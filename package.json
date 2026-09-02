@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "pnpm --filter @agri-erp/web dev",
     "build": "pnpm -r build",
-    "test": "vitest run",
+    "test": "vitest run --no-file-parallelism",
     "typecheck": "pnpm -r typecheck",
     "lint": "eslint .",
     "format": "prettier --write .",
@@ -15,7 +15,9 @@
     "db:migrate": "node scripts/with-env.mjs prisma migrate deploy",
     "db:seed": "node scripts/with-env.mjs prisma db seed",
     "db:studio": "node scripts/with-env.mjs prisma studio",
-    "db:reset": "node scripts/db-reset.mjs"
+    "db:reset": "node scripts/db-reset.mjs",
+    "locations:reseed": "node scripts/with-env.mjs node scripts/locations-reseed.mjs",
+    "locations:bundle": "node scripts/with-env.mjs node scripts/locations-bundle.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

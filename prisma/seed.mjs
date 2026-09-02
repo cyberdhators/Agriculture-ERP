@@ -1,32 +1,62 @@
-// Seeds the staging database. Run with `pnpm db:seed`.
+// Seeds the location hierarchy into staging. Run with `pnpm db:seed`.
 //
-// Empty on purpose. Unit B1.3 used this to insert one row into the throwaway
-// _smoke table; that table was dropped in migration 3, so there is nothing to
-// seed yet. The file stays, wired up and working, ready for the B2 location
-// tables.
+// Unit B2, criteria C-2.1 and C-2.2. Idempotent: safe to run repeatedly.
 //
-// Seed data is generated and fake. Real farmer data exists in production only,
-// and never reaches staging or a local machine.
+// Seed data is generated or reference data and never real farmer data. Real
+// farmer data exists in production only -- CLAUDE.md, "Personal data".
 
 import { PrismaClient } from '@prisma/client';
 
-import { loadEnvLocal } from '../scripts/load-env.mjs';
+import {
+  PLACEHOLDER_BANNER,
+  SOURCE_CSV,
+  loadSource,
+  makePrisma,
+  toTree,
+} from '../scripts/locations-lib.mjs';
 
-loadEnvLocal();
+const prisma = makePrisma(PrismaClient);
 
-if (!process.env.DATABASE_URL) {
-  console.error('');
-  console.error('DATABASE_URL is not set, so there is nothing to connect to.');
-  console.error('Put it in .env.local. Nothing was seeded.');
-  console.error('');
-  process.exit(1);
+const { placeholder, rows } = loadSource();
+const tree = toTree(rows);
+
+if (placeholder) {
+  console.log('');
+  console.log(PLACEHOLDER_BANNER);
+  console.log('');
+  console.log('  These are best-knowledge names and INVENTED codes. They are not');
+  console.log('  CORWADO source data and will not match the administrative boundary');
+  console.log('  lists due under Inception Report input I-07.');
+  console.log('');
+  console.log(`  To replace them, put the real list at:`);
+  console.log(`    ${SOURCE_CSV}`);
+  console.log('  then run:  pnpm locations:reseed');
+  console.log('');
 }
 
-const prisma = new PrismaClient();
-
-try {
-  await prisma.$connect();
-  console.log('Nothing to seed yet. The schema has no models.');
-} finally {
-  await prisma.$disconnect();
+// Upsert rather than insert, so seeding twice is not an error and so an
+// existing row is never disturbed by a re-run.
+for (const s of tree.states) {
+  await prisma.state.upsert({ where: { id: s.id }, update: { name: s.name }, create: s });
 }
+for (const c of tree.counties) {
+  await prisma.county.upsert({
+    where: { id: c.id },
+    update: { name: c.name, stateId: c.state_id },
+    create: { id: c.id, name: c.name, stateId: c.state_id },
+  });
+}
+for (const p of tree.payams) {
+  await prisma.payam.upsert({
+    where: { id: p.id },
+    update: { name: p.name, countyId: p.county_id, stateId: p.state_id },
+    create: { id: p.id, name: p.name, countyId: p.county_id, stateId: p.state_id },
+  });
+}
+
+console.log(
+  `Seeded ${tree.states.length} states, ${tree.counties.length} counties, ${tree.payams.length} payams` +
+    (placeholder ? '  [PLACEHOLDER]' : ''),
+);
+
+await prisma.$disconnect();
