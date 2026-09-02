@@ -186,6 +186,17 @@ emits one. A header that appears on some routes and not others is worse than
 none, because you cannot tell a request that had no id from one whose error was
 never reported. It belongs with the other guarantees the wrapper owns.
 
+**4. Enforce the "error messages never name a person" rule in the wrapper.**
+B1.5 established it as a standing rule and proved why it is needed: a name in
+free text reaches Sentry intact, and the scrubber cannot detect one. Today the
+rule is remembered rather than enforced, which will not survive B5 to B9 where
+almost every error concerns a specific farmer.
+
+The shared route wrapper is where it becomes structural rather than
+remembered. It already owns the fixed 500 sentence -- the same idea, for the
+same reason. What that enforcement looks like is B3's design decision; that it
+is B3's job is not.
+
 **The rule for B1.5 was met.** B1.5 created `/api/_dev/throw` and added its row
 to the outstanding items table in the same change. The rule stands for any
 future `_dev` route: it and its row are created together or not at all.
@@ -225,6 +236,26 @@ sparseness rather than meet it during an incident:
   `environment` and `app_version` tags, the release, the level, and device,
   memory and locale context.
 
+### The scrubber is the last gate we control, not the last gate
+
+`beforeSend` is the final point in the pipeline that runs **our** code. The SDK
+continues to build the envelope after it returns, and fields attached in that
+window are never seen by the scrubber.
+
+One field does this today: **`sdk.name`** arrives as the constant
+`sentry.javascript.nextjs`, despite the rule that redacts every key called
+`name`. It carries nothing personal, so there is nothing to fix.
+
+**The limit is what matters, not that field.** Our rule covers everything the
+scrubber can reach, and nothing it cannot. If a future SDK version attaches
+anything else after `beforeSend` — a new context, a new default field, richer
+metadata — **it is outside the rule and will not be redacted**, silently.
+
+There is no way to assert against this in advance. The only way to find it is
+the way it was found in B1.5: capture a real transmitted envelope and read it.
+**Any SDK upgrade should do that**, and compare against what this document
+records above.
+
 ### Three leaks found by reading a transmitted envelope
 
 None was visible from reading the code, and none was in the original brief.
@@ -235,14 +266,39 @@ None was visible from reading the code, and none was in the original brief.
 | **`server_name` shipped a person's name.** Sentry defaults it to the machine hostname, which on a laptop is often `<someone>s-MacBook-Air.local`.                                                                                                                                                                                  | `serverName` is set to the environment name instead.                                                                                   |
 | **Four tests passed while transmitting nothing.** Closing the Sentry client between tests left it closed, so every "no personal data appears" assertion passed against an empty payload.                                                                                                                                           | Every envelope test now asserts something _was_ transmitted before asserting what it did not contain. The B1.3 lesson, in a new place. |
 
+### STANDING RULE: error messages never name a person
+
+**Error messages, log lines and exception text never interpolate a farmer's
+name, phone number or national ID. Reference records by id only.**
+
+Not `could not register Achol Deng`, but `could not register farmer
+0f3c1a9e-...`.
+
+**Why this is a rule and not a preference.** The scrubber removes values under
+named keys and strings shaped like a South Sudan number. Nothing distinguishes a
+person's name from any other word in a sentence, so **a name written into an
+error message reaches Sentry intact**. Verified in B1.5, and there is a test
+named as a known limit so it cannot be assumed away.
+
+Today the only protection is that we do not do it. **That is a discipline, not a
+guarantee**, and a discipline decays: B5 through B9 are modules where nearly
+every error is about one specific farmer, written by whoever is working that
+week. The rule has to outlive the person who remembers why.
+
+**A national ID is the worst case.** It is not scrubbed by any rule -- it is not
+a listed key when written in free text, and it is not phone-shaped -- and it is
+the one identifier a farmer cannot change after it leaks.
+
+Enforcement belongs in the shared route wrapper, in B3. See the B3 opening
+tasks.
+
 ### What the scrubber does not do
 
 Stated so it is not assumed away:
 
-- **A personal name in free text survives.** Nothing distinguishes a person's
-  name from any other word in a sentence. The protection is that our own
-  messages never interpolate personal data — the same reasoning that fixes the
-  500 sentence in CONVENTIONS.md §5.4. There is a test named as a known limit.
+- **A personal name or national ID in free text survives.** This is the one that
+  will bite, and it has its own standing rule above — see "error messages never
+  name a person". There is a test named as a known limit.
 - **The phone pass over-matches, deliberately.** Any run of digits containing
   something that parses as a South Sudan number is redacted whole, so a
   13-digit millisecond timestamp or a 12-digit integer id is occasionally lost.

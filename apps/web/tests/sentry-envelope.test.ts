@@ -154,7 +154,7 @@ describe('what reaches Sentry when a route handler fails holding a farmer regist
     expect(text).not.toMatch(/"post_context":\[(?!\s*\])/);
   });
 
-  it('KNOWN LIMIT: a personal name written into free text is not removed', async () => {
+  it('KNOWN LIMIT: a name or national id written into free text is not removed', async () => {
     // Not a defect -- a stated limit of the agreed rules. The scrubber removes
     // values under named keys and strings shaped like a South Sudan number.
     // Nothing distinguishes a person's name from any other word in a sentence,
@@ -163,11 +163,16 @@ describe('what reaches Sentry when a route handler fails holding a farmer regist
     // The protection is that our own messages never interpolate personal data:
     // CONVENTIONS.md section 5.4 fixes the 500 sentence for the same reason.
     // This test exists so the limit is visible rather than assumed away.
-    Sentry.captureException(new Error('could not register Achol Deng'));
+    Sentry.captureException(new Error('could not register Achol Deng, id SSD-1234567'));
     await Sentry.flush(2000);
 
     expect(sent.length).toBeGreaterThan(0);
-    expect(transmitted()).toContain('Achol');
+    const text = transmitted();
+    expect(text).toContain('Achol');
+    // A national ID is the worse case: not a listed key when written in free
+    // text, not phone-shaped, and the one identifier a farmer cannot change
+    // after it leaks. See the standing rule in docs/PROJECT-STATE.md.
+    expect(text).toContain('SSD-1234567');
   });
 
   it('sends no part of a registration body held as a tag', async () => {
