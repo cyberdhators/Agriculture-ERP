@@ -51,6 +51,29 @@ for deployments. All are listed in `.env.example`.
 
 ---
 
+## KNOWN CONDITION — THE SESSION POOLER IS FLAKY
+
+`DIRECT_URL` reaches staging through the **session pooler**
+(`...pooler.supabase.com:5432`), not the direct host. The direct host
+`db.<ref>.supabase.co` has **no A record — it is IPv6 only**, and IPv4 direct
+access is a paid add-on. A machine without an IPv6 route cannot use it at all.
+
+**The connection drops intermittently.** Measured: roughly one attempt in three
+fails on the session pooler, and `prisma migrate deploy` needed three attempts
+to apply the housekeeping migration. The transaction pooler on `:6543` has been
+more reliable but is not immune.
+
+**When a command fails, retry the command.** A `P1001: Can't reach database
+server` is far more likely to be this than a real fault. Check twice before
+concluding anything is broken.
+
+**Do not add retry logic inside a test.** A test that retries hides the
+condition instead of surviving it, and — worse — it would also hide a genuine
+connection fault behind the same silence. Tests fail honestly; the operator
+retries the command.
+
+---
+
 ## OUTSTANDING ITEMS — THINGS THAT EXIST AND MUST BE REMOVED
 
 Things that **exist in the repository today** and are scheduled for deletion.

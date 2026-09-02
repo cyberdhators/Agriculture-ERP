@@ -200,6 +200,84 @@ for. Recorded so it is known rather than discovered.
 
 ---
 
+## Housekeeping — RLS on Prisma's migration-history table
+
+Every table this project creates enables row-level security in the same
+migration that creates it. `_prisma_migrations` broke that rule because **we did
+not create it**: Prisma creates it on first `migrate deploy`, and Prisma does
+not enable RLS.
+
+Supabase's advisor flagged it **critical**. Without RLS, anyone holding the
+staging anon key could read the migration history and, worse, modify or truncate
+it — which would make the database's record of what had been applied disagree
+with the repository, silently, with nothing to notice it.
+
+It is now covered by the same deny-by-default rule every project table follows,
+in its own migration, applied and verified.
+
+**The advisory that remains is the intended state.** Supabase now reports
+`rls_enabled_no_policy` at INFO level: RLS on, no policies. That is not a
+defect to fix — it is exactly what `CLAUDE.md` prescribes. RLS with no policies
+denies the anon and authenticated keys everything, while the server connects as
+owner and bypasses it deliberately. **A future session must not "resolve" this
+by adding a permissive policy.**
+
+Verified in both directions, per B1.3: the anon path is closed (RLS reported
+enabled), and the owner path still works (`migrate status` reports 4 migrations
+applied, no drift).
+
+---
+
+## Housekeeping — the Supabase MCP server is narrower than its URL
+
+The server was re-added with `read_only=true` removed and `account`, `functions`
+and `branching` in the feature list. **That was flagged as granting write access
+to staging and account-level reach past the project. Verified afterwards, and it
+does not.**
+
+What was observed rather than assumed:
+
+- `execute_sql` runs as `supabase_read_only_user`.
+- `CREATE TEMP TABLE` is refused: _cannot execute CREATE TABLE in a read-only
+  transaction_.
+- No `apply_migration` tool exists in the surfaced tool set.
+- `account` surfaced **no** account-level tools, because the URL pins a single
+  `project_ref`.
+
+**The read-only posture stands, now confirmed by observation rather than by
+configuration.** That distinction matters: it does not depend on the URL keeping
+a flag, so it should be re-checked the same way — by trying a write — after any
+change to the server URL or any upgrade of the MCP server itself.
+
+It remains true that schema changes must never be applied through this server
+even if it one day permits them. Supabase tracks migrations in its own table and
+Prisma tracks them in `_prisma_migrations`; applying through the API would
+create two competing histories. `list_migrations` returns empty while Prisma
+reports four applied, which is that divergence visible in miniature.
+
+---
+
+## Housekeeping — a credential backup was one command from being committed
+
+Taking a backup of `.env.local` before editing it produced `.env.local.bak-b2`,
+holding a live staging credential in plaintext inside the repository directory.
+
+The ignore rules were `.env`, `.env.local` and `.env.*.local`. **None of them
+matched it.** A `git add -A` would have committed it. gitleaks scans the diff
+and would likely have caught the connection string on the way past, but that is
+a backstop, not a rule.
+
+The patterns are now `.env`, `.env.*`, and `!.env.example` — ignore every
+variant, let the example back in explicitly. Checked in both directions:
+`.env.local.bak`, `.env.local.old` and `.env.backup` are ignored, and
+`.env.example` is still tracked.
+
+The near-miss is recorded because the failure was in the rules, not in the
+person: a backup is an ordinary thing to take before editing a file, and the
+rules should survive ordinary things.
+
+---
+
 ## B1.6 — Why this file exists
 
 `docs/PROJECT-STATE.md` had grown to 332 lines across six units. It is read at
