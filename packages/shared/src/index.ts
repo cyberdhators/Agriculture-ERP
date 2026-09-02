@@ -1,13 +1,28 @@
 /**
- * Scaffolding only.
+ * Shared validation.
  *
- * This package exists to hold the Zod schemas that the web app and the
- * officer mobile app will both validate against. It has none yet.
- *
- * `add` is a placeholder with one job: give apps/web something real to
- * import, so a test there proves the workspace link resolves. Delete it
- * when the first schema lands.
+ * The API is the single source of validation truth: every request is validated
+ * server-side against these schemas regardless of what a client did. See
+ * docs/api/CONVENTIONS.md section 8.
  */
-export function add(a: number, b: number): number {
-  return a + b;
-}
+
+export { PHONE_MESSAGES, parseSouthSudanMobile, phoneSchema, type PhoneParseResult } from './phone';
+
+export {
+  DEFAULT_LIMIT,
+  MAX_LIMIT,
+  PAGINATION_MESSAGES,
+  paginationSchema,
+  type Pagination,
+} from './pagination';
+
+export {
+  apiError,
+  ERROR_CODES,
+  ERROR_MESSAGES,
+  MAX_BODY_BYTES,
+  zodErrorToApiError,
+  type ApiErrorBody,
+} from './errors';
+
+export { devValidatePhoneBodySchema } from './dev';

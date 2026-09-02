@@ -82,3 +82,47 @@ databases. Migrations are hand-written SQL applied with `prisma migrate deploy`.
 **Prisma connects as database owner and bypasses row-level security by design.**
 RLS is the backstop against the anon and authenticated keys, not against our own
 server. Server-side authorisation is `requireRole` in the API routes.
+
+---
+
+## OUTSTANDING ITEMS — THINGS THAT EXIST AND MUST BE REMOVED
+
+This list holds things that **exist in the repository today** and are scheduled
+for deletion. It is not a list of intentions. Nothing is added here before it
+exists, and nothing is deleted from here except by deleting the thing itself.
+
+| Item                            | Added | Removed in | Why it exists                                                                                                                                                                                            |
+| ------------------------------- | ----- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `POST /api/_dev/validate-phone` | B1.4  | **B3**     | Proves `docs/api/CONVENTIONS.md` and the Zod schemas in `packages/shared` agree inside a running server, before `requireRole` exists. It is unauthenticated, which every other route is forbidden to be. |
+
+**Deleting `/api/_dev/validate-phone` in B3 means all five of these, together:**
+
+1. `apps/web/app/api/_dev/validate-phone/route.ts`
+2. `devValidatePhoneBodySchema` in `packages/shared/src/dev.ts` (and the file,
+   and its export from `src/index.ts`)
+3. `apps/web/tests/dev-validate-phone.test.ts`
+4. The row above
+5. The `/api/_dev/*` exception paragraph in `docs/api/CONVENTIONS.md` section 2
+
+When this table is empty, the `/api/_dev/*` exception is removed from
+CONVENTIONS.md entirely rather than left standing with nothing under it.
+
+**A rule for B1.5.** The B1.5 plan includes a `_dev/throw` route for proving
+Sentry receives an unhandled error. It does not exist yet. **If B1.5 creates
+it, B1.5 adds it to this table in the same change** — a `_dev` route and its row
+here are created together or not at all.
+
+---
+
+## BLOCKED
+
+**`docs/scope-and-acceptance.md` does not exist.** `CLAUDE.md` section 1 names
+it the only scope document and the source of truth for the twenty contracted
+deliverables (a)–(t). The file is not in the repository.
+
+This does not block B1.4 or B1.5, which are scaffolding and claim no acceptance
+criteria. **It blocks B2.** Farmer registration cannot begin without the
+criteria it is written against, because there would be nothing to mark DONE or
+NOT DONE against, and no way to tell a contracted field from an invented one.
+
+Resolve before B2 starts.
