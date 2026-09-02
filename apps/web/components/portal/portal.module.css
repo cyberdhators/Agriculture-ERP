@@ -1,214 +1,194 @@
-/* Desktop-first application layout: fixed sidebar, fluid content. */
+/* Masthead over a full-width content well. Desktop-first, wide. */
 
 .shell {
-  display: grid;
-  grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
+  display: flex;
+  flex-direction: column;
   min-height: 100vh;
 }
 
-/* ---- Sidebar --------------------------------------------------------- */
+/* ---- Masthead: dark band ------------------------------------------- */
 
-.sidebar {
+.masthead {
   position: sticky;
   top: 0;
+  z-index: 20;
+  height: var(--masthead-h);
+  background: var(--band);
+  color: var(--band-ink);
+  border-bottom: 1px solid var(--band-line);
+}
+
+.mastheadInner {
   display: flex;
-  flex-direction: column;
-  height: 100vh;
-  padding: var(--s-5) var(--s-4);
-  background: var(--card);
-  border-right: 1px solid var(--line);
+  align-items: stretch;
+  gap: var(--s-6);
+  height: 100%;
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding: 0 var(--s-8);
 }
 
 .wordmark {
   display: flex;
   align-items: center;
   gap: var(--s-3);
-  padding: var(--s-2) var(--s-2) var(--s-5);
-  color: var(--ink);
+  color: var(--band-ink);
   text-decoration: none;
+  white-space: nowrap;
 }
 
-.wordmarkTile {
-  display: grid;
-  place-items: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
-  background: var(--leaf);
-  color: #fff;
-  font-family: var(--font-display);
-  font-weight: 800;
-  font-size: 20px;
+.wordmarkOrg {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: var(--text-label);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
 }
 
-.wordmarkText {
-  display: grid;
-  line-height: 1.15;
+.wordmarkRule {
+  width: 1px;
+  height: 20px;
+  background: var(--band-line);
 }
 
 .wordmarkName {
   font-family: var(--font-display);
-  font-weight: 800;
-  font-size: 18px;
+  font-weight: 560;
+  font-size: 19px;
   letter-spacing: -0.01em;
-}
-
-.wordmarkSub {
-  font-size: var(--text-small);
-  color: var(--muted);
+  font-variation-settings: 'opsz' 36, 'SOFT' 40, 'WONK' 0;
 }
 
 .nav {
-  display: grid;
-  gap: 2px;
-}
-
-.navGroup {
-  padding: var(--s-4) var(--s-3) var(--s-2);
-}
-
-.navLink {
   display: flex;
+  align-items: stretch;
+  gap: var(--s-5);
+  margin-left: var(--s-2);
+}
+
+.navTab {
+  position: relative;
+  display: inline-flex;
   align-items: center;
-  gap: var(--s-3);
-  min-height: 44px;
-  padding: 0 var(--s-3);
-  border-radius: 12px;
-  color: var(--ink-2);
-  font-family: var(--font-display);
-  font-weight: 700;
+  color: rgba(243, 238, 227, 0.72);
+  font-weight: 500;
   font-size: var(--text-body);
   text-decoration: none;
+  border-bottom: 2px solid transparent;
+  transition: color 140ms ease;
 }
 
-.navLink:hover {
-  background: var(--paper);
-  color: var(--ink);
+.navTab:hover {
+  color: var(--band-ink);
 }
 
-.navLink[aria-current='page'] {
-  background: var(--leaf);
-  color: #fff;
+.navTab[aria-current='page'] {
+  color: var(--band-ink);
+  border-bottom-color: var(--accent);
 }
 
-.navLink svg {
-  flex: none;
-  opacity: 0.85;
-}
+/* ---- Global search ------------------------------------------------- */
 
-.navBadge {
+.search {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
   margin-left: auto;
-  padding: 0 8px;
-  border-radius: var(--radius-pill);
-  background: var(--dust);
-  color: var(--muted);
-  font-size: 11.5px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  align-self: center;
+  height: 32px;
+  padding: 0 var(--s-2) 0 var(--s-3);
+  min-width: 200px;
+  background: rgba(243, 238, 227, 0.08);
+  border: 1px solid var(--band-line);
+  border-radius: var(--radius-control);
+  color: rgba(243, 238, 227, 0.6);
 }
 
-.navLink[aria-current='page'] .navBadge {
-  background: rgba(255, 255, 255, 0.2);
-  color: #fff;
+.search:focus-within {
+  border-color: var(--accent);
+  color: var(--band-ink);
 }
 
-.sidebarFooter {
-  margin-top: auto;
-  padding-top: var(--s-4);
-  border-top: 1px solid var(--line);
-}
-
-.user {
-  display: flex;
-  align-items: center;
-  gap: var(--s-3);
-  padding: var(--s-2);
-}
-
-.userText {
-  display: grid;
-  line-height: 1.2;
-}
-
-.userName {
-  font-family: var(--font-display);
-  font-weight: 700;
-}
-
-/* ---- Main ------------------------------------------------------------ */
-
-.main {
-  display: flex;
-  flex-direction: column;
+.searchInput {
+  flex: 1;
   min-width: 0;
+  height: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--band-ink);
+  font-size: var(--text-small);
 }
 
-.topbar {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--s-4);
-  min-height: 64px;
-  padding: 0 var(--s-8);
-  background: rgba(251, 251, 247, 0.92);
-  backdrop-filter: blur(8px);
-  border-bottom: 1px solid var(--line);
+.searchInput::placeholder {
+  color: rgba(243, 238, 227, 0.5);
 }
 
-.topbarTitle {
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: var(--text-subhead);
+.searchInput:focus-visible {
+  outline: none;
+  box-shadow: none;
 }
 
-.topbarRight {
-  display: flex;
-  align-items: center;
-  gap: var(--s-4);
+.searchKbd {
+  display: grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  background: rgba(243, 238, 227, 0.1);
+  border: 1px solid var(--band-line);
+  border-radius: 3px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: rgba(243, 238, 227, 0.7);
 }
+
+/* ---- Role preview ------------------------------------------------- */
 
 .roleSwitch {
   display: flex;
   align-items: center;
   gap: var(--s-2);
-  padding: 4px 4px 4px 12px;
-  border: 1.5px dashed var(--sorghum);
-  border-radius: var(--radius-control);
-  background: var(--sorghum-tint);
+  align-self: center;
 }
 
 .roleSwitchLabel {
-  font-family: var(--font-display);
+  font-family: var(--font-body);
   font-size: var(--text-label);
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--sorghum);
+  color: rgba(243, 238, 227, 0.5);
 }
 
 .roleSwitch select {
-  min-height: 40px;
-  padding: 0 36px 0 12px;
-  border: 0;
-  border-radius: 10px;
-  background-color: var(--card);
-  font-family: var(--font-display);
-  font-weight: 700;
+  height: 32px;
+  padding: 0 30px 0 10px;
+  background-color: rgba(243, 238, 227, 0.08);
+  border: 1px solid var(--band-line);
+  border-radius: var(--radius-control);
+  color: var(--band-ink);
   font-size: var(--text-small);
+  font-weight: 500;
   appearance: none;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%233a443a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23e0d9c9' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
   background-repeat: no-repeat;
-  background-position: right 10px center;
+  background-position: right 8px center;
 }
+
+.roleSwitch select:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: none;
+}
+
+/* ---- Content well -------------------------------------------------- */
 
 .content {
   flex: 1;
   width: 100%;
   max-width: var(--content-max);
+  margin: 0 auto;
   padding: var(--s-8);
 }
 
@@ -218,7 +198,10 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--s-3);
-  padding: var(--s-4) var(--s-8);
+  max-width: var(--content-max);
+  width: 100%;
+  margin: 0 auto;
+  padding: var(--s-5) var(--s-8);
   border-top: 1px solid var(--line);
   color: var(--muted);
   font-size: var(--text-small);
@@ -228,41 +211,43 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  color: var(--sorghum);
-  font-weight: 700;
+  color: var(--accent-hover);
+  font-weight: 600;
 }
 
-/* ---- Narrow screens: sidebar becomes a top strip ---------------------- */
+/* ---- Narrow: the band wraps, nav scrolls. Fallback, not the target. */
 
 @media (max-width: 1024px) {
-  .shell {
-    grid-template-columns: 1fr;
+  .masthead {
+    height: auto;
+    position: static;
   }
 
-  .sidebar {
-    position: static;
-    height: auto;
+  .mastheadInner {
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--s-3) var(--s-4);
     padding: var(--s-3) var(--s-4);
-    border-right: 0;
-    border-bottom: 1px solid var(--line);
   }
 
   .nav {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--s-1);
+    order: 3;
+    width: 100%;
+    overflow-x: auto;
+    gap: var(--s-4);
+    margin-left: 0;
   }
 
-  .navGroup,
-  .sidebarFooter {
-    display: none;
+  .navTab {
+    padding-bottom: 4px;
   }
 
-  .wordmark {
-    padding-bottom: var(--s-3);
+  .search {
+    order: 2;
+    min-width: 0;
+    flex: 1 1 160px;
   }
 
-  .topbar,
   .content,
   .footer {
     padding-inline: var(--s-4);
@@ -270,12 +255,7 @@
 }
 
 @media print {
-  .shell {
-    display: block;
-  }
-
-  .sidebar,
-  .topbar,
+  .masthead,
   .footer {
     display: none;
   }

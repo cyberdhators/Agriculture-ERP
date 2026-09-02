@@ -6,19 +6,19 @@
   justify-content: center;
   gap: var(--s-2);
   min-height: var(--touch);
-  padding: 0 var(--s-5);
-  border: 1.5px solid transparent;
+  padding: 0 var(--s-4);
+  border: 1px solid transparent;
   border-radius: var(--radius-control);
-  font-family: var(--font-display);
-  font-weight: 700;
+  font-family: var(--font-body);
+  font-weight: 600;
   font-size: var(--text-body);
   line-height: 1;
   white-space: nowrap;
   text-decoration: none;
   transition:
-    background-color 120ms ease,
-    border-color 120ms ease,
-    color 120ms ease;
+    background-color 140ms ease,
+    border-color 140ms ease,
+    color 140ms ease;
 }
 
 .button:disabled,
@@ -29,52 +29,56 @@
   color: var(--muted);
 }
 
+/* Primary is the register's one amber act. Ink on amber for contrast;
+   hover inks the field dark and lets the amber read as text. */
 .buttonPrimary {
-  background: var(--nile);
-  color: #fff;
+  background: var(--accent);
+  border-color: var(--accent-hover);
+  color: var(--ink);
 }
 
 .buttonPrimary:hover:not(:disabled) {
-  background: var(--nile-deep);
-  color: #fff;
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--accent);
 }
 
 .buttonSecondary {
   background: var(--card);
-  border-color: var(--nile);
-  color: var(--nile);
+  border-color: var(--line-strong);
+  color: var(--ink);
 }
 
 .buttonSecondary:hover:not(:disabled) {
-  background: var(--nile-tint);
-  color: var(--nile-deep);
+  border-color: var(--ink);
+  background: var(--dust);
 }
 
 .buttonGhost {
   background: transparent;
-  color: var(--nile);
+  color: var(--ink);
   padding-inline: var(--s-3);
 }
 
 .buttonGhost:hover:not(:disabled) {
-  background: var(--nile-tint);
-  color: var(--nile-deep);
+  background: var(--dust);
+  color: var(--accent-hover);
 }
 
-/* Destructive: always outlined, never filled (design rule). */
+/* Destructive: outlined in danger, never filled. */
 .buttonDanger {
   background: var(--card);
-  border-color: var(--clay);
-  color: var(--clay);
+  border-color: var(--danger);
+  color: var(--danger);
 }
 
 .buttonDanger:hover:not(:disabled) {
-  background: var(--clay-tint);
+  background: var(--danger-tint);
 }
 
 .buttonSmall {
-  min-height: 40px;
-  padding-inline: var(--s-4);
+  min-height: 32px;
+  padding-inline: var(--s-3);
   font-size: var(--text-small);
 }
 
@@ -83,18 +87,18 @@
   padding: 0;
 }
 
-/* ---- Badge ------------------------------------------------------------ */
+/* ---- Badge (compact filing tag, square-cornered) --------------------- */
 
 .badge {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  min-height: 24px;
-  padding: 2px 10px;
-  border-radius: var(--radius-pill);
-  font-family: var(--font-display);
-  font-size: 12.5px;
-  font-weight: 700;
+  gap: 5px;
+  min-height: 20px;
+  padding: 1px 7px;
+  border-radius: var(--radius-control);
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 600;
   line-height: 1.3;
   white-space: nowrap;
 }
@@ -108,23 +112,23 @@
 }
 
 .badgeLeaf {
-  background: var(--leaf);
-  color: #fff;
+  background: var(--verified-tint);
+  color: var(--verified);
 }
 
 .badgeSorghum {
-  background: var(--sorghum);
-  color: #fff;
+  background: var(--pending-tint);
+  color: var(--pending);
 }
 
 .badgeClay {
-  background: var(--clay);
-  color: #fff;
+  background: var(--danger-tint);
+  color: var(--danger);
 }
 
 .badgeNile {
-  background: var(--nile);
-  color: #fff;
+  background: var(--info-tint);
+  color: var(--info);
 }
 
 .badgeNeutral {
@@ -134,23 +138,7 @@
 
 .badgeOutline {
   background: transparent;
-  border: 1.5px solid currentColor;
-}
-
-.badgeOutline.badgeLeaf {
-  color: var(--leaf);
-}
-
-.badgeOutline.badgeSorghum {
-  color: var(--sorghum);
-}
-
-.badgeOutline.badgeClay {
-  color: var(--clay);
-}
-
-.badgeOutline.badgeNile {
-  color: var(--nile);
+  border: 1px solid currentColor;
 }
 
 .badgeOutline.badgeNeutral {
@@ -158,13 +146,162 @@
   border-color: var(--line-strong);
 }
 
-/* ---- Card ------------------------------------------------------------- */
+/* ---- Stamp (verification status, inked and square) ------------------- */
+
+.stamp {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px;
+  border-radius: var(--radius-control);
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px currentColor;
+  font-family: var(--font-body);
+  font-size: var(--text-label);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.stampVerified {
+  color: var(--verified);
+  background: var(--verified-tint);
+}
+
+.stampPending {
+  color: var(--pending);
+  background: var(--pending-tint);
+}
+
+.stampRejected {
+  color: var(--danger);
+  background: var(--danger-tint);
+}
+
+.stampMerged {
+  color: var(--neutral);
+  background: var(--neutral-tint);
+}
+
+.stampInfo {
+  color: var(--info);
+  background: var(--info-tint);
+}
+
+.stampEscalated {
+  color: var(--accent-hover);
+  background: var(--accent-tint);
+}
+
+.stampNeutral {
+  color: var(--ink-2);
+  background: var(--dust);
+}
+
+/* ---- Sync chip (mono, tiny) ------------------------------------------ */
+
+.syncChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+
+.syncDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  flex: none;
+}
+
+.syncWaiting {
+  color: var(--muted);
+}
+.syncSending {
+  color: var(--info);
+}
+.syncSynced {
+  color: var(--verified);
+}
+.syncFailed {
+  color: var(--danger);
+}
+
+/* ---- KPI strip (hairline-ruled row of numbers, not cards) ------------ */
+
+.kpiStrip {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  border-top: 1px solid var(--line-strong);
+  border-bottom: 1px solid var(--line-strong);
+}
+
+.kpiItem {
+  display: grid;
+  gap: 2px;
+  padding: var(--s-4) var(--s-5) var(--s-4) 0;
+  border-right: 1px solid var(--line);
+}
+
+.kpiItem:last-child {
+  border-right: 0;
+}
+
+.kpiValue {
+  font-family: var(--font-display);
+  font-weight: 560;
+  font-size: 40px;
+  line-height: 1;
+  font-variation-settings: 'opsz' 60, 'SOFT' 40, 'WONK' 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.kpiValueAccent {
+  color: var(--accent-hover);
+}
+
+.kpiLabel {
+  font-family: var(--font-body);
+  font-size: var(--text-label);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.kpiDelta {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ink-2);
+}
+
+@media (max-width: 900px) {
+  .kpiStrip {
+    grid-auto-flow: row;
+    grid-auto-columns: auto;
+    grid-template-columns: 1fr 1fr;
+  }
+  .kpiItem {
+    border-bottom: 1px solid var(--line);
+    padding-right: var(--s-4);
+  }
+  .kpiValue {
+    font-size: 32px;
+  }
+}
+
+/* ---- Card (a ruled panel, no shadow) --------------------------------- */
 
 .card {
   background: var(--card);
-  border: 1px solid var(--line);
+  border: 1px solid var(--line-strong);
   border-radius: var(--radius-card);
-  box-shadow: var(--shadow-card);
 }
 
 .cardPadded {
@@ -176,7 +313,7 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: var(--s-4);
-  padding: var(--s-5) var(--s-6);
+  padding: var(--s-4) var(--s-5);
   border-bottom: 1px solid var(--line);
 }
 
@@ -186,11 +323,11 @@
 }
 
 .cardBody {
-  padding: var(--s-6);
+  padding: var(--s-5);
 }
 
 .cardFooter {
-  padding: var(--s-4) var(--s-6);
+  padding: var(--s-4) var(--s-5);
   border-top: 1px solid var(--line);
   background: var(--paper);
   border-radius: 0 0 var(--radius-card) var(--radius-card);
@@ -204,18 +341,20 @@
 }
 
 .fieldLabel {
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: var(--text-body);
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: var(--text-small);
+  letter-spacing: 0.02em;
   color: var(--ink);
 }
 
 .fieldOptional {
   margin-left: var(--s-2);
-  font-family: var(--font-body);
   font-weight: 400;
   font-size: var(--text-small);
   color: var(--muted);
+  text-transform: none;
+  letter-spacing: 0;
 }
 
 .fieldHint {
@@ -228,8 +367,8 @@
   align-items: flex-start;
   gap: 6px;
   font-size: var(--text-small);
-  font-weight: 600;
-  color: var(--clay);
+  font-weight: 500;
+  color: var(--danger);
 }
 
 .fieldError svg {
@@ -240,12 +379,12 @@
 .control {
   width: 100%;
   min-height: var(--touch);
-  padding: 0 var(--s-4);
+  padding: 0 var(--s-3);
   background: var(--card);
-  border: 1.5px solid var(--line-strong);
+  border: 1px solid var(--line-strong);
   border-radius: var(--radius-control);
   color: var(--ink);
-  transition: border-color 120ms ease;
+  transition: border-color 140ms ease;
 }
 
 .control::placeholder {
@@ -258,7 +397,7 @@
 }
 
 .control:focus-visible {
-  border-color: var(--nile);
+  border-color: var(--accent);
   box-shadow: var(--ring);
   border-radius: var(--radius-control);
 }
@@ -270,11 +409,11 @@
 }
 
 .control[aria-invalid='true'] {
-  border-color: var(--clay);
+  border-color: var(--danger);
 }
 
 textarea.control {
-  min-height: 112px;
+  min-height: 104px;
   padding-block: var(--s-3);
   line-height: 1.5;
   resize: vertical;
@@ -282,10 +421,10 @@ textarea.control {
 
 select.control {
   appearance: none;
-  padding-right: 44px;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%233a443a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
+  padding-right: 40px;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%233e4f44' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
   background-repeat: no-repeat;
-  background-position: right 16px center;
+  background-position: right 12px center;
 }
 
 .controlWithPrefix {
@@ -296,13 +435,13 @@ select.control {
 .controlPrefix {
   display: flex;
   align-items: center;
-  padding: 0 var(--s-4);
+  padding: 0 var(--s-3);
   background: var(--dust);
-  border: 1.5px solid var(--line-strong);
+  border: 1px solid var(--line-strong);
   border-right: 0;
   border-radius: var(--radius-control) 0 0 var(--radius-control);
-  font-family: var(--font-display);
-  font-weight: 700;
+  font-family: var(--font-mono);
+  font-weight: 500;
   color: var(--ink-2);
 }
 
@@ -319,10 +458,10 @@ select.control {
 }
 
 .checkbox input {
-  width: 22px;
-  height: 22px;
+  width: 18px;
+  height: 18px;
   margin: 0;
-  accent-color: var(--nile);
+  accent-color: var(--accent);
   cursor: pointer;
 }
 
@@ -334,7 +473,7 @@ select.control {
 
 .search svg {
   position: absolute;
-  left: 14px;
+  left: 12px;
   top: 50%;
   transform: translateY(-50%);
   color: var(--muted);
@@ -342,31 +481,29 @@ select.control {
 }
 
 .search .control {
-  padding-left: 42px;
+  padding-left: 38px;
 }
 
-/* ---- Tabs ------------------------------------------------------------- */
+/* ---- Tabs (underlined text, like the masthead) ----------------------- */
 
 .tabs {
   display: inline-flex;
-  gap: 2px;
-  padding: 3px;
-  background: var(--dust);
-  border-radius: var(--radius-control);
+  gap: var(--s-4);
+  border-bottom: 1px solid var(--line);
 }
 
 .tab {
   display: inline-flex;
   align-items: center;
   gap: var(--s-2);
-  min-height: 42px;
-  padding: 0 var(--s-4);
+  min-height: 36px;
+  padding: 0 2px 6px;
   border: 0;
-  border-radius: 11px;
+  border-bottom: 2px solid transparent;
   background: transparent;
-  color: var(--ink-2);
-  font-family: var(--font-display);
-  font-weight: 700;
+  color: var(--muted);
+  font-family: var(--font-body);
+  font-weight: 600;
   font-size: var(--text-small);
   white-space: nowrap;
 }
@@ -376,73 +513,59 @@ select.control {
 }
 
 .tab[aria-selected='true'] {
-  background: var(--card);
   color: var(--ink);
-  box-shadow: 0 1px 2px rgba(16, 23, 16, 0.12);
+  border-bottom-color: var(--accent);
 }
 
 .tabCount {
-  min-width: 22px;
-  padding: 0 6px;
-  border-radius: var(--radius-pill);
-  background: var(--paper);
+  font-family: var(--font-mono);
+  font-size: 12px;
   color: var(--muted);
-  text-align: center;
   font-variant-numeric: tabular-nums;
 }
 
 .tab[aria-selected='true'] .tabCount {
-  background: var(--nile-tint);
-  color: var(--nile-deep);
+  color: var(--accent-hover);
 }
 
 /* ---- Empty / error state --------------------------------------------- */
 
 .state {
   display: grid;
-  grid-template-columns: auto 1fr;
-  gap: var(--s-4);
+  gap: var(--s-2);
   padding: var(--s-6);
-  border: 1.5px dashed var(--line-strong);
+  background: var(--dust);
+  border: 1px solid var(--line);
   border-radius: var(--radius-card);
-  background: var(--paper);
 }
 
 .stateIcon {
-  display: grid;
-  place-items: center;
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  background: var(--dust);
-  color: var(--muted);
-}
-
-.stateError .stateIcon {
-  background: var(--clay-tint);
-  color: var(--clay);
+  display: none;
 }
 
 .stateError {
-  border-color: var(--clay);
+  border-color: var(--danger);
+  background: var(--danger-tint);
 }
 
 .stateTitle {
   font-family: var(--font-display);
-  font-weight: 700;
-  font-size: var(--text-subhead);
+  font-weight: 560;
+  font-size: var(--text-h2);
+  line-height: 1.1;
+  font-variation-settings: 'opsz' 40, 'SOFT' 60, 'WONK' 0;
 }
 
 .stateBody {
-  margin-top: 2px;
   color: var(--ink-2);
+  max-width: 60ch;
 }
 
 .stateActions {
   display: flex;
   flex-wrap: wrap;
   gap: var(--s-3);
-  margin-top: var(--s-4);
+  margin-top: var(--s-3);
 }
 
 /* ---- Notice (inline alert) ------------------------------------------- */
@@ -451,8 +574,9 @@ select.control {
   display: grid;
   grid-template-columns: auto 1fr;
   gap: var(--s-3);
-  padding: var(--s-4) var(--s-5);
-  border: 1.5px solid;
+  padding: var(--s-3) var(--s-4);
+  border: 1px solid;
+  border-left-width: 3px;
   border-radius: var(--radius-control);
 }
 
@@ -461,32 +585,31 @@ select.control {
 }
 
 .noticeTitle {
-  font-family: var(--font-display);
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .noticeInfo {
-  border-color: var(--nile);
-  background: var(--nile-tint);
-  color: var(--nile-deep);
+  border-color: var(--info);
+  background: var(--info-tint);
+  color: var(--info);
 }
 
 .noticeSuccess {
-  border-color: var(--leaf);
-  background: var(--leaf-tint);
-  color: var(--leaf);
+  border-color: var(--verified);
+  background: var(--verified-tint);
+  color: var(--verified);
 }
 
 .noticeWarn {
-  border-color: var(--sorghum);
-  background: var(--sorghum-tint);
-  color: var(--sorghum);
+  border-color: var(--accent-hover);
+  background: var(--accent-tint);
+  color: var(--accent-hover);
 }
 
 .noticeError {
-  border-color: var(--clay);
-  background: var(--clay-tint);
-  color: var(--clay);
+  border-color: var(--danger);
+  background: var(--danger-tint);
+  color: var(--danger);
 }
 
 .noticeBody {
@@ -498,7 +621,7 @@ select.control {
 .skeleton {
   display: block;
   background: var(--dust);
-  border-radius: 8px;
+  border-radius: var(--radius-control);
   animation: pulse 1.4s ease-in-out infinite;
 }
 
@@ -508,24 +631,28 @@ select.control {
   }
 }
 
-/* ---- Dialog ----------------------------------------------------------- */
+/* ---- Dialog (the one place a shadow is allowed) ---------------------- */
 
 .dialog {
-  width: min(560px, calc(100vw - 32px));
+  width: min(600px, calc(100vw - 32px));
   padding: 0;
-  border: 0;
+  border: 1px solid var(--line-strong);
   border-radius: var(--radius-card);
   background: var(--card);
   color: var(--ink);
-  box-shadow: 0 24px 64px -16px rgba(16, 23, 16, 0.4);
+  box-shadow: var(--shadow-dialog);
 }
 
 .dialog::backdrop {
-  background: rgba(16, 23, 16, 0.45);
+  background: rgba(15, 31, 22, 0.5);
 }
 
 .dialogHeader {
-  padding: var(--s-6) var(--s-6) 0;
+  padding: var(--s-5) var(--s-6) 0;
+}
+
+.dialogHeader h2 {
+  font-variation-settings: 'opsz' 40, 'SOFT' 60, 'WONK' 0;
 }
 
 .dialogBody {
@@ -539,33 +666,42 @@ select.control {
   justify-content: flex-end;
   gap: var(--s-3);
   padding: var(--s-4) var(--s-6) var(--s-6);
+  border-top: 1px solid var(--line);
 }
 
-/* ---- Definition list -------------------------------------------------- */
+/* ---- Definition list (hairline rows) --------------------------------- */
 
 .dl {
   display: grid;
   grid-template-columns: max-content 1fr;
-  column-gap: var(--s-6);
-  row-gap: var(--s-3);
+  column-gap: var(--s-5);
 }
 
 .dl dt {
-  font-family: var(--font-display);
+  font-family: var(--font-body);
   font-size: var(--text-label);
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted);
-  padding-top: 3px;
+  padding: var(--s-3) 0;
+  border-top: 1px solid var(--line);
+  align-self: start;
 }
 
 .dl dd {
   color: var(--ink);
   overflow-wrap: anywhere;
+  padding: var(--s-3) 0;
+  border-top: 1px solid var(--line);
 }
 
-/* ---- Page header ----------------------------------------------------- */
+.dl > :nth-child(1),
+.dl > :nth-child(2) {
+  border-top: 0;
+}
+
+/* ---- Page / section header row --------------------------------------- */
 
 .pageHeader {
   display: flex;
@@ -574,25 +710,32 @@ select.control {
   justify-content: space-between;
   gap: var(--s-4);
   margin-bottom: var(--s-6);
+  padding-bottom: var(--s-4);
+  border-bottom: 1px solid var(--line-strong);
 }
 
 .pageHeaderText {
   display: grid;
-  gap: var(--s-1);
+  gap: var(--s-2);
+  min-width: 0;
+}
+
+.pageHeader h1 {
+  font-size: 40px;
 }
 
 .pageEyebrow {
-  font-family: var(--font-display);
+  font-family: var(--font-body);
   font-size: var(--text-label);
-  font-weight: 700;
-  letter-spacing: 0.08em;
+  font-weight: 600;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--leaf);
+  color: var(--accent-hover);
 }
 
 .pageSubtitle {
   color: var(--muted);
-  max-width: 70ch;
+  max-width: 72ch;
 }
 
 .pageActions {
@@ -601,46 +744,49 @@ select.control {
   gap: var(--s-3);
 }
 
-/* ---- Avatar tile ------------------------------------------------------ */
+/* ---- Avatar (a squared filing monogram) ------------------------------ */
 
 .avatar {
   display: grid;
   place-items: center;
   flex: none;
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-control);
   background: var(--dust);
+  border: 1px solid var(--line-strong);
   color: var(--ink-2);
-  font-family: var(--font-display);
-  font-weight: 800;
-  font-size: 15px;
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: 14px;
   letter-spacing: 0.02em;
 }
 
 .avatarLarge {
-  width: 64px;
-  height: 64px;
-  border-radius: 18px;
-  font-size: 22px;
+  width: 60px;
+  height: 60px;
+  font-size: 20px;
 }
 
 .avatarLeaf {
-  background: var(--leaf-tint);
-  color: var(--leaf);
+  background: var(--verified-tint);
+  border-color: var(--verified);
+  color: var(--verified);
 }
 
 .avatarNile {
-  background: var(--nile-tint);
-  color: var(--nile-deep);
+  background: var(--info-tint);
+  border-color: var(--info);
+  color: var(--info);
 }
 
 .avatarSorghum {
-  background: var(--sorghum-tint);
-  color: var(--sorghum);
+  background: var(--pending-tint);
+  border-color: var(--pending);
+  color: var(--pending);
 }
 
-/* ---- Chips ------------------------------------------------------------ */
+/* ---- Chips (plain, square) ------------------------------------------- */
 
 .chips {
   display: flex;
@@ -651,10 +797,11 @@ select.control {
 .chip {
   display: inline-flex;
   align-items: center;
-  min-height: 26px;
-  padding: 0 10px;
-  border-radius: var(--radius-pill);
-  background: var(--dust);
+  min-height: 24px;
+  padding: 0 8px;
+  border-radius: var(--radius-control);
+  background: var(--card);
+  border: 1px solid var(--line);
   color: var(--ink-2);
   font-size: var(--text-small);
   font-weight: 500;

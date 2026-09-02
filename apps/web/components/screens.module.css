@@ -1,20 +1,22 @@
-/* Layouts shared by the directories and library screens. */
+/* Layouts shared by the directories and library screens, in The Register. */
 
 .toolbar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--s-3);
+  gap: var(--s-4);
   margin-bottom: var(--s-4);
+  padding-bottom: var(--s-4);
+  border-bottom: 1px solid var(--line);
 }
 
 .toolbarSearch {
-  flex: 1 1 280px;
-  max-width: 420px;
+  flex: 1 1 260px;
+  max-width: 380px;
 }
 
 .toolbarSelect {
-  flex: 0 1 220px;
+  flex: 0 1 210px;
 }
 
 .toolbarSelect select {
@@ -26,7 +28,8 @@
 }
 
 .resultLine {
-  margin-bottom: var(--s-3);
+  margin-bottom: var(--s-4);
+  font-family: var(--font-body);
   font-size: var(--text-small);
   color: var(--muted);
 }
@@ -35,15 +38,15 @@
 
 .split {
   display: grid;
-  grid-template-columns: minmax(380px, 5fr) minmax(420px, 7fr);
+  grid-template-columns: minmax(340px, 4fr) minmax(420px, 7fr);
   gap: var(--s-6);
   align-items: start;
 }
 
 .listPane {
   position: sticky;
-  top: 88px;
-  max-height: calc(100vh - 112px);
+  top: calc(var(--masthead-h) + var(--s-4));
+  max-height: calc(100vh - var(--masthead-h) - var(--s-6));
   overflow: auto;
 }
 
@@ -56,11 +59,12 @@
   grid-template-columns: auto 1fr auto;
   gap: var(--s-4);
   align-items: center;
-  padding: var(--s-4) var(--s-5);
+  padding: var(--s-3) var(--s-4);
   border-bottom: 1px solid var(--line);
+  border-left: 2px solid transparent;
   color: inherit;
   text-decoration: none;
-  transition: background-color 100ms ease;
+  transition: background-color 120ms ease;
 }
 
 .row:last-child {
@@ -68,12 +72,12 @@
 }
 
 .row:hover {
-  background: var(--paper);
+  background: var(--dust);
 }
 
 .row[aria-current='true'] {
-  background: var(--nile-tint);
-  box-shadow: inset 4px 0 0 var(--nile);
+  background: var(--accent-tint);
+  border-left-color: var(--accent);
 }
 
 .rowMain {
@@ -83,8 +87,8 @@
 }
 
 .rowTitle {
-  font-family: var(--font-display);
-  font-weight: 700;
+  font-family: var(--font-body);
+  font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -101,12 +105,12 @@
 .rowSide {
   display: grid;
   justify-items: end;
-  gap: 6px;
+  gap: 5px;
   text-align: right;
 }
 
 .rowInactive {
-  opacity: 0.7;
+  opacity: 0.65;
 }
 
 .rowInactive .rowTitle {
@@ -114,7 +118,7 @@
   text-decoration-color: var(--muted);
 }
 
-/* ---- Detail ---------------------------------------------------------- */
+/* ---- Detail (dossier) ------------------------------------------------ */
 
 .detailHead {
   display: grid;
@@ -129,6 +133,11 @@
   gap: var(--s-2);
 }
 
+.detailTitle h2 {
+  font-size: 28px;
+  font-variation-settings: 'opsz' 48, 'SOFT' 70, 'WONK' 0;
+}
+
 .detailBadges {
   display: flex;
   flex-wrap: wrap;
@@ -137,6 +146,8 @@
 
 .detailMeta {
   color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-small);
 }
 
 .detailActions {
@@ -160,7 +171,7 @@
 
 .fact {
   display: grid;
-  gap: 2px;
+  gap: 3px;
   padding: var(--s-4) var(--s-6);
   border-right: 1px solid var(--line);
 }
@@ -170,8 +181,8 @@
 }
 
 .factValue {
-  font-family: var(--font-display);
-  font-weight: 700;
+  font-family: var(--font-body);
+  font-weight: 600;
   font-size: var(--text-subhead);
   overflow-wrap: anywhere;
 }
@@ -198,6 +209,13 @@
   gap: var(--s-4);
 }
 
+.detailSectionHead h3 {
+  font-family: var(--font-display);
+  font-weight: 560;
+  font-size: var(--text-h2);
+  font-variation-settings: 'opsz' 40, 'SOFT' 60, 'WONK' 0;
+}
+
 .prose {
   max-width: 70ch;
   white-space: pre-line;
@@ -213,33 +231,36 @@
 .table th {
   padding: var(--s-3) var(--s-4);
   text-align: left;
-  background: var(--paper);
-  border-bottom: 1px solid var(--line);
-  font-family: var(--font-display);
+  background: var(--card);
+  border-bottom: 1.5px solid var(--line-strong);
+  font-family: var(--font-body);
   font-size: var(--text-label);
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted);
   white-space: nowrap;
+  position: sticky;
+  top: 0;
 }
 
 .table td {
-  padding: var(--s-3) var(--s-4);
+  height: 44px;
+  padding: var(--s-2) var(--s-4);
   border-bottom: 1px solid var(--line);
   vertical-align: middle;
 }
 
 .table tbody tr:hover td {
-  background: var(--paper);
+  background: var(--dust);
 }
 
 .table tbody tr[aria-current='true'] td {
-  background: var(--nile-tint);
+  background: var(--accent-tint);
 }
 
 .table tbody tr[aria-current='true'] td:first-child {
-  box-shadow: inset 4px 0 0 var(--nile);
+  box-shadow: inset 2px 0 0 var(--accent);
 }
 
 .table tr:last-child td {
@@ -257,28 +278,32 @@
   display: grid;
   place-items: center;
   flex: none;
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-control);
   background: var(--dust);
+  border: 1px solid var(--line-strong);
   color: var(--ink-2);
 }
 
 .titleLink {
-  font-family: var(--font-display);
-  font-weight: 700;
+  font-family: var(--font-body);
+  font-weight: 600;
   color: var(--ink);
   text-decoration: none;
 }
 
 .titleLink:hover {
-  color: var(--nile);
+  color: var(--accent-hover);
   text-decoration: underline;
+  text-decoration-color: var(--accent);
 }
 
 .tdNum {
   text-align: right;
   white-space: nowrap;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
 }
 
 .tdNowrap {
@@ -320,6 +345,13 @@
   gap: 2px;
 }
 
+.formSectionTitle h3 {
+  font-family: var(--font-display);
+  font-weight: 560;
+  font-size: var(--text-h2);
+  font-variation-settings: 'opsz' 40, 'SOFT' 60, 'WONK' 0;
+}
+
 .formActions {
   display: flex;
   flex-wrap: wrap;
@@ -333,7 +365,7 @@
 
 .aside {
   position: sticky;
-  top: 88px;
+  top: calc(var(--masthead-h) + var(--s-4));
   display: grid;
   gap: var(--s-4);
 }
@@ -341,8 +373,9 @@
 .previewJson {
   margin: 0;
   padding: var(--s-4);
-  background: var(--dust);
-  border-radius: 12px;
+  background: var(--ink);
+  color: var(--band-ink);
+  border-radius: var(--radius-control);
   font-family: var(--font-mono);
   font-size: 12px;
   line-height: 1.5;
@@ -353,7 +386,7 @@
   display: grid;
   gap: var(--s-3);
   padding: var(--s-5);
-  border: 1.5px dashed var(--line-strong);
+  border: 1px dashed var(--line-strong);
   border-radius: var(--radius-control);
   background: var(--paper);
 }

@@ -17,10 +17,11 @@ import { IconInfo, IconSearch, IconWarn, IconCheck, IconX } from './icons';
 import styles from './ui.module.css';
 
 /**
- * The component set. Every control here follows the design document: 14px
- * radius on buttons and inputs, 20px on cards, 48px minimum touch target,
- * destructive actions outlined and never filled, every icon accompanied by a
- * visible label, dust for disabled fills and skeletons and never for text.
+ * The component set for "The Register". Near-square corners (2px controls, 4px
+ * cards), structure carried by hairline rules rather than shadow, one amber
+ * act per view, verification shown as an inked square stamp, sync as a small
+ * mono chip, destructive actions outlined and never filled, every icon beside
+ * a visible label, wells and skeletons in the dust tone and never text.
  *
  * The /design page renders each of these in every state.
  */
@@ -133,6 +134,94 @@ export function Badge({
     >
       {children}
     </span>
+  );
+}
+
+/* ---- Stamp (verification / record status) ---------------------------- */
+
+export type StampKind =
+  | 'verified'
+  | 'pending'
+  | 'rejected'
+  | 'merged'
+  | 'info'
+  | 'escalated'
+  | 'neutral';
+
+const stampClass: Record<StampKind, string> = {
+  verified: styles.stampVerified ?? '',
+  pending: styles.stampPending ?? '',
+  rejected: styles.stampRejected ?? '',
+  merged: styles.stampMerged ?? '',
+  info: styles.stampInfo ?? '',
+  escalated: styles.stampEscalated ?? '',
+  neutral: styles.stampNeutral ?? '',
+};
+
+/** An inked, square status stamp. The word carries the meaning; colour backs it. */
+export function Stamp({
+  kind = 'neutral',
+  children,
+  className,
+}: {
+  kind?: StampKind;
+  children: ReactNode;
+  className?: string;
+}) {
+  return <span className={cx(styles.stamp, stampClass[kind], className)}>{children}</span>;
+}
+
+/* ---- Sync chip -------------------------------------------------------- */
+
+export type SyncStatus = 'waiting' | 'sending' | 'synced' | 'failed';
+
+const syncClass: Record<SyncStatus, string> = {
+  waiting: styles.syncWaiting ?? '',
+  sending: styles.syncSending ?? '',
+  synced: styles.syncSynced ?? '',
+  failed: styles.syncFailed ?? '',
+};
+
+const SYNC_LABELS: Record<SyncStatus, string> = {
+  waiting: 'waiting',
+  sending: 'sending',
+  synced: 'synced',
+  failed: 'failed',
+};
+
+/** The offline spine, shown small: a dot and the per-device sync state. */
+export function SyncChip({ status }: { status: SyncStatus }) {
+  return (
+    <span className={cx(styles.syncChip, syncClass[status])}>
+      <span className={styles.syncDot} aria-hidden />
+      {SYNC_LABELS[status]}
+    </span>
+  );
+}
+
+/* ---- KPI strip -------------------------------------------------------- */
+
+export interface KpiItem {
+  label: string;
+  value: ReactNode;
+  delta?: ReactNode;
+  accent?: boolean;
+}
+
+/** A hairline-ruled row of Fraunces figures with mono deltas — not cards. */
+export function KpiStrip({ items, label }: { items: ReadonlyArray<KpiItem>; label: string }) {
+  return (
+    <div className={styles.kpiStrip} role="group" aria-label={label}>
+      {items.map((item) => (
+        <div key={item.label} className={styles.kpiItem}>
+          <span className={cx(styles.kpiValue, item.accent && styles.kpiValueAccent)}>
+            {item.value}
+          </span>
+          <span className={styles.kpiLabel}>{item.label}</span>
+          {item.delta !== undefined ? <span className={styles.kpiDelta}>{item.delta}</span> : null}
+        </div>
+      ))}
+    </div>
   );
 }
 
