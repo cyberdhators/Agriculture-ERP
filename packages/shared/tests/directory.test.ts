@@ -141,7 +141,9 @@ describe('phones', () => {
     expect(schema.parse({ ...dealer, alt_phone: '+211 92 000 0000' }).alt_phone).toBe(
       '+211920000000',
     );
-    expect(firstMessage({ ...dealer, alt_phone: '12' }, 'alt_phone')).toBe(PHONE_MESSAGES.tooFew);
+    expect(firstMessage({ ...dealer, alt_phone: '+211 92 000' }, 'alt_phone')).toBe(
+      PHONE_MESSAGES.tooFew,
+    );
   });
 });
 
@@ -179,9 +181,7 @@ describe('location', () => {
   });
 
   it('refuses a point with the coordinates swapped into unknown keys', () => {
-    expect(schema.safeParse({ ...dealer, location: { lat: 4.85, lng: 31.6 } }).success).toBe(
-      false,
-    );
+    expect(schema.safeParse({ ...dealer, location: { lat: 4.85, lng: 31.6 } }).success).toBe(false);
   });
 });
 
@@ -230,9 +230,7 @@ describe('last verified date', () => {
 
   it('is required', () => {
     const missing = omit(dealer, 'last_verified_at');
-    expect(firstMessage(missing, 'last_verified_at')).toBe(
-      DIRECTORY_MESSAGES.verifiedDateRequired,
-    );
+    expect(firstMessage(missing, 'last_verified_at')).toBe(DIRECTORY_MESSAGES.verifiedDateRequired);
   });
 });
 

@@ -51,12 +51,16 @@ describe('enumerations', () => {
   });
 
   it('refuses an unknown topic, crop, language and format, each with its own sentence', () => {
-    expect(firstMessage({ ...guide, topic: 'finance' }, 'topic')).toBe(LEARNING_MESSAGES.topicUnknown);
+    expect(firstMessage({ ...guide, topic: 'finance' }, 'topic')).toBe(
+      LEARNING_MESSAGES.topicUnknown,
+    );
     expect(firstMessage({ ...guide, crop: 'rice' }, 'crop')).toBe(LEARNING_MESSAGES.cropUnknown);
     expect(firstMessage({ ...guide, language: 'fr' }, 'language')).toBe(
       LEARNING_MESSAGES.languageUnknown,
     );
-    expect(firstMessage({ ...guide, format: 'docx' }, 'format')).toBe(LEARNING_MESSAGES.formatUnknown);
+    expect(firstMessage({ ...guide, format: 'docx' }, 'format')).toBe(
+      LEARNING_MESSAGES.formatUnknown,
+    );
   });
 });
 
@@ -109,9 +113,11 @@ describe('byte size', () => {
   });
 
   it('accepts exactly the maximum and refuses one byte more', () => {
-    expect(schema.safeParse({ ...guide, byte_size: LEARNING_LIMITS.byteSizeMax }).success).toBe(true);
-    expect(firstMessage({ ...guide, byte_size: LEARNING_LIMITS.byteSizeMax + 1 }, 'byte_size')).toBe(
-      LEARNING_MESSAGES.byteSizeTooLarge,
+    expect(schema.safeParse({ ...guide, byte_size: LEARNING_LIMITS.byteSizeMax }).success).toBe(
+      true,
     );
+    expect(
+      firstMessage({ ...guide, byte_size: LEARNING_LIMITS.byteSizeMax + 1 }, 'byte_size'),
+    ).toBe(LEARNING_MESSAGES.byteSizeTooLarge);
   });
 });

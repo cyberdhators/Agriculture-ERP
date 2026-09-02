@@ -57,9 +57,9 @@ These are for you, the assistant reading this at the start of a session.
 
 ## THE LANES
 
-| Lane       | Work                                                                          | Branch prefix                  |
-| ---------- | ----------------------------------------------------------------------------- | ------------------------------ |
-| **Lane 1** | The backend spine: units B2–B11 in `docs/UNITS.md`, then the surface assigned there | `feat/b<n>-…`, `chore/…`       |
+| Lane       | Work                                                                                                              | Branch prefix              |
+| ---------- | ----------------------------------------------------------------------------------------------------------------- | -------------------------- |
+| **Lane 1** | The backend spine: units B2–B11 in `docs/UNITS.md`, then the surface assigned there                               | `feat/b<n>-…`, `chore/…`   |
 | **Lane 2** | Parallel units that do not touch the spine's tables: **P1** now (C-13); UI screens against fixture data alongside | `feat/p<n>-…`, `feat/ui-…` |
 
 Both lanes push under the GitHub login `cyberdhators`. The pull request title
@@ -105,26 +105,26 @@ tells them apart. `docs/UNITS.md` records which human owns which unit.
 Things one lane created that the other must **reuse, not recreate**. A second
 copy of any of these is a bug.
 
-| Object                                            | Created by     | Who reuses it                                                    |
-| ------------------------------------------------- | -------------- | ---------------------------------------------------------------- |
-| `payam` UNIQUE `(id, state_id)` — `payam_id_state_id_key` | P1, migration 6 | Every table below payam carrying a denormalised `state_id`: `farmer` (B5), `visit_note` (B8), … The composite FK pattern from migration 5, targeted at payam. |
-| Enum type `crop` — sorghum, groundnut, sesame, maize, cowpea | P1, migration 6 | `crop_declaration` (B5/B7). Do not `CREATE TYPE` again.            |
-| Enum type `language` — `en`, `ar-juba`            | P1, migration 6 | `consent` (B5). Do not `CREATE TYPE` again.                       |
-| Prisma enums `Crop`, `Language` in `schema.prisma` | P1             | Same units. `Language.ar_juba` is `@map("ar-juba")`.              |
-| `CROPS`, `LANGUAGES` constants in `packages/shared` | P1            | Any Zod schema needing a crop or language.                        |
-| Columns `verified_by`, `uploaded_by`, `deleted_by` on the P1 tables | P1 | **B3 adds the foreign keys to `user`** with `ALTER TABLE`, as it does for B2's `deleted_by`. |
-| API JSON key casing: **snake_case** (`entry_type`, `last_verified_at`) | P1, following `location.ts` and the data model docs | Every route body and response. No rule existed; this is now the rule unless Lane 1 objects **before B3 writes the first real route**. |
-| `tests/locations.test.ts` "every active view" assertion | B2, relaxed by P1 | It asserted exactly three `_active` views; now asserts the three location views are present and **every** `_active` view has `security_invoker`. Any later unit adding a view is covered automatically. |
+| Object                                                                 | Created by                                          | Who reuses it                                                                                                                                                                                           |
+| ---------------------------------------------------------------------- | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `payam` UNIQUE `(id, state_id)` — `payam_id_state_id_key`              | P1, migration 6                                     | Every table below payam carrying a denormalised `state_id`: `farmer` (B5), `visit_note` (B8), … The composite FK pattern from migration 5, targeted at payam.                                           |
+| Enum type `crop` — sorghum, groundnut, sesame, maize, cowpea           | P1, migration 6                                     | `crop_declaration` (B5/B7). Do not `CREATE TYPE` again.                                                                                                                                                 |
+| Enum type `language` — `en`, `ar-juba`                                 | P1, migration 6                                     | `consent` (B5). Do not `CREATE TYPE` again.                                                                                                                                                             |
+| Prisma enums `Crop`, `Language` in `schema.prisma`                     | P1                                                  | Same units. `Language.ar_juba` is `@map("ar-juba")`.                                                                                                                                                    |
+| `CROPS`, `LANGUAGES` constants in `packages/shared`                    | P1                                                  | Any Zod schema needing a crop or language.                                                                                                                                                              |
+| Columns `verified_by`, `uploaded_by`, `deleted_by` on the P1 tables    | P1                                                  | **B3 adds the foreign keys to `user`** with `ALTER TABLE`, as it does for B2's `deleted_by`.                                                                                                            |
+| API JSON key casing: **snake_case** (`entry_type`, `last_verified_at`) | P1, following `location.ts` and the data model docs | Every route body and response. No rule existed; this is now the rule unless Lane 1 objects **before B3 writes the first real route**.                                                                   |
+| `tests/locations.test.ts` "every active view" assertion                | B2, relaxed by P1                                   | It asserted exactly three `_active` views; now asserts the three location views are present and **every** `_active` view has `security_invoker`. Any later unit adding a view is covered automatically. |
 
 ---
 
 ## STATUS BOARD
 
-| Unit | Lane | Status                                  | PR  | Blocked on                                  |
-| ---- | ---- | --------------------------------------- | --- | ------------------------------------------- |
-| B2   | 1    | In review                               | #15 | —                                           |
-| B3   | 1    | Not started                             | —   | #15                                         |
-| B4   | 1    | Not started                             | —   | B3                                          |
+| Unit | Lane | Status                                                          | PR        | Blocked on                                                    |
+| ---- | ---- | --------------------------------------------------------------- | --------- | ------------------------------------------------------------- |
+| B2   | 1    | In review                                                       | #15       | —                                                             |
+| B3   | 1    | Not started                                                     | —         | #15                                                           |
+| B4   | 1    | Not started                                                     | —         | B3                                                            |
 | P1   | 2    | **Database, validation, seed, tests done. Routes not started.** | (this PR) | #15 to merge first; then B3 for routes, B4 for the audit rows |
 
 Lane 1: please add your rows as you go. Lane 2 filled in what it could read from the open PRs.
@@ -188,8 +188,9 @@ screens for directories and the library against fixture data, under
 `apps/web/app/(portal)/…`, calling no routes.
 
 **Needs from you.**
+
 1. Merge #15, then review the P1 PR.
-2. When you build B3: add the four foreign keys listed under *Dependencies*.
+2. When you build B3: add the four foreign keys listed under _Dependencies_.
 3. Say now if you disagree with **snake_case** JSON keys. After B3's first
    route it is expensive to change.
 
@@ -199,6 +200,7 @@ payam composite target `payam_id_state_id_key` exists; enum types `crop` and
 checks every one); JSON keys are snake_case.
 
 **Touched in your lane, minimally, and why:**
+
 - `prisma/schema.prisma` — one `@@unique` on `Payam`, one relation line each on
   `Payam` and `State`. Needed for the composite foreign key.
 - `tests/locations.test.ts` — the "exactly three views" assertion, as described
