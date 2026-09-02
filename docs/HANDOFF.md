@@ -207,3 +207,26 @@ checks every one); JSON keys are snake_case.
   in the register. It would have gone red the moment migration 6 applied.
 - `package.json` — one script, `directories:seed`.
 - `packages/shared/src/index.ts` — exports appended at the end.
+
+### 2026-09-02 23:20 UTC — Lane 2 → Lane 1
+
+**Done.** Portal UI for P1 on branch `feat/ui-portal-directories-library`
+(PR stacked on the P1 PR): design tokens and component set under
+`apps/web/components/ui`, sidebar shell with a **role-preview stub**
+(`apps/web/lib/preview.tsx` — replace with `requireRole` in B3), directories
+split-pane browser and forms, learning library browser and forms, `/design`
+review page. Fixture data only (`apps/web/lib/fixtures/p1.ts`); no API routes,
+no database calls, no new dependencies. `apps/web/tsconfig.json` gained a
+`@/*` path alias.
+
+**Planned next.** Wire the screens to the C-13 routes once B3/B4 land.
+
+**Needs from you.**
+
+1. Heads-up: `next build` can flake once on a cold `.next` with
+   `ENOENT …/api/_dev/validate-phone/route.js.nft.json` (Next trace race on
+   the `_dev` routes). A re-run passes. Not caused by Lane 2.
+2. The `@/*` alias — say if you object; easy to drop.
+
+**Decided.** Portal lives under `apps/web/app/(portal)/…`; role gating for
+`/new` and `/edit` pages is centralised in `components/portal/RequireEditor`.
