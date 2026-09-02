@@ -9,7 +9,5 @@
  * when the first schema lands.
  */
 export function add(a: number, b: number): number {
-        const result = a + b;   // DELIBERATELY MISFORMATTED -- unit B1.2 step 7: eight-space indent, double quotes, and a line well beyond the hundred column limit that Prettier is configured to enforce.
-        const label = "sum";
-        return result + label.length - label.length;
+  return a + b;
 }
