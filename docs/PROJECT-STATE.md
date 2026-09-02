@@ -127,6 +127,41 @@ The "Emitted today?" column in CONVENTIONS.md section 5 is the same information
 at the point of use. **Both must be updated together** — when a unit makes one of
 these reachable, it changes that column to _Yes_ and deletes the row here.
 
+Two whole sections of `docs/api/CONVENTIONS.md` are parked the same way, for the
+same reason:
+
+| Parked section                                                                             | Unparked by | Why it is unreachable today                                                                      |
+| ------------------------------------------------------------------------------------------ | ----------- | ------------------------------------------------------------------------------------------------ |
+| **§6 Lists** — the `page` object, cursors, the deterministic sort, the `deleted_at` filter | **B3**      | No route returns a list. `paginationSchema` is testable as a schema; the list responses are not. |
+| **§7 Timestamps** — ISO 8601 UTC with milliseconds and a `Z`                               | **B3**      | No response contains a timestamp, because no route returns a stored record.                      |
+
+---
+
+## B3 OPENING TASKS
+
+Two obligations B1.4 hands to B3. Neither is optional, and both belong at the
+start of B3 rather than the end.
+
+**1. Unpark §6 and the timestamp rule once the first list route exists.** Both
+are marked _Emitted today? No — B3_ in `docs/api/CONVENTIONS.md`. The unit that
+builds the first route returning a list, or the first response carrying a stored
+record, removes the parking note and adds the tests that were impossible before.
+Parking is a promise to come back, not a place to leave things.
+
+**2. Move the code-in-the-right-situation guarantee into the shared route
+wrapper.** The drift test added in B1.4 locks the documented sentences to the
+exported constants, and that is all it does. **It does not prove a route emits
+the right code in the right situation.** A route changed to return `400` where
+`415` belongs leaves both tables matching and the drift test green. Today that
+gap is covered for one route by its own tests, and nothing generalises it.
+
+B3 builds a shared route wrapper for `requireRole`. That wrapper is the right
+place for the behaviour every route must share and must not restate: the
+`Content-Type` check, the body size cap, the JSON parse, the documented `405`,
+and the fixed `500`. Once routes are built on it, those guarantees hold by
+construction instead of by each author remembering. The `405` handlers in
+`/api/_dev/validate-phone` exist only because no wrapper does yet.
+
 **A rule for B1.5.** The B1.5 plan includes a `_dev/throw` route for proving
 Sentry receives an unhandled error. It does not exist yet. **If B1.5 creates
 it, B1.5 adds it to this table in the same change** — a `_dev` route and its row

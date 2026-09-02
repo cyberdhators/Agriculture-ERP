@@ -246,8 +246,19 @@ is routed by the framework to the `GET` handler.
 
 | Method    | Returns                                                                         |
 | --------- | ------------------------------------------------------------------------------- |
-| `OPTIONS` | `204 No Content`, with an `Allow` header listing every method. No body.         |
+| `OPTIONS` | `204 No Content`, with an `Allow` header. No body.                              |
 | `HEAD`    | `405`, from the `GET` handler, with no body — `HEAD` responses never carry one. |
+
+The `Allow` header lists the methods the route exports, plus `HEAD` and
+`OPTIONS`, which the framework adds. For `/api/_dev/validate-phone`, which
+exports all five, the value sent is exactly:
+
+```
+Allow: DELETE, GET, HEAD, OPTIONS, PATCH, POST, PUT
+```
+
+A route exporting fewer handlers sends a shorter list. Assert against what the
+route exports, not against this literal string.
 
 Neither carries the error shape. A test asserts the status, and for `OPTIONS` the
 `Allow` header, rather than a JSON payload.
@@ -266,6 +277,16 @@ never to the client.
 ---
 
 ## 6. LISTS
+
+> **Emitted today? No — B3.** This whole section is parked, in the same sense as
+> the codes marked _No_ in section 5. **No route returns a list**, so nothing
+> here can be reached or tested: not the `page` object, not cursors, not the
+> sort order, not the `deleted_at` filter. The rules are agreed and fixed; the
+> behaviour does not exist yet. B3 builds the first list route and unparks this
+> section. Listed in the outstanding items section of `docs/PROJECT-STATE.md`.
+>
+> `paginationSchema` in `packages/shared` is testable today as a schema. The
+> list _responses_ described below are not.
 
 - **Cursor pagination on every list endpoint.** No offset pagination anywhere.
 - Default page size **50**. Maximum **100**.
@@ -326,6 +347,11 @@ every request and every response:
 
 Never an offset such as `+03:00`. Never without milliseconds. Never a local
 time.
+
+> **Emitted today? No — B3.** Parked, like section 6. **No response contains a
+> timestamp**, because no route returns a stored record. The format is fixed so
+> that the first route to return one has nothing to decide. Listed in the
+> outstanding items section of `docs/PROJECT-STATE.md`.
 
 **Phone numbers.** E.164 in every request and every response:
 `+211912345678`. Local format is accepted at the edge and normalised
@@ -421,6 +447,13 @@ application/json."**
 
 Parameters are allowed and ignored, so `application/json; charset=utf-8` is
 accepted. The media type is compared case-insensitively.
+
+**A request that sends no body at all is treated the same way.** A bare `POST`
+with neither a body nor a `Content-Type` header returns `415`, not `400` — the
+header is checked before anything tries to read a body, so a request that never
+says what it is fails on that alone. A `POST` that sends
+`Content-Type: application/json` but no body gets past this check and fails at
+the next one: `400`, `invalid_json`.
 
 ### 9.2 Size
 
