@@ -173,13 +173,26 @@ Four obligations handed to B3. All belong at its start, not its end.
 
 ## BLOCKED
 
-**`docs/scope-and-acceptance.md` does not exist.** `CLAUDE.md` §1 names it the
-only scope document and the source of truth for the twenty contracted
-deliverables (a)–(t). It is not in the repository.
+**Nothing is blocked.** `docs/scope-and-acceptance.md` arrived and B2 is
+unblocked. The criteria for B2 are C-2.1 to C-2.8 in that file.
 
-Scaffolding units claim no criteria, so this blocked none of B1.1–B1.6. **It
-blocks B2.** Farmer registration cannot begin without the criteria it is written
-against: nothing to mark DONE against, and no way to tell a contracted field
-from an invented one.
+**One open question for B2.** `docs/data-model-extension.md` §1.3 defines
+`deleted_by` as `fk -> user`, and the `user` table is not built until B3. B2
+creates the first tables, so it must decide: carry `deleted_by` as a nullable
+column with the foreign key added in B3, or omit the column until B3 and add it
+then. The first keeps the column shape stable; the second avoids a column that
+points at nothing. **Ask before writing the migration.**
 
-Resolve before B2 starts.
+## OPEN QUESTIONS LIVE IN THEIR OWN DOCUMENTS
+
+Not duplicated here, so there is one copy of each and it stays current:
+
+| Where                                                       | What                                                                                                                                                |
+| ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `docs/scope-and-acceptance.md`, "Open against the contract" | Four items needing a written answer from CORWADO: whether buyers can log in, the farmer-facing app in the designs, "Ask AI", and Arabi Juba script. |
+| `docs/data-model.md` §5                                     | Six questions for the programme manager. Three change the schema.                                                                                   |
+| `docs/data-model-extension.md` §11                          | Six more, numbered 7-12. Two are marked blocking, for deliverables (g) and the home screen.                                                         |
+
+`CLAUDE.md` §2 also lists three items as **Unresolved — do not build until
+confirmed in writing**. The farmer-facing app and "Ask AI" appear in both places
+and are the same questions.

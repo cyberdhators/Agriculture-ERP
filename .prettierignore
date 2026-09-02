@@ -7,4 +7,13 @@ pnpm-lock.yaml
 apps/web/next-env.d.ts
 
 # Governing project documents -- never reformatted by tooling.
+#
+# CLAUDE.md is the law. The three below are supplied documents: the scope file
+# derives from the signed Inception Report, and the data models are the
+# programme manager's. Reformatting a contractual document by tool is how a
+# wording change gets made by accident and nobody notices in the diff. They are
+# stored exactly as supplied.
 CLAUDE.md
+docs/scope-and-acceptance.md
+docs/data-model.md
+docs/data-model-extension.md
