@@ -1,0 +1,73 @@
+// =============================================================================
+// Agriculture ERP -- Prisma schema
+//
+// -----------------------------------------------------------------------------
+// RLS AND THIS CONNECTION -- DO NOT "FIX" THIS
+// -----------------------------------------------------------------------------
+// Prisma connects as the database owner and therefore BYPASSES row-level
+// security. That is correct and intended.
+//
+// RLS is our backstop against the anon and authenticated Supabase keys, which
+// reach the database directly from clients. It is NOT our defence against our
+// own server. Our server-side control is requireRole in the Next.js API
+// routes, which verifies session and role before any query runs.
+//
+// So: every table enables RLS with no policies (deny-by-default), and Prisma
+// bypasses it as owner. Both are deliberate. A future session that "fixes"
+// this by connecting Prisma as a restricted role will break every API route
+// and gain nothing.
+//
+// Prisma cannot author RLS policies. There is no schema syntax for ENABLE ROW
+// LEVEL SECURITY or CREATE POLICY in any Prisma version. Policies are
+// hand-written SQL in migrations, which is why the rule lives as a comment in
+// the migration files themselves.
+//
+// -----------------------------------------------------------------------------
+// MIGRATIONS -- `prisma migrate dev` IS NOT USED ON THIS PROJECT
+// -----------------------------------------------------------------------------
+// `migrate dev` wants to create a shadow database to diff against. The
+// Supabase `postgres` role cannot create databases, so it times out or fails.
+// That failure is expected and is not a bug to chase.
+//
+// Migrations here are hand-written SQL in timestamped folders under
+// prisma/migrations, applied with `prisma migrate deploy` (pnpm db:migrate).
+//
+// -----------------------------------------------------------------------------
+// WHERE THE CONNECTION URLS LIVE -- NOT IN THIS FILE
+// -----------------------------------------------------------------------------
+// Prisma 7 removed `url` and `directUrl` from the datasource block. They are
+// no longer valid here and the schema will not parse if you add them back.
+//
+//   DIRECT_URL    Direct connection, port 5432. Read in prisma.config.ts as
+//                 `datasource.url`. This is what MIGRATIONS use. Migrations
+//                 cannot run through the pooler.
+//
+//   DATABASE_URL  Pooled connection, port 6543, with pgbouncer=true and
+//                 connection_limit=1. Passed to the PrismaPg driver adapter
+//                 when a PrismaClient is constructed. This is what the
+//                 APPLICATION uses at runtime.
+//
+// Both carry ?schema=public, which is how Prisma is restricted to the public
+// schema and never touches the auth, storage, realtime or graphql schemas
+// that Supabase manages itself.
+//
+// Real values live in .env.local only, never in this repository.
+// =============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/// Throwaway smoke-test table for unit B1.3. Proves a migration applies and
+/// reverses. Created in migration 2, dropped in migration 3. Holds no real
+/// data and is not part of the data model.
+model Smoke {
+  id   Int    @id @default(autoincrement())
+  note String
+
+  @@map("_smoke")
+}

@@ -1,3 +1,9 @@
 packages:
   - 'apps/*'
   - 'packages/*'
+
+# Prisma fetches its schema engine in a postinstall script. pnpm blocks
+# dependency lifecycle scripts by default; these two are allowed deliberately.
+allowBuilds:
+  '@prisma/engines': true
+  prisma: true
