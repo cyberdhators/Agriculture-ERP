@@ -1,4 +1,3 @@
-import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '@prisma/client';
 import { describe, expect, it } from 'vitest';
 
@@ -19,9 +18,7 @@ const databaseUrl = process.env.DATABASE_URL;
 
 describe.skipIf(!databaseUrl)('_smoke table via Prisma', () => {
   it('contains the seeded row', async () => {
-    const prisma = new PrismaClient({
-      adapter: new PrismaPg({ connectionString: String(databaseUrl) }),
-    });
+    const prisma = new PrismaClient();
 
     try {
       const rows = await prisma.smoke.findMany();
