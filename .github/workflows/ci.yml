@@ -1,0 +1,69 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+
+# A new push to a branch cancels that branch's previous run.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  GITLEAKS_VERSION: 8.30.1
+
+jobs:
+  verify:
+    name: verify
+    runs-on: ubuntu-latest
+    steps:
+      # Full history: the secret scan reads every commit on the branch, not
+      # just the tip. A secret added and then "removed" is still a leak.
+      - name: Checkout (full history)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Format check
+        run: pnpm format:check
+
+      - name: Test
+        run: pnpm test
+
+      # Official released binary rather than the marketplace action, which can
+      # require a GITLEAKS_LICENSE repository secret. This workflow uses none.
+      - name: Secret scan (gitleaks)
+        run: |
+          set -euo pipefail
+          curl -sSfL \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" \
+            -o /tmp/gitleaks.tar.gz
+          tar -xzf /tmp/gitleaks.tar.gz -C /tmp gitleaks
+          /tmp/gitleaks version
+          /tmp/gitleaks git . \
+            --config .gitleaks.toml \
+            --redact \
+            --no-banner \
+            --log-level info
