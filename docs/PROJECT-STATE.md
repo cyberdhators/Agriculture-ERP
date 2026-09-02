@@ -20,13 +20,38 @@ commands against staging, and report what those returned.
 GitHub secrets — never in `.env.local`, never pasted into a session, never
 committed. **If anything from production is needed, Claude stops and asks.**
 
+**THE ENVIRONMENT NAMES ARE WRONG — read this before any database work.**
+Verified against the Supabase Management API on 2026-09-02: the account holds
+**exactly one project**, reference `xmmxbrxmfgodhpwolrvk`, named
+**`agri-production`** in the dashboard. That one project is what this file calls
+staging. It is what `.env.local` points at, what `.mcp.json` attaches to, what
+`scripts/db-reset.mjs` will accept, and what all four migrations have been
+applied to.
+
+**There is no production project. It does not exist.** The paragraph that stood
+here said it did. That was wrong, and every rule in this file separating staging
+from production rested on it.
+
+**Do not run `pnpm db:reset` until the rename below has happened.** The guard
+will accept `xmmxbrxmfgodhpwolrvk`, report _Target confirmed as staging_, and
+drop every table in a project named `agri-production`.
+
+**The agreed fix, in order.** Reasoning in `docs/DECISIONS.md`:
+
+1. Rename the project to `agri-staging` in the Supabase dashboard. The reference
+   is immutable, so nothing in this repository changes.
+2. Rotate that project's database password and update `.env.local`.
+3. Create production new at B11. It must not be this project, which has held
+   developer credentials and carries a throwaway `_smoke` table in its migration
+   history.
+
+**Production is empty until B11** still holds, and now means what it says: there
+is nothing yet for it to be empty of. No real farmer data exists anywhere, and
+none enters production until the backup and restore unit is done and the restore
+drill has run successfully.
+
 Staging Supabase project reference: `xmmxbrxmfgodhpwolrvk`. Not a secret; the
 connection strings containing it are.
-
-**Production is empty until B11.** The production Supabase project exists but
-holds no data and receives no migrations until the backup and restore unit is
-done and the restore drill has run successfully. No real farmer data enters
-production before that.
 
 **OPEN — Supabase plan and point-in-time recovery.** Not yet recorded: the plan
 CORWADO's projects are on, and whether point-in-time recovery is included. B11
