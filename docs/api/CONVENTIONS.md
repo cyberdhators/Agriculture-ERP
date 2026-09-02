@@ -66,6 +66,18 @@ present on a success, and is always an object or an array.
 
 ---
 
+### 3.1 Every response is JSON
+
+Every response carries `Content-Type: application/json`, **including every
+error**. A caller may parse any response body as JSON without inspecting the
+status first.
+
+The two exceptions have no body at all to type, and are described in section
+5.3: `OPTIONS` returns `204 No Content`, and a `HEAD` response never carries a
+body.
+
+---
+
 ## 4. ERROR SHAPE
 
 ```json
@@ -124,20 +136,20 @@ the top level.
 
 Exact. No discretion.
 
-| Status | Code                     | When                                                          | Emitted today? |
-| ------ | ------------------------ | ------------------------------------------------------------- | -------------- |
-| 400    | `invalid_input`          | Input failed validation. Carries `fields`.                    | Yes            |
-| 400    | `invalid_json`           | The body could not be parsed as JSON.                         | Yes            |
-| 400    | `invalid_cursor`         | The pagination cursor is unreadable.                          | **No — B3**    |
-| 401    | `unauthenticated`        | No session, expired session, or invalid session.              | **No — B3**    |
-| 403    | `forbidden`              | Authenticated, but this role may not do this.                 | **No — B3**    |
-| 404    | `not_found`              | Not found, soft-deleted, **or** outside the caller's scope.   | **No — B3**    |
-| 405    | `method_not_allowed`     | The route exists; this HTTP method does not.                  | Yes            |
-| 409    | `conflict`               | E.g. the same client UUID submitted with a different payload. | **No — B2**    |
-| 413    | `payload_too_large`      | Body exceeds 1 MB.                                            | Yes            |
-| 415    | `unsupported_media_type` | A request with a body did not send `application/json`.        | Yes            |
-| 422    | `unprocessable`          | Input was valid but violates a business rule.                 | **No — B2**    |
-| 500    | `internal_error`         | Unexpected.                                                   | Yes            |
+| Status | Code                     | When                                                                                                                   | Emitted today? |
+| ------ | ------------------------ | ---------------------------------------------------------------------------------------------------------------------- | -------------- |
+| 400    | `invalid_input`          | Input failed validation. Carries `fields`.                                                                             | Yes            |
+| 400    | `invalid_json`           | The body could not be parsed as JSON.                                                                                  | Yes            |
+| 400    | `invalid_cursor`         | The pagination cursor is unreadable.                                                                                   | **No — B3**    |
+| 401    | `unauthenticated`        | No session, expired session, or invalid session.                                                                       | **No — B3**    |
+| 403    | `forbidden`              | Authenticated, but this role may not do this.                                                                          | **No — B3**    |
+| 404    | `not_found`              | Not found, soft-deleted, **or** outside the caller's scope.                                                            | **No — B3**    |
+| 405    | `method_not_allowed`     | The route exists, but does not accept `GET`, `PUT`, `PATCH` or `DELETE`. `OPTIONS` and `HEAD` are different — see 5.3. | Yes            |
+| 409    | `conflict`               | E.g. the same client UUID submitted with a different payload.                                                          | **No — B2**    |
+| 413    | `payload_too_large`      | Body exceeds 1 MB.                                                                                                     | Yes            |
+| 415    | `unsupported_media_type` | A request with a body did not send `application/json`.                                                                 | Yes            |
+| 422    | `unprocessable`          | Input was valid but violates a business rule.                                                                          | **No — B2**    |
+| 500    | `internal_error`         | Unexpected.                                                                                                            | Yes            |
 
 **The "Emitted today?" column is part of the contract.** A code marked _No_ is
 documented, agreed and deliberately unreachable — no route can currently produce
@@ -204,6 +216,8 @@ These are also exact.
 | Situation                            | Exact reason                                                                       |
 | ------------------------------------ | ---------------------------------------------------------------------------------- |
 | A field the request may not send     | This field is not recognised.                                                      |
+| The body is not an object at all     | The request was not sent in the expected form.                                     |
+| Page marker: not text                | The page marker must be text.                                                      |
 | Phone: nothing entered, or not text  | Enter a mobile number.                                                             |
 | Phone: contains a letter             | A mobile number contains digits only.                                              |
 | Phone: disallowed punctuation        | A mobile number may contain only digits, spaces and hyphens, and may begin with +. |
@@ -218,7 +232,27 @@ The key beside each reason is the field name, per section 4.1. An unrecognised
 field named `nickname` therefore produces `{ "nickname": "This field is not
 recognised." }`.
 
-### 5.3 The 500 message is fixed
+**No reason is ever generated by the validation library.** Zod's own wording for
+such a failure — "Invalid input: expected object, received string" — names
+concepts a caller has no use for, and section 4 forbids that register. Every
+reason above is written by us and pinned here. A reason that appears in a
+response but is not in this table is a defect.
+
+### 5.3 `OPTIONS` and `HEAD` are not covered by the 405 rule
+
+Two methods do not behave as the 405 row describes, because they are not ours to
+decide: `OPTIONS` is answered by the framework before our code runs, and `HEAD`
+is routed by the framework to the `GET` handler.
+
+| Method    | Returns                                                                         |
+| --------- | ------------------------------------------------------------------------------- |
+| `OPTIONS` | `204 No Content`, with an `Allow` header listing every method. No body.         |
+| `HEAD`    | `405`, from the `GET` handler, with no body — `HEAD` responses never carry one. |
+
+Neither carries the error shape. A test asserts the status, and for `OPTIONS` the
+`Allow` header, rather than a JSON payload.
+
+### 5.4 The 500 message is fixed
 
 Exactly this sentence, every time, with no variation:
 

@@ -51,6 +51,13 @@ export const ERROR_MESSAGES = {
    * it is built. CONVENTIONS.md section 5.2.
    */
   unknownField: 'This field is not recognised.',
+  /**
+   * Used for any failure against the body as a whole. Zod's own sentence for
+   * this is "Invalid input: expected object, received string", which names
+   * library concepts an extension officer has no use for. CONVENTIONS.md
+   * section 4 forbids that register, so it never reaches a caller.
+   */
+  bodyNotExpectedForm: 'The request was not sent in the expected form.',
 } as const;
 
 /** The largest request body any route in B1.4 accepts. CONVENTIONS.md section 9.2. */
@@ -112,8 +119,15 @@ export function zodErrorToApiError(error: ZodError): {
       continue;
     }
 
-    // A failure against the body as a whole has no field name of its own.
-    record(path === '' ? 'body' : path, issue.message);
+    if (path === '') {
+      // A failure against the body as a whole has no field name of its own.
+      // Zod's sentence for it is library vocabulary, so it is replaced. A
+      // `custom` issue is one we wrote deliberately, so its message is kept.
+      record('body', issue.code === 'custom' ? issue.message : ERROR_MESSAGES.bodyNotExpectedForm);
+      continue;
+    }
+
+    record(path, issue.message);
   }
 
   return {

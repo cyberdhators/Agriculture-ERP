@@ -13,12 +13,13 @@ export const MAX_LIMIT = 100;
 
 export const PAGINATION_MESSAGES = {
   notANumber: 'The page size must be a number.',
+  cursorNotText: 'The page marker must be text.',
   notWhole: 'The page size must be a whole number.',
   tooSmall: 'The page size must be at least 1.',
 } as const;
 
 const limitSchema = z
-  .union([z.string(), z.number()])
+  .union([z.string(), z.number()], { error: () => PAGINATION_MESSAGES.notANumber })
   .optional()
   .transform((raw, ctx) => {
     if (raw === undefined) {
@@ -49,7 +50,7 @@ const limitSchema = z
   });
 
 export const paginationSchema = z.strictObject({
-  cursor: z.string().optional(),
+  cursor: z.string({ error: () => PAGINATION_MESSAGES.cursorNotText }).optional(),
   limit: limitSchema,
 });
 
