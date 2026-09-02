@@ -1,0 +1,37 @@
+title = "Agriculture ERP secret scan"
+
+# Everything gitleaks ships with, plus the providers this project actually uses.
+# No allowlist. If a scan produces a false positive, that is a decision for a
+# human to make deliberately, not a default set here.
+[extend]
+useDefault = true
+
+[[rules]]
+id = "agri-supabase-jwt"
+description = "Supabase anon/service key or any JWT-shaped value"
+regex = '''\beyJ[A-Za-z0-9_\-]{8,}\.[A-Za-z0-9_\-]{8,}\.[A-Za-z0-9_\-]{8,}'''
+tags = ["supabase", "jwt", "key"]
+
+[[rules]]
+id = "agri-supabase-sb-key"
+description = "Supabase publishable or secret key (sb_ prefix)"
+regex = '''\bsb_[A-Za-z0-9_\-]{16,}'''
+tags = ["supabase", "key"]
+
+[[rules]]
+id = "agri-sendgrid-key"
+description = "SendGrid API key"
+regex = '''\bSG\.[A-Za-z0-9_\-]{10,}\.[A-Za-z0-9_\-]{10,}'''
+tags = ["sendgrid", "key"]
+
+[[rules]]
+id = "agri-mapbox-token"
+description = "Mapbox access token (public pk. or secret sk.)"
+regex = '''\b[ps]k\.[A-Za-z0-9_\-]{20,}\.[A-Za-z0-9_\-]{10,}'''
+tags = ["mapbox", "token"]
+
+[[rules]]
+id = "agri-postgres-url-with-password"
+description = "Postgres connection string carrying a password"
+regex = '''\bpostgres(?:ql)?://[^\s:@/]+:[^\s@/]+@[^\s/]+'''
+tags = ["postgres", "database", "credentials"]
