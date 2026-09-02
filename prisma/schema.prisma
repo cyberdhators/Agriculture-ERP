@@ -98,6 +98,8 @@ model State {
 
   counties County[]
   payams   Payam[]
+  /// P1 (migration 6). Every scoped table carries state_id, so every one relates here.
+  directoryEntries DirectoryEntry[]
 
   @@map("state")
 }
@@ -132,8 +134,12 @@ model Payam {
   /// its county about which state it is in.
   county County @relation(fields: [countyId, stateId], references: [id, stateId], map: "payam_county_state_consistent_fkey")
   state  State  @relation(fields: [stateId], references: [id], map: "payam_state_id_fkey")
+  directoryEntries DirectoryEntry[]
 
   @@index([countyId], map: "payam_county_id_idx")
+  /// Target of the composite key on every table below payam that carries a
+  /// denormalised state_id. Added by migration 6 (P1); B5 onward reuse it.
+  @@unique([id, stateId], map: "payam_id_state_id_key")
   @@index([stateId], map: "payam_state_id_idx")
   @@map("payam")
 }
@@ -149,4 +155,137 @@ model LocationBundle {
   payamCount  Int      @map("payam_count")
 
   @@map("location_bundle")
+}
+
+// -----------------------------------------------------------------------------
+// P1 -- directories and learning library (migration 6)
+// -----------------------------------------------------------------------------
+//
+// Mirrors migration 6 by hand, like the B2 models above mirror migration 5.
+// The `_active` views are not modelled, for the reason given above.
+//
+// `crop` and `language` are SHARED enum types. crop_declaration (B5/B7) and
+// consent (B5) reuse them; they must not be redeclared. See docs/HANDOFF.md.
+
+enum DirectoryEntryType {
+  agro_dealer
+  input_supplier
+  financial_service
+
+  @@map("directory_entry_type")
+}
+
+enum FinancialProviderClass {
+  bank
+  microfinance
+  mobile_money
+  cooperative_sacco
+  other
+
+  @@map("financial_provider_class")
+}
+
+enum LearningTopic {
+  crop_production
+  livestock
+  pest_disease
+  post_harvest
+  marketing
+  cooperative
+  climate
+  other
+
+  @@map("learning_topic")
+}
+
+/// SHARED. The five project crops.
+enum Crop {
+  sorghum
+  groundnut
+  sesame
+  maize
+  cowpea
+
+  @@map("crop")
+}
+
+/// SHARED. The two interface languages. Prisma identifiers cannot contain a
+/// hyphen, so the database value 'ar-juba' is mapped.
+enum Language {
+  en
+  ar_juba @map("ar-juba")
+
+  @@map("language")
+}
+
+enum ResourceFormat {
+  pdf
+  image
+  audio
+  video
+
+  @@map("resource_format")
+}
+
+/// Deliverables (i), (j), (k): one typed table. A named place with a phone
+/// number that a farmer can be sent to. Never an account.
+model DirectoryEntry {
+  id              String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  entryType       DirectoryEntryType      @map("entry_type")
+  name            String
+  description     String?
+  services        String[]                @default([])
+  contactName     String?                 @map("contact_name")
+  /// E.164. The CHECK constraint mirrors parseSouthSudanMobile.
+  phone           String
+  altPhone        String?                 @map("alt_phone")
+  email           String?
+  physicalAddress String?                 @map("physical_address")
+  /// PostGIS. Read and written with raw SQL; Prisma has no geography type.
+  location        Unsupported("geography(Point, 4326)")?
+  payamId         String                  @map("payam_id")
+  /// Denormalised, per data-model-extension 1.4. The composite key keeps it honest.
+  stateId         String                  @map("state_id")
+  /// Financial services only; the CHECK constraint enforces both directions.
+  providerClass   FinancialProviderClass? @map("provider_class")
+  lastVerifiedAt  DateTime                @map("last_verified_at") @db.Date
+  /// Foreign key to user added in B3.
+  verifiedBy      String?                 @map("verified_by") @db.Uuid
+  active          Boolean                 @default(true)
+  deletedAt       DateTime?               @map("deleted_at") @db.Timestamptz(6)
+  deletedBy       String?                 @map("deleted_by") @db.Uuid
+
+  payam Payam @relation(fields: [payamId, stateId], references: [id, stateId], map: "directory_entry_payam_state_consistent_fkey")
+  state State @relation(fields: [stateId], references: [id], map: "directory_entry_state_id_fkey")
+
+  @@index([entryType, payamId, active], map: "directory_entry_lookup_idx")
+  @@index([stateId], map: "directory_entry_state_id_idx")
+  @@map("directory_entry")
+}
+
+/// Deliverable (m): a repository, not a course system. The file lives in
+/// Supabase Storage; this row is its catalogue card.
+model LearningResource {
+  id          String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title       String
+  topic       LearningTopic
+  crop        Crop?
+  language    Language
+  format      ResourceFormat
+  storagePath String         @map("storage_path")
+  /// Shown next to every download, so an officer on a metered phone can decide.
+  byteSize    Int            @map("byte_size")
+  description String?
+  /// New rows start unpublished; officers see published rows only.
+  published   Boolean        @default(false)
+  /// Foreign key to user added in B3.
+  uploadedBy  String?        @map("uploaded_by") @db.Uuid
+  uploadedAt  DateTime       @default(now()) @map("uploaded_at") @db.Timestamptz(6)
+  deletedAt   DateTime?      @map("deleted_at") @db.Timestamptz(6)
+  deletedBy   String?        @map("deleted_by") @db.Uuid
+
+  // Both indexes on this table are partial (deleted_at IS NULL) and the unique
+  // on storage_path is too. Prisma cannot express partial indexes, so they live
+  // in migration 6 only, as the _active indexes on the B2 tables do.
+  @@map("learning_resource")
 }

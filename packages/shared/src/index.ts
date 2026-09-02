@@ -46,3 +46,32 @@ export {
   type PayamRow,
   type StateRow,
 } from './location';
+
+export {
+  DIRECTORY_ENTRY_TYPES,
+  DIRECTORY_LIMITS,
+  DIRECTORY_MESSAGES,
+  FINANCIAL_PROVIDER_CLASSES,
+  directoryEntryInputSchema,
+  geoPointSchema,
+  todayIso,
+  type DirectoryEntryInput,
+  type DirectoryEntryType,
+  type FinancialProviderClass,
+  type GeoPoint,
+} from './directory';
+
+export {
+  CROPS,
+  LANGUAGES,
+  LEARNING_LIMITS,
+  LEARNING_MESSAGES,
+  LEARNING_TOPICS,
+  RESOURCE_FORMATS,
+  learningResourceInputSchema,
+  type Crop,
+  type Language,
+  type LearningResourceInput,
+  type LearningTopic,
+  type ResourceFormat,
+} from './learning';

@@ -13,6 +13,10 @@ Before writing any code, restate in your own words:
 
 Then STOP and wait for my confirmation. Do not begin work until I reply.
 
+Also read `docs/HANDOFF.md` first. Two lanes work in this repository in
+parallel; that file says what each lane owns, what is done, and where to
+continue. Log your session there before you finish.
+
 ---
 
 ## 1. SOURCE OF TRUTH
