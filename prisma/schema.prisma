@@ -74,8 +74,79 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-// No models yet. _smoke was created and dropped within unit B1.3 to prove a
-// migration applies and reverses; the real data model arrives in B2.
-//
 // Every model added here must come with a migration that creates the table AND
 // enables row-level security on it, in the same migration, with no policies.
+//
+// These models mirror migration 5 by hand. Migrations are hand-written SQL
+// applied with `migrate deploy`; `migrate dev` is not used on this project, so
+// nothing generates this file and nothing checks it against the database except
+// the tests. Keep them in step deliberately.
+//
+// The `_active` views are not modelled. Prisma has no view support we rely on,
+// and every read in B2 goes through raw SQL against the views for exactly that
+// reason.
+
+/// Top level of the location hierarchy. Code as primary key, not a uuid:
+/// location codes appear in donor exports, where CE means something.
+model State {
+  id        String  @id
+  name      String
+  active    Boolean @default(true)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+  /// Foreign key to user added in B3, when that table exists.
+  deletedBy String?   @map("deleted_by") @db.Uuid
+
+  counties County[]
+  payams   Payam[]
+
+  @@map("state")
+}
+
+model County {
+  id        String  @id
+  name      String
+  stateId   String  @map("state_id")
+  active    Boolean @default(true)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+  deletedBy String?   @map("deleted_by") @db.Uuid
+
+  state  State   @relation(fields: [stateId], references: [id])
+  payams Payam[]
+
+  /// Target of the composite key on payam that enforces C-2.3.
+  @@unique([id, stateId], map: "county_id_state_id_key")
+  @@index([stateId], map: "county_state_id_idx")
+  @@map("county")
+}
+
+model Payam {
+  id        String @id
+  name      String
+  countyId  String @map("county_id")
+  /// Denormalised, per data-model-extension 1.4, so a scope check is not a join.
+  stateId   String @map("state_id")
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+  deletedBy String?   @map("deleted_by") @db.Uuid
+
+  /// C-2.3 lives here: the composite key means a payam cannot disagree with
+  /// its county about which state it is in.
+  county County @relation(fields: [countyId, stateId], references: [id, stateId], map: "payam_county_state_consistent_fkey")
+  state  State  @relation(fields: [stateId], references: [id], map: "payam_state_id_fkey")
+
+  @@index([countyId], map: "payam_county_id_idx")
+  @@index([stateId], map: "payam_state_id_idx")
+  @@map("payam")
+}
+
+/// One row. Holds the version identifier of the most recently built bundle so
+/// a device can ask whether the hierarchy changed without downloading it.
+model LocationBundle {
+  id          Int      @id @default(1)
+  version     String
+  builtAt     DateTime @map("built_at") @db.Timestamptz(6)
+  stateCount  Int      @map("state_count")
+  countyCount Int      @map("county_count")
+  payamCount  Int      @map("payam_count")
+
+  @@map("location_bundle")
+}

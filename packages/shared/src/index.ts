@@ -30,3 +30,19 @@ export {
 export { devValidatePhoneBodySchema } from './dev';
 
 export { REDACTED, isSensitiveKey, scrub, scrubEvent, scrubString } from './scrub';
+
+export {
+  LOCATION_MESSAGES,
+  canonicaliseTree,
+  countyRowSchema,
+  locationCodeSchema,
+  locationNameSchema,
+  locationRowSchema,
+  payamRowSchema,
+  stateRowSchema,
+  type CountyRow,
+  type LocationRow,
+  type LocationTree,
+  type PayamRow,
+  type StateRow,
+} from './location';

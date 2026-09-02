@@ -67,6 +67,18 @@ more reliable but is not immune.
 server` is far more likely to be this than a real fault. Check twice before
 concluding anything is broken.
 
+**Two settings this forced, both recorded so they are not "tidied away":**
+
+- **Database tests must run with `--no-file-parallelism`.** Vitest runs files in
+  parallel by default; each opens its own client, and the reseed tests spawn
+  subprocesses that open more. That exhausts the pooler's connection slots and
+  fails as `P1001`, which reads like the link being down when it is not. Serial:
+  6-7 of 7 pass. Parallel: 2 of 7.
+- **The reseed's interactive transaction is given a 300s budget.** Prisma's
+  default is 5 seconds. A full reseed is dozens of round trips at seconds each,
+  so the default closes the transaction mid-write and reports `P2028`. The
+  budget matches the work and the latency, not the other way round.
+
 **Do not add retry logic inside a test.** A test that retries hides the
 condition instead of surviving it, and — worse — it would also hide a genuine
 connection fault behind the same silence. Tests fail honestly; the operator
