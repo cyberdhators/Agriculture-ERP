@@ -74,12 +74,8 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-/// Throwaway smoke-test table for unit B1.3. Proves a migration applies and
-/// reverses. Created in migration 2, dropped in migration 3. Holds no real
-/// data and is not part of the data model.
-model Smoke {
-  id   Int    @id @default(autoincrement())
-  note String
-
-  @@map("_smoke")
-}
+// No models yet. _smoke was created and dropped within unit B1.3 to prove a
+// migration applies and reverses; the real data model arrives in B2.
+//
+// Every model added here must come with a migration that creates the table AND
+// enables row-level security on it, in the same migration, with no policies.

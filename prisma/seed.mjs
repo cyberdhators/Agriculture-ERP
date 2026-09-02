@@ -1,8 +1,12 @@
 // Seeds the staging database. Run with `pnpm db:seed`.
 //
-// Unit B1.3 inserts exactly one row into the throwaway _smoke table. When
-// _smoke is dropped in migration 3 this file stays, emptied of that logic,
-// ready for the B2 location tables.
+// Empty on purpose. Unit B1.3 used this to insert one row into the throwaway
+// _smoke table; that table was dropped in migration 3, so there is nothing to
+// seed yet. The file stays, wired up and working, ready for the B2 location
+// tables.
+//
+// Seed data is generated and fake. Real farmer data exists in production only,
+// and never reaches staging or a local machine.
 
 import { PrismaClient } from '@prisma/client';
 
@@ -21,14 +25,8 @@ if (!process.env.DATABASE_URL) {
 const prisma = new PrismaClient();
 
 try {
-  const existing = await prisma.smoke.count();
-
-  if (existing > 0) {
-    console.log(`_smoke already holds ${existing} row(s). Nothing inserted.`);
-  } else {
-    const row = await prisma.smoke.create({ data: { note: 'unit B1.3 smoke row' } });
-    console.log(`Inserted one row into _smoke (id ${row.id}).`);
-  }
+  await prisma.$connect();
+  console.log('Nothing to seed yet. The schema has no models.');
 } finally {
   await prisma.$disconnect();
 }
