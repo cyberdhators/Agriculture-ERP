@@ -21,6 +21,8 @@ export {
   ERROR_CODES,
   ERROR_MESSAGES,
   MAX_BODY_BYTES,
+  REQUIRED_MEDIA_TYPE,
+  isJsonMediaType,
   zodErrorToApiError,
   type ApiErrorBody,
 } from './errors';

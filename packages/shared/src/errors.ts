@@ -24,6 +24,7 @@ export const ERROR_CODES = {
   forbidden: 'forbidden',
   notFound: 'not_found',
   methodNotAllowed: 'method_not_allowed',
+  unsupportedMediaType: 'unsupported_media_type',
   conflict: 'conflict',
   payloadTooLarge: 'payload_too_large',
   unprocessable: 'unprocessable',
@@ -38,15 +39,38 @@ export const ERROR_MESSAGES = {
   forbidden: 'You do not have permission to do this.',
   notFound: 'That record could not be found.',
   methodNotAllowed: 'That action is not available on this address.',
+  unsupportedMediaType: 'Send the request as application/json.',
   conflict: 'That record has already been sent with different details.',
   payloadTooLarge: 'That request is too large to send.',
-  /** Fixed sentence, never varied. CONVENTIONS.md section 5.2. */
+  /** Fixed sentence, never varied. CONVENTIONS.md section 5.3. */
   internalError: 'Something went wrong. Please try again.',
+  /**
+   * `unprocessable` (422) deliberately has no entry here. Its sentence is
+   * written by the business rule that rejected the request, because a generic
+   * one would tell an officer nothing. Each rule states its own sentence when
+   * it is built. CONVENTIONS.md section 5.2.
+   */
   unknownField: 'This field is not recognised.',
 } as const;
 
-/** The largest request body any route in B1.4 accepts. CONVENTIONS.md section 9. */
+/** The largest request body any route in B1.4 accepts. CONVENTIONS.md section 9.2. */
 export const MAX_BODY_BYTES = 1_048_576;
+
+/** The only media type a request with a body may use. CONVENTIONS.md section 9.1. */
+export const REQUIRED_MEDIA_TYPE = 'application/json';
+
+/**
+ * True when a Content-Type header names JSON.
+ *
+ * Parameters such as `; charset=utf-8` are allowed and ignored; only the
+ * media type itself is compared, case-insensitively. A missing header is
+ * false: a body must say what it is.
+ */
+export function isJsonMediaType(headerValue: string | null): boolean {
+  if (headerValue === null) return false;
+  const mediaType = headerValue.split(';')[0]?.trim().toLowerCase() ?? '';
+  return mediaType === REQUIRED_MEDIA_TYPE;
+}
 
 /** Builds an error body with no `fields` key. */
 export function apiError(code: string, message: string): ApiErrorBody {

@@ -27,6 +27,19 @@ const postRaw = async (rawBody: string, headers: Record<string, string> = {}) =>
 
 const postJson = (body: unknown) => postRaw(JSON.stringify(body));
 
+const postWithContentType = async (contentType: string | null) => {
+  const headers: Record<string, string> = {};
+  if (contentType !== null) headers['content-type'] = contentType;
+  const response = await POST(
+    new Request('http://localhost/api/_dev/validate-phone', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ phone: '0912345678' }),
+    }),
+  );
+  return { status: response.status, body: (await response.json()) as ErrorShape };
+};
+
 describe('checking a phone number through the running server', () => {
   it('returns the number in international form when it is valid', async () => {
     const { status, body } = await postJson({ phone: '0912345678' });
@@ -121,4 +134,56 @@ describe('using the wrong kind of request', () => {
       expect(error.error.message).toBe(ERROR_MESSAGES.methodNotAllowed);
     },
   );
+});
+
+describe('saying what kind of request is being sent', () => {
+  it('accepts a request that says it is JSON', async () => {
+    const { status } = await postWithContentType('application/json');
+    expect(status).toBe(200);
+  });
+
+  it('accepts a request that also states the character set', async () => {
+    const { status } = await postWithContentType('application/json; charset=utf-8');
+    expect(status).toBe(200);
+  });
+
+  it('accepts the type written in capitals', async () => {
+    const { status } = await postWithContentType('APPLICATION/JSON');
+    expect(status).toBe(200);
+  });
+
+  it('refuses a request that says it is a web form', async () => {
+    const { status, body } = await postWithContentType('application/x-www-form-urlencoded');
+
+    expect(status).toBe(415);
+    expect(body.error.code).toBe(ERROR_CODES.unsupportedMediaType);
+    expect(body.error.message).toBe('Send the request as application/json.');
+  });
+
+  it('refuses a request that says it is plain writing', async () => {
+    const { status, body } = await postWithContentType('text/plain');
+
+    expect(status).toBe(415);
+    expect(body.error.code).toBe(ERROR_CODES.unsupportedMediaType);
+  });
+
+  it('refuses a request that does not say what it is at all', async () => {
+    const { status, body } = await postWithContentType(null);
+
+    expect(status).toBe(415);
+    expect(body.error.code).toBe(ERROR_CODES.unsupportedMediaType);
+  });
+
+  it('complains about the kind of request before complaining about its contents', async () => {
+    // A request wrong in two ways fails the same way every time.
+    const response = await POST(
+      new Request('http://localhost/api/_dev/validate-phone', {
+        method: 'POST',
+        headers: { 'content-type': 'text/plain' },
+        body: 'not a form at all',
+      }),
+    );
+
+    expect(response.status).toBe(415);
+  });
 });

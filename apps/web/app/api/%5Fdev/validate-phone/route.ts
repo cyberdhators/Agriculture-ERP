@@ -4,6 +4,7 @@ import {
   MAX_BODY_BYTES,
   apiError,
   devValidatePhoneBodySchema,
+  isJsonMediaType,
   zodErrorToApiError,
 } from '@agri-erp/shared';
 import { NextResponse } from 'next/server';
@@ -33,6 +34,15 @@ import { NextResponse } from 'next/server';
 
 export async function POST(request: Request): Promise<NextResponse> {
   try {
+    // Checked in the order CONVENTIONS.md section 9 states: what the request
+    // claims to be, then how big it claims to be, then whether it can be read.
+    if (!isJsonMediaType(request.headers.get('content-type'))) {
+      return NextResponse.json(
+        apiError(ERROR_CODES.unsupportedMediaType, ERROR_MESSAGES.unsupportedMediaType),
+        { status: 415 },
+      );
+    }
+
     const declaredLength = Number(request.headers.get('content-length') ?? '0');
     if (Number.isFinite(declaredLength) && declaredLength > MAX_BODY_BYTES) {
       return NextResponse.json(
@@ -59,7 +69,7 @@ export async function POST(request: Request): Promise<NextResponse> {
 
     return NextResponse.json({ data: { phone: parsed.data.phone } }, { status: 200 });
   } catch {
-    // Nothing internal reaches the caller. CONVENTIONS.md section 5.2.
+    // Nothing internal reaches the caller. CONVENTIONS.md section 5.3.
     return NextResponse.json(apiError(ERROR_CODES.internalError, ERROR_MESSAGES.internalError), {
       status: 500,
     });

@@ -107,6 +107,26 @@ exists, and nothing is deleted from here except by deleting the thing itself.
 When this table is empty, the `/api/_dev/*` exception is removed from
 CONVENTIONS.md entirely rather than left standing with nothing under it.
 
+### Documented behaviour that cannot yet be reached
+
+These are agreed, written into `docs/api/CONVENTIONS.md`, and **impossible to
+test today** because no route can produce them. A code that cannot be reached
+must be visibly parked, not silently dead. The unit named against each one is
+the unit that must make it reachable and testable in the same change.
+
+| Behaviour               | Made testable by | Why it is unreachable today                                                                                                                               |
+| ----------------------- | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `invalid_cursor` (400)  | **B3**           | No cursor format exists. No route returns a list, so nothing issues a cursor and nothing can judge one unreadable. `paginationSchema` accepts any string. |
+| `unauthenticated` (401) | **B3**           | `requireRole` does not exist.                                                                                                                             |
+| `forbidden` (403)       | **B3**           | No roles exist.                                                                                                                                           |
+| `not_found` (404)       | **B3**           | No record and no scope resolution exist.                                                                                                                  |
+| `conflict` (409)        | **B2**           | No record and no client-UUID idempotency exist.                                                                                                           |
+| `unprocessable` (422)   | **B2**           | No business rules exist. Its message is written by the rule that raises it, so each rule must also state its exact sentence.                              |
+
+The "Emitted today?" column in CONVENTIONS.md section 5 is the same information
+at the point of use. **Both must be updated together** — when a unit makes one of
+these reachable, it changes that column to _Yes_ and deletes the row here.
+
 **A rule for B1.5.** The B1.5 plan includes a `_dev/throw` route for proving
 Sentry receives an unhandled error. It does not exist yet. **If B1.5 creates
 it, B1.5 adds it to this table in the same change** — a `_dev` route and its row
