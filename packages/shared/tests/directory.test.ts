@@ -7,6 +7,12 @@ import {
   directoryEntryInputSchema,
 } from '../src/index';
 
+function omit<T extends object, K extends keyof T>(obj: T, key: K): Omit<T, K> {
+  const copy: Partial<T> = { ...obj };
+  delete copy[key];
+  return copy as Omit<T, K>;
+}
+
 /**
  * Directory entry validation. Unit P1, C-13.1 to C-13.5.
  *
@@ -53,7 +59,7 @@ describe('a minimal entry', () => {
   });
 
   it('defaults active to true and services to an empty list', () => {
-    const { services: _services, ...noServices } = dealer;
+    const noServices = omit(dealer, 'services');
     const result = schema.parse(noServices);
     expect(result.active).toBe(true);
     expect(result.services).toEqual([]);
@@ -86,7 +92,7 @@ describe('name', () => {
 
   it('refuses a blank name and a missing one with different sentences', () => {
     expect(firstMessage({ ...dealer, name: '   ' }, 'name')).toBe(DIRECTORY_MESSAGES.nameBlank);
-    const { name: _name, ...missing } = dealer;
+    const missing = omit(dealer, 'name');
     expect(firstMessage(missing, 'name')).toBe(DIRECTORY_MESSAGES.nameRequired);
   });
 
@@ -181,7 +187,7 @@ describe('location', () => {
 
 describe('provider class, both directions', () => {
   it('requires a class on a financial service', () => {
-    const { provider_class: _pc, ...noClass } = bank;
+    const noClass = omit(bank, 'provider_class');
     expect(firstMessage(noClass, 'provider_class')).toBe(DIRECTORY_MESSAGES.providerClassRequired);
     expect(firstMessage({ ...bank, provider_class: null }, 'provider_class')).toBe(
       DIRECTORY_MESSAGES.providerClassRequired,
@@ -223,7 +229,7 @@ describe('last verified date', () => {
   });
 
   it('is required', () => {
-    const { last_verified_at: _d, ...missing } = dealer;
+    const missing = omit(dealer, 'last_verified_at');
     expect(firstMessage(missing, 'last_verified_at')).toBe(
       DIRECTORY_MESSAGES.verifiedDateRequired,
     );

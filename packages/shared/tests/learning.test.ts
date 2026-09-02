@@ -2,6 +2,12 @@ import { describe, expect, it } from 'vitest';
 
 import { LEARNING_LIMITS, LEARNING_MESSAGES, learningResourceInputSchema } from '../src/index';
 
+function omit<T extends object, K extends keyof T>(obj: T, key: K): Omit<T, K> {
+  const copy: Partial<T> = { ...obj };
+  delete copy[key];
+  return copy as Omit<T, K>;
+}
+
 /** Learning resource validation. Unit P1, C-13.6 to C-13.9. */
 
 const schema = learningResourceInputSchema;
@@ -29,7 +35,7 @@ describe('a minimal resource', () => {
   });
 
   it('accepts a resource with no crop, because not every topic has one', () => {
-    const { crop: _crop, ...noCrop } = guide;
+    const noCrop = omit(guide, 'crop');
     expect(schema.safeParse({ ...noCrop, topic: 'cooperative' }).success).toBe(true);
     expect(schema.parse({ ...guide, crop: null }).crop).toBeNull();
   });
