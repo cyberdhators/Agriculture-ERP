@@ -11,9 +11,15 @@ build/
 *.tsbuildinfo
 
 # environment
+#
+# Broad on purpose. The earlier patterns matched .env.local but not
+# .env.local.bak, .env.local.old or .env.backup -- so a backup of a credential
+# file taken during ordinary work was committable. It happened during B2 and
+# was caught by inspection rather than by the rules. Ignore every .env variant
+# and let .env.example back in explicitly.
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
 
 # test output
 coverage/

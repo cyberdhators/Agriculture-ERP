@@ -1,0 +1,27 @@
+-- Migration 4 -- housekeeping, between units B1.6 and B2
+--
+-- Enable row-level security on Prisma's own migration-history table.
+--
+-- WHY THIS TABLE WAS MISSED
+-- Every table this project creates enables RLS in the same migration that
+-- creates it -- the rule written into migration 2. `_prisma_migrations` broke
+-- that rule because we did not create it: Prisma created it on first
+-- `migrate deploy`, and Prisma does not enable RLS.
+--
+-- Supabase's advisor flags it critical. Without RLS, anyone holding the
+-- staging anon key can read the migration history and, worse, modify or
+-- truncate it -- which would make the database's record of what has been
+-- applied disagree with the repository, silently.
+--
+-- WHY THIS IS SAFE
+-- RLS with no policies is deny-by-default. Prisma connects as the database
+-- owner and bypasses RLS deliberately, so `migrate deploy`, `migrate status`
+-- and every other Prisma command are unaffected. What changes is that the anon
+-- and authenticated keys, which reach the database directly from clients, can
+-- no longer see or touch this table.
+--
+-- This is the same deny-by-default backstop every project table follows. It is
+-- housekeeping rather than part of any unit, which is why it is its own
+-- migration.
+
+ALTER TABLE "public"."_prisma_migrations" ENABLE ROW LEVEL SECURITY;
