@@ -82,3 +82,102 @@ databases. Migrations are hand-written SQL applied with `prisma migrate deploy`.
 **Prisma connects as database owner and bypasses row-level security by design.**
 RLS is the backstop against the anon and authenticated keys, not against our own
 server. Server-side authorisation is `requireRole` in the API routes.
+
+---
+
+## OUTSTANDING ITEMS — THINGS THAT EXIST AND MUST BE REMOVED
+
+This list holds things that **exist in the repository today** and are scheduled
+for deletion. It is not a list of intentions. Nothing is added here before it
+exists, and nothing is deleted from here except by deleting the thing itself.
+
+| Item                            | Added | Removed in | Why it exists                                                                                                                                                                                            |
+| ------------------------------- | ----- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `POST /api/_dev/validate-phone` | B1.4  | **B3**     | Proves `docs/api/CONVENTIONS.md` and the Zod schemas in `packages/shared` agree inside a running server, before `requireRole` exists. It is unauthenticated, which every other route is forbidden to be. |
+
+**Deleting `/api/_dev/validate-phone` in B3 means all five of these, together:**
+
+1. `apps/web/app/api/_dev/validate-phone/route.ts`
+2. `devValidatePhoneBodySchema` in `packages/shared/src/dev.ts` (and the file,
+   and its export from `src/index.ts`)
+3. `apps/web/tests/dev-validate-phone.test.ts`
+4. The row above
+5. The `/api/_dev/*` exception paragraph in `docs/api/CONVENTIONS.md` section 2
+
+When this table is empty, the `/api/_dev/*` exception is removed from
+CONVENTIONS.md entirely rather than left standing with nothing under it.
+
+### Documented behaviour that cannot yet be reached
+
+These are agreed, written into `docs/api/CONVENTIONS.md`, and **impossible to
+test today** because no route can produce them. A code that cannot be reached
+must be visibly parked, not silently dead. The unit named against each one is
+the unit that must make it reachable and testable in the same change.
+
+| Behaviour               | Made testable by | Why it is unreachable today                                                                                                                               |
+| ----------------------- | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `invalid_cursor` (400)  | **B3**           | No cursor format exists. No route returns a list, so nothing issues a cursor and nothing can judge one unreadable. `paginationSchema` accepts any string. |
+| `unauthenticated` (401) | **B3**           | `requireRole` does not exist.                                                                                                                             |
+| `forbidden` (403)       | **B3**           | No roles exist.                                                                                                                                           |
+| `not_found` (404)       | **B3**           | No record and no scope resolution exist.                                                                                                                  |
+| `conflict` (409)        | **B2**           | No record and no client-UUID idempotency exist.                                                                                                           |
+| `unprocessable` (422)   | **B2**           | No business rules exist. Its message is written by the rule that raises it, so each rule must also state its exact sentence.                              |
+
+The "Emitted today?" column in CONVENTIONS.md section 5 is the same information
+at the point of use. **Both must be updated together** — when a unit makes one of
+these reachable, it changes that column to _Yes_ and deletes the row here.
+
+Two whole sections of `docs/api/CONVENTIONS.md` are parked the same way, for the
+same reason:
+
+| Parked section                                                                             | Unparked by | Why it is unreachable today                                                                      |
+| ------------------------------------------------------------------------------------------ | ----------- | ------------------------------------------------------------------------------------------------ |
+| **§6 Lists** — the `page` object, cursors, the deterministic sort, the `deleted_at` filter | **B3**      | No route returns a list. `paginationSchema` is testable as a schema; the list responses are not. |
+| **§7 Timestamps** — ISO 8601 UTC with milliseconds and a `Z`                               | **B3**      | No response contains a timestamp, because no route returns a stored record.                      |
+
+---
+
+## B3 OPENING TASKS
+
+Two obligations B1.4 hands to B3. Neither is optional, and both belong at the
+start of B3 rather than the end.
+
+**1. Unpark §6 and the timestamp rule once the first list route exists.** Both
+are marked _Emitted today? No — B3_ in `docs/api/CONVENTIONS.md`. The unit that
+builds the first route returning a list, or the first response carrying a stored
+record, removes the parking note and adds the tests that were impossible before.
+Parking is a promise to come back, not a place to leave things.
+
+**2. Move the code-in-the-right-situation guarantee into the shared route
+wrapper.** The drift test added in B1.4 locks the documented sentences to the
+exported constants, and that is all it does. **It does not prove a route emits
+the right code in the right situation.** A route changed to return `400` where
+`415` belongs leaves both tables matching and the drift test green. Today that
+gap is covered for one route by its own tests, and nothing generalises it.
+
+B3 builds a shared route wrapper for `requireRole`. That wrapper is the right
+place for the behaviour every route must share and must not restate: the
+`Content-Type` check, the body size cap, the JSON parse, the documented `405`,
+and the fixed `500`. Once routes are built on it, those guarantees hold by
+construction instead of by each author remembering. The `405` handlers in
+`/api/_dev/validate-phone` exist only because no wrapper does yet.
+
+**A rule for B1.5.** The B1.5 plan includes a `_dev/throw` route for proving
+Sentry receives an unhandled error. It does not exist yet. **If B1.5 creates
+it, B1.5 adds it to this table in the same change** — a `_dev` route and its row
+here are created together or not at all.
+
+---
+
+## BLOCKED
+
+**`docs/scope-and-acceptance.md` does not exist.** `CLAUDE.md` section 1 names
+it the only scope document and the source of truth for the twenty contracted
+deliverables (a)–(t). The file is not in the repository.
+
+This does not block B1.4 or B1.5, which are scaffolding and claim no acceptance
+criteria. **It blocks B2.** Farmer registration cannot begin without the
+criteria it is written against, because there would be nothing to mark DONE or
+NOT DONE against, and no way to tell a contracted field from an invented one.
+
+Resolve before B2 starts.
