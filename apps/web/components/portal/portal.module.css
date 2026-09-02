@@ -1,0 +1,287 @@
+/* Desktop-first application layout: fixed sidebar, fluid content. */
+
+.shell {
+  display: grid;
+  grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
+  min-height: 100vh;
+}
+
+/* ---- Sidebar --------------------------------------------------------- */
+
+.sidebar {
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  padding: var(--s-5) var(--s-4);
+  background: var(--card);
+  border-right: 1px solid var(--line);
+}
+
+.wordmark {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-2) var(--s-2) var(--s-5);
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.wordmarkTile {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--leaf);
+  color: #fff;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 20px;
+}
+
+.wordmarkText {
+  display: grid;
+  line-height: 1.15;
+}
+
+.wordmarkName {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 18px;
+  letter-spacing: -0.01em;
+}
+
+.wordmarkSub {
+  font-size: var(--text-small);
+  color: var(--muted);
+}
+
+.nav {
+  display: grid;
+  gap: 2px;
+}
+
+.navGroup {
+  padding: var(--s-4) var(--s-3) var(--s-2);
+}
+
+.navLink {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  min-height: 44px;
+  padding: 0 var(--s-3);
+  border-radius: 12px;
+  color: var(--ink-2);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--text-body);
+  text-decoration: none;
+}
+
+.navLink:hover {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.navLink[aria-current='page'] {
+  background: var(--leaf);
+  color: #fff;
+}
+
+.navLink svg {
+  flex: none;
+  opacity: 0.85;
+}
+
+.navBadge {
+  margin-left: auto;
+  padding: 0 8px;
+  border-radius: var(--radius-pill);
+  background: var(--dust);
+  color: var(--muted);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.navLink[aria-current='page'] .navBadge {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+.sidebarFooter {
+  margin-top: auto;
+  padding-top: var(--s-4);
+  border-top: 1px solid var(--line);
+}
+
+.user {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-2);
+}
+
+.userText {
+  display: grid;
+  line-height: 1.2;
+}
+
+.userName {
+  font-family: var(--font-display);
+  font-weight: 700;
+}
+
+/* ---- Main ------------------------------------------------------------ */
+
+.main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-4);
+  min-height: 64px;
+  padding: 0 var(--s-8);
+  background: rgba(251, 251, 247, 0.92);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--line);
+}
+
+.topbarTitle {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--text-subhead);
+}
+
+.topbarRight {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+}
+
+.roleSwitch {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: 4px 4px 4px 12px;
+  border: 1.5px dashed var(--sorghum);
+  border-radius: var(--radius-control);
+  background: var(--sorghum-tint);
+}
+
+.roleSwitchLabel {
+  font-family: var(--font-display);
+  font-size: var(--text-label);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--sorghum);
+}
+
+.roleSwitch select {
+  min-height: 40px;
+  padding: 0 36px 0 12px;
+  border: 0;
+  border-radius: 10px;
+  background-color: var(--card);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--text-small);
+  appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%233a443a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+}
+
+.content {
+  flex: 1;
+  width: 100%;
+  max-width: var(--content-max);
+  padding: var(--s-8);
+}
+
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  padding: var(--s-4) var(--s-8);
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: var(--text-small);
+}
+
+.footerFlag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--sorghum);
+  font-weight: 700;
+}
+
+/* ---- Narrow screens: sidebar becomes a top strip ---------------------- */
+
+@media (max-width: 1024px) {
+  .shell {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    position: static;
+    height: auto;
+    padding: var(--s-3) var(--s-4);
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s-1);
+  }
+
+  .navGroup,
+  .sidebarFooter {
+    display: none;
+  }
+
+  .wordmark {
+    padding-bottom: var(--s-3);
+  }
+
+  .topbar,
+  .content,
+  .footer {
+    padding-inline: var(--s-4);
+  }
+}
+
+@media print {
+  .shell {
+    display: block;
+  }
+
+  .sidebar,
+  .topbar,
+  .footer {
+    display: none;
+  }
+
+  .content {
+    padding: 0;
+    max-width: none;
+  }
+}
