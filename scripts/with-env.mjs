@@ -9,7 +9,7 @@
 
 import { spawn } from 'node:child_process';
 
-import { envLocalPath, loadEnvLocal } from './load-env.mjs';
+import { envLocalPath, loadEnvLocal, resolveLocalBin } from './load-env.mjs';
 
 const [command, ...args] = process.argv.slice(2);
 
@@ -32,7 +32,7 @@ if (!loaded.ok) {
   process.exit(1);
 }
 
-const child = spawn(command, args, { stdio: 'inherit', env: process.env });
+const child = spawn(resolveLocalBin(command), args, { stdio: 'inherit', env: process.env });
 child.on('error', (error) => {
   console.error(`with-env: could not start "${command}": ${error.message}`);
   process.exit(1);

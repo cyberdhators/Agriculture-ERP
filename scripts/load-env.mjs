@@ -46,3 +46,18 @@ export function loadEnvLocal() {
 
   return { ok: true };
 }
+
+/**
+ * Resolves a locally installed CLI to its absolute path.
+ *
+ * `pnpm run` puts node_modules/.bin on PATH, but running these scripts with
+ * plain `node` does not. Resolving explicitly means they work either way.
+ *
+ * @param {string} name
+ * @returns {string} absolute path if installed locally, otherwise the bare
+ *   name, so PATH lookup can still find it
+ */
+export function resolveLocalBin(name) {
+  const local = join(repoRoot, 'node_modules', '.bin', name);
+  return existsSync(local) ? local : name;
+}

@@ -18,14 +18,14 @@
 
 import { spawn } from 'node:child_process';
 
-import { envLocalPath, loadEnvLocal } from './load-env.mjs';
+import { envLocalPath, loadEnvLocal, resolveLocalBin } from './load-env.mjs';
 
 // ---------------------------------------------------------------------------
 // The staging Supabase project reference. Replace the placeholder below with
 // the real reference. Until that happens this script refuses everything,
 // which is the safe state.
 // ---------------------------------------------------------------------------
-const STAGING_PROJECT_REF = 'jkzvhqmwxplsdnbugtri';
+const STAGING_PROJECT_REF = 'xmmxbrxmfgodhpwolrvk';
 
 const PLACEHOLDER = 'SET_STAGING_PROJECT_REF_HERE';
 
@@ -95,7 +95,10 @@ console.log('This will DROP EVERYTHING in that database and re-apply migrations.
 console.log('Prisma will ask you to confirm before anything is destroyed.');
 console.log('');
 
-const child = spawn('prisma', ['migrate', 'reset'], { stdio: 'inherit', env: process.env });
+const child = spawn(resolveLocalBin('prisma'), ['migrate', 'reset'], {
+  stdio: 'inherit',
+  env: process.env,
+});
 child.on('error', (error) => {
   console.error(`db:reset: could not start prisma: ${error.message}`);
   process.exit(1);
