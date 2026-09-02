@@ -19,6 +19,12 @@ regex = '''\bsb_[A-Za-z0-9_\-]{16,}'''
 tags = ["supabase", "key"]
 
 [[rules]]
+id = "agri-supabase-access-token"
+description = "Supabase personal access token (sbp_) -- ACCOUNT-WIDE, reaches production"
+regex = '''\bsbp_[A-Za-z0-9_\-]{20,}'''
+tags = ["supabase", "token", "account", "production"]
+
+[[rules]]
 id = "agri-sendgrid-key"
 description = "SendGrid API key"
 regex = '''\bSG\.[A-Za-z0-9_\-]{10,}\.[A-Za-z0-9_\-]{10,}'''
