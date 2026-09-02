@@ -41,3 +41,10 @@ id = "agri-postgres-url-with-password"
 description = "Postgres connection string carrying a password"
 regex = '''\bpostgres(?:ql)?://[^\s:@/]+:[^\s@/]+@[^\s/]+'''
 tags = ["postgres", "database", "credentials"]
+
+[[rules]]
+id = "sentry-dsn"
+description = "Sentry DSN -- write-only ingest key, but still a credential shape"
+regex = '''https://[a-f0-9]{32,}@[a-z0-9.-]*ingest[a-z0-9.-]*\.sentry\.io/\d+'''
+tags = ["sentry", "dsn"]
+

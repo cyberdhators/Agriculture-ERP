@@ -91,9 +91,10 @@ This list holds things that **exist in the repository today** and are scheduled
 for deletion. It is not a list of intentions. Nothing is added here before it
 exists, and nothing is deleted from here except by deleting the thing itself.
 
-| Item                            | Added | Removed in | Why it exists                                                                                                                                                                                            |
-| ------------------------------- | ----- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `POST /api/_dev/validate-phone` | B1.4  | **B3**     | Proves `docs/api/CONVENTIONS.md` and the Zod schemas in `packages/shared` agree inside a running server, before `requireRole` exists. It is unauthenticated, which every other route is forbidden to be. |
+| Item                            | Added | Removed in | Why it exists                                                                                                                                                                                                                 |
+| ------------------------------- | ----- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `POST /api/_dev/validate-phone` | B1.4  | **B3**     | Proves `docs/api/CONVENTIONS.md` and the Zod schemas in `packages/shared` agree inside a running server, before `requireRole` exists. It is unauthenticated, which every other route is forbidden to be.                      |
+| `POST /api/_dev/throw`          | B1.5  | **B3**     | Throws on purpose, so error reporting can be proved end to end: an error nobody caught reaching Sentry with the environment and version tags attached and the scrubber having run. Unauthenticated, under the same exception. |
 
 **Deleting `/api/_dev/validate-phone` in B3 means all five of these, together:**
 
@@ -103,6 +104,22 @@ exists, and nothing is deleted from here except by deleting the thing itself.
 3. `apps/web/tests/dev-validate-phone.test.ts`
 4. The row above
 5. The `/api/_dev/*` exception paragraph in `docs/api/CONVENTIONS.md` section 2
+
+**Deleting `/api/_dev/throw` in B3 means all four of these, together:**
+
+1. `apps/web/app/api/%5Fdev/throw/route.ts`
+2. Its row above
+3. The two divergence notes immediately below
+4. The `/api/_dev/*` exception paragraph in `docs/api/CONVENTIONS.md` section 2,
+   if `validate-phone` has also gone by then
+
+**`/api/_dev/throw` diverges from CONVENTIONS.md in two agreed ways.** Both were
+decided deliberately in B1.5, both are temporary, and both die with the route.
+
+| Divergence                                                                                                                                                                                                               | Why it was accepted                                                                                                                                                                                          |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Its response is **not** the documented error shape. It throws unhandled, so the framework answers, not us — no `error` object per §4, not the fixed sentence of §5.4, and not necessarily the JSON content type of §3.1. | Catching the error would produce a correct response and prove far less. It would test our own call to Sentry rather than Sentry's capture of an error nobody handled, which is the only thing worth proving. |
+| It throws **before** the §9.1 `Content-Type` check, so a request with no `Content-Type` gets a 500 rather than a 415.                                                                                                    | It reads no body, so there is nothing to check, and returning 415 would defeat the route's only purpose.                                                                                                     |
 
 When this table is empty, the `/api/_dev/*` exception is removed from
 CONVENTIONS.md entirely rather than left standing with nothing under it.
@@ -162,10 +179,141 @@ and the fixed `500`. Once routes are built on it, those guarantees hold by
 construction instead of by each author remembering. The `405` handlers in
 `/api/_dev/validate-phone` exist only because no wrapper does yet.
 
-**A rule for B1.5.** The B1.5 plan includes a `_dev/throw` route for proving
-Sentry receives an unhandled error. It does not exist yet. **If B1.5 creates
-it, B1.5 adds it to this table in the same change** — a `_dev` route and its row
-here are created together or not at all.
+**3. Emit a correlation id from the shared route wrapper.** B1.4 deferred this
+to B1.5; B1.5 deferred it to B3, and the reason is stronger than "the wrapper
+does not exist yet". A correlation id is only worth having if **every** route
+emits one. A header that appears on some routes and not others is worse than
+none, because you cannot tell a request that had no id from one whose error was
+never reported. It belongs with the other guarantees the wrapper owns.
+
+**4. Enforce the "error messages never name a person" rule in the wrapper.**
+B1.5 established it as a standing rule and proved why it is needed: a name in
+free text reaches Sentry intact, and the scrubber cannot detect one. Today the
+rule is remembered rather than enforced, which will not survive B5 to B9 where
+almost every error concerns a specific farmer.
+
+The shared route wrapper is where it becomes structural rather than
+remembered. It already owns the fixed 500 sentence -- the same idea, for the
+same reason. What that enforcement looks like is B3's design decision; that it
+is B3's job is not.
+
+**The rule for B1.5 was met.** B1.5 created `/api/_dev/throw` and added its row
+to the outstanding items table in the same change. The rule stands for any
+future `_dev` route: it and its row are created together or not at all.
+
+---
+
+## ERROR REPORTING (B1.5)
+
+**The Sentry DSN is public on purpose, and is not a leak.** It is exposed to the
+browser as `NEXT_PUBLIC_SENTRY_DSN`. A DSN is a **write-only ingest key**: it can
+create error events in one project and can read nothing — not events, not
+members, not settings. Client-side errors cannot be reported at all unless the
+browser has it. Anyone reading the bundle can send us junk error events, which
+is the whole of the risk. `.gitleaks.toml` scans for DSNs anyway, because the
+scanner should know every credential shape in the project; a DSN being harmless
+to expose is a fact about Sentry, not a reason to stop looking for it.
+
+**No source maps are uploaded, and client stack traces are minified because of
+it.** Uploading needs a build-time `SENTRY_AUTH_TOKEN` and CI wiring, and B1.5
+was not permitted to touch CI. `@sentry/cli` is therefore recorded in
+`pnpm-workspace.yaml` as a build that is deliberately **not** run — it exists
+only to upload source maps. **Server-side** stack traces are unaffected and
+readable. **A B3-or-later task**, with that cost stated.
+
+### What an arriving event actually looks like
+
+Redacting every key called `name` was applied literally, as agreed. Expect
+sparseness rather than meet it during an incident:
+
+- `contexts.os.name`, `contexts.runtime.name` and every other nested `name`
+  arrive as `[redacted]`. The versions beside them survive.
+- `sdk.name` **does** arrive, as the constant `sentry.javascript.nextjs`. Sentry
+  attaches it during envelope assembly, after `beforeSend` has run, so the
+  scrubber never sees it. It carries nothing personal.
+- What remains, and is what an error is actually read from: the exception type
+  and message, the full stack trace with filenames, line and column numbers, the
+  `environment` and `app_version` tags, the release, the level, and device,
+  memory and locale context.
+
+### The scrubber is the last gate we control, not the last gate
+
+`beforeSend` is the final point in the pipeline that runs **our** code. The SDK
+continues to build the envelope after it returns, and fields attached in that
+window are never seen by the scrubber.
+
+One field does this today: **`sdk.name`** arrives as the constant
+`sentry.javascript.nextjs`, despite the rule that redacts every key called
+`name`. It carries nothing personal, so there is nothing to fix.
+
+**The limit is what matters, not that field.** Our rule covers everything the
+scrubber can reach, and nothing it cannot. If a future SDK version attaches
+anything else after `beforeSend` — a new context, a new default field, richer
+metadata — **it is outside the rule and will not be redacted**, silently.
+
+There is no way to assert against this in advance. The only way to find it is
+the way it was found in B1.5: capture a real transmitted envelope and read it.
+**Any SDK upgrade should do that**, and compare against what this document
+records above.
+
+### Three leaks found by reading a transmitted envelope
+
+None was visible from reading the code, and none was in the original brief.
+
+| Found                                                                                                                                                                                                                                                                                                                              | Fix                                                                                                                                    |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| **`ContextLines` shipped source code.** It attaches the source lines around the throw site verbatim. Those lines are code, so the scrubber's rules — values under a named key, strings shaped like a phone number — cannot judge them. A literal, a field name or a comment near a failure travelled to Sentry exactly as written. | Integration disabled. Filenames, line and column numbers survive, which is what a stack trace is for.                                  |
+| **`server_name` shipped a person's name.** Sentry defaults it to the machine hostname, which on a laptop is often `<someone>s-MacBook-Air.local`.                                                                                                                                                                                  | `serverName` is set to the environment name instead.                                                                                   |
+| **Four tests passed while transmitting nothing.** Closing the Sentry client between tests left it closed, so every "no personal data appears" assertion passed against an empty payload.                                                                                                                                           | Every envelope test now asserts something _was_ transmitted before asserting what it did not contain. The B1.3 lesson, in a new place. |
+
+### STANDING RULE: error messages never name a person
+
+**Error messages, log lines and exception text never interpolate a farmer's
+name, phone number or national ID. Reference records by id only.**
+
+Not `could not register Achol Deng`, but `could not register farmer
+0f3c1a9e-...`.
+
+**Why this is a rule and not a preference.** The scrubber removes values under
+named keys and strings shaped like a South Sudan number. Nothing distinguishes a
+person's name from any other word in a sentence, so **a name written into an
+error message reaches Sentry intact**. Verified in B1.5, and there is a test
+named as a known limit so it cannot be assumed away.
+
+Today the only protection is that we do not do it. **That is a discipline, not a
+guarantee**, and a discipline decays: B5 through B9 are modules where nearly
+every error is about one specific farmer, written by whoever is working that
+week. The rule has to outlive the person who remembers why.
+
+**A national ID is the worst case.** It is not scrubbed by any rule -- it is not
+a listed key when written in free text, and it is not phone-shaped -- and it is
+the one identifier a farmer cannot change after it leaks.
+
+Enforcement belongs in the shared route wrapper, in B3. See the B3 opening
+tasks.
+
+### What the scrubber does not do
+
+Stated so it is not assumed away:
+
+- **A personal name or national ID in free text survives.** This is the one that
+  will bite, and it has its own standing rule above — see "error messages never
+  name a person". There is a test named as a known limit.
+- **The phone pass over-matches, deliberately.** Any run of digits containing
+  something that parses as a South Sudan number is redacted whole, so a
+  13-digit millisecond timestamp or a 12-digit integer id is occasionally lost.
+  ISO timestamps, UUIDs, ports, process ids, stack offsets, SHAs and numbers
+  from other countries are unaffected. A redacted timestamp is cheaper than a
+  leaked farmer's number.
+- **Stack frames from `node_modules` carry absolute file paths**, which on a
+  developer's machine include the operating-system username. Deployed builds run
+  from a deployment path with no username in it, and local machines have no DSN
+  configured, so nothing is sent from the place where this applies. Not fixed,
+  because rewriting filenames would damage the stack traces the reports exist
+  for. Stated so it is known rather than discovered.
+- **Candidates are confirmed by `parseSouthSudanMobile`**, so there is exactly
+  one definition of a valid South Sudan number in the codebase rather than a
+  regex that can drift from `phoneSchema`.
 
 ---
 
