@@ -15,6 +15,25 @@ serves that.
 
 These are for you, the assistant reading this at the start of a session.
 
+**Who you are.** Two humans, two assistants, one repository:
+
+- **Alieu-Claude** — the assistant working with Alieu. Handles **the web UI**
+  (everything under `apps/web` except `app/api/**`) and the parallel P-units
+  (P1). Signs every log entry `Alieu-Claude`.
+- **Monkon-Claude** — the assistant working with Monkonmlah. Handles **the
+  backend and the database**: the B-unit spine, migrations, `packages/shared`,
+  API routes, `app/api/**`. Signs every log entry `Monkon-Claude`.
+
+Say which one you are in your first message of the session, and sign your log
+entries with that name. Both humans push under the same GitHub login, so the
+signature here is the only reliable record of which side wrote what.
+
+**Never rewrite the other side's work, and never restart your own from
+scratch.** Where the last entry says work stopped is where the next session
+continues — check out the branch it names and carry on. A fresh start is a
+decision a human makes, written in the log, not something a session does
+because a rewrite looks easier than reading.
+
 **At the start of every session, before any work:**
 
 1. Read this whole file, then `git fetch` and read the open pull requests.
@@ -46,7 +65,7 @@ These are for you, the assistant reading this at the start of a session.
 **Log entry format:**
 
 ```
-### YYYY-MM-DD HH:MM UTC — Lane N → Lane M (or → both)
+### YYYY-MM-DD HH:MM UTC — Alieu-Claude → Monkon-Claude (or the reverse, or → both)
 **Done.** …
 **Planned next.** …
 **Needs from you.** … (or "Nothing.")
@@ -57,10 +76,16 @@ These are for you, the assistant reading this at the start of a session.
 
 ## THE LANES
 
-| Lane       | Work                                                                                                              | Branch prefix              |
-| ---------- | ----------------------------------------------------------------------------------------------------------------- | -------------------------- |
-| **Lane 1** | The backend spine: units B2–B11 in `docs/UNITS.md`, then the surface assigned there                               | `feat/b<n>-…`, `chore/…`   |
-| **Lane 2** | Parallel units that do not touch the spine's tables: **P1** now (C-13); UI screens against fixture data alongside | `feat/p<n>-…`, `feat/ui-…` |
+| Lane                       | Work                                                                                                                   | Branch prefix              |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------- | -------------------------- |
+| **Lane 1 — Monkon-Claude** | Backend and database: the spine, units B2–B11 in `docs/UNITS.md`, migrations, `packages/shared`, API routes            | `feat/b<n>-…`, `chore/…`   |
+| **Lane 2 — Alieu-Claude**  | The web UI (`apps/web`, screens on fixture data until routes exist) and parallel units that do not touch the spine: P1 | `feat/p<n>-…`, `feat/ui-…` |
+
+Division of labour, agreed 2026-09-02: **Alieu-Claude builds the UI; Monkon-Claude
+builds the backend and the database.** When a screen needs a route or a schema
+that does not exist yet, Alieu-Claude builds against fixtures shaped like
+`docs/data-model.md` and writes a _Needs from you_ line; Monkon-Claude builds the
+route and replies in the log. Neither side builds the other's part.
 
 Both lanes push under the GitHub login `cyberdhators`. The pull request title
 carries the unit id (`feat(b2): …`, `feat(p1): …`), which is how a reader
@@ -144,7 +169,7 @@ Lane 1: please add your rows as you go. Lane 2 filled in what it could read from
 
 ## CONTINUE FROM HERE
 
-### Lane 2 — P1, directories and learning library
+### Lane 2 (Alieu-Claude) — P1, directories and learning library
 
 **Done, in this PR:**
 
@@ -167,7 +192,7 @@ Lane 1: please add your rows as you go. Lane 2 filled in what it could read from
 2. Add the `_dev`-style round-trip test the B1.4 pattern expects, then delete nothing — the dev route is Lane 1's to remove in B3.
 3. Ask CORWADO the one open question in C-13's notes (whether officers may propose a directory entry from the field). It changes whether the officer role gets a write route.
 
-### Lane 2 — UI: where to continue
+### Lane 2 (Alieu-Claude) — UI: where to continue
 
 **Shipped (PR #18, stacked on #17):** first portal — shell with sidebar, design tokens copied from the client design document, directories and library screens, `/design` page. The user rejected the look as generic ("just like the design I shared"). Do not extend that skin.
 
@@ -176,7 +201,7 @@ Lane 1: please add your rows as you go. Lane 2 filled in what it could read from
 - Art direction "The Register" — the full brief is reproduced below so the next session does not need the chat. Done so far: `app/globals.css` (new tokens), `app/layout.tsx` (Fraunces / Instrument Sans / JetBrains Mono via `next/font/google` — built into Next, not a dependency), `components/portal/Shell.tsx` + css (masthead with text-tab nav replaces the sidebar), `components/ui/index.tsx` + `ui.module.css` (stamps, mono chips, ruled tables, 2px corners), `components/screens.module.css`, `lib/fixtures/farmers.ts` (farmers, officers, cooperatives, farms with boundary polygons, verification events, consents), `lib/farmers/schema.ts` (local Zod schema — moves to `packages/shared` when C-5 is written; Lane 1 decides the final shape), `lib/farmers/presentation.ts`.
 - Not written yet: `app/(portal)/farmers/{page,[id]/page,new/page,review/page}.tsx` and `components/farmers/**`; the inline-SVG boundary component; re-skin pass over `components/directories/**` and `components/library/**`; `/design` update; overview home; the check run.
 
-**To resume:** `git checkout wip/ui-register-reskin`, fix the TS6133, build the farmers screens and the rest per the brief, run typecheck / lint / format / format:check / test / `--filter @agri-erp/web build`, then rebase or merge onto `feat/ui-portal-directories-library` and push so PR #18's preview updates. Never run `pnpm install` from a Fable session — the registry is ~112 KB/s from the dev machine; installs need `--fetch-timeout 1800000 --network-concurrency 2` and are done by a separate cheap agent. Default `node` on the dev machine is broken; use `/usr/local/opt/node@24/bin`.
+**To resume (Alieu-Claude, next session — continue, do not rewrite):** `git checkout wip/ui-register-reskin`, fix the TS6133, build the farmers screens and the rest per the brief, run typecheck / lint / format / format:check / test / `--filter @agri-erp/web build`, then rebase or merge onto `feat/ui-portal-directories-library` and push so PR #18's preview updates. Never run `pnpm install` from a Fable session — the registry is ~112 KB/s from the dev machine; installs need `--fetch-timeout 1800000 --network-concurrency 2` and are done by a separate cheap agent. Default `node` on the dev machine is broken; use `/usr/local/opt/node@24/bin`.
 
 **The brief (art direction, abbreviated but complete enough to execute):**
 
@@ -190,7 +215,7 @@ Lane 1: please add your rows as you go. Lane 2 filled in what it could read from
 
 **UI, if Lane 2 starts it before the routes exist:** build the pages under `apps/web/app/(portal)/directories` and `/library` against the placeholder seed shapes, validate forms with the shared Zod schemas, and do not call any route. Wire them when step 1 lands.
 
-### Lane 1 — the spine
+### Lane 1 (Monkon-Claude) — the spine
 
 _Lane 1 to fill in. From the open PRs, Lane 2 believes: B2 is in #15 awaiting review; B3 is next and is the unit six parked items in `docs/PROJECT-STATE.md` come due on._
 
@@ -208,7 +233,7 @@ _Lane 1 to fill in. From the open PRs, Lane 2 believes: B2 is in #15 awaiting re
 
 ## LOG
 
-### 2026-09-02 21:30 UTC — Lane 2 → Lane 1
+### 2026-09-02 21:30 UTC — Alieu-Claude → Monkon-Claude
 
 **Done.** Unit P1 (C-13: directories (i)(j)(k) and learning library (m)) —
 database, Prisma models, shared Zod validation, tests and placeholder seed.
@@ -240,7 +265,9 @@ checks every one); JSON keys are snake_case.
 - `package.json` — one script, `directories:seed`.
 - `packages/shared/src/index.ts` — exports appended at the end.
 
-### 2026-09-02 23:20 UTC — Lane 2 → Lane 1
+— Alieu-Claude
+
+### 2026-09-02 23:20 UTC — Alieu-Claude → Monkon-Claude
 
 **Done.** Portal UI for P1 on branch `feat/ui-portal-directories-library`
 (PR stacked on the P1 PR): design tokens and component set under
@@ -263,7 +290,9 @@ no database calls, no new dependencies. `apps/web/tsconfig.json` gained a
 **Decided.** Portal lives under `apps/web/app/(portal)/…`; role gating for
 `/new` and `/edit` pages is centralised in `components/portal/RequireEditor`.
 
-### 2026-09-02 23:55 UTC — Lane 2 → Lane 1
+— Alieu-Claude
+
+### 2026-09-02 23:55 UTC — Alieu-Claude → Monkon-Claude
 
 **Done.** PR #18 (portal shell, directories, library on fixtures; checks green, Vercel preview builds). PR #17 CI green. Started the re-skin and the Farmers module; the session hit its limit, so the unfinished work is parked on `wip/ui-register-reskin` (`7b331bf`), not in any PR. Details and the full brief are under _Continue from here → Lane 2 — UI_.
 
@@ -276,3 +305,5 @@ no database calls, no new dependencies. `apps/web/tsconfig.json` gained a
 3. Nothing in `apps/web/app/api/**` was touched.
 
 **Decided.** UI ownership widened to all of `apps/web` except `app/api/**` and the Sentry wiring (ownership map updated). Farmer screens are built against `docs/data-model.md` shapes so the wiring to your C-5/C-6 routes is a fixture swap.
+
+— Alieu-Claude
