@@ -31,6 +31,17 @@ saying "parked until B3" named a thing a reader could not look up.
 | **B10**  | Reporting views and export record   | Monkonmlah | Not started     |
 | **B11**  | Backup and restore drill            | Alieu      | Not started     |
 
+## Parallel units — Lane 2
+
+Built alongside the backend spine without touching its tables. Coordination,
+ownership and the log live in `docs/HANDOFF.md`.
+
+| Unit     | What it covers                                                    | Owner  | Status                                        |
+| -------- | ----------------------------------------------------------------- | ------ | --------------------------------------------- |
+| **P1**   | Directories (i)(j)(k) and learning library (m): schema, Zod, seed | Lane 2 | Done except routes — PR #17, waits on B3/B4   |
+| **UI**   | Web portal screens on fixture data: shell, directories, library   | Lane 2 | PR #18 (stacked on #17)                       |
+| **UI-2** | Re-skin ("The Register") and Farmers screens                      | Lane 2 | Parked, unfinished — `wip/ui-register-reskin` |
+
 ## Surfaces
 
 After the backend units, work splits by surface:

@@ -88,7 +88,7 @@ tells them apart. `docs/UNITS.md` records which human owns which unit.
 - `docs/scope-and-acceptance.md` section C-13
 - Tables: `directory_entry`, `learning_resource`; views `directory_entry_active`, `learning_resource_active`
 - Enum types: `directory_entry_type`, `financial_provider_class`, `learning_topic`, `resource_format`
-- UI: `apps/web/app/(portal)/directories/**`, `apps/web/app/(portal)/library/**` when they exist
+- UI: everything under `apps/web/app/(portal)/**`, `apps/web/components/**`, `apps/web/lib/**` (shell, design system, directories, library, farmers screens against fixture data). Lane 1 owns `apps/web/app/api/**` and `apps/web/app/layout.tsx`'s Sentry/instrumentation wiring.
 
 **Shared** — either lane may edit, minimally, and must log it:
 
@@ -118,14 +118,25 @@ copy of any of these is a bug.
 
 ---
 
+**Added 2026-09-02 (UI lane):**
+
+- Farmer-number format is a **placeholder** (`CE-JUB-000123`) until C-5 defines it. Lane 1: say the real format and Lane 2 changes one helper.
+- Farmer input validation lives in `apps/web/lib/farmers/schema.ts` for now; it moves to `packages/shared` when C-5 is written, in whatever shape Lane 1 chooses. Lane 2 will not add farmer schemas to `packages/shared` unasked.
+- Role preview stub `apps/web/lib/preview.tsx` (role + officer id) is what B3's `requireRole` and session replace.
+- Fonts are loaded with `next/font/google` — part of Next, not a new dependency.
+
+---
+
 ## STATUS BOARD
 
-| Unit | Lane | Status                                                          | PR        | Blocked on                                                    |
-| ---- | ---- | --------------------------------------------------------------- | --------- | ------------------------------------------------------------- |
-| B2   | 1    | In review                                                       | #15       | —                                                             |
-| B3   | 1    | Not started                                                     | —         | #15                                                           |
-| B4   | 1    | Not started                                                     | —         | B3                                                            |
-| P1   | 2    | **Database, validation, seed, tests done. Routes not started.** | (this PR) | #15 to merge first; then B3 for routes, B4 for the audit rows |
+| Unit | Lane | Status                                                                 | PR                                     | Blocked on                                                    |
+| ---- | ---- | ---------------------------------------------------------------------- | -------------------------------------- | ------------------------------------------------------------- |
+| B2   | 1    | In review                                                              | #15                                    | —                                                             |
+| B3   | 1    | Not started                                                            | —                                      | #15                                                           |
+| B4   | 1    | Not started                                                            | —                                      | B3                                                            |
+| P1   | 2    | **Database, validation, seed, tests done. Routes not started.**        | (this PR)                              | #15 to merge first; then B3 for routes, B4 for the audit rows |
+| UI   | 2    | Portal shell + directories + library screens on fixtures, checks green | #18 (stacked on #17)                   | #17                                                           |
+| UI-2 | 2    | **Re-skin ("The Register") + Farmers module — parked, unfinished**     | branch `wip/ui-register-reskin`, no PR | nothing; needs a session to finish                            |
 
 Lane 1: please add your rows as you go. Lane 2 filled in what it could read from the open PRs.
 
@@ -155,6 +166,27 @@ Lane 1: please add your rows as you go. Lane 2 filled in what it could read from
    - `location` is written with raw SQL: `ST_SetSRID(ST_MakePoint($lng, $lat), 4326)::geography`.
 2. Add the `_dev`-style round-trip test the B1.4 pattern expects, then delete nothing — the dev route is Lane 1's to remove in B3.
 3. Ask CORWADO the one open question in C-13's notes (whether officers may propose a directory entry from the field). It changes whether the officer role gets a write route.
+
+### Lane 2 — UI: where to continue
+
+**Shipped (PR #18, stacked on #17):** first portal — shell with sidebar, design tokens copied from the client design document, directories and library screens, `/design` page. The user rejected the look as generic ("just like the design I shared"). Do not extend that skin.
+
+**In progress, parked on `wip/ui-register-reskin` (commit `7b331bf`, one TS6133 unused variable in `lib/fixtures/farmers.ts` line ~454):**
+
+- Art direction "The Register" — the full brief is reproduced below so the next session does not need the chat. Done so far: `app/globals.css` (new tokens), `app/layout.tsx` (Fraunces / Instrument Sans / JetBrains Mono via `next/font/google` — built into Next, not a dependency), `components/portal/Shell.tsx` + css (masthead with text-tab nav replaces the sidebar), `components/ui/index.tsx` + `ui.module.css` (stamps, mono chips, ruled tables, 2px corners), `components/screens.module.css`, `lib/fixtures/farmers.ts` (farmers, officers, cooperatives, farms with boundary polygons, verification events, consents), `lib/farmers/schema.ts` (local Zod schema — moves to `packages/shared` when C-5 is written; Lane 1 decides the final shape), `lib/farmers/presentation.ts`.
+- Not written yet: `app/(portal)/farmers/{page,[id]/page,new/page,review/page}.tsx` and `components/farmers/**`; the inline-SVG boundary component; re-skin pass over `components/directories/**` and `components/library/**`; `/design` update; overview home; the check run.
+
+**To resume:** `git checkout wip/ui-register-reskin`, fix the TS6133, build the farmers screens and the rest per the brief, run typecheck / lint / format / format:check / test / `--filter @agri-erp/web build`, then rebase or merge onto `feat/ui-portal-directories-library` and push so PR #18's preview updates. Never run `pnpm install` from a Fable session — the registry is ~112 KB/s from the dev machine; installs need `--fetch-timeout 1800000 --network-concurrency 2` and are done by a separate cheap agent. Default `node` on the dev machine is broken; use `/usr/local/opt/node@24/bin`.
+
+**The brief (art direction, abbreviated but complete enough to execute):**
+
+- Concept: a working register of a farming economy — editorial, dense, warm, precise. Not a SaaS dashboard, not an admin template.
+- Type: Fraunces (display, 28/36/48, leading 1.05), Instrument Sans (UI, 15/13), JetBrains Mono with tabular numerals for every id, phone, date and figure; labels 11px uppercase 0.08em.
+- Colour, defined only in `globals.css`: bone paper `#F3EEE3`, raised `#FBF8F1`, well `#EAE3D3`; ink forest `#12261B` / `#3E4F44` / `#6F7D73`; hairlines `#D9D0BC` / `#B9AE95`; accent harvest amber `#D8811A` (rare: primary actions, active tab marker, key numbers); status inks verified `#1F6B3A`, pending `#8A5A0B`, rejected `#9B2C1E`, info `#1E4E79`, merged `#4F5B63`; masthead `#0F1F16`. Radius 2px, structure from rules not shadows, focus ring 2px amber.
+- Layout: masthead (wordmark, tabs Farmers · Cooperatives · Directories · Market · Library · Reports, global search "/" and ⌘K, role-preview select), section header row (eyebrow, H1, actions), 12-column grid to 1600px, filter rail in cols 1–3 as plain controls, tables 44px rows with hairlines and sticky uppercase headers, detail pages as dossiers with numbered sections, states as one Fraunces line + one sentence + one action, print stylesheet.
+- Signatures: farm boundaries as inline SVG polygons from fixture GeoJSON (no map library); verification stamps; sync chips; KPI strip as ruled row of Fraunces numbers; days-waiting with escalated stamp past 7 days; duplicate warning inset with side-by-side Compare (warns, never blocks); Arabic-script names with `dir="auto"`.
+- Farmers screens: `/farmers` register (KPIs, filter rail, sortable table, bulk review for supervisor/admin, export stub explaining the logged query/filters/cut-off), `/farmers/[id]` dossier (01 Identity, 02 Consent, 03 Farms, 04 Cooperatives, 05 Verification, 06 Sync & audit; Verify / Merge into / Reject with reason), `/farmers/new` registration with duplicate check preview, `/farmers/review` queue sorted by days waiting, an overview home. Role scope from `docs/data-model.md`: supervisor/officer see state CE, officer only their own caseload, read_only read-only.
+- Placeholders to flag on `/design`: farmer-number format `CE-JUB-000123` (C-5 unwritten); farmer Zod schema local to `apps/web`.
 
 **UI, if Lane 2 starts it before the routes exist:** build the pages under `apps/web/app/(portal)/directories` and `/library` against the placeholder seed shapes, validate forms with the shared Zod schemas, and do not call any route. Wire them when step 1 lands.
 
@@ -230,3 +262,17 @@ no database calls, no new dependencies. `apps/web/tsconfig.json` gained a
 
 **Decided.** Portal lives under `apps/web/app/(portal)/…`; role gating for
 `/new` and `/edit` pages is centralised in `components/portal/RequireEditor`.
+
+### 2026-09-02 23:55 UTC — Lane 2 → Lane 1
+
+**Done.** PR #18 (portal shell, directories, library on fixtures; checks green, Vercel preview builds). PR #17 CI green. Started the re-skin and the Farmers module; the session hit its limit, so the unfinished work is parked on `wip/ui-register-reskin` (`7b331bf`), not in any PR. Details and the full brief are under _Continue from here → Lane 2 — UI_.
+
+**Planned next.** Finish the re-skin and Farmers screens on the WIP branch, fold into #18.
+
+**Needs from you.**
+
+1. Merge order stays #15 → #17 → #18.
+2. When you write C-5: the farmer-number format, and whether `apps/web/lib/farmers/schema.ts` should move into `packages/shared` as-is or be rewritten to your shape. Lane 2 will follow either.
+3. Nothing in `apps/web/app/api/**` was touched.
+
+**Decided.** UI ownership widened to all of `apps/web` except `app/api/**` and the Sentry wiring (ownership map updated). Farmer screens are built against `docs/data-model.md` shapes so the wiring to your C-5/C-6 routes is a fixture swap.
