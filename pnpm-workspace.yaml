@@ -8,4 +8,8 @@ packages:
 allowBuilds:
   '@prisma/client': true
   '@prisma/engines': true
+  # Downloads a binary used only to upload source maps at build time. B1.5
+  # does not upload source maps -- that needs CI wiring and a build-time
+  # token -- so the binary is not wanted. See docs/PROJECT-STATE.md.
+  '@sentry/cli': false
   prisma: true

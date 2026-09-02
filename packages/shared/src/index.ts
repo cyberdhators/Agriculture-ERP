@@ -28,3 +28,5 @@ export {
 } from './errors';
 
 export { devValidatePhoneBodySchema } from './dev';
+
+export { REDACTED, isSensitiveKey, scrub, scrubEvent, scrubString } from './scrub';
