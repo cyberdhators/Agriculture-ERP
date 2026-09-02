@@ -48,11 +48,13 @@ export const LEARNING_MESSAGES = {
   languageUnknown: 'A resource is in English or Arabi Juba.',
   formatUnknown: 'A resource is a PDF, an image, audio or video.',
   storagePathRequired: 'The uploaded file has no storage path.',
-  storagePathShape: 'A storage path is a relative path inside the bucket, with no leading slash or "..".',
+  storagePathShape:
+    'A storage path is a relative path inside the bucket, with no leading slash or "..".',
   storagePathTooLong: `A storage path has at most ${LEARNING_LIMITS.storagePathMax} characters.`,
   byteSizeNotWhole: 'The file size must be a whole number of bytes.',
   byteSizeTooSmall: 'An empty file cannot be published.',
-  byteSizeTooLarge: 'A file larger than 200 MB cannot be offered to a phone on a metered connection.',
+  byteSizeTooLarge:
+    'A file larger than 200 MB cannot be offered to a phone on a metered connection.',
   descriptionTooLong: `A description has at most ${LEARNING_LIMITS.descriptionMax} characters.`,
 } as const;
 
@@ -70,7 +72,10 @@ export const learningResourceInputSchema = z.strictObject({
     .min(1, LEARNING_MESSAGES.titleBlank)
     .max(LEARNING_LIMITS.titleMax, LEARNING_MESSAGES.titleTooLong),
   topic: z.enum(LEARNING_TOPICS, { error: () => LEARNING_MESSAGES.topicUnknown }),
-  crop: z.enum(CROPS, { error: () => LEARNING_MESSAGES.cropUnknown }).nullable().optional(),
+  crop: z
+    .enum(CROPS, { error: () => LEARNING_MESSAGES.cropUnknown })
+    .nullable()
+    .optional(),
   language: z.enum(LANGUAGES, { error: () => LEARNING_MESSAGES.languageUnknown }),
   format: z.enum(RESOURCE_FORMATS, { error: () => LEARNING_MESSAGES.formatUnknown }),
   storage_path: z

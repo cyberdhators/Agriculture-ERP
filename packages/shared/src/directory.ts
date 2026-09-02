@@ -17,7 +17,11 @@ import { phoneSchema } from './phone';
  * about what is valid (CLAUDE.md, Validation).
  */
 
-export const DIRECTORY_ENTRY_TYPES = ['agro_dealer', 'input_supplier', 'financial_service'] as const;
+export const DIRECTORY_ENTRY_TYPES = [
+  'agro_dealer',
+  'input_supplier',
+  'financial_service',
+] as const;
 
 export const FINANCIAL_PROVIDER_CLASSES = [
   'bank',
@@ -92,7 +96,10 @@ const optionalText = (max: number, tooLong: string) =>
  * geography by raw SQL in the route; this is the shape before that.
  */
 export const geoPointSchema = z.strictObject({
-  latitude: z.number().min(-90, DIRECTORY_MESSAGES.latitudeRange).max(90, DIRECTORY_MESSAGES.latitudeRange),
+  latitude: z
+    .number()
+    .min(-90, DIRECTORY_MESSAGES.latitudeRange)
+    .max(90, DIRECTORY_MESSAGES.latitudeRange),
   longitude: z
     .number()
     .min(-180, DIRECTORY_MESSAGES.longitudeRange)
@@ -127,9 +134,15 @@ export function directoryEntryInputSchema(today: string = todayIso()) {
         .trim()
         .min(1, DIRECTORY_MESSAGES.nameBlank)
         .max(DIRECTORY_LIMITS.nameMax, DIRECTORY_MESSAGES.nameTooLong),
-      description: optionalText(DIRECTORY_LIMITS.descriptionMax, DIRECTORY_MESSAGES.descriptionTooLong),
+      description: optionalText(
+        DIRECTORY_LIMITS.descriptionMax,
+        DIRECTORY_MESSAGES.descriptionTooLong,
+      ),
       services: servicesSchema,
-      contact_name: optionalText(DIRECTORY_LIMITS.contactNameMax, DIRECTORY_MESSAGES.contactNameTooLong),
+      contact_name: optionalText(
+        DIRECTORY_LIMITS.contactNameMax,
+        DIRECTORY_MESSAGES.contactNameTooLong,
+      ),
       phone: phoneSchema,
       alt_phone: phoneSchema.nullable().optional(),
       email: z
@@ -139,7 +152,10 @@ export function directoryEntryInputSchema(today: string = todayIso()) {
         .pipe(z.email({ error: () => DIRECTORY_MESSAGES.emailInvalid }).nullable())
         .nullable()
         .optional(),
-      physical_address: optionalText(DIRECTORY_LIMITS.addressMax, DIRECTORY_MESSAGES.addressTooLong),
+      physical_address: optionalText(
+        DIRECTORY_LIMITS.addressMax,
+        DIRECTORY_MESSAGES.addressTooLong,
+      ),
       location: geoPointSchema.nullable().optional(),
       payam_id: locationCodeSchema,
       state_id: locationCodeSchema,

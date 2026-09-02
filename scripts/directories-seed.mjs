@@ -127,9 +127,15 @@ for (const e of entries) {
 }
 for (const r of resources) {
   const { id: rowId, ...rest } = r;
-  await prisma.learningResource.upsert({ where: { id: rowId }, update: {}, create: { id: rowId, ...rest } });
+  await prisma.learningResource.upsert({
+    where: { id: rowId },
+    update: {},
+    create: { id: rowId, ...rest },
+  });
 }
 
-console.log(`  ${entries.length} directory entries, ${resources.length} learning resources (placeholder).`);
+console.log(
+  `  ${entries.length} directory entries, ${resources.length} learning resources (placeholder).`,
+);
 console.log('');
 await prisma.$disconnect();

@@ -23,8 +23,12 @@ const T = 'ZZP1';
 const PATH = 'zz-test/p1';
 
 const cleanup = async () => {
-  await prisma.$executeRawUnsafe(`DELETE FROM public.directory_entry   WHERE state_id LIKE '${T}%'`);
-  await prisma.$executeRawUnsafe(`DELETE FROM public.learning_resource WHERE storage_path LIKE '${PATH}/%'`);
+  await prisma.$executeRawUnsafe(
+    `DELETE FROM public.directory_entry   WHERE state_id LIKE '${T}%'`,
+  );
+  await prisma.$executeRawUnsafe(
+    `DELETE FROM public.learning_resource WHERE storage_path LIKE '${PATH}/%'`,
+  );
   await prisma.$executeRawUnsafe(`DELETE FROM public.payam  WHERE id LIKE '${T}%'`);
   await prisma.$executeRawUnsafe(`DELETE FROM public.county WHERE id LIKE '${T}%'`);
   await prisma.$executeRawUnsafe(`DELETE FROM public.state  WHERE id LIKE '${T}%'`);
