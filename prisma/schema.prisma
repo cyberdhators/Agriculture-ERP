@@ -1,0 +1,81 @@
+// =============================================================================
+// Agriculture ERP -- Prisma schema
+//
+// -----------------------------------------------------------------------------
+// PINNED TO PRISMA 6.19.3, DELIBERATELY
+// -----------------------------------------------------------------------------
+// Exact pins, no carets: "prisma": "6.19.3" and "@prisma/client": "6.19.3".
+//
+// This is a decision, not neglect. The pooled-plus-direct connection pattern
+// below is the path Supabase documents, and this team cannot read code. A
+// well-trodden path is worth more to us than being current.
+//
+// Prisma 7 removed `url` and `directUrl` from this datasource block and moved
+// them to a prisma.config.ts plus a driver adapter. That is a real change to
+// how the application connects, and it will be made once, deliberately, as its
+// own unit with its own attack review -- never as a side effect of scaffolding.
+//
+// Do not bump either package as part of unrelated work.
+//
+// -----------------------------------------------------------------------------
+// `prisma migrate dev` IS NOT USED ON THIS PROJECT
+// -----------------------------------------------------------------------------
+// `migrate dev` requires a shadow database to diff against, and it creates that
+// database itself. The Supabase `postgres` role cannot create databases, so the
+// command times out or fails outright. That failure is expected. It is not a
+// bug to chase, and it is not fixed by retrying.
+//
+// Migrations here are hand-written SQL in timestamped folders under
+// prisma/migrations, applied with `prisma migrate deploy` (pnpm db:migrate).
+//
+// -----------------------------------------------------------------------------
+// PRISMA BYPASSES ROW-LEVEL SECURITY, BY DESIGN -- DO NOT "FIX" THIS
+// -----------------------------------------------------------------------------
+// Prisma connects as the database owner and therefore bypasses RLS entirely.
+// That is correct and intended.
+//
+// RLS is our backstop against the anon and authenticated Supabase keys, which
+// reach the database directly from clients. It is NOT our defence against our
+// own server. Server-side, authorisation is enforced by requireRole in the
+// Next.js API routes, which checks session and role before any query runs.
+//
+// So: every table enables RLS with no policies (deny-by-default), and Prisma
+// bypasses it as owner. Both are deliberate. A future session that "fixes" this
+// by connecting Prisma as a restricted role will break every API route and gain
+// nothing.
+//
+// Prisma cannot author RLS policies. No Prisma version has schema syntax for
+// ENABLE ROW LEVEL SECURITY or CREATE POLICY. Policies are hand-written SQL in
+// migrations, which is why that rule is written into the migration files.
+//
+// -----------------------------------------------------------------------------
+// THE TWO CONNECTION URLS
+// -----------------------------------------------------------------------------
+//   DATABASE_URL  Pooled, port 6543, pgbouncer=true & connection_limit=1.
+//                 Used by the application at runtime.
+//
+//   DIRECT_URL    Direct, port 5432. Used by MIGRATIONS and introspection,
+//                 which cannot run through the pooler.
+//
+// Both carry ?schema=public. That is how Prisma is restricted to the public
+// schema, so it never introspects, migrates or drops the auth, storage,
+// realtime or graphql schemas that Supabase manages itself.
+//
+// Real values live in .env.local only, never in this repository.
+// =============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// No models yet. _smoke was created and dropped within unit B1.3 to prove a
+// migration applies and reverses; the real data model arrives in B2.
+//
+// Every model added here must come with a migration that creates the table AND
+// enables row-level security on it, in the same migration, with no policies.

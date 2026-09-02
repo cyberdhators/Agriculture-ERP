@@ -1,3 +1,11 @@
 packages:
   - 'apps/*'
   - 'packages/*'
+
+# Prisma fetches its query engines and generates its client in postinstall
+# scripts. pnpm blocks dependency lifecycle scripts by default; these are
+# allowed deliberately.
+allowBuilds:
+  '@prisma/client': true
+  '@prisma/engines': true
+  prisma: true

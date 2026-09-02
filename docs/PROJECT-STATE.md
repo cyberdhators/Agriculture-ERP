@@ -1,0 +1,84 @@
+# PROJECT STATE
+
+Read this at the start of every session, after `CLAUDE.md`. It records
+decisions and constraints that are not derivable from the code.
+
+`CLAUDE.md` is the law. This file is the running state.
+
+---
+
+## CREDENTIALS
+
+**Claude may hold STAGING credentials.** They live in `.env.local` at the
+repository root, which is git-ignored. Claude may read them, run database
+commands against staging, and report what those commands returned.
+
+**Claude will never hold production credentials.** Production values live only
+in Vercel and in GitHub secrets. They are never placed in `.env.local`, never
+pasted into a session, and never committed.
+
+**If anything from production is ever needed, Claude stops and asks.** No
+exceptions, no workarounds, no "just this once to check something".
+
+The staging Supabase project reference is `xmmxbrxmfgodhpwolrvk`. It is not a
+secret. The connection strings that contain it are.
+
+---
+
+## GUARDS ARE TESTED IN BOTH DIRECTIONS
+
+**Rule: no unit is done until every guard it introduces has been tested both
+refusing and accepting.** Refusal alone is not evidence.
+
+**What happened.** During unit B1.3, a project reference that had been invented
+rather than issued sat in the `db:reset` guard for about an hour before it was
+corrected. No real Supabase project existed yet when the guard was written.
+
+**Why it went unnoticed.** The guard was tested three times, and every test was
+a refusal: the unset placeholder, a missing `.env.local`, and a deliberately
+wrong project reference. All three passed. The direction never tested was
+**acceptance** — that the guard lets the real staging project through — because
+there was no real project to test with. A guard that refuses everything passes
+every refusal test perfectly.
+
+**What the damage could have been.** Limited, because the guard fails closed:
+with a wrong reference it refuses the real staging project too. So it could not
+have reset the wrong database. The real costs were a `db:reset` that would never
+have run, and a false sense of protection.
+
+**What testing acceptance immediately found.** The first genuine acceptance test
+exposed a second, unrelated bug: the guard spawned `prisma` by bare name and
+relied on `pnpm` putting `node_modules/.bin` on `PATH`, so it crashed with
+`spawn prisma ENOENT` when run any other way. That bug was invisible to every
+refusal test, because refusal returns before anything is spawned.
+
+**How to test acceptance safely.** Point the guard at a connection string that
+contains the real project reference but an unroutable host — for example
+`127.0.0.1` on a port with nothing listening. The guard accepts, the command
+launches, and the connection fails harmlessly. Nothing real is touched.
+
+---
+
+## STACK DECISIONS NOT OBVIOUS FROM THE CODE
+
+**Prisma is pinned to exactly 6.19.3**, both `prisma` and `@prisma/client`, no
+carets. This is deliberate, not neglect. The pooled-plus-direct connection
+pattern in `schema.prisma` is the path Supabase documents; this team cannot read
+code; a well-trodden path is worth more than being current.
+
+Prisma 7 removes `url` and `directUrl` from the datasource block and replaces
+them with a config file and a driver adapter. That upgrade happens once,
+deliberately, as its own unit with its own attack review — never as a side
+effect of scaffolding.
+
+Note: `@prisma/engines-version` resolves to a 7.x-numbered version. That is
+Prisma's internal engine pointer, versioned independently of the CLI. It is not
+a Prisma 7 installation.
+
+**`prisma migrate dev` is not used on this project.** It requires a shadow
+database that it creates itself, and the Supabase `postgres` role cannot create
+databases. Migrations are hand-written SQL applied with `prisma migrate deploy`.
+
+**Prisma connects as database owner and bypasses row-level security by design.**
+RLS is the backstop against the anon and authenticated keys, not against our own
+server. Server-side authorisation is `requireRole` in the API routes.

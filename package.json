@@ -10,7 +10,12 @@
     "typecheck": "pnpm -r typecheck",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "postinstall": "prisma generate",
+    "db:migrate": "node scripts/with-env.mjs prisma migrate deploy",
+    "db:seed": "node scripts/with-env.mjs prisma db seed",
+    "db:studio": "node scripts/with-env.mjs prisma studio",
+    "db:reset": "node scripts/db-reset.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -18,8 +23,15 @@
     "eslint": "^10.9.1",
     "eslint-config-prettier": "^10.1.8",
     "prettier": "^3.9.6",
+    "prisma": "6.19.3",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.69.0",
     "vitest": "^4.1.11"
+  },
+  "dependencies": {
+    "@prisma/client": "6.19.3"
+  },
+  "prisma": {
+    "seed": "node prisma/seed.mjs"
   }
 }
