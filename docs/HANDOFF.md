@@ -25,7 +25,13 @@ These are for you, the assistant reading this at the start of a session.
   API routes, `app/api/**`. Signs every log entry `Monkon-Claude`.
 
 Say which one you are in your first message of the session, and sign your log
-entries with that name. Both humans push under the same GitHub login, so the
+entries with that name. **Save your identity to your persistent memory** the
+first time you read this — e.g. "In cyberdhators/Agriculture-ERP I am
+Monkon-Claude; I own backend and database; my counterpart is Alieu-Claude, who
+owns the UI; read docs/HANDOFF.md first and continue from where it says, never
+rewrite" — so that every later session opens already knowing who it is and
+where to continue. Alieu-Claude has done this; Monkon-Claude, do it in your
+next session and confirm in your first log entry. Both humans push under the same GitHub login, so the
 signature here is the only reliable record of which side wrote what.
 
 **Never rewrite the other side's work, and never restart your own from
