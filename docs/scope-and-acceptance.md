@@ -126,6 +126,79 @@ mark C-2.4 partially met and C-2.5 not met, and record both as B3 opening tasks.
 
 ---
 
+## C-13 — DIRECTORIES AND LEARNING LIBRARY
+
+**Deliverables (i), (j), (k) and (m). Unit P1.**
+
+Built out of the numbered order in `CLAUDE.md` §2 (group 4 before group 3),
+deliberately: these tables hold no field data and depend on nothing but the
+location hierarchy, so a second person can build them while the spine is
+built. The deviation is recorded in `docs/DECISIONS.md`.
+
+Source: Inception Report section 5, items (i), (j), (k), (m), and the scope
+note above — *"maintained reference information, not a transactional system.
+(k) holds, transfers and lends nothing. (m) is a repository, not a course or
+examination system."* Shapes from `docs/data-model-extension.md` §3 and §4.
+
+An administrator maintains these lists. Everyone else looks them up.
+
+C-13.1  Agro-dealers, input suppliers and financial services are one kind of
+        record, a directory entry, distinguished by type. An entry has a name,
+        at least one South Sudan mobile number, an optional email, address and
+        map point, and a list of the services it offers.
+
+C-13.2  Every entry is located in exactly one payam and carries its state
+        directly, and that state always equals the payam's state. The database
+        enforces this as it does for payam and county in C-2.3.
+
+C-13.3  A financial service says what kind it is — bank, microfinance, mobile
+        money, cooperative or SACCO, or other — and no other kind of entry
+        does. The database refuses both a financial service without a kind and
+        a dealer with one.
+
+C-13.4  Every entry records the date it was last checked, and that date is
+        never in the future. An entry can be marked inactive without being
+        removed. Removal is soft deletion, and a removed entry appears in no
+        list, count or export.
+
+C-13.5  The same validation rules run in the web form and in the API, from one
+        definition in `packages/shared`. A phone number the farmer record would
+        refuse, the directory refuses too.
+
+C-13.6  A learning resource is a catalogue card for a file held in Supabase
+        Storage: title, topic, optional crop, language (English or Arabi
+        Juba), format (PDF, image, audio, video), size in bytes and an
+        optional description. The file itself never enters the database.
+
+C-13.7  Exactly one live card exists per stored file. Removing a card is soft
+        deletion, and it releases the file's path so the file can be
+        registered again.
+
+C-13.8  A card starts unpublished. Officers see published cards only;
+        administrators see all. The size is shown beside every download.
+
+C-13.9  Reads and writes go through API routes that check role on the server
+        (C-3). Only an administrator creates, changes or removes an entry or a
+        card. Every such write appends an audit event (C-4). A supervisor's and
+        an officer's directory reads are scoped to their state.
+
+### Notes for the builder
+
+C-13.1 to C-13.8 are met by the database, the shared validation and the tests
+in unit P1. **C-13.9 requires B3 and B4 and is NOT DONE until they exist.** The
+routes are specified in `docs/HANDOFF.md`, *Continue from here*.
+
+Nothing in this section is an account. If a field starts to look like a
+balance, a loan, a repayment, an enrolment or a score, stop and ask.
+
+**One open question for CORWADO, not blocking:** may an extension officer
+propose a new directory entry from the field (a shop they found), for an
+administrator to approve? The contract says the administrator maintains the
+list. If yes, the officer role gets a write route and entries gain a
+`pending` state. Until answered, officers read only.
+
+---
+
 ## SECTIONS NOT YET WRITTEN
 
 Written one unit ahead of the build, not all at once, so that criteria reflect
@@ -141,7 +214,6 @@ what the preceding unit actually produced.
 - C-10 — dashboards, reporting and export — (p), (q)
 - C-11 — backup and disaster recovery — (t)
 - C-12 — cooperatives — (l)
-- C-13 — directories and learning library — (i), (j), (k), (m)
 - C-14 — market prices, produce listings, buyer matching — (f), (g), (h)
 - C-15 — SMS notifications — (n)
 - C-16 — weather advisories — (e)

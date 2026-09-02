@@ -135,7 +135,11 @@ run('soft deletion and the active views', () => {
        FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
        WHERE n.nspname='public' AND c.relkind='v' AND c.relname LIKE '%_active'`,
     );
-    expect(views).toHaveLength(3);
+    // Every _active view in the database, not only B2's: a later unit that
+    // adds one without security_invoker fails here too (P1 added two).
+    expect(views.map((v) => v.view_name)).toEqual(
+      expect.arrayContaining(['state_active', 'county_active', 'payam_active']),
+    );
     for (const v of views) expect(v.invoker_on, `${v.view_name} bypasses RLS`).toBe(true);
   });
 
