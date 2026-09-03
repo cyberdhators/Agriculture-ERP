@@ -41,7 +41,10 @@ export function Shell({ children }: { children: ReactNode }) {
           target.tagName === 'TEXTAREA' ||
           target.tagName === 'SELECT' ||
           target.isContentEditable);
-      if ((event.key === '/' && !typing) || (event.key === 'k' && (event.metaKey || event.ctrlKey))) {
+      if (
+        (event.key === '/' && !typing) ||
+        (event.key === 'k' && (event.metaKey || event.ctrlKey))
+      ) {
         event.preventDefault();
         searchRef.current?.focus();
         searchRef.current?.select();

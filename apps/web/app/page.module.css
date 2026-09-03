@@ -27,9 +27,9 @@
   place-items: center;
   width: 56px;
   height: 56px;
-  border-radius: 16px;
+  border-radius: var(--radius-card);
   background: var(--leaf);
-  color: #fff;
+  color: var(--band-ink);
   font-family: var(--font-display);
   font-weight: 800;
   font-size: 28px;

@@ -124,7 +124,8 @@ export function FarmerDossier({ id }: { id: string }) {
 
   function submit(kind: Exclude<ActionKind, null>) {
     const who = `${farmer!.given_name} ${farmer!.family_name}`;
-    if (kind === 'verify') setRecorded(`Recorded (preview — no server): ${who} verified as a new farmer.`);
+    if (kind === 'verify')
+      setRecorded(`Recorded (preview — no server): ${who} verified as a new farmer.`);
     if (kind === 'reject')
       setRecorded(`Recorded (preview — no server): ${who} rejected. Reason: ${reason.trim()}`);
     if (kind === 'merge') {
@@ -167,7 +168,9 @@ export function FarmerDossier({ id }: { id: string }) {
             <div className={styles.stampRow}>
               <Stamp kind={statusStamp(farmer)}>{STATUS_LABEL[status]}</Stamp>
               {escalated ? <Stamp kind="escalated">Escalated</Stamp> : null}
-              {farmer.registration_source === 'self' ? <Stamp kind="info">Self-registered</Stamp> : null}
+              {farmer.registration_source === 'self' ? (
+                <Stamp kind="info">Self-registered</Stamp>
+              ) : null}
             </div>
             <DefinitionList
               items={[
@@ -272,10 +275,16 @@ export function FarmerDossier({ id }: { id: string }) {
                 },
                 {
                   term: 'Registration source',
-                  value: farmer.registration_source === 'officer' ? 'Registered by an officer' : 'Self-registered',
+                  value:
+                    farmer.registration_source === 'officer'
+                      ? 'Registered by an officer'
+                      : 'Self-registered',
                 },
                 { term: 'Registered by', value: officer ? officer.name : 'Self-registration' },
-                { term: 'Created', value: <span className="mono">{formatDate(farmer.created_at)}</span> },
+                {
+                  term: 'Created',
+                  value: <span className="mono">{formatDate(farmer.created_at)}</span>,
+                },
               ]}
             />
           </Section>
@@ -286,10 +295,15 @@ export function FarmerDossier({ id }: { id: string }) {
                 items={[
                   { term: 'Version', value: <span className="mono">{consent.text_version}</span> },
                   { term: 'Language', value: LANGUAGE_LABELS[consent.language] },
-                  { term: 'Granted', value: consent.granted ? formatDate(consent.granted_at) : 'Not granted' },
+                  {
+                    term: 'Granted',
+                    value: consent.granted ? formatDate(consent.granted_at) : 'Not granted',
+                  },
                   {
                     term: 'Withdrawn',
-                    value: consent.withdrawn_at ? formatDate(consent.withdrawn_at) : 'Still in force',
+                    value: consent.withdrawn_at
+                      ? formatDate(consent.withdrawn_at)
+                      : 'Still in force',
                   },
                 ]}
               />
@@ -298,7 +312,11 @@ export function FarmerDossier({ id }: { id: string }) {
             )}
           </Section>
 
-          <Section no="03" title="Farms" count={`${farms.length} · ${totalAreaHa(farmer.id).toFixed(2)} ha`}>
+          <Section
+            no="03"
+            title="Farms"
+            count={`${farms.length} · ${totalAreaHa(farmer.id).toFixed(2)} ha`}
+          >
             {farms.length === 0 ? (
               <EmptyState
                 title="No farms mapped"
@@ -313,11 +331,7 @@ export function FarmerDossier({ id }: { id: string }) {
                       <div className={styles.farmFactsGrid}>
                         <Mini label="Area" value={`${farm.area_ha.toFixed(2)} ha`} mono />
                         <Mini label="Points" value={String(farm.point_count)} mono />
-                        <Mini
-                          label="GPS accuracy"
-                          value={`±${farm.gps_accuracy_m} m`}
-                          mono
-                        />
+                        <Mini label="GPS accuracy" value={`±${farm.gps_accuracy_m} m`} mono />
                         <Mini
                           label="Trace"
                           value={
@@ -357,7 +371,11 @@ export function FarmerDossier({ id }: { id: string }) {
             )}
           </Section>
 
-          <Section no="04" title="Cooperatives" count={memberships.length ? String(memberships.length) : undefined}>
+          <Section
+            no="04"
+            title="Cooperatives"
+            count={memberships.length ? String(memberships.length) : undefined}
+          >
             {memberships.length === 0 ? (
               <p className="muted">Not a member of any cooperative.</p>
             ) : (
@@ -368,7 +386,8 @@ export function FarmerDossier({ id }: { id: string }) {
                     term: coop ? coop.name : m.cooperative_id,
                     value: (
                       <span>
-                        {titleCase(m.role)} · joined <span className="mono">{formatDate(m.joined_at)}</span>
+                        {titleCase(m.role)} · joined{' '}
+                        <span className="mono">{formatDate(m.joined_at)}</span>
                       </span>
                     ),
                   };
@@ -377,7 +396,11 @@ export function FarmerDossier({ id }: { id: string }) {
             )}
           </Section>
 
-          <Section no="05" title="Verification" count={events.length ? String(events.length) : undefined}>
+          <Section
+            no="05"
+            title="Verification"
+            count={events.length ? String(events.length) : undefined}
+          >
             {events.length === 0 ? (
               <p className="muted">Awaiting first review.</p>
             ) : (
@@ -388,7 +411,14 @@ export function FarmerDossier({ id }: { id: string }) {
                     <div key={ev.id} className={styles.timelineRow}>
                       <span className={styles.timelineWhen}>{formatDate(ev.decided_at)}</span>
                       <div className={styles.timelineBody}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s-2)', flexWrap: 'wrap' }}>
+                        <div
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 'var(--s-2)',
+                            flexWrap: 'wrap',
+                          }}
+                        >
                           <Stamp
                             kind={
                               ev.decision === 'verified'
@@ -448,7 +478,9 @@ export function FarmerDossier({ id }: { id: string }) {
                           <SyncChip status={s.sync_status} />
                         </td>
                         <td className="small muted">
-                          {s.reason_code ? (SYNC_REASON_LABEL[s.reason_code] ?? s.reason_code) : '—'}
+                          {s.reason_code
+                            ? (SYNC_REASON_LABEL[s.reason_code] ?? s.reason_code)
+                            : '—'}
                         </td>
                         <td className="mono">{s.attempt_count}</td>
                       </tr>
@@ -556,7 +588,11 @@ export function FarmerDossier({ id }: { id: string }) {
             <Button variant="ghost" onClick={() => setAction(null)}>
               Cancel
             </Button>
-            <Button variant="danger" onClick={() => submit('reject')} disabled={reason.trim() === ''}>
+            <Button
+              variant="danger"
+              onClick={() => submit('reject')}
+              disabled={reason.trim() === ''}
+            >
               Reject
             </Button>
           </>

@@ -108,9 +108,7 @@ export function Overview() {
         <div className={farmers.homeStack}>
           <Card as="section" padded>
             <div className={farmers.sectionHead}>
-              <h2 className="label">
-                Waiting on review
-              </h2>
+              <h2 className="label">Waiting on review</h2>
               {canReview(role) ? (
                 <Link href="/farmers/review" className="small">
                   Open queue →
@@ -161,9 +159,7 @@ export function Overview() {
 
           <Card as="section" padded>
             <div className={farmers.sectionHead}>
-              <h2 className="label">
-                Recent registrations
-              </h2>
+              <h2 className="label">Recent registrations</h2>
               <Link href="/farmers" className="small">
                 All farmers →
               </Link>
@@ -207,9 +203,7 @@ export function Overview() {
         <aside className={farmers.homeAside}>
           <Card as="section" padded>
             <div className={farmers.sectionHead}>
-              <h2 className="label">
-                Coverage by payam
-              </h2>
+              <h2 className="label">Coverage by payam</h2>
             </div>
             <p className="small muted" style={{ marginBottom: 'var(--s-4)' }}>
               Verified farmers against the total on the register, payam by payam. The solid bar is
@@ -258,9 +252,12 @@ interface CoverageRow {
 function byPayam(pool: readonly Farmer[]): CoverageRow[] {
   const map = new Map<string, CoverageRow>();
   for (const f of pool) {
-    const row =
-      map.get(f.payam_id) ??
-      { payamId: f.payam_id, name: farmerPayamName(f.payam_id) || payamName(f.payam_id), verified: 0, total: 0 };
+    const row = map.get(f.payam_id) ?? {
+      payamId: f.payam_id,
+      name: farmerPayamName(f.payam_id) || payamName(f.payam_id),
+      verified: 0,
+      total: 0,
+    };
     row.total += 1;
     if (f.verification_status === 'verified') row.verified += 1;
     map.set(f.payam_id, row);

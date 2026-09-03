@@ -57,7 +57,10 @@
   font-weight: 560;
   font-size: 19px;
   letter-spacing: -0.01em;
-  font-variation-settings: 'opsz' 36, 'SOFT' 40, 'WONK' 0;
+  font-variation-settings:
+    'opsz' 36,
+    'SOFT' 40,
+    'WONK' 0;
 }
 
 .nav {

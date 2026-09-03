@@ -140,13 +140,7 @@ export function Badge({
 /* ---- Stamp (verification / record status) ---------------------------- */
 
 export type StampKind =
-  | 'verified'
-  | 'pending'
-  | 'rejected'
-  | 'merged'
-  | 'info'
-  | 'escalated'
-  | 'neutral';
+  'verified' | 'pending' | 'rejected' | 'merged' | 'info' | 'escalated' | 'neutral';
 
 const stampClass: Record<StampKind, string> = {
   verified: styles.stampVerified ?? '',

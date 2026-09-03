@@ -258,7 +258,10 @@
   font-weight: 560;
   font-size: 40px;
   line-height: 1;
-  font-variation-settings: 'opsz' 60, 'SOFT' 40, 'WONK' 0;
+  font-variation-settings:
+    'opsz' 60,
+    'SOFT' 40,
+    'WONK' 0;
   font-variant-numeric: tabular-nums;
 }
 
@@ -553,7 +556,10 @@ select.control {
   font-weight: 560;
   font-size: var(--text-h2);
   line-height: 1.1;
-  font-variation-settings: 'opsz' 40, 'SOFT' 60, 'WONK' 0;
+  font-variation-settings:
+    'opsz' 40,
+    'SOFT' 60,
+    'WONK' 0;
 }
 
 .stateBody {
@@ -652,7 +658,10 @@ select.control {
 }
 
 .dialogHeader h2 {
-  font-variation-settings: 'opsz' 40, 'SOFT' 60, 'WONK' 0;
+  font-variation-settings:
+    'opsz' 40,
+    'SOFT' 60,
+    'WONK' 0;
 }
 
 .dialogBody {

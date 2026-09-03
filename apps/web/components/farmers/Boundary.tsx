@@ -45,7 +45,13 @@ function project(ring: Ring, size: number, pad: number): Projected {
     offY + (maxLat - lat) * scale,
   ];
 
-  const points = ring.map(([lon, lat]) => toXY(lon, lat).map((n) => n.toFixed(2)).join(',')).join(' ');
+  const points = ring
+    .map(([lon, lat]) =>
+      toXY(lon, lat)
+        .map((n) => n.toFixed(2))
+        .join(','),
+    )
+    .join(' ');
   let sx = 0;
   let sy = 0;
   for (const [lon, lat] of ring) {

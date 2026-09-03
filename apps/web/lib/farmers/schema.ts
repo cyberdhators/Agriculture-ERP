@@ -50,7 +50,11 @@ export type FarmerErrors = Partial<Record<keyof FarmerFormValues, string>>;
 
 export type FarmerParseResult =
   | { readonly ok: true; readonly values: ParsedFarmer }
-  | { readonly ok: false; readonly errors: FarmerErrors; readonly firstInvalid: keyof FarmerFormValues };
+  | {
+      readonly ok: false;
+      readonly errors: FarmerErrors;
+      readonly firstInvalid: keyof FarmerFormValues;
+    };
 
 /** Youngest a lead farmer may be, in years. */
 export const MIN_AGE = 12;

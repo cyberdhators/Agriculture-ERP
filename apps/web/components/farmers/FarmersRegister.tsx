@@ -118,7 +118,8 @@ export function FarmersRegister() {
       if (fOfficer && f.registered_by !== fOfficer) return false;
       if (fCrop && !cropsForFarmer(f.id).includes(fCrop as Crop)) return false;
       if (fDup === '1' && !dupIds.has(f.id)) return false;
-      if (fCoop && !membershipsForFarmer(f.id).some((m) => m.cooperative_id === fCoop)) return false;
+      if (fCoop && !membershipsForFarmer(f.id).some((m) => m.cooperative_id === fCoop))
+        return false;
       return true;
     });
   }, [scoped, q, fState, fPayam, fStatus, fSex, fAge, fSource, fOfficer, fCrop, fDup, fCoop]);
@@ -194,10 +195,19 @@ export function FarmersRegister() {
     selectablePending.length > 0 && selectablePending.every((f) => selected.has(f.id));
 
   const activeFilters =
-    q || fState || fPayam || fStatus || fSex || fAge || fSource || fOfficer || fCrop || fDup || fCoop;
+    q ||
+    fState ||
+    fPayam ||
+    fStatus ||
+    fSex ||
+    fAge ||
+    fSource ||
+    fOfficer ||
+    fCrop ||
+    fDup ||
+    fCoop;
 
-  const scopeName =
-    role === 'admin' ? 'All states' : STATE_NAMES.CE ?? 'Central Equatoria';
+  const scopeName = role === 'admin' ? 'All states' : (STATE_NAMES.CE ?? 'Central Equatoria');
 
   function reset() {
     set({
@@ -215,9 +225,7 @@ export function FarmersRegister() {
     });
   }
 
-  const officersInScope = OFFICERS.filter(
-    (o) => role === 'admin' || o.status === 'active',
-  );
+  const officersInScope = OFFICERS.filter((o) => role === 'admin' || o.status === 'active');
 
   return (
     <>
@@ -568,7 +576,11 @@ function SortTh({
 }) {
   const active = sort.key === k;
   return (
-    <th scope="col" style={num ? { textAlign: 'right' } : undefined} aria-sort={active ? (sort.dir === 'asc' ? 'ascending' : 'descending') : 'none'}>
+    <th
+      scope="col"
+      style={num ? { textAlign: 'right' } : undefined}
+      aria-sort={active ? (sort.dir === 'asc' ? 'ascending' : 'descending') : 'none'}
+    >
       <button type="button" className={styles.sortBtn} onClick={() => onSort(k)}>
         {label}
         {active ? (
@@ -627,4 +639,3 @@ function payamOptions(pool: readonly Farmer[]): Array<{ value: string; label: st
     .map((id) => ({ value: id, label: farmerPayamName(id) }))
     .sort((a, b) => a.label.localeCompare(b.label));
 }
-

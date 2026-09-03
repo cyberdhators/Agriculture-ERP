@@ -104,10 +104,7 @@ function normalName(farmer: Farmer): string {
  * payam. Warns; it never blocks — the survivor is a person's decision, not the
  * system's. Merged rows and the farmer itself are excluded.
  */
-export function duplicatesOf(
-  farmer: Farmer,
-  pool: readonly Farmer[] = FARMERS,
-): DuplicateMatch[] {
+export function duplicatesOf(farmer: Farmer, pool: readonly Farmer[] = FARMERS): DuplicateMatch[] {
   const matches: DuplicateMatch[] = [];
   for (const other of pool) {
     if (other.id === farmer.id) continue;

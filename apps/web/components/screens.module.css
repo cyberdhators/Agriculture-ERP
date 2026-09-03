@@ -135,7 +135,10 @@
 
 .detailTitle h2 {
   font-size: 28px;
-  font-variation-settings: 'opsz' 48, 'SOFT' 70, 'WONK' 0;
+  font-variation-settings:
+    'opsz' 48,
+    'SOFT' 70,
+    'WONK' 0;
 }
 
 .detailBadges {
@@ -213,7 +216,10 @@
   font-family: var(--font-display);
   font-weight: 560;
   font-size: var(--text-h2);
-  font-variation-settings: 'opsz' 40, 'SOFT' 60, 'WONK' 0;
+  font-variation-settings:
+    'opsz' 40,
+    'SOFT' 60,
+    'WONK' 0;
 }
 
 .prose {
@@ -349,7 +355,10 @@
   font-family: var(--font-display);
   font-weight: 560;
   font-size: var(--text-h2);
-  font-variation-settings: 'opsz' 40, 'SOFT' 60, 'WONK' 0;
+  font-variation-settings:
+    'opsz' 40,
+    'SOFT' 60,
+    'WONK' 0;
 }
 
 .formActions {

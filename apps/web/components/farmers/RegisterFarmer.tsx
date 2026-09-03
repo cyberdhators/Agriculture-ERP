@@ -540,8 +540,11 @@ export function RegisterFarmer() {
               <p className="label">After this step</p>
               <p className="small muted">
                 Crop declarations and the farm boundary are captured on the next screen once the
-                farmer exists — {CROPS.slice(0, 4).map((c) => CROP_LABELS[c]).join(', ')} and more.
-                The intake form records the person and their consent only.
+                farmer exists —{' '}
+                {CROPS.slice(0, 4)
+                  .map((c) => CROP_LABELS[c])
+                  .join(', ')}{' '}
+                and more. The intake form records the person and their consent only.
               </p>
               <p className="small muted">
                 Location is scoped to {payamName(values.payam_id) || 'Central Equatoria'} — the only

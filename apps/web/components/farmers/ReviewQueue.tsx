@@ -91,7 +91,11 @@ export function ReviewQueue() {
         eyebrow="Farmers · Verification"
         title="Review queue"
         subtitle={`Pending farmers, oldest wait first. A wait past ${ESCALATE_AFTER_DAYS} days is escalated and sits at the top.`}
-        actions={<ButtonLink href="/farmers" variant="secondary">Back to register</ButtonLink>}
+        actions={
+          <ButtonLink href="/farmers" variant="secondary">
+            Back to register
+          </ButtonLink>
+        }
       />
 
       <div style={{ marginBottom: 'var(--s-6)' }}>
@@ -112,11 +116,7 @@ export function ReviewQueue() {
         />
       ) : (
         <>
-          <p
-            className="small muted"
-            style={{ marginBottom: 'var(--s-4)' }}
-            aria-live="polite"
-          >
+          <p className="small muted" style={{ marginBottom: 'var(--s-4)' }} aria-live="polite">
             {pluralise(queue.length, 'farmer')} waiting · {escalatedCount} escalated
           </p>
           <div className={styles.reviewList}>
@@ -132,10 +132,16 @@ export function ReviewQueue() {
                   <div className={styles.reviewCard}>
                     <div className={styles.reviewHead}>
                       <Stamp kind={escalated ? 'escalated' : 'pending'}>
-                        {escalated ? `${daysWaiting(farmer)}d — escalated` : `${daysWaiting(farmer)}d waiting`}
+                        {escalated
+                          ? `${daysWaiting(farmer)}d — escalated`
+                          : `${daysWaiting(farmer)}d waiting`}
                       </Stamp>
                       <div className={styles.reviewName}>
-                        <Link href={`/farmers/${farmer.id}`} className={styles.reviewNameMain} dir="auto">
+                        <Link
+                          href={`/farmers/${farmer.id}`}
+                          className={styles.reviewNameMain}
+                          dir="auto"
+                        >
                           {farmer.given_name} {farmer.family_name}
                         </Link>
                         <span className="small muted">
@@ -153,9 +159,13 @@ export function ReviewQueue() {
                         <div className="small">
                           <span className="mono">{formatPhone(farmer.phone)}</span>
                           {' · '}
-                          {farms.length ? `${farms.length} farm${farms.length > 1 ? 's' : ''} · ${totalAreaHa(farmer.id).toFixed(2)} ha` : 'no farm mapped'}
+                          {farms.length
+                            ? `${farms.length} farm${farms.length > 1 ? 's' : ''} · ${totalAreaHa(farmer.id).toFixed(2)} ha`
+                            : 'no farm mapped'}
                         </div>
-                        <div className="small muted">Crops: {crops.length ? crops.join(', ') : '—'}</div>
+                        <div className="small muted">
+                          Crops: {crops.length ? crops.join(', ') : '—'}
+                        </div>
                         {duplicates.length > 0 ? (
                           <DuplicateWarning farmer={farmer} matches={duplicates} />
                         ) : null}

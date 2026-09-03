@@ -77,7 +77,11 @@ function CompareBody({ a, b }: { a: Farmer; b: Farmer }) {
   const rows: ReadonlyArray<{ label: string; a: string; b: string }> = [
     { label: 'Farmer no', a: a.farmer_number, b: b.farmer_number },
     { label: 'Name', a: `${a.given_name} ${a.family_name}`, b: `${b.given_name} ${b.family_name}` },
-    { label: 'Sex / YOB', a: `${a.sex.toUpperCase()} · ${a.year_of_birth}`, b: `${b.sex.toUpperCase()} · ${b.year_of_birth}` },
+    {
+      label: 'Sex / YOB',
+      a: `${a.sex.toUpperCase()} · ${a.year_of_birth}`,
+      b: `${b.sex.toUpperCase()} · ${b.year_of_birth}`,
+    },
     { label: 'Phone', a: formatPhone(a.phone), b: formatPhone(b.phone) },
     { label: 'Payam', a: farmerPayamName(a.payam_id), b: farmerPayamName(b.payam_id) },
     {
@@ -87,8 +91,14 @@ function CompareBody({ a, b }: { a: Farmer; b: Farmer }) {
     },
     {
       label: 'Crops',
-      a: cropsForFarmer(a.id).map((c) => CROP_LABELS[c]).join(', ') || '—',
-      b: cropsForFarmer(b.id).map((c) => CROP_LABELS[c]).join(', ') || '—',
+      a:
+        cropsForFarmer(a.id)
+          .map((c) => CROP_LABELS[c])
+          .join(', ') || '—',
+      b:
+        cropsForFarmer(b.id)
+          .map((c) => CROP_LABELS[c])
+          .join(', ') || '—',
     },
     { label: 'Registered', a: formatDate(a.created_at), b: formatDate(b.created_at) },
   ];

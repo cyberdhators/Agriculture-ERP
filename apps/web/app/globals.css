@@ -144,14 +144,20 @@ h4 {
   font-weight: 560;
   line-height: 1.05;
   letter-spacing: -0.01em;
-  font-variation-settings: 'opsz' 40, 'SOFT' 60, 'WONK' 0;
+  font-variation-settings:
+    'opsz' 40,
+    'SOFT' 60,
+    'WONK' 0;
 }
 
 h1 {
   font-size: var(--text-h1);
   font-weight: 600;
   letter-spacing: -0.02em;
-  font-variation-settings: 'opsz' 72, 'SOFT' 80, 'WONK' 0;
+  font-variation-settings:
+    'opsz' 72,
+    'SOFT' 80,
+    'WONK' 0;
 }
 
 h2 {

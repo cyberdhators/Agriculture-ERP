@@ -190,10 +190,10 @@ export function DesignPage() {
         <div className={styles.sectionHead}>
           <h2 id="h-palette">Palette</h2>
           <p>
-            &ldquo;The Register&rdquo;: a bone-paper ground, forest ink, and harvest amber as the one
-            action colour, used rarely. Structure is carried by the two rule tokens, not by fills or
-            shadow. Contrast is pushed past WCAG AA because the portal is read in sunlight. Dust is a
-            fill and never a text colour.
+            &ldquo;The Register&rdquo;: a bone-paper ground, forest ink, and harvest amber as the
+            one action colour, used rarely. Structure is carried by the two rule tokens, not by
+            fills or shadow. Contrast is pushed past WCAG AA because the portal is read in sunlight.
+            Dust is a fill and never a text colour.
           </p>
         </div>
         <div className={styles.swatches}>
@@ -336,9 +336,9 @@ export function DesignPage() {
         <div className={styles.sectionHead}>
           <h2 id="h-stamps">Stamps</h2>
           <p>
-            A farmer&apos;s state, stamped like an inspector&apos;s mark: a ruled inset with an ink and
-            a tint from the status tokens. The word carries the meaning; escalated is a pending wait
-            gone past seven days.
+            A farmer&apos;s state, stamped like an inspector&apos;s mark: a ruled inset with an ink
+            and a tint from the status tokens. The word carries the meaning; escalated is a pending
+            wait gone past seven days.
           </p>
         </div>
         <Card padded as="div">
@@ -359,7 +359,8 @@ export function DesignPage() {
           <h2 id="h-sync">Sync chips</h2>
           <p>
             Where a record is on its way up from the field. Offline-first: a row can be waiting or
-            sending, and a failed upload keeps a reason on the device rather than dropping the record.
+            sending, and a failed upload keeps a reason on the device rather than dropping the
+            record.
           </p>
         </div>
         <Card padded as="div">
@@ -376,8 +377,8 @@ export function DesignPage() {
         <div className={styles.sectionHead}>
           <h2 id="h-boundary">Farm boundary</h2>
           <p>
-            The walked plot, drawn as an inline SVG polygon straight from the fixture GeoJSON — no map
-            library, no tiles, no network. Two sizes: 96px in the register table, 360px in the
+            The walked plot, drawn as an inline SVG polygon straight from the fixture GeoJSON — no
+            map library, no tiles, no network. Two sizes: 96px in the register table, 360px in the
             dossier. A plot with no usable trace says so in the same box rather than drawing a shape
             that would lie about the land.
           </p>
@@ -414,8 +415,8 @@ export function DesignPage() {
             {FARMER_NUMBER_FORMAT}
           </p>
           <p className="small muted" style={{ marginTop: 'var(--s-3)' }}>
-            state · county · sequence. Fixture rows use this shape so the screens read correctly; the
-            real sequence, check digit and reset rule are C-5&apos;s to decide.
+            state · county · sequence. Fixture rows use this shape so the screens read correctly;
+            the real sequence, check digit and reset rule are C-5&apos;s to decide.
           </p>
         </Card>
       </section>
