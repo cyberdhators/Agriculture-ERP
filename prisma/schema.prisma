@@ -100,6 +100,8 @@ model State {
   payams   Payam[]
   /// P1 (migration 6). Every scoped table carries state_id, so every one relates here.
   directoryEntries DirectoryEntry[]
+  users    User[]
+  officers Officer[]
 
   @@map("state")
 }
@@ -136,10 +138,13 @@ model Payam {
   state  State  @relation(fields: [stateId], references: [id], map: "payam_state_id_fkey")
   directoryEntries DirectoryEntry[]
 
+  officers Officer[]
+
+  /// Target of the composite key on officer.
+  @@unique([id, stateId], map: "payam_id_state_id_key")
   @@index([countyId], map: "payam_county_id_idx")
   /// Target of the composite key on every table below payam that carries a
   /// denormalised state_id. Added by migration 6 (P1); B5 onward reuse it.
-  @@unique([id, stateId], map: "payam_id_state_id_key")
   @@index([stateId], map: "payam_state_id_idx")
   @@map("payam")
 }
@@ -289,3 +294,69 @@ model LearningResource {
   // in migration 6 only, as the _active indexes on the B2 tables do.
   @@map("learning_resource")
 }
+/// Office staff. NO EMAIL COLUMN: email lives in auth.users and nowhere else,
+/// so the two cannot drift. auth_user_id is the only link.
+model User {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  authUserId   String    @unique @map("auth_user_id") @db.Uuid
+  name         String
+  role         UserRole
+  /// Null for an admin, required for a supervisor or read_only. The database
+  /// enforces the pair, so a null scope can never mean "everything".
+  scopeStateId String?   @map("scope_state_id")
+  lastLoginAt  DateTime? @map("last_login_at") @db.Timestamptz(6)
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  deletedAt    DateTime? @map("deleted_at") @db.Timestamptz(6)
+  deletedBy    String?   @map("deleted_by") @db.Uuid
+
+  scopeState State? @relation(fields: [scopeStateId], references: [id])
+
+  @@index([role], map: "user_role_idx")
+  @@index([scopeStateId], map: "user_scope_state_id_idx")
+  @@map("user")
+}
+
+enum UserRole {
+  admin
+  supervisor
+  read_only
+
+  @@map("user_role")
+}
+
+/// Extension officers. `phone` is the identity the officer types; the
+/// identifier presented to Supabase Auth is DERIVED from it and is not stored
+/// here. See docs/DECISIONS.md.
+model Officer {
+  id         String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  authUserId String        @unique @map("auth_user_id") @db.Uuid
+  name       String
+  /// E.164, exactly as phoneSchema produces it -- never the GoTrue form, which
+  /// strips the leading plus.
+  phone      String        @unique
+  payamId    String        @map("payam_id")
+  /// Denormalised, so a scope check is not a join.
+  stateId    String        @map("state_id")
+  status     OfficerStatus @default(active)
+  lastSyncAt DateTime?     @map("last_sync_at") @db.Timestamptz(6)
+  createdAt  DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  deletedAt  DateTime?     @map("deleted_at") @db.Timestamptz(6)
+  deletedBy  String?       @map("deleted_by") @db.Uuid
+
+  /// The same composite-key trick as payam: an officer's state cannot disagree
+  /// with the state of their payam.
+  payam Payam @relation(fields: [payamId, stateId], references: [id, stateId], map: "officer_payam_state_consistent_fkey")
+  state State @relation(fields: [stateId], references: [id], map: "officer_state_id_fkey")
+
+  @@index([payamId], map: "officer_payam_id_idx")
+  @@index([stateId], map: "officer_state_id_idx")
+  @@map("officer")
+}
+
+enum OfficerStatus {
+  active
+  inactive
+
+  @@map("officer_status")
+}
+
