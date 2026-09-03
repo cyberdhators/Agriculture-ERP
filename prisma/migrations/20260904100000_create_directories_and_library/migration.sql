@@ -90,8 +90,30 @@ CREATE TYPE "public"."resource_format" AS ENUM (
 -- Additive: a unique constraint on columns that are already unique together
 -- (id is the primary key). It cannot fail against existing rows.
 
-ALTER TABLE "public"."payam"
-    ADD CONSTRAINT "payam_id_state_id_key" UNIQUE ("id", "state_id");
+-- IDEMPOTENT ON PURPOSE, and this is not a style choice.
+--
+-- Both lanes wrote this ALTER independently: Lane 1 needed it in B3's migration
+-- 6 so `officer` could carry a composite key to payam, and Lane 2 needed it
+-- here for `directory_entry`. Neither could see the other, because
+-- docs/HANDOFF.md -- the file whose shared-objects register exists to prevent
+-- exactly this -- was not on main.
+--
+-- Whichever of the two applies second would fail with "constraint already
+-- exists" and leave the migration history in a failed state. Guarding it means
+-- this migration applies whether B3 landed before it or after it.
+--
+-- Do NOT copy this pattern for ordinary constraints. It is here because two
+-- migrations legitimately need the same additive constraint and neither can
+-- assume the other has run.
+DO $$
+BEGIN
+    ALTER TABLE "public"."payam"
+        ADD CONSTRAINT "payam_id_state_id_key" UNIQUE ("id", "state_id");
+EXCEPTION
+    WHEN duplicate_table OR duplicate_object THEN
+        NULL;
+END
+$$;
 
 -- =============================================================================
 -- DIRECTORY ENTRY  (i) (j) (k)
@@ -116,7 +138,12 @@ CREATE TABLE "public"."directory_entry" (
     -- Where the place is, for the map. Nullable: many entries will be entered
     -- from a list with no coordinates. geography, not geometry, so distance
     -- comes back in metres without a projection step.
-    "location"         geography(Point, 4326),
+    -- SCHEMA-QUALIFIED. Migration 1 installed PostGIS into the "extensions"
+    -- schema, not public, because that is where Supabase's own tooling looks
+    -- for it. An unqualified `geography` is not on the migration connection's
+    -- search_path and fails with `type "geography" does not exist`.
+    -- Every spatial column from here on must qualify the type the same way.
+    "location"         extensions.geography(Point, 4326),
     "payam_id"         TEXT        NOT NULL,
     -- Denormalised, per extension 1.4, so a supervisor scope check is not a
     -- join. The composite foreign key below keeps it honest.
