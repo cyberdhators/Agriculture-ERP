@@ -320,11 +320,28 @@ migration history.
 
 The reverse, promoting this project to production, was rejected. It has held
 developer credentials on a laptop, carries a throwaway `_smoke` table in its
-migration history, and its credentials have twice left the vault: once in
-`.env.local.bak-b2`, recorded above, in a repository that is public, and once
-when an account-wide Supabase personal access token was pasted into a chat
-session. A database with that history should not be the one holding farmer
-records. Production should be born clean.
+migration history, and an account-wide Supabase personal access token reaching
+it was pasted into a chat session. A database with that history should not be
+the one holding farmer records. Production should be born clean.
+
+> **Two claims in the first version of this entry were wrong, corrected here
+> rather than quietly edited.** It said the credentials had "twice left the
+> vault", the second instance being `.env.local.bak-b2` "in a repository that is
+> public". Checked afterwards:
+>
+> - **The repository is private**, not public.
+> - **`.env.local.bak-b2` was never committed.** It sat in the working directory
+>   and was deleted there. `git log --all --diff-filter=A` finds it in no commit
+>   on any branch, and no connection string appears anywhere in the full history.
+>
+> The near-miss was real and is recorded above — the ignore rules did not match
+> it, so an ordinary `git add -A` would have committed it. But it did not happen,
+> and a permanent record should not say it did.
+>
+> **The decision is unchanged.** One credential exposure is enough on its own:
+> an account-wide token that reached this project was pasted into a chat and, at
+> the time of writing, has still not been revoked. Production should be born
+> clean regardless.
 
 **Also decided:** rotate that project's database password, and revoke the
 personal access token. Both are cheap now and get dearer with every unit.

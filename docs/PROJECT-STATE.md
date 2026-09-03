@@ -25,8 +25,9 @@ Verified against the Supabase Management API on 2026-09-02: the account holds
 **exactly one project**, reference `xmmxbrxmfgodhpwolrvk`, named
 **`agri-production`** in the dashboard. That one project is what this file calls
 staging. It is what `.env.local` points at, what `.mcp.json` attaches to, what
-`scripts/db-reset.mjs` will accept, and what all four migrations have been
-applied to.
+`scripts/db-reset.mjs` will accept, and what all **five** migrations have been
+applied to — the fifth being B2's location hierarchy, which landed after this
+paragraph was first written.
 
 **There is no production project. It does not exist.** The paragraph that stood
 here said it did. That was wrong, and every rule in this file separating staging
