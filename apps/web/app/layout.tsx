@@ -5,7 +5,7 @@ import type { ReactNode } from 'react';
 import './globals.css';
 
 /**
- * The Register's three voices, loaded once and exposed as CSS variables on
+ * AgriOne's three voices, loaded once and exposed as CSS variables on
  * <html>: Fraunces for display (optical size, soft terminals), Instrument Sans
  * for the interface, JetBrains Mono for every id, code, date and figure.
  */
@@ -30,11 +30,11 @@ const jetbrains = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: 'CORWADO · Agricultural Register',
-    template: '%s · Agricultural Register',
+    default: 'AgriOne',
+    template: '%s · AgriOne',
   },
   description:
-    'The working register of a farming economy — farmers, fields, crops and cooperatives across Central Equatoria. CORWADO, LAST Project.',
+    'AgriOne — Digital Agriculture & Agribusiness Ecosystem. Farmers, farms, produce and the marketplace that joins them.',
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

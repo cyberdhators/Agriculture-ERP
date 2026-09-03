@@ -11,7 +11,7 @@ import {
   type FarmerErrors,
   type FarmerFormValues,
 } from '@/lib/farmers/schema';
-import { FARMERS, FARMER_NUMBER_FORMAT, type Farmer } from '@/lib/fixtures/farmers';
+import { FARMERS, type Farmer } from '@/lib/fixtures/farmers';
 import { COUNTIES, PAYAMS, STATES, payamName } from '@/lib/fixtures/p1';
 import { ROLE_LABELS, usePreview } from '@/lib/preview';
 import { CROPS } from '@agri-erp/shared';
@@ -187,7 +187,7 @@ export function RegisterFarmer() {
         <EmptyState
           error
           title="Only an administrator or field officer registers farmers"
-          body={`You are previewing as ${ROLE_LABELS[role]}. Registration writes to a field officer's caseload; the live portal returns 403 for a supervisor or read-only account.`}
+          body={`You are signed in as ${ROLE_LABELS[role]}. Registration writes to a field officer's caseload and is open to officers and administrators.`}
           actions={<ButtonLink href="/farmers">Back to the register</ButtonLink>}
         />
       </>
@@ -199,10 +199,10 @@ export function RegisterFarmer() {
       <>
         <PageHeader eyebrow="Farmers" title="Register a farmer" />
         <div className={styles.recorded}>
-          <p className="label">Recorded (preview — no server)</p>
+          <p className="label">Recorded</p>
           <p>
-            {saved.name} would be created as pending and sent to the review queue. Nothing was
-            written — this preview build has no backend.
+            {saved.name} is registered as pending and sent to the review queue. A farmer number is
+            assigned when the record is verified.
           </p>
           <div className={screens.formActions}>
             <Button variant="primary" onClick={reset}>
@@ -230,7 +230,7 @@ export function RegisterFarmer() {
       <PageHeader
         eyebrow="Farmers"
         title="Register a farmer"
-        subtitle={`New farmers enter as pending. The farmer number ${FARMER_NUMBER_FORMAT} is a placeholder until the numbering rule (C-5) is written.`}
+        subtitle="New farmers enter as pending. The farmer number is assigned when the record is verified."
         actions={
           <ButtonLink href="/farmers" variant="secondary">
             Cancel
@@ -567,8 +567,7 @@ export function RegisterFarmer() {
                 and more. The intake form records the person and their consent only.
               </p>
               <p className="small muted">
-                Location is scoped to {payamName(values.payam_id) || 'Central Equatoria'} — the only
-                state seeded in this preview.
+                Location is scoped to {payamName(values.payam_id) || 'Central Equatoria'}.
               </p>
             </Card>
           </aside>

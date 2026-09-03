@@ -54,7 +54,11 @@ export function AccountShell({ children }: { children: ReactNode }) {
                 </Link>
               );
             })}
-            <Link href="/market" className={`${styles.mastTab}`}>
+            <Link
+              href="/market"
+              className={styles.mastTab}
+              aria-current={pathname.startsWith('/market') ? 'page' : undefined}
+            >
               {t('shell.marketplace', language)}
             </Link>
           </nav>

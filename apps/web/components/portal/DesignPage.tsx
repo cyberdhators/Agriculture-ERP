@@ -68,7 +68,7 @@ const PALETTE = [
   { name: 'line-strong', hex: '#AEB8A6', use: 'Structural rule, strong border, section heads.' },
   { name: 'ink', hex: '#132A1C', use: 'Forest. Primary text and headings.' },
   { name: 'ink-2', hex: '#3B4F41', use: 'Secondary text, body copy on cards.' },
-  { name: 'muted', hex: '#6C7A6E', use: 'Captions, helper text, labels.' },
+  { name: 'muted', hex: '#5E6C60', use: 'Captions, helper text, labels. 5.1:1 on paper.' },
   { name: 'green-deep', hex: '#14532D', use: 'Placeholder words, the public spread, deep fills.' },
   {
     name: 'green',
@@ -83,7 +83,12 @@ const PALETTE = [
     hex: '#E0A526',
     use: 'Harvest gold, fills only: List it, sold stamps, KPI rules. Never text on white.',
   },
-  { name: 'harvest-deep', hex: '#B8841A', use: 'Harvest gold as text: prices, KPI figures.' },
+  { name: 'harvest-deep', hex: '#B8841A', use: 'Harvest gold as large text: KPI figures.' },
+  {
+    name: 'harvest-ink',
+    hex: '#8F6E1B',
+    use: 'Harvest gold as small text: prices on cards and product pages, 4.8:1.',
+  },
   { name: 'harvest-tint', hex: '#FBF0D2', use: 'Gold tint behind a price or a sold mark.' },
   { name: 'soil', hex: '#6B4A2B', use: 'Earth. Secondary buttons and moderation surfaces.' },
   { name: 'soil-tint', hex: '#EFE6DB', use: 'Earth tint for secondary surfaces.' },

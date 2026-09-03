@@ -102,7 +102,7 @@ export function FarmerAccount() {
 
   function onSignOut() {
     signOut();
-    router.push('/farmer');
+    router.push('/');
   }
 
   const show = t('login.show', language);

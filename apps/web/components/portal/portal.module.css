@@ -31,36 +31,7 @@
 .wordmark {
   display: flex;
   align-items: center;
-  gap: var(--s-3);
-  color: var(--band-ink);
-  text-decoration: none;
   white-space: nowrap;
-}
-
-.wordmarkOrg {
-  font-family: var(--font-body);
-  font-weight: 600;
-  font-size: var(--text-label);
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--accent);
-}
-
-.wordmarkRule {
-  width: 1px;
-  height: 20px;
-  background: var(--band-line);
-}
-
-.wordmarkName {
-  font-family: var(--font-display);
-  font-weight: 560;
-  font-size: 19px;
-  letter-spacing: -0.01em;
-  font-variation-settings:
-    'opsz' 36,
-    'SOFT' 40,
-    'WONK' 0;
 }
 
 .nav {
@@ -208,14 +179,6 @@
   border-top: 1px solid var(--line);
   color: var(--muted);
   font-size: var(--text-small);
-}
-
-.footerFlag {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--accent-hover);
-  font-weight: 600;
 }
 
 /* ---- Narrow: the band wraps, nav scrolls. Fallback, not the target. */

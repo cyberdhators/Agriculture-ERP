@@ -213,9 +213,8 @@ export function EntryForm({ existing }: { existing: DirectoryEntryRow | null }) 
       />
 
       {saved ? (
-        <Notice kind="success" title="Saved (preview)" className="no-print">
-          Validated with the shared schema and written to this session’s preview store only. In the
-          live portal this is a {existing ? 'PATCH' : 'POST'} to /api/directory-entries.{' '}
+        <Notice kind="success" title="Saved" className="no-print">
+          The entry is saved.{' '}
           <Link href={`/directories?entry=${existing?.id ?? ''}`}>View the entry</Link>.
         </Notice>
       ) : null}
@@ -489,17 +488,16 @@ export function EntryForm({ existing }: { existing: DirectoryEntryRow | null }) 
           </Card>
         </form>
 
-        <aside className={styles.aside} aria-label="Preview of the request">
+        <aside className={styles.aside} aria-label="Record">
           <Card padded as="div">
-            <h3>What will be sent</h3>
+            <h3>Record</h3>
             <p className="small muted" style={{ margin: 'var(--s-2) 0 var(--s-4)' }}>
-              The body of the request, after the shared schema has trimmed and normalised it. Shown
-              here so the form and the API can be seen to agree.
+              The entry as it is stored, after validation.
             </p>
             {saved ? (
               <pre className={styles.previewJson}>{JSON.stringify(saved, null, 2)}</pre>
             ) : (
-              <p className="small muted">Save the form to see the validated body.</p>
+              <p className="small muted">Save the form to see the record.</p>
             )}
           </Card>
           <Card padded as="div">

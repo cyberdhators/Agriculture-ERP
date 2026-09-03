@@ -4,7 +4,7 @@ import styles from './brand.module.css';
 
 /**
  * The AgriOne wordmark, set in Fraunces: "Agri" regular, "One" semibold, and
- * the tittle of the i replaced by one harvest-amber dot. A dotless ı carries
+ * the tittle of the i replaced by one sprout-green dot. A dotless ı carries
  * the letterform so the dot is ours, not the font's. Optionally the tagline
  * beneath in 11px letter-spaced caps. `onBand` inverts it for the forest band.
  */

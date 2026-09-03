@@ -72,7 +72,7 @@ export function ReviewQueue() {
         <EmptyState
           error
           title="Only a supervisor or administrator reviews farmers"
-          body={`You are previewing as ${ROLE_LABELS[role]}. Verifying, merging and rejecting are review actions; the live portal returns 403 for anyone else.`}
+          body={`You are signed in as ${ROLE_LABELS[role]}. Verifying, merging and rejecting are review actions for administrators and supervisors.`}
           actions={<ButtonLink href="/farmers">Back to the register</ButtonLink>}
         />
       </>
@@ -184,7 +184,7 @@ export function ReviewQueue() {
                           onClick={() =>
                             record(
                               farmer,
-                              `Recorded (preview — no server): ${farmer.given_name} ${farmer.family_name} verified.`,
+                              `Recorded: ${farmer.given_name} ${farmer.family_name} verified.`,
                             )
                           }
                         >
@@ -197,7 +197,7 @@ export function ReviewQueue() {
                             onClick={() =>
                               record(
                                 farmer,
-                                `Recorded (preview — no server): merged into ${duplicates[0]!.farmer.farmer_number}.`,
+                                `Recorded: merged into ${duplicates[0]!.farmer.farmer_number}.`,
                               )
                             }
                           >
@@ -243,7 +243,7 @@ export function ReviewQueue() {
                 if (reject)
                   record(
                     reject,
-                    `Recorded (preview — no server): ${reject.given_name} ${reject.family_name} rejected. Reason: ${reason.trim()}`,
+                    `Recorded: ${reject.given_name} ${reject.family_name} rejected. Reason: ${reason.trim()}`,
                   );
                 setReject(null);
               }}

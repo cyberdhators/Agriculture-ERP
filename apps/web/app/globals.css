@@ -31,7 +31,7 @@
   /* ---- Ink ----------------------------------------------------------- */
   --ink: #132a1c; /* forest, primary text */
   --ink-2: #3b4f41; /* secondary text */
-  --muted: #6c7a6e; /* captions, helper text, labels */
+  --muted: #5e6c60; /* captions, helper text, labels — 5.1:1 on paper */
 
   /* ---- Dark band (masthead, entry spread panel) --------------------- */
   --band: #0f2e1c;
@@ -47,7 +47,12 @@
 
   /* ---- Harvest gold: the second accent. Prices, "List it", sold, KPIs. */
   --harvest: #e0a526; /* fills only — never text on white */
-  --harvest-deep: #b8841a; /* the text form of harvest */
+  --harvest-deep: #b8841a; /* the text form of harvest, large figures only */
+  --harvest-ink: color-mix(
+    in srgb,
+    var(--harvest-deep) 75%,
+    var(--ink)
+  ); /* gold as small text, 4.8:1 */
   --harvest-tint: #fbf0d2;
 
   /* ---- Earth: secondary surfaces and secondary buttons -------------- */
