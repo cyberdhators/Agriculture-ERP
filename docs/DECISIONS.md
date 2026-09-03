@@ -299,8 +299,9 @@ must also be checked against that environment's name, by someone reading both.**
 and receives no migrations until B11". The second was never true.
 
 Read from the Supabase Management API on 2026-09-02, the account holds exactly
-one project. Its reference is `xmmxbrxmfgodhpwolrvk`. Its name is
-`agri-production`. Everything this repository calls staging — `.env.local`, the
+one project. Its reference is `xmmxbrxmfgodhpwolrvk`. Its name **was**
+`agri-production` when this was written on 2026-09-02; it was renamed to
+`agri-staging` on 2026-09-03, which is what this entry asked for. Everything this repository calls staging — `.env.local`, the
 MCP server in `.mcp.json`, four applied migrations, the `_smoke` table created
 and dropped in B1.3 — happened inside a project named production.
 
@@ -353,6 +354,74 @@ credential surface inside a destructive script, to defend a distinction that
 disappears once production is simply not on the same account. The protection is
 structural instead: production is not created until B11, and its credentials
 never go in `.env.local`.
+
+---
+
+## B2 — `deleted_by` carries no foreign key until B3, and that is the precedent
+
+`docs/data-model-extension.md` §1.3 defines `deleted_by` as a foreign key to
+`user`. B2 created the first three tables and the `user` table does not exist
+until B3, so the column had to point at nothing or not exist.
+
+**Decided: carry it now as a nullable `uuid` with no foreign key. B3 adds the
+constraint with `ALTER TABLE`.**
+
+The column shape stays stable, so no later migration alters these tables to add
+a column. And **adding a constraint to a populated table is cheaper and safer
+than adding a column to one** — the constraint is validated against existing
+rows, which are all null here, so it cannot fail.
+
+**This is the precedent every table created between B2 and B3 inherits.** Any
+such table carries `deleted_at timestamptz` and `deleted_by uuid`, both nullable,
+neither keyed. B3 adds every missing key in one migration. It is listed as a B3
+opening task so the debt is paid rather than remembered.
+
+---
+
+## B2 — C-2.3 is a composite foreign key, not a trigger and not a CHECK
+
+Every payam carries `state_id` directly as well as through its county, and the
+two must always agree. Three ways to enforce that:
+
+A **CHECK constraint cannot see another table**, so it cannot compare a payam's
+state to its county's state at all.
+
+A **trigger** can, but it must be written correctly for inserts and for updates
+on both sides, it can be disabled, and it is code that has to be maintained.
+
+A **composite foreign key** — `(county_id, state_id)` referencing
+`county(id, state_id)`, with a `UNIQUE (id, state_id)` on county as its target —
+is declarative, is enforced on insert and on update, cannot be disabled without
+being dropped, and additionally stops a county being moved to another state
+while payams still point at the old one. That last property was not asked for
+and is the strongest argument for it.
+
+The extra `UNIQUE (id, state_id)` on county looks redundant beside its primary
+key. It is not: a composite foreign key needs a unique constraint spanning
+exactly the columns it references.
+
+---
+
+## B2 — the dependant check names no table, on purpose
+
+C-2.7 requires the reseed to refuse removing a location that other records
+depend on. When B2 was built, `farmer`, `officer` and `cooperative` did not
+exist.
+
+**Hardcoding those names would have been worse than useless.** A guard that
+names three tables which never appear refuses nothing, forever, while looking
+exactly like a guard that works. That is the B1.3 failure mode with a longer
+fuse: it would have passed every test written against it and started silently
+failing the moment B5 created `farmer` under a slightly different name.
+
+Instead it asks `pg_constraint` which foreign keys point at the location tables
+and counts through whatever it finds. It protects tables that do not exist yet,
+with no change to the code, the moment they declare a key.
+
+**The limit, stated in the code and here:** it sees dependants declared as
+FOREIGN KEYS. A future table holding a payam code as loose text with no key is
+invisible to it. That is an argument for always declaring the key, and B5 onward
+should treat it as one.
 
 ---
 

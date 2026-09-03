@@ -126,6 +126,56 @@ mark C-2.4 partially met and C-2.5 not met, and record both as B3 opening tasks.
 
 ---
 
+## C-3 — IDENTITY, ROLES AND PERMISSIONS
+
+Deliverables: (r) user administration, (s) system security features
+
+C-3.1  CORWADO administrators create, modify and deactivate staff accounts and
+       extension officer accounts. There is no self-signup.
+
+C-3.2  Every account holds exactly one role: admin, supervisor, read_only, or
+       extension officer.
+
+C-3.3  Every request is authenticated and its role checked on the server before
+       any data is read or written.
+
+C-3.4  A supervisor or read_only user sees only records within their assigned
+       state. An extension officer sees only their own caseload.
+
+C-3.5  A request for a record outside the caller's scope is indistinguishable
+       from a request for a record that does not exist.
+
+C-3.6  Deactivating an account ends its access immediately, including any
+       session already open. An account is deactivated either by an
+       administrator setting its status to inactive, or by soft deletion. Both
+       end access immediately and by the same mechanism; there are not two
+       kinds of not-active.
+
+C-3.7  Extension officers authenticate by phone number and password and remain
+       authenticated across periods without network coverage.
+
+C-3.8  Farmers do not authenticate. No farmer account exists in this phase.
+
+C-3.9  A read_only user cannot write anything. It is a reporting role: it reads
+       within its assigned state, and every route that writes rejects it.
+
+### Notes for the builder
+
+**A null scope must never mean "everything".** A supervisor or read_only account
+must have an assigned state, and an admin must not; the database enforces this
+rather than the application remembering it. An account with no state sees
+nothing, never everything.
+
+**An officer's caseload is the records they registered**, not every record in
+their payam. The payam in an officer's scope exists so that they can only create
+records in their own payam — it is not a reading permission.
+
+**Passwords.** An administrator sets any account's password. Any account may
+change its own. No account may change another's, except an administrator.
+
+**The last administrator cannot be removed or demoted**, by anyone including
+themselves. Locking CORWADO out of their own system is not something this team
+can recover for them.
 ## C-13 — DIRECTORIES AND LEARNING LIBRARY
 
 **Deliverables (i), (j), (k) and (m). Unit P1.**
@@ -204,7 +254,6 @@ list. If yes, the officer role gets a write route and entries gain a
 Written one unit ahead of the build, not all at once, so that criteria reflect
 what the preceding unit actually produced.
 
-- C-3 — identity, roles and permissions — deliverables (r), (s)
 - C-4 — audit log — deliverable (s)
 - C-5 — farmer registration, profiling, farmer number, duplicate warning — (c)
 - C-6 — verification and approval workflow — (c)

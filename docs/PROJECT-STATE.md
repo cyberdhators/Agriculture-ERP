@@ -33,39 +33,25 @@ of the repository root. Both are deleted.
 **A chat exposure and a repository exposure need different responses.** Why that
 distinction is worth keeping is in `docs/DECISIONS.md`.
 
-**THE ENVIRONMENT NAMES ARE WRONG — read this before any database work.**
-Verified against the Supabase Management API on 2026-09-02: the account holds
-**exactly one project**, reference `xmmxbrxmfgodhpwolrvk`, named
-**`agri-production`** in the dashboard. That one project is what this file calls
-staging. It is what `.env.local` points at, what `.mcp.json` attaches to, what
-`scripts/db-reset.mjs` will accept, and what all **five** migrations have been
-applied to — the fifth being B2's location hierarchy, which landed after this
-paragraph was first written.
-
-**There is no production project. It does not exist.** The paragraph that stood
-here said it did. That was wrong, and every rule in this file separating staging
-from production rested on it.
-
-**Do not run `pnpm db:reset` until the rename below has happened.** The guard
-will accept `xmmxbrxmfgodhpwolrvk`, report _Target confirmed as staging_, and
-drop every table in a project named `agri-production`.
-
-**The agreed fix, in order.** Reasoning in `docs/DECISIONS.md`:
-
-1. Rename the project to `agri-staging` in the Supabase dashboard. The reference
-   is immutable, so nothing in this repository changes.
-2. Rotate that project's database password and update `.env.local`.
-3. Create production new at B11. It must not be this project, which has held
-   developer credentials and carries a throwaway `_smoke` table in its migration
-   history.
-
-**Production is empty until B11** still holds, and now means what it says: there
-is nothing yet for it to be empty of. No real farmer data exists anywhere, and
-none enters production until the backup and restore unit is done and the restore
-drill has run successfully.
-
-Staging Supabase project reference: `xmmxbrxmfgodhpwolrvk`. Not a secret; the
+**THERE IS ONE SUPABASE PROJECT, AND IT IS STAGING.** Reference
+`xmmxbrxmfgodhpwolrvk`, named **`agri-staging`**. It is what `.env.local` points
+at, what `.mcp.json` attaches to, what `scripts/db-reset.mjs` accepts, and what
+every migration has been applied to. The reference is not a secret; the
 connection strings containing it are.
+
+**There is no production project yet.** It is created new at B11 — deliberately
+not this one, which has held developer credentials on a laptop and carries a
+throwaway `_smoke` table in its migration history. Reasoning in
+`docs/DECISIONS.md`.
+
+**Resolved 2026-09-03**, all three, so none of it is outstanding: the project was
+renamed from `agri-production`, its database password was rotated, and the
+account-wide access token was revoked. **`pnpm db:reset` is safe to run again** —
+the naming mismatch that made it dangerous is gone.
+
+**Production is empty until B11** and now means what it says: no real farmer data
+exists anywhere, and none enters production until the backup and restore unit is
+done and the restore drill has run successfully.
 
 **OPEN — Supabase plan and point-in-time recovery.** Not yet recorded: the plan
 CORWADO's projects are on, and whether point-in-time recovery is included. B11
@@ -80,13 +66,13 @@ it here.
 Names only. Values live in `.env.local` locally and in Vercel and GitHub secrets
 for deployments. All are listed in `.env.example`.
 
-| Name                     | Used by                                        | For                                                                                            |
-| ------------------------ | ---------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| `DATABASE_URL`           | Prisma at runtime                              | Pooled connection, port 6543, `pgbouncer=true`, `connection_limit=1`.                          |
-| `DIRECT_URL`             | `prisma/schema.prisma`, `scripts/db-reset.mjs` | Direct connection, port 5432. Migrations and introspection only.                               |
-| `NEXT_PUBLIC_SENTRY_DSN` | `apps/web/sentry.shared.ts`                    | Where errors go. **Public by design** — see `docs/DECISIONS.md`. Empty switches reporting off. |
-| `SENTRY_ENVIRONMENT`     | same                                           | staging or production. Falls back to `VERCEL_ENV`, then `development`.                         |
-| `SENTRY_RELEASE`         | same                                           | Which build. Falls back to `VERCEL_GIT_COMMIT_SHA`, then `unknown`.                            |
+| Name                     | Used by                                        | For                                                                                                                                         |
+| ------------------------ | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`           | Prisma at runtime                              | Pooled connection, port 6543, `pgbouncer=true`, `connection_limit=1`.                                                                       |
+| `DIRECT_URL`             | `prisma/schema.prisma`, `scripts/db-reset.mjs` | **Session pooler**, port 5432 — NOT the direct host, which is IPv6-only. Migrations, introspection, operational scripts and database tests. |
+| `NEXT_PUBLIC_SENTRY_DSN` | `apps/web/sentry.shared.ts`                    | Where errors go. **Public by design** — see `docs/DECISIONS.md`. Empty switches reporting off.                                              |
+| `SENTRY_ENVIRONMENT`     | same                                           | staging or production. Falls back to `VERCEL_ENV`, then `development`.                                                                      |
+| `SENTRY_RELEASE`         | same                                           | Which build. Falls back to `VERCEL_GIT_COMMIT_SHA`, then `unknown`.                                                                         |
 
 ---
 
@@ -240,7 +226,18 @@ Nothing is lost and some of it will be worth taking.
 
 ## B3 OPENING TASKS
 
-Four obligations handed to B3. All belong at its start, not its end.
+**Six obligations handed to B3.** Four are listed here; the other two live where
+they belong and are repeated as pointers, because a checklist that undercounts is
+worse than no checklist.
+
+**5. Delete `/api/_dev/validate-phone` and `/api/_dev/throw`**, with everything
+their removal entails — see OUTSTANDING ITEMS above.
+
+**6. Add the `deleted_by` foreign key to `user`** on `state`, `county` and
+`payam`, and on every table created between B2 and B3. Precedent in
+`docs/DECISIONS.md`.
+
+The four handed over by earlier units:
 
 1. **Unpark §6 and the timestamp rule** once the first list route or first
    stored-record response exists, adding the tests that were impossible before.
@@ -264,15 +261,12 @@ Four obligations handed to B3. All belong at its start, not its end.
 
 ## BLOCKED
 
-**Nothing is blocked.** `docs/scope-and-acceptance.md` arrived and B2 is
-unblocked. The criteria for B2 are C-2.1 to C-2.8 in that file.
+**Nothing is blocked.**
 
-**One open question for B2.** `docs/data-model-extension.md` §1.3 defines
-`deleted_by` as `fk -> user`, and the `user` table is not built until B3. B2
-creates the first tables, so it must decide: carry `deleted_by` as a nullable
-column with the foreign key added in B3, or omit the column until B3 and add it
-then. The first keeps the column shape stable; the second avoids a column that
-points at nothing. **Ask before writing the migration.**
+B2's open question — whether `deleted_by` should carry a foreign key before the
+`user` table existed — was answered and executed: the column is a nullable uuid
+with no key, and **B3 adds the constraint**. The precedent is in
+`docs/DECISIONS.md`.
 
 ## OPEN QUESTIONS LIVE IN THEIR OWN DOCUMENTS
 
