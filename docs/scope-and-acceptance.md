@@ -61,6 +61,9 @@ requirement appears to need them.
 
 - A farmer-facing mobile application. The Android app is the extension
   officers' tool; farmers are reached by SMS (F-05).
+  _Amended 2026-09-03:_ a farmer-facing **web** flow is in this phase — see
+  "Open against the contract" items 1 and 2, and C-18. The Android app remains
+  the officers' tool.
 - Mobile money transaction integration.
 - Automated market price feeds. Prices are entered manually by CORWADO's
   System Administrator (F-01).
@@ -155,6 +158,9 @@ C-3.7  Extension officers authenticate by phone number and password and remain
        authenticated across periods without network coverage.
 
 C-3.8  Farmers do not authenticate. No farmer account exists in this phase.
+       _Amended 2026-09-03:_ superseded by C-18. A farmer account is a
+       separate principal from the four staff roles; C-3.1–C-3.7 and C-3.9 are
+       unchanged and still describe staff and officers only.
 
 C-3.9  A read_only user cannot write anything. It is a reporting role: it reads
        within its assigned state, and every route that writes rejects it.
@@ -303,6 +309,9 @@ what the preceding unit actually produced.
 - C-11 — backup and disaster recovery — (t)
 - C-12 — cooperatives — (l)
 - C-14 — market prices, produce listings, buyer matching — (f), (g), (h)
+- C-18 — farmer account: language choice, self-registration, login by phone
+  and SMS code, own record, own produce listings — (c), and the farmer side of
+  (f), (g), (h). Added 2026-09-03; see "Open against the contract" 1 and 2.
 - C-15 — SMS notifications — (n)
 - C-16 — weather advisories — (e)
 - C-17 — WhatsApp — (o), conditional on Meta verification
@@ -322,9 +331,26 @@ CORWADO before the affected deliverable is built.
    second reading is consistent with "introduction and contact record only" and
    is far cheaper. It needs confirming before C-14 is written.
 
+   **Answered 2026-09-03 (Alieu, for CORWADO): farmers receive accounts and
+   post their own produce listings.** A verified farmer's listing is visible to
+   staff and to buyers; a pending farmer's listing is held as a draft until an
+   officer or supervisor verifies the farmer (C-6). Buyers still have no role:
+   buyer requirements are entered by CORWADO staff, and matching remains an
+   introduction recorded by staff. Recorded by Alieu-Claude; the unit is C-18.
+
 2. **The interface designs show a farmer-facing application.** Section 5.1
    excludes one from this phase. Either the designs are for a later phase or the
    baseline changed. Not to be built until answered.
+
+   **Answered 2026-09-03 (Alieu, for CORWADO): the baseline changed.** A
+   farmer-facing web flow is in this phase: language choice (`en` or
+   `ar-juba`, the two languages the data model already carries), then
+   self-registration or login, then the farmer's own account with their produce
+   listings. It is web, not the Android app, which stays the officers' tool.
+   Self-registration is the `registration_source = self` path the data model
+   already describes: the record is `pending` with `registered_by` null until
+   an officer picks it up. Login is by phone number and a one-time SMS code
+   (C-15), not a password. Recorded by Alieu-Claude; the unit is C-18.
 
 3. **"Ask AI" appears in the designs and in no deliverable.** Not to be built
    until answered.
