@@ -1,0 +1,270 @@
+/* Masthead over a full-width content well. Desktop-first, wide. */
+
+.shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* ---- Masthead: dark band ------------------------------------------- */
+
+.masthead {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  height: var(--masthead-h);
+  background: var(--band);
+  color: var(--band-ink);
+  border-bottom: 1px solid var(--band-line);
+}
+
+.mastheadInner {
+  display: flex;
+  align-items: stretch;
+  gap: var(--s-6);
+  height: 100%;
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding: 0 var(--s-8);
+}
+
+.wordmark {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  color: var(--band-ink);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.wordmarkOrg {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: var(--text-label);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.wordmarkRule {
+  width: 1px;
+  height: 20px;
+  background: var(--band-line);
+}
+
+.wordmarkName {
+  font-family: var(--font-display);
+  font-weight: 560;
+  font-size: 19px;
+  letter-spacing: -0.01em;
+  font-variation-settings:
+    'opsz' 36,
+    'SOFT' 40,
+    'WONK' 0;
+}
+
+.nav {
+  display: flex;
+  align-items: stretch;
+  gap: var(--s-5);
+  margin-left: var(--s-2);
+}
+
+.navTab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  color: rgba(243, 238, 227, 0.72);
+  font-weight: 500;
+  font-size: var(--text-body);
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+  transition: color 140ms ease;
+}
+
+.navTab:hover {
+  color: var(--band-ink);
+}
+
+.navTab[aria-current='page'] {
+  color: var(--band-ink);
+  border-bottom-color: var(--accent);
+}
+
+/* ---- Global search ------------------------------------------------- */
+
+.search {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  margin-left: auto;
+  align-self: center;
+  height: 32px;
+  padding: 0 var(--s-2) 0 var(--s-3);
+  min-width: 200px;
+  background: rgba(243, 238, 227, 0.08);
+  border: 1px solid var(--band-line);
+  border-radius: var(--radius-control);
+  color: rgba(243, 238, 227, 0.6);
+}
+
+.search:focus-within {
+  border-color: var(--accent);
+  color: var(--band-ink);
+}
+
+.searchInput {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--band-ink);
+  font-size: var(--text-small);
+}
+
+.searchInput::placeholder {
+  color: rgba(243, 238, 227, 0.5);
+}
+
+.searchInput:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+.searchKbd {
+  display: grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  background: rgba(243, 238, 227, 0.1);
+  border: 1px solid var(--band-line);
+  border-radius: 3px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: rgba(243, 238, 227, 0.7);
+}
+
+/* ---- Role preview ------------------------------------------------- */
+
+.roleSwitch {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  align-self: center;
+}
+
+.roleSwitchLabel {
+  font-family: var(--font-body);
+  font-size: var(--text-label);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(243, 238, 227, 0.5);
+}
+
+.roleSwitch select {
+  height: 32px;
+  padding: 0 30px 0 10px;
+  background-color: rgba(243, 238, 227, 0.08);
+  border: 1px solid var(--band-line);
+  border-radius: var(--radius-control);
+  color: var(--band-ink);
+  font-size: var(--text-small);
+  font-weight: 500;
+  appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23e0d9c9' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+}
+
+.roleSwitch select:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: none;
+}
+
+/* ---- Content well -------------------------------------------------- */
+
+.content {
+  flex: 1;
+  width: 100%;
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding: var(--s-8);
+}
+
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  max-width: var(--content-max);
+  width: 100%;
+  margin: 0 auto;
+  padding: var(--s-5) var(--s-8);
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: var(--text-small);
+}
+
+.footerFlag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--accent-hover);
+  font-weight: 600;
+}
+
+/* ---- Narrow: the band wraps, nav scrolls. Fallback, not the target. */
+
+@media (max-width: 1024px) {
+  .masthead {
+    height: auto;
+    position: static;
+  }
+
+  .mastheadInner {
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--s-3) var(--s-4);
+    padding: var(--s-3) var(--s-4);
+  }
+
+  .nav {
+    order: 3;
+    width: 100%;
+    overflow-x: auto;
+    gap: var(--s-4);
+    margin-left: 0;
+  }
+
+  .navTab {
+    padding-bottom: 4px;
+  }
+
+  .search {
+    order: 2;
+    min-width: 0;
+    flex: 1 1 160px;
+  }
+
+  .content,
+  .footer {
+    padding-inline: var(--s-4);
+  }
+}
+
+@media print {
+  .masthead,
+  .footer {
+    display: none;
+  }
+
+  .content {
+    padding: 0;
+    max-width: none;
+  }
+}
