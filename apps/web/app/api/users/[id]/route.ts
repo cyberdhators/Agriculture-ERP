@@ -1,5 +1,6 @@
 import { patchUserSchema, toIso } from '@agri-erp/shared';
 
+import { audited, writeAudit, writeAuditOutcome } from '../../../../lib/api/audit';
 import { notFound, unprocessable } from '../../../../lib/api/errors';
 import { defineRoutes, empty, ok } from '../../../../lib/api/route';
 import { requireWriter } from '../../../../lib/api/scope';
@@ -96,41 +97,75 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
 
       const demoting = body.role !== undefined && target.role === 'admin' && body.role !== 'admin';
 
-      const updated = await prisma.$transaction(
-        async (tx) => {
-          if (demoting && !(await otherAdminExists(tx as never, target.id))) {
-            throw unprocessable('last_admin_cannot_be_demoted');
-          }
+      const updated = await audited(prisma, async (tx) => {
+        if (demoting && !(await otherAdminExists(tx as never, target.id))) {
+          throw unprocessable('last_admin_cannot_be_demoted');
+        }
 
-          const nextRole = body.role ?? target.role;
-          // The database refuses an admin with a state and a supervisor
-          // without one, so keep the pair consistent here rather than let the
-          // constraint produce a 500.
-          const nextState = nextRole === 'admin' ? null : (body.state_id ?? target.scope_state_id);
-          if (nextRole !== 'admin' && !nextState) throw unprocessable('state_not_found');
+        const nextRole = body.role ?? target.role;
+        // The database refuses an admin with a state and a supervisor
+        // without one, so keep the pair consistent here rather than let the
+        // constraint produce a 500.
+        const nextState = nextRole === 'admin' ? null : (body.state_id ?? target.scope_state_id);
+        if (nextRole !== 'admin' && !nextState) throw unprocessable('state_not_found');
 
-          const [row] = await tx.$queryRawUnsafe<UserRow[]>(
-            `UPDATE public."user"
+        const [row] = await tx.$queryRawUnsafe<UserRow[]>(
+          `UPDATE public."user"
              SET name = COALESCE($2, name),
                  role = $3::public.user_role,
                  scope_state_id = $4
              WHERE id = $1::uuid AND deleted_at IS NULL
              RETURNING id, auth_user_id, name, role::text AS role, scope_state_id, last_login_at, created_at`,
-            target.id,
-            body.name ?? null,
-            nextRole,
-            nextState,
-          );
-          if (!row) throw notFound();
-          return row;
-        },
-        { maxWait: 30_000, timeout: 120_000 },
-      );
+          target.id,
+          body.name ?? null,
+          nextRole,
+          nextState,
+        );
+        if (!row) throw notFound();
 
-      // Outside the transaction: an HTTP call cannot be rolled back, and a
-      // password that changed while the row did not is recoverable, whereas the
-      // reverse silently leaves the old password working.
-      if (body.password) await setAuthPassword(target.auth_user_id, body.password);
+        // Changed fields only -- what the log is for is "the role and state
+        // change matter most" (DECISIONS). Unchanged fields are noise.
+        const before: Record<string, unknown> = {};
+        const after: Record<string, unknown> = {};
+        for (const [key, was, now] of [
+          ['name', target.name, row.name],
+          ['role', target.role, row.role],
+          ['state_id', target.scope_state_id, row.scope_state_id],
+        ] as const) {
+          if (was !== now) {
+            before[key] = was;
+            after[key] = now;
+          }
+        }
+        if (Object.keys(after).length > 0) {
+          await writeAudit(tx, {
+            entityType: 'user',
+            entityId: row.id,
+            actorType: auth.role,
+            actorId: auth.principal.id,
+            action: 'user.updated',
+            before,
+            after,
+          });
+        }
+        return row;
+      });
+
+      // Outside the transaction: an HTTP call cannot be rolled back. The audit
+      // row is written AFTER the call returns, recording the outcome; and it
+      // never records the password -- before and after are null (C-4.6).
+      if (body.password) {
+        await setAuthPassword(target.auth_user_id, body.password);
+        await writeAuditOutcome({
+          entityType: 'user',
+          entityId: target.id,
+          actorType: auth.role,
+          actorId: auth.principal.id,
+          action: 'user.password_set',
+          before: null,
+          after: null,
+        });
+      }
 
       return ok(present(updated));
     },
@@ -144,25 +179,50 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
 
       if (target.id === auth.principal.id) throw unprocessable('cannot_remove_own_account');
 
-      await prisma.$transaction(
-        async (tx) => {
-          if (target.role === 'admin' && !(await otherAdminExists(tx as never, target.id))) {
-            throw unprocessable('last_admin_cannot_be_removed');
-          }
-          await tx.$executeRawUnsafe(
-            `UPDATE public."user" SET deleted_at = now(), deleted_by = $2::uuid
-             WHERE id = $1::uuid AND deleted_at IS NULL`,
-            target.id,
-            auth.principal.id,
-          );
-        },
-        { maxWait: 30_000, timeout: 120_000 },
-      );
+      const deletedAt = await audited(prisma, async (tx) => {
+        if (target.role === 'admin' && !(await otherAdminExists(tx as never, target.id))) {
+          throw unprocessable('last_admin_cannot_be_removed');
+        }
+        const [row] = await tx.$queryRawUnsafe<{ deleted_at: Date }[]>(
+          `UPDATE public."user" SET deleted_at = now(), deleted_by = $2::uuid
+           WHERE id = $1::uuid AND deleted_at IS NULL RETURNING deleted_at`,
+          target.id,
+          auth.principal.id,
+        );
+        if (!row) throw notFound();
+        // A deactivation is not an edit (DECISIONS): its own action key.
+        await writeAudit(tx, {
+          entityType: 'user',
+          entityId: target.id,
+          actorType: auth.role,
+          actorId: auth.principal.id,
+          action: 'user.soft_deleted',
+          before: { deleted_at: null },
+          after: { deleted_at: toIso(row.deleted_at) },
+        });
+        return row.deleted_at;
+      });
+      void deletedAt;
 
       // Soft delete alone would leave the session working. C-3.6 requires access
-      // to end immediately, so the auth account is disabled too: the refresh
-      // token is revoked and the access token is rejected on its next use.
-      await disableAuthAccount(target.auth_user_id);
+      // to end immediately, so the auth account is disabled too. This is an HTTP
+      // call with no transaction: the second audit row records the OUTCOME after
+      // it returns -- two rows for a delete, not one (DECISIONS).
+      const outcome = {
+        entityType: 'user',
+        entityId: target.id,
+        actorType: auth.role,
+        actorId: auth.principal.id,
+      } as const;
+      try {
+        await disableAuthAccount(target.auth_user_id);
+        await writeAuditOutcome({ ...outcome, action: 'auth.disabled' });
+      } catch (failure) {
+        await writeAuditOutcome({ ...outcome, action: 'auth.disable_failed' }).catch(
+          () => undefined,
+        );
+        throw failure;
+      }
 
       return empty(204);
     },

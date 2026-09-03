@@ -1,5 +1,6 @@
 import { patchOfficerSchema, toIso } from '@agri-erp/shared';
 
+import { audited, writeAudit, writeAuditOutcome } from '../../../../lib/api/audit';
 import { notFound, unprocessable } from '../../../../lib/api/errors';
 import { defineRoutes, empty, ok } from '../../../../lib/api/route';
 import { requireWriter } from '../../../../lib/api/scope';
@@ -104,31 +105,114 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
         stateId = payam.state_id;
       }
 
-      const [row] = await prisma.$queryRawUnsafe<OfficerRow[]>(
-        `UPDATE public."officer"
-         SET name = COALESCE($2, name),
-             payam_id = $3, state_id = $4,
-             status = COALESCE($5::public.officer_status, status)
-         WHERE id = $1::uuid AND deleted_at IS NULL
-         RETURNING id, auth_user_id, name, phone, payam_id, state_id, status::text AS status,
-                   last_sync_at, created_at`,
-        target.id,
-        body.name ?? null,
-        payamId,
-        stateId,
-        body.status ?? null,
-      );
-      if (!row) throw notFound();
+      const actor = { actorType: auth.role, actorId: auth.principal.id } as const;
+      const statusChanging = body.status !== undefined && body.status !== target.status;
 
-      // C-3.6: inactive ends access immediately, by the same mechanism as soft
-      // deletion. And re-activating restores it -- otherwise inactive is
-      // one-way and an administrator cannot undo their own mistake.
-      if (body.status === 'inactive') await disableAuthAccount(target.auth_user_id);
-      if (body.status === 'active') await enableAuthAccount(target.auth_user_id);
+      const row = await audited(prisma, async (tx) => {
+        const [updated] = await tx.$queryRawUnsafe<OfficerRow[]>(
+          `UPDATE public."officer"
+           SET name = COALESCE($2, name),
+               payam_id = $3, state_id = $4,
+               status = COALESCE($5::public.officer_status, status)
+           WHERE id = $1::uuid AND deleted_at IS NULL
+           RETURNING id, auth_user_id, name, phone, payam_id, state_id, status::text AS status,
+                     last_sync_at, created_at`,
+          target.id,
+          body.name ?? null,
+          payamId,
+          stateId,
+          body.status ?? null,
+        );
+        if (!updated) throw notFound();
+        const next = updated as OfficerRow;
 
-      if (body.password) await setAuthPassword(target.auth_user_id, body.password);
+        // An edit and a deactivation are different rows (DECISIONS): "who cut
+        // off this officer's access" must be answerable without diffing JSON.
+        const before: Record<string, unknown> = {};
+        const after: Record<string, unknown> = {};
+        for (const [key, was, now] of [
+          ['name', target.name, next.name],
+          ['payam_id', target.payam_id, next.payam_id],
+          ['state_id', target.state_id, next.state_id],
+        ] as const) {
+          if (was !== now) {
+            before[key] = was;
+            after[key] = now;
+          }
+        }
+        if (Object.keys(after).length > 0) {
+          await writeAudit(tx, {
+            entityType: 'officer',
+            entityId: next.id,
+            ...actor,
+            action: 'officer.updated',
+            before,
+            after,
+          });
+        }
+        if (statusChanging) {
+          await writeAudit(tx, {
+            entityType: 'officer',
+            entityId: next.id,
+            ...actor,
+            action: 'officer.status_changed',
+            before: { status: target.status },
+            after: { status: next.status },
+          });
+        }
+        return next;
+      });
 
-      return ok(present(row as OfficerRow));
+      // The auth side of a status change is an HTTP call with no transaction.
+      // Its audit row records the OUTCOME after the call returns (C-4.4 note).
+      const outcome = { entityType: 'officer', entityId: target.id, ...actor } as const;
+      if (statusChanging && body.status === 'inactive') {
+        try {
+          await disableAuthAccount(target.auth_user_id);
+          await writeAuditOutcome({ ...outcome, action: 'auth.disabled' });
+        } catch (failure) {
+          await writeAuditOutcome({ ...outcome, action: 'auth.disable_failed' }).catch(
+            () => undefined,
+          );
+          throw failure;
+        }
+      }
+      if (statusChanging && body.status === 'active') {
+        try {
+          await enableAuthAccount(target.auth_user_id);
+        } catch (failure) {
+          // The database already says active; access was not restored. Rather
+          // than let the log say something the world does not, flip the row
+          // back and record the flip -- no new action key needed, and the log
+          // reads exactly what happened: active, then inactive again.
+          await audited(prisma, async (tx) => {
+            await tx.$executeRawUnsafe(
+              `UPDATE public."officer" SET status = 'inactive' WHERE id = $1::uuid`,
+              target.id,
+            );
+            await writeAudit(tx, {
+              ...outcome,
+              action: 'officer.status_changed',
+              before: { status: 'active' },
+              after: { status: 'inactive' },
+            });
+          });
+          throw failure;
+        }
+      }
+
+      if (body.password) {
+        await setAuthPassword(target.auth_user_id, body.password);
+        // Never the password itself: before and after are null (C-4.6).
+        await writeAuditOutcome({
+          ...outcome,
+          action: 'officer.password_set',
+          before: null,
+          after: null,
+        });
+      }
+
+      return ok(present(row));
     },
   },
 
@@ -138,14 +222,37 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       requireWriter(auth);
       const target = await loadVisible(params.id ?? '', {});
 
-      await prisma.$executeRawUnsafe(
-        `UPDATE public."officer" SET deleted_at = now(), deleted_by = $2::uuid
-         WHERE id = $1::uuid AND deleted_at IS NULL`,
-        target.id,
-        auth.principal.id,
-      );
+      const actor = { actorType: auth.role, actorId: auth.principal.id } as const;
+      await audited(prisma, async (tx) => {
+        const [row] = await tx.$queryRawUnsafe<{ deleted_at: Date }[]>(
+          `UPDATE public."officer" SET deleted_at = now(), deleted_by = $2::uuid
+           WHERE id = $1::uuid AND deleted_at IS NULL RETURNING deleted_at`,
+          target.id,
+          auth.principal.id,
+        );
+        if (!row) throw notFound();
+        await writeAudit(tx, {
+          entityType: 'officer',
+          entityId: target.id,
+          ...actor,
+          action: 'officer.soft_deleted',
+          before: { deleted_at: null },
+          after: { deleted_at: toIso(row.deleted_at) },
+        });
+      });
 
-      await disableAuthAccount(target.auth_user_id);
+      // Two rows for a delete, not one (DECISIONS): the auth disable is a
+      // separate system that can fail on its own, and the log says which.
+      const outcome = { entityType: 'officer', entityId: target.id, ...actor } as const;
+      try {
+        await disableAuthAccount(target.auth_user_id);
+        await writeAuditOutcome({ ...outcome, action: 'auth.disabled' });
+      } catch (failure) {
+        await writeAuditOutcome({ ...outcome, action: 'auth.disable_failed' }).catch(
+          () => undefined,
+        );
+        throw failure;
+      }
       return empty(204);
     },
   },

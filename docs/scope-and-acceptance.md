@@ -176,6 +176,46 @@ change its own. No account may change another's, except an administrator.
 **The last administrator cannot be removed or demoted**, by anyone including
 themselves. Locking CORWADO out of their own system is not something this team
 can recover for them.
+## C-4 — AUDIT LOG
+
+Deliverable: (s) system security features
+
+Inception Report wording: "Authentication, role based access, encryption of
+personal data, non editable audit log."
+
+C-4.1  Every create, update and deactivation of a record is recorded, with what
+       changed, who did it, and when.
+
+C-4.2  A recorded entry cannot be altered or removed by the application through
+       any code path.
+
+C-4.3  An entry identifies its actor, including where the actor is an automated
+       process rather than a person.
+
+C-4.4  A change and its audit entry succeed or fail together. A failed change
+       leaves no entry, and a recorded entry always corresponds to a change
+       that happened.
+
+       Note: two writes in this system are calls to an external authentication
+       service and have no transaction. For those, the entry records the
+       outcome after the call returns, and a separate action key records
+       failure.
+
+C-4.5  Deactivating a record does not remove its history. History remains
+       readable after the record has left every list.
+
+C-4.6  Entries never contain a password, a token, or an authentication
+       identifier.
+
+C-4.7  Entries never contain a farmer's name, phone number or national ID in
+       free text. Actions are recorded as fixed keys.
+
+C-4.8  Only administrators can read the audit log.
+
+C-4.9  The log can be filtered by record, by actor and by date range.
+
+---
+
 ## C-13 — DIRECTORIES AND LEARNING LIBRARY
 
 **Deliverables (i), (j), (k) and (m). Unit P1.**
@@ -254,7 +294,6 @@ list. If yes, the officer role gets a write route and entries gain a
 Written one unit ahead of the build, not all at once, so that criteria reflect
 what the preceding unit actually produced.
 
-- C-4 — audit log — deliverable (s)
 - C-5 — farmer registration, profiling, farmer number, duplicate warning — (c)
 - C-6 — verification and approval workflow — (c)
 - C-7 — farm boundary mapping — (c)
