@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
 
-import { ListingForm } from '@/components/farmer/ListingForm';
+import { ListingDetail } from '@/components/farmer/ListingDetail';
 
-export const metadata: Metadata = { title: 'Edit produce' };
+export const metadata: Metadata = { title: 'Listing' };
 
-export default async function EditListingPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function ListingDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  return <ListingForm listingId={id} />;
+  return <ListingDetail listingId={id} />;
 }

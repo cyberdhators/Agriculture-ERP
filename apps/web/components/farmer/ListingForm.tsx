@@ -80,12 +80,12 @@ export function ListingForm({ listingId }: { listingId?: string }) {
     }
   }, [own]);
 
+  const photosRef = useRef(photos);
+  photosRef.current = photos;
   useEffect(() => {
     return () => {
-      photos.filter((p) => p.startsWith('blob:')).forEach((p) => URL.revokeObjectURL(p));
+      photosRef.current.filter((p) => p.startsWith('blob:')).forEach((p) => URL.revokeObjectURL(p));
     };
-    // Revoke only on unmount; photos are read then.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const verified = useMemo(() => (farmer ? canPublishListings(farmer) : false), [farmer]);
@@ -212,7 +212,10 @@ export function ListingForm({ listingId }: { listingId?: string }) {
       <div className={styles.formLayout}>
         {/* Photos */}
         <aside className={styles.photoPanel}>
-          <Field label={t('listingForm.photos', language)} hint={t('listingForm.photosHint', language)}>
+          <Field
+            label={t('listingForm.photos', language)}
+            hint={t('listingForm.photosHint', language)}
+          >
             {(ids) => (
               <label
                 className={`${styles.dropZone} ${dragging ? styles.dropZoneActive : ''}`}
@@ -240,7 +243,9 @@ export function ListingForm({ listingId }: { listingId?: string }) {
                 ) : (
                   <span>
                     {t('listingForm.photosDrop', language)}{' '}
-                    <span className={styles.textLink}>{t('listingForm.photosChoose', language)}</span>
+                    <span className={styles.textLink}>
+                      {t('listingForm.photosChoose', language)}
+                    </span>
                   </span>
                 )}
                 <span className="small muted mono">
@@ -323,7 +328,9 @@ export function ListingForm({ listingId }: { listingId?: string }) {
                     {...ids}
                     id="listing-category"
                     value={values.category}
-                    onChange={(e) => set('category', e.target.value as ListingFormValues['category'])}
+                    onChange={(e) =>
+                      set('category', e.target.value as ListingFormValues['category'])
+                    }
                     onBlur={() => blur('category')}
                   >
                     <option value="">{t('register.select', language)}</option>

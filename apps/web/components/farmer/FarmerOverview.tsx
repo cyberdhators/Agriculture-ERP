@@ -8,8 +8,7 @@ import { ButtonLink, EmptyState, KpiStrip, Notice, Stamp } from '@/components/ui
 import { farmerPayamName, farmsForFarmer } from '@/lib/fixtures/farmers';
 import { useFarmerSession } from '@/lib/farmer-session';
 import { VERIFICATION_KEY, verificationStamp } from '@/lib/farmers/verification';
-import { formatDate, formatPhone } from '@/lib/format';
-import { LANGUAGE_LABELS } from '@/lib/format';
+import { LANGUAGE_LABELS, formatDate, formatPhone } from '@/lib/format';
 import { t } from '@/lib/i18n';
 
 import { PageHead } from './AccountShell';
@@ -65,7 +64,7 @@ export function FarmerOverview() {
       <div className={styles.overview}>
         <div className={styles.block}>
           {farmer.verification_status === 'pending' ? (
-            <Notice kind="warning" title={t('account.whatPendingTitle', language)}>
+            <Notice kind="warn" title={t('account.whatPendingTitle', language)}>
               <p className="small">{t('account.whatPendingBody', language)}</p>
             </Notice>
           ) : null}
@@ -125,7 +124,9 @@ export function FarmerOverview() {
                 <dd className={styles.recordValueMono}>
                   {numberPending ? '—' : farmer.farmer_number}
                   {numberPending ? (
-                    <span className={styles.recordNote}>{t('account.numberPending', language)}</span>
+                    <span className={styles.recordNote}>
+                      {t('account.numberPending', language)}
+                    </span>
                   ) : null}
                 </dd>
               </div>
@@ -173,8 +174,7 @@ export function FarmerOverview() {
                         {t('account.plot', language)} {i + 1}
                       </div>
                       <div className={styles.farmMeta}>
-                        {farm.season} · {t('account.mapped', language)}{' '}
-                        {formatDate(farm.mapped_at)}
+                        {farm.season} · {t('account.mapped', language)} {formatDate(farm.mapped_at)}
                       </div>
                     </div>
                   </div>

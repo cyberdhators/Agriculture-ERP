@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 
-import { Market } from '@/components/market/Market';
+import { StaffMarket } from '@/components/market/StaffMarket';
 
-export const metadata: Metadata = { title: 'Market' };
+export const metadata: Metadata = { title: 'Marketplace' };
 
 export default function MarketPage() {
-  return <Market />;
+  return <StaffMarket />;
 }

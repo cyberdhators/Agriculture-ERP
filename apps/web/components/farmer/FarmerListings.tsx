@@ -29,7 +29,8 @@ export function FarmerListings() {
 
   const all = listingsFor(farmer.id);
   const shown = filter === 'all' ? all : all.filter((l) => l.status === filter);
-  const count = (f: Filter) => (f === 'all' ? all.length : all.filter((l) => l.status === f).length);
+  const count = (f: Filter) =>
+    f === 'all' ? all.length : all.filter((l) => l.status === f).length;
 
   return (
     <>

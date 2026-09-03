@@ -209,8 +209,8 @@ export function FarmerRegister() {
     <div className={styles.sheet}>
       <div className={styles.progress}>
         <p className={styles.progressLabel}>
-          {t('register.step', language)} {step + 1} {t('register.of', language)}{' '}
-          {LAST_STEP + 1} — {stepTitle}
+          {t('register.step', language)} {step + 1} {t('register.of', language)} {LAST_STEP + 1} —{' '}
+          {stepTitle}
         </p>
         <div className={styles.progressTrack} aria-hidden>
           {[0, 1, 2, 3].map((i) => (

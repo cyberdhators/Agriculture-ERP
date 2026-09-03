@@ -190,7 +190,10 @@ export function FarmerAccount() {
             </Button>
             {panel === 'password' ? (
               <form className={styles.inlineForm} onSubmit={submitPassword} noValidate>
-                <Field label={t('account.currentPassword', language)} error={passwordErrors.current}>
+                <Field
+                  label={t('account.currentPassword', language)}
+                  error={passwordErrors.current}
+                >
                   {(ids) => (
                     <PasswordInput
                       {...ids}

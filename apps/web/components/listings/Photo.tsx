@@ -35,7 +35,11 @@ export function Photo({
       {local ? (
         <img src={src} alt={alt} />
       ) : (
-        <div className={styles.placeholder} role="img" aria-label={alt || t(CATEGORY_KEY[category], lang)}>
+        <div
+          className={styles.placeholder}
+          role="img"
+          aria-label={alt || t(CATEGORY_KEY[category], lang)}
+        >
           <span className={styles.placeholderWord}>
             {src === null ? t('listings.noPhoto', lang) : t(CATEGORY_KEY[category], lang)}
           </span>

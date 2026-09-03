@@ -1527,7 +1527,7 @@ const LISTING_SEEDS: ListingSeed[] = [
     category: 'crop',
     product: 'Sorghum',
     description:
-      'This season\'s red sorghum from Rejaf, threshed and winnowed, bagged in 100 kg sacks. Dry and free of stones. Eight bags ready now, more after the second harvest.',
+      "This season's red sorghum from Rejaf, threshed and winnowed, bagged in 100 kg sacks. Dry and free of stones. Eight bags ready now, more after the second harvest.",
     quantity: 8,
     unit: 'bag_100kg',
     price: 35000,

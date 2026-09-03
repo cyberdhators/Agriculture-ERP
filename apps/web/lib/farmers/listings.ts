@@ -202,8 +202,7 @@ export type ListingParsed = Omit<
 >;
 
 export type ListingParseResult =
-  | { ok: true; values: ListingParsed }
-  | { ok: false; errors: ListingErrors };
+  { ok: true; values: ListingParsed } | { ok: false; errors: ListingErrors };
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -218,7 +217,8 @@ export function validateListing(input: ListingFormValues): ListingParseResult {
   if (product === '') errors.product_name = 'error.productName';
   const description = input.description.trim();
   if (description === '') errors.description = 'error.description';
-  else if (description.length > LISTING_DESCRIPTION_MAX) errors.description = 'error.descriptionLong';
+  else if (description.length > LISTING_DESCRIPTION_MAX)
+    errors.description = 'error.descriptionLong';
 
   const quantity = Number(input.quantity);
   if (input.quantity.trim() === '' || !Number.isFinite(quantity) || quantity <= 0)

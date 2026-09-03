@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 
-import { FarmerAccount } from '@/components/farmer/FarmerAccount';
+import { FarmerOverview } from '@/components/farmer/FarmerOverview';
 
-export const metadata: Metadata = { title: 'My account' };
+export const metadata: Metadata = { title: 'Overview' };
 
-export default function FarmerAccountPage() {
-  return <FarmerAccount />;
+export default function FarmerOverviewPage() {
+  return <FarmerOverview />;
 }
