@@ -349,8 +349,11 @@ CORWADO before the affected deliverable is built.
    listings. It is web, not the Android app, which stays the officers' tool.
    Self-registration is the `registration_source = self` path the data model
    already describes: the record is `pending` with `registered_by` null until
-   an officer picks it up. Login is by phone number and a one-time SMS code
-   (C-15), not a password. Recorded by Alieu-Claude; the unit is C-18.
+   an officer picks it up. Login is by phone number and a password, the same
+   mechanism as officers (C-3.7). The password is created at registration —
+   by the farmer when self-registering, or by the staff member registering
+   them — and the farmer may change it after signing in; a staff member may
+   reset it. Recorded by Alieu-Claude; the unit is C-18.
 
 3. **"Ask AI" appears in the designs and in no deliverable.** Not to be built
    until answered.
