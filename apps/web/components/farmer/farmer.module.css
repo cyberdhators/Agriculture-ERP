@@ -144,16 +144,31 @@
 .panelLangBtn {
   min-height: 32px;
   padding: 0 var(--s-3);
-  border: 1px solid var(--band-line);
+  border: 1px solid var(--line-strong);
   border-radius: var(--radius-control);
   background: transparent;
-  color: var(--band-ink);
+  color: var(--ink);
   font-family: var(--font-body);
   font-size: var(--text-small);
+  cursor: pointer;
 }
 
 .panelLangBtn[aria-pressed='true'] {
+  border-color: var(--green);
+  background: var(--green-tint);
+  color: var(--green-deep);
+  font-weight: 600;
+}
+
+/* On the band the same switch inverts. */
+.compactBand .panelLangBtn {
+  border-color: var(--band-line);
+  color: var(--band-ink);
+}
+
+.compactBand .panelLangBtn[aria-pressed='true'] {
   border-color: var(--sprout);
+  background: transparent;
   color: var(--sprout);
 }
 
