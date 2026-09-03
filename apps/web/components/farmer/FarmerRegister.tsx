@@ -3,7 +3,16 @@
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-import { Button, Checkbox, Field, Input, Notice, PrefixedInput, Select } from '@/components/ui';
+import {
+  Button,
+  Checkbox,
+  Field,
+  Input,
+  Notice,
+  PasswordInput,
+  PrefixedInput,
+  Select,
+} from '@/components/ui';
 import { IconWarn } from '@/components/ui/icons';
 import { maxBirthYear, validateFarmer, type FarmerFormValues } from '@/lib/farmers/schema';
 import { FARMERS } from '@/lib/fixtures/farmers';
@@ -25,15 +34,18 @@ function digits(value: string): string {
   return value.replace(/\D/g, '');
 }
 
-type Step = 0 | 1 | 2;
+type Step = 0 | 1 | 2 | 3;
+const LAST_STEP: Step = 3;
 const STEP_KEYS: Array<(keyof FarmerFormValues)[]> = [
   ['given_name', 'family_name', 'sex', 'year_of_birth'],
   ['phone', 'state_id', 'county_id', 'payam_id'],
+  ['password'],
   ['consent_language', 'consent_granted'],
 ];
 
 /**
- * Self-registration in three short steps with a progress rule. It validates
+ * Self-registration in four short steps with a progress rule: name, phone and
+ * place, a password (created here, B12 point 2), then consent. It validates
  * through the same `validateFarmer` law the officer intake uses, warns about a
  * possible duplicate (same phone, or same name in the payam) without ever
  * blocking, and on submit creates the record as pending with no farmer number
@@ -58,7 +70,10 @@ export function FarmerRegister() {
     registration_source: 'self',
     consent_language: language,
     consent_granted: false,
+    password: '',
   });
+  const [confirm, setConfirm] = useState('');
+  const [confirmError, setConfirmError] = useState<string | undefined>();
   const [errors, setErrors] = useState<Partial<Record<keyof FarmerFormValues, string>>>({});
   const [done, setDone] = useState<{ number: string } | null>(null);
 
@@ -103,7 +118,9 @@ export function FarmerRegister() {
   }
 
   function validateStep(current: Step): boolean {
-    const result = validateFarmer({ ...values, consent_language: language }, REFERENCE);
+    const result = validateFarmer({ ...values, consent_language: language }, REFERENCE, {
+      requirePassword: true,
+    });
     const stepErrors: Partial<Record<keyof FarmerFormValues, string>> = {};
     if (!result.ok) {
       for (const key of STEP_KEYS[current]!) {
@@ -111,12 +128,15 @@ export function FarmerRegister() {
       }
     }
     setErrors(stepErrors);
-    return Object.keys(stepErrors).length === 0;
+    // The confirmation is the form's own check, not the schema's.
+    const mismatch = current === 2 && !stepErrors.password && confirm !== values.password;
+    setConfirmError(mismatch ? t('register.passwordMismatch', language) : undefined);
+    return Object.keys(stepErrors).length === 0 && !mismatch;
   }
 
   function next() {
     if (!validateStep(step)) return;
-    setStep((s) => Math.min(2, s + 1) as Step);
+    setStep((s) => Math.min(LAST_STEP, s + 1) as Step);
   }
 
   function back() {
@@ -125,7 +145,9 @@ export function FarmerRegister() {
   }
 
   function submit() {
-    const result = validateFarmer({ ...values, consent_language: language }, REFERENCE);
+    const result = validateFarmer({ ...values, consent_language: language }, REFERENCE, {
+      requirePassword: true,
+    });
     if (!result.ok) {
       setErrors(result.errors);
       // Jump to the earliest step that still has an error.
@@ -143,6 +165,7 @@ export function FarmerRegister() {
       state_id: result.values.state_id,
       preferred_language: language,
       consent_version: CONSENT_VERSION[language],
+      password: result.values.password ?? '',
     });
     setDone({ number: created.farmer_number });
   }
@@ -158,7 +181,8 @@ export function FarmerRegister() {
 
         <div className={styles.receiptNumber}>
           <span className={styles.recordTerm}>{t('register.doneNumber', language)}</span>
-          <span className={styles.receiptNumberValue}>{t('register.donePending', language)}</span>
+          <span className={styles.receiptNumberValue}>—</span>
+          <span className={styles.receiptNote}>{t('register.donePending', language)}</span>
         </div>
 
         <div className={styles.actions}>
@@ -177,6 +201,7 @@ export function FarmerRegister() {
   const stepTitle = [
     t('register.stepName', language),
     t('register.stepContact', language),
+    t('register.stepPassword', language),
     t('register.stepConsent', language),
   ][step];
 
@@ -184,10 +209,11 @@ export function FarmerRegister() {
     <div className={styles.sheet}>
       <div className={styles.progress}>
         <p className={styles.progressLabel}>
-          {t('register.step', language)} {step + 1} {t('register.of', language)} 3 — {stepTitle}
+          {t('register.step', language)} {step + 1} {t('register.of', language)}{' '}
+          {LAST_STEP + 1} — {stepTitle}
         </p>
         <div className={styles.progressTrack} aria-hidden>
-          {[0, 1, 2].map((i) => (
+          {[0, 1, 2, 3].map((i) => (
             <span
               key={i}
               className={`${styles.progressSeg} ${i <= step ? styles.progressSegDone : ''}`}
@@ -348,6 +374,42 @@ export function FarmerRegister() {
 
       {step === 2 ? (
         <div className={styles.stack}>
+          <Field
+            label={t('register.password', language)}
+            hint={t('register.passwordHint', language)}
+            error={errors.password}
+          >
+            {(ids) => (
+              <PasswordInput
+                {...ids}
+                autoComplete="new-password"
+                value={values.password ?? ''}
+                showLabel={t('login.show', language)}
+                hideLabel={t('login.hide', language)}
+                onChange={(e) => set('password', e.target.value)}
+              />
+            )}
+          </Field>
+          <Field label={t('register.passwordConfirm', language)} error={confirmError}>
+            {(ids) => (
+              <PasswordInput
+                {...ids}
+                autoComplete="new-password"
+                value={confirm}
+                showLabel={t('login.show', language)}
+                hideLabel={t('login.hide', language)}
+                onChange={(e) => {
+                  setConfirm(e.target.value);
+                  setConfirmError(undefined);
+                }}
+              />
+            )}
+          </Field>
+        </div>
+      ) : null}
+
+      {step === 3 ? (
+        <div className={styles.stack}>
           <div>
             <p className={styles.progressLabel}>{t('register.consentTitle', language)}</p>
             <div className={styles.consentBody}>{t('consent.body', language)}</div>
@@ -366,7 +428,7 @@ export function FarmerRegister() {
       ) : null}
 
       <div className={styles.actions}>
-        {step < 2 ? (
+        {step < LAST_STEP ? (
           <Button variant="primary" className={styles.blockButton} onClick={next}>
             {t('register.next', language)}
           </Button>

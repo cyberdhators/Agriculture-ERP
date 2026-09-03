@@ -266,7 +266,7 @@
 }
 
 .kpiValueAccent {
-  color: var(--accent-hover);
+  color: var(--harvest-deep);
 }
 
 .kpiLabel {
@@ -450,6 +450,40 @@ select.control {
 
 .controlWithPrefix .control {
   border-radius: 0 var(--radius-control) var(--radius-control) 0;
+}
+
+/* Password: the control with a "Show" / "Hide" word beside it — a word, not an
+   eye icon, so the state is never colour- or icon-only. Logical properties so
+   the toggle sits on the trailing side under RTL. */
+.controlWithToggle {
+  display: grid;
+  grid-template-columns: 1fr auto;
+}
+
+.controlWithToggle .control {
+  border-start-end-radius: 0;
+  border-end-end-radius: 0;
+}
+
+.controlToggle {
+  min-width: var(--touch);
+  min-height: var(--touch);
+  padding: 0 var(--s-3);
+  background: var(--dust);
+  border: 1px solid var(--line-strong);
+  border-inline-start: 0;
+  border-start-end-radius: var(--radius-control);
+  border-end-end-radius: var(--radius-control);
+  font-size: var(--text-small);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+
+.controlToggle:hover {
+  color: var(--accent-hover);
 }
 
 .checkbox {

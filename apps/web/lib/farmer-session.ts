@@ -14,8 +14,8 @@ import {
 import { DEFAULT_LANGUAGE, LANG_COOKIE, LANG_STORAGE, isLanguage, type Language } from '@/lib/i18n';
 import {
   FARMERS,
+  FARMER_FIXTURE_PASSWORD,
   LISTINGS,
-  farmerByPhone,
   type ConsentLanguage,
   type Farmer,
   type ProduceListing,
@@ -29,9 +29,12 @@ import {
  * reads and localStorage so it survives a return), the signed-in farmer (the
  * cookie `farmer_session` carries a fixture farmer id), self-registrations held
  * in client state for the session, and produce listings held the same way.
- * Nothing is written anywhere. When B12 lands — phone + SMS code auth, a real
- * `farmer` principal, the `produce_listing` table — this file is deleted and
- * the screens fetch instead, unchanged.
+ * Sign-in is phone + password (B12 point 2): every fixture farmer answers to
+ * `FARMER_FIXTURE_PASSWORD`; a self-registered farmer to the password they
+ * chose; a changed password or phone is remembered for the session only.
+ * Nothing is written anywhere. When B12 lands — `POST /api/farmer/auth/login`,
+ * a real `farmer` principal, the `produce_listing` table — this file is
+ * deleted and the screens fetch instead, unchanged.
  */
 
 export const SESSION_COOKIE = 'farmer_session';
@@ -64,7 +67,14 @@ export interface FarmerRegistration {
   state_id: string;
   preferred_language: ConsentLanguage;
   consent_version: string;
+  password: string;
 }
+
+/** Why a sign-in or a password/phone change did not go through. */
+export type AuthFailure = 'wrong' | 'locked';
+
+/** Failed sign-ins before the account locks (B12 point 2: 5 failures → 429). */
+export const MAX_LOGIN_FAILURES = 5;
 
 interface FarmerSessionValue {
   hydrated: boolean;
@@ -73,9 +83,17 @@ interface FarmerSessionValue {
 
   /** The signed-in farmer, or null. `(farmer)/account/**` redirects when null. */
   farmer: Farmer | null;
-  signIn: (farmerId: string) => void;
+  /**
+   * `POST /api/farmer/auth/login {phone, password}`: an unknown phone and a
+   * wrong password fail the same way; the fifth failure locks the phone.
+   */
+  signIn: (phone: string, password: string) => { ok: true } | { ok: false; reason: AuthFailure };
   register: (input: FarmerRegistration) => Farmer;
   signOut: () => void;
+  /** `POST /api/farmer/me/password {current, next}`. */
+  changePassword: (current: string, next: string) => boolean;
+  /** `PATCH /api/farmer/me {phone}` — the phone change asks for the password. */
+  changePhone: (password: string, phone: string) => boolean;
 
   listingsFor: (farmerId: string) => ProduceListing[];
   listingById: (id: string) => ProduceListing | undefined;
@@ -123,6 +141,11 @@ export function FarmerSessionProvider({
   const [selfFarmers, setSelfFarmers] = useState<Farmer[]>([]);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [listings, setListings] = useState<ProduceListing[]>(() => [...LISTINGS]);
+  // Session-only memory of what B12 keeps hashed: passwords set at
+  // registration or changed here, phones changed here, sign-in failures.
+  const [passwords, setPasswords] = useState<Record<string, string>>({});
+  const [phones, setPhones] = useState<Record<string, string>>({});
+  const [failures, setFailures] = useState<Record<string, number>>({});
 
   // Read the persisted choices once, client-side, so SSR and first paint agree.
   useEffect(() => {
@@ -150,17 +173,40 @@ export function FarmerSessionProvider({
     }
   }, []);
 
-  const allFarmers = useMemo<readonly Farmer[]>(() => [...selfFarmers, ...FARMERS], [selfFarmers]);
+  const allFarmers = useMemo<readonly Farmer[]>(
+    () =>
+      [...selfFarmers, ...FARMERS].map((f) =>
+        phones[f.id] !== undefined ? { ...f, phone: phones[f.id]! } : f,
+      ),
+    [selfFarmers, phones],
+  );
+
+  const passwordOf = useCallback(
+    (farmerId: string) => passwords[farmerId] ?? FARMER_FIXTURE_PASSWORD,
+    [passwords],
+  );
 
   const farmer = useMemo(
     () => (sessionId ? (allFarmers.find((f) => f.id === sessionId) ?? null) : null),
     [sessionId, allFarmers],
   );
 
-  const signIn = useCallback((farmerId: string) => {
-    setSessionId(farmerId);
-    writeCookie(SESSION_COOKIE, farmerId);
-  }, []);
+  const signIn = useCallback<FarmerSessionValue['signIn']>(
+    (phone, password) => {
+      if ((failures[phone] ?? 0) >= MAX_LOGIN_FAILURES) return { ok: false, reason: 'locked' };
+      const match = allFarmers.find((f) => f.phone === phone && !f.merged_into);
+      if (!match || passwordOf(match.id) !== password) {
+        const count = (failures[phone] ?? 0) + 1;
+        setFailures((map) => ({ ...map, [phone]: count }));
+        return { ok: false, reason: count >= MAX_LOGIN_FAILURES ? 'locked' : 'wrong' };
+      }
+      setFailures((map) => ({ ...map, [phone]: 0 }));
+      setSessionId(match.id);
+      writeCookie(SESSION_COOKIE, match.id);
+      return { ok: true };
+    },
+    [allFarmers, failures, passwordOf],
+  );
 
   const register = useCallback((input: FarmerRegistration) => {
     const id =
@@ -169,6 +215,7 @@ export function FarmerSessionProvider({
         : `self-${Date.now()}`;
     const created = makeSelfFarmer(input, id);
     setSelfFarmers((list) => [created, ...list]);
+    setPasswords((map) => ({ ...map, [id]: input.password }));
     setSessionId(id);
     writeCookie(SESSION_COOKIE, id);
     return created;
@@ -178,6 +225,24 @@ export function FarmerSessionProvider({
     setSessionId(null);
     clearCookie(SESSION_COOKIE);
   }, []);
+
+  const changePassword = useCallback(
+    (current: string, next: string) => {
+      if (!sessionId || passwordOf(sessionId) !== current) return false;
+      setPasswords((map) => ({ ...map, [sessionId]: next }));
+      return true;
+    },
+    [sessionId, passwordOf],
+  );
+
+  const changePhone = useCallback(
+    (password: string, phone: string) => {
+      if (!sessionId || passwordOf(sessionId) !== password) return false;
+      setPhones((map) => ({ ...map, [sessionId]: phone }));
+      return true;
+    },
+    [sessionId, passwordOf],
+  );
 
   const listingsFor = useCallback(
     (farmerId: string) =>
@@ -214,6 +279,8 @@ export function FarmerSessionProvider({
       signIn,
       register,
       signOut,
+      changePassword,
+      changePhone,
       listingsFor,
       listingById,
       saveListing,
@@ -227,6 +294,8 @@ export function FarmerSessionProvider({
       signIn,
       register,
       signOut,
+      changePassword,
+      changePhone,
       listingsFor,
       listingById,
       saveListing,
@@ -242,6 +311,3 @@ export function useFarmerSession(): FarmerSessionValue {
   if (!ctx) throw new Error('useFarmerSession must be used inside FarmerSessionProvider');
   return ctx;
 }
-
-/** Fixture sign-in: any known farmer phone works; the code is checked elsewhere. */
-export { farmerByPhone };

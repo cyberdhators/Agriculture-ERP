@@ -1425,25 +1425,66 @@ export function caseloadCount(officerId: string): number {
 /* ---- Produce listings (C-18 / B12 point 5) --------------------------- */
 
 /**
- * A farmer's own produce listing. Shape mirrors B12 point 5's `produce_listing`
- * table field-for-field so wiring the farmer flow to the route is a fixture
- * swap: `status` is the enum draft | listed | withdrawn | sold, a listing only
- * reaches `listed` once the farmer is verified, `price_ssp_per_kg` and
- * `available_until` are nullable, and the photo is a storage path, captured
- * elsewhere. EVERY ROW HERE IS INVENTED.
+ * A farmer's own product listing. Shape mirrors B12 point 5's `produce_listing`
+ * table field-for-field (Alieu 2026-09-03: a general product listing, not five
+ * crop tiles) so wiring the farmer flow to the route is a fixture swap. A
+ * listing only reaches `listed` once the farmer is verified; `location` is the
+ * farmer's payam, read from the farmer record, not stored here; `photos` are
+ * storage paths captured elsewhere, first is the cover. EVERY ROW HERE IS
+ * INVENTED.
  */
 export type ListingStatus = 'draft' | 'listed' | 'withdrawn' | 'sold';
+
+export const LISTING_CATEGORIES = [
+  'crop',
+  'vegetable',
+  'fruit',
+  'livestock',
+  'poultry',
+  'dairy',
+  'fish',
+  'processed',
+  'seeds_inputs',
+  'other',
+] as const;
+export type ListingCategory = (typeof LISTING_CATEGORIES)[number];
+
+export const LISTING_UNITS = [
+  'kg',
+  'bag_50kg',
+  'bag_100kg',
+  'sack',
+  'crate',
+  'bunch',
+  'piece',
+  'head',
+  'litre',
+  'tin',
+] as const;
+export type ListingUnit = (typeof LISTING_UNITS)[number];
+
+export const LISTING_MAX_PHOTOS = 5;
+export const LISTING_DESCRIPTION_MAX = 1000;
 
 export interface ProduceListing {
   id: string;
   farmer_id: string;
-  crop: Crop;
-  quantity_kg: number;
-  price_ssp_per_kg: number | null;
+  title: string;
+  category: ListingCategory;
+  product_name: string;
+  description: string;
+  quantity: number;
+  unit: ListingUnit;
+  price_ssp: number;
+  price_per: ListingUnit;
+  negotiable: boolean;
+  photo_storage_paths: string[];
   available_from: string; // YYYY-MM-DD
   available_until: string | null;
-  notes: string;
-  photo_storage_path: string | null;
+  harvest_season: string | null;
+  pickup_notes: string | null;
+  contact_phone: string;
+  delivery_available: boolean;
   status: ListingStatus;
   created_at: string;
   updated_at: string;
@@ -1452,172 +1493,298 @@ export interface ProduceListing {
 const lid = (n: number) => `f0000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
 
 /**
- * Twelve listings across verified and pending fixture farmers, covering every
- * status. A pending farmer (Agnes Yar, Nadia Kuku, Amina Hassan) can only hold
- * a draft — the "listed only when verified" rule the farmer flow enforces.
+ * Sixteen listings across verified and pending fixture farmers, every category
+ * and every status. A pending farmer (Agnes Yar, Nadia Kuku) can only hold a
+ * draft — the "listed only when verified" rule the farmer flow enforces.
  */
 interface ListingSeed {
   who: number; // index into FARMERS
-  crop: Crop;
-  kg: number;
-  price: number | null;
+  title: string;
+  category: ListingCategory;
+  product: string;
+  description: string;
+  quantity: number;
+  unit: ListingUnit;
+  price: number;
+  per?: ListingUnit; // defaults to `unit`
+  negotiable?: boolean;
+  photos?: number; // 0–3 placeholder photo paths
   from: number; // days ago the produce became available
-  until: number | null; // days ahead it stops
+  until?: number; // days ahead it stops
+  season?: string;
+  pickup?: string;
+  delivery?: boolean;
   status: ListingStatus;
-  photo?: boolean;
-  notes: string;
   createdDaysAgo: number;
+  updatedDaysAgo?: number;
 }
 
 const LISTING_SEEDS: ListingSeed[] = [
-  // — verified farmers, live and sold —
+  // — verified farmers, live —
   {
     who: 0,
-    crop: 'sorghum',
-    kg: 400,
-    price: 350,
+    title: 'Red sorghum, cleaned and bagged',
+    category: 'crop',
+    product: 'Sorghum',
+    description:
+      'This season\'s red sorghum from Rejaf, threshed and winnowed, bagged in 100 kg sacks. Dry and free of stones. Eight bags ready now, more after the second harvest.',
+    quantity: 8,
+    unit: 'bag_100kg',
+    price: 35000,
+    negotiable: true,
+    photos: 2,
     from: 2,
     until: 40,
+    season: '2026 first season',
+    pickup: 'Collection at the homestead, Rejaf, off the Juba–Nimule road.',
+    delivery: false,
     status: 'listed',
-    photo: true,
-    notes: 'Red sorghum, cleaned and bagged. Collection at Rejaf.',
     createdDaysAgo: 3,
   },
   {
     who: 0,
-    crop: 'groundnut',
-    kg: 120,
+    title: 'Groundnuts, shelled',
+    category: 'crop',
+    product: 'Groundnut',
+    description: 'Shelled red groundnuts, sorted by hand. Sold to a Juba trader.',
+    quantity: 120,
+    unit: 'kg',
     price: 900,
+    photos: 1,
     from: 30,
-    until: null,
     status: 'sold',
-    notes: 'Sold to a Juba trader.',
     createdDaysAgo: 26,
+    updatedDaysAgo: 9,
   },
   {
     who: 1,
-    crop: 'sorghum',
-    kg: 800,
-    price: 340,
+    title: 'Fresh okra, picked daily',
+    category: 'vegetable',
+    product: 'Okra',
+    description:
+      'Young okra picked each morning from the riverside plot. Crates of about 12 kg. Best collected before midday.',
+    quantity: 6,
+    unit: 'crate',
+    price: 4500,
+    negotiable: true,
+    photos: 3,
     from: 1,
-    until: 60,
+    until: 14,
+    pickup: 'Rejaf market side, ask for Ladu.',
+    delivery: true,
     status: 'listed',
-    photo: true,
-    notes: 'Two ox-cart loads available weekly.',
+    createdDaysAgo: 1,
+  },
+  {
+    who: 2,
+    title: 'Sesame, white',
+    category: 'crop',
+    product: 'Sesame',
+    description: 'White sesame, cleaned, in 50 kg bags. Suitable for oil pressing or export grade.',
+    quantity: 12,
+    unit: 'bag_50kg',
+    price: 42000,
+    photos: 1,
+    from: 5,
+    until: 60,
+    season: '2026 first season',
+    pickup: 'Kator, near the church.',
+    status: 'listed',
     createdDaysAgo: 5,
   },
   {
     who: 3,
-    crop: 'groundnut',
-    kg: 200,
-    price: 950,
-    from: 4,
-    until: 30,
-    status: 'listed',
-    notes: 'Shelled, sun-dried.',
-    createdDaysAgo: 4,
-  },
-  {
-    who: 4,
-    crop: 'maize',
-    kg: 600,
-    price: 300,
-    from: 10,
-    until: null,
-    status: 'withdrawn',
-    notes: 'Held back for household use after price fell.',
-    createdDaysAgo: 14,
-  },
-  {
-    who: 7,
-    crop: 'sorghum',
-    kg: 500,
-    price: 360,
-    from: 45,
-    until: null,
-    status: 'sold',
-    notes: 'Whole lot to the cooperative store.',
-    createdDaysAgo: 38,
-  },
-  {
-    who: 9,
-    crop: 'sesame',
-    kg: 150,
-    price: 1400,
+    title: 'Ripe mangoes, Munuki',
+    category: 'fruit',
+    product: 'Mango',
+    description:
+      'Sweet local mangoes from mature trees, sold by the crate of roughly 40 fruit. Ripening now; best within a week.',
+    quantity: 10,
+    unit: 'crate',
+    price: 6000,
+    negotiable: true,
+    photos: 2,
     from: 3,
-    until: 25,
+    until: 10,
+    delivery: true,
     status: 'listed',
-    photo: true,
-    notes: 'White sesame, market grade.',
-    createdDaysAgo: 6,
-  },
-  {
-    who: 23,
-    crop: 'groundnut',
-    kg: 90,
-    price: null,
-    from: 7,
-    until: 35,
-    status: 'draft',
-    notes: 'Deciding on a price — will list once decided.',
-    createdDaysAgo: 2,
-  },
-  {
-    who: 29,
-    crop: 'sorghum',
-    kg: 350,
-    price: 355,
-    from: 2,
-    until: 50,
-    status: 'listed',
-    notes: 'Clean grain, ready now.',
     createdDaysAgo: 3,
   },
   {
-    who: 30,
-    crop: 'maize',
-    kg: 300,
-    price: 310,
-    from: 5,
-    until: null,
+    who: 4,
+    title: 'Two Nilotic bulls',
+    category: 'livestock',
+    product: 'Cattle',
+    description:
+      'Two healthy bulls, about four years old, well fed. Viewing welcome at the kraal in Northern Bari. Serious buyers only.',
+    quantity: 2,
+    unit: 'head',
+    price: 450000,
+    negotiable: true,
+    photos: 2,
+    from: 10,
+    pickup: 'Northern Bari; call ahead for directions.',
     status: 'listed',
-    photo: true,
-    notes: 'Dry maize, own store.',
+    createdDaysAgo: 10,
+  },
+  {
+    who: 5,
+    title: 'Local hens, laying',
+    category: 'poultry',
+    product: 'Chicken',
+    description: 'Free-range local hens, laying regularly. Sold singly or as a batch of ten.',
+    quantity: 25,
+    unit: 'piece',
+    price: 7000,
+    photos: 1,
+    from: 7,
+    delivery: true,
+    status: 'listed',
+    createdDaysAgo: 7,
+  },
+  {
+    who: 6,
+    title: 'Fresh cow milk, mornings',
+    category: 'dairy',
+    product: 'Milk',
+    description:
+      'Fresh milk from our herd, available every morning by 7. Bring your own container or take a 5 litre jerrycan.',
+    quantity: 30,
+    unit: 'litre',
+    price: 800,
+    photos: 0,
+    from: 14,
+    pickup: 'Munuki, Block C.',
+    delivery: true,
+    status: 'listed',
+    createdDaysAgo: 14,
+    updatedDaysAgo: 2,
+  },
+  {
+    who: 7,
+    title: 'Smoked Nile perch',
+    category: 'fish',
+    product: 'Nile perch',
+    description:
+      'Smoked perch from the Rejaf landing, sold by the bunch of five. Smoked over mango wood, keeps two weeks.',
+    quantity: 20,
+    unit: 'bunch',
+    price: 12000,
+    negotiable: true,
+    photos: 2,
+    from: 2,
+    until: 12,
+    status: 'listed',
+    createdDaysAgo: 2,
+  },
+  {
+    who: 8,
+    title: 'Groundnut paste, 1 kg tins',
+    category: 'processed',
+    product: 'Groundnut paste',
+    description:
+      'Roasted and ground at home, nothing added. Sold in sealed 1 kg tins. Wholesale price for twenty or more.',
+    quantity: 40,
+    unit: 'tin',
+    price: 3500,
+    photos: 3,
+    from: 4,
+    until: 90,
+    delivery: true,
+    status: 'listed',
     createdDaysAgo: 4,
   },
-  // — pending farmers: drafts only (cannot be listed until verified) —
+  {
+    who: 9,
+    title: 'Maize seed, saved from a good stand',
+    category: 'seeds_inputs',
+    product: 'Maize seed',
+    description:
+      'Open-pollinated maize seed selected from the best cobs of last season. Dried and stored in sealed sacks. Germination tested at home.',
+    quantity: 5,
+    unit: 'sack',
+    price: 28000,
+    photos: 1,
+    from: 20,
+    until: 45,
+    season: '2025 second season',
+    status: 'listed',
+    createdDaysAgo: 20,
+  },
+  // — verified farmers, not live —
+  {
+    who: 23,
+    title: 'Cowpea, dried',
+    category: 'crop',
+    product: 'Cowpea',
+    description: 'Dried cowpea in 50 kg bags. Withdrawn: kept for the household after all.',
+    quantity: 3,
+    unit: 'bag_50kg',
+    price: 30000,
+    photos: 0,
+    from: 25,
+    status: 'withdrawn',
+    createdDaysAgo: 25,
+    updatedDaysAgo: 6,
+  },
+  {
+    who: 29,
+    title: 'Tomatoes, ripe',
+    category: 'vegetable',
+    product: 'Tomato',
+    description: 'Ripe tomatoes by the crate. Sold within two days of listing.',
+    quantity: 8,
+    unit: 'crate',
+    price: 5000,
+    photos: 1,
+    from: 9,
+    status: 'sold',
+    createdDaysAgo: 9,
+    updatedDaysAgo: 7,
+  },
+  {
+    who: 30,
+    title: 'Sorghum, second season',
+    category: 'crop',
+    product: 'Sorghum',
+    description: 'Not yet threshed. Will update once bagged.',
+    quantity: 400,
+    unit: 'kg',
+    price: 350,
+    photos: 0,
+    from: 0,
+    season: '2026 second season',
+    status: 'draft',
+    createdDaysAgo: 1,
+  },
+  // — pending farmers: drafts only —
   {
     who: 10,
-    crop: 'groundnut',
-    kg: 80,
-    price: 900,
-    from: 6,
-    until: 30,
+    title: 'Bananas by the bunch',
+    category: 'fruit',
+    product: 'Banana',
+    description: 'Sweet bananas from the Munuki plot. Waiting for verification before listing.',
+    quantity: 15,
+    unit: 'bunch',
+    price: 2500,
+    photos: 1,
+    from: 0,
     status: 'draft',
-    notes: 'Waiting to be verified before this can go live.',
     createdDaysAgo: 2,
   },
   {
     who: 12,
-    crop: 'cowpea',
-    kg: 60,
-    price: 700,
-    from: 1,
-    until: 20,
+    title: 'Charcoal, bagged',
+    category: 'other',
+    product: 'Charcoal',
+    description: 'Hardwood charcoal in sacks.',
+    quantity: 10,
+    unit: 'sack',
+    price: 9000,
+    photos: 0,
+    from: 0,
     status: 'draft',
-    notes: 'First harvest, small lot.',
     createdDaysAgo: 1,
-  },
-  {
-    who: 32,
-    crop: 'sesame',
-    kg: 110,
-    price: 1350,
-    from: 8,
-    until: null,
-    status: 'draft',
-    notes: 'Ready but account still pending.',
-    createdDaysAgo: 3,
   },
 ];
 
@@ -1627,20 +1794,33 @@ function isoDate(days: number): string {
 
 export const LISTINGS: readonly ProduceListing[] = LISTING_SEEDS.map((seed, i) => {
   const farmer = farmers[seed.who]!;
-  const created = daysAgoIso(seed.createdDaysAgo);
+  const id = lid(i + 1);
+  const photos = Array.from(
+    { length: seed.photos ?? 0 },
+    (_, n) => `listings/${farmer.id}/${id}/${n + 1}.jpg`,
+  );
   return {
-    id: lid(i + 1),
+    id,
     farmer_id: farmer.id,
-    crop: seed.crop,
-    quantity_kg: seed.kg,
-    price_ssp_per_kg: seed.price,
+    title: seed.title,
+    category: seed.category,
+    product_name: seed.product,
+    description: seed.description,
+    quantity: seed.quantity,
+    unit: seed.unit,
+    price_ssp: seed.price,
+    price_per: seed.per ?? seed.unit,
+    negotiable: seed.negotiable ?? false,
+    photo_storage_paths: photos,
     available_from: isoDate(seed.from),
-    available_until: seed.until === null ? null : isoDate(-seed.until),
-    notes: seed.notes,
-    photo_storage_path: seed.photo ? `listings/${farmer.id}/${lid(i + 1)}.jpg` : null,
+    available_until: seed.until === undefined ? null : isoDate(-seed.until),
+    harvest_season: seed.season ?? null,
+    pickup_notes: seed.pickup ?? null,
+    contact_phone: farmer.phone,
+    delivery_available: seed.delivery ?? false,
     status: seed.status,
-    created_at: created,
-    updated_at: created,
+    created_at: daysAgoIso(seed.createdDaysAgo),
+    updated_at: daysAgoIso(seed.updatedDaysAgo ?? seed.createdDaysAgo),
   };
 });
 
@@ -1648,18 +1828,16 @@ export function listingsForFarmer(farmerId: string): ProduceListing[] {
   return LISTINGS.filter((l) => l.farmer_id === farmerId);
 }
 
-export function farmerByPhone(phone: string): Farmer | undefined {
-  return FARMERS.find((f) => f.phone === phone);
-}
-
 /**
- * FARMER LOGIN IS A FIXTURE. The dev code `123456` succeeds for any farmer
- * phone in the register (B12 point 2's dev-only fixed code, behind a flag until
- * C-15 lands). An unknown phone still reaches the code screen — no enumeration.
- * These three are convenient sign-ins for a demo: a verified farmer with live
- * listings, a pending self-registrant, and an Arabi-Juba record.
+ * FARMER LOGIN IS A FIXTURE. Sign-in is phone + password, the same mechanism
+ * as officers (B12 point 2, Alieu 2026-09-03: "signin with password not otp").
+ * In this preview every fixture farmer's password is `farmer123`; a farmer who
+ * self-registers in the browser signs in with the password they chose. Wrong
+ * password and unknown phone read the same — no enumeration. These three are
+ * convenient sign-ins for a demo: a verified farmer with live listings, a
+ * pending self-registrant, and an Arabi-Juba record.
  */
-export const FARMER_DEV_CODE = '123456';
+export const FARMER_FIXTURE_PASSWORD = 'farmer123';
 
 export const FARMER_LOGIN_PHONES: ReadonlyArray<{ phone: string; who: string }> = [
   { phone: farmers[0]!.phone, who: 'Mary Aluel — verified, live listings' },

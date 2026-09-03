@@ -1,58 +1,103 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-import { Button, ButtonLink, Notice, Stamp } from '@/components/ui';
-import { Boundary } from '@/components/farmers/Boundary';
-import { farmerPayamName, farmsForFarmer, type VerificationStatus } from '@/lib/fixtures/farmers';
+import { parseSouthSudanMobile } from '@agri-erp/shared';
+
+import { Button, Field, Notice, PasswordInput, PrefixedInput } from '@/components/ui';
+import { validatePassword } from '@/lib/farmers/schema';
+import { farmerPayamName } from '@/lib/fixtures/farmers';
 import { useFarmerSession } from '@/lib/farmer-session';
 import { t, type Language } from '@/lib/i18n';
-import { formatPhone, pluralise } from '@/lib/format';
+import { formatPhone } from '@/lib/format';
 
+import { PageHead } from './AccountShell';
 import styles from './farmer.module.css';
 
-const STATUS_STAMP = {
-  pending: 'pending',
-  verified: 'verified',
-  rejected: 'rejected',
-} as const;
-
-const STATUS_KEY: Record<
-  VerificationStatus,
-  'account.pending' | 'account.verified' | 'account.rejected'
-> = {
-  pending: 'account.pending',
-  verified: 'account.verified',
-  rejected: 'account.rejected',
-};
+type Panel = 'password' | 'phone' | null;
 
 /**
- * The farmer's own record: name, phone, payam, the verification stamp, a plain
- * note on what pending or not-verified means, any farms an officer has mapped
- * (the same inline-SVG boundary the staff dossier uses, at a small size) and a
- * summary of their produce. Below it the account actions: change language,
- * change phone (which re-verifies by code) and sign out.
+ * The Account tab: the record as it stands (name, farmer number, phone,
+ * payam), the language choice, change password (current, new, again), change
+ * phone (asks for the password, B12 point 2) and sign out — four ruled cards
+ * on a two-column grid.
  */
 export function FarmerAccount() {
-  const { hydrated, farmer, language, setLanguage, signOut, listingsFor } = useFarmerSession();
+  const { farmer, language, setLanguage, signOut, changePassword, changePhone } =
+    useFarmerSession();
   const router = useRouter();
-  const [showPhone, setShowPhone] = useState(false);
 
-  // No session: send them to sign in. Own-record-only is the B12 rule; here the
-  // stub simply has nothing to show without a session.
-  useEffect(() => {
-    if (hydrated && !farmer) router.replace('/farmer/login');
-  }, [hydrated, farmer, router]);
+  const [panel, setPanel] = useState<Panel>(null);
+  const [done, setDone] = useState<'password' | 'phone' | null>(null);
 
-  if (!hydrated || !farmer) return null;
+  const [current, setCurrent] = useState('');
+  const [next, setNext] = useState('');
+  const [again, setAgain] = useState('');
+  const [passwordErrors, setPasswordErrors] = useState<{
+    current?: string;
+    next?: string;
+    again?: string;
+  }>({});
 
-  const farms = farmsForFarmer(farmer.id);
-  const listings = listingsFor(farmer.id);
-  const status = farmer.verification_status;
+  const [phonePassword, setPhonePassword] = useState('');
+  const [newPhone, setNewPhone] = useState('');
+  const [phoneErrors, setPhoneErrors] = useState<{ password?: string; phone?: string }>({});
+
+  if (!farmer) return null;
+  const numberPending = farmer.farmer_number.endsWith('-pending');
 
   function switchLanguage(lang: Language) {
     setLanguage(lang);
+  }
+
+  function open(which: Panel) {
+    setPanel((p) => (p === which ? null : which));
+    setDone(null);
+  }
+
+  function submitPassword(event: React.FormEvent) {
+    event.preventDefault();
+    const errors: typeof passwordErrors = {};
+    if (current === '') errors.current = t('account.wrongPassword', language);
+    const nextError = validatePassword(next);
+    if (nextError) errors.next = t('register.passwordHint', language);
+    else if (again !== next) errors.again = t('register.passwordMismatch', language);
+    if (Object.keys(errors).length > 0) {
+      setPasswordErrors(errors);
+      return;
+    }
+    if (!changePassword(current, next)) {
+      setPasswordErrors({ current: t('account.wrongPassword', language) });
+      return;
+    }
+    setPasswordErrors({});
+    setCurrent('');
+    setNext('');
+    setAgain('');
+    setPanel(null);
+    setDone('password');
+  }
+
+  function submitPhone(event: React.FormEvent) {
+    event.preventDefault();
+    const errors: typeof phoneErrors = {};
+    const parsed = parseSouthSudanMobile(newPhone);
+    if (!parsed.ok) errors.phone = parsed.message;
+    if (phonePassword === '') errors.password = t('account.wrongPassword', language);
+    if (Object.keys(errors).length > 0 || !parsed.ok) {
+      setPhoneErrors(errors);
+      return;
+    }
+    if (!changePhone(phonePassword, parsed.value)) {
+      setPhoneErrors({ password: t('account.wrongPassword', language) });
+      return;
+    }
+    setPhoneErrors({});
+    setPhonePassword('');
+    setNewPhone('');
+    setPanel(null);
+    setDone('phone');
   }
 
   function onSignOut() {
@@ -60,125 +105,199 @@ export function FarmerAccount() {
     router.push('/farmer');
   }
 
+  const show = t('login.show', language);
+  const hide = t('login.hide', language);
+
   return (
-    <div className={styles.sheet}>
-      <p className={styles.eyebrow}>{t('brand.tagline', language)}</p>
-      <div className={styles.sectionHead}>
-        <h1 className={styles.h1} style={{ marginBlockEnd: 0 }} dir="auto">
-          {farmer.given_name} {farmer.family_name}
-        </h1>
-        <Stamp kind={STATUS_STAMP[status]}>{t(STATUS_KEY[status], language)}</Stamp>
-      </div>
+    <>
+      <PageHead title={t('account.tabAccount', language)} />
 
-      <div className={styles.recordRows}>
-        <div className={styles.recordRow}>
-          <span className={styles.recordTerm}>{t('account.phone', language)}</span>
-          <span className={`${styles.recordValue} ${styles.recordValueMono}`}>
-            {formatPhone(farmer.phone)}
-          </span>
-        </div>
-        <div className={styles.recordRow}>
-          <span className={styles.recordTerm}>{t('account.payam', language)}</span>
-          <span className={styles.recordValue}>{farmerPayamName(farmer.payam_id)}</span>
-        </div>
-      </div>
-
-      {status === 'pending' ? (
-        <Notice kind="warn" title={t('account.whatPendingTitle', language)}>
-          <p className="small">{t('account.whatPendingBody', language)}</p>
+      {done === 'password' ? (
+        <Notice kind="success" className={styles.block}>
+          <p className="small">{t('account.passwordChanged', language)}</p>
         </Notice>
       ) : null}
-      {status === 'rejected' ? (
-        <Notice kind="error" title={t('account.rejected', language)}>
-          <p className="small">{t('account.whatRejectedBody', language)}</p>
+      {done === 'phone' ? (
+        <Notice kind="success">
+          <p className="small">{t('account.phoneChanged', language)}</p>
         </Notice>
       ) : null}
 
-      {/* Farms */}
-      <section className={styles.section}>
-        <div className={styles.sectionHead}>
-          <h2 className={styles.sectionTitle}>{t('account.farms', language)}</h2>
-        </div>
-        {farms.length === 0 ? (
-          <p className="muted">{t('account.noFarms', language)}</p>
-        ) : (
-          <div className={styles.farms}>
-            {farms.map((farm) => (
-              <div key={farm.id} className={styles.farmCard}>
-                <Boundary farm={farm} size={96} />
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
-
-      {/* Listings summary */}
-      <section className={styles.section}>
-        <div className={styles.sectionHead}>
-          <h2 className={styles.sectionTitle}>{t('account.listings', language)}</h2>
-          <span className="mono muted small">{pluralise(listings.length, 'listing')}</span>
-        </div>
-        <ButtonLink
-          href="/farmer/account/listings"
-          variant="secondary"
-          className={styles.blockButton}
-        >
-          {t('account.viewListings', language)}
-        </ButtonLink>
-      </section>
-
-      {/* Account actions */}
-      <section className={styles.section}>
-        <div className={styles.sectionHead}>
-          <h2 className={styles.sectionTitle}>{t('account.actions', language)}</h2>
-        </div>
-
-        <div className={styles.stackTight}>
-          <div>
-            <p className={styles.progressLabel}>{t('account.changeLanguage', language)}</p>
-            <div className={styles.choiceRow}>
-              <button
-                type="button"
-                className={`${styles.choice} ${language === 'en' ? styles.choiceSelected : ''}`}
-                aria-pressed={language === 'en'}
-                onClick={() => switchLanguage('en')}
-              >
-                {t('language.name', language)}
-              </button>
-              <button
-                type="button"
-                className={`${styles.choice} ${language === 'ar-juba' ? styles.choiceSelected : ''}`}
-                aria-pressed={language === 'ar-juba'}
-                onClick={() => switchLanguage('ar-juba')}
-                dir="rtl"
-                lang="ar"
-              >
-                {t('language.arjubaNative', language)}
-              </button>
+      <div className={styles.settings}>
+        <section className={styles.settingCard}>
+          <h2>{t('account.record', language)}</h2>
+          <dl className={styles.recordRows}>
+            <div className={styles.recordRow}>
+              <dt>{t('account.name', language)}</dt>
+              <dd dir="auto">
+                {farmer.given_name} {farmer.family_name}
+              </dd>
             </div>
-          </div>
+            <div className={styles.recordRow}>
+              <dt>{t('account.farmerNumber', language)}</dt>
+              <dd className={styles.recordValueMono}>
+                {numberPending ? '—' : farmer.farmer_number}
+                {numberPending ? (
+                  <span className={styles.recordNote}>{t('account.numberPending', language)}</span>
+                ) : null}
+              </dd>
+            </div>
+            <div className={styles.recordRow}>
+              <dt>{t('account.phone', language)}</dt>
+              <dd className={styles.recordValueMono}>{formatPhone(farmer.phone)}</dd>
+            </div>
+            <div className={styles.recordRow}>
+              <dt>{t('account.payam', language)}</dt>
+              <dd>{farmerPayamName(farmer.payam_id)}</dd>
+            </div>
+          </dl>
+        </section>
 
+        <section className={styles.settingCard}>
+          <h2>{t('account.changeLanguage', language)}</h2>
+          <p className="small muted">{t('language.subtitle', language)}</p>
+          <div className={styles.choiceRow}>
+            <button
+              type="button"
+              className={`${styles.choice} ${language === 'en' ? styles.choiceSelected : ''}`}
+              aria-pressed={language === 'en'}
+              onClick={() => switchLanguage('en')}
+            >
+              {t('language.name', language)}
+            </button>
+            <button
+              type="button"
+              className={`${styles.choice} ${language === 'ar-juba' ? styles.choiceSelected : ''}`}
+              aria-pressed={language === 'ar-juba'}
+              onClick={() => switchLanguage('ar-juba')}
+              dir="rtl"
+              lang="ar"
+            >
+              {t('language.arjubaNative', language)}
+            </button>
+          </div>
+        </section>
+
+        <section className={styles.settingCard}>
+          <h2>{t('account.changePassword', language)}</h2>
           <div>
             <Button
               variant="secondary"
-              className={styles.blockButton}
-              aria-expanded={showPhone}
-              onClick={() => setShowPhone((v) => !v)}
+              aria-expanded={panel === 'password'}
+              onClick={() => open('password')}
+            >
+              {t('account.changePassword', language)}
+            </Button>
+            {panel === 'password' ? (
+              <form className={styles.inlineForm} onSubmit={submitPassword} noValidate>
+                <Field label={t('account.currentPassword', language)} error={passwordErrors.current}>
+                  {(ids) => (
+                    <PasswordInput
+                      {...ids}
+                      autoComplete="current-password"
+                      value={current}
+                      showLabel={show}
+                      hideLabel={hide}
+                      onChange={(e) => setCurrent(e.target.value)}
+                    />
+                  )}
+                </Field>
+                <Field
+                  label={t('account.newPassword', language)}
+                  hint={t('register.passwordHint', language)}
+                  error={passwordErrors.next}
+                >
+                  {(ids) => (
+                    <PasswordInput
+                      {...ids}
+                      autoComplete="new-password"
+                      value={next}
+                      showLabel={show}
+                      hideLabel={hide}
+                      onChange={(e) => setNext(e.target.value)}
+                    />
+                  )}
+                </Field>
+                <Field label={t('register.passwordConfirm', language)} error={passwordErrors.again}>
+                  {(ids) => (
+                    <PasswordInput
+                      {...ids}
+                      autoComplete="new-password"
+                      value={again}
+                      showLabel={show}
+                      hideLabel={hide}
+                      onChange={(e) => setAgain(e.target.value)}
+                    />
+                  )}
+                </Field>
+                <Button type="submit" variant="primary">
+                  {t('account.changePassword', language)}
+                </Button>
+              </form>
+            ) : null}
+          </div>
+        </section>
+
+        <section className={styles.settingCard}>
+          <h2>{t('account.changePhone', language)}</h2>
+          <p className="small muted">{t('account.changePhoneNote', language)}</p>
+          <div>
+            <Button
+              variant="secondary"
+              aria-expanded={panel === 'phone'}
+              onClick={() => open('phone')}
             >
               {t('account.changePhone', language)}
             </Button>
-            {showPhone ? (
-              <Notice kind="info" className="no-print">
-                <p className="small">{t('account.changePhoneNote', language)}</p>
-              </Notice>
+            {panel === 'phone' ? (
+              <form className={styles.inlineForm} onSubmit={submitPhone} noValidate>
+                <Field label={t('account.newPhone', language)} error={phoneErrors.phone}>
+                  {(ids) => (
+                    <PrefixedInput
+                      {...ids}
+                      prefix="+211"
+                      inputMode="tel"
+                      autoComplete="tel-national"
+                      className="mono"
+                      placeholder="9XX XXX XXX"
+                      value={newPhone}
+                      onChange={(e) => setNewPhone(e.target.value)}
+                    />
+                  )}
+                </Field>
+                <Field
+                  label={t('login.passwordLabel', language)}
+                  hint={t('account.changePhoneNote', language)}
+                  error={phoneErrors.password}
+                >
+                  {(ids) => (
+                    <PasswordInput
+                      {...ids}
+                      autoComplete="current-password"
+                      value={phonePassword}
+                      showLabel={show}
+                      hideLabel={hide}
+                      onChange={(e) => setPhonePassword(e.target.value)}
+                    />
+                  )}
+                </Field>
+                <Button type="submit" variant="primary">
+                  {t('account.changePhone', language)}
+                </Button>
+              </form>
             ) : null}
           </div>
+        </section>
 
-          <Button variant="ghost" className={styles.blockButton} onClick={onSignOut}>
-            {t('account.signOut', language)}
-          </Button>
-        </div>
-      </section>
-    </div>
+        <section className={styles.settingCard}>
+          <h2>{t('account.signOut', language)}</h2>
+          <div>
+            <Button variant="ghost" onClick={onSignOut}>
+              {t('account.signOut', language)}
+            </Button>
+          </div>
+        </section>
+      </div>
+    </>
   );
 }

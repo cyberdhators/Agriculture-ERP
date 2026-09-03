@@ -1,7 +1,9 @@
 /*
- * "The Register" — design tokens for the CORWADO Agricultural Register.
+ * "The Register" — design tokens for AgriOne.
  *
- * A working register of a farming economy: editorial, dense, warm, precise.
+ * A working register of a farming economy: editorial, dense, warm, precise,
+ * coloured like the land it records — a living green for every real action,
+ * harvest gold for money and sales, earth for secondary surfaces.
  * Not a SaaS dashboard. Structure is carried by hairline rules and 1px
  * borders; shadow is used once, for a dialog. Every colour, size and radius
  * lives here — a raw hex outside this file is a bug.
@@ -19,43 +21,60 @@
     sans-serif;
   --font-mono: var(--font-jetbrains), ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
-  /* ---- Surfaces: bone paper, raised leaf, sunken well ---------------- */
-  --paper: #f3eee3; /* ground */
-  --card: #fbf8f1; /* raised surfaces */
-  --dust: #eae3d3; /* wells, insets, skeletons, disabled fills. Never text. */
-  --line: #d9d0bc; /* hairline rule */
-  --line-strong: #b9ae95; /* structural rule, strong border */
+  /* ---- Ground: light natural off-white with a green cast ------------ */
+  --paper: #f5f7f1; /* ground */
+  --card: #ffffff; /* raised surfaces */
+  --dust: #e9ede3; /* wells, insets, skeletons, disabled fills. Never text. */
+  --line: #d6dccf; /* hairline rule */
+  --line-strong: #aeb8a6; /* structural rule, strong border */
 
   /* ---- Ink ----------------------------------------------------------- */
-  --ink: #12261b; /* forest, primary text */
-  --ink-2: #3e4f44; /* secondary text */
-  --muted: #6f7d73; /* captions, helper text, labels */
+  --ink: #132a1c; /* forest, primary text */
+  --ink-2: #3b4f41; /* secondary text */
+  --muted: #6c7a6e; /* captions, helper text, labels */
 
-  /* ---- Dark band (masthead only) ------------------------------------ */
-  --band: #0f1f16;
-  --band-ink: #f3eee3;
-  --band-line: #2b3a30;
+  /* ---- Dark band (masthead, entry spread panel) --------------------- */
+  --band: #0f2e1c;
+  --band-ink: #f2f6ee;
+  --band-line: #23492f;
 
-  /* ---- Accent: harvest amber. Rare on purpose. ---------------------- */
-  --accent: #d8811a;
-  --accent-hover: #b86a0f;
-  --accent-tint: #f7e4c8;
+  /* ---- Primary: a living green, used for real ----------------------- */
+  --green-deep: #14532d; /* masthead accents, headings on dark, placeholder words */
+  --green: #1f7a3f; /* primary buttons, links, active tab rule, focus ring */
+  --green-hover: #165f31;
+  --sprout: #7cb342; /* highlights, success moments, the wordmark tittle, plot motif */
+  --green-tint: #e4f1e3; /* selected rows, chips, tints */
+
+  /* ---- Harvest gold: the second accent. Prices, "List it", sold, KPIs. */
+  --harvest: #e0a526; /* fills only — never text on white */
+  --harvest-deep: #b8841a; /* the text form of harvest */
+  --harvest-tint: #fbf0d2;
+
+  /* ---- Earth: secondary surfaces and secondary buttons -------------- */
+  --soil: #6b4a2b;
+  --soil-tint: #efe6db;
+
+  /* ---- Accent aliases: what every control reads --------------------- */
+  --accent: var(--green);
+  --accent-hover: var(--green-hover);
+  --accent-tint: var(--green-tint);
 
   /* ---- Status inks (stamp foreground + tint fill) ------------------- */
-  --verified: #1f6b3a;
-  --verified-tint: #dcebdf;
-  --pending: #8a5a0b;
-  --pending-tint: #f3e6c5;
-  --danger: #9b2c1e;
-  --danger-tint: #f2dad5;
-  --info: #1e4e79;
-  --info-tint: #dce6ef;
-  --neutral: #4f5b63;
-  --neutral-tint: #e3e0d6;
+  /* Distinct from the brand green so a stamp never reads as a button. */
+  --verified: #2e7d32;
+  --verified-tint: #dff0df;
+  --pending: #9a6b0f;
+  --pending-tint: #f6ebcc;
+  --danger: #a32d1e;
+  --danger-tint: #f5dcd7;
+  --info: #1d5a85;
+  --info-tint: #dce8f1;
+  --neutral: #55625b;
+  --neutral-tint: #e4e7e2;
 
   /* ---- Legacy status aliases (directories/library screens) ---------- */
   --nile: var(--info);
-  --nile-deep: #163a5a;
+  --nile-deep: #164666;
   --nile-tint: var(--info-tint);
   --leaf: var(--verified);
   --leaf-tint: var(--verified-tint);
@@ -90,9 +109,9 @@
 
   /* One soft shadow, dialogs only. */
   --shadow-card: none;
-  --shadow-dialog: 0 24px 64px -20px rgba(15, 31, 22, 0.35);
+  --shadow-dialog: 0 24px 64px -20px rgba(15, 46, 28, 0.35);
 
-  /* Focus ring: 2px amber, offset 2px. */
+  /* Focus ring: 2px green, offset 2px. */
   --ring: 0 0 0 2px var(--paper), 0 0 0 4px var(--accent);
 
   --content-max: 1600px;

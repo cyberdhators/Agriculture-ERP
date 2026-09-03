@@ -26,6 +26,7 @@ import {
   Input,
   Notice,
   PageHeader,
+  PasswordInput,
   PrefixedInput,
   Select,
 } from '../ui';
@@ -55,6 +56,7 @@ const EMPTY: FarmerFormValues = {
   registration_source: 'officer',
   consent_language: '',
   consent_granted: false,
+  password: '',
 };
 
 const FIELD_LABELS: Record<keyof FarmerFormValues, string> = {
@@ -70,6 +72,7 @@ const FIELD_LABELS: Record<keyof FarmerFormValues, string> = {
   registration_source: 'How registered',
   consent_language: 'Consent language',
   consent_granted: 'Consent',
+  password: 'Initial password',
 };
 
 function digits(value: string): string {
@@ -136,14 +139,14 @@ export function RegisterFarmer() {
 
   function blur(key: keyof FarmerFormValues) {
     setTouched((prev) => ({ ...prev, [key]: true }));
-    const result = validateFarmer(values, REFERENCE);
+    const result = validateFarmer(values, REFERENCE, { requirePassword: true });
     const message = result.ok ? undefined : result.errors[key];
     setErrors((prev) => ({ ...prev, [key]: message }));
   }
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const result = validateFarmer(values, REFERENCE);
+    const result = validateFarmer(values, REFERENCE, { requirePassword: true });
     if (!result.ok) {
       setErrors(result.errors);
       setTouched((prev) => {
@@ -474,6 +477,23 @@ export function RegisterFarmer() {
                         <option value="en">{LANGUAGE_LABELS.en}</option>
                         <option value="ar-juba">{LANGUAGE_LABELS['ar-juba']}</option>
                       </Select>
+                    )}
+                  </Field>
+                </Row>
+                <Row name="password">
+                  <Field
+                    label={FIELD_LABELS.password}
+                    hint="Tell the farmer this password; they can change it after signing in."
+                    error={shown('password')}
+                  >
+                    {(ids) => (
+                      <PasswordInput
+                        {...ids}
+                        autoComplete="new-password"
+                        value={values.password ?? ''}
+                        onChange={(e) => set('password', e.target.value)}
+                        onBlur={() => blur('password')}
+                      />
                     )}
                   </Field>
                 </Row>
