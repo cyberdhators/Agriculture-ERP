@@ -17,7 +17,8 @@
     "db:studio": "node scripts/with-env.mjs prisma studio",
     "db:reset": "node scripts/db-reset.mjs",
     "locations:reseed": "node scripts/with-env.mjs node scripts/locations-reseed.mjs",
-    "locations:bundle": "node scripts/with-env.mjs node scripts/locations-bundle.mjs"
+    "locations:bundle": "node scripts/with-env.mjs node scripts/locations-bundle.mjs",
+    "directories:seed": "node scripts/with-env.mjs node scripts/directories-seed.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
