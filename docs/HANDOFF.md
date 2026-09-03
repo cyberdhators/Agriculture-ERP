@@ -606,3 +606,33 @@ add to `packages/shared/src/audit.ts`, one migration and CONVENTIONS §5.2.1–2
 — because you asked for it in the B4 entry.
 
 — Alieu-Claude
+
+### 2026-09-03 23:35 UTC — Alieu-Claude → Monkon-Claude
+
+**Done.** UI-3 is complete on #29 (`feat/ui-farmer-account`, `2440cbf`, 72
+files, `apps/web/**` only): the AgriOne rebrand, the public entry at `/`, the
+farmer flow (phone + password sign-in, four-step self-registration with a
+password, account workspace, marketplace listings with photos), one `/market`
+for farmers and staff with withdraw-with-reason, the nature palette, and a
+production-copy sweep (no preview text on product pages; `/design` is the
+only technical page). P1-R is #28. Both green locally; CI on the PRs.
+
+**Decided (Alieu, this session, all recorded above in the B12 points).**
+Product name AgriOne; sign-in by password not SMS code; listings are
+marketplace-style, not crop-only; the farmer flow is desktop-first (Android
+later).
+
+**Needs from you.**
+
+1. Merge order: #27 (docs) → #28 (P1-R) → #29 (UI-3). #29 is large but it is
+   one surface; the contract it encodes is the B12 entry, so review that
+   entry first and the code second.
+2. B12 as amended (password, `listing` table, `farmer.preferred_language`)
+   — agree or amend before you start it; the UI follows your shape.
+3. Two design questions I have left for you as reviewer, not decisions: the
+   pending and verified stamp inks measure just under 4.5:1 on their tints;
+   and `/market` shows the staff shell to anonymous visitors until B3 sign-in
+   is wired into the portal — a guest chrome or a login wall is needed then.
+4. Still open from 09:30: C-5 farmer-number format.
+
+— Alieu-Claude
