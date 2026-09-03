@@ -532,14 +532,24 @@ shape, so tell me where you diverge and I will follow):**
    `ALL_ROLES` stays as it is; `requireRole` gains a way to say "this farmer,
    own record only". Scope = `farmer.id`. C-3.4/C-3.5 apply: outside own
    record is indistinguishable from not found.
-2. **Auth.** Phone number (E.164, `+211`) plus a one-time SMS code from C-15;
-   no password. `POST /api/farmer/auth/request-code {phone, language}` →
-   204 always (no enumeration); `POST /api/farmer/auth/verify {phone, code}`
-   → session. Codes: 6 digits, 10 minutes, 5 attempts, then `429` with a rule
-   key. Until C-15 exists, a dev-only fixed code behind an env flag is fine.
+2. **Auth.** Phone number (E.164, `+211`) plus a **password** — the same
+   mechanism as officers (C-3.7), not an SMS code (Alieu, 2026-09-03: "signin
+   with password not otp"). The password is created at registration: by the
+   farmer on `POST /api/farmer/register`, or by the staff member who registers
+   them (`POST /api/farmers` gains an `initial_password`; the officer tells
+   the farmer). `POST /api/farmer/auth/login {phone, password}` → session;
+   `POST /api/farmer/auth/logout`. Wrong password and unknown phone return the
+   same 401 (no enumeration); 5 failures → `429` with a rule key. The farmer
+   changes their own password (`POST /api/farmer/me/password {current,
+next}`); a staff member resets it (`POST /api/farmers/:id/reset-password`,
+   admin/supervisor/registering officer) — the "an administrator sets any
+   account's password" note in C-3 applies. Password rule: minimum 6
+   characters, no other composition rule (feature phones, low literacy);
+   hashed like staff passwords. An SMS-code reset can be added when C-15
+   exists; not before.
 3. **Self-registration.** `POST /api/farmer/register` with
    `given_name, family_name, sex, year_of_birth, phone, payam_id,
-preferred_language, consent_version` → farmer row with
+preferred_language, consent_version, password` → farmer row with
    `registration_source = self`, `registered_by = null`,
    `verification_status = pending`, a `consent` row, and the duplicate check
    from `docs/data-model.md` (phone; name + payam) returning warnings, never
@@ -547,7 +557,7 @@ preferred_language, consent_version` → farmer row with
    — C-5's schema, so it lands with B5, not before.
 4. **Own record.** `GET /api/farmer/me` (farmer + farms + verification
    status + listings); `PATCH /api/farmer/me` limited to `preferred_language`
-   and `phone` (phone change re-verifies by code).
+   and `phone` (phone change requires the current password).
 5. **Listings.** Table `produce_listing`: `id`, `farmer_id`, `crop` (the
    existing five-crop enum), `quantity_kg`, `price_ssp_per_kg` nullable,
    `available_from`, `available_until` nullable, `notes`, `photo_storage_path`
@@ -558,7 +568,8 @@ preferred_language, consent_version` → farmer row with
    drafts are always allowed. Staff read all listings in the portal Market tab
    (`GET /api/listings`, scoped like everything else).
 6. **Audit keys.** `farmer.self_registered`, `farmer.language_changed`,
-   `farmer.phone_changed`, `produce_listing.created / updated / listed /
+   `farmer.phone_changed`, `farmer.password_changed`,
+   `farmer.password_reset`, `produce_listing.created / updated / listed /
 withdrawn / sold / soft_deleted`. Changed fields only; `auditSafe` as
    before.
 
