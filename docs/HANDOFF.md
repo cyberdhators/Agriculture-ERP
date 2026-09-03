@@ -558,18 +558,29 @@ preferred_language, consent_version, password` → farmer row with
 4. **Own record.** `GET /api/farmer/me` (farmer + farms + verification
    status + listings); `PATCH /api/farmer/me` limited to `preferred_language`
    and `phone` (phone change requires the current password).
-5. **Listings.** Table `produce_listing`: `id`, `farmer_id`, `crop` (the
-   existing five-crop enum), `quantity_kg`, `price_ssp_per_kg` nullable,
-   `available_from`, `available_until` nullable, `notes`, `photo_storage_path`
-   nullable, `status enum draft | listed | withdrawn | sold`, timestamps,
-   soft delete. Routes `GET/POST /api/farmer/listings`,
-   `PATCH /api/farmer/listings/:id`. Rule: a listing can only move to
+5. **Listings.** Marketplace-style, not a crop-only form (Alieu,
+   2026-09-03: "stop limiting what the farmer will add, it's like an
+   e-commerce"). Table `listing`: `id`, `farmer_id`, `title`, `category enum
+crop | vegetable | fruit | livestock | poultry | dairy | fish | processed |
+seeds_inputs | other`, `product_name`, `description` (≤ 1000),
+   `quantity numeric`, `unit enum kg | bag_50kg | bag_100kg | sack | crate |
+bunch | piece | head | litre | tin`, `price_ssp numeric`, `price_per` (same
+   unit enum), `negotiable bool`, `photo_storage_paths text[]` (≤ 5, Supabase
+   Storage, first is the cover), `available_from date`, `available_until date`
+   nullable, `harvest_season text` nullable, `pickup_notes text` nullable,
+   `contact_phone` (defaults to the farmer's), `delivery_available bool`,
+   `status enum draft | listed | withdrawn | sold`, timestamps, soft delete.
+   `payam_id` is the farmer's, not stored twice. Routes `GET/POST
+/api/farmer/listings`, `GET/PATCH /api/farmer/listings/:id`, photo upload
+   to Storage first then paths on the row. Rule: a listing can only move to
    `listed` when the farmer is `verified` — otherwise `422` with a rule key;
-   drafts are always allowed. Staff read all listings in the portal Market tab
-   (`GET /api/listings`, scoped like everything else).
+   drafts are always allowed. Staff browse all listings in the portal Market
+   tab (`GET /api/listings` with `category`, `payam_id`, `status`, price
+   range; scoped like everything else). The five-crop enum stays for
+   `crop_declaration` only.
 6. **Audit keys.** `farmer.self_registered`, `farmer.language_changed`,
    `farmer.phone_changed`, `farmer.password_changed`,
-   `farmer.password_reset`, `produce_listing.created / updated / listed /
+   `farmer.password_reset`, `listing.created / updated / listed /
 withdrawn / sold / soft_deleted`. Changed fields only; `auditSafe` as
    before.
 

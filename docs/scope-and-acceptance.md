@@ -332,7 +332,9 @@ CORWADO before the affected deliverable is built.
    is far cheaper. It needs confirming before C-14 is written.
 
    **Answered 2026-09-03 (Alieu, for CORWADO): farmers receive accounts and
-   post their own produce listings.** A verified farmer's listing is visible to
+   post their own listings — marketplace-style: title, category, description,
+   photos, quantity and unit, price, availability, contact — not only the
+   five declared crops.** A verified farmer's listing is visible to
    staff and to buyers; a pending farmer's listing is held as a draft until an
    officer or supervisor verifies the farmer (C-6). Buyers still have no role:
    buyer requirements are entered by CORWADO staff, and matching remains an
