@@ -15,6 +15,33 @@ serves that.
 
 These are for you, the assistant reading this at the start of a session.
 
+**Who you are.** Two humans, two assistants, one repository:
+
+- **Alieu-Claude** — the assistant working with Alieu. Handles **the web UI**
+  (everything under `apps/web` except `app/api/**`) and the parallel P-units
+  (P1). Signs every log entry `— Alieu-Claude`.
+- **Monkon-Claude** — the assistant working with Monkonmlah. Handles **the
+  backend and the database**: the B-unit spine, migrations, `packages/shared`,
+  API routes, `app/api/**`. Signs every log entry `— Monkon-Claude`.
+
+Say which one you are in your first message of the session, and sign your log
+entries with that name. Both humans push under the same GitHub login, so the
+signature here is the only reliable record of which side wrote what.
+
+**Save your identity to your persistent memory** the first time you read this
+— e.g. "In cyberdhators/Agriculture-ERP I am Monkon-Claude; I own backend and
+database; my counterpart is Alieu-Claude, who owns the UI; read
+docs/HANDOFF.md first and continue from where it says, never rewrite" — so
+that every later session opens already knowing who it is and where to
+continue. Alieu-Claude has done this; Monkon-Claude, do it in your next
+session and confirm in your first log entry.
+
+**Never rewrite the other side's work, and never restart your own from
+scratch.** Where the last entry says work stopped is where the next session
+continues — check out the branch it names and carry on. A fresh start is a
+decision a human makes, written in the log, not something a session does
+because a rewrite looks easier than reading.
+
 **At the start of every session, before any work:**
 
 1. Read this whole file, then `git fetch` and read the open pull requests.
@@ -46,7 +73,7 @@ These are for you, the assistant reading this at the start of a session.
 **Log entry format:**
 
 ```
-### YYYY-MM-DD HH:MM UTC — Lane N → Lane M (or → both)
+### YYYY-MM-DD HH:MM UTC — Alieu-Claude → Monkon-Claude (or the reverse, or → both)
 **Done.** …
 **Planned next.** …
 **Needs from you.** … (or "Nothing.")
@@ -57,10 +84,18 @@ These are for you, the assistant reading this at the start of a session.
 
 ## THE LANES
 
-| Lane       | Work                                                                                                              | Branch prefix              |
-| ---------- | ----------------------------------------------------------------------------------------------------------------- | -------------------------- |
-| **Lane 1** | The backend spine: units B2–B11 in `docs/UNITS.md`, then the surface assigned there                               | `feat/b<n>-…`, `chore/…`   |
-| **Lane 2** | Parallel units that do not touch the spine's tables: **P1** now (C-13); UI screens against fixture data alongside | `feat/p<n>-…`, `feat/ui-…` |
+| Lane                       | Work                                                                                                                   | Branch prefix              |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------- | -------------------------- |
+| **Lane 1 — Monkon-Claude** | Backend and database: the spine, units B2–B11 in `docs/UNITS.md`, migrations, `packages/shared`, API routes            | `feat/b<n>-…`, `chore/…`   |
+| **Lane 2 — Alieu-Claude**  | The web UI (`apps/web`, screens on fixture data until routes exist) and parallel units that do not touch the spine: P1 | `feat/p<n>-…`, `feat/ui-…` |
+
+Division of labour, agreed 2026-09-02: **Alieu-Claude builds the UI;
+Monkon-Claude builds the backend and the database.** When a screen needs a
+route or a schema that does not exist yet, Alieu-Claude builds against fixtures
+shaped like `docs/data-model.md` and writes a _Needs from you_ line;
+Monkon-Claude builds the route and replies in the log. Neither side builds the
+other's part. UI pull requests touch `apps/web/**` only, so they can be
+reviewed in one read.
 
 Both lanes push under the GitHub login `cyberdhators`. The pull request title
 carries the unit id (`feat(b2): …`, `feat(p1): …`), which is how a reader
@@ -88,7 +123,7 @@ tells them apart. `docs/UNITS.md` records which human owns which unit.
 - `docs/scope-and-acceptance.md` section C-13
 - Tables: `directory_entry`, `learning_resource`; views `directory_entry_active`, `learning_resource_active`
 - Enum types: `directory_entry_type`, `financial_provider_class`, `learning_topic`, `resource_format`
-- UI: `apps/web/app/(portal)/directories/**`, `apps/web/app/(portal)/library/**` when they exist
+- UI: everything under `apps/web/app/(portal)/**`, `apps/web/components/**`, `apps/web/lib/**` (shell, design system, screens against fixture data). Lane 1 owns `apps/web/app/api/**`, `apps/web/lib/api/**` and the Sentry/instrumentation wiring.
 
 **Shared** — either lane may edit, minimally, and must log it:
 
@@ -118,14 +153,25 @@ copy of any of these is a bug.
 
 ---
 
+**Added 2026-09-03 (Alieu-Claude, UI lane):**
+
+- Farmer-number format is a **placeholder** (`CE-JUB-000123`) until C-5 defines it. Monkon-Claude: say the real format and Alieu-Claude changes one helper.
+- Farmer input validation lives in `apps/web/lib/farmers/schema.ts` for now; it moves to `packages/shared` when C-5 is written, in whatever shape Lane 1 chooses. Alieu-Claude will not add farmer schemas to `packages/shared` unasked.
+- Role preview stub `apps/web/lib/preview.tsx` (role + officer id, names exactly as B3's `ALL_ROLES`) is what B3's `requireRole` and session replace.
+- Fonts are loaded with `next/font/google` — part of Next, not a new dependency.
+
+---
+
 ## STATUS BOARD
 
-| Unit | Lane | Status                                                              | PR  | Blocked on                           |
-| ---- | ---- | ------------------------------------------------------------------- | --- | ------------------------------------ |
-| B2   | 1    | **Merged** — #15                                                    | #15 | —                                    |
-| B3   | 1    | **In review**                                                       | #20 | —                                    |
-| B4   | 1    | Not started                                                         | —   | B3                                   |
-| P1   | 2    | **Merged** — database, validation, seed, tests. Routes not started. | #17 | B3 for routes, B4 for the audit rows |
+| Unit | Lane | Status                                                              | PR  | Blocked on                              |
+| ---- | ---- | ------------------------------------------------------------------- | --- | --------------------------------------- |
+| B2   | 1    | **Merged** — #15                                                    | #15 | —                                       |
+| B3   | 1    | **In review**                                                       | #20 | —                                       |
+| B4   | 1    | Not started                                                         | —   | B3                                      |
+| P1   | 2    | **Merged** — database, validation, seed, tests. Routes not started. | #17 | B3 for routes, B4 for the audit rows    |
+| UI   | 2    | First portal skin — **closed unmerged** (#18), kept as reference    | #18 | — (superseded by UI-2)                  |
+| UI-2 | 2    | **PR open** — "The Register" re-skin + Farmers screens on fixtures  | #23 | Lane 1 review; C-5 farmer-number format |
 
 Lane 1: please add your rows as you go. Lane 2 filled in what it could read from the open PRs.
 
@@ -157,6 +203,50 @@ Lane 1: please add your rows as you go. Lane 2 filled in what it could read from
 3. Ask CORWADO the one open question in C-13's notes (whether officers may propose a directory entry from the field). It changes whether the officer role gets a write route.
 
 **UI, if Lane 2 starts it before the routes exist:** build the pages under `apps/web/app/(portal)/directories` and `/library` against the placeholder seed shapes, validate forms with the shared Zod schemas, and do not call any route. Wire them when step 1 lands.
+
+### Lane 2 (Alieu-Claude) — UI: where to continue
+
+**Branch `feat/ui-farmers-register` = PR #23, based on `main`, `apps/web/**`
+only.** Complete at `c83eade`, all checks green (typecheck, lint, format:check,
+test 186/31 skipped, web build 15 routes). It carries the "The Register"
+foundation (`app/globals.css` tokens, fonts via `next/font/google`, masthead
+shell, re-skinned ui kit), the Farmers screens (register `/farmers`, dossier
+`/farmers/[id]`, review queue `/farmers/review`, registration `/farmers/new`),
+the inline-SVG `Boundary`, the overview home on `/dashboard`, directories and
+library re-skinned, and `/design`. Next for this lane after #23 merges: wire
+the screens to real routes as B5–B7 land (fixture swap), replace
+`lib/farmers/schema.ts` with the C-5 shared schema, P1 routes after B4.
+
+**Why Farmers now.** Phase 2 in `CLAUDE.md` §2 is farmer registration,
+profiling and boundary mapping — the next phase after B3. The screens are built
+against `docs/data-model.md` shapes (farmer, farm, crop_declaration,
+verification_event, consent, cooperative_member, sync_record) so wiring them to
+B5–B7's routes is a fixture swap. Directories and library screens stay in the
+branch, re-skinned, but are phase 4 and are not what the PR is for.
+
+**To resume (continue, do not rewrite):** `git checkout feat/ui-farmers-register`,
+read `apps/web/app/globals.css`, `components/ui/index.tsx`,
+`components/portal/Shell.tsx`, `lib/fixtures/farmers.ts`, `lib/farmers/*`, then
+finish whatever the last commit message says is unfinished. Checks: typecheck,
+lint, format, format:check, test, `--filter @agri-erp/web build`. Never run
+`pnpm install` from a UI session — the registry is ~112 KB/s from the dev
+machine and needs `--fetch-timeout 1800000 --network-concurrency 2`; the
+default `node` there is broken, use `/usr/local/opt/node@24/bin`.
+
+**Art direction, "The Register"** (so no session needs the chat): a working
+register of a farming economy — editorial, dense, warm, precise; not a SaaS
+dashboard. Fraunces for display, Instrument Sans for UI, JetBrains Mono with
+tabular numerals for every id, phone, date and figure. Bone paper `#F3EEE3`,
+forest ink `#12261B`, hairlines `#D9D0BC`, one rare accent harvest amber
+`#D8811A`; status inks verified `#1F6B3A`, pending `#8A5A0B`, rejected
+`#9B2C1E`, info `#1E4E79`, merged `#4F5B63`; masthead `#0F1F16`. Radius 2px,
+structure from rules not shadows. Layout: dark masthead with text-tab nav
+(Farmers · Cooperatives · Directories · Market · Library · Reports), section
+header row, 12-column grid to 1600px, filter rail as plain controls, 44px
+table rows, detail pages as dossiers with numbered sections. Signatures: farm
+boundaries as inline SVG polygons (no map library), verification stamps, sync
+chips, KPI strip as a ruled row of numbers, escalated stamp past 7 days
+pending, duplicate warning with side-by-side compare (warns, never blocks).
 
 ### Lane 1 — the spine
 
@@ -293,3 +383,67 @@ disagreement, and yours is what is on `main`.
 
 **Needs from you.** Nothing blocking. When you build P1's routes, B3's wrapper
 and helpers are ready and B4 will add the audit rows.
+
+### 2026-09-03 09:30 UTC — Alieu-Claude → Monkon-Claude
+
+**Read.** Your 2026-09-03 entry, the closing note on #18, and #19/#20. The
+naming below is the fix for "neither lane noticed": from here every entry is
+signed, and the instructions at the top ask each assistant to keep its identity
+in memory.
+
+**Done.** The two entries I wrote on the #18 branch (23:20 and 23:55 UTC on
+2026-09-02) never reached `main` when #18 closed; their substance is folded
+into the sections above rather than replayed here. UI work moved to
+`feat/ui-farmers-register`, based on `main`, `apps/web/**` only — no docs, no
+`packages/shared`, no prisma, no `CLAUDE.md`, so it can be reviewed in one
+read. It leads with the Farmers screens (phase 2), not directories (phase 4).
+This docs PR re-lands the lanes, identities, ownership, register and
+continue-from-here sections lost with #18.
+
+**Planned next.** Finish the Farmers screens and open the UI PR against `main`.
+P1 routes after B4, through `defineRoutes`, with rule keys in `RULE_MESSAGES`
+and sentences pinned in `docs/api/CONVENTIONS.md` §5.2.1, using
+`tests/helpers/principals.ts` — as you decided.
+
+**Needs from you.**
+
+1. Confirm the identity scheme (sign as `— Monkon-Claude`, save it to memory).
+2. When you write C-5: the farmer-number format and the shape you want for the
+   farmer Zod schema; `apps/web/lib/farmers/schema.ts` will be replaced by
+   yours.
+3. Thank you for the two migration repairs; `extensions.geography` is noted for
+   anything spatial the UI lane ever touches.
+
+**Decided.** UI ownership is all of `apps/web` except `app/api/**`,
+`lib/api/**` and Sentry wiring (ownership map). UI PRs are `apps/web/**` only.
+The role-preview stub uses B3's role names exactly.
+
+— Alieu-Claude
+
+### 2026-09-03 10:20 UTC — Alieu-Claude → Monkon-Claude
+
+**Done.** UI-2 is finished and open as **#23** (`feat/ui-farmers-register`,
+`c83eade`, `apps/web/**` only, 54 files). Farmers screens on fixture data
+(`/farmers`, `/farmers/[id]`, `/farmers/review`, `/farmers/new`), inline-SVG
+farm boundary, overview home, directories/library re-skinned, `/design`. Roles
+use B3 names through `lib/preview.tsx`; officer sees own caseload, supervisor
+and read_only their state, admin all. Reach figures count verified only;
+duplicates warn and never block; reject requires a reason. All checks green
+locally; CI runs on the PR.
+
+**Planned next.** Nothing on this branch. When you have merged #22 (this file)
+and reviewed #23, the lane continues with route wiring as B5–B7 land.
+
+**Needs from you.**
+
+1. Review #23 — every file is under `apps/web`, so it should be one read.
+2. Merge #22 so this file is on `main` — both lanes are still reading it from
+   a branch.
+3. Unchanged from 09:30: C-5 farmer-number format and schema shape; confirm
+   you sign as `— Monkon-Claude` and hold that in memory.
+
+**Decided.** Placeholder farmer number `CE-JUB-000123` is marked in code and
+on `/design` until C-5; `lib/farmers/schema.ts` is disposable and will be
+replaced by `packages/shared` when you write it.
+
+— Alieu-Claude
