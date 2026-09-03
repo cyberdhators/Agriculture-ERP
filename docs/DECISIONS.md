@@ -286,3 +286,53 @@ the start of every session, and a document that long stops being read.
 The split: PROJECT-STATE holds what is **true now and must be acted on** and
 stays under two pages. This file holds **why**, and may grow without limit
 because nobody has to read it to start work.
+
+---
+
+## Housekeeping — the environments were never separate
+
+**The rule this produced: a guard that identifies an environment by reference
+must also be checked against that environment's name, by someone reading both.**
+
+`docs/PROJECT-STATE.md` recorded two Supabase projects: staging, reference
+`xmmxbrxmfgodhpwolrvk`, and a production project that "exists but holds no data
+and receives no migrations until B11". The second was never true.
+
+Read from the Supabase Management API on 2026-09-02, the account holds exactly
+one project. Its reference is `xmmxbrxmfgodhpwolrvk`. Its name is
+`agri-production`. Everything this repository calls staging — `.env.local`, the
+MCP server in `.mcp.json`, four applied migrations, the `_smoke` table created
+and dropped in B1.3 — happened inside a project named production.
+
+**This is the B1.3 lesson one level up.** That entry established that a guard
+must be tested accepting as well as refusing, and the `db:reset` guard was duly
+tested in both directions. Acceptance was proved by pointing at the real
+reference on an unroutable host: the guard accepted, the connection failed
+harmlessly, the test passed. It confirmed that the guard accepts
+`xmmxbrxmfgodhpwolrvk`. Nobody asked what `xmmxbrxmfgodhpwolrvk` was called. A
+twenty-character reference carries no meaning a reader can check, which is why
+it is the right thing for a guard to compare — and why it hid this.
+
+**The decision: rename rather than promote.** The single project becomes
+`agri-staging`, and production is created new at B11. The reference is
+immutable, so the rename changes nothing here — no code, no configuration, no
+migration history.
+
+The reverse, promoting this project to production, was rejected. It has held
+developer credentials on a laptop, carries a throwaway `_smoke` table in its
+migration history, and its credentials have twice left the vault: once in
+`.env.local.bak-b2`, recorded above, in a repository that is public, and once
+when an account-wide Supabase personal access token was pasted into a chat
+session. A database with that history should not be the one holding farmer
+records. Production should be born clean.
+
+**Also decided:** rotate that project's database password, and revoke the
+personal access token. Both are cheap now and get dearer with every unit.
+
+**What was not built.** Making `scripts/db-reset.mjs` verify the project's
+_name_ was considered and rejected. The script holds connection strings, not
+names, so the check would need a Management API call and a token — more
+credential surface inside a destructive script, to defend a distinction that
+disappears once production is simply not on the same account. The protection is
+structural instead: production is not created until B11, and its credentials
+never go in `.env.local`.
