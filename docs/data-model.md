@@ -144,8 +144,9 @@ verification_event
 audit_event
   id          uuid
   entity_type text
-  entity_id   uuid
-  actor_id    fk → user or officer
+  entity_id   text      -- uuid or a location code; see DECISIONS (B4)
+  actor_type  enum admin | supervisor | read_only | officer | system
+  actor_id    uuid, nullable -- no foreign key; see DECISIONS (B4)
   action      text, e.g. field_corrected
   before      json, nullable
   after       json, nullable

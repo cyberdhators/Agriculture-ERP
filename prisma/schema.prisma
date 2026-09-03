@@ -360,3 +360,36 @@ enum OfficerStatus {
   @@map("officer_status")
 }
 
+/// The append-only audit log (B4, C-4). Never updated, never deleted: a
+/// database trigger raises on both. entity_id is TEXT so a location code fits;
+/// actor_id carries NO foreign key so a row survives its actor -- both are
+/// deliberate, see docs/DECISIONS.md. Always written through writeAudit in
+/// apps/web/lib/api/audit.ts, inside the transaction of the change it records.
+model AuditEvent {
+  id         String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  entityType String         @map("entity_type")
+  entityId   String         @map("entity_id")
+  actorType  AuditActorType @map("actor_type")
+  actorId    String?        @map("actor_id") @db.Uuid
+  action     String
+  before     Json?
+  after      Json?
+  deviceId   String?        @map("device_id")
+  occurredAt DateTime       @default(now()) @map("occurred_at") @db.Timestamptz(6)
+
+  @@index([entityType, entityId, occurredAt(sort: Desc)], map: "audit_event_entity_idx")
+  @@index([actorId, occurredAt(sort: Desc)], map: "audit_event_actor_idx")
+  @@index([occurredAt(sort: Desc), id(sort: Desc)], map: "audit_event_occurred_idx")
+  @@map("audit_event")
+}
+
+enum AuditActorType {
+  admin
+  supervisor
+  read_only
+  officer
+  system
+
+  @@map("audit_actor_type")
+}
+

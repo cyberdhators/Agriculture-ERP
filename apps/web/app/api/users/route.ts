@@ -7,6 +7,7 @@ import {
   toIso,
 } from '@agri-erp/shared';
 
+import { audited, writeAudit, writeAuditOutcome } from '../../../lib/api/audit';
 import { countOrphanAuthAccounts } from '../../../lib/api/orphans';
 import { conflict, invalidCursor, unprocessable } from '../../../lib/api/errors';
 import { created, defineRoutes, paged } from '../../../lib/api/route';
@@ -144,21 +145,49 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       }
 
       try {
-        const [row] = await prisma.$queryRawUnsafe<UserRow[]>(
-          `INSERT INTO public."user" (auth_user_id, name, role, scope_state_id)
-           VALUES ($1::uuid, $2, $3::public.user_role, $4)
-           RETURNING id, auth_user_id, name, role::text AS role, scope_state_id, last_login_at, created_at`,
-          authUserId,
-          body.name,
-          body.role,
-          body.state_id ?? null,
-        );
-        return created(present(row as UserRow));
+        // The row and its audit entry succeed or fail together (C-4.4): both
+        // are written inside audited(), and writeAudit accepts nothing else.
+        const row = await audited(prisma, async (tx) => {
+          const [inserted] = await tx.$queryRawUnsafe<UserRow[]>(
+            `INSERT INTO public."user" (auth_user_id, name, role, scope_state_id)
+             VALUES ($1::uuid, $2, $3::public.user_role, $4)
+             RETURNING id, auth_user_id, name, role::text AS role, scope_state_id, last_login_at, created_at`,
+            authUserId,
+            body.name,
+            body.role,
+            body.state_id ?? null,
+          );
+          const created_ = inserted as UserRow;
+          await writeAudit(tx, {
+            entityType: 'user',
+            entityId: created_.id,
+            actorType: auth.role,
+            actorId: auth.principal.id,
+            action: 'user.created',
+            // Changed fields only. The password and the auth link are never
+            // recorded; auditSafe strips them even if passed.
+            after: { name: created_.name, role: created_.role, state_id: created_.scope_state_id },
+          });
+          return created_;
+        });
+        return created(present(row));
       } catch (failure) {
-        // Compensate. If THIS fails too, an orphan auth account remains: it can
-        // authenticate, requireRole finds no row, and it gets 401. Fails closed,
-        // and the list below surfaces it.
-        await deleteAuthAccount(authUserId).catch(() => undefined);
+        // Compensate. If THIS also fails, an orphan auth account remains: it
+        // fails closed at requireRole (401), and the list surfaces it. The
+        // outcome is recorded after the fact -- there is no transaction to be
+        // inside of -- so the log says what actually happened.
+        const compensated = await deleteAuthAccount(authUserId)
+          .then(() => true)
+          .catch(() => false);
+        if (!compensated) {
+          await writeAuditOutcome({
+            entityType: 'auth_account',
+            entityId: authUserId,
+            actorType: auth.role,
+            actorId: auth.principal.id,
+            action: 'auth.account_orphaned',
+          }).catch(() => undefined);
+        }
         throw failure;
       }
     },

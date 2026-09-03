@@ -8,6 +8,7 @@ import {
   toIso,
 } from '@agri-erp/shared';
 
+import { audited, writeAudit, writeAuditOutcome } from '../../../lib/api/audit';
 import { conflict, invalidCursor, unprocessable } from '../../../lib/api/errors';
 import { created, defineRoutes, paged } from '../../../lib/api/route';
 import { requireWriter } from '../../../lib/api/scope';
@@ -135,20 +136,50 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       }
 
       try {
-        const [row] = await prisma.$queryRawUnsafe<OfficerRow[]>(
-          `INSERT INTO public."officer" (auth_user_id, name, phone, payam_id, state_id)
-           VALUES ($1::uuid, $2, $3, $4, $5)
-           RETURNING id, auth_user_id, name, phone, payam_id, state_id, status::text AS status,
-                     last_sync_at, created_at`,
-          authUserId,
-          body.name,
-          body.phone,
-          payam.id,
-          payam.state_id,
-        );
-        return created(present(row as OfficerRow));
+        // Row and audit entry succeed or fail together (C-4.4).
+        const row = await audited(prisma, async (tx) => {
+          const [inserted] = await tx.$queryRawUnsafe<OfficerRow[]>(
+            `INSERT INTO public."officer" (auth_user_id, name, phone, payam_id, state_id)
+             VALUES ($1::uuid, $2, $3, $4, $5)
+             RETURNING id, auth_user_id, name, phone, payam_id, state_id, status::text AS status,
+                       last_sync_at, created_at`,
+            authUserId,
+            body.name,
+            body.phone,
+            payam.id,
+            payam.state_id,
+          );
+          const created_ = inserted as OfficerRow;
+          await writeAudit(tx, {
+            entityType: 'officer',
+            entityId: created_.id,
+            actorType: auth.role,
+            actorId: auth.principal.id,
+            action: 'officer.created',
+            // The phone is a listed key and is stripped by auditSafe; the
+            // derived identifier never gets here at all. Location and name only.
+            after: {
+              name: created_.name,
+              payam_id: created_.payam_id,
+              state_id: created_.state_id,
+            },
+          });
+          return created_;
+        });
+        return created(present(row));
       } catch (failure) {
-        await deleteAuthAccount(authUserId).catch(() => undefined);
+        const compensated = await deleteAuthAccount(authUserId)
+          .then(() => true)
+          .catch(() => false);
+        if (!compensated) {
+          await writeAuditOutcome({
+            entityType: 'auth_account',
+            entityId: authUserId,
+            actorType: auth.role,
+            actorId: auth.principal.id,
+            action: 'auth.account_orphaned',
+          }).catch(() => undefined);
+        }
         throw failure;
       }
     },

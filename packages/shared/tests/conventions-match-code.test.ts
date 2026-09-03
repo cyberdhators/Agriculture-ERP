@@ -3,7 +3,13 @@ import { fileURLToPath } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
 
-import { ERROR_CODES, ERROR_MESSAGES, PAGINATION_MESSAGES, PHONE_MESSAGES } from '../src/index';
+import {
+  AUDIT_ACTIONS,
+  ERROR_CODES,
+  ERROR_MESSAGES,
+  PAGINATION_MESSAGES,
+  PHONE_MESSAGES,
+} from '../src/index';
 
 /**
  * THE DOCUMENT MUST NOT BE ABLE TO DRIFT AWAY FROM THE CODE.
@@ -48,7 +54,7 @@ const tableRows = (headingText: string): string[][] => {
     // Skip the header row and the ---- separator row.
     if (cells.every((c) => /^-+$/.test(c)) || cells[0] === 'Status' || cells[0] === 'Code')
       continue;
-    if (cells[0] === 'Situation' || cells[0] === 'Method') continue;
+    if (cells[0] === 'Situation' || cells[0] === 'Method' || cells[0] === 'Action key') continue;
     rows.push(cells);
   }
 
@@ -130,7 +136,7 @@ describe('the documented error messages match the ones the code actually sends',
 
 describe('the documented field reasons match the ones the code actually sends', () => {
   const documented = new Set(
-    tableRows('#### 5.2.2 Reasons inside `fields`').map((cells) => cells[1] ?? ''),
+    tableRows('#### 5.2.3 Reasons inside `fields`').map((cells) => cells[1] ?? ''),
   );
 
   const reasonsInCode = [
@@ -161,5 +167,21 @@ describe('the documented field reasons match the ones the code actually sends', 
         `this reads like library output, not a sentence for an officer: "${reason}"`,
       ).not.toMatch(/^Invalid input|expected \w+, received/i);
     }
+  });
+});
+
+describe('the documented audit action keys match the ones the code actually writes', () => {
+  // B4. The database CHECK is generated from AUDIT_ACTIONS too, so this table,
+  // the constant and the constraint are one list seen three ways.
+  const documented = tableRows('#### 5.2.2 Audit action keys').map((cells) =>
+    unbacktick(cells[0] ?? ''),
+  );
+
+  it('pins every action the code can write, and no others', () => {
+    expect([...documented].sort()).toEqual([...AUDIT_ACTIONS].sort());
+  });
+
+  it('every key is a key, not a sentence', () => {
+    for (const key of AUDIT_ACTIONS) expect(key).toMatch(/^[a-z_]+\.[a-z_]+$/);
   });
 });

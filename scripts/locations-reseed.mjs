@@ -115,6 +115,43 @@ if (APPLY) {
         for (const r of plan.removable) {
           await tx[r.level].update({ where: { id: r.id }, data: { deletedAt: now } });
         }
+
+        // ---- AUDIT ROWS, inside this same transaction (C-4.4). ------------
+        //
+        // The reseed has no principal, so the actor is `system` (C-4.3). This
+        // script cannot import writeAudit from apps/web -- the bare package
+        // specifier does not resolve from scripts/ -- so it writes the same
+        // INSERT under the same rules: inside the transaction, action keys from
+        // the fixed set, changed fields only. The database's CHECK refuses any
+        // key not in AUDIT_ACTIONS, so the two cannot drift silently.
+        //
+        // Runs before B4 merged wrote no rows. That gap is recorded in
+        // docs/DECISIONS.md and is not backfilled.
+        const audit = (level, id, action, before, after) =>
+          tx.$executeRawUnsafe(
+            `INSERT INTO public.audit_event
+               (entity_type, entity_id, actor_type, actor_id, action, before, after)
+             VALUES ($1, $2, 'system', NULL, $3, $4::jsonb, $5::jsonb)`,
+            level,
+            id,
+            action,
+            before === null ? null : JSON.stringify(before),
+            after === null ? null : JSON.stringify(after),
+          );
+        for (const a of plan.added)
+          await audit(a.level, a.id, 'location.created', null, { name: a.name });
+        for (const r of plan.renamed)
+          await audit(r.level, r.id, 'location.renamed', { name: r.from }, { name: r.to });
+        for (const r of plan.removable)
+          await audit(
+            r.level,
+            r.id,
+            'location.soft_deleted',
+            { deleted_at: null },
+            {
+              deleted_at: now.toISOString(),
+            },
+          );
       },
       // The default interactive-transaction budget is 5 seconds. A full reseed is
       // dozens of round trips, and this link averages seconds per round trip, so

@@ -634,3 +634,132 @@ and that a 404 and a 200 report nothing. It was proved to discriminate: with the
 **The lesson worth keeping.** When a layer _catches_ something, ask what used to
 happen to it further up. Catching is not free: it silences every handler that
 sat behind the thing you caught.
+
+---
+
+## B4 — the audit log: what the database enforces, and what it does not
+
+**Append-only is a trigger, not a revoke from the owner.** The application
+connects as the table's owner (`postgres`). A privilege revoked from the owner
+is re-grantable by the owner in the same session, so a `REVOKE` protects against
+nothing this code can run. A `BEFORE UPDATE OR DELETE` trigger raises for every
+role including the owner, until someone deliberately removes it. `UPDATE`,
+`DELETE` and `TRUNCATE` are also revoked from `anon` and `authenticated`, which
+RLS already denies everything.
+
+**What it does not stop, stated plainly.** A superuser, or the owner via
+`DROP TRIGGER`, `ALTER TABLE ... DISABLE TRIGGER`, or `TRUNCATE`, can still
+alter history. Those are deliberate DDL acts that show up as migration drift,
+not something an ordinary code path does by accident. **This is append-only
+against the application, not immutability against the database's owner.** It
+must never be described as immutable.
+
+**Actions are keys generated from one list.** `AUDIT_ACTIONS` in
+`packages/shared` and the `CHECK` constraint in migration 9 are produced from the
+same source, so the database refuses any key the code does not define, and a
+sentence — `could not register Achol Deng` — cannot enter the `action` column
+at all (C-4.7).
+
+---
+
+## B4 — two corrections to the data model, and why
+
+**`entity_id` is `text`, not `uuid`.** C-2 decided that locations are keyed by
+codes (`CE-JUB-MUN`), and the reseed must record what it changed. A uuid still
+fits in a text column; a code does not fit in a uuid column. `docs/data-model.md`
+is corrected on this branch.
+
+**`actor_id` carries no foreign key.** The model wrote `fk → user or officer`,
+which no foreign key can express. And append-only means a row can never be
+cascaded or nulled: the test sweep hard-deletes its actors, and a key would make
+that either fail or corrupt history. `actor_type` gains **`system`** for the
+reseed and any script with no principal (C-4.3); the database enforces that
+`system` has no `actor_id` and every other type has one. `writeAudit` checks the
+same pairing before it reaches the database.
+
+---
+
+## B4 — the two writes outside the transaction guarantee
+
+C-4.4 says a change and its entry succeed or fail together. Two writes cannot
+honour that literally: disabling an authentication account and deleting an
+orphaned one are HTTP calls to Supabase Auth, and an HTTP call has no
+transaction to be inside of.
+
+**Decided:** the entry is written **after the call returns**, recording the
+outcome — `auth.disabled` on success, **`auth.disable_failed`** on failure,
+`auth.account_orphaned` when a compensating delete itself fails. A log that
+records an intention rather than an outcome is worse than no log.
+
+**Re-activation has no key of its own, on purpose.** When restoring an officer's
+access fails after the row already says `active`, the row is flipped back to
+`inactive` in a second audited transaction and that flip is recorded as another
+`officer.status_changed`. The log then reads exactly what happened — active,
+then inactive again — and the database matches the world, with no new action
+key added past the agreed set.
+
+---
+
+## B4 — how writeAudit is impossible to call outside a transaction
+
+Two layers, both tested.
+
+**The type.** `writeAudit` takes an `AuditTx`: a Prisma transaction client
+carrying a brand symbol. The only function that produces one is `audited()`,
+which opens the interactive transaction and stamps the client. Passing the
+top-level `prisma` fails to compile — and the root `tsconfig.json` now covers
+`tests/`, so the `@ts-expect-error` that proves it is actually checked.
+
+**The runtime.** An interactive transaction client has no `$transaction`
+method; the top-level client does. `writeAudit` asserts the brand is present
+and `$transaction` is absent, so a caller who casts past the type still fails at
+the first call — proved with the top-level client and with an un-stamped
+transaction client.
+
+**A consequence worth knowing:** a failed change leaves no row, because the row
+was written inside the transaction that failed. Tested.
+
+---
+
+## B4 — the audit log's exclusion list is not the Sentry scrubber's
+
+The first version of `auditSafe` reused the Sentry scrubber's key list. That
+list redacts every key called `name` — right for an envelope leaving for a
+third party, and wrong for a table that exists to answer "who renamed this
+payam, from what to what". Every rename came back empty, and four tests caught
+it.
+
+The audit log has its own list: credentials and the auth link by key; a
+farmer's identifiers — national id, phone, email — by key; the derived officer
+identifier by **value** wherever it appears; and phone-shaped strings inside any
+value, using the one definition of a South Sudan number. `name` is recorded.
+The audit log is our own admin-only table under RLS, not a third party.
+
+---
+
+## B4 — the root tests/ directory had never been typechecked
+
+`pnpm -r typecheck` runs per workspace package. `tests/` belongs to none, so
+B2's location tests, B3's forbidden matrix and scope suite, and the helpers had
+never been typechecked at all. The first run found a latent unchecked-index
+defect in `tests/locations.test.ts` from B2, and proved that a
+`@ts-expect-error` in a file nobody typechecks asserts nothing.
+
+A root `tsconfig.json` now covers `tests/`, and `pnpm typecheck` runs it before
+the packages.
+
+---
+
+## B4 — the reseed audit gap, exactly
+
+The location reseed writes audit rows from B4 onward, as `system`, inside its
+own transaction, for every location it added, renamed or soft-deleted.
+
+**Runs before that wrote no rows. The gap is 2026-09-02 18:28 UTC — the first
+seed against staging — until the day B4 merges.** It is not backfilled: the
+only record of those runs is the reseed's own JSON logs, which are local to one
+machine and gitignored, so an invented row would carry a guessed `occurred_at`
+into an append-only table whose entire value is that it is truthful. **This
+entry is the only durable record that the gap exists and what it covers.** In
+that window the location tables were seeded from placeholder data and reseeded
+by tests; no CORWADO source data was involved.

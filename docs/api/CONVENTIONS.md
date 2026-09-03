@@ -259,7 +259,38 @@ nowhere for interpolation to go, because the function does not accept text.
 Adding a rule means adding a line here and a line in the registry, which a
 reviewer sees, rather than a template literal inside a route nobody reads again.
 
-#### 5.2.2 Reasons inside `fields`
+#### 5.2.2 Audit action keys
+
+Every create, update and deactivation appends an `audit_event` row (B4, C-4).
+The `action` column takes a **fixed key, never a sentence** (C-4.7). This table
+is the complete set; the database's `CHECK` constraint is generated from the
+same list, so a key that is not here is refused at the database. Adding one
+means editing `AUDIT_ACTIONS` in `packages/shared` and this table in the same
+change.
+
+| Action key               |
+| ------------------------ |
+| `user.created`           |
+| `user.updated`           |
+| `user.password_set`      |
+| `user.soft_deleted`      |
+| `officer.created`        |
+| `officer.updated`        |
+| `officer.status_changed` |
+| `officer.password_set`   |
+| `officer.soft_deleted`   |
+| `auth.disabled`          |
+| `auth.disable_failed`    |
+| `auth.account_orphaned`  |
+| `location.created`       |
+| `location.renamed`       |
+| `location.soft_deleted`  |
+
+`before` and `after` hold **changed fields only**, never whole rows, and never a
+password, token, authentication identifier, national id, phone or email — those
+are stripped before the row is written, whatever a caller passes (C-4.6).
+
+#### 5.2.3 Reasons inside `fields`
 
 The `fields` map carries a reason per failing field, not the message above.
 These are also exact.
@@ -518,3 +549,41 @@ that: `413`, `payload_too_large`.
 > which must enforce a size while reading rather than trusting a header. B9 also
 > sets the sync batch limit separately, and it will be a different number. This
 > 1 MB figure does not govern it.
+
+---
+
+## 10. AUDIT
+
+**Every route that creates, updates or deactivates a record writes its audit
+row inside the same transaction as the change**, through `audited()` and
+`writeAudit()` in `apps/web/lib/api/audit.ts`. `writeAudit` refuses anything
+except the client `audited()` hands out — at compile time and at runtime — so a
+row cannot be written outside the transaction of its change (C-4.4).
+
+The two exceptions are calls to Supabase Auth, which have no transaction: their
+row records the **outcome after the call returns** — `auth.disabled` or
+`auth.disable_failed` — in a transaction of its own.
+
+**A deactivation is its own row** (`*.soft_deleted`, `officer.status_changed`),
+never folded into an `*.updated`. **A delete writes two rows**: the soft delete
+and the auth outcome. **A password change records that it happened, and nothing
+else** — `before` and `after` are null.
+
+### 10.1 `GET /api/audit`
+
+Administrators only (C-4.8). Every other role, and no session, is refused with
+the documented `403` / `401`.
+
+Filters, all optional, all validated before any query (C-4.9):
+
+| Query parameter   | Meaning                                             |
+| ----------------- | --------------------------------------------------- |
+| `entity_type`     | the kind of record, e.g. `user`, `officer`, `payam` |
+| `entity_id`       | one record's id or code                             |
+| `actor_id`        | who did it                                          |
+| `from`, `to`      | ISO 8601 bounds on `occurred_at`, inclusive         |
+| `limit`, `cursor` | per section 6                                       |
+
+Sorted `occurred_at` descending, then `id` descending; cursor-paginated per
+section 6. Rows for a soft-deleted record remain readable here after the record
+has left every list (C-4.5).

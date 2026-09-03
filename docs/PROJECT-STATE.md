@@ -231,11 +231,33 @@ phone numbers there, not names. The standing rule still applies to log lines.
 
 ---
 
-## B4 OPENING TASKS
+## B4 — THE AUDIT LOG IS BUILT, AND THE AUDIT LAW IS MET WITH ONE STATED EXCEPTION
 
-**Audit the writes B3 could not.** `audit_event` does not exist until B4, so
-every write below happened with no audit row. B4 decides whether to backfill and
-adds the rows going forward. The full list is in `docs/DECISIONS.md`.
+`audit_event` exists (migration 9), append-only **against the application**: a
+database trigger refuses `UPDATE` and `DELETE` for every role including the
+owner. **It is not immutable.** A superuser, or the owner via `DROP TRIGGER`,
+`DISABLE TRIGGER` or `TRUNCATE`, can alter history; those are deliberate DDL
+acts visible as drift. Never describe it as immutable.
+
+**The twelve B3 writes are retro-fitted.** Every route that creates, updates or
+deactivates writes its row inside the same transaction, through `audited()` +
+`writeAudit()` — which refuse any other client at compile time and at runtime.
+
+**The exception, stated:** two writes are HTTP calls to Supabase Auth and have
+no transaction. Their row records the **outcome after the call returns**
+(`auth.disabled` / `auth.disable_failed`), not an intention. `CLAUDE.md` §4's
+"every create, update and delete appends a row" is therefore met for every
+database write, and met-after-the-fact for the two external ones. That is the
+whole of the gap, and `docs/DECISIONS.md` records it.
+
+**The reseed writes rows from now on**, as `system`. **Runs before B4 wrote
+none: 2026-09-02 18:28 UTC until B4 merged.** Not backfilled — the only logs of
+that window are local and gitignored, so `docs/DECISIONS.md` is the only durable
+record it existed. Placeholder data only; no CORWADO source data was in it.
+
+**`pnpm typecheck` now covers `tests/`.** It never had: the root directory
+belongs to no workspace package, so `pnpm -r` skipped it and B2's and B3's
+tests were never typechecked. A root `tsconfig.json` fixes that.
 
 ---
 

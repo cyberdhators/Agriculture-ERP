@@ -94,11 +94,11 @@ run('the shape of the hierarchy', () => {
   });
 
   it('C-2.3 is enforced by the database, not remembered by the application', async () => {
-    const [{ n }] = await prisma.$queryRawUnsafe<{ n: number }[]>(
+    const found = await prisma.$queryRawUnsafe<{ n: number }[]>(
       `SELECT count(*)::int AS n FROM pg_constraint
        WHERE conname = 'payam_county_state_consistent_fkey' AND contype = 'f'`,
     );
-    expect(n).toBe(1);
+    expect(found[0]?.n).toBe(1);
   });
 });
 
