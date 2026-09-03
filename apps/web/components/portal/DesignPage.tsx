@@ -21,11 +21,18 @@ import {
   SearchInput,
   Select,
   Skeleton,
+  Stamp,
+  SyncChip,
   Tabs,
   Textarea,
 } from '../ui';
+import { Boundary } from '../farmers/Boundary';
+import { FARMS, FARMER_NUMBER_FORMAT } from '@/lib/fixtures/farmers';
 import * as Icons from '../ui/icons';
 import styles from './design.module.css';
+
+const GOOD_FARM = FARMS.find((f) => f.boundary && f.accuracy_flag === 'good') ?? FARMS[0]!;
+const UNUSABLE_FARM = FARMS.find((f) => f.accuracy_flag === 'unusable') ?? FARMS[0]!;
 
 /**
  * The design system, rendered from the same tokens and components the
@@ -35,17 +42,21 @@ import styles from './design.module.css';
  */
 
 const PALETTE = [
-  { name: 'paper', hex: '#FBFBF7', use: 'App background.' },
-  { name: 'card', hex: '#FFFFFF', use: 'Raised surfaces: cards, inputs, menus.' },
-  { name: 'ink', hex: '#101710', use: 'Primary text and headings.' },
-  { name: 'ink-2', hex: '#3A443A', use: 'Secondary text, body copy on cards.' },
-  { name: 'muted', hex: '#5C665B', use: 'Captions, helper text, labels.' },
-  { name: 'nile', hex: '#12557E', use: 'Primary action, links, information.' },
-  { name: 'nile-deep', hex: '#0C3A57', use: 'Pressed and hover on primary.' },
-  { name: 'leaf', hex: '#1C6034', use: 'Verified, published, brand tile.' },
-  { name: 'sorghum', hex: '#A45B10', use: 'Pending, stale, needs attention.' },
-  { name: 'clay', hex: '#9E2B18', use: 'Errors, rejected, destructive outline.' },
-  { name: 'dust', hex: '#F1EFE7', use: 'Inset wells, skeletons, disabled fills. Never text.' },
+  { name: 'paper', hex: '#F3EEE3', use: 'Ground. The bone paper the register sits on.' },
+  { name: 'card', hex: '#FBF8F1', use: 'Raised surfaces: cards, inputs, menus.' },
+  { name: 'dust', hex: '#EAE3D3', use: 'Wells, insets, skeletons, disabled fills. Never text.' },
+  { name: 'line', hex: '#D9D0BC', use: 'Hairline rule. Carries most of the structure.' },
+  { name: 'line-strong', hex: '#B9AE95', use: 'Structural rule, strong border, section heads.' },
+  { name: 'ink', hex: '#12261B', use: 'Forest. Primary text and headings.' },
+  { name: 'ink-2', hex: '#3E4F44', use: 'Secondary text, body copy on cards.' },
+  { name: 'muted', hex: '#6F7D73', use: 'Captions, helper text, labels.' },
+  { name: 'accent', hex: '#D8811A', use: 'Harvest amber. The one action colour; rare on purpose.' },
+  { name: 'verified', hex: '#1F6B3A', use: 'Verified stamp and its tint fill.' },
+  { name: 'pending', hex: '#8A5A0B', use: 'Pending and escalated stamps.' },
+  { name: 'danger', hex: '#9B2C1E', use: 'Rejected, errors, destructive outline.' },
+  { name: 'info', hex: '#1E4E79', use: 'Information notices and merged links.' },
+  { name: 'neutral', hex: '#4F5B63', use: 'Draft, neutral facts.' },
+  { name: 'band', hex: '#0F1F16', use: 'The masthead band only.' },
 ] as const;
 
 const TYPE = [
@@ -80,24 +91,23 @@ const TYPE = [
     style: { fontSize: 13, color: 'var(--muted)' },
   },
   {
-    name: 'LABEL 11.5 / 700',
+    name: 'LABEL 11 / 600',
     sample: 'PHONE · LAST CHECKED · SERVICES',
     style: {
-      fontFamily: 'var(--font-display)',
-      fontSize: 11.5,
-      fontWeight: 700,
+      fontFamily: 'var(--font-body)',
+      fontSize: 11,
+      fontWeight: 600,
       letterSpacing: '0.08em',
       textTransform: 'uppercase' as const,
       color: 'var(--muted)',
     },
   },
   {
-    name: 'Numbers',
-    sample: '4,218 · +211 92 884 1107 · 1.84 ha',
+    name: 'Mono / numbers',
+    sample: 'CE-JUB-000123 · +211 92 884 1107 · 1.84 ha',
     style: {
-      fontFamily: 'var(--font-display)',
-      fontSize: 22,
-      fontWeight: 700,
+      fontFamily: 'var(--font-mono)',
+      fontSize: 18,
       fontVariantNumeric: 'tabular-nums',
     },
   },
@@ -137,6 +147,10 @@ const SECTIONS = [
   ['shape', 'Shape and spacing'],
   ['buttons', 'Buttons'],
   ['badges', 'Badges'],
+  ['stamps', 'Stamps'],
+  ['sync', 'Sync chips'],
+  ['boundary', 'Farm boundary'],
+  ['numbering', 'Farmer number'],
   ['fields', 'Fields'],
   ['tabs', 'Tabs and search'],
   ['states', 'Empty, error and notice states'],
@@ -176,8 +190,10 @@ export function DesignPage() {
         <div className={styles.sectionHead}>
           <h2 id="h-palette">Palette</h2>
           <p>
-            Eleven colours, each with one job. Contrast is pushed past WCAG AA because the portal is
-            read in sunlight. Dust is a fill and never a text colour.
+            &ldquo;The Register&rdquo;: a bone-paper ground, forest ink, and harvest amber as the one
+            action colour, used rarely. Structure is carried by the two rule tokens, not by fills or
+            shadow. Contrast is pushed past WCAG AA because the portal is read in sunlight. Dust is a
+            fill and never a text colour.
           </p>
         </div>
         <div className={styles.swatches}>
@@ -198,9 +214,10 @@ export function DesignPage() {
         <div className={styles.sectionHead}>
           <h2 id="h-type">Type</h2>
           <p>
-            Archivo for display, labels and every number (tabular figures); IBM Plex Sans for body
-            text. Fonts are referenced by name with system fallbacks and are not fetched from a
-            third party at runtime; self-hosted files are a follow-up.
+            Fraunces for display and headings (optical size, soft and wonk axes set for a warm,
+            editorial masthead); Instrument Sans for body text and labels; JetBrains Mono for every
+            number, code and farmer number, in tabular figures. The faces load through
+            next/font/google in the layout, with system fallback stacks until they arrive.
           </p>
         </div>
         <Card padded as="div">
@@ -217,29 +234,26 @@ export function DesignPage() {
         <div className={styles.sectionHead}>
           <h2 id="h-shape">Shape and spacing</h2>
           <p>
-            Cards 20px radius, controls 14px, pills fully round. Every interactive element is at
-            least 48×48. Spacing steps: 4, 8, 12, 16, 20, 24, 32, 40.
+            Near-square: cards 4px radius, controls 2px. No pills — the register is ruled, not
+            rounded. Every interactive element is at least 40×40. Spacing steps: 4, 8, 12, 16, 20,
+            24, 32, 40.
           </p>
         </div>
         <div className={styles.shapeRow}>
           <div className={styles.shape}>
-            <div className={styles.shapeBox} style={{ borderRadius: 20 }} />
-            card · 20px
+            <div className={styles.shapeBox} style={{ borderRadius: 4 }} />
+            card · 4px
           </div>
           <div className={styles.shape}>
-            <div className={styles.shapeBox} style={{ borderRadius: 14 }} />
-            control · 14px
-          </div>
-          <div className={styles.shape}>
-            <div className={styles.shapeBox} style={{ borderRadius: 999, width: 96, height: 32 }} />
-            pill
+            <div className={styles.shapeBox} style={{ borderRadius: 2 }} />
+            control · 2px
           </div>
           <div className={styles.shape}>
             <div
               className={styles.shapeBox}
-              style={{ width: 48, height: 48, borderRadius: 14, borderStyle: 'dashed' }}
+              style={{ width: 40, height: 40, borderRadius: 2, borderStyle: 'dashed' }}
             />
-            touch · 48px
+            touch · 40px
           </div>
         </div>
       </section>
@@ -315,6 +329,94 @@ export function DesignPage() {
               Draft
             </Badge>
           </div>
+        </Card>
+      </section>
+
+      <section id="stamps" className={styles.section} aria-labelledby="h-stamps">
+        <div className={styles.sectionHead}>
+          <h2 id="h-stamps">Stamps</h2>
+          <p>
+            A farmer&apos;s state, stamped like an inspector&apos;s mark: a ruled inset with an ink and
+            a tint from the status tokens. The word carries the meaning; escalated is a pending wait
+            gone past seven days.
+          </p>
+        </div>
+        <Card padded as="div">
+          <div className={styles.row}>
+            <Stamp kind="verified">Verified</Stamp>
+            <Stamp kind="pending">Pending</Stamp>
+            <Stamp kind="escalated">Escalated</Stamp>
+            <Stamp kind="rejected">Rejected</Stamp>
+            <Stamp kind="merged">Merged</Stamp>
+            <Stamp kind="info">Self-registered</Stamp>
+            <Stamp kind="neutral">Draft</Stamp>
+          </div>
+        </Card>
+      </section>
+
+      <section id="sync" className={styles.section} aria-labelledby="h-sync">
+        <div className={styles.sectionHead}>
+          <h2 id="h-sync">Sync chips</h2>
+          <p>
+            Where a record is on its way up from the field. Offline-first: a row can be waiting or
+            sending, and a failed upload keeps a reason on the device rather than dropping the record.
+          </p>
+        </div>
+        <Card padded as="div">
+          <div className={styles.row}>
+            <SyncChip status="synced" />
+            <SyncChip status="sending" />
+            <SyncChip status="waiting" />
+            <SyncChip status="failed" />
+          </div>
+        </Card>
+      </section>
+
+      <section id="boundary" className={styles.section} aria-labelledby="h-boundary">
+        <div className={styles.sectionHead}>
+          <h2 id="h-boundary">Farm boundary</h2>
+          <p>
+            The walked plot, drawn as an inline SVG polygon straight from the fixture GeoJSON — no map
+            library, no tiles, no network. Two sizes: 96px in the register table, 360px in the
+            dossier. A plot with no usable trace says so in the same box rather than drawing a shape
+            that would lie about the land.
+          </p>
+        </div>
+        <Card padded as="div">
+          <div className={styles.row} style={{ alignItems: 'flex-start', gap: 'var(--s-8)' }}>
+            <div style={{ display: 'grid', gap: 'var(--s-2)', justifyItems: 'center' }}>
+              <Boundary farm={GOOD_FARM} size={96} />
+              <span className="small muted">96px · table</span>
+            </div>
+            <div style={{ display: 'grid', gap: 'var(--s-2)', justifyItems: 'center' }}>
+              <Boundary farm={GOOD_FARM} size={360} showArea={false} />
+              <span className="small muted">360px · dossier</span>
+            </div>
+            <div style={{ display: 'grid', gap: 'var(--s-2)', justifyItems: 'center' }}>
+              <Boundary farm={UNUSABLE_FARM} size={96} />
+              <span className="small muted">unusable · no trace</span>
+            </div>
+          </div>
+        </Card>
+      </section>
+
+      <section id="numbering" className={styles.section} aria-labelledby="h-numbering">
+        <div className={styles.sectionHead}>
+          <h2 id="h-numbering">Farmer number</h2>
+          <p>
+            Every farmer carries a human-readable number, shown in mono everywhere. The format below
+            is a placeholder: the numbering rule (C-5) has not been written, so nothing here mints a
+            real number.
+          </p>
+        </div>
+        <Card padded as="div">
+          <p className="mono" style={{ fontSize: 18 }}>
+            {FARMER_NUMBER_FORMAT}
+          </p>
+          <p className="small muted" style={{ marginTop: 'var(--s-3)' }}>
+            state · county · sequence. Fixture rows use this shape so the screens read correctly; the
+            real sequence, check digit and reset rule are C-5&apos;s to decide.
+          </p>
         </Card>
       </section>
 
@@ -553,8 +655,8 @@ export function DesignPage() {
             names the situation and offers the next step as a button.
           </li>
           <li>
-            <strong>Numbers are Archivo, tabular.</strong> Phone numbers, counts, sizes and dates
-            line up in columns.
+            <strong>Numbers are JetBrains Mono, tabular.</strong> Phone numbers, farmer numbers,
+            counts, sizes and dates line up in columns.
           </li>
           <li>
             <strong>User text is bidirectional.</strong> Anything a person typed renders with
