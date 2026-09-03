@@ -353,3 +353,65 @@ credential surface inside a destructive script, to defend a distinction that
 disappears once production is simply not on the same account. The protection is
 structural instead: production is not created until B11, and its credentials
 never go in `.env.local`.
+
+---
+
+## A chat exposure is not a repository exposure
+
+The account-wide Supabase token was pasted into a chat session. It was never in
+the repository, and the two need different responses.
+
+**A repository exposure** means rewriting history, force-pushing, and treating
+every clone and fork as compromised — the credential is in objects other people
+already hold.
+
+**A chat exposure** means revoking the credential. Nothing else. There is no
+history to rewrite.
+
+Recording them as one thing sends the next person hunting through git history
+for something that was never there. Worse, it can make a revoked token look like
+a live one: the search comes back empty, and nobody knows whether that means
+"clean" or "looked in the wrong place".
+
+The same applies to `.env.local.bak-b2`. It sat in the working directory and was
+deleted there. The ignore rules did not match it, so it _could_ have been
+committed — that near-miss is real and recorded above. It was not committed.
+
+**Both facts belong on the record: the exposure that happened, and the exposure
+that did not.**
+
+---
+
+## C-13 was built three phases early, and was closed rather than merged
+
+Two pull requests arrived building directories and the learning library —
+deliverables (i), (j), (k), (m) — with a portal shell around them. Both were
+closed unmerged on 2026-09-03.
+
+**They ran three phases ahead.** `CLAUDE.md` §2 puts directories in phase 4.
+Phases 1 to 3 — auth, roles and permissions; farmer registration; extension
+visits — do not exist. The order is not a preference: §2 gives its reason, that
+a defect in the foundations is expensive once field data exists.
+
+**There was no `requireRole` to place behind them.** Neither added an API route,
+so nothing violated the authorization law yet. But sixty-five files of portal
+screens arriving before the thing that protects them is a large surface waiting
+for a guard that has not been designed.
+
+**They were written against criteria that do not exist.** C-13 is under
+"sections not yet written" in `docs/scope-and-acceptance.md`, which states that
+sections are written one unit ahead of the build so criteria reflect what the
+preceding unit actually produced. Building first inverts that.
+
+**They edited `CLAUDE.md` and `docs/scope-and-acceptance.md`.** One is the law,
+the other derives from a signed contract. Neither should move inside a feature
+branch.
+
+**And they could not be inspected.** Sixty-five files in one pull request,
+touching B2's migration and `packages/shared/src/location.ts`, is more than a
+review can honestly cover. **Closing was the reviewable decision; merging would
+not have been.** A reviewer who cannot inspect a change and merges it anyway has
+not reviewed it, whatever the record says afterwards.
+
+The branches are kept. The work is not wasted — it is early, and it will be
+worth reading when C-13 is actually reached.

@@ -20,6 +20,19 @@ commands against staging, and report what those returned.
 GitHub secrets — never in `.env.local`, never pasted into a session, never
 committed. **If anything from production is needed, Claude stops and asks.**
 
+**THE ACCESS TOKEN IS REVOKED. CLOSED, not outstanding.** The account-wide
+Supabase personal access token pasted into a chat session has been revoked — the
+Access Tokens page shows none on the account (account holder, 2026-09-03).
+
+**It never entered the repository.** Verified three ways on 2026-09-03: no
+commit under those paths on any branch; no `.txt` file ever added; the `sbp_`
+pattern appears **zero** times in the content of every commit on every branch.
+Structurally it could not have — both files lived in `~/Documents/`, the parent
+of the repository root. Both are deleted.
+
+**A chat exposure and a repository exposure need different responses.** Why that
+distinction is worth keeping is in `docs/DECISIONS.md`.
+
 **THE ENVIRONMENT NAMES ARE WRONG — read this before any database work.**
 Verified against the Supabase Management API on 2026-09-02: the account holds
 **exactly one project**, reference `xmmxbrxmfgodhpwolrvk`, named
@@ -205,6 +218,23 @@ change after it leaks. **Today this is a discipline, not a guarantee** —
 enforcement is a B3 opening task.
 
 **A `_dev` route and its row here are created together or not at all.**
+
+---
+
+## C-13 WAS BUILT THREE PHASES EARLY AND WAS NOT MERGED
+
+Pull requests **#17** (directories and learning library) and **#18** (65 files of
+portal screens) were **closed unmerged** on 2026-09-03. They ran three phases
+ahead of the build order in `CLAUDE.md` §2, with no `requireRole` to place
+behind them, against criteria not yet written, and were too large to inspect.
+Full reasoning in `docs/DECISIONS.md`.
+
+**The branches remain** — `feat/p1-directories-library` and
+`feat/ui-portal-directories-library` — as reference for the real C-13 unit.
+Nothing is lost and some of it will be worth taking.
+
+**Order: B3 first, then the phases before 4, then C-13 written into
+`docs/scope-and-acceptance.md`, then the build.**
 
 ---
 
