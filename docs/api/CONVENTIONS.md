@@ -271,43 +271,44 @@ Section 5.2 says 422 has no generic sentence and each rule states its own. These
 are B3's, and they are pinned the same way: a test may assert them character for
 character.
 
-| Rule                             | Exact message                                                                                                                 |
-| -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| `phone_already_registered`       | That phone number is already registered to another officer.                                                                   |
-| `account_already_exists`         | An account already exists for that address.                                                                                   |
-| `last_admin_cannot_be_removed`   | This is the only administrator account. Create another administrator before removing this one.                                |
-| `last_admin_cannot_be_demoted`   | This is the only administrator account. Create another administrator before changing this one.                                |
-| `cannot_remove_own_account`      | You cannot remove your own account.                                                                                           |
-| `cannot_change_own_role`         | You cannot change your own role.                                                                                              |
-| `payam_not_found`                | That payam could not be found.                                                                                                |
-| `state_not_found`                | That state could not be found.                                                                                                |
-| `consent_required`               | Consent must be recorded before a farmer can be registered.                                                                   |
-| `farmer_already_exists`          | A farmer with that identifier has already been registered with different details. Open it and compare before sending again.   |
-| `registering_officer_required`   | Name the extension officer who registered this farmer.                                                                        |
-| `registering_officer_not_found`  | The registering officer could not be found in that payam.                                                                     |
-| `transition_not_allowed`         | That decision is not available for this record in its current state.                                                          |
-| `reason_required`                | A rejection must carry a reason.                                                                                              |
-| `merge_target_not_found`         | The farmer named as the original could not be found.                                                                          |
-| `merge_target_not_eligible`      | The farmer named as the original cannot receive a merge.                                                                      |
-| `merge_across_states`            | A farmer cannot be merged into a record in another state.                                                                     |
-| `boundary_not_closed`            | The boundary does not close: the last point must be the first point again. Go back to where you started and finish the shape. |
-| `boundary_crosses_itself`        | The boundary crosses itself. Walk the edge of the plot in one direction without cutting across it.                            |
-| `boundary_too_few_points`        | A boundary needs at least four corners. Keep walking to the next corner before you finish.                                    |
-| `farm_already_exists`            | A farm with that identifier has already been recorded with different details. Open it and compare before sending again.       |
-| `boundary_already_exists`        | A boundary with that identifier has already been recorded with different details. Open it and compare before sending again.   |
-| `boundary_recorded_concurrently` | Another boundary was recorded for this farm and season at the same moment. Load the farm again before re-mapping.             |
-| `visit_already_exists`           | A visit with that identifier has already been recorded with different details. Open it and compare before sending again.      |
-| `follow_up_not_found`            | The earlier visit could not be found for this farmer. Choose it from this farmer's visits, or leave the link out.             |
-| `follow_up_cycle`                | That earlier visit already follows this one. Choose a visit from before it, or leave the link out.                            |
-| `correction_window_closed`       | A day has passed since this visit was received. Ask an administrator to make the correction.                                  |
-| `attachment_already_exists`      | An attachment with that identifier has already been declared.                                                                 |
-| `attachment_not_arrived`         | The file has not reached the server yet. Keep the phone on with signal and try again in a moment.                             |
-| `attachment_already_failed`      | This attachment did not send. Open the visit and send it again.                                                               |
-| `attachment_mismatch`            | The file that arrived is not the one declared. Open the visit and send it again.                                              |
-| `attachment_grant_expired`       | The upload took too long. Open the visit and send it again.                                                                   |
-| `attachment_not_received`        | This attachment has not been received, so there is nothing to open yet.                                                       |
-| `reassign_officer_not_found`     | No active officer with that identifier works in this farmer's payam. Choose one who does.                                     |
-| `reassign_same_officer`          | This farmer is already with that officer. Nothing to change.                                                                  |
+| Rule                               | Exact message                                                                                                                 |
+| ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `phone_already_registered`         | That phone number is already registered to another officer.                                                                   |
+| `account_already_exists`           | An account already exists for that address.                                                                                   |
+| `last_admin_cannot_be_removed`     | This is the only administrator account. Create another administrator before removing this one.                                |
+| `last_admin_cannot_be_demoted`     | This is the only administrator account. Create another administrator before changing this one.                                |
+| `cannot_remove_own_account`        | You cannot remove your own account.                                                                                           |
+| `cannot_change_own_role`           | You cannot change your own role.                                                                                              |
+| `payam_not_found`                  | That payam could not be found.                                                                                                |
+| `state_not_found`                  | That state could not be found.                                                                                                |
+| `consent_required`                 | Consent must be recorded before a farmer can be registered.                                                                   |
+| `farmer_already_exists`            | A farmer with that identifier has already been registered with different details. Open it and compare before sending again.   |
+| `registering_officer_required`     | Name the extension officer who registered this farmer.                                                                        |
+| `registering_officer_not_found`    | The registering officer could not be found in that payam.                                                                     |
+| `transition_not_allowed`           | That decision is not available for this record in its current state.                                                          |
+| `reason_required`                  | A rejection must carry a reason.                                                                                              |
+| `merge_target_not_found`           | The farmer named as the original could not be found.                                                                          |
+| `merge_target_not_eligible`        | The farmer named as the original cannot receive a merge.                                                                      |
+| `merge_across_states`              | A farmer cannot be merged into a record in another state.                                                                     |
+| `boundary_not_closed`              | The boundary does not close: the last point must be the first point again. Go back to where you started and finish the shape. |
+| `boundary_crosses_itself`          | The boundary crosses itself. Walk the edge of the plot in one direction without cutting across it.                            |
+| `boundary_too_few_points`          | A boundary needs at least four corners. Keep walking to the next corner before you finish.                                    |
+| `farm_already_exists`              | A farm with that identifier has already been recorded with different details. Open it and compare before sending again.       |
+| `boundary_already_exists`          | A boundary with that identifier has already been recorded with different details. Open it and compare before sending again.   |
+| `boundary_recorded_concurrently`   | Another boundary was recorded for this farm and season at the same moment. Load the farm again before re-mapping.             |
+| `visit_already_exists`             | A visit with that identifier has already been recorded with different details. Open it and compare before sending again.      |
+| `follow_up_not_found`              | The earlier visit could not be found for this farmer. Choose it from this farmer's visits, or leave the link out.             |
+| `follow_up_cycle`                  | That earlier visit already follows this one. Choose a visit from before it, or leave the link out.                            |
+| `correction_window_closed`         | A day has passed since this visit was received. Ask an administrator to make the correction.                                  |
+| `attachment_already_exists`        | An attachment with that identifier has already been declared.                                                                 |
+| `attachment_not_arrived`           | The file has not reached the server yet. Keep the phone on with signal and try again in a moment.                             |
+| `attachment_already_failed`        | This attachment did not send. Open the visit and send it again.                                                               |
+| `attachment_mismatch`              | The file that arrived is not the one declared. Open the visit and send it again.                                              |
+| `attachment_grant_expired`         | The upload took too long. Open the visit and send it again.                                                                   |
+| `attachment_not_received`          | This attachment has not been received, so there is nothing to open yet.                                                       |
+| `reassign_officer_not_found`       | No active officer with that identifier works in this farmer's payam. Choose one who does.                                     |
+| `reassign_same_officer`            | This farmer is already with that officer. Nothing to change.                                                                  |
+| `resource_file_already_registered` | A learning resource is already registered for that file.                                                                      |
 
 **A route names a rule; it never writes a sentence.** `conflict()` and
 `unprocessable()` take a key from this registry, not a string. That is how the
@@ -327,48 +328,55 @@ same list, so a key that is not here is refused at the database. Adding one
 means editing `AUDIT_ACTIONS` in `packages/shared` and this table in the same
 change.
 
-| Action key                     |
-| ------------------------------ |
-| `user.created`                 |
-| `user.updated`                 |
-| `user.password_set`            |
-| `user.soft_deleted`            |
-| `officer.created`              |
-| `officer.updated`              |
-| `officer.status_changed`       |
-| `officer.password_set`         |
-| `officer.soft_deleted`         |
-| `auth.disabled`                |
-| `auth.disable_failed`          |
-| `auth.account_orphaned`        |
-| `location.created`             |
-| `location.renamed`             |
-| `location.soft_deleted`        |
-| `farmer.created`               |
-| `farmer.updated`               |
-| `farmer.soft_deleted`          |
-| `consent.recorded`             |
-| `farmer.verified`              |
-| `farmer.rejected`              |
-| `farmer.merged`                |
-| `farmer.resubmitted`           |
-| `farmer.reassigned`            |
-| `farm.created`                 |
-| `farm.boundary_added`          |
-| `farm.boundary_superseded`     |
-| `farm.crops_declared`          |
-| `farm.soft_deleted`            |
-| `visit.recorded`               |
-| `visit.corrected`              |
-| `visit.soft_deleted`           |
-| `visit.attachment_declared`    |
-| `visit.attachment_arrived`     |
-| `visit.attachment_failed`      |
-| `visit.attachment_link_issued` |
-| `farm.repointed`               |
-| `visit.repointed`              |
-| `report.exported`              |
-| `system.restored`              |
+| Action key                       |
+| -------------------------------- |
+| `user.created`                   |
+| `user.updated`                   |
+| `user.password_set`              |
+| `user.soft_deleted`              |
+| `officer.created`                |
+| `officer.updated`                |
+| `officer.status_changed`         |
+| `officer.password_set`           |
+| `officer.soft_deleted`           |
+| `auth.disabled`                  |
+| `auth.disable_failed`            |
+| `auth.account_orphaned`          |
+| `location.created`               |
+| `location.renamed`               |
+| `location.soft_deleted`          |
+| `farmer.created`                 |
+| `farmer.updated`                 |
+| `farmer.soft_deleted`            |
+| `consent.recorded`               |
+| `farmer.verified`                |
+| `farmer.rejected`                |
+| `farmer.merged`                  |
+| `farmer.resubmitted`             |
+| `farmer.reassigned`              |
+| `farm.created`                   |
+| `farm.boundary_added`            |
+| `farm.boundary_superseded`       |
+| `farm.crops_declared`            |
+| `farm.soft_deleted`              |
+| `visit.recorded`                 |
+| `visit.corrected`                |
+| `visit.soft_deleted`             |
+| `visit.attachment_declared`      |
+| `visit.attachment_arrived`       |
+| `visit.attachment_failed`        |
+| `visit.attachment_link_issued`   |
+| `farm.repointed`                 |
+| `visit.repointed`                |
+| `report.exported`                |
+| `system.restored`                |
+| `directory_entry.created`        |
+| `directory_entry.updated`        |
+| `directory_entry.soft_deleted`   |
+| `learning_resource.created`      |
+| `learning_resource.updated`      |
+| `learning_resource.published`    |
+| `learning_resource.soft_deleted` |
 
 `before` and `after` hold **changed fields only**, never whole rows, and never a
 password, token, authentication identifier, national id, phone, email, given
