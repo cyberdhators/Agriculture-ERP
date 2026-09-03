@@ -1,0 +1,148 @@
+.page {
+  display: grid;
+  gap: var(--s-8);
+}
+
+.toc {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+}
+
+.toc a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-pill);
+  color: var(--ink-2);
+  text-decoration: none;
+  font-size: var(--text-small);
+  font-weight: 600;
+}
+
+.toc a:hover {
+  border-color: var(--nile);
+  color: var(--nile-deep);
+}
+
+.section {
+  display: grid;
+  gap: var(--s-5);
+  scroll-margin-top: 88px;
+}
+
+.sectionHead {
+  display: grid;
+  gap: var(--s-1);
+  max-width: 80ch;
+}
+
+.sectionHead p {
+  color: var(--ink-2);
+}
+
+.swatches {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--s-4);
+}
+
+.swatch {
+  display: grid;
+  gap: var(--s-3);
+}
+
+.swatchChip {
+  height: 72px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+}
+
+.swatchName {
+  font-family: var(--font-display);
+  font-weight: 700;
+}
+
+.swatchHex {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.typeRow {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  gap: var(--s-6);
+  align-items: baseline;
+  padding: var(--s-4) 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.typeRow:last-child {
+  border-bottom: 0;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-3);
+}
+
+.grid2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--s-5);
+}
+
+.icons {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: var(--s-3);
+}
+
+.icon {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-3);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  font-size: var(--text-small);
+}
+
+.rules {
+  display: grid;
+  gap: var(--s-3);
+  padding-left: 20px;
+  list-style: disc;
+  color: var(--ink-2);
+  max-width: 80ch;
+}
+
+.rules strong {
+  color: var(--ink);
+}
+
+.shapeRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-5);
+}
+
+.shape {
+  display: grid;
+  gap: var(--s-2);
+  justify-items: center;
+  font-size: var(--text-small);
+  color: var(--muted);
+}
+
+.shapeBox {
+  width: 96px;
+  height: 64px;
+  background: var(--card);
+  border: 1.5px solid var(--nile);
+}
