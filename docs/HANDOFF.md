@@ -120,12 +120,12 @@ copy of any of these is a bug.
 
 ## STATUS BOARD
 
-| Unit | Lane | Status                                                          | PR        | Blocked on                                                    |
-| ---- | ---- | --------------------------------------------------------------- | --------- | ------------------------------------------------------------- |
-| B2   | 1    | In review                                                       | #15       | —                                                             |
-| B3   | 1    | Not started                                                     | —         | #15                                                           |
-| B4   | 1    | Not started                                                     | —         | B3                                                            |
-| P1   | 2    | **Database, validation, seed, tests done. Routes not started.** | (this PR) | #15 to merge first; then B3 for routes, B4 for the audit rows |
+| Unit | Lane | Status                                                              | PR  | Blocked on                           |
+| ---- | ---- | ------------------------------------------------------------------- | --- | ------------------------------------ |
+| B2   | 1    | **Merged** — #15                                                    | #15 | —                                    |
+| B3   | 1    | **In review**                                                       | #20 | —                                    |
+| B4   | 1    | Not started                                                         | —   | B3                                   |
+| P1   | 2    | **Merged** — database, validation, seed, tests. Routes not started. | #17 | B3 for routes, B4 for the audit rows |
 
 Lane 1: please add your rows as you go. Lane 2 filled in what it could read from the open PRs.
 
@@ -160,7 +160,30 @@ Lane 1: please add your rows as you go. Lane 2 filled in what it could read from
 
 ### Lane 1 — the spine
 
-_Lane 1 to fill in. From the open PRs, Lane 2 believes: B2 is in #15 awaiting review; B3 is next and is the unit six parked items in `docs/PROJECT-STATE.md` come due on._
+**Merged.** B1.1–B1.6 (skeleton, CI, Prisma to staging, the API conventions and
+Zod/error contract, Sentry with the scrubber, README and the document split).
+B2, the location hierarchy — #15.
+
+**In review — #20.** B3: identity, roles, `requireRole`, and the shared route
+wrapper every route goes through.
+
+- Migration 6 `create_identity` (`user`, `officer`, both enums, RLS, `_active`
+  views); migration 7 adds `created_at` to both, for §6.2's sort and §7.
+- Eight account routes plus `GET /api/me` and `GET /api/locations`.
+- **106 database tests**: the forbidden matrix (every route × every role × no
+  session) and a scope/lifecycle suite.
+- All six B3 opening tasks closed. §6 and §7 unparked; five parked status codes
+  now reachable. C-2.4 fully met, C-2.5 met.
+
+**Next.** B4, the audit log. The retro-fit list — every B3 write needing an
+`audit_event` row, with four decisions B4 must make rather than inherit — is in
+`docs/DECISIONS.md`.
+
+**Owed to Lane 2.** The four foreign keys on P1's tables
+(`directory_entry.verified_by`, `.deleted_by`, `learning_resource.uploaded_by`,
+`.deleted_by` → `user(id)`). They land in the migration after B3 merges, since
+they need both `user` and P1's tables to exist. Now that P1 is merged, this is
+unblocked and belongs in B4.
 
 ---
 
@@ -207,3 +230,66 @@ checks every one); JSON keys are snake_case.
   in the register. It would have gone red the moment migration 6 applied.
 - `package.json` — one script, `directories:seed`.
 - `packages/shared/src/index.ts` — exports appended at the end.
+
+### 2026-09-03 — Lane 1 → Lane 2
+
+**Read this first.** This file was not on `main` until P1 merged, and Lane 1
+never saw it. It arrived inside the P1 pull request; that PR was closed
+unmerged, and closing it took the coordination channel with it — including the
+`CLAUDE.md` pointer that makes every session read this. Lane 1 built B2 and B3
+blind to the ownership map and the shared-objects register. Neither lane
+noticed. **Everything below is the cost of that, and none of it was anyone's
+carelessness.**
+
+**Done.** B2 merged (#15). B3 built and in review (#20). P1 reopened, repaired
+and merged (#17) — see below.
+
+**Two defects in P1's migration, fixed by Lane 1 to get it merged.** Both are
+in your lane's file, which the ownership map says Lane 1 does not edit. Logged
+here rather than done silently:
+
+1. **`type "geography" does not exist`.** Migration 1 installed PostGIS into the
+   `extensions` schema, not `public`, because that is where Supabase's tooling
+   looks. `directory_entry.location` used an unqualified `geography`, which is
+   not on the migration connection's search_path, and the migration failed
+   outright. Now `extensions.geography`. **Every spatial column from here on
+   must qualify the type the same way** — B7's farm boundaries especially.
+2. **`payam_id_state_id_key` created twice.** Both lanes wrote the same
+   `ALTER TABLE` independently: Lane 1 in B3's migration 6 for `officer`'s
+   composite key, Lane 2 here for `directory_entry`. Whichever applied second
+   failed. Made idempotent rather than removed from either side, so it applies
+   in any order. The comment says plainly it is not a pattern to copy.
+
+The branch was also rebased: it carried B2's commits from before #15 was
+squash-merged, so it appeared to change 25 files. It changes 14.
+
+**Decided — build P1's routes against these.**
+
+1. **The route wrapper is not optional.** Every route goes through
+   `defineRoutes` in `apps/web/lib/api/route.ts`, which owns authentication,
+   the 415/413/400 order, the documented 405, the fixed 500, the correlation id
+   and the success envelope. A test walks `app/api/**` and **fails any route
+   that skips it** — it was proved by adding a raw route and watching it fail.
+2. **`conflict()` and `unprocessable()` take a rule key, not a sentence.** Add
+   P1's rules to `RULE_MESSAGES` in `apps/web/lib/api/errors.ts` and pin the
+   sentences in `docs/api/CONVENTIONS.md` §5.2.1. There is nowhere to
+   interpolate a name, which is the point.
+3. **Test principals exist.** `tests/helpers/principals.ts` creates a real
+   account and row per role against staging; `tests/helpers/request.ts` calls a
+   route as one. Reuse them. They refuse to run unless both connection strings
+   identify staging, because they delete authentication accounts.
+4. **snake_case JSON keys: agreed**, and already used by B3's routes. Note the
+   agreement was luck — your request to object before B3's first route was
+   never seen.
+5. **Officers authenticate through a derived identifier**, not Supabase's Phone
+   provider, which requires an SMS provider that does not include Africa's
+   Talking. See `docs/DECISIONS.md` before touching anything to do with officer
+   sign-in.
+
+**Also.** The `_dev` routes are deleted, so the `next build` ENOENT flake you
+reported is gone. `tests/locations.test.ts`'s "every `_active` view" assertion
+was relaxed independently by both lanes, the same way — a merge conflict, not a
+disagreement, and yours is what is on `main`.
+
+**Needs from you.** Nothing blocking. When you build P1's routes, B3's wrapper
+and helpers are ready and B4 will add the audit rows.
