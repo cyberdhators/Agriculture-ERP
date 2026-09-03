@@ -130,7 +130,7 @@ describe('the documented error messages match the ones the code actually sends',
 
 describe('the documented field reasons match the ones the code actually sends', () => {
   const documented = new Set(
-    tableRows('#### 5.2.1 Reasons inside `fields`').map((cells) => cells[1] ?? ''),
+    tableRows('#### 5.2.2 Reasons inside `fields`').map((cells) => cells[1] ?? ''),
   );
 
   const reasonsInCode = [

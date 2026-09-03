@@ -48,7 +48,19 @@ async function resolveAuthUserId(request: Request): Promise<string | null> {
     return error || !data.user ? null : data.user.id;
   }
 
-  const store = await cookies();
+  // No bearer token, so look for a session cookie.
+  //
+  // `cookies()` THROWS outside a request scope rather than returning empty, and
+  // an unhandled throw here becomes a 500 for what is simply an unauthenticated
+  // request. The forbidden matrix caught this: every no-session case returned
+  // 500 instead of 401. No cookie store means no session, which is a 401.
+  let store: Awaited<ReturnType<typeof cookies>>;
+  try {
+    store = await cookies();
+  } catch {
+    return null;
+  }
+
   const { data, error } = await createServerClient(url, anon, {
     cookies: {
       getAll: () => store.getAll(),

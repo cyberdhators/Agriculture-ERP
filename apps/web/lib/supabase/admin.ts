@@ -93,6 +93,20 @@ export async function deleteAuthAccount(authUserId: string): Promise<void> {
   if (error) throw new Error(`Could not delete the authentication account: ${error.message}`);
 }
 
+/**
+ * Restores access to an account that was disabled.
+ *
+ * Without this, setting an officer inactive is one-way and an administrator
+ * cannot undo their own mistake. C-3.6 says deactivation ends access; it does
+ * not say deactivation is permanent.
+ */
+export async function enableAuthAccount(authUserId: string): Promise<void> {
+  const { error } = await adminClient().auth.admin.updateUserById(authUserId, {
+    ban_duration: 'none',
+  });
+  if (error) throw new Error(`Could not restore the authentication account: ${error.message}`);
+}
+
 /** Sets a password. An administrator may do this for anyone; a principal for themselves. */
 export async function setAuthPassword(authUserId: string, password: string): Promise<void> {
   const { error } = await adminClient().auth.admin.updateUserById(authUserId, { password });

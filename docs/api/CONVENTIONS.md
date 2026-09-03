@@ -35,13 +35,38 @@ route must never require one form specifically.
 parses a cookie or an `Authorization` header itself. `requireRole` runs before
 any data access, in every route, without exception.
 
-> **One temporary exception, enumerated.** Routes under `/api/_dev/*` are
-> unauthenticated scaffolding that exist to prove wiring before `requireRole`
-> exists. Every such route is listed in the outstanding items section of
-> `docs/PROJECT-STATE.md` and is deleted in B3. When that list is empty this
-> exception is removed from this document. No route outside `/api/_dev/*` may
-> use this exception, and no new `_dev` route may be added without being added
-> to that list in the same change.
+**There is no exception.** `/api/_dev/*` carried one while
+`/api/_dev/validate-phone` and `/api/_dev/throw` existed; both were deleted in
+B3 and the exception went with them, rather than being left standing with
+nothing under it.
+
+### 2.1 How an officer's phone becomes a session
+
+An extension officer signs in with a phone number and a password (C-3.7). They
+never see or type anything else.
+
+Underneath, the phone is turned into an authentication identifier by a single
+function, `officerAuthIdentifier` in `packages/shared`. **Do not "fix" this by
+enabling Supabase's Phone provider**: it requires an SMS provider from a fixed
+list that does not include Africa's Talking, our contracted provider, and it was
+verified refusing phone sign-in on this project. Full reasoning, and the rules
+the identifier comes with, are in `docs/DECISIONS.md`.
+
+The identifier is never displayed, never typed, and never appears in an error
+message. The officer row stores the real E.164 phone.
+
+### 2.2 Test principals
+
+`tests/helpers/principals.ts` creates a real account and row for each role
+against staging, signs it in, and returns its tokens; `tests/helpers/request.ts`
+calls a route as that principal. Every future test session should use them
+rather than inventing its own.
+
+They **create and delete authentication accounts**, so they refuse to run unless
+the Supabase URL and the database URL both identify the staging project — the
+same guard, for the same reason, as `scripts/db-reset.mjs`. Everything they
+create is prefixed `zztest` and swept before and after each run, so a crashed
+run leaves residue the next run clears rather than trips over.
 
 ---
 
@@ -140,15 +165,15 @@ Exact. No discretion.
 | ------ | ------------------------ | ---------------------------------------------------------------------------------------------------------------------- | -------------- |
 | 400    | `invalid_input`          | Input failed validation. Carries `fields`.                                                                             | Yes            |
 | 400    | `invalid_json`           | The body could not be parsed as JSON.                                                                                  | Yes            |
-| 400    | `invalid_cursor`         | The pagination cursor is unreadable.                                                                                   | **No — B3**    |
-| 401    | `unauthenticated`        | No session, expired session, or invalid session.                                                                       | **No — B3**    |
-| 403    | `forbidden`              | Authenticated, but this role may not do this.                                                                          | **No — B3**    |
-| 404    | `not_found`              | Not found, soft-deleted, **or** outside the caller's scope.                                                            | **No — B3**    |
+| 400    | `invalid_cursor`         | The pagination cursor is unreadable.                                                                                   | Yes            |
+| 401    | `unauthenticated`        | No session, expired session, or invalid session.                                                                       | Yes            |
+| 403    | `forbidden`              | Authenticated, but this role may not do this.                                                                          | Yes            |
+| 404    | `not_found`              | Not found, soft-deleted, **or** outside the caller's scope.                                                            | Yes            |
 | 405    | `method_not_allowed`     | The route exists, but does not accept `GET`, `PUT`, `PATCH` or `DELETE`. `OPTIONS` and `HEAD` are different — see 5.3. | Yes            |
 | 409    | `conflict`               | E.g. the same client UUID submitted with a different payload.                                                          | **No — B2**    |
 | 413    | `payload_too_large`      | Body exceeds 1 MB.                                                                                                     | Yes            |
 | 415    | `unsupported_media_type` | A request with a body did not send `application/json`.                                                                 | Yes            |
-| 422    | `unprocessable`          | Input was valid but violates a business rule.                                                                          | **No — B2**    |
+| 422    | `unprocessable`          | Input was valid but violates a business rule.                                                                          | Yes            |
 | 500    | `internal_error`         | Unexpected.                                                                                                            | Yes            |
 
 **The "Emitted today?" column is part of the contract.** A code marked _No_ is
@@ -208,7 +233,33 @@ generic sentence would tell an officer nothing they could act on. Each rule
 states its own exact sentence in its own unit's documentation when it is built.
 No route emits 422 today.
 
-#### 5.2.1 Reasons inside `fields`
+#### 5.2.1 Business-rule sentences (409 and 422)
+
+Section 5.2 says 422 has no generic sentence and each rule states its own. These
+are B3's, and they are pinned the same way: a test may assert them character for
+character.
+
+| Rule                           | Exact message                                                                                  |
+| ------------------------------ | ---------------------------------------------------------------------------------------------- |
+| `phone_already_registered`     | That phone number is already registered to another officer.                                    |
+| `account_already_exists`       | An account already exists for that address.                                                    |
+| `last_admin_cannot_be_removed` | This is the only administrator account. Create another administrator before removing this one. |
+| `last_admin_cannot_be_demoted` | This is the only administrator account. Create another administrator before changing this one. |
+| `cannot_remove_own_account`    | You cannot remove your own account.                                                            |
+| `cannot_change_own_role`       | You cannot change your own role.                                                               |
+| `payam_not_found`              | That payam could not be found.                                                                 |
+| `state_not_found`              | That state could not be found.                                                                 |
+
+**A route names a rule; it never writes a sentence.** `conflict()` and
+`unprocessable()` take a key from this registry, not a string. That is how the
+standing rule — never interpolate a farmer's name, phone number or national ID
+into an error — stops being a discipline and becomes structural: there is
+nowhere for interpolation to go, because the function does not accept text.
+
+Adding a rule means adding a line here and a line in the registry, which a
+reviewer sees, rather than a template literal inside a route nobody reads again.
+
+#### 5.2.2 Reasons inside `fields`
 
 The `fields` map carries a reason per failing field, not the message above.
 These are also exact.
@@ -278,15 +329,11 @@ never to the client.
 
 ## 6. LISTS
 
-> **Emitted today? No — B3.** This whole section is parked, in the same sense as
-> the codes marked _No_ in section 5. **No route returns a list**, so nothing
-> here can be reached or tested: not the `page` object, not cursors, not the
-> sort order, not the `deleted_at` filter. The rules are agreed and fixed; the
-> behaviour does not exist yet. B3 builds the first list route and unparks this
-> section. Listed in the outstanding items section of `docs/PROJECT-STATE.md`.
->
-> `paginationSchema` in `packages/shared` is testable today as a schema. The
-> list _responses_ described below are not.
+**Unparked in B3.** `GET /api/users` and `GET /api/officers` are the first list
+routes, and every rule below is now exercised by
+`tests/scope-and-lifecycle.test.ts`: cursor paging, an unreadable cursor
+refused rather than treated as page one, `page` present with `cursor: null` on
+the last page, and the `deleted_at` filter through the `_active` views.
 
 - **Cursor pagination on every list endpoint.** No offset pagination anywhere.
 - Default page size **50**. Maximum **100**.
@@ -348,10 +395,10 @@ every request and every response:
 Never an offset such as `+03:00`. Never without milliseconds. Never a local
 time.
 
-> **Emitted today? No — B3.** Parked, like section 6. **No response contains a
-> timestamp**, because no route returns a stored record. The format is fixed so
-> that the first route to return one has nothing to decide. Listed in the
-> outstanding items section of `docs/PROJECT-STATE.md`.
+**Unparked in B3.** `created_at` and `last_login_at` on the user and officer
+lists are the first timestamps any response carries, and a test asserts the
+exact form — four digits, `T`, milliseconds, `Z` — rather than merely that a
+date is present.
 
 **Phone numbers.** E.164 in every request and every response:
 `+211912345678`. Local format is accepted at the edge and normalised

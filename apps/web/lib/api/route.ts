@@ -59,7 +59,12 @@ export type RouteResult =
   | {
       readonly kind: 'page';
       readonly data: readonly unknown[];
-      readonly page: { cursor: string | null; hasMore: boolean };
+      /**
+       * `cursor` and `hasMore` are required by CONVENTIONS section 6.1. A route
+       * may add diagnostic fields beside them -- the users list reports orphaned
+       * authentication accounts this way.
+       */
+      readonly page: { cursor: string | null; hasMore: boolean } & Record<string, unknown>;
     }
   | { readonly kind: 'empty'; readonly status: number; readonly headers?: Record<string, string> };
 
@@ -73,7 +78,7 @@ export const created = (data: unknown): RouteResult => ({ kind: 'data', data, st
 /** A list. `{ data: [...], page: { cursor, hasMore } }` -- section 6.1. */
 export const paged = (
   data: readonly unknown[],
-  page: { cursor: string | null; hasMore: boolean },
+  page: { cursor: string | null; hasMore: boolean } & Record<string, unknown>,
 ): RouteResult => ({
   kind: 'page',
   data,
@@ -193,11 +198,27 @@ function wrap<TBody>(definition: RouteDefinition<TBody>): NextRouteHandler {
 }
 
 /**
+ * A definition with its body type erased.
+ *
+ * Each method's body type must infer from its OWN bodySchema, so the container
+ * cannot name a single one. `never` makes every schema unassignable and
+ * `unknown` loses the handler's parameter type, so the body slot is deliberately
+ * open here and recovered by inference at each call site.
+ */
+type AnyRouteDefinition = {
+  readonly roles: readonly Role[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  readonly bodySchema?: ZodType<any>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  readonly handler: (ctx: RouteContext<any>) => Promise<RouteResult>;
+};
+
+/**
  * Defines a route file's handlers. Methods you do not define return the
  * documented 405 rather than whatever the framework would do.
  */
 export function defineRoutes(
-  definitions: Partial<{ [M in HttpMethod]: RouteDefinition<never> }>,
+  definitions: Partial<{ [M in HttpMethod]: AnyRouteDefinition }>,
 ): Record<HttpMethod, NextRouteHandler> {
   const out = {} as Record<HttpMethod, NextRouteHandler>;
   for (const method of HTTP_METHODS) {

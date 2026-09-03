@@ -550,3 +550,50 @@ of existing accounts planned, not as a tidy-up.
 
 This is also documented in `docs/api/CONVENTIONS.md` §2, where a session working
 on authentication will actually see it.
+
+---
+
+## B3 — every write that needs an audit row retro-fitted in B4
+
+The audit law says every create, update and delete appends an `audit_event` row
+carrying actor, action, before, after and device. **`audit_event` does not exist
+until B4**, so B3 wrote to the database with no audit trail at all. This is the
+inventory B4 needs.
+
+| Where                        | Action                   | Actor     | Before / after                                                  |
+| ---------------------------- | ------------------------ | --------- | --------------------------------------------------------------- |
+| `POST /api/users`            | `user.created`           | the admin | no before; after is the row                                     |
+| `PATCH /api/users/:id`       | `user.updated`           | the admin | both; **the role and state change matter most**                 |
+| `PATCH /api/users/:id`       | `user.password_set`      | the admin | neither, ever — see below                                       |
+| `DELETE /api/users/:id`      | `user.soft_deleted`      | the admin | before is the row; after is `deleted_at`                        |
+| `DELETE /api/users/:id`      | `auth.disabled`          | the admin | no row change; the auth account was banned                      |
+| `POST /api/officers`         | `officer.created`        | the admin | no before; after is the row                                     |
+| `PATCH /api/officers/:id`    | `officer.updated`        | the admin | both; payam and state move together                             |
+| `PATCH /api/officers/:id`    | `officer.status_changed` | the admin | both; **this is a deactivation and is not the same as an edit** |
+| `PATCH /api/officers/:id`    | `officer.password_set`   | the admin | neither, ever                                                   |
+| `DELETE /api/officers/:id`   | `officer.soft_deleted`   | the admin | before is the row; after is `deleted_at`                        |
+| `DELETE /api/officers/:id`   | `auth.disabled`          | the admin | no row change                                                   |
+| The compensating transaction | `auth.account_orphaned`  | the admin | the auth id only, when the compensating delete itself failed    |
+
+**Four things B4 must decide, not inherit:**
+
+**A password change must never record the password**, in `before`, in `after`, or
+in a message. It is the one audit row whose value is entirely in the fact that
+it happened, the actor, and the time. If `before`/`after` are non-null for
+`password_set`, that is a defect.
+
+**A deactivation is not an edit.** `officer.status_changed` and
+`user.soft_deleted` are the rows a supervisor will be asked about a year later —
+"who cut off this officer's access, and when". Folding them into a generic
+`updated` makes that question unanswerable without diffing JSON.
+
+**Two rows or one for delete?** Soft-deleting a principal also disables their
+auth account. They are one intent and two systems, and the second can fail
+independently. Recording one row hides that; recording two makes the pair
+visible. Recommend two.
+
+**Backfill: recommend not.** Everything B3 wrote was test principals and
+whatever accounts an administrator creates before B4 lands. Inventing audit rows
+after the fact means writing rows whose `occurred_at` is a guess, into a table
+whose entire value is that it is append-only and truthful. Better to record that
+the log begins at B4 and say so, than to forge its first entries.
