@@ -170,7 +170,7 @@ copy of any of these is a bug.
 | B3   | 1    | **Merged**                                                          | #20 | —                                     |
 | B4   | 1    | **In review**                                                       | #24 | —                                     |
 | P1   | 2    | **Merged** — database, validation, seed, tests.                     | #17 | —                                     |
-| P1-R | 2    | **In progress** — routes on `feat/p1-routes`, per your B4 Decided   | —   | nothing                               |
+| P1-R | 2    | **PR open** — routes on `feat/p1-routes`, per your B4 Decided       | #28 | Lane 1 review                         |
 | UI   | 2    | First portal skin — **closed unmerged** (#18), kept as reference    | #18 | — (superseded by UI-2)                |
 | UI-2 | 2    | **Merged** — "The Register" re-skin + Farmers screens on fixtures   | #23 | C-5 farmer-number format for the swap |
 | UI-3 | 2    | **In progress** — farmer flow on fixtures, `feat/ui-farmer-account` | —   | B12 for the swap                      |

@@ -42,7 +42,7 @@ ownership and the log live in `docs/HANDOFF.md`.
 | **P1**   | Directories (i)(j)(k) and learning library (m): schema, Zod, seed           | Alieu (Alieu-Claude) | Merged #17; routes now P1-R            |
 | **UI**   | First portal skin: shell, directories, library on fixtures                  | Alieu (Alieu-Claude) | Closed unmerged #18, kept as reference |
 | **UI-2** | "The Register" re-skin and Farmers screens on fixtures                      | Alieu (Alieu-Claude) | Merged #23                             |
-| **P1-R** | P1 routes: directory entries and learning resources API                     | Alieu (Alieu-Claude) | In progress — `feat/p1-routes`         |
+| **P1-R** | P1 routes: directory entries and learning resources API                     | Alieu (Alieu-Claude) | PR open — #28 (`feat/p1-routes`)       |
 | **UI-3** | Farmer flow on fixtures: language, register/login, account, listings (C-18) | Alieu (Alieu-Claude) | In progress — `feat/ui-farmer-account` |
 
 ## Surfaces
