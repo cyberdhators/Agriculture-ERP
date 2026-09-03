@@ -28,8 +28,11 @@ import {
 } from '../ui';
 import { Boundary } from '../farmers/Boundary';
 import { FARMS, FARMER_NUMBER_FORMAT } from '@/lib/fixtures/farmers';
+import { CROPS } from '@agri-erp/shared';
+import { CROP_LABELS } from '@/lib/format';
 import * as Icons from '../ui/icons';
 import styles from './design.module.css';
+import farmer from '../farmer/farmer.module.css';
 
 const GOOD_FARM = FARMS.find((f) => f.boundary && f.accuracy_flag === 'good') ?? FARMS[0]!;
 const UNUSABLE_FARM = FARMS.find((f) => f.accuracy_flag === 'unusable') ?? FARMS[0]!;
@@ -157,6 +160,7 @@ const SECTIONS = [
   ['cards', 'Cards and skeletons'],
   ['dialog', 'Dialog'],
   ['icons', 'Icons'],
+  ['farmer', 'Farmer flow'],
   ['rules', 'Rules'],
 ] as const;
 
@@ -628,6 +632,70 @@ export function DesignPage() {
             </div>
           ))}
         </div>
+      </section>
+
+      <section id="farmer" className={styles.section} aria-labelledby="h-farmer">
+        <div className={styles.sectionHead}>
+          <h2 id="h-farmer">Farmer flow</h2>
+          <p>
+            The farmer&apos;s own phone-first screens use the same tokens at a larger touch target
+            (48px) and fewer words per view. Language is chosen as two tiles; the sign-in code is
+            one wide mono field; produce is a crop chosen from tiles; and a listing&apos;s state is
+            stamped with the same marks as a farmer&apos;s record — draft neutral, listed verified,
+            withdrawn merged, sold info.
+          </p>
+        </div>
+        <Card padded as="div">
+          <div className={farmer.scope} style={{ background: 'transparent' }}>
+            <p className="small muted">Language</p>
+            <div className={farmer.tiles} role="radiogroup" aria-label="Language">
+              <span className={`${farmer.tile} ${farmer.tileSelected}`} role="radio" aria-checked>
+                <span className={farmer.tileNative}>English</span>
+              </span>
+              <span className={farmer.tile} role="radio" aria-checked={false} dir="rtl" lang="ar">
+                <span className={farmer.tileNative}>عربي جوبا</span>
+                <span className={farmer.tileLatin}>Arabi Juba</span>
+              </span>
+            </div>
+
+            <p className="small muted" style={{ marginTop: 'var(--s-5)' }}>
+              Sign-in code
+            </p>
+            <Input
+              className={farmer.codeInput}
+              inputMode="numeric"
+              defaultValue="123456"
+              aria-label="Six-digit code"
+              readOnly
+            />
+
+            <p className="small muted" style={{ marginTop: 'var(--s-5)' }}>
+              Crop
+            </p>
+            <div className={farmer.cropTiles} role="radiogroup" aria-label="Crop">
+              {CROPS.map((c, i) => (
+                <span
+                  key={c}
+                  role="radio"
+                  aria-checked={i === 0}
+                  className={`${farmer.cropTile} ${i === 0 ? farmer.cropTileSelected : ''}`}
+                >
+                  {CROP_LABELS[c]}
+                </span>
+              ))}
+            </div>
+
+            <p className="small muted" style={{ marginTop: 'var(--s-5)' }}>
+              Listing status
+            </p>
+            <div className={styles.row}>
+              <Stamp kind="neutral">Draft</Stamp>
+              <Stamp kind="verified">Listed</Stamp>
+              <Stamp kind="merged">Withdrawn</Stamp>
+              <Stamp kind="info">Sold</Stamp>
+            </div>
+          </div>
+        </Card>
       </section>
 
       <section id="rules" className={styles.section} aria-labelledby="h-rules">
