@@ -27,8 +27,6 @@ export {
   type ApiErrorBody,
 } from './errors';
 
-export { devValidatePhoneBodySchema } from './dev';
-
 export { REDACTED, isSensitiveKey, scrub, scrubEvent, scrubString } from './scrub';
 
 export {
@@ -75,3 +73,35 @@ export {
   type LearningTopic,
   type ResourceFormat,
 } from './learning';
+
+export {
+  ALL_ROLES,
+  IDENTITY_MESSAGES,
+  OFFICER_AUTH_DOMAIN,
+  USER_ROLES,
+  WRITING_ROLES,
+  canWrite,
+  createOfficerSchema,
+  createUserSchema,
+  officerAuthIdentifier,
+  passwordSchema,
+  patchOfficerSchema,
+  patchUserSchema,
+  personNameSchema,
+  userRoleSchema,
+  type CreateOfficer,
+  type CreateUser,
+  type PatchOfficer,
+  type PatchUser,
+  type Role,
+  type Scope,
+  type UserRole,
+} from './identity';
+
+/**
+ * Re-exported so apps/web can type a schema without taking a direct dependency
+ * on zod. This package owns the validation library; the app owns none of it.
+ */
+export type { ZodError, ZodType } from 'zod';
+
+export { decodeCursor, encodeCursor, toIso, type Cursor } from './cursor';

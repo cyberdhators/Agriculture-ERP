@@ -299,8 +299,9 @@ must also be checked against that environment's name, by someone reading both.**
 and receives no migrations until B11". The second was never true.
 
 Read from the Supabase Management API on 2026-09-02, the account holds exactly
-one project. Its reference is `xmmxbrxmfgodhpwolrvk`. Its name is
-`agri-production`. Everything this repository calls staging — `.env.local`, the
+one project. Its reference is `xmmxbrxmfgodhpwolrvk`. Its name **was**
+`agri-production` when this was written on 2026-09-02; it was renamed to
+`agri-staging` on 2026-09-03, which is what this entry asked for. Everything this repository calls staging — `.env.local`, the
 MCP server in `.mcp.json`, four applied migrations, the `_smoke` table created
 and dropped in B1.3 — happened inside a project named production.
 
@@ -353,6 +354,74 @@ credential surface inside a destructive script, to defend a distinction that
 disappears once production is simply not on the same account. The protection is
 structural instead: production is not created until B11, and its credentials
 never go in `.env.local`.
+
+---
+
+## B2 — `deleted_by` carries no foreign key until B3, and that is the precedent
+
+`docs/data-model-extension.md` §1.3 defines `deleted_by` as a foreign key to
+`user`. B2 created the first three tables and the `user` table does not exist
+until B3, so the column had to point at nothing or not exist.
+
+**Decided: carry it now as a nullable `uuid` with no foreign key. B3 adds the
+constraint with `ALTER TABLE`.**
+
+The column shape stays stable, so no later migration alters these tables to add
+a column. And **adding a constraint to a populated table is cheaper and safer
+than adding a column to one** — the constraint is validated against existing
+rows, which are all null here, so it cannot fail.
+
+**This is the precedent every table created between B2 and B3 inherits.** Any
+such table carries `deleted_at timestamptz` and `deleted_by uuid`, both nullable,
+neither keyed. B3 adds every missing key in one migration. It is listed as a B3
+opening task so the debt is paid rather than remembered.
+
+---
+
+## B2 — C-2.3 is a composite foreign key, not a trigger and not a CHECK
+
+Every payam carries `state_id` directly as well as through its county, and the
+two must always agree. Three ways to enforce that:
+
+A **CHECK constraint cannot see another table**, so it cannot compare a payam's
+state to its county's state at all.
+
+A **trigger** can, but it must be written correctly for inserts and for updates
+on both sides, it can be disabled, and it is code that has to be maintained.
+
+A **composite foreign key** — `(county_id, state_id)` referencing
+`county(id, state_id)`, with a `UNIQUE (id, state_id)` on county as its target —
+is declarative, is enforced on insert and on update, cannot be disabled without
+being dropped, and additionally stops a county being moved to another state
+while payams still point at the old one. That last property was not asked for
+and is the strongest argument for it.
+
+The extra `UNIQUE (id, state_id)` on county looks redundant beside its primary
+key. It is not: a composite foreign key needs a unique constraint spanning
+exactly the columns it references.
+
+---
+
+## B2 — the dependant check names no table, on purpose
+
+C-2.7 requires the reseed to refuse removing a location that other records
+depend on. When B2 was built, `farmer`, `officer` and `cooperative` did not
+exist.
+
+**Hardcoding those names would have been worse than useless.** A guard that
+names three tables which never appear refuses nothing, forever, while looking
+exactly like a guard that works. That is the B1.3 failure mode with a longer
+fuse: it would have passed every test written against it and started silently
+failing the moment B5 created `farmer` under a slightly different name.
+
+Instead it asks `pg_constraint` which foreign keys point at the location tables
+and counts through whatever it finds. It protects tables that do not exist yet,
+with no change to the code, the moment they declare a key.
+
+**The limit, stated in the code and here:** it sees dependants declared as
+FOREIGN KEYS. A future table holding a payam code as loose text with no key is
+invisible to it. That is an argument for always declaring the key, and B5 onward
+should treat it as one.
 
 ---
 
@@ -415,3 +484,153 @@ not reviewed it, whatever the record says afterwards.
 
 The branches are kept. The work is not wasted — it is early, and it will be
 worth reading when C-13 is actually reached.
+
+---
+
+## B3 — Officers authenticate by phone, through a derived identifier
+
+**C-3.7 says extension officers authenticate by phone number and password. They
+do. What changed is what happens underneath, and why.**
+
+Supabase's Phone provider is **disabled on this project**, and enabling it
+requires selecting an SMS provider from a fixed list: Twilio, Twilio Verify,
+MessageBird, Vonage, Textlocal. **Africa's Talking — our contracted provider
+under F-03 — is not on that list.**
+
+Verified against staging on 2026-09-03 rather than assumed. An officer account
+with a phone and password was created successfully (`200`), and signing in with
+that phone and password was refused: `422 phone_provider_disabled, "Phone logins
+are disabled"`. The same test on the email path succeeded end to end.
+
+**Three options, and why C:**
+
+**A — enable the Phone provider with a supported SMS provider.** Means paying
+for a second SMS provider purely to satisfy a toggle, for one-time codes we
+never send. It also contradicts the stack table, which names one SMS provider.
+
+**B — enable the provider without SMS credentials, through the Management API.**
+Plausible: the OTP endpoints are ones we never call. **Unverified**, and
+verifying it needs a Management API token that was deliberately revoked. A
+security decision should not be undone to save a configuration step.
+
+**C — derive an authentication identifier from the phone number.** The officer
+types their phone number and password, exactly as C-3.7 requires. Underneath,
+the account is keyed by a deterministic identifier derived from the E.164
+number, on a non-routable domain, and no message is ever sent to it. **The only
+option verified working end to end.**
+
+### The rules this comes with
+
+- **Derived in exactly one function**, deterministically, from the E.164 phone.
+- **Never typed by a human, never displayed, never in an error message.** It is
+  an authentication detail, not an address.
+- **A non-routable domain**, so nothing can ever receive mail there.
+- **Officer records store the real E.164 phone.** The derived identifier is not
+  a field of the officer and is not stored on the officer row.
+
+### Why the single function matters more than it looks
+
+GoTrue **strips the leading plus**: an account created with `+211900000001` is
+stored as `211900000001`. `phoneSchema` produces the plus. Two representations
+of the same number, in two systems, is precisely how a lookup silently finds
+nothing and a user is told their password is wrong.
+
+One derivation function means the two representations cannot disagree, because
+only one of them is ever used to address the auth system. A test asserts that
+`0912345678`, `+211912345678` and `211912345678` all resolve to the same
+account.
+
+### Do not "fix" this by enabling the phone provider
+
+A future session will see a derived identifier and read it as a workaround.
+Enabling the Phone provider means either paying for an SMS provider we do not
+use, or an unverified configuration path. If Africa's Talking ever joins
+Supabase's supported list, revisit it then — deliberately, with the migration
+of existing accounts planned, not as a tidy-up.
+
+This is also documented in `docs/api/CONVENTIONS.md` §2, where a session working
+on authentication will actually see it.
+
+---
+
+## B3 — every write that needs an audit row retro-fitted in B4
+
+The audit law says every create, update and delete appends an `audit_event` row
+carrying actor, action, before, after and device. **`audit_event` does not exist
+until B4**, so B3 wrote to the database with no audit trail at all. This is the
+inventory B4 needs.
+
+| Where                        | Action                   | Actor     | Before / after                                                  |
+| ---------------------------- | ------------------------ | --------- | --------------------------------------------------------------- |
+| `POST /api/users`            | `user.created`           | the admin | no before; after is the row                                     |
+| `PATCH /api/users/:id`       | `user.updated`           | the admin | both; **the role and state change matter most**                 |
+| `PATCH /api/users/:id`       | `user.password_set`      | the admin | neither, ever — see below                                       |
+| `DELETE /api/users/:id`      | `user.soft_deleted`      | the admin | before is the row; after is `deleted_at`                        |
+| `DELETE /api/users/:id`      | `auth.disabled`          | the admin | no row change; the auth account was banned                      |
+| `POST /api/officers`         | `officer.created`        | the admin | no before; after is the row                                     |
+| `PATCH /api/officers/:id`    | `officer.updated`        | the admin | both; payam and state move together                             |
+| `PATCH /api/officers/:id`    | `officer.status_changed` | the admin | both; **this is a deactivation and is not the same as an edit** |
+| `PATCH /api/officers/:id`    | `officer.password_set`   | the admin | neither, ever                                                   |
+| `DELETE /api/officers/:id`   | `officer.soft_deleted`   | the admin | before is the row; after is `deleted_at`                        |
+| `DELETE /api/officers/:id`   | `auth.disabled`          | the admin | no row change                                                   |
+| The compensating transaction | `auth.account_orphaned`  | the admin | the auth id only, when the compensating delete itself failed    |
+
+**Four things B4 must decide, not inherit:**
+
+**A password change must never record the password**, in `before`, in `after`, or
+in a message. It is the one audit row whose value is entirely in the fact that
+it happened, the actor, and the time. If `before`/`after` are non-null for
+`password_set`, that is a defect.
+
+**A deactivation is not an edit.** `officer.status_changed` and
+`user.soft_deleted` are the rows a supervisor will be asked about a year later —
+"who cut off this officer's access, and when". Folding them into a generic
+`updated` makes that question unanswerable without diffing JSON.
+
+**Two rows or one for delete?** Soft-deleting a principal also disables their
+auth account. They are one intent and two systems, and the second can fail
+independently. Recording one row hides that; recording two makes the pair
+visible. Recommend two.
+
+**Backfill: recommend not.** Everything B3 wrote was test principals and
+whatever accounts an administrator creates before B4 lands. Inventing audit rows
+after the fact means writing rows whose `occurred_at` is a guess, into a table
+whose entire value is that it is append-only and truthful. Better to record that
+the log begins at B4 and say so, than to forge its first entries.
+
+---
+
+## B3 — the wrapper swallowed every error, and its comment said otherwise
+
+The shared route wrapper catches everything a handler throws, so that the
+caller always gets the fixed 500 sentence and never a stack trace. That is
+correct. What it also does, as a consequence, is **stop Next's own
+`onRequestError` hook from ever seeing the error** — the hook fires only for
+errors that escape the handler, and none escape.
+
+So the wrapper is the _only_ place a server-side route failure can be reported
+from. The first version of it wrote to `console.error` and nothing else, while
+its comment claimed _"the detail goes to the server log and Sentry"_. **Error
+reporting was silently off for every route** from the moment the wrapper landed.
+A comment asserting behaviour the code does not have is worse than a gap: it
+reads as deliberate.
+
+**How it was found.** Not by a test. By planning the Sentry verification unit and
+asking what command would trigger a reportable error — and realising there was
+no path from a route to Sentry at all. Had the verification run first, nothing
+would have arrived, and the obvious conclusion would have been a bad DSN.
+
+**The fix.** The wrapper calls `Sentry.captureException` for anything that is not
+an `ApiFailure`, tagged with the correlation id so the report can be matched to
+the response the caller saw. `ApiFailure`s — 401, 404, 422 and the rest — are
+**not** reported: an officer's 404 is not an incident, and reporting them would
+bury the real ones.
+
+**The test, in both directions.** `apps/web/tests/wrapper-reports-errors.test.ts`
+asserts an unexpected error is reported exactly once with the correlation id,
+and that a 404 and a 200 report nothing. It was proved to discriminate: with the
+`captureException` line removed, two of its four cases go red.
+
+**The lesson worth keeping.** When a layer _catches_ something, ask what used to
+happen to it further up. Catching is not free: it silences every handler that
+sat behind the thing you caught.

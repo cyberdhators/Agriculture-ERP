@@ -33,39 +33,25 @@ of the repository root. Both are deleted.
 **A chat exposure and a repository exposure need different responses.** Why that
 distinction is worth keeping is in `docs/DECISIONS.md`.
 
-**THE ENVIRONMENT NAMES ARE WRONG — read this before any database work.**
-Verified against the Supabase Management API on 2026-09-02: the account holds
-**exactly one project**, reference `xmmxbrxmfgodhpwolrvk`, named
-**`agri-production`** in the dashboard. That one project is what this file calls
-staging. It is what `.env.local` points at, what `.mcp.json` attaches to, what
-`scripts/db-reset.mjs` will accept, and what all **five** migrations have been
-applied to — the fifth being B2's location hierarchy, which landed after this
-paragraph was first written.
-
-**There is no production project. It does not exist.** The paragraph that stood
-here said it did. That was wrong, and every rule in this file separating staging
-from production rested on it.
-
-**Do not run `pnpm db:reset` until the rename below has happened.** The guard
-will accept `xmmxbrxmfgodhpwolrvk`, report _Target confirmed as staging_, and
-drop every table in a project named `agri-production`.
-
-**The agreed fix, in order.** Reasoning in `docs/DECISIONS.md`:
-
-1. Rename the project to `agri-staging` in the Supabase dashboard. The reference
-   is immutable, so nothing in this repository changes.
-2. Rotate that project's database password and update `.env.local`.
-3. Create production new at B11. It must not be this project, which has held
-   developer credentials and carries a throwaway `_smoke` table in its migration
-   history.
-
-**Production is empty until B11** still holds, and now means what it says: there
-is nothing yet for it to be empty of. No real farmer data exists anywhere, and
-none enters production until the backup and restore unit is done and the restore
-drill has run successfully.
-
-Staging Supabase project reference: `xmmxbrxmfgodhpwolrvk`. Not a secret; the
+**THERE IS ONE SUPABASE PROJECT, AND IT IS STAGING.** Reference
+`xmmxbrxmfgodhpwolrvk`, named **`agri-staging`**. It is what `.env.local` points
+at, what `.mcp.json` attaches to, what `scripts/db-reset.mjs` accepts, and what
+every migration has been applied to. The reference is not a secret; the
 connection strings containing it are.
+
+**There is no production project yet.** It is created new at B11 — deliberately
+not this one, which has held developer credentials on a laptop and carries a
+throwaway `_smoke` table in its migration history. Reasoning in
+`docs/DECISIONS.md`.
+
+**Resolved 2026-09-03**, all three, so none of it is outstanding: the project was
+renamed from `agri-production`, its database password was rotated, and the
+account-wide access token was revoked. **`pnpm db:reset` is safe to run again** —
+the naming mismatch that made it dangerous is gone.
+
+**Production is empty until B11** and now means what it says: no real farmer data
+exists anywhere, and none enters production until the backup and restore unit is
+done and the restore drill has run successfully.
 
 **OPEN — Supabase plan and point-in-time recovery.** Not yet recorded: the plan
 CORWADO's projects are on, and whether point-in-time recovery is included. B11
@@ -80,13 +66,30 @@ it here.
 Names only. Values live in `.env.local` locally and in Vercel and GitHub secrets
 for deployments. All are listed in `.env.example`.
 
-| Name                     | Used by                                        | For                                                                                            |
-| ------------------------ | ---------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| `DATABASE_URL`           | Prisma at runtime                              | Pooled connection, port 6543, `pgbouncer=true`, `connection_limit=1`.                          |
-| `DIRECT_URL`             | `prisma/schema.prisma`, `scripts/db-reset.mjs` | Direct connection, port 5432. Migrations and introspection only.                               |
-| `NEXT_PUBLIC_SENTRY_DSN` | `apps/web/sentry.shared.ts`                    | Where errors go. **Public by design** — see `docs/DECISIONS.md`. Empty switches reporting off. |
-| `SENTRY_ENVIRONMENT`     | same                                           | staging or production. Falls back to `VERCEL_ENV`, then `development`.                         |
-| `SENTRY_RELEASE`         | same                                           | Which build. Falls back to `VERCEL_GIT_COMMIT_SHA`, then `unknown`.                            |
+| Name                     | Used by                                        | For                                                                                                                                         |
+| ------------------------ | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`           | Prisma at runtime                              | Pooled connection, port 6543, `pgbouncer=true`, `connection_limit=1`.                                                                       |
+| `DIRECT_URL`             | `prisma/schema.prisma`, `scripts/db-reset.mjs` | **Session pooler**, port 5432 — NOT the direct host, which is IPv6-only. Migrations, introspection, operational scripts and database tests. |
+| `NEXT_PUBLIC_SENTRY_DSN` | `apps/web/sentry.shared.ts`                    | Where errors go. **Public by design** — see `docs/DECISIONS.md`. Empty switches reporting off.                                              |
+| `SENTRY_ENVIRONMENT`     | same                                           | staging or production. Falls back to `VERCEL_ENV`, then `development`.                                                                      |
+| `SENTRY_RELEASE`         | same                                           | Which build. Falls back to `VERCEL_GIT_COMMIT_SHA`, then `unknown`.                                                                         |
+
+---
+
+## PAID EXTERNAL SERVICES ARE DEFERRED
+
+**Africa's Talking (I-02), OpenWeather (I-03) and Mapbox** are deferred until
+CORWADO provides accounts. All third-party accounts are held in CORWADO's name —
+`CLAUDE.md` §3 — so none can be created by this team.
+
+**No unit before B9 depends on any of them.** Weather advisories, deliverable
+(e), and SMS notifications, deliverable (n), do — and both come after the backend
+units. Nothing is blocked today.
+
+One consequence worth knowing now: Supabase's Phone auth provider requires an SMS
+provider from a fixed list that **does not include Africa's Talking**. That is
+why officers authenticate through a derived identifier rather than Supabase's
+phone provider. See `docs/DECISIONS.md`.
 
 ---
 
@@ -127,34 +130,13 @@ retries the command.
 
 ## OUTSTANDING ITEMS — THINGS THAT EXIST AND MUST BE REMOVED
 
-Things that **exist in the repository today** and are scheduled for deletion.
-Not a list of intentions: nothing is added before it exists, and nothing leaves
-this list except by deleting the thing itself.
+**The list is empty.** Both `_dev` routes were deleted in B3, with
+`packages/shared/src/dev.ts`, its export and the validate-phone test. The
+`/api/_dev/*` exception has been removed from `docs/api/CONVENTIONS.md` §2
+entirely rather than left standing with nothing under it.
 
-| Item                            | Added | Removed in | Why it exists                                                                                                                 |
-| ------------------------------- | ----- | ---------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| `POST /api/_dev/validate-phone` | B1.4  | **B3**     | Proves `docs/api/CONVENTIONS.md` and the Zod schemas agree in a running server, before `requireRole` exists. Unauthenticated. |
-| `POST /api/_dev/throw`          | B1.5  | **B3**     | Throws on purpose, proving an unhandled error reaches Sentry scrubbed and tagged. Unauthenticated.                            |
-
-Both are unauthenticated, which every other route is forbidden to be. They are
-the single enumerated `/api/_dev/*` exception in `docs/api/CONVENTIONS.md` §2.
-
-**Deleting them in B3 means all of this, together:**
-
-1. `apps/web/app/api/%5Fdev/validate-phone/route.ts` and
-   `apps/web/app/api/%5Fdev/throw/route.ts` — note `%5Fdev`, not `_dev`: Next
-   treats a leading-underscore folder as private and would not route it
-2. `packages/shared/src/dev.ts` and its export from `packages/shared/src/index.ts`
-3. `apps/web/tests/dev-validate-phone.test.ts` and the `_dev` cases in
-   `apps/web/tests/sentry-envelope.test.ts`
-4. The rows above
-5. The `/api/_dev/*` exception paragraph in `docs/api/CONVENTIONS.md` §2 —
-   removed entirely once this table is empty, not left standing with nothing
-   under it
-
-**`/api/_dev/throw` diverges from `docs/api/CONVENTIONS.md` in two agreed ways**, both
-dying with the route: its response is not the documented error shape, and it
-throws before the §9.1 `Content-Type` check. Reasoning in `docs/DECISIONS.md`.
+The rule stands for any future `_dev` route: **it and its row here are created
+together or not at all.**
 
 ---
 
@@ -162,23 +144,15 @@ throws before the §9.1 `Content-Type` check. Reasoning in `docs/DECISIONS.md`.
 
 Stated so they are known rather than discovered.
 
-**Six error codes are documented but unreachable.** No route can produce them,
-so no test can. Marked _Emitted today? No_ in `docs/api/CONVENTIONS.md` §5; that column
-and this table must be updated together.
+**Five of the six parked error codes are now reachable**, and the two parked
+sections of `docs/api/CONVENTIONS.md` are unparked. B3 made `invalid_cursor`,
+`unauthenticated`, `forbidden`, `not_found` and `unprocessable` emittable, and
+built the first list routes and the first responses carrying timestamps.
 
-| Code                    | Reachable in | Why not yet                                                  |
-| ----------------------- | ------------ | ------------------------------------------------------------ |
-| `invalid_cursor` (400)  | **B3**       | No cursor format exists; no route returns a list.            |
-| `unauthenticated` (401) | **B3**       | `requireRole` does not exist.                                |
-| `forbidden` (403)       | **B3**       | No roles exist.                                              |
-| `not_found` (404)       | **B3**       | No record and no scope resolution exist.                     |
-| `conflict` (409)        | **B2**       | No record and no client-UUID idempotency exist.              |
-| `unprocessable` (422)   | **B2**       | No business rules exist; each writes its own exact sentence. |
-
-**Two sections of `docs/api/CONVENTIONS.md` are parked the same way.** §6 Lists (the
-`page` object, cursors, the deterministic sort, the `deleted_at` filter) and the
-timestamp rule in §7 — **B3** unparks both. `paginationSchema` is testable as a
-schema; list responses are not.
+**One remains parked:** `conflict` (409) is emitted by B3 — a duplicate officer
+phone, a taken address — but the client-UUID idempotency case in the status
+table's description arrives with **B9**. The column reads _Yes_ because a route
+does emit it.
 
 **The scrubber is the last gate we control, not the last gate.** `beforeSend` is
 the last point running our code; the SDK keeps building the envelope afterwards.
@@ -238,41 +212,41 @@ Nothing is lost and some of it will be worth taking.
 
 ---
 
-## B3 OPENING TASKS
+## B3 OPENING TASKS — ALL SIX DONE
 
-Four obligations handed to B3. All belong at its start, not its end.
+| #   | Task                                                            |                                                                                                                    |
+| --- | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| 1   | Delete both `_dev` routes and everything they entailed          | done                                                                                                               |
+| 2   | Unpark §6 and the timestamp rule in §7                          | done — first list routes and first timestamps                                                                      |
+| 3   | Move the code-in-the-right-situation guarantee into the wrapper | done — the wrapper owns the 415/413/400 order, the 405 and the fixed 500, and a test fails any route that skips it |
+| 4   | A correlation id on every response                              | done — including 401s, 403s and 500s, and it echoes a caller-supplied one                                          |
+| 5   | Enforce the free-text rule structurally                         | done — `conflict()` and `unprocessable()` take a rule key, not a sentence                                          |
+| 6   | Add the `deleted_by` foreign keys                               | done — five constraints                                                                                            |
 
-1. **Unpark §6 and the timestamp rule** once the first list route or first
-   stored-record response exists, adding the tests that were impossible before.
-   Parking is a promise to come back, not a place to leave things.
-2. **Move the code-in-the-right-situation guarantee into the shared route
-   wrapper.** The B1.4 drift test locks sentences to constants and no more; a
-   route returning `400` where `415` belongs leaves it green. The wrapper built
-   for `requireRole` should own the `Content-Type` check, the size cap, the JSON
-   parse, the documented `405` and the fixed `500`, so those hold by
-   construction. The `405` handlers in `/api/_dev/validate-phone` exist only
-   because no wrapper does.
-3. **Emit a correlation id from that wrapper.** Deferred from B1.4 and B1.5. It
-   is only worth having if _every_ route emits one — a header on some routes and
-   not others is worse than none, because a request with no id is
-   indistinguishable from one whose error was never reported.
-4. **Enforce "error messages never name a person" in that wrapper**, so it stops
-   being remembered and becomes structural. The wrapper already owns the fixed
-   500 sentence — same idea, same reason.
+**What task 5 does and does not do.** A route can no longer interpolate into a
+409 or 422 message, because those functions do not accept text. The wrapper's
+own errors were already pinned constants. What is still possible is an author
+writing a name into a `console.error` or a thrown `Error` — the scrubber catches
+phone numbers there, not names. The standing rule still applies to log lines.
+
+---
+
+## B4 OPENING TASKS
+
+**Audit the writes B3 could not.** `audit_event` does not exist until B4, so
+every write below happened with no audit row. B4 decides whether to backfill and
+adds the rows going forward. The full list is in `docs/DECISIONS.md`.
 
 ---
 
 ## BLOCKED
 
-**Nothing is blocked.** `docs/scope-and-acceptance.md` arrived and B2 is
-unblocked. The criteria for B2 are C-2.1 to C-2.8 in that file.
+**Nothing is blocked.**
 
-**One open question for B2.** `docs/data-model-extension.md` §1.3 defines
-`deleted_by` as `fk -> user`, and the `user` table is not built until B3. B2
-creates the first tables, so it must decide: carry `deleted_by` as a nullable
-column with the foreign key added in B3, or omit the column until B3 and add it
-then. The first keeps the column shape stable; the second avoids a column that
-points at nothing. **Ask before writing the migration.**
+B2's open question — whether `deleted_by` should carry a foreign key before the
+`user` table existed — was answered and executed: the column is a nullable uuid
+with no key, and **B3 adds the constraint**. The precedent is in
+`docs/DECISIONS.md`.
 
 ## OPEN QUESTIONS LIVE IN THEIR OWN DOCUMENTS
 

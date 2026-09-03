@@ -12,6 +12,8 @@
     "@agri-erp/shared": "workspace:*",
     "@prisma/client": "6.19.3",
     "@sentry/nextjs": "10.73.0",
+    "@supabase/ssr": "0.12.5",
+    "@supabase/supabase-js": "2.114.0",
     "next": "^15.5.25",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
