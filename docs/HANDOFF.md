@@ -225,8 +225,10 @@ data behind `apps/web/lib/preview.tsx`.
    `RULE_MESSAGES` pinned in §5.2.1. Officers get no write route (C-13 open
    question unanswered). PR against `main` when checks pass.
 2. `feat/ui-farmer-account` — UI-3, the C-18 farmer flow on fixtures, in the
-   UI worktree, `apps/web/**` only: `/farmer` (language), `/farmer/login`,
-   `/farmer/register`, `/farmer/account`, `/farmer/account/listings[/new]`.
+   UI worktree, `apps/web/**` only, desktop-first like the portal (the
+   Android app comes later): `/farmer` (language), `/farmer/login` (phone +
+   password), `/farmer/register`, `/farmer/account` (masthead: Overview · My
+   listings · My farm · Account), marketplace-style listings, staff `/market`.
    Built against the B12 contract in the 11:00 UTC entry below so that wiring
    is a fixture swap. Strings come from `apps/web/lib/i18n/` with `ar-juba`
    falling back to English until CORWADO supplies the translated text.
