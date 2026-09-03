@@ -520,6 +520,12 @@ points; it adds the seven `directory_entry.* / learning_resource.*` keys to
 `AUDIT_ACTIONS`, the CHECK migration and the §5.2.2 rows in one change, as you
 asked. UI-3 started on `feat/ui-farmer-account` (below).
 
+**Decided — product name.** The application is **AgriOne**, tagline "Digital
+Agriculture & Agribusiness Ecosystem" (Alieu, 2026-09-03). "CORWADO · LAST
+Project" is the publisher line. Use the name in anything user-facing —
+emails, SMS templates (C-15), error pages, exports — and keep the package
+scope `@agri-erp/*` as it is; renaming packages is not worth the churn.
+
 **Decided — by Alieu for CORWADO, recorded in `docs/scope-and-acceptance.md`
 ("Open against the contract" 1 and 2, C-3.8 amendment, C-18 added).** The
 baseline changed: a farmer-facing **web** flow is in this phase. Farmers get
