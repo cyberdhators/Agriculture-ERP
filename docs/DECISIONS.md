@@ -484,3 +484,69 @@ not reviewed it, whatever the record says afterwards.
 
 The branches are kept. The work is not wasted — it is early, and it will be
 worth reading when C-13 is actually reached.
+
+---
+
+## B3 — Officers authenticate by phone, through a derived identifier
+
+**C-3.7 says extension officers authenticate by phone number and password. They
+do. What changed is what happens underneath, and why.**
+
+Supabase's Phone provider is **disabled on this project**, and enabling it
+requires selecting an SMS provider from a fixed list: Twilio, Twilio Verify,
+MessageBird, Vonage, Textlocal. **Africa's Talking — our contracted provider
+under F-03 — is not on that list.**
+
+Verified against staging on 2026-09-03 rather than assumed. An officer account
+with a phone and password was created successfully (`200`), and signing in with
+that phone and password was refused: `422 phone_provider_disabled, "Phone logins
+are disabled"`. The same test on the email path succeeded end to end.
+
+**Three options, and why C:**
+
+**A — enable the Phone provider with a supported SMS provider.** Means paying
+for a second SMS provider purely to satisfy a toggle, for one-time codes we
+never send. It also contradicts the stack table, which names one SMS provider.
+
+**B — enable the provider without SMS credentials, through the Management API.**
+Plausible: the OTP endpoints are ones we never call. **Unverified**, and
+verifying it needs a Management API token that was deliberately revoked. A
+security decision should not be undone to save a configuration step.
+
+**C — derive an authentication identifier from the phone number.** The officer
+types their phone number and password, exactly as C-3.7 requires. Underneath,
+the account is keyed by a deterministic identifier derived from the E.164
+number, on a non-routable domain, and no message is ever sent to it. **The only
+option verified working end to end.**
+
+### The rules this comes with
+
+- **Derived in exactly one function**, deterministically, from the E.164 phone.
+- **Never typed by a human, never displayed, never in an error message.** It is
+  an authentication detail, not an address.
+- **A non-routable domain**, so nothing can ever receive mail there.
+- **Officer records store the real E.164 phone.** The derived identifier is not
+  a field of the officer and is not stored on the officer row.
+
+### Why the single function matters more than it looks
+
+GoTrue **strips the leading plus**: an account created with `+211900000001` is
+stored as `211900000001`. `phoneSchema` produces the plus. Two representations
+of the same number, in two systems, is precisely how a lookup silently finds
+nothing and a user is told their password is wrong.
+
+One derivation function means the two representations cannot disagree, because
+only one of them is ever used to address the auth system. A test asserts that
+`0912345678`, `+211912345678` and `211912345678` all resolve to the same
+account.
+
+### Do not "fix" this by enabling the phone provider
+
+A future session will see a derived identifier and read it as a workaround.
+Enabling the Phone provider means either paying for an SMS provider we do not
+use, or an unverified configuration path. If Africa's Talking ever joins
+Supabase's supported list, revisit it then — deliberately, with the migration
+of existing accounts planned, not as a tidy-up.
+
+This is also documented in `docs/api/CONVENTIONS.md` §2, where a session working
+on authentication will actually see it.

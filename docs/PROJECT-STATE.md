@@ -76,6 +76,23 @@ for deployments. All are listed in `.env.example`.
 
 ---
 
+## PAID EXTERNAL SERVICES ARE DEFERRED
+
+**Africa's Talking (I-02), OpenWeather (I-03) and Mapbox** are deferred until
+CORWADO provides accounts. All third-party accounts are held in CORWADO's name —
+`CLAUDE.md` §3 — so none can be created by this team.
+
+**No unit before B9 depends on any of them.** Weather advisories, deliverable
+(e), and SMS notifications, deliverable (n), do — and both come after the backend
+units. Nothing is blocked today.
+
+One consequence worth knowing now: Supabase's Phone auth provider requires an SMS
+provider from a fixed list that **does not include Africa's Talking**. That is
+why officers authenticate through a derived identifier rather than Supabase's
+phone provider. See `docs/DECISIONS.md`.
+
+---
+
 ## KNOWN CONDITION — THE SESSION POOLER IS FLAKY
 
 `DIRECT_URL` reaches staging through the **session pooler**
