@@ -597,3 +597,40 @@ whatever accounts an administrator creates before B4 lands. Inventing audit rows
 after the fact means writing rows whose `occurred_at` is a guess, into a table
 whose entire value is that it is append-only and truthful. Better to record that
 the log begins at B4 and say so, than to forge its first entries.
+
+---
+
+## B3 — the wrapper swallowed every error, and its comment said otherwise
+
+The shared route wrapper catches everything a handler throws, so that the
+caller always gets the fixed 500 sentence and never a stack trace. That is
+correct. What it also does, as a consequence, is **stop Next's own
+`onRequestError` hook from ever seeing the error** — the hook fires only for
+errors that escape the handler, and none escape.
+
+So the wrapper is the _only_ place a server-side route failure can be reported
+from. The first version of it wrote to `console.error` and nothing else, while
+its comment claimed _"the detail goes to the server log and Sentry"_. **Error
+reporting was silently off for every route** from the moment the wrapper landed.
+A comment asserting behaviour the code does not have is worse than a gap: it
+reads as deliberate.
+
+**How it was found.** Not by a test. By planning the Sentry verification unit and
+asking what command would trigger a reportable error — and realising there was
+no path from a route to Sentry at all. Had the verification run first, nothing
+would have arrived, and the obvious conclusion would have been a bad DSN.
+
+**The fix.** The wrapper calls `Sentry.captureException` for anything that is not
+an `ApiFailure`, tagged with the correlation id so the report can be matched to
+the response the caller saw. `ApiFailure`s — 401, 404, 422 and the rest — are
+**not** reported: an officer's 404 is not an incident, and reporting them would
+bury the real ones.
+
+**The test, in both directions.** `apps/web/tests/wrapper-reports-errors.test.ts`
+asserts an unexpected error is reported exactly once with the correlation id,
+and that a 404 and a 200 report nothing. It was proved to discriminate: with the
+`captureException` line removed, two of its four cases go red.
+
+**The lesson worth keeping.** When a layer _catches_ something, ask what used to
+happen to it further up. Catching is not free: it silences every handler that
+sat behind the thing you caught.

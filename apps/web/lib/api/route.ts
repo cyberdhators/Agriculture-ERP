@@ -8,6 +8,7 @@ import {
   isJsonMediaType,
   zodErrorToApiError,
 } from '@agri-erp/shared';
+import * as Sentry from '@sentry/nextjs';
 import { NextResponse } from 'next/server';
 import { randomUUID } from 'node:crypto';
 
@@ -184,12 +185,26 @@ function wrap<TBody>(definition: RouteDefinition<TBody>): NextRouteHandler {
         correlationId,
       );
     } catch (failure) {
+      // A documented outcome for the caller -- 401, 404, 422 and so on. Not an
+      // error in our code, so it is NOT reported: an officer's 404 is not an
+      // incident, and reporting them would bury the real ones.
       if (failure instanceof ApiFailure) return failureResponse(failure, correlationId);
 
-      // Anything else is ours, not the caller's. The message is fixed and the
-      // detail goes to the server log and Sentry -- never to the client, and
-      // never carrying a name, phone number or national id.
+      // Anything else is ours, not the caller's. This wrapper CATCHES the
+      // error, so Next's own onRequestError hook never sees it -- which means
+      // if it is not reported from here, it is not reported at all. The first
+      // version of this block only wrote to the console, and its comment
+      // claimed Sentry was informed. It was not. Server-side error reporting
+      // was silently off for every route until the Sentry verification unit
+      // was planned and the gap was noticed. See docs/DECISIONS.md.
+      //
+      // The correlation id goes with it, so the report can be matched to the
+      // response the caller saw. The event passes through the scrubber like
+      // every other -- no name, phone number or national id leaves here.
+      Sentry.captureException(failure, { tags: { correlation_id: correlationId } });
       console.error(`[${correlationId}] unhandled route failure`, failure);
+
+      // The caller gets the fixed sentence and nothing else.
       return failureResponse(internalError(), correlationId);
     }
   };
