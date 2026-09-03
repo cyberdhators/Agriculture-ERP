@@ -1,15 +1,15 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 
-import { PlaceholderSection } from '@/components/portal/PlaceholderSection';
+import { FarmersRegister } from '@/components/farmers/FarmersRegister';
 
 export const metadata: Metadata = { title: 'Farmers' };
 
 export default function FarmersPage() {
+  // useSearchParams (filters live in the URL) needs a Suspense boundary.
   return (
-    <PlaceholderSection
-      title="Farmers"
-      unit="Built with the farmer registry units (B5 to B8)"
-      body="Dense farmer list, farmer detail with the audit trail, registration form with duplicate warning, and the verification queue, as on pages 2 to 5 of the web design. Waits for the farmer table and requireRole."
-    />
+    <Suspense fallback={null}>
+      <FarmersRegister />
+    </Suspense>
   );
 }

@@ -1,0 +1,666 @@
+/* The Farmers module in "The Register": boundaries, the filter rail, the
+   register table extras, the dossier and the registration form. Table skin,
+   page header, cards and stamps come from screens.module.css and ui. */
+
+/* ---- Boundary (inline SVG farm plots) -------------------------------- */
+
+.boundary {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  justify-items: start;
+}
+
+.boundarySvg {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+}
+
+.boundaryPoly {
+  fill: var(--accent);
+  fill-opacity: 0.3;
+  stroke: var(--ink);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+}
+
+.boundaryCentroid {
+  fill: var(--accent-hover);
+}
+
+.boundaryArea {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--text-small);
+  color: var(--ink-2);
+}
+
+.boundaryEmpty {
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+
+.boundaryEmptyRect {
+  fill: var(--dust);
+  stroke: var(--line-strong);
+  stroke-width: 1;
+  stroke-dasharray: 4 4;
+}
+
+.boundaryEmptyLabel {
+  position: absolute;
+  padding: 0 4px;
+  font-family: var(--font-body);
+  font-size: var(--text-label);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-align: center;
+}
+
+/* ---- Register layout: filter rail + content -------------------------- */
+
+.register {
+  display: grid;
+  grid-template-columns: minmax(210px, 3fr) minmax(0, 9fr);
+  gap: var(--s-6);
+  align-items: start;
+}
+
+.rail {
+  position: sticky;
+  top: calc(var(--masthead-h) + var(--s-4));
+  display: grid;
+  gap: 0;
+}
+
+.railGroup {
+  display: grid;
+  gap: var(--s-2);
+  padding: var(--s-4) 0;
+  border-top: 1px solid var(--line);
+}
+
+.railGroup:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.railHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-2);
+}
+
+.railReset {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font-family: var(--font-body);
+  font-size: var(--text-small);
+  color: var(--accent-hover);
+}
+
+.railReset:hover {
+  text-decoration: underline;
+}
+
+.railField {
+  display: grid;
+  gap: 4px;
+}
+
+.railField select {
+  min-height: 34px;
+}
+
+.content {
+  min-width: 0;
+  display: grid;
+  gap: var(--s-5);
+}
+
+/* ---- Sortable table header ------------------------------------------- */
+
+.sortBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.sortBtn:hover {
+  color: var(--ink);
+}
+
+.sortArrow {
+  font-family: var(--font-mono);
+  color: var(--accent-hover);
+}
+
+.thCheck {
+  width: 34px;
+}
+
+.cellName {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+
+.cellNameMain {
+  font-weight: 600;
+  color: var(--ink);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.cellNameMain:hover {
+  color: var(--accent-hover);
+  text-decoration: underline;
+  text-decoration-color: var(--accent);
+}
+
+.cellSub {
+  font-size: var(--text-small);
+  color: var(--muted);
+}
+
+.cellCrops {
+  color: var(--ink-2);
+  font-size: var(--text-small);
+  max-width: 22ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cellWait {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-2);
+}
+
+.cellWaitEscalated {
+  color: var(--pending);
+  font-weight: 600;
+}
+
+.stampInline {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.bulkBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-3) var(--s-4);
+  background: var(--accent-tint);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-control);
+}
+
+.bulkCount {
+  font-family: var(--font-mono);
+  font-weight: 500;
+}
+
+.tableScroll {
+  overflow-x: auto;
+}
+
+.registerTable {
+  min-width: 940px;
+}
+
+/* ---- Coverage bars (dashboard, CSS only) ----------------------------- */
+
+.coverage {
+  display: grid;
+  gap: var(--s-3);
+}
+
+.coverageRow {
+  display: grid;
+  grid-template-columns: 140px 1fr 92px;
+  gap: var(--s-3);
+  align-items: center;
+}
+
+.coverageName {
+  font-size: var(--text-small);
+  color: var(--ink-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.coverageTrack {
+  height: 12px;
+  background: var(--dust);
+  border-radius: var(--radius-control);
+  overflow: hidden;
+}
+
+.coverageFill {
+  height: 100%;
+  background: var(--accent);
+}
+
+.coverageFillMuted {
+  height: 100%;
+  background: var(--line-strong);
+}
+
+.coverageValue {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--text-small);
+  color: var(--muted);
+  text-align: right;
+}
+
+/* ---- Overview home layout -------------------------------------------- */
+
+.homeGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(280px, 4fr);
+  gap: var(--s-6);
+  align-items: start;
+}
+
+.homeStack {
+  display: grid;
+  gap: var(--s-6);
+  min-width: 0;
+}
+
+.homeAside {
+  display: grid;
+  gap: var(--s-6);
+  min-width: 0;
+}
+
+/* ---- Dossier --------------------------------------------------------- */
+
+.dossierGrid {
+  display: grid;
+  grid-template-columns: minmax(280px, 4fr) minmax(0, 8fr);
+  gap: var(--s-6);
+  align-items: start;
+}
+
+.stampRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+  margin-bottom: var(--s-4);
+}
+
+.dossierSummary {
+  position: sticky;
+  top: calc(var(--masthead-h) + var(--s-4));
+  display: grid;
+  gap: var(--s-4);
+}
+
+.dossierMain {
+  display: grid;
+  gap: var(--s-6);
+  min-width: 0;
+}
+
+.section {
+  scroll-margin-top: calc(var(--masthead-h) + var(--s-4));
+}
+
+.sectionHead {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-3);
+  margin-bottom: var(--s-4);
+  padding-bottom: var(--s-3);
+  border-bottom: 1.5px solid var(--line-strong);
+}
+
+.sectionNo {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: var(--text-subhead);
+  color: var(--accent-hover);
+}
+
+.sectionHead h2 {
+  font-family: var(--font-display);
+  font-weight: 560;
+  font-size: var(--text-h2);
+  font-variation-settings: 'opsz' 40, 'SOFT' 60, 'WONK' 0;
+}
+
+.sectionCount {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: var(--text-small);
+  color: var(--muted);
+}
+
+/* Farm cards in the dossier */
+.farmCard {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--s-5);
+  padding: var(--s-5) 0;
+  border-top: 1px solid var(--line);
+}
+
+.farmCard:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.farmFacts {
+  display: grid;
+  gap: var(--s-3);
+  min-width: 0;
+}
+
+.farmFactsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: var(--s-3) var(--s-5);
+}
+
+.miniFact {
+  display: grid;
+  gap: 1px;
+}
+
+.miniFactValue {
+  font-family: var(--font-body);
+  font-weight: 600;
+}
+
+.miniFactValue.mono {
+  font-family: var(--font-mono);
+}
+
+/* Timeline for verification events */
+.timeline {
+  display: grid;
+  gap: 0;
+}
+
+.timelineRow {
+  display: grid;
+  grid-template-columns: 132px 1fr;
+  gap: var(--s-4);
+  padding: var(--s-4) 0;
+  border-top: 1px solid var(--line);
+}
+
+.timelineRow:first-child {
+  border-top: 0;
+}
+
+.timelineWhen {
+  font-family: var(--font-mono);
+  font-size: var(--text-small);
+  color: var(--muted);
+}
+
+.timelineBody {
+  display: grid;
+  gap: var(--s-2);
+  min-width: 0;
+}
+
+.timelineMeta {
+  font-size: var(--text-small);
+  color: var(--muted);
+}
+
+.timelineReason {
+  color: var(--ink-2);
+}
+
+/* Duplicate warning inset */
+.dupWarn {
+  display: grid;
+  gap: var(--s-3);
+  padding: var(--s-4);
+  border: 1px solid var(--accent);
+  border-left-width: 3px;
+  border-radius: var(--radius-control);
+  background: var(--accent-tint);
+}
+
+.dupWarnHead {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-2);
+  color: var(--accent-hover);
+  font-weight: 600;
+}
+
+.dupList {
+  display: grid;
+  gap: var(--s-2);
+}
+
+.dupItem {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+}
+
+/* Side-by-side compare in a dialog */
+.compareGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--s-5);
+}
+
+.comparePane {
+  display: grid;
+  gap: var(--s-3);
+  padding: var(--s-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  background: var(--paper);
+}
+
+.comparePaneHead {
+  display: grid;
+  gap: 2px;
+  padding-bottom: var(--s-2);
+  border-bottom: 1px solid var(--line);
+}
+
+.compareRow {
+  display: grid;
+  gap: 1px;
+}
+
+.compareLabel {
+  font-family: var(--font-body);
+  font-size: var(--text-label);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.compareDiff {
+  color: var(--accent-hover);
+  font-weight: 600;
+}
+
+/* ---- Audit + sync tables --------------------------------------------- */
+
+.plainTable th {
+  padding: var(--s-2) var(--s-3);
+  text-align: left;
+  font-family: var(--font-body);
+  font-size: var(--text-label);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  border-bottom: 1.5px solid var(--line-strong);
+  white-space: nowrap;
+}
+
+.plainTable td {
+  padding: var(--s-2) var(--s-3);
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+
+.plainTable tr:last-child td {
+  border-bottom: 0;
+}
+
+/* ---- Review queue ---------------------------------------------------- */
+
+.reviewList {
+  display: grid;
+  gap: var(--s-5);
+}
+
+.reviewCard {
+  display: grid;
+  gap: var(--s-4);
+}
+
+.reviewHead {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: var(--s-4);
+  align-items: center;
+}
+
+.reviewName {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.reviewNameMain {
+  font-family: var(--font-display);
+  font-weight: 560;
+  font-size: var(--text-subhead);
+}
+
+.reviewBody {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--s-5);
+  align-items: start;
+}
+
+.reviewActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-3);
+  padding-top: var(--s-4);
+  border-top: 1px solid var(--line);
+}
+
+.reviewActions > :last-child {
+  margin-left: auto;
+}
+
+/* ---- Registration form ----------------------------------------------- */
+
+.recorded {
+  display: grid;
+  gap: var(--s-2);
+  padding: var(--s-6);
+  border: 1px solid var(--verified);
+  border-radius: var(--radius-card);
+  background: var(--verified-tint);
+}
+
+.errorSummary {
+  display: grid;
+  gap: var(--s-2);
+  padding: var(--s-4);
+  border: 1px solid var(--danger);
+  border-left-width: 3px;
+  border-radius: var(--radius-control);
+  background: var(--danger-tint);
+}
+
+.errorSummary ul {
+  display: grid;
+  gap: 4px;
+  list-style: none;
+}
+
+.errorSummary a {
+  color: var(--danger);
+}
+
+/* ---- Responsive ------------------------------------------------------ */
+
+@media (max-width: 1100px) {
+  .register,
+  .dossierGrid,
+  .homeGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .rail,
+  .dossierSummary {
+    position: static;
+  }
+
+  .compareGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .farmCard {
+    grid-template-columns: 1fr;
+  }
+
+  .coverageRow {
+    grid-template-columns: 100px 1fr 64px;
+  }
+}
+
+@media print {
+  .rail,
+  .bulkBar,
+  .reviewActions,
+  .thCheck {
+    display: none;
+  }
+
+  .register,
+  .dossierGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .dossierSummary,
+  .rail {
+    position: static;
+  }
+}

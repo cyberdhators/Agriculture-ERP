@@ -213,8 +213,13 @@ export const USERS: readonly User[] = [
 
 const SUPERVISOR_ID = uid(2);
 
-/** The officer whose caseload each preview role stands in for. */
-export const PREVIEW_OFFICER_ID = OFFICERS[0]!.id;
+/**
+ * The officer whose caseload the "Field officer" preview role stands in for.
+ * Grace Poni (Munuki) is chosen deliberately: her caseload spans verified,
+ * pending, an escalated wait and a name+payam duplicate, so the officer view
+ * has something honest to show. Swapped for the signed-in officer under B3.
+ */
+export const PREVIEW_OFFICER_ID = OFFICERS[2]!.id;
 
 export const COOPERATIVES: readonly Cooperative[] = [
   ['Rejaf Sorghum Growers', 'CE-JUB-REJ', 2021, 'sorghum'],
@@ -451,7 +456,6 @@ const farmers: Farmer[] = SEEDS.map((seed, i) => {
 });
 
 SEEDS.forEach((seed, i) => {
-  const n = i + 1;
   const farmer = farmers[i]!;
   const officerId = seed.officer === null ? OFFICERS[0]!.id : OFFICERS[seed.officer]!.id;
   const device = seed.officer === null ? 'self-web' : `device-${String(seed.officer + 1).padStart(2, '0')}`;
