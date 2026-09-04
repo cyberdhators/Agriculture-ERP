@@ -1451,3 +1451,61 @@
     flex-basis: 100%;
   }
 }
+
+/* ---- Amazon "Your Account" tiles ------------------------------------- */
+
+.acctTiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: var(--s-4);
+  margin-block-end: var(--s-6);
+}
+
+.acctTile {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  padding: var(--s-5);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  color: var(--ink);
+  text-decoration: none;
+  transition:
+    border-color 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.acctTile:hover {
+  border-color: var(--line-strong);
+  box-shadow: var(--shadow-card-hover);
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.acctTileGlyph {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-card);
+  background: var(--green-tint);
+  color: var(--green-deep);
+}
+
+.acctTileText {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.acctTileTitle {
+  font-weight: 700;
+  font-size: var(--text-subhead);
+}
+
+.acctTileSub {
+  font-size: var(--text-small);
+  color: var(--muted);
+}

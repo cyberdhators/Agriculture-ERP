@@ -1335,3 +1335,54 @@
     padding-inline-start: 0;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+ *  Amazon-style overrides inside the `.shop` scope (marketplace surfaces).
+ *  The filter rail becomes plain ruled sections on the ground (not a boxed
+ *  card); the product panel becomes a bordered white "buy box" with a soft
+ *  shadow; the negotiable chip picks up the green palette. The staff portal
+ *  never carries `.shop`, so its marketplace is unchanged.
+ * ═══════════════════════════════════════════════════════════════════════ */
+
+:global(.shop) .rail {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 0 var(--s-5) 0 0;
+}
+
+:global(.shop) .railHead {
+  border-bottom-color: var(--az-line-strong);
+}
+
+:global(.shop) .card {
+  border-color: var(--az-line);
+}
+
+:global(.shop) .panel {
+  align-self: start;
+  background: var(--card);
+  border: 1px solid var(--az-line);
+  border-radius: var(--az-radius);
+  padding: var(--s-6);
+  box-shadow: var(--az-shadow-hover);
+}
+
+:global(.shop) .productHead {
+  border-bottom-color: var(--az-line);
+}
+
+:global(.shop) .seller {
+  border-color: var(--az-line);
+  background: var(--az-dust);
+}
+
+:global(.shop) .negChip {
+  background: var(--green-tint);
+  border-color: color-mix(in srgb, var(--green) 45%, transparent);
+  color: var(--green-deep);
+}
+
+:global(.shop) .detailTable th {
+  color: var(--muted);
+}
