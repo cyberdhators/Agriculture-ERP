@@ -763,3 +763,50 @@ into an append-only table whose entire value is that it is truthful. **This
 entry is the only durable record that the gap exists and what it covers.** In
 that window the location tables were seeded from placeholder data and reseeded
 by tests; no CORWADO source data was involved.
+
+## B1.5 verification — the post-`beforeSend` limit has a first instance
+
+**Observed 2026-09-04**, one real event (`pnpm sentry:verify`, issue
+`AGRI-WEB-1`, event `4f4a56c0`), read in the Sentry UI by the user. The
+scrubber did what it was written to do: every listed key, the phone inside the
+query string and URL, and both `name` values under `os` and `runtime` were
+redacted; zero matches for the fabricated number; `server_name` was the
+environment, not the laptop. The free-text limit is real: `Achol` and
+`SSD-1234567` arrived in the title, message and breadcrumb.
+
+**Two things arrived that no prediction covered, and they are not the same
+kind of thing.**
+
+**User Geography — `India (IN)`.** Derived by Sentry from the sending IP,
+attached at ingest, after transmission. `beforeSend` never sees it; there is
+no code we can write that removes it. B1.5 recorded "anything attached after
+`beforeSend` is outside the rule" as a theoretical limit — this is its first
+concrete instance. `sendDefaultPii: false` did not prevent it, because that
+flag governs what the SDK _sends_, and the IP is not sent — it is the
+connection. The remedy is Sentry's project setting _Prevent Storing of IP
+Addresses_ (Settings → Security & Privacy), which stops geo enrichment at the
+source. That is CORWADO's account; recorded as their decision, not applied.
+
+**Culture — timezone `Asia/Calcutta`.** Looks the same, is the opposite: the
+SDK attaches it _before_ `beforeSend` (it was in B1.5's captured envelope),
+so the scrubber could reach it and simply had no rule for it. Left as is:
+mildly identifying, and adding `timezone` to the key list would be a code
+change with no unit behind it. Recorded so the two are not confused — one is a
+missing rule, the other is a rule that cannot exist.
+
+**The username path.** The frame carried
+`/Users/<username>/…/apps/web/scripts/sentry-verify.mjs`. B1.5 accepted this
+on the premise _"local machines have no DSN configured, so nothing is sent
+from the place where this applies"_. That premise lapsed when a DSN went into
+`.env.local` for this verification — which is exactly why the path arrived.
+For a Vercel deployment the function runs from `/var/task/…` with no username;
+that is **inferred from Vercel's runtime layout, not observed** — we have no
+Vercel-originated event yet. The observation that would settle it is one real
+route error on a preview deployment, read the same way. Until then the rule is
+the simple one: a local DSN sends local paths, so the DSN leaves `.env.local`
+when verification is done.
+
+**`sdk.name`.** Transmitted — seen in the captured envelope — but not confirmed
+in the UI, which was not expanded that far. Recorded as transmitted, not as
+displayed; the distinction matters only for the next SDK upgrade, when the
+envelope is captured again anyway.

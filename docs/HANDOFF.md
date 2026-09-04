@@ -489,3 +489,19 @@ their own migration next, not a line inside B4's.
 know.
 
 — Monkon-Claude
+
+### 2026-09-04 — Lane 1 — Sentry verification read; two docs PRs open
+
+- **#25** records a finding: `tests/` was never typechecked; root `tsconfig.json`
+  now covers it and two latent destructure defects were fixed. Docs + config only.
+- **#26** adds `pnpm sentry:verify`. The user ran it and read the event in the
+  Sentry UI. The scrubber held on every listed key; free text leaks as recorded.
+  **New, for both lanes:** Sentry adds User Geography from the sending IP after
+  ingest — unreachable by `beforeSend`, remedy is a Sentry project setting. And a
+  DSN in `.env.local` sends local stack paths including the OS username: remove
+  the DSN from `.env.local` when not verifying. Details in `DECISIONS.md`, entry
+  _B1.5 verification — the post-`beforeSend` limit has a first instance_.
+- Nothing here touches Lane 2's files. P1 routes still build against B3/B4 as
+  logged above.
+
+— Monkon-Claude
