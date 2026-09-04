@@ -810,3 +810,58 @@ when verification is done.
 in the UI, which was not expanded that far. Recorded as transmitted, not as
 displayed; the distinction matters only for the next SDK upgrade, when the
 envelope is captured again anyway.
+
+## 2026-09-04 — The Sentry environment tag says what we mean, not what Vercel calls it
+
+`SENTRY_ENVIRONMENT` is set explicitly in Vercel: `staging` on preview
+deployments, `production` on production. Without it the code falls to
+`VERCEL_ENV`, whose vocabulary is `preview` / `production` — and `preview`
+would have become the filter everyone uses before anyone chose it. Decided
+now, from the _To settle on the first real preview deployment_ list, rather
+than after the first event. The fallback stays in the code; the rule is that
+it must never be the thing producing the value, and a preview event tagged
+`preview` means the Vercel variable is missing.
+
+## 2026-09-04 — Process finding: the gate tests code, not whether code was asked for
+
+PR #29 reached main with no brief, no criterion (C-18 does not exist) and no
+handoff entry, building the farmer-facing flow that `CLAUDE.md` lists as
+unresolved and Inception Report 5.1 excludes. Its checks were green because
+nothing in the gate reads the scope document. #17 and #18 were the same
+pattern, caught before merge. Recorded in `PROJECT-STATE.md` with the full
+inventory of what #29 added; the revert decision is the user's and is not
+made here. The inventory shows the cost is low — screens and fixtures only,
+nothing depends on it — which is the argument for reverting cleanly rather
+than the argument for keeping it.
+
+## 2026-09-04 — #29 is reverted
+
+The user's reasoning, recorded as given.
+
+It builds farmer self-registration and a farmer-facing application. Inception
+Report section 5.1 excludes both from this phase, and `CLAUDE.md` lists them
+as unresolved pending a written answer from CORWADO. Building them does not
+make them in scope; it makes 3,000 lines that either get thrown away or get
+shown to a client as though they were agreed.
+
+It also builds produce listings, which is deliverable (h), phase 5, while we
+are in phase 2.
+
+Its login flow uses phone plus a one-time code. B3 established that path is
+not available to us and chose the derived-identifier approach instead. A
+merged implementation contradicting a recorded decision is worse than no
+implementation.
+
+C-18 and B12 do not exist in any document.
+
+The branch stays in the repository. If CORWADO confirms the farmer app is in
+scope, this is a reference for the real unit — built against criteria that
+exist, with a brief, in the right phase.
+
+**How it was done.** A plain `git revert` of the squash commit, on the same
+PR as the process finding (#31), so one merge carries the revert and its
+record and the two cannot conflict. It applied without conflict. The two
+files #29 had modified rather than added — the fixtures file that the
+pre-existing Farmers screens import, and the design page — are byte-identical
+to their pre-#29 state, checked against the parent commit, not assumed from
+the revert.

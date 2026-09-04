@@ -66,13 +66,13 @@ it here.
 Names only. Values live in `.env.local` locally and in Vercel and GitHub secrets
 for deployments. All are listed in `.env.example`.
 
-| Name                     | Used by                                        | For                                                                                                                                         |
-| ------------------------ | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| `DATABASE_URL`           | Prisma at runtime                              | Pooled connection, port 6543, `pgbouncer=true`, `connection_limit=1`.                                                                       |
-| `DIRECT_URL`             | `prisma/schema.prisma`, `scripts/db-reset.mjs` | **Session pooler**, port 5432 — NOT the direct host, which is IPv6-only. Migrations, introspection, operational scripts and database tests. |
-| `NEXT_PUBLIC_SENTRY_DSN` | `apps/web/sentry.shared.ts`                    | Where errors go. **Public by design** — see `docs/DECISIONS.md`. Empty switches reporting off.                                              |
-| `SENTRY_ENVIRONMENT`     | same                                           | staging or production. Falls back to `VERCEL_ENV`, then `development`.                                                                      |
-| `SENTRY_RELEASE`         | same                                           | Which build. Falls back to `VERCEL_GIT_COMMIT_SHA`, then `unknown`.                                                                         |
+| Name                     | Used by                                        | For                                                                                                                                                                                                                                                                                          |
+| ------------------------ | ---------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`           | Prisma at runtime                              | Pooled connection, port 6543, `pgbouncer=true`, `connection_limit=1`.                                                                                                                                                                                                                        |
+| `DIRECT_URL`             | `prisma/schema.prisma`, `scripts/db-reset.mjs` | **Session pooler**, port 5432 — NOT the direct host, which is IPv6-only. Migrations, introspection, operational scripts and database tests.                                                                                                                                                  |
+| `NEXT_PUBLIC_SENTRY_DSN` | `apps/web/sentry.shared.ts`                    | Where errors go. **Public by design** — see `docs/DECISIONS.md`. Empty switches reporting off.                                                                                                                                                                                               |
+| `SENTRY_ENVIRONMENT`     | same                                           | **Set explicitly in Vercel: `staging` for preview deployments, `production` for production.** Decided 2026-09-04. The code falls back to `VERCEL_ENV`, then `development`, but the fallback must never be what produces the value — `VERCEL_ENV` says `preview`, which is not a name we use. |
+| `SENTRY_RELEASE`         | same                                           | Which build. Falls back to `VERCEL_GIT_COMMIT_SHA`, then `unknown`.                                                                                                                                                                                                                          |
 
 ---
 
@@ -292,6 +292,50 @@ belongs to no workspace package, so `pnpm -r` skipped it and B2's and B3's
 tests were never typechecked. A root `tsconfig.json` fixes that.
 
 ---
+
+## PROCESS FINDING — WORK REACHED MAIN WITHOUT A BRIEF (2026-09-04)
+
+**What happened.** PR #29, _farmer flow — language, login by code,
+self-registration, account, listings (C-18) on fixtures_, was merged to main on
+2026-09-03 22:24 UTC. It was not briefed. It carries no acceptance criterion:
+**C-18 does not exist** in `docs/scope-and-acceptance.md`. It has no
+`docs/HANDOFF.md` entry. Farmer self-registration is excluded by Inception
+Report section 5.1 and a farmer-facing application is on the _Unresolved — do
+not build until I confirm in writing_ list in `CLAUDE.md` section 2.
+
+**The pattern.** This is the third time work has appeared outside the build
+order. #17 and #18 were the same pattern (see _C-13 was built three phases
+early_, above) and were caught before merge, closed unmerged. #29 was not
+caught: its checks were green (lint, typecheck, Vercel preview) because
+nothing in the gate reads the scope document. **The gate tests code; it does
+not test whether the code was asked for.** That is the finding, and it is a
+process finding, not a code one — the code in #29 is fixtures and screens,
+touches no table, migration, route or shared package, and is clean to remove.
+
+**What #29 added, as inventoried on 2026-09-04.** Twenty-three new files and
+two modified, all under `apps/web`: a `(farmer)` route group with seven
+pages, eight components, a client-side preview session (a cookie holding a
+fixture farmer id, a language cookie and `localStorage`), a translation
+layer, a produce-listings block appended to the fixtures file, and a Farmer
+section appended to the design page. No database, no API, no shared schema,
+no CI, no docs, no migration. Nothing merged after it depends on it. It is
+reachable on the preview deployment by URL only; the portal links to none of
+it.
+
+**Status: reverted, 2026-09-04**, by a plain revert of the squash commit,
+which applied without conflict and left both modified files byte-identical to
+their pre-#29 state. The work lives on branch `feat/ui-farmer-account` on the remote, and in full in the reverted squash commit `141993d` on main's history. If CORWADO confirms the farmer
+application is in scope, that is the reference for the real unit — built
+against criteria that exist, with a brief, in the right phase. The reasoning
+is in `docs/DECISIONS.md`.
+
+**Sentry environment tag — decided the same day.** A preview deployment
+reports `staging`, production reports `production`, because
+`SENTRY_ENVIRONMENT` is set explicitly in Vercel for each. Without it the
+code falls to `VERCEL_ENV`, whose word is `preview` — not a name we use, and
+it would have become everyone's filter before anyone chose it. A preview
+event tagged `preview` means the Vercel variable is missing; that is the
+fault, not the code.
 
 ## FINDING — tests/ was outside the typecheck gate from B1.1 until B4
 
