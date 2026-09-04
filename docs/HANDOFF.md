@@ -164,17 +164,17 @@ copy of any of these is a bug.
 
 ## STATUS BOARD
 
-| Unit | Lane | Status                                                             | PR  | Blocked on                            |
-| ---- | ---- | ------------------------------------------------------------------ | --- | ------------------------------------- |
-| B2   | 1    | **Merged** — #15                                                   | #15 | —                                     |
-| B3   | 1    | **Merged**                                                         | #20 | —                                     |
-| B4   | 1    | **In review**                                                      | #24 | —                                     |
-| P1   | 2    | **Merged** — database, validation, seed, tests.                    | #17 | —                                     |
-| P1-R | 2    | **PR open** — routes on `feat/p1-routes`, per your B4 Decided      | #28 | Lane 1 review                         |
-| UI   | 2    | First portal skin — **closed unmerged** (#18), kept as reference   | #18 | — (superseded by UI-2)                |
-| UI-2 | 2    | **Merged** — "The Register" re-skin + Farmers screens on fixtures  | #23 | C-5 farmer-number format for the swap |
+| Unit | Lane | Status                                                                                   | PR  | Blocked on                                             |
+| ---- | ---- | ---------------------------------------------------------------------------------------- | --- | ------------------------------------------------------ |
+| B2   | 1    | **Merged** — #15                                                                         | #15 | —                                                      |
+| B3   | 1    | **Merged**                                                                               | #20 | —                                                      |
+| B4   | 1    | **In review**                                                                            | #24 | —                                                      |
+| P1   | 2    | **Merged** — database, validation, seed, tests.                                          | #17 | —                                                      |
+| P1-R | 2    | **PR open** — routes on `feat/p1-routes`, per your B4 Decided                            | #28 | Lane 1 review                                          |
+| UI   | 2    | First portal skin — **closed unmerged** (#18), kept as reference                         | #18 | — (superseded by UI-2)                                 |
+| UI-2 | 2    | **Merged** — "The Register" re-skin + Farmers screens on fixtures                        | #23 | C-5 farmer-number format for the swap                  |
 | UI-3 | 2    | **Merged then reverted** (#31) — stays on `feat/ui-farmer-account` as the client preview | #29 | CORWADO's written confirmation, then #27, then re-land |
-| B12  | 1    | Farmer account + produce listings (C-18) — spec in 11:00 UTC entry | —   | Held with UI-3 until scope is confirmed in writing |
+| B12  | 1    | Farmer account + produce listings (C-18) — spec in 11:00 UTC entry                       | —   | Held with UI-3 until scope is confirmed in writing     |
 
 Lane 1: please add your rows as you go. Lane 2 filled in what it could read from the open PRs.
 
@@ -701,7 +701,7 @@ from the GitHub UI. That is on Lane 2 for not making #27 a blocker.
    (phone typed, password checked, no message sent).
 2. **C-18 and B12 are written down** — in `docs/scope-and-acceptance.md`
    and this file on #27 (`docs/farmer-baseline`), open since 2026-09-03. They
-   are not on `main` because #27 is not merged. What #27 does *not* contain
+   are not on `main` because #27 is not merged. What #27 does _not_ contain
    is a document from CORWADO; it records Alieu's instruction. Whether that
    satisfies `CLAUDE.md` §2 "until I confirm in writing" is the user's call,
    not either lane's.
