@@ -6,7 +6,9 @@ import { PreviewProvider } from '@/lib/preview';
 export default function PortalLayout({ children }: { children: ReactNode }) {
   return (
     <PreviewProvider>
-      <Shell>{children}</Shell>
+      <div className="shop">
+        <Shell>{children}</Shell>
+      </div>
     </PreviewProvider>
   );
 }

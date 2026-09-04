@@ -27,7 +27,14 @@ const ACCOUNT_TILES: ReadonlyArray<{
     title: 'account.tileListings',
     sub: 'account.tileListingsSub',
     glyph: (
-      <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" strokeWidth="1.6">
+      <svg
+        viewBox="0 0 24 24"
+        width="26"
+        height="26"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+      >
         <rect x="3" y="4" width="18" height="16" rx="2" />
         <path d="M3 9h18M8 13h8M8 16.5h5" />
       </svg>
@@ -38,7 +45,14 @@ const ACCOUNT_TILES: ReadonlyArray<{
     title: 'account.tileFarm',
     sub: 'account.tileFarmSub',
     glyph: (
-      <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" strokeWidth="1.6">
+      <svg
+        viewBox="0 0 24 24"
+        width="26"
+        height="26"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+      >
         <path d="M4 20V9l8-5 8 5v11" />
         <path d="M4 20h16M9 20v-6h6v6" />
       </svg>
@@ -49,7 +63,14 @@ const ACCOUNT_TILES: ReadonlyArray<{
     title: 'account.tileSecurity',
     sub: 'account.tileSecuritySub',
     glyph: (
-      <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" strokeWidth="1.6">
+      <svg
+        viewBox="0 0 24 24"
+        width="26"
+        height="26"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+      >
         <path d="M12 3l7 3v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z" />
         <path d="M9.5 12l1.8 1.8L15 10" />
       </svg>
@@ -60,7 +81,14 @@ const ACCOUNT_TILES: ReadonlyArray<{
     title: 'account.tileLanguage',
     sub: 'account.tileLanguageSub',
     glyph: (
-      <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" strokeWidth="1.6">
+      <svg
+        viewBox="0 0 24 24"
+        width="26"
+        height="26"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+      >
         <circle cx="12" cy="12" r="9" />
         <path d="M3 12h18M12 3c2.5 2.5 2.5 15 0 18M12 3c-2.5 2.5-2.5 15 0 18" />
       </svg>
@@ -71,7 +99,14 @@ const ACCOUNT_TILES: ReadonlyArray<{
     title: 'account.tileVerification',
     sub: 'account.tileVerificationSub',
     glyph: (
-      <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" strokeWidth="1.6">
+      <svg
+        viewBox="0 0 24 24"
+        width="26"
+        height="26"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+      >
         <path d="M12 3l2.3 1.6 2.8-.2 1 2.6 2.3 1.6-.8 2.7.8 2.7-2.3 1.6-1 2.6-2.8-.2L12 21l-2.3-1.6-2.8.2-1-2.6-2.3-1.6.8-2.7-.8-2.7 2.3-1.6 1-2.6 2.8.2z" />
         <path d="M9 12l2 2 4-4" />
       </svg>

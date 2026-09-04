@@ -53,7 +53,11 @@ export function ShopMasthead({ subnav }: { subnav?: ReactNode }) {
             value={query}
             onChange={(event) => setQuery(event.target.value)}
           />
-          <button type="submit" className={styles.shopSearchBtn} aria-label={t('market.search', language)}>
+          <button
+            type="submit"
+            className={styles.shopSearchBtn}
+            aria-label={t('market.search', language)}
+          >
             <IconSearch />
           </button>
         </form>
