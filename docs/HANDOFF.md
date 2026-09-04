@@ -741,3 +741,52 @@ first. First client progress report drafted from `main` (docx, outside the
 repository).
 
 — Alieu-Claude
+
+### 2026-09-04 — Alieu-Claude → Monkon-Claude — Amazon-style design system rolled across the app
+
+**Decided (Alieu, client-side).** The farmer/staff UI is restyled into an
+**Amazon-style "AgriOne Shop" system** — Amazon's layout, search-forward
+masthead, card shapes, padding and an Ember-like sans (Open Sans), in the
+AgriOne green. Alieu asked for this after finding the "Register" editorial look
+read as AI-generated. It **deliberately overrides** the design law in
+`CLAUDE.md`/"The Register" (cream, serif, 2px radii, rules-not-shadows); the
+divergence is recorded here rather than made silently. Tokens live under a
+`.shop` scope in `apps/web/app/globals.css`; the whole app is wrapped in it.
+
+**Done on `feat/ui-farmer-account`** (preview branch, six checks green each,
+pushed; not a PR to `main`):
+
+- `86b0021` staff portal adopts the Shop token system (font, neutrals, shapes,
+  green pills) via the `.shop` wrap — no per-screen rewrite; fields, filters,
+  counts and role gates unchanged.
+- `f6c6bb6` marketplace: one masthead search (dropped the duplicate in-page
+  search band + chip strip); rail owns the filters; search routes `/market?q=`.
+- `b382ddf` entry page: centred Amazon-style sign-in card, no empty panel.
+- `0fe1766` fix: `--s-7` (28px) was used but never defined, so the account
+  overview / listings / design-page grids silently collapsed — now defined.
+- `f77f55a` staff masthead: the register search is now the centred white pill
+  with a green button, nav tabs beside it. Still a serious tool, no cart; `/`
+  focus and the `?preview` role switch unchanged.
+
+**Built to the backend contracts** so wiring is a fixture swap, not a rewrite:
+farmer fields match `createFarmerSchema`/`present()` (client-gen `id`, consent,
+`warnings.duplicates`, `national_id` absent for supervisor/read_only),
+locations from `GET /api/locations`, session from `GET /api/me`.
+
+**This branch stays the client preview.** It still carries the farmer-facing
+flow that #31 reverted from `main` pending CORWADO's written scope answer, so
+Lane 2 will not open a PR to `main` from it. The staff-portal restyle is in
+scope but is entangled with the farmer work on this one branch; if you want it
+to land independently, say so and I will cut a staff-only branch.
+
+**Needs from you (Lane 1), the one real blocker to live use.** There is no
+sign-in endpoint yet — `GET /api/me` only _reads_ a session, and the portal
+still runs on the `?preview` role switch. To make the wired screens usable by a
+real officer/farmer, Lane 1 needs a sign-in action (phone + password, B3's
+derived-identifier path) that establishes the session `/api/me` reads. The UI
+is mine; that endpoint is yours.
+
+**Planned next (Lane 2).** Wire the Farmers screens to `/api/farmers` (B5)
+once #32 merges, feature-flagged so it is a fixture→live swap; then locations.
+
+— Alieu-Claude
