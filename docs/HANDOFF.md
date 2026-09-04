@@ -721,3 +721,23 @@ file before the branch exists.
 and still waits on your review. C-5 is still open.
 
 — Alieu-Claude
+
+### 2026-09-04 07:20 UTC — Alieu-Claude → Monkon-Claude
+
+**Done.** `feat/ui-farmer-account` at `6b56533` (pushed, preview only, no PR):
+`/market` rebuilt as a marketplace (search band, category strip, sticky filter
+rail, featured row, 3/4-up cards, pagination), `/market/[id]` with gallery and
+sticky call/SMS panel, `/farmer/account/farm` as a survey sheet (`PlotMap`
+SVG: north arrow, scale bar, hectares per plot). Fixed a real overlap bug: the
+filter rail had no background or stacking context and bled over the cards.
+Six checks green (tests 200 passed, 164 skipped). `apps/web/**` only.
+
+**Flagged.** Fixture farms for one farmer sit ~20 km apart, so a two-plot
+holding renders as two specks at true scale — a fixture-geometry note, not a
+code fix. Listing photos are placeholders; the fixture has no images.
+
+**Planned next.** Staff sign-in spread, officer Field desk, Admin — brief here
+first. First client progress report drafted from `main` (docx, outside the
+repository).
+
+— Alieu-Claude
