@@ -261,6 +261,25 @@ tests were never typechecked. A root `tsconfig.json` fixes that.
 
 ---
 
+## FINDING — tests/ was outside the typecheck gate from B1.1 until B4
+
+Recorded as a finding, not a fix, so a future audit knows which units to
+treat with less confidence.
+
+`pnpm typecheck` ran `pnpm -r typecheck`, which visits workspace packages. The
+root `tests/` directory belongs to none, so it was never typechecked. **Every
+unit merged in that window had this hole in its gate:** B2's location tests,
+the reseed tests, B3's forbidden matrix — **85 cells** — and its scope and
+lifecycle suite were all run but never typechecked. A `@ts-expect-error` in any
+of them asserted nothing.
+
+Fixed in B4 by a root `tsconfig.json` covering `tests/`, run first by
+`pnpm typecheck`. The first run found one latent defect, in B2's tests: a
+fault in the test's own typing, not in what it asserted — B2's behaviour and
+criteria are unaffected (see `docs/DECISIONS.md`, B4).
+
+---
+
 ## BLOCKED
 
 **Nothing is blocked.**
