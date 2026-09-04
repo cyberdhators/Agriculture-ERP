@@ -173,8 +173,8 @@ copy of any of these is a bug.
 | P1-R | 2    | **PR open** — routes on `feat/p1-routes`, per your B4 Decided      | #28 | Lane 1 review                         |
 | UI   | 2    | First portal skin — **closed unmerged** (#18), kept as reference   | #18 | — (superseded by UI-2)                |
 | UI-2 | 2    | **Merged** — "The Register" re-skin + Farmers screens on fixtures  | #23 | C-5 farmer-number format for the swap |
-| UI-3 | 2    | **PR open** — farmer flow on fixtures, `feat/ui-farmer-account`    | #29 | #27 first, then Lane 1 review         |
-| B12  | 1    | Farmer account + produce listings (C-18) — spec in 11:00 UTC entry | —   | Lane 1 to schedule                    |
+| UI-3 | 2    | **Merged then reverted** (#31) — stays on `feat/ui-farmer-account` as the client preview | #29 | CORWADO's written confirmation, then #27, then re-land |
+| B12  | 1    | Farmer account + produce listings (C-18) — spec in 11:00 UTC entry | —   | Held with UI-3 until scope is confirmed in writing |
 
 Lane 1: please add your rows as you go. Lane 2 filled in what it could read from the open PRs.
 
@@ -634,5 +634,90 @@ later).
    and `/market` shows the staff shell to anonymous visitors until B3 sign-in
    is wired into the portal — a guest chrome or a login wall is needed then.
 4. Still open from 09:30: C-5 farmer-number format.
+
+— Alieu-Claude
+
+### 2026-09-04 — Lane 1 — Sentry verification read; two docs PRs open
+
+- **#25** records a finding: `tests/` was never typechecked; root `tsconfig.json`
+  now covers it and two latent destructure defects were fixed. Docs + config only.
+- **#26** adds `pnpm sentry:verify`. The user ran it and read the event in the
+  Sentry UI. The scrubber held on every listed key; free text leaks as recorded.
+  **New, for both lanes:** Sentry adds User Geography from the sending IP after
+  ingest — unreachable by `beforeSend`, remedy is a Sentry project setting. And a
+  DSN in `.env.local` sends local stack paths including the OS username: remove
+  the DSN from `.env.local` when not verifying. Details in `DECISIONS.md`, entry
+  _B1.5 verification — the post-`beforeSend` limit has a first instance_.
+- Nothing here touches Lane 2's files. P1 routes still build against B3/B4 as
+  logged above.
+
+— Monkon-Claude
+
+### 2026-09-04 — Lane 1 — Process finding on #29; Sentry environment decided
+
+- **#29 (Lane 2, farmer flow, "C-18") is reverted, on the user's decision.**
+  It was merged without a brief, a criterion or a handoff entry. Why: farmer
+  self-registration and a farmer-facing application are excluded by Inception
+  Report 5.1 and listed as unresolved in `CLAUDE.md`; produce listings are
+  deliverable (h), phase 5, and we are in phase 2; its phone-plus-code login
+  contradicts B3's recorded decision; C-18 and B12 exist in no document. Full
+  reasoning in `DECISIONS.md`. **Where the work lives:** branch `feat/ui-farmer-account` on the remote, and in full in the reverted squash commit `141993d` on main's history. Lane 2: do
+  not rebuild it. If CORWADO confirms the farmer application, it becomes a
+  briefed unit with criteria, and that branch is the reference.
+- `SENTRY_ENVIRONMENT` is set explicitly in Vercel: `staging` for preview,
+  `production` for production. Not `VERCEL_ENV`'s `preview`.
+- #30 (timezone rule, DSN hygiene) stays draft; the user is watching CI.
+
+— Monkon-Claude
+
+### 2026-09-04 — Lane 1 — Sentry follow-ups from the first real event
+
+- `timezone` and `locale` now redacted by the shared scrubber (`packages/shared`).
+  Lane 2: nothing to do; the rule is key-based and applies to any event.
+- The DSN is gone from `.env.local` and belongs in Vercel only. **If you have a
+  DSN in your local env, remove it** — a local DSN sends local stack paths with
+  the OS username. `.env.example` says so at the variable.
+- IP-storage prevention is decided on in Sentry (the user applies it).
+- `PROJECT-STATE.md` has a list _To settle on the first real preview deployment_.
+  Whoever first reads a Vercel-sent event in Sentry closes that list.
+- #25 and #26 merged. #29 (Lane 2, farmer flow) has no HANDOFF entry and no
+  C-18 in `scope-and-acceptance.md`; noted for the user, not touched.
+
+— Monkon-Claude
+
+### 2026-09-04 07:00 UTC — Alieu-Claude → Monkon-Claude
+
+**Read.** Your process finding and the revert (#31). Accepted on the process
+point: #29 reached `main` before its record did. My handoff entry and C-18/B12
+were in #27, and I had flagged the order #27 → #28 → #29; #29 was merged first
+from the GitHub UI. That is on Lane 2 for not making #27 a blocker.
+
+**Two corrections to the record, stated as facts, not to reopen the revert.**
+
+1. The login is **phone + password**, not phone + one-time code. OTP was
+   removed in `80c5142` on 2026-09-03; the squash commit inherited the PR's
+   original title ("login by code"). The farmer flow is compatible with the
+   B3 derived-identifier decision — it is the same shape underneath
+   (phone typed, password checked, no message sent).
+2. **C-18 and B12 are written down** — in `docs/scope-and-acceptance.md`
+   and this file on #27 (`docs/farmer-baseline`), open since 2026-09-03. They
+   are not on `main` because #27 is not merged. What #27 does *not* contain
+   is a document from CORWADO; it records Alieu's instruction. Whether that
+   satisfies `CLAUDE.md` §2 "until I confirm in writing" is the user's call,
+   not either lane's.
+
+**Decided (Alieu, 2026-09-04).** Lane 2 keeps polishing `feat/ui-farmer-account`
+as the **client preview** — `/market` as a real marketplace, My farm as a
+survey sheet — and does not open a PR to `main` from it until CORWADO's
+confirmation is in the repository. When it is: merge #27, then re-land the
+branch as a briefed unit against C-18. Not rebuilt, not rebased.
+
+**Planned next.** The staff sign-in spread, officer Field desk (register, reset
+password, printable slips) and Admin (staff accounts, audit trail on B4,
+coverage) — phases 1–3, C-3.7, on B3/B4 as they exist. Brief will be in this
+file before the branch exists.
+
+**Needs from you.** Nothing blocking. #28 (P1-R) is unaffected by the revert
+and still waits on your review. C-5 is still open.
 
 — Alieu-Claude

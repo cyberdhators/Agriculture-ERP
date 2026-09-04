@@ -763,3 +763,142 @@ into an append-only table whose entire value is that it is truthful. **This
 entry is the only durable record that the gap exists and what it covers.** In
 that window the location tables were seeded from placeholder data and reseeded
 by tests; no CORWADO source data was involved.
+
+## B1.5 verification — the post-`beforeSend` limit has a first instance
+
+**Observed 2026-09-04**, one real event (`pnpm sentry:verify`, issue
+`AGRI-WEB-1`, event `4f4a56c0`), read in the Sentry UI by the user. The
+scrubber did what it was written to do: every listed key, the phone inside the
+query string and URL, and both `name` values under `os` and `runtime` were
+redacted; zero matches for the fabricated number; `server_name` was the
+environment, not the laptop. The free-text limit is real: `Achol` and
+`SSD-1234567` arrived in the title, message and breadcrumb.
+
+**Two things arrived that no prediction covered, and they are not the same
+kind of thing.**
+
+**User Geography — `India (IN)`.** Derived by Sentry from the sending IP,
+attached at ingest, after transmission. `beforeSend` never sees it; there is
+no code we can write that removes it. B1.5 recorded "anything attached after
+`beforeSend` is outside the rule" as a theoretical limit — this is its first
+concrete instance. `sendDefaultPii: false` did not prevent it, because that
+flag governs what the SDK _sends_, and the IP is not sent — it is the
+connection. The remedy is Sentry's project setting _Prevent Storing of IP
+Addresses_ (Settings → Security & Privacy), which stops geo enrichment at the
+source. That is CORWADO's account; recorded as their decision, not applied.
+
+**Culture — timezone `Asia/Calcutta`.** Looks the same, is the opposite: the
+SDK attaches it _before_ `beforeSend` (it was in B1.5's captured envelope),
+so the scrubber could reach it and simply had no rule for it. Left as is:
+mildly identifying, and adding `timezone` to the key list would be a code
+change with no unit behind it. Recorded so the two are not confused — one is a
+missing rule, the other is a rule that cannot exist.
+
+**The username path.** The frame carried
+`/Users/<username>/…/apps/web/scripts/sentry-verify.mjs`. B1.5 accepted this
+on the premise _"local machines have no DSN configured, so nothing is sent
+from the place where this applies"_. That premise lapsed when a DSN went into
+`.env.local` for this verification — which is exactly why the path arrived.
+For a Vercel deployment the function runs from `/var/task/…` with no username;
+that is **inferred from Vercel's runtime layout, not observed** — we have no
+Vercel-originated event yet. The observation that would settle it is one real
+route error on a preview deployment, read the same way. Until then the rule is
+the simple one: a local DSN sends local paths, so the DSN leaves `.env.local`
+when verification is done.
+
+**`sdk.name`.** Transmitted — seen in the captured envelope — but not confirmed
+in the UI, which was not expanded that far. Recorded as transmitted, not as
+displayed; the distinction matters only for the next SDK upgrade, when the
+envelope is captured again anyway.
+
+## 2026-09-04 — The Sentry environment tag says what we mean, not what Vercel calls it
+
+`SENTRY_ENVIRONMENT` is set explicitly in Vercel: `staging` on preview
+deployments, `production` on production. Without it the code falls to
+`VERCEL_ENV`, whose vocabulary is `preview` / `production` — and `preview`
+would have become the filter everyone uses before anyone chose it. Decided
+now, from the _To settle on the first real preview deployment_ list, rather
+than after the first event. The fallback stays in the code; the rule is that
+it must never be the thing producing the value, and a preview event tagged
+`preview` means the Vercel variable is missing.
+
+## 2026-09-04 — Process finding: the gate tests code, not whether code was asked for
+
+PR #29 reached main with no brief, no criterion (C-18 does not exist) and no
+handoff entry, building the farmer-facing flow that `CLAUDE.md` lists as
+unresolved and Inception Report 5.1 excludes. Its checks were green because
+nothing in the gate reads the scope document. #17 and #18 were the same
+pattern, caught before merge. Recorded in `PROJECT-STATE.md` with the full
+inventory of what #29 added; the revert decision is the user's and is not
+made here. The inventory shows the cost is low — screens and fixtures only,
+nothing depends on it — which is the argument for reverting cleanly rather
+than the argument for keeping it.
+
+## 2026-09-04 — #29 is reverted
+
+The user's reasoning, recorded as given.
+
+It builds farmer self-registration and a farmer-facing application. Inception
+Report section 5.1 excludes both from this phase, and `CLAUDE.md` lists them
+as unresolved pending a written answer from CORWADO. Building them does not
+make them in scope; it makes 3,000 lines that either get thrown away or get
+shown to a client as though they were agreed.
+
+It also builds produce listings, which is deliverable (h), phase 5, while we
+are in phase 2.
+
+Its login flow uses phone plus a one-time code. B3 established that path is
+not available to us and chose the derived-identifier approach instead. A
+merged implementation contradicting a recorded decision is worse than no
+implementation.
+
+C-18 and B12 do not exist in any document.
+
+The branch stays in the repository. If CORWADO confirms the farmer app is in
+scope, this is a reference for the real unit — built against criteria that
+exist, with a brief, in the right phase.
+
+**How it was done.** A plain `git revert` of the squash commit, on the same
+PR as the process finding (#31), so one merge carries the revert and its
+record and the two cannot conflict. It applied without conflict. The two
+files #29 had modified rather than added — the fixtures file that the
+pre-existing Farmers screens import, and the design page — are byte-identical
+to their pre-#29 state, checked against the parent commit, not assumed from
+the revert.
+
+## 2026-09-04 — Three decisions from reading the first real Sentry event
+
+**IP-derived geography: off.** Sentry's _Prevent Storing of IP Addresses_ is
+to be on for this project. The user's reasoning, recorded as given: we have no
+use for IP-derived location, and once real staff in South Sudan are using the
+system every error would carry inferred location about a named person's
+device. Turning it off costs nothing because we never wanted it. This is a
+Sentry project setting on CORWADO's account; the repository cannot reach it,
+so it was applied in the UI, not in code, and the proof is a later event with
+no User Geography.
+
+**The DSN leaves `.env.local`.** Removed the day verification finished. B1.5
+accepted username-bearing local paths on the premise that _"local machines
+have no DSN, so nothing is sent from where this applies"_ — that premise is
+the whole protection, and it holds only while the DSN is absent. So the DSN
+belongs in Vercel's environment variables and nowhere else. Re-verifying
+locally is a three-step act: add, run, remove. Recorded in `.env.example` at
+the variable itself, where the next person will read it.
+
+**`timezone` and `locale` join the scrubber's key list.** The culture context
+was established reachable (SDK-side, before `beforeSend`) on 2026-09-04. It is
+not needed for diagnosis and it narrows a person's location. Added as keys
+rather than by deleting `contexts.culture`, so the rule holds wherever a
+timezone or locale appears — a breadcrumb, a tag, extra context — not only in
+the one place the SDK puts it. `locale` was not named in the instruction;
+`en-IN` narrows location as the timezone does, and the reasoning given
+("culture context is not needed") covers both fields. Tested in both
+directions: the values go, the diagnostic neighbours stay.
+
+**And a list, not a decision.** Everything currently inferred rather than
+observed about a Vercel-sent event is gathered in `PROJECT-STATE.md` under _To
+settle on the first real preview deployment_, so that one route error on a
+preview, read once, closes the whole list instead of items being rediscovered
+one at a time. The username path is the first entry; the `environment` tag
+falling to `VERCEL_ENV` (`preview`, never `staging`) is the one most likely to
+surprise.

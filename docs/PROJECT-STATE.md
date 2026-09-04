@@ -66,13 +66,13 @@ it here.
 Names only. Values live in `.env.local` locally and in Vercel and GitHub secrets
 for deployments. All are listed in `.env.example`.
 
-| Name                     | Used by                                        | For                                                                                                                                         |
-| ------------------------ | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| `DATABASE_URL`           | Prisma at runtime                              | Pooled connection, port 6543, `pgbouncer=true`, `connection_limit=1`.                                                                       |
-| `DIRECT_URL`             | `prisma/schema.prisma`, `scripts/db-reset.mjs` | **Session pooler**, port 5432 — NOT the direct host, which is IPv6-only. Migrations, introspection, operational scripts and database tests. |
-| `NEXT_PUBLIC_SENTRY_DSN` | `apps/web/sentry.shared.ts`                    | Where errors go. **Public by design** — see `docs/DECISIONS.md`. Empty switches reporting off.                                              |
-| `SENTRY_ENVIRONMENT`     | same                                           | staging or production. Falls back to `VERCEL_ENV`, then `development`.                                                                      |
-| `SENTRY_RELEASE`         | same                                           | Which build. Falls back to `VERCEL_GIT_COMMIT_SHA`, then `unknown`.                                                                         |
+| Name                     | Used by                                        | For                                                                                                                                                                                                                                                                                          |
+| ------------------------ | ---------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`           | Prisma at runtime                              | Pooled connection, port 6543, `pgbouncer=true`, `connection_limit=1`.                                                                                                                                                                                                                        |
+| `DIRECT_URL`             | `prisma/schema.prisma`, `scripts/db-reset.mjs` | **Session pooler**, port 5432 — NOT the direct host, which is IPv6-only. Migrations, introspection, operational scripts and database tests.                                                                                                                                                  |
+| `NEXT_PUBLIC_SENTRY_DSN` | `apps/web/sentry.shared.ts`                    | Where errors go. **Public by design** — see `docs/DECISIONS.md`. Empty switches reporting off. **Lives in Vercel's environment variables, not on any laptop** — see _The DSN and local machines_ below.                                                                                      |
+| `SENTRY_ENVIRONMENT`     | same                                           | **Set explicitly in Vercel: `staging` for preview deployments, `production` for production.** Decided 2026-09-04. The code falls back to `VERCEL_ENV`, then `development`, but the fallback must never be what produces the value — `VERCEL_ENV` says `preview`, which is not a name we use. |
+| `SENTRY_RELEASE`         | same                                           | Which build. Falls back to `VERCEL_GIT_COMMIT_SHA`, then `unknown`.                                                                                                                                                                                                                          |
 
 ---
 
@@ -154,12 +154,86 @@ phone, a taken address — but the client-UUID idempotency case in the status
 table's description arrives with **B9**. The column reads _Yes_ because a route
 does emit it.
 
-**The scrubber is the last gate we control, not the last gate.** `beforeSend` is
-the last point running our code; the SDK keeps building the envelope afterwards.
-`sdk.name` arrives despite the rule redacting every `name` — harmless in itself,
-but anything a future SDK version attaches after `beforeSend` is outside the
-rule and will not be redacted, **silently**. After any SDK upgrade, capture a
-real envelope and read it.
+**The scrubber is the last gate we control, not the last gate — now observed,
+not predicted.** On 2026-09-04 one deliberate event (`pnpm sentry:verify`) was
+read in the Sentry UI: issue `AGRI-WEB-1`, event `4f4a56c0`. What arrived:
+
+- **Removed, as designed:** every value under a listed key
+  (`registration_body` shows `given_name`, `family_name`, `national_id`,
+  `phone` all `[redacted]`), the phone inside `query_string` and `url`, and
+  `os.name` / `runtime.name` (versions survive). **Zero** matches for the
+  fabricated number anywhere. `server_name` is `development`, not a laptop.
+  Stack frames show file and line only — no source lines.
+- **Present, the known limit:** `Achol` and `SSD-1234567` in the title, the
+  message and the breadcrumb. A name or national id in free text is not
+  removed. The standing rule is the protection.
+- **`sdk.name`:** transmitted (seen in the captured envelope); not confirmed in
+  the UI, which was not expanded that far.
+
+**Two things arrived that no prediction covered.**
+
+1. **Sentry adds User Geography — `India (IN)` — after ingest**, derived from
+   the sending IP. **This is the first concrete instance of the
+   post-`beforeSend` limit**, recorded in B1.5 as theoretical: it is attached
+   by Sentry's pipeline, our scrubber never sees it, and no code of ours can
+   remove it. `sendDefaultPii: false` did not prevent it. The remedy is a
+   Sentry **project setting**, not code: Settings → Security & Privacy →
+   _Prevent Storing of IP Addresses_. Not yet applied; CORWADO's decision.
+2. **Culture — timezone `Asia/Calcutta` — is different**: it is attached by the
+   SDK _before_ `beforeSend` (it was in B1.5's captured envelope), so it is
+   reachable, and was simply not on the key list. Mildly identifying; left as
+   is, recorded here.
+
+**The stack frame carried the full local path including the OS username.**
+B1.5 accepted that limit on the premise that no local machine holds a DSN —
+**that premise lapsed when a DSN went into `.env.local` for this
+verification.** For a Vercel deployment the path is `/var/task/…` with no
+username; that is **inferred from Vercel's runtime layout, not observed from a
+Vercel-originated event** — the observation that would settle it is one real
+route error on a preview deployment (see _To settle on the first real preview
+deployment_, below). Until then: a local DSN sends local paths.
+
+**The DSN and local machines.** The DSN was removed from `.env.local` on
+2026-09-04, the verification done. **It belongs in Vercel's environment
+variables, not on any laptop.** B1.5's premise — _"local machines have no DSN,
+so nothing is sent from where this applies"_ — is what keeps local paths, and
+the username in them, out of Sentry, and it holds only while the DSN is absent.
+To re-verify locally: add it, run `pnpm sentry:verify`, remove it. Three steps,
+not two.
+
+**Culture context is now redacted.** `timezone` and `locale` joined the key
+list on 2026-09-04: reachable (SDK-side, before `beforeSend`), not needed for
+diagnosis, and it narrows a person's location. Tested in both directions.
+
+**IP-derived geography: decided off, 2026-09-04.** CORWADO's decision, made by
+the user: turn on Sentry's _Prevent Storing of IP Addresses_ (Settings →
+Security & Privacy). Reasoning: we have no use for IP-derived location, and
+once real staff in South Sudan are using the system every error would carry an
+inferred location for a named person's device; turning it off costs nothing
+because we never wanted it. **Applied by the user in the Sentry UI — this
+repository cannot reach that setting.** Confirm by re-reading a later event:
+User Geography absent.
+
+**To settle on the first real preview deployment.** Each of these is inferred
+from code or from Vercel's documented layout, not yet observed from an event
+that Vercel sent. One real route error on a preview deployment, read the same
+way as the verification event, settles all of them at once:
+
+- The stack frame path is `/var/task/…`, with no username.
+- The `environment` tag reads `staging` on a preview deployment and
+  `production` on production, because `SENTRY_ENVIRONMENT` is set explicitly
+  in Vercel (decided 2026-09-04, see the process-finding section). A preview
+  event tagged `preview` means the Vercel variable is missing.
+- The `release` and `app_version` tags carry the commit SHA from
+  `VERCEL_GIT_COMMIT_SHA`, not `unknown`.
+- `server_name` is the environment there too; the code path is the same, the
+  runtime is not.
+- Frames offer _Unminify Code_ and nothing else, because no source maps are
+  uploaded — expected, confirm it reads acceptably.
+- The 1 MB request cap is judged from `Content-Length`; Vercel imposes its own
+  body limit ahead of ours. Which one answers first is unobserved.
+- `sdk.name` is displayed, not only transmitted.
+- User Geography is absent, once the IP-storage setting is on.
 
 **A personal name or national ID in free text is not removed.** See the standing
 rule below.
@@ -258,6 +332,69 @@ record it existed. Placeholder data only; no CORWADO source data was in it.
 **`pnpm typecheck` now covers `tests/`.** It never had: the root directory
 belongs to no workspace package, so `pnpm -r` skipped it and B2's and B3's
 tests were never typechecked. A root `tsconfig.json` fixes that.
+
+---
+
+## PROCESS FINDING — WORK REACHED MAIN WITHOUT A BRIEF (2026-09-04)
+
+**What happened.** PR #29, _farmer flow — language, login by code,
+self-registration, account, listings (C-18) on fixtures_, was merged to main on
+2026-09-03 22:24 UTC. It was not briefed. It carries no acceptance criterion:
+**C-18 does not exist** in `docs/scope-and-acceptance.md`. It has no
+`docs/HANDOFF.md` entry. Farmer self-registration is excluded by Inception
+Report section 5.1 and a farmer-facing application is on the _Unresolved — do
+not build until I confirm in writing_ list in `CLAUDE.md` section 2.
+
+**The pattern.** This is the third time work has appeared outside the build
+order. #17 and #18 were the same pattern (see _C-13 was built three phases
+early_, above) and were caught before merge, closed unmerged. #29 was not
+caught: its checks were green (lint, typecheck, Vercel preview) because
+nothing in the gate reads the scope document. **The gate tests code; it does
+not test whether the code was asked for.** That is the finding, and it is a
+process finding, not a code one — the code in #29 is fixtures and screens,
+touches no table, migration, route or shared package, and is clean to remove.
+
+**What #29 added, as inventoried on 2026-09-04.** Twenty-three new files and
+two modified, all under `apps/web`: a `(farmer)` route group with seven
+pages, eight components, a client-side preview session (a cookie holding a
+fixture farmer id, a language cookie and `localStorage`), a translation
+layer, a produce-listings block appended to the fixtures file, and a Farmer
+section appended to the design page. No database, no API, no shared schema,
+no CI, no docs, no migration. Nothing merged after it depends on it. It is
+reachable on the preview deployment by URL only; the portal links to none of
+it.
+
+**Status: reverted, 2026-09-04**, by a plain revert of the squash commit,
+which applied without conflict and left both modified files byte-identical to
+their pre-#29 state. The work lives on branch `feat/ui-farmer-account` on the remote, and in full in the reverted squash commit `141993d` on main's history. If CORWADO confirms the farmer
+application is in scope, that is the reference for the real unit — built
+against criteria that exist, with a brief, in the right phase. The reasoning
+is in `docs/DECISIONS.md`.
+
+**Sentry environment tag — decided the same day.** A preview deployment
+reports `staging`, production reports `production`, because
+`SENTRY_ENVIRONMENT` is set explicitly in Vercel for each. Without it the
+code falls to `VERCEL_ENV`, whose word is `preview` — not a name we use, and
+it would have become everyone's filter before anyone chose it. A preview
+event tagged `preview` means the Vercel variable is missing; that is the
+fault, not the code.
+
+## FINDING — tests/ was outside the typecheck gate from B1.1 until B4
+
+Recorded as a finding, not a fix, so a future audit knows which units to
+treat with less confidence.
+
+`pnpm typecheck` ran `pnpm -r typecheck`, which visits workspace packages. The
+root `tests/` directory belongs to none, so it was never typechecked. **Every
+unit merged in that window had this hole in its gate:** B2's location tests,
+the reseed tests, B3's forbidden matrix — **85 cells** — and its scope and
+lifecycle suite were all run but never typechecked. A `@ts-expect-error` in any
+of them asserted nothing.
+
+Fixed in B4 by a root `tsconfig.json` covering `tests/`, run first by
+`pnpm typecheck`. The first run found one latent defect, in B2's tests: a
+fault in the test's own typing, not in what it asserted — B2's behaviour and
+criteria are unaffected (see `docs/DECISIONS.md`, B4).
 
 ---
 
