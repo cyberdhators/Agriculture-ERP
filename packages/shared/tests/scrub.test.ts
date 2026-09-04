@@ -220,3 +220,27 @@ describe('which written forms of a number the scrubber recognises', () => {
     expect(scrubString(text)).toBe(text);
   });
 });
+
+describe('the culture context, established reachable on 2026-09-04', () => {
+  it('a timezone and locale under contexts.culture leave redacted', () => {
+    const out = scrubEvent({
+      contexts: { culture: { timezone: 'Asia/Calcutta', locale: 'en-IN' } },
+    }) as { contexts: { culture: { timezone: string; locale: string } } };
+    expect(out.contexts.culture.timezone).toBe(REDACTED);
+    expect(out.contexts.culture.locale).toBe(REDACTED);
+  });
+
+  it('a timezone in a breadcrumb leaves redacted, and the diagnostic neighbours survive', () => {
+    const out = scrubEvent({
+      contexts: { runtime: { name: 'node', version: 'v24.18.0' } },
+      breadcrumbs: [{ category: 'clock', data: { timezone: 'Africa/Juba', offset_minutes: 120 } }],
+    }) as {
+      contexts: { runtime: { name: string; version: string } };
+      breadcrumbs: { category: string; data: { timezone: string; offset_minutes: number } }[];
+    };
+    expect(out.breadcrumbs[0]?.data.timezone).toBe(REDACTED);
+    expect(out.breadcrumbs[0]?.data.offset_minutes).toBe(120);
+    expect(out.breadcrumbs[0]?.category).toBe('clock');
+    expect(out.contexts.runtime.version).toBe('v24.18.0');
+  });
+});

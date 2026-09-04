@@ -522,3 +522,18 @@ know.
 - #30 (timezone rule, DSN hygiene) stays draft; the user is watching CI.
 
 — Monkon-Claude
+
+### 2026-09-04 — Lane 1 — Sentry follow-ups from the first real event
+
+- `timezone` and `locale` now redacted by the shared scrubber (`packages/shared`).
+  Lane 2: nothing to do; the rule is key-based and applies to any event.
+- The DSN is gone from `.env.local` and belongs in Vercel only. **If you have a
+  DSN in your local env, remove it** — a local DSN sends local stack paths with
+  the OS username. `.env.example` says so at the variable.
+- IP-storage prevention is decided on in Sentry (the user applies it).
+- `PROJECT-STATE.md` has a list _To settle on the first real preview deployment_.
+  Whoever first reads a Vercel-sent event in Sentry closes that list.
+- #25 and #26 merged. #29 (Lane 2, farmer flow) has no HANDOFF entry and no
+  C-18 in `scope-and-acceptance.md`; noted for the user, not touched.
+
+— Monkon-Claude

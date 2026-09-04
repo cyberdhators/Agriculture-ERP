@@ -60,6 +60,19 @@ const SENSITIVE_KEYS = [
   'context_line',
   'pre_context',
   'post_context',
+
+  /**
+   * The SDK's culture context: `contexts.culture.timezone` and `.locale`.
+   *
+   * Reachable -- the SDK attaches it before `beforeSend`, and the 2026-09-04
+   * verification event showed `Asia/Calcutta` arriving. Not needed for
+   * diagnosis, and it narrows a person's location: once staff in South Sudan
+   * are using the system, every error would say where the device was. Listed
+   * as keys rather than by stripping the context, so the rule holds wherever
+   * a timezone or locale turns up, not only in that one place.
+   */
+  'timezone',
+  'locale',
 ];
 
 const normaliseKey = (key: string): string => key.toLowerCase().replace(/[_\-\s]/g, '');

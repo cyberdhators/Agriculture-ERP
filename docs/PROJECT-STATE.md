@@ -70,7 +70,7 @@ for deployments. All are listed in `.env.example`.
 | ------------------------ | ---------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `DATABASE_URL`           | Prisma at runtime                              | Pooled connection, port 6543, `pgbouncer=true`, `connection_limit=1`.                                                                                                                                                                                                                        |
 | `DIRECT_URL`             | `prisma/schema.prisma`, `scripts/db-reset.mjs` | **Session pooler**, port 5432 — NOT the direct host, which is IPv6-only. Migrations, introspection, operational scripts and database tests.                                                                                                                                                  |
-| `NEXT_PUBLIC_SENTRY_DSN` | `apps/web/sentry.shared.ts`                    | Where errors go. **Public by design** — see `docs/DECISIONS.md`. Empty switches reporting off.                                                                                                                                                                                               |
+| `NEXT_PUBLIC_SENTRY_DSN` | `apps/web/sentry.shared.ts`                    | Where errors go. **Public by design** — see `docs/DECISIONS.md`. Empty switches reporting off. **Lives in Vercel's environment variables, not on any laptop** — see _The DSN and local machines_ below.                                                                                      |
 | `SENTRY_ENVIRONMENT`     | same                                           | **Set explicitly in Vercel: `staging` for preview deployments, `production` for production.** Decided 2026-09-04. The code falls back to `VERCEL_ENV`, then `development`, but the fallback must never be what produces the value — `VERCEL_ENV` says `preview`, which is not a name we use. |
 | `SENTRY_RELEASE`         | same                                           | Which build. Falls back to `VERCEL_GIT_COMMIT_SHA`, then `unknown`.                                                                                                                                                                                                                          |
 
@@ -190,8 +190,50 @@ B1.5 accepted that limit on the premise that no local machine holds a DSN —
 verification.** For a Vercel deployment the path is `/var/task/…` with no
 username; that is **inferred from Vercel's runtime layout, not observed from a
 Vercel-originated event** — the observation that would settle it is one real
-route error on a preview deployment. Until then: a local DSN sends local paths.
-Remove the DSN from `.env.local` when the verification is done.
+route error on a preview deployment (see _To settle on the first real preview
+deployment_, below). Until then: a local DSN sends local paths.
+
+**The DSN and local machines.** The DSN was removed from `.env.local` on
+2026-09-04, the verification done. **It belongs in Vercel's environment
+variables, not on any laptop.** B1.5's premise — _"local machines have no DSN,
+so nothing is sent from where this applies"_ — is what keeps local paths, and
+the username in them, out of Sentry, and it holds only while the DSN is absent.
+To re-verify locally: add it, run `pnpm sentry:verify`, remove it. Three steps,
+not two.
+
+**Culture context is now redacted.** `timezone` and `locale` joined the key
+list on 2026-09-04: reachable (SDK-side, before `beforeSend`), not needed for
+diagnosis, and it narrows a person's location. Tested in both directions.
+
+**IP-derived geography: decided off, 2026-09-04.** CORWADO's decision, made by
+the user: turn on Sentry's _Prevent Storing of IP Addresses_ (Settings →
+Security & Privacy). Reasoning: we have no use for IP-derived location, and
+once real staff in South Sudan are using the system every error would carry an
+inferred location for a named person's device; turning it off costs nothing
+because we never wanted it. **Applied by the user in the Sentry UI — this
+repository cannot reach that setting.** Confirm by re-reading a later event:
+User Geography absent.
+
+**To settle on the first real preview deployment.** Each of these is inferred
+from code or from Vercel's documented layout, not yet observed from an event
+that Vercel sent. One real route error on a preview deployment, read the same
+way as the verification event, settles all of them at once:
+
+- The stack frame path is `/var/task/…`, with no username.
+- The `environment` tag reads `staging` on a preview deployment and
+  `production` on production, because `SENTRY_ENVIRONMENT` is set explicitly
+  in Vercel (decided 2026-09-04, see the process-finding section). A preview
+  event tagged `preview` means the Vercel variable is missing.
+- The `release` and `app_version` tags carry the commit SHA from
+  `VERCEL_GIT_COMMIT_SHA`, not `unknown`.
+- `server_name` is the environment there too; the code path is the same, the
+  runtime is not.
+- Frames offer _Unminify Code_ and nothing else, because no source maps are
+  uploaded — expected, confirm it reads acceptably.
+- The 1 MB request cap is judged from `Content-Length`; Vercel imposes its own
+  body limit ahead of ours. Which one answers first is unobserved.
+- `sdk.name` is displayed, not only transmitted.
+- User Geography is absent, once the IP-storage setting is on.
 
 **A personal name or national ID in free text is not removed.** See the standing
 rule below.
