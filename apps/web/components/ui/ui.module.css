@@ -849,3 +849,57 @@ select.control {
   font-size: var(--text-small);
   font-weight: 500;
 }
+
+/* ─────────────────────────────────────────────────────────────────────
+ *  Amazon-style controls inside the `.shop` scope (farmer + marketplace).
+ *  Green stands in for Amazon's yellow: the primary CTA is a solid-green
+ *  pill with a darker-green border and a top inner-highlight; the secondary
+ *  is a white bordered pill; inputs gain the 8px radius and green focus.
+ *  The staff portal never carries `.shop`, so it is unaffected.
+ * ───────────────────────────────────────────────────────────────────── */
+
+:global(.shop) .button {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  transition:
+    background-color 140ms ease,
+    border-color 140ms ease,
+    box-shadow 140ms ease,
+    color 140ms ease;
+}
+
+:global(.shop) .buttonPrimary {
+  background: var(--green);
+  border-color: var(--green-deep);
+  color: var(--az-btn-ink);
+  box-shadow: inset 0 1px 0 var(--az-btn-top);
+}
+
+:global(.shop) .buttonPrimary:hover:not(:disabled) {
+  background: var(--green-hover);
+  border-color: var(--green-deep);
+  color: var(--az-btn-ink);
+}
+
+:global(.shop) .buttonSecondary {
+  background: var(--card);
+  border-color: var(--az-line-strong);
+  color: var(--ink);
+  box-shadow: 0 1px 0 rgba(15, 17, 17, 0.04);
+}
+
+:global(.shop) .buttonSecondary:hover:not(:disabled) {
+  background: var(--az-dust);
+  border-color: var(--ink-2);
+}
+
+:global(.shop) .control {
+  border-radius: var(--az-radius);
+  border-color: var(--az-line-strong);
+}
+
+:global(.shop) .control:focus,
+:global(.shop) .control:focus-visible {
+  border-color: var(--green);
+  box-shadow: var(--az-focus);
+}

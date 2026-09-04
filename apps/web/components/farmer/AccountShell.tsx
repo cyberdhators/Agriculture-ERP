@@ -5,11 +5,11 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, type ReactNode } from 'react';
 
 import { Wordmark } from '@/components/brand/Wordmark';
-import { Skeleton, Stamp } from '@/components/ui';
+import { Skeleton } from '@/components/ui';
 import { useFarmerSession } from '@/lib/farmer-session';
-import { VERIFICATION_KEY, verificationStamp } from '@/lib/farmers/verification';
 import { t, type TKey } from '@/lib/i18n';
 
+import { ShopMasthead } from './ShopMasthead';
 import styles from './farmer.module.css';
 
 const TABS: ReadonlyArray<{ href: string; key: TKey; exact?: boolean }> = [
@@ -37,17 +37,16 @@ export function AccountShell({ children }: { children: ReactNode }) {
 
   return (
     <div className={styles.account}>
-      <header className={styles.masthead}>
-        <div className={styles.mastheadInner}>
-          <Wordmark href="/farmer/account" size={22} onBand />
-          <nav className={styles.mastNav} aria-label={t('account.title', language)}>
+      <ShopMasthead
+        subnav={
+          <nav className={styles.shopStripNav} aria-label={t('account.title', language)}>
             {TABS.map((tab) => {
               const active = tab.exact ? pathname === tab.href : pathname.startsWith(tab.href);
               return (
                 <Link
                   key={tab.href}
                   href={tab.href}
-                  className={styles.mastTab}
+                  className={styles.shopStripLink}
                   aria-current={active ? 'page' : undefined}
                 >
                   {t(tab.key, language)}
@@ -56,28 +55,14 @@ export function AccountShell({ children }: { children: ReactNode }) {
             })}
             <Link
               href="/market"
-              className={styles.mastTab}
+              className={styles.shopStripLink}
               aria-current={pathname.startsWith('/market') ? 'page' : undefined}
             >
               {t('shell.marketplace', language)}
             </Link>
           </nav>
-          <div className={styles.mastIdentity}>
-            {farmer ? (
-              <>
-                <Link href="/farmer/account/settings" className={styles.mastName} dir="auto">
-                  {farmer.given_name} {farmer.family_name}
-                </Link>
-                <Stamp kind={verificationStamp(farmer.verification_status)}>
-                  {t(VERIFICATION_KEY[farmer.verification_status], language)}
-                </Stamp>
-              </>
-            ) : (
-              <Skeleton width={160} height={16} />
-            )}
-          </div>
-        </div>
-      </header>
+        }
+      />
 
       <main id="farmer-main" className={styles.main} tabIndex={-1}>
         {farmer ? children : <WorkspaceSkeleton />}

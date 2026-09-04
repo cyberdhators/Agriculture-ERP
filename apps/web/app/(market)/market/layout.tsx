@@ -21,7 +21,9 @@ export default async function MarketLayout({ children }: { children: ReactNode }
     <FarmerSessionProvider initialLanguage={initialLanguage}>
       <PreviewProvider>
         <MarketModerationProvider>
-          <MarketShell>{children}</MarketShell>
+          <div className="shop">
+            <MarketShell>{children}</MarketShell>
+          </div>
         </MarketModerationProvider>
       </PreviewProvider>
     </FarmerSessionProvider>

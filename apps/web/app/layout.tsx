@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Fraunces, Instrument_Sans, JetBrains_Mono } from 'next/font/google';
+import { Fraunces, Instrument_Sans, JetBrains_Mono, Open_Sans } from 'next/font/google';
 import type { ReactNode } from 'react';
 
 import './globals.css';
@@ -28,6 +28,19 @@ const jetbrains = JetBrains_Mono({
   variable: '--font-jetbrains',
 });
 
+/**
+ * Open Sans is the farmer + marketplace UI face — a free humanist sans standing
+ * in for Amazon Ember on the shopping surfaces only. It reaches the document as
+ * --font-open-sans and is applied inside the `.shop` scope; the staff portal
+ * keeps Fraunces / Instrument Sans / JetBrains Mono untouched.
+ */
+const openSans = Open_Sans({
+  subsets: ['latin'],
+  display: 'swap',
+  weight: ['400', '600', '700'],
+  variable: '--font-open-sans',
+});
+
 export const metadata: Metadata = {
   title: {
     default: 'AgriOne',
@@ -39,7 +52,10 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" className={`${fraunces.variable} ${instrument.variable} ${jetbrains.variable}`}>
+    <html
+      lang="en"
+      className={`${fraunces.variable} ${instrument.variable} ${jetbrains.variable} ${openSans.variable}`}
+    >
       <body>{children}</body>
     </html>
   );

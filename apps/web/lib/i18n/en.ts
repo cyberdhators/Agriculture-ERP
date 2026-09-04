@@ -10,6 +10,7 @@ export const en = {
   'brand.tagline': 'Digital Agriculture & Agribusiness Ecosystem',
   'brand.copyright': '© 2026 AgriOne',
   'shell.staffSignIn': 'Staff sign in',
+  'shell.greeting': 'Hello,',
   'shell.marketplace': 'Marketplace',
   'shell.myAccount': 'My account',
   'shell.skip': 'Skip to content',

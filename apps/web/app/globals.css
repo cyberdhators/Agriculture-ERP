@@ -126,6 +126,100 @@
   color-scheme: light;
 }
 
+/*
+ * ─────────────────────────────────────────────────────────────────────
+ *  ".shop" — the Amazon-style farmer + marketplace scope.
+ *
+ *  A DELIBERATE divergence from "The Register" above, requested by the
+ *  client lead: the farmer-facing surfaces (the (farmer) entry/account and
+ *  the (market) browse/product pages) are dressed as an Amazon-style
+ *  shopping experience — Open Sans, cool-grey ground, white cards, 8px
+ *  radius, soft hover shadow, a green focus glow — while KEEPING AgriOne's
+ *  green palette (green is Amazon's cart-yellow here). The staff portal
+ *  (app/(portal)/**) is never wrapped in `.shop` and stays exactly as the
+ *  Register defines it. Everything here is tokens; no raw hex in components.
+ * ───────────────────────────────────────────────────────────────────── */
+
+.shop {
+  /* ---- Amazon neutrals (a hair green, never pure) ------------------- */
+  --az-bg: #eaeeeb;
+  --az-card: #ffffff;
+  --az-dust: #f0f2f0;
+  --az-line: #d5d9d9;
+  --az-line-strong: #b8bfbe;
+  --az-ink: #0f1111;
+  --az-ink-2: #333b3b;
+  --az-muted: #565f5f;
+
+  /* ---- Amazon shapes & feedback (green where Amazon is orange) ------ */
+  --az-radius: 8px;
+  --az-radius-pill: 999px;
+  --az-shadow-hover: 0 2px 8px rgba(15, 17, 17, 0.15);
+  --az-focus: 0 0 0 3px rgba(31, 122, 63, 0.5);
+  --az-strip: #16482c; /* the second, lighter-green category strip */
+  --az-btn-ink: #ffffff; /* text on the solid-green CTA pill */
+  --az-btn-top: rgba(255, 255, 255, 0.28); /* CTA top inner-highlight */
+
+  /* ---- Remap the Register's base tokens onto the Amazon values ------ */
+  --font-display: var(--font-open-sans), system-ui, 'Segoe UI', Roboto, Arial, sans-serif;
+  --font-body: var(--font-open-sans), system-ui, 'Segoe UI', Roboto, Arial, sans-serif;
+  --font-mono: var(--font-open-sans), system-ui, 'Segoe UI', Roboto, Arial, sans-serif;
+
+  --paper: var(--az-bg);
+  --card: var(--az-card);
+  --dust: var(--az-dust);
+  --line: var(--az-line);
+  --line-strong: var(--az-line-strong);
+  --ink: var(--az-ink);
+  --ink-2: var(--az-ink-2);
+  --muted: var(--az-muted);
+
+  --radius-card: var(--az-radius);
+  --radius-control: var(--az-radius);
+  --radius-pill: var(--az-radius-pill);
+
+  --shadow-card-hover: var(--az-shadow-hover);
+  --ring: var(--az-focus);
+
+  font-family: var(--font-body);
+  color: var(--ink);
+  background: var(--paper);
+}
+
+/* Mono numerals keep tabular figures but ride the Open Sans face here. */
+.shop .mono,
+.shop .num {
+  font-family: var(--font-body);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Amazon headings are the same humanist face, not a display serif. */
+.shop h1,
+.shop h2,
+.shop h3,
+.shop h4 {
+  font-family: var(--font-body);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  font-variation-settings: normal;
+}
+
+/* Amazon links: ink text, green underline on hover. */
+.shop a {
+  text-decoration-color: transparent;
+}
+
+.shop a:hover {
+  color: var(--ink);
+  text-decoration-color: var(--green);
+}
+
+/* Amazon focus is a soft green glow, not the offset ring. */
+.shop :focus-visible {
+  box-shadow: var(--az-focus);
+  border-radius: var(--az-radius);
+}
+
 /* ---- Reset ---------------------------------------------------------- */
 
 *,

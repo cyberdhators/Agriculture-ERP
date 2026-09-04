@@ -18,7 +18,9 @@ export default async function FarmerLayout({ children }: { children: ReactNode }
 
   return (
     <FarmerSessionProvider initialLanguage={initialLanguage}>
-      <FarmerShell>{children}</FarmerShell>
+      <div className="shop">
+        <FarmerShell>{children}</FarmerShell>
+      </div>
     </FarmerSessionProvider>
   );
 }
