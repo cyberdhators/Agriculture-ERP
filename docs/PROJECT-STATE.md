@@ -154,12 +154,44 @@ phone, a taken address — but the client-UUID idempotency case in the status
 table's description arrives with **B9**. The column reads _Yes_ because a route
 does emit it.
 
-**The scrubber is the last gate we control, not the last gate.** `beforeSend` is
-the last point running our code; the SDK keeps building the envelope afterwards.
-`sdk.name` arrives despite the rule redacting every `name` — harmless in itself,
-but anything a future SDK version attaches after `beforeSend` is outside the
-rule and will not be redacted, **silently**. After any SDK upgrade, capture a
-real envelope and read it.
+**The scrubber is the last gate we control, not the last gate — now observed,
+not predicted.** On 2026-09-04 one deliberate event (`pnpm sentry:verify`) was
+read in the Sentry UI: issue `AGRI-WEB-1`, event `4f4a56c0`. What arrived:
+
+- **Removed, as designed:** every value under a listed key
+  (`registration_body` shows `given_name`, `family_name`, `national_id`,
+  `phone` all `[redacted]`), the phone inside `query_string` and `url`, and
+  `os.name` / `runtime.name` (versions survive). **Zero** matches for the
+  fabricated number anywhere. `server_name` is `development`, not a laptop.
+  Stack frames show file and line only — no source lines.
+- **Present, the known limit:** `Achol` and `SSD-1234567` in the title, the
+  message and the breadcrumb. A name or national id in free text is not
+  removed. The standing rule is the protection.
+- **`sdk.name`:** transmitted (seen in the captured envelope); not confirmed in
+  the UI, which was not expanded that far.
+
+**Two things arrived that no prediction covered.**
+
+1. **Sentry adds User Geography — `India (IN)` — after ingest**, derived from
+   the sending IP. **This is the first concrete instance of the
+   post-`beforeSend` limit**, recorded in B1.5 as theoretical: it is attached
+   by Sentry's pipeline, our scrubber never sees it, and no code of ours can
+   remove it. `sendDefaultPii: false` did not prevent it. The remedy is a
+   Sentry **project setting**, not code: Settings → Security & Privacy →
+   _Prevent Storing of IP Addresses_. Not yet applied; CORWADO's decision.
+2. **Culture — timezone `Asia/Calcutta` — is different**: it is attached by the
+   SDK _before_ `beforeSend` (it was in B1.5's captured envelope), so it is
+   reachable, and was simply not on the key list. Mildly identifying; left as
+   is, recorded here.
+
+**The stack frame carried the full local path including the OS username.**
+B1.5 accepted that limit on the premise that no local machine holds a DSN —
+**that premise lapsed when a DSN went into `.env.local` for this
+verification.** For a Vercel deployment the path is `/var/task/…` with no
+username; that is **inferred from Vercel's runtime layout, not observed from a
+Vercel-originated event** — the observation that would settle it is one real
+route error on a preview deployment. Until then: a local DSN sends local paths.
+Remove the DSN from `.env.local` when the verification is done.
 
 **A personal name or national ID in free text is not removed.** See the standing
 rule below.
