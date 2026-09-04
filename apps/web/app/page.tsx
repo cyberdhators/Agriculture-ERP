@@ -21,11 +21,13 @@ export default async function Home() {
 
   return (
     <FarmerSessionProvider initialLanguage={initialLanguage}>
-      <FarmerShell>
-        <EntrySpread>
-          <FarmerLogin />
-        </EntrySpread>
-      </FarmerShell>
+      <div className="shop">
+        <FarmerShell>
+          <EntrySpread>
+            <FarmerLogin />
+          </EntrySpread>
+        </FarmerShell>
+      </div>
     </FarmerSessionProvider>
   );
 }

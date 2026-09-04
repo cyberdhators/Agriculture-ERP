@@ -1509,3 +1509,64 @@
   font-size: var(--text-small);
   color: var(--muted);
 }
+
+/* ── Public entry: shop-style centred sign-in ─────────────────────────── */
+.entryPage {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: var(--paper);
+  padding: var(--s-6) var(--s-4);
+}
+.entryHead {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s-2);
+  text-align: center;
+  margin-block: var(--s-8) var(--s-5);
+}
+.entryTagline {
+  margin: 0;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.entryLang {
+  margin-block-start: var(--s-3);
+}
+.entryMain {
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+}
+.signCard {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  padding: var(--s-6);
+  box-shadow: var(--shadow-card-hover);
+}
+.entryBrowse {
+  margin: 0;
+  text-align: center;
+  font-size: 14px;
+}
+.entryBrowseLink {
+  color: var(--ink);
+  font-weight: 600;
+}
+.entryFoot {
+  margin-block-start: auto;
+  padding-block-start: var(--s-6);
+  display: flex;
+  gap: var(--s-4);
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  font-size: 13px;
+}
