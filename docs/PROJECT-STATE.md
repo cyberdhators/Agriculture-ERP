@@ -322,8 +322,12 @@ no CI, no docs, no migration. Nothing merged after it depends on it. It is
 reachable on the preview deployment by URL only; the portal links to none of
 it.
 
-**Status.** Not reverted, on the user's instruction, pending their decision
-on the cost. The inventory above is what a revert removes.
+**Status: reverted, 2026-09-04**, by a plain revert of the squash commit,
+which applied without conflict and left both modified files byte-identical to
+their pre-#29 state. The work lives on branch `feat/ui-farmer-account` on the remote, and in full in the reverted squash commit `141993d` on main's history. If CORWADO confirms the farmer
+application is in scope, that is the reference for the real unit — built
+against criteria that exist, with a brief, in the right phase. The reasoning
+is in `docs/DECISIONS.md`.
 
 **Sentry environment tag — decided the same day.** A preview deployment
 reports `staging`, production reports `production`, because

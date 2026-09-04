@@ -508,12 +508,15 @@ know.
 
 ### 2026-09-04 — Lane 1 — Process finding on #29; Sentry environment decided
 
-- **#29 (Lane 2, farmer flow, "C-18") was merged without a brief, a criterion or
-  a handoff entry.** Recorded in `PROJECT-STATE.md` as a process finding, with
-  a file-by-file inventory. Not reverted; the user decides. Lane 2: no work on
-  `(farmer)`, `components/farmer`, `lib/farmer-session`, `lib/i18n` or the
-  produce-listings block until that decision is made. A farmer-facing
-  application is on the CLAUDE.md unresolved list.
+- **#29 (Lane 2, farmer flow, "C-18") is reverted, on the user's decision.**
+  It was merged without a brief, a criterion or a handoff entry. Why: farmer
+  self-registration and a farmer-facing application are excluded by Inception
+  Report 5.1 and listed as unresolved in `CLAUDE.md`; produce listings are
+  deliverable (h), phase 5, and we are in phase 2; its phone-plus-code login
+  contradicts B3's recorded decision; C-18 and B12 exist in no document. Full
+  reasoning in `DECISIONS.md`. **Where the work lives:** branch `feat/ui-farmer-account` on the remote, and in full in the reverted squash commit `141993d` on main's history. Lane 2: do
+  not rebuild it. If CORWADO confirms the farmer application, it becomes a
+  briefed unit with criteria, and that branch is the reference.
 - `SENTRY_ENVIRONMENT` is set explicitly in Vercel: `staging` for preview,
   `production` for production. Not `VERCEL_ENV`'s `preview`.
 - #30 (timezone rule, DSN hygiene) stays draft; the user is watching CI.
