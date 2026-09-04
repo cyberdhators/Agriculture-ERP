@@ -244,7 +244,7 @@ export function ProductPage({
                 <dd className={styles.mono}>{formatDate(seller.created_at)}</dd>
               </div>
               <div className={styles.sellerRow}>
-                <dt>{t('listings.title', lang)}</dt>
+                <dt>{t('detail.listings', lang)}</dt>
                 <dd className={styles.mono}>
                   {sellerListingCount} {t('detail.sellerListings', lang)}
                 </dd>
@@ -270,7 +270,7 @@ export function ProductPage({
       </section>
 
       <section className={styles.productSection}>
-        <h2>{t('listings.title', lang)}</h2>
+        <h2>{t('detail.details', lang)}</h2>
         <table className={styles.detailTable}>
           <tbody>
             <DetailRow term={t('detail.category', lang)}>
@@ -282,7 +282,9 @@ export function ProductPage({
               {listing.harvest_season || t('listings.ongoing', lang)}
             </DetailRow>
             <DetailRow term={t('detail.pickup', lang)}>{listing.pickup_notes || '—'}</DetailRow>
-            <DetailRow term={t('detail.listedOn', lang)}>{formatDate(listing.created_at)}</DetailRow>
+            <DetailRow term={t('detail.listedOn', lang)}>
+              {formatDate(listing.created_at)}
+            </DetailRow>
             <DetailRow term={t('market.listingNo', lang)}>
               {listing.id.slice(-8).toUpperCase()}
             </DetailRow>

@@ -214,7 +214,11 @@ export function Market({
               aria-label={t('market.searchLabel', lang)}
               dir="auto"
             />
-            <button type="submit" className={styles.searchSubmit} aria-label={t('market.searchSubmit', lang)}>
+            <button
+              type="submit"
+              className={styles.searchSubmit}
+              aria-label={t('market.searchSubmit', lang)}
+            >
               <IconSearch size={18} />
             </button>
           </form>
@@ -273,7 +277,11 @@ export function Market({
               {applied.map((a) => (
                 <span key={a.key} className={styles.appliedChip}>
                   <span dir="auto">{a.label}</span>
-                  <button type="button" onClick={a.clear} aria-label={`${t('market.remove', lang)}: ${a.label}`}>
+                  <button
+                    type="button"
+                    onClick={a.clear}
+                    aria-label={`${t('market.remove', lang)}: ${a.label}`}
+                  >
                     <IconX size={12} />
                   </button>
                 </span>
@@ -434,7 +442,11 @@ export function Market({
               </select>
             </label>
             <div className={styles.viewToggle} role="group" aria-label={t('market.view', lang)}>
-              <button type="button" aria-pressed={view === 'cards'} onClick={() => setView('cards')}>
+              <button
+                type="button"
+                aria-pressed={view === 'cards'}
+                onClick={() => setView('cards')}
+              >
                 {t('market.viewCards', lang)}
               </button>
               <button type="button" aria-pressed={view === 'list'} onClick={() => setView('list')}>
@@ -468,7 +480,9 @@ export function Market({
 
           {shown.length === 0 ? (
             <EmptyState
-              title={rows.length === 0 ? t('market.emptyAll', lang) : t('market.emptyFiltered', lang)}
+              title={
+                rows.length === 0 ? t('market.emptyAll', lang) : t('market.emptyFiltered', lang)
+              }
               body={t('market.lead', lang)}
               actions={
                 applied.length > 0 ? (
@@ -524,7 +538,12 @@ export function Market({
                   {shown.map(({ listing, seller }) => (
                     <tr key={listing.id}>
                       <td className={styles.listThumb}>
-                        <Photo src={coverOf(listing)} category={listing.category} lang={lang} square />
+                        <Photo
+                          src={coverOf(listing)}
+                          category={listing.category}
+                          lang={lang}
+                          square
+                        />
                       </td>
                       <td className="title">
                         <Link href={detailHref(listing.id)} dir="auto">

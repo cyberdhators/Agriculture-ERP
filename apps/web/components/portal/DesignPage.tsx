@@ -31,6 +31,7 @@ import { Boundary } from '../farmers/Boundary';
 import { CategoryGlyph } from '../listings/CategoryGlyph';
 import { ListingCard } from '../listings/ListingCard';
 import { Photo } from '../listings/Photo';
+import { PlotMap } from '../farmer/PlotMap';
 import { LanguageButtons } from '../farmer/LanguageSwitch';
 import { PasswordInput } from '../ui';
 import {
@@ -52,6 +53,7 @@ import listings from '../listings/listings.module.css';
 
 const GOOD_FARM = FARMS.find((f) => f.boundary && f.accuracy_flag === 'good') ?? FARMS[0]!;
 const UNUSABLE_FARM = FARMS.find((f) => f.accuracy_flag === 'unusable') ?? FARMS[0]!;
+const MAP_FARMS = FARMS.filter((f) => f.farmer_id === GOOD_FARM.farmer_id);
 
 /**
  * The design system, rendered from the same tokens and components the
@@ -201,6 +203,8 @@ const SECTIONS = [
   ['icons', 'Icons'],
   ['brand', 'Wordmark'],
   ['listings', 'Listings and photos'],
+  ['market', 'Marketplace'],
+  ['survey', 'Farm survey map'],
   ['farmer', 'Farmer flow'],
   ['rules', 'Rules'],
 ] as const;
@@ -761,6 +765,75 @@ export function DesignPage() {
               <Stamp kind="info">Sold</Stamp>
             </div>
           </div>
+        </div>
+      </section>
+
+      <section id="market" className={styles.section} aria-labelledby="h-market">
+        <div className={styles.sectionHead}>
+          <h2 id="h-market">Marketplace</h2>
+          <p>
+            The browse chrome: a 48px search field with a submit glyph, a category chip strip whose
+            active chip fills green with band ink, and the two price sizes &mdash; 20px mono on the
+            card, 28px mono on the product page. Prices read in ink; the unit follows in muted.
+          </p>
+        </div>
+
+        <p className="small muted">Search field</p>
+        <form className={listings.searchField} role="search" onSubmit={(e) => e.preventDefault()}>
+          <Icons.IconSearch size={20} />
+          <input
+            type="search"
+            placeholder="Search produce, livestock, inputs…"
+            aria-label="Search the marketplace"
+            readOnly
+          />
+          <button type="submit" className={listings.searchSubmit} aria-label="Search">
+            <Icons.IconSearch size={18} />
+          </button>
+        </form>
+
+        <p className="small muted" style={{ marginTop: 'var(--s-5)' }}>
+          Category chip strip
+        </p>
+        <div className={listings.chipStrip} role="group" aria-label="Category">
+          <button type="button" className={listings.chip} aria-pressed>
+            All produce
+          </button>
+          {LISTING_CATEGORIES.slice(0, 4).map((c) => (
+            <button key={c} type="button" className={listings.chip} aria-pressed={false}>
+              <CategoryGlyph category={c} size={15} />
+              {CATEGORY_LABELS[c]}
+            </button>
+          ))}
+        </div>
+
+        <p className="small muted" style={{ marginTop: 'var(--s-5)' }}>
+          Price &mdash; card (20) and product (28)
+        </p>
+        <div className={styles.row}>
+          <div className={listings.cardPrice}>
+            SSP 1,250 <small>/ 50 kg bag</small>
+          </div>
+          <div className={listings.productPrice}>
+            <span>SSP 1,250</span>
+            <small>/ 50 kg bag</small>
+            <span className={listings.negChip}>Negotiable</span>
+          </div>
+        </div>
+      </section>
+
+      <section id="survey" className={styles.section} aria-labelledby="h-survey">
+        <div className={styles.sectionHead}>
+          <h2 id="h-survey">Farm survey map</h2>
+          <p>
+            The farmer&rsquo;s whole holding on one survey map: every walked plot fitted into a
+            single frame &mdash; longitude compressed by the cosine of the latitude &mdash; with a
+            north arrow, a metric scale bar read from the extents, and each plot&rsquo;s hectares
+            stamped in mono at its centroid. No map library, no tiles, no network.
+          </p>
+        </div>
+        <div className={farmer.surveyMap} style={{ maxWidth: 520 }}>
+          <PlotMap farms={MAP_FARMS} selectedId={MAP_FARMS[0]?.id} lang="en" />
         </div>
       </section>
 

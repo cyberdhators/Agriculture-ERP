@@ -103,8 +103,7 @@ export function applyFilters(
     if (f.verifiedOnly && seller.verification_status !== 'verified') return false;
     if (f.deliveryOnly && !listing.delivery_available) return false;
     if (q !== '') {
-      const hay =
-        `${listing.title} ${listing.product_name} ${listing.category}`.toLowerCase();
+      const hay = `${listing.title} ${listing.product_name} ${listing.category}`.toLowerCase();
       if (!hay.includes(q)) return false;
     }
     if (f.availability === 'now') {

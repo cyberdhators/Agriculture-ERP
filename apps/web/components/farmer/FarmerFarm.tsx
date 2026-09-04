@@ -3,12 +3,7 @@
 import { useState } from 'react';
 
 import { Chips, EmptyState, Stamp } from '@/components/ui';
-import {
-  cropsForFarm,
-  farmsForFarmer,
-  totalAreaHa,
-  type Farm,
-} from '@/lib/fixtures/farmers';
+import { cropsForFarm, farmsForFarmer, totalAreaHa, type Farm } from '@/lib/fixtures/farmers';
 import { useFarmerSession } from '@/lib/farmer-session';
 import { CROP_LABELS, formatDate } from '@/lib/format';
 import { t, type Language, type TKey } from '@/lib/i18n';
@@ -44,7 +39,10 @@ export function FarmerFarm() {
     return (
       <>
         <PageHead title={t('account.farms', language)} lead={t('account.farmLead', language)} />
-        <EmptyState title={t('account.noFarms', language)} body={t('account.howRecordedBody', language)} />
+        <EmptyState
+          title={t('account.noFarms', language)}
+          body={t('account.howRecordedBody', language)}
+        />
       </>
     );
   }
@@ -58,13 +56,10 @@ export function FarmerFarm() {
       <PageHead title={t('account.farms', language)} lead={t('account.farmLead', language)} />
       <div className={styles.survey}>
         <figure className={styles.surveyMap}>
-          <PlotMap
-            farms={farms}
-            selectedId={current.id}
-            onSelect={setSelected}
-            lang={language}
-          />
-          <figcaption className={styles.surveyCaption}>{t('account.selectPlot', language)}</figcaption>
+          <PlotMap farms={farms} selectedId={current.id} onSelect={setSelected} lang={language} />
+          <figcaption className={styles.surveyCaption}>
+            {t('account.selectPlot', language)}
+          </figcaption>
         </figure>
 
         <div className={styles.surveySide}>

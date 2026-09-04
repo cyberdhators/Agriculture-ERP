@@ -283,6 +283,8 @@ export const en = {
   'detail.photoOf': 'Photo',
   'detail.of': 'of',
   'detail.previewNote': 'This is how buyers will see it.',
+  'detail.details': 'Details',
+  'detail.listings': 'Listings',
 
   // Field errors (farmer-sized)
   'error.optional': 'optional',

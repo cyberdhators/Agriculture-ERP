@@ -111,7 +111,7 @@ export function PlotMap({
 
   // Scale bar: a round distance about a quarter of the frame wide.
   const pxPerMetre = scale / METRES_PER_DEG;
-  const barMetres = niceMetres((VBW - PAD * 2) * 0.25 / pxPerMetre);
+  const barMetres = niceMetres(((VBW - PAD * 2) * 0.25) / pxPerMetre);
   const barPx = barMetres * pxPerMetre;
   const barY = VBH - PAD / 2;
   const barX = PAD;

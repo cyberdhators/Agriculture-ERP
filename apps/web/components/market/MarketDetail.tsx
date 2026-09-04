@@ -140,7 +140,10 @@ export function MarketDetail({
         related={
           <>
             {relatedBlock(t('market.moreFromSeller', lang), more)}
-            {relatedBlock(`${t('market.similar', lang)} ${t(CATEGORY_KEY[listing.category], lang)}`, similar)}
+            {relatedBlock(
+              `${t('market.similar', lang)} ${t(CATEGORY_KEY[listing.category], lang)}`,
+              similar,
+            )}
           </>
         }
       />
