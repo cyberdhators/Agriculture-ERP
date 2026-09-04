@@ -810,3 +810,26 @@ when verification is done.
 in the UI, which was not expanded that far. Recorded as transmitted, not as
 displayed; the distinction matters only for the next SDK upgrade, when the
 envelope is captured again anyway.
+
+## 2026-09-04 — The Sentry environment tag says what we mean, not what Vercel calls it
+
+`SENTRY_ENVIRONMENT` is set explicitly in Vercel: `staging` on preview
+deployments, `production` on production. Without it the code falls to
+`VERCEL_ENV`, whose vocabulary is `preview` / `production` — and `preview`
+would have become the filter everyone uses before anyone chose it. Decided
+now, from the _To settle on the first real preview deployment_ list, rather
+than after the first event. The fallback stays in the code; the rule is that
+it must never be the thing producing the value, and a preview event tagged
+`preview` means the Vercel variable is missing.
+
+## 2026-09-04 — Process finding: the gate tests code, not whether code was asked for
+
+PR #29 reached main with no brief, no criterion (C-18 does not exist) and no
+handoff entry, building the farmer-facing flow that `CLAUDE.md` lists as
+unresolved and Inception Report 5.1 excludes. Its checks were green because
+nothing in the gate reads the scope document. #17 and #18 were the same
+pattern, caught before merge. Recorded in `PROJECT-STATE.md` with the full
+inventory of what #29 added; the revert decision is the user's and is not
+made here. The inventory shows the cost is low — screens and fixtures only,
+nothing depends on it — which is the argument for reverting cleanly rather
+than the argument for keeping it.
