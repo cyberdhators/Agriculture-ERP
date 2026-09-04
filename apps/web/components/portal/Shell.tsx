@@ -74,6 +74,30 @@ export function Shell({ children }: { children: ReactNode }) {
             <Wordmark size={22} tagline onBand href="/dashboard" />
           </div>
 
+          <form
+            className={styles.search}
+            role="search"
+            onSubmit={(event) => {
+              event.preventDefault();
+              const q = searchRef.current?.value.trim() ?? '';
+              router.push(q ? `/farmers?q=${encodeURIComponent(q)}` : '/farmers');
+            }}
+          >
+            <span className={styles.searchIcon} aria-hidden>
+              <IconSearch size={18} />
+            </span>
+            <input
+              ref={searchRef}
+              type="search"
+              className={styles.searchInput}
+              placeholder="Search the register — farmers, cooperatives, directories"
+              aria-label="Search the register by name, phone or number"
+            />
+            <button type="submit" className={styles.searchBtn} aria-label="Search the register">
+              <IconSearch size={18} />
+            </button>
+          </form>
+
           <nav className={styles.nav} aria-label="Primary">
             {NAV.map((item) => {
               const active = pathname.startsWith(item.href);
@@ -89,28 +113,6 @@ export function Shell({ children }: { children: ReactNode }) {
               );
             })}
           </nav>
-
-          <form
-            className={styles.search}
-            role="search"
-            onSubmit={(event) => {
-              event.preventDefault();
-              const q = searchRef.current?.value.trim() ?? '';
-              router.push(q ? `/farmers?q=${encodeURIComponent(q)}` : '/farmers');
-            }}
-          >
-            <IconSearch size={16} />
-            <input
-              ref={searchRef}
-              type="search"
-              className={styles.searchInput}
-              placeholder="Search the register"
-              aria-label="Search the register by name, phone or number"
-            />
-            <kbd className={styles.searchKbd} aria-hidden>
-              /
-            </kbd>
-          </form>
 
           {/*
             Design tooling only, shown with `?preview` in the address. Switches

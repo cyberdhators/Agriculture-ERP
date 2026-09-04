@@ -67,16 +67,32 @@
 .search {
   display: flex;
   align-items: center;
-  gap: var(--s-2);
-  margin-left: auto;
   align-self: center;
-  height: 32px;
-  padding: 0 var(--s-2) 0 var(--s-3);
-  min-width: 200px;
-  background: rgba(243, 238, 227, 0.08);
-  border: 1px solid var(--band-line);
-  border-radius: var(--radius-control);
-  color: rgba(243, 238, 227, 0.6);
+  flex: 1 1 auto;
+  max-width: 560px;
+  margin-inline: var(--s-6);
+  height: 40px;
+  padding-inline-start: var(--s-4);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+  color: var(--muted);
+}
+.searchIcon {
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+}
+.searchBtn {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  padding-inline: var(--s-4);
+  background: var(--green);
+  color: var(--band-ink);
+  border: 0;
+  cursor: pointer;
 }
 
 .search:focus-within {
@@ -90,8 +106,12 @@
   height: 100%;
   border: 0;
   background: transparent;
-  color: var(--band-ink);
-  font-size: var(--text-small);
+  color: var(--ink);
+  font-size: var(--text-body);
+  padding-inline: var(--s-2);
+}
+.searchInput::placeholder {
+  color: var(--muted);
 }
 
 .searchInput::placeholder {
