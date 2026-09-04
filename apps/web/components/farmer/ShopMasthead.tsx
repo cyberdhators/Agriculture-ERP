@@ -33,7 +33,8 @@ export function ShopMasthead({ subnav }: { subnav?: ReactNode }) {
 
   function onSearch(event: React.FormEvent) {
     event.preventDefault();
-    router.push('/market');
+    const q = query.trim();
+    router.push(q ? `/market?q=${encodeURIComponent(q)}` : '/market');
   }
 
   return (

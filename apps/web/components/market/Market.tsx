@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { CategoryGlyph } from '@/components/listings/CategoryGlyph';
@@ -17,7 +18,7 @@ import {
   Stamp,
   Textarea,
 } from '@/components/ui';
-import { IconSearch, IconX } from '@/components/ui/icons';
+import { IconX } from '@/components/ui/icons';
 import {
   LISTING_CATEGORIES,
   LISTING_UNITS,
@@ -84,8 +85,9 @@ export function Market({
   detailHref: (id: string) => string;
 }) {
   const { overrides, withdraw } = useMarketModeration();
-  const [filters, setFilters] = useState<MarketFilters>(DEFAULT_FILTERS);
-  const [query, setQuery] = useState('');
+  const searchParams = useSearchParams();
+  const qParam = searchParams.get('q') ?? '';
+  const [filters, setFilters] = useState<MarketFilters>({ ...DEFAULT_FILTERS, q: qParam });
   const [sort, setSort] = useState<MarketSort>('newest');
   const [view, setView] = useState<'cards' | 'list'>('cards');
   const [page, setPage] = useState(1);
@@ -124,10 +126,11 @@ export function Market({
     gridTop.current?.scrollIntoView({ block: 'start', behavior: 'smooth' });
   }
 
-  function submitSearch(e: React.FormEvent) {
-    e.preventDefault();
-    set('q', query.trim());
-  }
+  // The search lives in the masthead; it navigates to /market?q=… and this
+  // keeps the marketplace's own filter in step with that query.
+  useEffect(() => {
+    setFilters((f) => (f.q === qParam ? f : { ...f, q: qParam }));
+  }, [qParam]);
 
   function confirmWithdraw() {
     if (!moderating) return;
@@ -147,10 +150,7 @@ export function Market({
     applied.push({
       key: 'q',
       label: `“${filters.q.trim()}”`,
-      clear: () => {
-        setQuery('');
-        set('q', '');
-      },
+      clear: () => set('q', ''),
     });
   if (filters.category)
     applied.push({
@@ -195,77 +195,13 @@ export function Market({
     });
 
   function clearAll() {
-    setQuery('');
     setFilters(DEFAULT_FILTERS);
   }
 
   return (
     <div className={styles.browse}>
-      {/* ---- Header band: search, payam, category strip ---- */}
-      <div className={styles.headerBand}>
-        <div className={styles.searchRow}>
-          <form className={styles.searchField} role="search" onSubmit={submitSearch}>
-            <IconSearch size={20} />
-            <input
-              type="search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder={t('market.search', lang)}
-              aria-label={t('market.searchLabel', lang)}
-              dir="auto"
-            />
-            <button
-              type="submit"
-              className={styles.searchSubmit}
-              aria-label={t('market.searchSubmit', lang)}
-            >
-              <IconSearch size={18} />
-            </button>
-          </form>
-          <div className={styles.payamField}>
-            <label htmlFor="market-payam-top" className="visually-hidden">
-              {t('market.payam', lang)}
-            </label>
-            <select
-              id="market-payam-top"
-              value={filters.payam}
-              onChange={(e) => set('payam', e.target.value)}
-            >
-              <option value="">{t('market.allPayams', lang)}</option>
-              {payams.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        <div className={styles.chipStrip} role="group" aria-label={t('market.category', lang)}>
-          <button
-            type="button"
-            className={styles.chip}
-            aria-pressed={filters.category === ''}
-            onClick={() => set('category', '')}
-          >
-            {t('market.allCategories', lang)}
-          </button>
-          {LISTING_CATEGORIES.map((c) => (
-            <button
-              key={c}
-              type="button"
-              className={styles.chip}
-              aria-pressed={filters.category === c}
-              onClick={() => set('category', filters.category === c ? '' : c)}
-            >
-              <CategoryGlyph category={c} size={15} />
-              {t(CATEGORY_KEY[c], lang)}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* ---- Body: filter rail + results ---- */}
+      {/* Search and the category strip live in the masthead; the left rail
+          holds the full filter set. No in-page search band here. */}
       <div className={styles.body}>
         <aside className={styles.rail} aria-label={t('market.filters', lang)}>
           <div className={styles.railHead}>
