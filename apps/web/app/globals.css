@@ -112,8 +112,9 @@
   --s-8: 32px;
   --s-10: 40px;
 
-  /* One soft shadow, dialogs only. */
+  /* One soft shadow, dialogs only; one lift, product cards on hover. */
   --shadow-card: none;
+  --shadow-card-hover: 0 8px 24px -12px rgba(15, 31, 22, 0.25);
   --shadow-dialog: 0 24px 64px -20px rgba(15, 46, 28, 0.35);
 
   /* Focus ring: 2px green, offset 2px. */

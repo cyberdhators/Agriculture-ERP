@@ -704,6 +704,206 @@
   margin-bottom: var(--s-2);
 }
 
+/* ---- Farm survey sheet ---------------------------------------------- */
+
+.survey {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  gap: var(--s-6);
+  align-items: start;
+}
+
+.surveyMap {
+  margin: 0;
+  padding: var(--s-4);
+  background: var(--dust);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-card);
+}
+
+.map {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.mapField {
+  fill: var(--paper);
+  stroke: var(--line);
+  stroke-width: 1;
+}
+
+.mapPlot,
+.mapPlotOn {
+  cursor: pointer;
+}
+
+.mapPlot polygon {
+  fill: var(--green-tint);
+  stroke: var(--green);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+  transition: fill 120ms ease;
+}
+
+.mapPlot:hover polygon {
+  fill: color-mix(in srgb, var(--green) 20%, var(--paper));
+}
+
+.mapPlotOn polygon {
+  fill: color-mix(in srgb, var(--green) 26%, var(--paper));
+  stroke: var(--green-deep);
+  stroke-width: 2.5;
+  stroke-linejoin: round;
+}
+
+.map g:focus-visible {
+  outline: none;
+}
+
+.map g:focus-visible polygon {
+  stroke: var(--green-deep);
+  stroke-width: 3;
+}
+
+.mapArea {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  fill: var(--ink);
+  paint-order: stroke;
+  stroke: var(--paper);
+  stroke-width: 3;
+  stroke-linejoin: round;
+}
+
+.mapNorth polygon {
+  fill: var(--ink-2);
+}
+
+.mapNorth text {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  fill: var(--ink-2);
+}
+
+.mapScale line {
+  stroke: var(--ink-2);
+  stroke-width: 1.5;
+}
+
+.mapScale text {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  fill: var(--muted);
+}
+
+.mapEmpty {
+  display: grid;
+  place-items: center;
+  min-height: 260px;
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius-control);
+  color: var(--muted);
+  font-size: var(--text-small);
+}
+
+.surveyCaption {
+  margin-top: var(--s-3);
+  font-size: var(--text-small);
+  color: var(--muted);
+}
+
+.surveySide {
+  display: grid;
+  gap: var(--s-5);
+}
+
+.surveyTable {
+  width: 100%;
+  border-collapse: collapse;
+  border-top: 1px solid var(--line-strong);
+  font-size: var(--text-small);
+}
+
+.surveyTable th,
+.surveyTable td {
+  height: 44px;
+  padding: 0 var(--s-3);
+  text-align: start;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+
+.surveyTable th {
+  font-size: var(--text-label);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.surveyTable td.num,
+.surveyTable th.num {
+  text-align: end;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.surveyRow,
+.surveyRowOn {
+  cursor: pointer;
+}
+
+.surveyRow:hover td {
+  background: var(--dust);
+}
+
+.surveyRowOn td {
+  background: var(--green-tint);
+}
+
+.surveyRowBtn {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.surveyTotal {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-4);
+  padding-top: var(--s-3);
+  border-top: 1px solid var(--line-strong);
+  font-weight: 600;
+}
+
+.surveyNote {
+  padding: var(--s-4);
+  background: var(--soil-tint);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+}
+
+.surveyNote h3 {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: var(--text-subhead);
+  margin-bottom: var(--s-2);
+}
+
+.surveyNote p {
+  font-size: var(--text-small);
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+
 .farms {
   display: grid;
   gap: var(--s-3);
@@ -971,6 +1171,10 @@
   }
 
   .plotCard {
+    grid-template-columns: 1fr;
+  }
+
+  .survey {
     grid-template-columns: 1fr;
   }
 

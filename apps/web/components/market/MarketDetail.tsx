@@ -1,15 +1,25 @@
 'use client';
 
+import Link from 'next/link';
 import { useMemo, useState } from 'react';
 
-import { BackLink, ProductPage } from '@/components/listings/ProductPage';
+import { ListingCard } from '@/components/listings/ListingCard';
+import { ProductPage } from '@/components/listings/ProductPage';
 import { Button, Dialog, Field, Notice, Textarea } from '@/components/ui';
-import { farmerById, farmsForFarmer } from '@/lib/fixtures/farmers';
+import { farmerById } from '@/lib/fixtures/farmers';
+import { CATEGORY_KEY } from '@/lib/farmers/listings';
 import { t, type Language } from '@/lib/i18n';
 import type { Role } from '@/lib/preview';
 
 import { useMarketModeration } from './moderation';
-import { liveCount, marketRows, type MarketMode } from './marketplace';
+import {
+  liveCount,
+  marketRows,
+  moreFromSeller,
+  similarRows,
+  type MarketMode,
+  type MarketRow,
+} from './marketplace';
 import styles from '@/components/listings/listings.module.css';
 
 /**
@@ -36,11 +46,14 @@ export function MarketDetail({
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState('');
   const [error, setError] = useState<string | undefined>();
+  const detailHref = (lid: string) => `${backHref}/${lid}`;
 
   if (!row) {
     return (
       <>
-        <BackLink href={backHref}>{t('market.title', lang)}</BackLink>
+        <nav className={styles.breadcrumb} aria-label={t('market.breadcrumb', lang)}>
+          <Link href={backHref}>{t('market.title', lang)}</Link>
+        </nav>
         <Notice kind="info">
           <p className="small">{t('market.notFound', lang)}</p>
         </Notice>
@@ -53,6 +66,8 @@ export function MarketDetail({
   const canModerate =
     mode === 'staff' && (role === 'admin' || role === 'supervisor') && listing.status === 'listed';
   const withdrawnReason = reasons.get(listing.id);
+  const more = moreFromSeller(rows, seller.id, listing.id);
+  const similar = similarRows(rows, listing.category, listing.id);
 
   function confirm() {
     if (reason.trim().length < 3) {
@@ -63,9 +78,39 @@ export function MarketDetail({
     setOpen(false);
   }
 
+  const breadcrumb = (
+    <nav className={styles.breadcrumb} aria-label={t('market.breadcrumb', lang)}>
+      <Link href={backHref}>{t('market.title', lang)}</Link>
+      <span className={styles.breadcrumbSep} aria-hidden>
+        ›
+      </span>
+      <span>{t(CATEGORY_KEY[listing.category], lang)}</span>
+      <span className={styles.breadcrumbSep} aria-hidden>
+        ›
+      </span>
+      <span className={styles.breadcrumbCurrent} dir="auto">
+        {listing.title}
+      </span>
+    </nav>
+  );
+
+  const relatedBlock = (title: string, list: MarketRow[]) =>
+    list.length > 0 ? (
+      <section className={styles.relatedRow}>
+        <div className={styles.ruledHead}>
+          <h2>{title}</h2>
+          <span className={styles.ruledCount}>{list.length}</span>
+        </div>
+        <div className={styles.featured}>
+          {list.map(({ listing: l, seller: s }) => (
+            <ListingCard key={l.id} listing={l} seller={s} lang={lang} href={detailHref(l.id)} />
+          ))}
+        </div>
+      </section>
+    ) : null;
+
   return (
     <>
-      <BackLink href={backHref}>{t('market.title', lang)}</BackLink>
       {withdrawnReason ? (
         <Notice kind="warn" title={t('market.withdrawnBy', lang)}>
           <p className="small" dir="auto">
@@ -73,21 +118,30 @@ export function MarketDetail({
           </p>
         </Notice>
       ) : null}
+
       <ProductPage
         listing={listing}
         seller={seller}
         sellerListingCount={liveCount(rows, seller.id)}
-        farm={farmsForFarmer(seller.id)[0]}
         lang={lang}
-        actions={
+        breadcrumb={breadcrumb}
+        sellerListingsHref={backHref}
+        moderate={
           canModerate ? (
-            <div className={styles.moderation}>
-              <span className={styles.moderationTitle}>{t('market.status', lang)}</span>
+            <section id="moderate" className={styles.moderation}>
+              <span className={styles.moderationTitle}>{t('market.moderate', lang)}</span>
+              <p className={styles.moderationBody}>{t('market.moderateNote', lang)}</p>
               <Button variant="danger" onClick={() => setOpen(true)}>
                 {t('market.withdraw', lang)}
               </Button>
-            </div>
+            </section>
           ) : undefined
+        }
+        related={
+          <>
+            {relatedBlock(t('market.moreFromSeller', lang), more)}
+            {relatedBlock(`${t('market.similar', lang)} ${t(CATEGORY_KEY[listing.category], lang)}`, similar)}
+          </>
         }
       />
 

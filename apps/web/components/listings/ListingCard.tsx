@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 
-import { Stamp } from '@/components/ui';
+import { ButtonLink, Stamp } from '@/components/ui';
 import { farmerPayamName, type Farmer, type ProduceListing } from '@/lib/fixtures/farmers';
 import {
   CATEGORY_KEY,
@@ -16,14 +16,23 @@ import { formatDate } from '@/lib/format';
 import { t, type Language } from '@/lib/i18n';
 import { verificationStamp, VERIFICATION_KEY } from '@/lib/farmers/verification';
 
+import { CategoryGlyph } from './CategoryGlyph';
 import { Photo } from './Photo';
 import styles from './listings.module.css';
 
+/** Two initials for the seller disc — never an icon alone. */
+function initials(seller: Farmer): string {
+  return `${seller.given_name[0] ?? ''}${seller.family_name[0] ?? ''}`.toUpperCase();
+}
+
 /**
- * One product card: cover photo, category, title, price per unit in mono,
- * quantity, then either the seller (marketplace) or the status stamp and edit
- * action (the farmer's own list). The whole card is the link; actions sit
- * above it.
+ * One product card. On the marketplace (a `seller` is given): a 4:3 cover with
+ * a category badge and, when not listed, a status stamp; a Fraunces title, the
+ * product and quantity, the price as the hero line, the seller with their
+ * verification stamp and payam, and a "Contact seller" button revealed on
+ * hover or shown on touch. On the farmer's own list (no seller): the same head
+ * with the status stamp and an Edit action in the foot. Staff get a kebab that
+ * opens moderation. The whole card links to the product page.
  */
 export function ListingCard({
   listing,
@@ -32,6 +41,7 @@ export function ListingCard({
   seller,
   showStatus = false,
   actions,
+  onModerate,
 }: {
   listing: ProduceListing;
   href: string;
@@ -39,52 +49,89 @@ export function ListingCard({
   seller?: Farmer;
   showStatus?: boolean;
   actions?: ReactNode;
+  onModerate?: (listing: ProduceListing) => void;
 }) {
   const unit = (u: ProduceListing['unit']) => t(UNIT_KEY[u], lang);
   const photos = listing.photo_storage_paths.length;
+  const stampVisible = showStatus || (seller && listing.status !== 'listed');
+
   return (
     <article className={styles.card}>
-      <Photo
-        src={coverOf(listing)}
-        category={listing.category}
-        lang={lang}
-        note={photos > 1 ? `${photos} ${t('listings.photos', lang)}` : undefined}
-      />
+      <div className={styles.cover}>
+        <Photo
+          src={coverOf(listing)}
+          category={listing.category}
+          lang={lang}
+          alt={listing.title}
+          note={photos > 1 ? `${photos} ${t('listings.photos', lang)}` : undefined}
+        />
+        <span className={styles.badge}>
+          <CategoryGlyph category={listing.category} size={14} />
+          {t(CATEGORY_KEY[listing.category], lang)}
+        </span>
+        {stampVisible || onModerate ? (
+          <span className={styles.frameTopRight}>
+            {stampVisible ? (
+              <Stamp kind={listingStamp(listing.status)}>
+                {t(STATUS_KEY[listing.status], lang)}
+              </Stamp>
+            ) : null}
+            {onModerate ? (
+              <details className={styles.kebab}>
+                <summary aria-label={t('market.moderate', lang)}>⋮</summary>
+                <div className={styles.kebabMenu}>
+                  <button
+                    type="button"
+                    className={styles.kebabItem}
+                    onClick={() => onModerate(listing)}
+                  >
+                    {t('market.moderateListing', lang)}
+                  </button>
+                </div>
+              </details>
+            ) : null}
+          </span>
+        ) : null}
+      </div>
+
       <div className={styles.cardBody}>
-        <div className={styles.cardTop}>
-          <span className={styles.cardCategory}>{t(CATEGORY_KEY[listing.category], lang)}</span>
-          {showStatus ? (
-            <Stamp kind={listingStamp(listing.status)}>{t(STATUS_KEY[listing.status], lang)}</Stamp>
-          ) : null}
-        </div>
         <Link href={href} className={styles.cardTitle} dir="auto">
           {listing.title}
         </Link>
+        <span className={styles.cardProduct} dir="auto">
+          {listing.product_name} · {formatQuantity(listing, unit)}
+        </span>
         <div className={styles.cardPrice}>
           {formatSsp(listing.price_ssp)} <small>/ {unit(listing.price_per)}</small>
         </div>
-        <div className={styles.cardMeta}>
-          <span>{formatQuantity(listing, unit)}</span>
-          {listing.negotiable ? <span>{t('listings.negotiable', lang)}</span> : null}
-        </div>
       </div>
-      <div className={styles.cardFoot}>
-        {seller ? (
-          <span className={styles.cardSeller}>
+
+      {seller ? (
+        <>
+          <div className={styles.cardSellerRow}>
+            <span className={styles.disc} aria-hidden>
+              {initials(seller)}
+            </span>
             <span className={styles.cardSellerName} dir="auto">
               {seller.given_name} {seller.family_name}
             </span>
             <Stamp kind={verificationStamp(seller.verification_status)}>
               {t(VERIFICATION_KEY[seller.verification_status], lang)}
             </Stamp>
-          </span>
-        ) : (
+            <span className={styles.cardSellerPayam}>{farmerPayamName(seller.payam_id)}</span>
+          </div>
+          <div className={styles.cardContact}>
+            <ButtonLink href={href} variant="secondary" size="small">
+              {t('market.contact', lang)}
+            </ButtonLink>
+          </div>
+        </>
+      ) : (
+        <div className={styles.cardFoot}>
           <span className={styles.mono}>{formatDate(listing.updated_at)}</span>
-        )}
-        <span className={styles.cardActions}>
-          {actions ?? (seller ? <span>{farmerPayamName(seller.payam_id)}</span> : null)}
-        </span>
-      </div>
+          <span className={styles.cardActions}>{actions}</span>
+        </div>
+      )}
     </article>
   );
 }

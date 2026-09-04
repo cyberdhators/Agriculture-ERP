@@ -26,9 +26,13 @@ export interface MarketRow {
 
 export type MarketMode = 'public' | 'staff';
 export type Availability = 'any' | 'now' | 'soon';
-export type MarketSort = 'newest' | 'price_low' | 'price_high' | 'title';
+export type MarketSort = 'newest' | 'price_low' | 'price_high' | 'quantity';
+
+/** Listings per page in the browse grid. The B12 fetch keeps the same window. */
+export const PAGE_SIZE = 24;
 
 export interface MarketFilters {
+  q: string;
   category: ListingCategory | '';
   payam: string;
   unit: ListingUnit | '';
@@ -36,10 +40,12 @@ export interface MarketFilters {
   priceMax: string;
   availability: Availability;
   verifiedOnly: boolean;
+  deliveryOnly: boolean;
   status: ListingStatus;
 }
 
 export const DEFAULT_FILTERS: MarketFilters = {
+  q: '',
   category: '',
   payam: '',
   unit: '',
@@ -47,8 +53,24 @@ export const DEFAULT_FILTERS: MarketFilters = {
   priceMax: '',
   availability: 'any',
   verifiedOnly: true,
+  deliveryOnly: false,
   status: 'listed',
 };
+
+/** True when the shopper has narrowed the browse in any way (not the defaults). */
+export function filtersActive(f: MarketFilters): boolean {
+  return (
+    f.q.trim() !== '' ||
+    f.category !== '' ||
+    f.payam !== '' ||
+    f.unit !== '' ||
+    f.priceMin !== '' ||
+    f.priceMax !== '' ||
+    f.availability !== 'any' ||
+    !f.verifiedOnly ||
+    f.deliveryOnly
+  );
+}
 
 export function marketRows(
   mode: MarketMode,
@@ -70,6 +92,7 @@ export function applyFilters(
 ): MarketRow[] {
   const min = f.priceMin === '' ? null : Number(f.priceMin);
   const max = f.priceMax === '' ? null : Number(f.priceMax);
+  const q = f.q.trim().toLowerCase();
   return rows.filter(({ listing, seller }) => {
     if (mode === 'staff' ? listing.status !== f.status : listing.status !== 'listed') return false;
     if (f.category && listing.category !== f.category) return false;
@@ -78,6 +101,12 @@ export function applyFilters(
     if (min !== null && listing.price_ssp < min) return false;
     if (max !== null && listing.price_ssp > max) return false;
     if (f.verifiedOnly && seller.verification_status !== 'verified') return false;
+    if (f.deliveryOnly && !listing.delivery_available) return false;
+    if (q !== '') {
+      const hay =
+        `${listing.title} ${listing.product_name} ${listing.category}`.toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
     if (f.availability === 'now') {
       if (listing.available_from > today) return false;
       if (listing.available_until && listing.available_until < today) return false;
@@ -94,11 +123,55 @@ export function sortRows(rows: readonly MarketRow[], sort: MarketSort): MarketRo
       return out.sort((a, b) => a.listing.price_ssp - b.listing.price_ssp);
     case 'price_high':
       return out.sort((a, b) => b.listing.price_ssp - a.listing.price_ssp);
-    case 'title':
-      return out.sort((a, b) => a.listing.title.localeCompare(b.listing.title));
+    case 'quantity':
+      return out.sort((a, b) => b.listing.quantity - a.listing.quantity);
     default:
       return out.sort((a, b) => b.listing.updated_at.localeCompare(a.listing.updated_at));
   }
+}
+
+/** The freshest listed rows for the "Fresh this week" featured strip. */
+export function featuredRows(rows: readonly MarketRow[], count = 4): MarketRow[] {
+  return sortRows(
+    rows.filter((r) => r.listing.status === 'listed'),
+    'newest',
+  ).slice(0, count);
+}
+
+/** Other listed rows from the same seller, newest first. */
+export function moreFromSeller(
+  rows: readonly MarketRow[],
+  sellerId: string,
+  excludeId: string,
+  count = 4,
+): MarketRow[] {
+  return sortRows(
+    rows.filter(
+      (r) =>
+        r.listing.farmer_id === sellerId &&
+        r.listing.id !== excludeId &&
+        r.listing.status === 'listed',
+    ),
+    'newest',
+  ).slice(0, count);
+}
+
+/** Other listed rows in the same category, newest first. */
+export function similarRows(
+  rows: readonly MarketRow[],
+  category: string,
+  excludeId: string,
+  count = 4,
+): MarketRow[] {
+  return sortRows(
+    rows.filter(
+      (r) =>
+        r.listing.category === category &&
+        r.listing.id !== excludeId &&
+        r.listing.status === 'listed',
+    ),
+    'newest',
+  ).slice(0, count);
 }
 
 /** Payams present among the rows, named, for the rail. */

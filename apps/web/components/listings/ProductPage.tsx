@@ -1,10 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, type ReactNode } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 
-import { Boundary } from '@/components/farmers/Boundary';
-import { ButtonLink, Stamp } from '@/components/ui';
+import { Button, ButtonLink, Stamp } from '@/components/ui';
+import { IconChevronLeft, IconChevronRight } from '@/components/ui/icons';
 import {
   farmerPayamName,
   type Farm,
@@ -26,32 +26,47 @@ import { t, type Language } from '@/lib/i18n';
 import { Photo } from './Photo';
 import styles from './listings.module.css';
 
+/** Two initials for the seller disc — never an icon alone. */
+function initials(seller: Farmer): string {
+  return `${seller.given_name[0] ?? ''}${seller.family_name[0] ?? ''}`.toUpperCase();
+}
+
 /**
- * The product page, shared by the marketplace and the farmer's own preview:
- * gallery (cover first, up to five), title, price per unit, quantity,
- * description, availability, pickup and delivery, and the seller card with
- * verification stamp, payam, contact phone, listing count and a plot outline.
+ * The product page, shared by the marketplace and the farmer's own preview: a
+ * gallery with a keyboard-navigable thumbnail strip on the left, and a sticky
+ * buy panel on the right — title, price per unit, the quantity and availability
+ * lines, call and SMS, and the seller card. Below, the full-width description,
+ * a details table with mono values, and any "more from this seller" or
+ * "similar" rows. A sticky price-and-call bar appears on narrow screens.
  * "Contact seller" is a call or an SMS — there is no chat.
  */
 export function ProductPage({
   listing,
   seller,
   sellerListingCount,
-  farm,
   lang,
   photos,
+  breadcrumb,
   kicker,
   actions,
+  moderate,
+  related,
+  sellerListingsHref,
 }: {
   listing: ProduceListing;
   seller: Farmer;
   sellerListingCount: number;
+  /** Accepted for the farmer preview's call sites; the map lives on /farm now. */
   farm?: Farm;
   lang: Language;
   /** Local object URLs standing in for the storage paths (the form's preview). */
   photos?: string[];
+  breadcrumb?: ReactNode;
   kicker?: ReactNode;
   actions?: ReactNode;
+  moderate?: ReactNode;
+  related?: ReactNode;
+  sellerListingsHref?: string;
 }) {
   const sources: Array<string | null> =
     photos && photos.length > 0
@@ -60,103 +75,152 @@ export function ProductPage({
         ? listing.photo_storage_paths
         : [null];
   const [index, setIndex] = useState(0);
+  const thumbRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const current = sources[Math.min(index, sources.length - 1)] ?? null;
   const unit = (u: ProduceListing['unit']) => t(UNIT_KEY[u], lang);
   const phone = listing.contact_phone;
 
+  function step(delta: number, focus = false) {
+    setIndex((i) => {
+      const next = Math.min(Math.max(i + delta, 0), sources.length - 1);
+      if (focus) thumbRefs.current[next]?.focus();
+      return next;
+    });
+  }
+
+  const availability = (
+    <span className={styles.mono}>
+      {formatDate(listing.available_from)}
+      {' – '}
+      {listing.available_until ? formatDate(listing.available_until) : t('listings.ongoing', lang)}
+    </span>
+  );
+
   return (
-    <div className={styles.product}>
-      <div className={styles.gallery}>
-        <Photo
-          src={current}
-          category={listing.category}
-          lang={lang}
-          alt={listing.title}
-          note={
-            sources.length > 1
-              ? `${t('detail.photoOf', lang)} ${index + 1} ${t('detail.of', lang)} ${sources.length}`
-              : undefined
-          }
-        />
-        {sources.length > 1 ? (
-          <div className={styles.thumbs} role="list">
-            {sources.map((src, i) => (
-              <button
-                key={i}
-                type="button"
-                role="listitem"
-                className={styles.thumb}
-                aria-current={i === index}
-                aria-label={`${t('detail.photoOf', lang)} ${i + 1}`}
-                onClick={() => setIndex(i)}
+    <>
+      {breadcrumb}
+      <div className={styles.product}>
+        <div className={styles.gallery}>
+          <Photo
+            src={current}
+            category={listing.category}
+            lang={lang}
+            alt={listing.title}
+            note={
+              sources.length > 1
+                ? `${t('detail.photoOf', lang)} ${index + 1} ${t('detail.of', lang)} ${sources.length}`
+                : undefined
+            }
+          />
+          {sources.length > 1 ? (
+            <div
+              className={styles.thumbs}
+              role="group"
+              aria-label={t('detail.description', lang)}
+              onKeyDown={(e) => {
+                if (e.key === 'ArrowRight') {
+                  e.preventDefault();
+                  step(1, true);
+                } else if (e.key === 'ArrowLeft') {
+                  e.preventDefault();
+                  step(-1, true);
+                }
+              }}
+            >
+              <Button
+                variant="ghost"
+                size="small"
+                iconOnly
+                aria-label={t('detail.back', lang)}
+                disabled={index === 0}
+                onClick={() => step(-1)}
               >
-                <Photo src={src} category={listing.category} lang={lang} />
-              </button>
-            ))}
-          </div>
-        ) : null}
-        <section className={styles.productSection}>
-          <h2>{t('detail.description', lang)}</h2>
-          <p className={styles.prose} dir="auto">
-            {listing.description}
-          </p>
-        </section>
-      </div>
+                <IconChevronLeft size={18} />
+              </Button>
+              {sources.map((src, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  ref={(el) => {
+                    thumbRefs.current[i] = el;
+                  }}
+                  className={styles.thumb}
+                  aria-current={i === index}
+                  tabIndex={i === index ? 0 : -1}
+                  aria-label={`${t('detail.photoOf', lang)} ${i + 1}`}
+                  onClick={() => setIndex(i)}
+                >
+                  <Photo src={src} category={listing.category} lang={lang} />
+                </button>
+              ))}
+              <Button
+                variant="ghost"
+                size="small"
+                iconOnly
+                aria-label={t('detail.of', lang)}
+                disabled={index === sources.length - 1}
+                onClick={() => step(1)}
+              >
+                <IconChevronRight size={18} />
+              </Button>
+            </div>
+          ) : null}
+        </div>
 
-      <div>
-        {kicker}
-        <header className={styles.productHead}>
-          <div className={styles.productKicker}>
-            <span>{t(CATEGORY_KEY[listing.category], lang)}</span>
-            <span aria-hidden>·</span>
-            <span dir="auto">{listing.product_name}</span>
-            <Stamp kind={listingStamp(listing.status)}>{t(STATUS_KEY[listing.status], lang)}</Stamp>
-          </div>
-          <h1 className={styles.productTitle} dir="auto">
-            {listing.title}
-          </h1>
-          <div className={styles.productPrice}>
-            <span>{formatSsp(listing.price_ssp)}</span>
-            <small>/ {unit(listing.price_per)}</small>
-            {listing.negotiable ? <small>· {t('listings.negotiable', lang)}</small> : null}
-          </div>
-          {actions}
-        </header>
+        <div className={styles.panel}>
+          {kicker}
+          <header className={styles.productHead}>
+            <div className={styles.productKicker}>
+              <span>{t(CATEGORY_KEY[listing.category], lang)}</span>
+              <span aria-hidden>·</span>
+              <span dir="auto">{listing.product_name}</span>
+              <Stamp kind={listingStamp(listing.status)}>
+                {t(STATUS_KEY[listing.status], lang)}
+              </Stamp>
+            </div>
+            <h1 className={styles.productTitle} dir="auto">
+              {listing.title}
+            </h1>
+            <div className={styles.productPrice}>
+              <span>{formatSsp(listing.price_ssp)}</span>
+              <small>/ {unit(listing.price_per)}</small>
+              {listing.negotiable ? (
+                <span className={styles.negChip}>{t('market.negotiable', lang)}</span>
+              ) : null}
+            </div>
+          </header>
 
-        <dl className={styles.productFacts}>
-          <Fact term={t('detail.quantity', lang)}>{formatQuantity(listing, unit)}</Fact>
-          <Fact term={t('detail.location', lang)}>{farmerPayamName(seller.payam_id)}</Fact>
-          <Fact term={t('detail.availability', lang)}>
-            <span className={styles.mono}>
-              {formatDate(listing.available_from)}
-              {' – '}
-              {listing.available_until
-                ? formatDate(listing.available_until)
-                : t('listings.ongoing', lang)}
+          <div className={styles.buyLine}>
+            <span>{t('detail.quantity', lang)}</span>
+            <span className={styles.mono}>{formatQuantity(listing, unit)}</span>
+          </div>
+          <div className={styles.buyLine}>
+            <span>{t('detail.availability', lang)}</span>
+            {availability}
+          </div>
+          <div className={styles.buyLine}>
+            <span>{t('detail.delivery', lang)}</span>
+            <span>
+              {listing.delivery_available
+                ? t('listings.delivery', lang)
+                : t('listings.noDelivery', lang)}
             </span>
-          </Fact>
-          <Fact term={t('detail.delivery', lang)}>
-            {listing.delivery_available
-              ? t('listings.delivery', lang)
-              : t('listings.noDelivery', lang)}
-          </Fact>
-          {listing.harvest_season ? (
-            <Fact term={t('detail.season', lang)}>{listing.harvest_season}</Fact>
-          ) : null}
-          {listing.pickup_notes ? (
-            <Fact term={t('detail.pickup', lang)}>
-              <span dir="auto">{listing.pickup_notes}</span>
-            </Fact>
-          ) : null}
-          <Fact term={t('detail.updatedOn', lang)}>
-            <span className={styles.mono}>{formatDate(listing.updated_at)}</span>
-          </Fact>
-        </dl>
+          </div>
 
-        <section className={styles.productSection}>
-          <h2 className={styles.sellerTitle}>{t('detail.seller', lang)}</h2>
+          <div className={styles.contact}>
+            <ButtonLink href={`tel:${phone}`} variant="primary">
+              {t('detail.call', lang)}
+            </ButtonLink>
+            <ButtonLink href={`sms:${phone}`} variant="secondary">
+              {t('detail.sms', lang)}
+            </ButtonLink>
+          </div>
+
           <div className={styles.seller}>
             <div className={styles.sellerHead}>
+              <span className={styles.sellerDisc} aria-hidden>
+                {initials(seller)}
+              </span>
               <div>
                 <div className={styles.sellerName} dir="auto">
                   {seller.given_name} {seller.family_name}
@@ -165,7 +229,6 @@ export function ProductPage({
                   {t(VERIFICATION_KEY[seller.verification_status], lang)}
                 </Stamp>
               </div>
-              {farm ? <Boundary farm={farm} size={96} /> : null}
             </div>
             <dl className={styles.sellerRows}>
               <div className={styles.sellerRow}>
@@ -177,33 +240,76 @@ export function ProductPage({
                 <dd className={styles.mono}>{formatPhone(phone)}</dd>
               </div>
               <div className={styles.sellerRow}>
+                <dt>{t('market.memberSince', lang)}</dt>
+                <dd className={styles.mono}>{formatDate(seller.created_at)}</dd>
+              </div>
+              <div className={styles.sellerRow}>
                 <dt>{t('listings.title', lang)}</dt>
                 <dd className={styles.mono}>
                   {sellerListingCount} {t('detail.sellerListings', lang)}
                 </dd>
               </div>
             </dl>
-            <div className={styles.sellerContact}>
-              <ButtonLink href={`tel:${phone}`} variant="primary">
-                {t('detail.call', lang)}
-              </ButtonLink>
-              <ButtonLink href={`sms:${phone}`} variant="secondary">
-                {t('detail.sms', lang)}
-              </ButtonLink>
-            </div>
+            {sellerListingsHref ? (
+              <Link href={sellerListingsHref} className={styles.sellerLink}>
+                {t('market.viewSellerListings', lang)}
+              </Link>
+            ) : null}
           </div>
-        </section>
+
+          {actions}
+          {moderate}
+        </div>
       </div>
-    </div>
+
+      <section className={styles.productSection}>
+        <h2>{t('detail.description', lang)}</h2>
+        <p className={styles.prose} dir="auto">
+          {listing.description}
+        </p>
+      </section>
+
+      <section className={styles.productSection}>
+        <h2>{t('listings.title', lang)}</h2>
+        <table className={styles.detailTable}>
+          <tbody>
+            <DetailRow term={t('detail.category', lang)}>
+              {t(CATEGORY_KEY[listing.category], lang)}
+            </DetailRow>
+            <DetailRow term={t('detail.quantity', lang)}>{formatQuantity(listing, unit)}</DetailRow>
+            <DetailRow term={t('market.unit', lang)}>{unit(listing.unit)}</DetailRow>
+            <DetailRow term={t('detail.season', lang)}>
+              {listing.harvest_season || t('listings.ongoing', lang)}
+            </DetailRow>
+            <DetailRow term={t('detail.pickup', lang)}>{listing.pickup_notes || '—'}</DetailRow>
+            <DetailRow term={t('detail.listedOn', lang)}>{formatDate(listing.created_at)}</DetailRow>
+            <DetailRow term={t('market.listingNo', lang)}>
+              {listing.id.slice(-8).toUpperCase()}
+            </DetailRow>
+          </tbody>
+        </table>
+      </section>
+
+      {related}
+
+      <div className={styles.stickyBar}>
+        <span className={styles.mono}>
+          {formatSsp(listing.price_ssp)} <span className="small">/ {unit(listing.price_per)}</span>
+        </span>
+        <ButtonLink href={`tel:${phone}`} variant="primary">
+          {t('detail.call', lang)}
+        </ButtonLink>
+      </div>
+    </>
   );
 }
 
-function Fact({ term, children }: { term: string; children: ReactNode }) {
+function DetailRow({ term, children }: { term: string; children: ReactNode }) {
   return (
-    <div className={styles.productFact}>
-      <dt className={styles.cardCategory}>{term}</dt>
-      <dd className={styles.productFactValue}>{children}</dd>
-    </div>
+    <tr>
+      <th scope="row">{term}</th>
+      <td dir="auto">{children}</td>
+    </tr>
   );
 }
 
