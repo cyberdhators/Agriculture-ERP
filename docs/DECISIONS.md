@@ -865,3 +865,40 @@ files #29 had modified rather than added — the fixtures file that the
 pre-existing Farmers screens import, and the design page — are byte-identical
 to their pre-#29 state, checked against the parent commit, not assumed from
 the revert.
+
+## 2026-09-04 — Three decisions from reading the first real Sentry event
+
+**IP-derived geography: off.** Sentry's _Prevent Storing of IP Addresses_ is
+to be on for this project. The user's reasoning, recorded as given: we have no
+use for IP-derived location, and once real staff in South Sudan are using the
+system every error would carry inferred location about a named person's
+device. Turning it off costs nothing because we never wanted it. This is a
+Sentry project setting on CORWADO's account; the repository cannot reach it,
+so it was applied in the UI, not in code, and the proof is a later event with
+no User Geography.
+
+**The DSN leaves `.env.local`.** Removed the day verification finished. B1.5
+accepted username-bearing local paths on the premise that _"local machines
+have no DSN, so nothing is sent from where this applies"_ — that premise is
+the whole protection, and it holds only while the DSN is absent. So the DSN
+belongs in Vercel's environment variables and nowhere else. Re-verifying
+locally is a three-step act: add, run, remove. Recorded in `.env.example` at
+the variable itself, where the next person will read it.
+
+**`timezone` and `locale` join the scrubber's key list.** The culture context
+was established reachable (SDK-side, before `beforeSend`) on 2026-09-04. It is
+not needed for diagnosis and it narrows a person's location. Added as keys
+rather than by deleting `contexts.culture`, so the rule holds wherever a
+timezone or locale appears — a breadcrumb, a tag, extra context — not only in
+the one place the SDK puts it. `locale` was not named in the instruction;
+`en-IN` narrows location as the timezone does, and the reasoning given
+("culture context is not needed") covers both fields. Tested in both
+directions: the values go, the diagnostic neighbours stay.
+
+**And a list, not a decision.** Everything currently inferred rather than
+observed about a Vercel-sent event is gathered in `PROJECT-STATE.md` under _To
+settle on the first real preview deployment_, so that one route error on a
+preview, read once, closes the whole list instead of items being rediscovered
+one at a time. The username path is the first entry; the `environment` tag
+falling to `VERCEL_ENV` (`preview`, never `staging`) is the one most likely to
+surprise.
