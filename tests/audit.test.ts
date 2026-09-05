@@ -455,17 +455,19 @@ run('GET /api/audit: the forbidden matrix and the filters (C-4.8, C-4.9)', () =>
 });
 
 run('an audited transaction cannot sit idle holding locks (found 2026-09-05)', () => {
-  it('sets the idle-in-transaction timeout inside the transaction, and leaves the session untouched outside it', async () => {
+  it('sets a 30 s idle-in-transaction timeout inside the transaction, and the session outside keeps the role default', async () => {
     const inside = await audited(prisma, async (tx) => {
       const [row] = await tx.$queryRawUnsafe<{ v: string }[]>(
-        'SHOW idle_in_transaction_session_timeout',
+        `SELECT current_setting('idle_in_transaction_session_timeout') AS v`,
       );
       return row?.v;
     });
     expect(inside).toBe(IDLE_IN_TRANSACTION_TIMEOUT);
+    // The role default is whatever the operator set (60 s on staging since
+    // 2026-09-05, 0 on a fresh project). The point is that SET LOCAL did not leak.
     const [outside] = await prisma.$queryRawUnsafe<{ v: string }[]>(
-      'SHOW idle_in_transaction_session_timeout',
+      `SELECT current_setting('idle_in_transaction_session_timeout') AS v`,
     );
-    expect(outside?.v).toBe('0');
+    expect(outside?.v).not.toBe(IDLE_IN_TRANSACTION_TIMEOUT);
   });
 });

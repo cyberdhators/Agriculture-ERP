@@ -504,6 +504,22 @@ again, so a county code changing later leaves every printed card valid.
 the farmer. For supervisors and read-only users the key is absent, not
 masked. Data model open question 2, chosen narrow; `docs/DECISIONS.md`.
 
+**Run 5, 2026-09-05, under both fixes (connect timeout, pool size, the
+idle-transaction guard in `audited()` and the two role settings).** 19 of 23
+files, 425 of 450 tests. `tests/farmers.test.ts` ran all 31: the
+**1,000-allocation lock test passed** (1,000 distinct, contiguous values,
+ten transactions in flight on the transaction pooler) and **both halves of
+the C-5.13 scan passed** (every error status scanned; a 500 whose underlying
+error carried a fabricated name, phone and id sent the fixed sentence). The
+one farmer failure was the route-throughput test: 100 registrations did not
+fit in five minutes from this machine and it is now 50. The other three: a
+test of the idle-timeout guard that read the wrong column and assumed the
+role default was still zero (fixed), and two files plus one audit test that
+could not get a connection from the **session pooler** for some minutes after
+the concurrency tests — the transaction pooler kept answering. That is the
+next thing to change, in the CI unit: test clients should use the transaction
+pooler like the app does, and keep the session pooler for migrations.
+
 **Known conditions from this unit.**
 
 - Each run of `tests/farmers.test.ts` appends roughly 250 permanent rows to

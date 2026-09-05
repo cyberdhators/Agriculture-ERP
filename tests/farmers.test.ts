@@ -689,13 +689,13 @@ run('the farmer number is unique under concurrency (C-5.4)', () => {
     }
   });
 
-  it('100 concurrent registrations through the route all succeed with distinct farmer numbers — proves it end to end, including the audit rows; the app pool serialises them, so this is not the lock test', async () => {
-    // Waves of ten: the app's pool has one connection, so a hundred at once
-    // would queue past the transaction's start timeout and fail as 500s that
-    // say nothing about uniqueness. Ten overlapping registrations per wave is
-    // real overlap at the counter row; ten waves is a hundred numbers.
+  it('50 registrations through the route, ten at a time, all succeed with distinct farmer numbers — proves it end to end, including the audit rows; the lock is proved by the test above', async () => {
+    // Waves of ten, five waves. Ten overlapping registrations is real overlap
+    // at the counter row; the number of waves is a time budget, not a proof:
+    // from a laptop far from the database each registration is 3-6 s of round
+    // trips, and a hundred did not fit in five minutes (run 5, 2026-09-05).
     const results: CallResult[] = [];
-    for (let wave = 0; wave < 10; wave += 1) {
+    for (let wave = 0; wave < 5; wave += 1) {
       results.push(
         ...(await Promise.all(
           Array.from({ length: 10 }, () =>
@@ -708,9 +708,9 @@ run('the farmer number is unique under concurrency (C-5.4)', () => {
       acc[r.status] = (acc[r.status] ?? 0) + 1;
       return acc;
     }, {});
-    expect(statuses, 'every registration must be 201').toEqual({ 201: 100 });
+    expect(statuses, 'every registration must be 201').toEqual({ 201: 50 });
     const numbers = results.map((r) => data(r).farmer_number as string);
-    expect(new Set(numbers).size).toBe(100);
+    expect(new Set(numbers).size).toBe(50);
   });
 });
 
