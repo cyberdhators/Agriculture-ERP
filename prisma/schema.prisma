@@ -102,6 +102,7 @@ model State {
   directoryEntries DirectoryEntry[]
   users    User[]
   officers Officer[]
+  farmers  Farmer[]
 
   @@map("state")
 }
@@ -116,6 +117,8 @@ model County {
 
   state  State   @relation(fields: [stateId], references: [id])
   payams Payam[]
+  farmers Farmer[]
+  farmerNumberCounter FarmerNumberCounter?
 
   /// Target of the composite key on payam that enforces C-2.3.
   @@unique([id, stateId], map: "county_id_state_id_key")
@@ -139,9 +142,12 @@ model Payam {
   directoryEntries DirectoryEntry[]
 
   officers Officer[]
+  farmers  Farmer[]
 
   /// Target of the composite key on officer.
   @@unique([id, stateId], map: "payam_id_state_id_key")
+  /// Target of farmer's second composite key (C-5.5): county must match. B5, migration 10.
+  @@unique([id, countyId], map: "payam_id_county_id_key")
   @@index([countyId], map: "payam_county_id_idx")
   /// Target of the composite key on every table below payam that carries a
   /// denormalised state_id. Added by migration 6 (P1); B5 onward reuse it.
@@ -347,6 +353,7 @@ model Officer {
   /// with the state of their payam.
   payam Payam @relation(fields: [payamId, stateId], references: [id, stateId], map: "officer_payam_state_consistent_fkey")
   state State @relation(fields: [stateId], references: [id], map: "officer_state_id_fkey")
+  farmersRegistered Farmer[]
 
   @@index([payamId], map: "officer_payam_id_idx")
   @@index([stateId], map: "officer_state_id_idx")
@@ -393,3 +400,98 @@ enum AuditActorType {
   @@map("audit_actor_type")
 }
 
+
+// -----------------------------------------------------------------------------
+// B5 — the farmer record (C-5). Migration 10.
+// -----------------------------------------------------------------------------
+
+enum Sex {
+  f
+  m
+
+  @@map("sex")
+}
+
+enum RegistrationSource {
+  officer
+  /// In the enum because the data model has it. No route produces it: a value, not a permission.
+  self
+
+  @@map("registration_source")
+}
+
+enum VerificationStatus {
+  pending
+  verified
+  rejected
+
+  @@map("verification_status")
+}
+
+/// One row per county; the row lock on the upsert is what makes farmer numbers unique (C-5.4).
+model FarmerNumberCounter {
+  countyId  String @id @map("county_id")
+  nextValue Int    @default(1) @map("next_value")
+
+  county County @relation(fields: [countyId], references: [id])
+
+  @@map("farmer_number_counter")
+}
+
+model Farmer {
+  /// Client-generated (C-5.12). No default.
+  id                 String             @id @db.Uuid
+  /// Stored at insert, never re-derived (C-5.4).
+  farmerNumber       String             @unique(map: "farmer_farmer_number_key") @map("farmer_number")
+  givenName          String             @map("given_name")
+  familyName         String             @map("family_name")
+  sex                Sex
+  yearOfBirth        Int                @map("year_of_birth")
+  phone              String
+  nationalId         String?            @map("national_id")
+  payamId            String             @map("payam_id")
+  countyId           String             @map("county_id")
+  stateId            String             @map("state_id")
+  registeredBy       String?            @map("registered_by") @db.Uuid
+  registrationSource RegistrationSource @default(officer) @map("registration_source")
+  verificationStatus VerificationStatus @default(pending) @map("verification_status")
+  mergedInto         String?            @map("merged_into") @db.Uuid
+  consentId          String             @map("consent_id") @db.Uuid
+  duplicateFlag      Boolean            @default(false) @map("duplicate_flag")
+  duplicateMatches   String[]           @default([]) @map("duplicate_matches") @db.Uuid
+  createdAt          DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime           @default(now()) @map("updated_at") @db.Timestamptz(6)
+  deletedAt          DateTime?          @map("deleted_at") @db.Timestamptz(6)
+  deletedBy          String?            @map("deleted_by") @db.Uuid
+
+  payam        Payam    @relation(fields: [payamId, stateId], references: [id, stateId], map: "farmer_payam_state_consistent_fkey")
+  county       County   @relation(fields: [countyId], references: [id], map: "farmer_county_id_fkey")
+  state        State    @relation(fields: [stateId], references: [id], map: "farmer_state_id_fkey")
+  registrar    Officer? @relation(fields: [registeredBy], references: [id], map: "farmer_registered_by_fkey")
+  mergedTarget Farmer?  @relation("FarmerMerge", fields: [mergedInto], references: [id], map: "farmer_merged_into_fkey")
+  mergedFrom   Farmer[] @relation("FarmerMerge")
+  /// The current consent. Deferred foreign key: both rows commit together (C-5.3).
+  consent      Consent  @relation("CurrentConsent", fields: [consentId], references: [id], map: "farmer_consent_id_fkey")
+  consents     Consent[] @relation("FarmerConsents")
+
+  @@index([payamId, verificationStatus, deletedAt], map: "farmer_payam_status_idx")
+  @@index([countyId], map: "farmer_county_id_idx")
+  @@map("farmer")
+}
+
+/// A record of an event. Never soft-deleted, never removed (data-model-extension §1.3).
+model Consent {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  farmerId    String    @map("farmer_id") @db.Uuid
+  textVersion String    @map("text_version")
+  language    Language
+  granted     Boolean
+  grantedAt   DateTime  @default(now()) @map("granted_at") @db.Timestamptz(6)
+  withdrawnAt DateTime? @map("withdrawn_at") @db.Timestamptz(6)
+
+  farmer    Farmer   @relation("FarmerConsents", fields: [farmerId], references: [id], map: "consent_farmer_id_fkey")
+  currentOf Farmer[] @relation("CurrentConsent")
+
+  @@index([farmerId], map: "consent_farmer_id_idx")
+  @@map("consent")
+}

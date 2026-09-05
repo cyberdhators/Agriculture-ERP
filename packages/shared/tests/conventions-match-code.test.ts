@@ -7,6 +7,7 @@ import {
   AUDIT_ACTIONS,
   ERROR_CODES,
   ERROR_MESSAGES,
+  FARMER_MESSAGES,
   PAGINATION_MESSAGES,
   PHONE_MESSAGES,
 } from '../src/index';
@@ -142,6 +143,7 @@ describe('the documented field reasons match the ones the code actually sends', 
   const reasonsInCode = [
     ...Object.values(PHONE_MESSAGES),
     ...Object.values(PAGINATION_MESSAGES),
+    ...Object.values(FARMER_MESSAGES),
     ERROR_MESSAGES.unknownField,
     ERROR_MESSAGES.bodyNotExpectedForm,
   ];

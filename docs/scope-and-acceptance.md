@@ -216,6 +216,127 @@ C-4.9  The log can be filtered by record, by actor and by date range.
 
 ---
 
+## C-5 — FARMER REGISTRATION AND PROFILING
+
+Deliverable: (c) farmer registration and profiling. Unit B5.
+
+Inception Report wording, section 5 (c): farmer registration and profiling.
+Shapes from `docs/data-model.md` section 1 (`farmer`, `consent`), section 3
+*Conflicts and duplicates*, and `docs/data-model-extension.md` §1.3, §1.4 and
+§10. Farmers are reached by SMS and do not use the system themselves (F-05;
+section 5.1 excludes a farmer-facing application).
+
+**Scoped to exclude farm boundary mapping**, which is part of deliverable (c)
+but has its own section, C-7, and its own unit, B7. Verification, approval,
+rejection and merging are C-6. Nothing here is farmer-facing.
+
+This is the first section under which real personal data enters the system.
+The people it describes did not choose to be in a database and cannot ask us
+to correct it.
+
+C-5.1  An extension officer registers a farmer in the officer's own payam, and
+       that farmer is in the officer's caseload. An administrator registers a
+       farmer by naming the registering officer, who must be an active officer
+       in that payam. No other role creates a farmer. Farmers do not register
+       themselves.
+
+C-5.2  A farmer's profile is given name, family name, sex, year of birth,
+       phone number, an optional national ID, and payam. Each is validated by
+       one definition in `packages/shared`, so a value the API refuses the
+       officer's app refuses too. The year of birth is not in the future and
+       not more than 120 years past. The phone number is a South Sudan mobile
+       number, stored and returned in one form. Names are stored exactly as
+       supplied (C-2.8).
+
+C-5.3  A farmer record cannot exist without a consent record that says consent
+       was granted, which text the farmer agreed to, and in which language.
+       The two are written together or not at all, and the database enforces
+       it rather than the application remembering. A registration without
+       consent is refused as a business rule not met, not as invalid input.
+
+C-5.4  Every farmer receives, at creation, a unique human-readable farmer
+       number derived from state, county and a sequence, of the form
+       `CE-JUB-000123`. It is stored as written, is never changed, never
+       re-derived and never reused, and two farmers can never receive the same
+       number however many are created at the same moment. It is the number on
+       a printed card.
+
+C-5.5  Every farmer carries a payam, and directly a county and a state, and the
+       state always equals the payam's state. The database enforces this as it
+       does for payam and county (C-2.3).
+
+C-5.6  At registration, and whenever a farmer's phone number or name changes,
+       the system looks for an existing farmer with the same phone number, or
+       with the same given and family name in the same payam. Names are
+       compared ignoring case, surrounding space and Unicode form; the stored
+       value is untouched. A match sets the farmer's duplicate flag and records
+       which existing farmers matched. **It warns. It never blocks the save.**
+       The warning carries the matched farmers' ids and nothing else about
+       them. Deciding what a duplicate is, is C-6.
+
+C-5.7  An officer reads the farmers they registered and no others. A supervisor
+       or read_only user reads the farmers in their assigned state. An
+       administrator reads all. A farmer outside the caller's scope is
+       indistinguishable from one that does not exist (C-3.5). Lists can be
+       filtered by verification status, payam, county, sex, registration date
+       range and duplicate flag, and are paged in a fixed order.
+
+C-5.8  A farmer's national ID is returned only to administrators and to the
+       officer who registered that farmer. To a supervisor or read_only user it
+       is absent from the response, not masked, because a masked field still
+       says one exists. This is data model open question 2, unanswered by
+       CORWADO; the narrower reading is our decision, recorded in
+       `docs/DECISIONS.md`, and can be widened on request.
+
+C-5.9  An officer may change a farmer they registered while that farmer's
+       verification is pending. An administrator may change any farmer at any
+       time. Nobody else changes a farmer. The farmer number and the registering
+       officer are never changed by anyone.
+
+C-5.10 Only an administrator removes a farmer, and removal is soft deletion. A
+       removed farmer appears in no list, count, export or report, and their
+       history remains readable in the audit log (C-4.5). Consent records are
+       never removed.
+
+C-5.11 Every registration, change and removal appends an audit event in the
+       same transaction as the change (C-4.4). Audit entries carry no name,
+       phone number or national ID (C-4.7).
+
+C-5.12 A registration carries a client-supplied identifier. A repeat of the
+       same identifier creates no second farmer and is answered as a conflict,
+       so a retried upload is never a second row. Synchronisation itself is
+       C-9.
+
+C-5.13 Every error response in this deliverable — 400, 403, 404, 409, 422,
+       500 — is free of any farmer's name, phone number or national ID.
+       Success responses carry personal data only inside the farmer record or
+       records that were requested, and never in a message, a warning, or a
+       field description. A test proves both halves for every error path in
+       the unit, rather than a reading of the code.
+
+C-5.14 Every farmer in staging, in tests and in seed data is invented. No real
+       farmer exists anywhere but production.
+
+### Notes for the builder
+
+**Uniqueness of the farmer number** is a per-county counter row updated with a
+row lock inside the insert transaction, with a UNIQUE constraint as backstop.
+Concurrent registrations in one county serialise on that row. The number is
+text, stored at insert, never derived from the current county code — a
+county code changing under the I-07 boundary list leaves printed cards valid.
+
+**Verification status** starts at `pending`. Every transition is C-6; this
+section only creates records in that state.
+
+**`registration_source`** keeps the value `self` from the data model. No route
+produces it. It is a value, not a permission.
+
+**The placeholder payam codes.** Until I-07 arrives, every farmer references a
+placeholder payam. What that costs if the codes are replaced rather than
+renamed is stated in `docs/PROJECT-STATE.md` when B5 lands.
+
+---
+
 ## C-13 — DIRECTORIES AND LEARNING LIBRARY
 
 **Deliverables (i), (j), (k) and (m). Unit P1.**
@@ -294,7 +415,6 @@ list. If yes, the officer role gets a write route and entries gain a
 Written one unit ahead of the build, not all at once, so that criteria reflect
 what the preceding unit actually produced.
 
-- C-5 — farmer registration, profiling, farmer number, duplicate warning — (c)
 - C-6 — verification and approval workflow — (c)
 - C-7 — farm boundary mapping — (c)
 - C-8 — extension visit recording — (d)

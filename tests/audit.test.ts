@@ -6,7 +6,12 @@ import * as officerItem from '../apps/web/app/api/officers/[id]/route';
 import * as officers from '../apps/web/app/api/officers/route';
 import * as userItem from '../apps/web/app/api/users/[id]/route';
 import * as users from '../apps/web/app/api/users/route';
-import { type AuditTx, audited, writeAudit } from '../apps/web/lib/api/audit';
+import {
+  type AuditTx,
+  IDLE_IN_TRANSACTION_TIMEOUT,
+  audited,
+  writeAudit,
+} from '../apps/web/lib/api/audit';
 import { officerAuthIdentifier } from '../packages/shared/src/identity';
 import { type TestPrincipal, createPrincipal, sweep } from './helpers/principals';
 import { call } from './helpers/request';
@@ -446,5 +451,23 @@ run('GET /api/audit: the forbidden matrix and the filters (C-4.8, C-4.9)', () =>
     expect((await call(audit, 'GET', { as: admin, query: { cursor: 'garbage' } })).status).toBe(
       400,
     );
+  });
+});
+
+run('an audited transaction cannot sit idle holding locks (found 2026-09-05)', () => {
+  it('sets a 30 s idle-in-transaction timeout inside the transaction, and the session outside keeps the role default', async () => {
+    const inside = await audited(prisma, async (tx) => {
+      const [row] = await tx.$queryRawUnsafe<{ v: string }[]>(
+        `SELECT current_setting('idle_in_transaction_session_timeout') AS v`,
+      );
+      return row?.v;
+    });
+    expect(inside).toBe(IDLE_IN_TRANSACTION_TIMEOUT);
+    // The role default is whatever the operator set (60 s on staging since
+    // 2026-09-05, 0 on a fresh project). The point is that SET LOCAL did not leak.
+    const [outside] = await prisma.$queryRawUnsafe<{ v: string }[]>(
+      `SELECT current_setting('idle_in_transaction_session_timeout') AS v`,
+    );
+    expect(outside?.v).not.toBe(IDLE_IN_TRANSACTION_TIMEOUT);
   });
 });

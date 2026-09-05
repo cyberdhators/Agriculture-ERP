@@ -91,6 +91,30 @@ present on a success, and is always an object or an array.
 
 ---
 
+### 3.2 Warnings sit beside `data`, never inside an error
+
+**Unparked in B5.** A write can succeed and still have something to say. That
+is a **warning**, and a warning is not an error: the status is `200` or `201`,
+`data` is the record, and `warnings` sits beside it.
+
+```json
+{ "data": { "id": "..." }, "warnings": { "duplicates": ["<uuid>", "<uuid>"] } }
+```
+
+- `warnings` is present **only when it has something in it**. An empty warning
+  is omitted, not sent as `{}` or `[]`.
+- It never appears in an error body. A response with `error` has no `warnings`.
+- Every key inside it is documented here, with its exact shape. Nothing else
+  may appear.
+
+| Key          | Shape                 | Emitted by                                    | Meaning                                                                                                                         |
+| ------------ | --------------------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `duplicates` | array of farmer `id`s | `POST /api/farmers`, `PATCH /api/farmers/:id` | Existing farmers that match by phone, or by name and payam (C-5.6). **Ids only.** The caller looks them up. The save succeeded. |
+
+> A warning carries no person. `duplicates` is a list of identifiers, never a
+> name, a phone number or a national ID — the same standing rule as errors,
+> for the same reason.
+
 ### 3.1 Every response is JSON
 
 Every response carries `Content-Type: application/json`, **including every
@@ -231,7 +255,7 @@ None of these is templated. Nothing is interpolated into any of them.
 sentence is written by the business rule that rejected the request, because a
 generic sentence would tell an officer nothing they could act on. Each rule
 states its own exact sentence in its own unit's documentation when it is built.
-No route emits 422 today.
+B5 emits it: see 5.2.1.
 
 #### 5.2.1 Business-rule sentences (409 and 422)
 
@@ -239,16 +263,20 @@ Section 5.2 says 422 has no generic sentence and each rule states its own. These
 are B3's, and they are pinned the same way: a test may assert them character for
 character.
 
-| Rule                           | Exact message                                                                                  |
-| ------------------------------ | ---------------------------------------------------------------------------------------------- |
-| `phone_already_registered`     | That phone number is already registered to another officer.                                    |
-| `account_already_exists`       | An account already exists for that address.                                                    |
-| `last_admin_cannot_be_removed` | This is the only administrator account. Create another administrator before removing this one. |
-| `last_admin_cannot_be_demoted` | This is the only administrator account. Create another administrator before changing this one. |
-| `cannot_remove_own_account`    | You cannot remove your own account.                                                            |
-| `cannot_change_own_role`       | You cannot change your own role.                                                               |
-| `payam_not_found`              | That payam could not be found.                                                                 |
-| `state_not_found`              | That state could not be found.                                                                 |
+| Rule                            | Exact message                                                                                  |
+| ------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `phone_already_registered`      | That phone number is already registered to another officer.                                    |
+| `account_already_exists`        | An account already exists for that address.                                                    |
+| `last_admin_cannot_be_removed`  | This is the only administrator account. Create another administrator before removing this one. |
+| `last_admin_cannot_be_demoted`  | This is the only administrator account. Create another administrator before changing this one. |
+| `cannot_remove_own_account`     | You cannot remove your own account.                                                            |
+| `cannot_change_own_role`        | You cannot change your own role.                                                               |
+| `payam_not_found`               | That payam could not be found.                                                                 |
+| `state_not_found`               | That state could not be found.                                                                 |
+| `consent_required`              | Consent must be recorded before a farmer can be registered.                                    |
+| `farmer_already_exists`         | A farmer with that identifier has already been registered.                                     |
+| `registering_officer_required`  | Name the extension officer who registered this farmer.                                         |
+| `registering_officer_not_found` | The registering officer could not be found in that payam.                                      |
 
 **A route names a rule; it never writes a sentence.** `conflict()` and
 `unprocessable()` take a key from this registry, not a string. That is how the
@@ -285,30 +313,57 @@ change.
 | `location.created`       |
 | `location.renamed`       |
 | `location.soft_deleted`  |
+| `farmer.created`         |
+| `farmer.updated`         |
+| `farmer.soft_deleted`    |
+| `consent.recorded`       |
 
 `before` and `after` hold **changed fields only**, never whole rows, and never a
-password, token, authentication identifier, national id, phone or email — those
-are stripped before the row is written, whatever a caller passes (C-4.6).
+password, token, authentication identifier, national id, phone, email, given
+name or family name — those are stripped before the row is written, whatever a
+caller passes (C-4.6, C-4.7).
 
 #### 5.2.3 Reasons inside `fields`
 
 The `fields` map carries a reason per failing field, not the message above.
 These are also exact.
 
-| Situation                            | Exact reason                                                                       |
-| ------------------------------------ | ---------------------------------------------------------------------------------- |
-| A field the request may not send     | This field is not recognised.                                                      |
-| The body is not an object at all     | The request was not sent in the expected form.                                     |
-| Page marker: not text                | The page marker must be text.                                                      |
-| Phone: nothing entered, or not text  | Enter a mobile number.                                                             |
-| Phone: contains a letter             | A mobile number contains digits only.                                              |
-| Phone: disallowed punctuation        | A mobile number may contain only digits, spaces and hyphens, and may begin with +. |
-| Phone: wrong or missing country code | Enter a South Sudan mobile number starting +211.                                   |
-| Phone: too short                     | A South Sudan mobile number has nine digits after +211. This one has too few.      |
-| Phone: too long                      | A South Sudan mobile number has nine digits after +211. This one has too many.     |
-| Page size: not a number, or blank    | The page size must be a number.                                                    |
-| Page size: has a decimal point       | The page size must be a whole number.                                              |
-| Page size: below one                 | The page size must be at least 1.                                                  |
+| Situation                             | Exact reason                                                                       |
+| ------------------------------------- | ---------------------------------------------------------------------------------- |
+| A field the request may not send      | This field is not recognised.                                                      |
+| The body is not an object at all      | The request was not sent in the expected form.                                     |
+| Page marker: not text                 | The page marker must be text.                                                      |
+| Phone: nothing entered, or not text   | Enter a mobile number.                                                             |
+| Phone: contains a letter              | A mobile number contains digits only.                                              |
+| Phone: disallowed punctuation         | A mobile number may contain only digits, spaces and hyphens, and may begin with +. |
+| Phone: wrong or missing country code  | Enter a South Sudan mobile number starting +211.                                   |
+| Phone: too short                      | A South Sudan mobile number has nine digits after +211. This one has too few.      |
+| Phone: too long                       | A South Sudan mobile number has nine digits after +211. This one has too many.     |
+| Page size: not a number, or blank     | The page size must be a number.                                                    |
+| Page size: has a decimal point        | The page size must be a whole number.                                              |
+| Page size: below one                  | The page size must be at least 1.                                                  |
+| Farmer id: missing                    | A registration must carry its identifier.                                          |
+| Farmer id: not a UUID                 | The identifier is not in the expected form.                                        |
+| Given name: missing or blank          | Enter the given name.                                                              |
+| Family name: missing or blank         | Enter the family name.                                                             |
+| Name: over 100 characters             | A name can be at most 100 characters.                                              |
+| Name: digits, symbols or emoji        | A name contains letters, spaces, apostrophes and hyphens only.                     |
+| Sex: not f or m                       | Choose f or m.                                                                     |
+| Year of birth: not a whole number     | The year of birth must be a whole number.                                          |
+| Year of birth: after this year        | The year of birth cannot be in the future.                                         |
+| Year of birth: over 120 years back    | The year of birth cannot be more than 120 years ago.                               |
+| National ID: wrong shape              | A national ID is 6 to 20 characters: digits and capital letters only.              |
+| Payam: missing                        | Choose a payam.                                                                    |
+| Registering officer: not a UUID       | The registering officer is not in the expected form.                               |
+| Consent: not an object                | Consent must be recorded as an object.                                             |
+| Consent text version: missing         | Record which consent text was read.                                                |
+| Consent text version: over 32 chars   | The consent text version can be at most 32 characters.                             |
+| Consent language: not en or ar-juba   | Choose en or ar-juba for the consent language.                                     |
+| Consent granted: not true or false    | Say whether consent was granted, true or false.                                    |
+| Filter: verification status unknown   | Choose pending, verified or rejected.                                              |
+| Filter: date not ISO 8601             | Give the date as an ISO 8601 timestamp.                                            |
+| Filter: duplicate flag not true/false | Choose true or false.                                                              |
+| Filter: date range inverted           | The end of the date range is before its start.                                     |
 
 The key beside each reason is the field name, per section 4.1. An unrecognised
 field named `nickname` therefore produces `{ "nickname": "This field is not
@@ -446,6 +501,24 @@ between the digits. Surrounding whitespace is ignored.
 > instead.
 
 > Every phone number in this document is fabricated.
+
+**Farmer numbers.** `CE-JUB-000123`: the county code, a hyphen, six digits.
+Allocated by the server at registration from a per-county counter, stored as
+text, never changed, never re-derived from the county code and never reused
+(C-5.4). It is the number on a printed card, so it must survive a county code
+being renamed under the I-07 boundary list — which is why it is stored rather
+than computed.
+
+**National IDs.** Optional. 6 to 20 characters, digits and capital letters only,
+no spaces: `^[0-9A-Z]{6,20}$`.
+
+> **Reserved, and provisional.** No official format for a South Sudan national
+> ID is documented anywhere available to this project. This shape is wide
+> enough not to refuse a real one and narrow enough to catch a phone number or
+> a name typed into the wrong box. It is corrected the day CORWADO supplies the
+> format, in `packages/shared` and here, in one change. Returned only to
+> administrators and to the officer who registered the farmer; absent, not
+> masked, for everyone else (C-5.8).
 
 **Money.** Minor units as integers, with an explicit currency field — never a
 float, never a bare number.
@@ -587,3 +660,37 @@ Filters, all optional, all validated before any query (C-4.9):
 Sorted `occurred_at` descending, then `id` descending; cursor-paginated per
 section 6. Rows for a soft-deleted record remain readable here after the record
 has left every list (C-4.5).
+
+---
+
+## 11. FARMERS
+
+`POST /api/farmers`, `GET /api/farmers`, `GET|PATCH|DELETE /api/farmers/:id`
+(C-5, unit B5). Every list rule in section 6 applies. Default sort:
+`created_at` descending, `id` descending.
+
+**Who may do what.**
+
+| Route                     | admin                                                            | supervisor | read_only | officer                                                                 |
+| ------------------------- | ---------------------------------------------------------------- | ---------- | --------- | ----------------------------------------------------------------------- |
+| `POST /api/farmers`       | yes — must name `registered_by`, an active officer in that payam | no         | no        | yes — own payam only; registered as themselves                          |
+| `GET /api/farmers`        | all                                                              | own state  | own state | own registrations only                                                  |
+| `GET /api/farmers/:id`    | all                                                              | own state  | own state | own registrations; anything else is `404`                               |
+| `PATCH /api/farmers/:id`  | yes                                                              | no         | no        | own registrations while `pending`; otherwise `403`; not theirs is `404` |
+| `DELETE /api/farmers/:id` | yes                                                              | no         | no        | no                                                                      |
+
+**List filters**, all optional, all in the query string: `verification_status`
+(`pending`, `verified`, `rejected`), `payam`, `county`, `sex` (`f`, `m`),
+`registered_from` and `registered_to` (ISO 8601, inclusive), `duplicate_flag`
+(`true`, `false`), plus `limit` and `cursor`.
+
+**Consent** is sent with the registration as `consent: { text_version,
+language, granted }`. Missing, or `granted: false`, is `422 consent_required`:
+the input was valid, the rule was not met.
+
+**The client identifier** `id` is mandatory on a registration and is the
+farmer's id thereafter. Sending the same `id` twice is `409
+farmer_already_exists` — the first registration stands, no second row exists.
+
+**`national_id`** is present in a response only for an administrator and for
+the officer who registered that farmer. For anyone else the key is absent.

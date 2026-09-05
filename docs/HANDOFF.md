@@ -168,7 +168,8 @@ copy of any of these is a bug.
 | ---- | ---- | ------------------------------------------------------------------- | --- | --------------------------------------- |
 | B2   | 1    | **Merged** — #15                                                    | #15 | —                                       |
 | B3   | 1    | **Merged**                                                          | #20 | —                                       |
-| B4   | 1    | **In review**                                                       | #24 | —                                       |
+| B4   | 1    | **Merged**                                                          | #24 | —                                       |
+| B5   | 1    | **In review** — draft, staging suite blocked by the pooler          | #32 | —                                       |
 | P1   | 2    | **Merged** — database, validation, seed, tests. Routes not started. | #17 | B3 for routes, B4 for the audit rows    |
 | UI   | 2    | First portal skin — **closed unmerged** (#18), kept as reference    | #18 | — (superseded by UI-2)                  |
 | UI-2 | 2    | **PR open** — "The Register" re-skin + Farmers screens on fixtures  | #23 | Lane 1 review; C-5 farmer-number format |
@@ -535,5 +536,43 @@ know.
   Whoever first reads a Vercel-sent event in Sentry closes that list.
 - #25 and #26 merged. #29 (Lane 2, farmer flow) has no HANDOFF entry and no
   C-18 in `scope-and-acceptance.md`; noted for the user, not touched.
+
+— Monkon-Claude
+
+### 2026-09-05 — Lane 1 — B5, the farmer record, built on `feat/b5-farmer-core`
+
+- **C-5 is written** (confirmed by the user) and B5 is built against it:
+  migration 10 (`farmer`, `consent`, `farmer_number_counter`, `farmer_active`),
+  five routes under `/api/farmers`, `packages/shared/src/farmer.ts`, four audit
+  actions, `warnings` on the success envelope (CONVENTIONS §3.2), CONVENTIONS
+  §11 for who-may-do-what and the filters.
+- **Lane 2: the Farmers screens can now swap fixtures for these routes.** The
+  response shape is `present()` in `apps/web/lib/api/farmers.ts` and the rules
+  are CONVENTIONS §11. Three things your fixtures may not expect: `national_id`
+  is **absent** (not null) for supervisor and read-only sessions; a create or
+  patch can carry `warnings.duplicates` (ids only) beside `data`; registration
+  requires `consent` and a client-generated `id`.
+- **Shared objects added** (reuse, do not recreate): enums `sex`,
+  `registration_source`, `verification_status`; `payam` UNIQUE `(id, county_id)`;
+  `FARMER_MESSAGES`, `createFarmerSchema`, `patchFarmerSchema`,
+  `farmerFilterSchema`, `nameMatchKey`, `formatFarmerNumber` in `packages/shared`.
+- The `sweep()` test helper now removes test farmers, consents, counter rows
+  and the `EE-ZZT` fixtures; every DB test file calls it, nothing to change.
+- Next for Lane 1: B6, verification and escalation — once C-6 is written.
+
+— Monkon-Claude
+
+### 2026-09-05 — Lane 1 — B5 diagnosis closed; one defect handed to B3
+
+- Four causes of failed suite runs found and fixed in sequence (connect
+  timeout, app-client pool in tests, abandoned transactions holding the
+  counter row, test concurrency). All in `PROJECT-STATE.md` and `DECISIONS.md`.
+- **Defect for B3 (Lane 1 owns it):** `requireRole` turns a Supabase Auth
+  service error into 401 _Sign in to continue_. Recorded in `PROJECT-STATE.md`.
+- Staging role settings applied by the user: idle-in-transaction 60 s, lock
+  timeout 10 s. Production must get them by hand at B11 (checklist in
+  `PROJECT-STATE.md`).
+- #32 leaves draft so CI runs the suite on its own runner. C-5.13 and the
+  1,000-allocation test stay PARTIAL until that run says otherwise.
 
 — Monkon-Claude

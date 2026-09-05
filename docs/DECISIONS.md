@@ -902,3 +902,246 @@ preview, read once, closes the whole list instead of items being rediscovered
 one at a time. The username path is the first entry; the `environment` tag
 falling to `VERCEL_ENV` (`preview`, never `staging`) is the one most likely to
 surprise.
+
+## B5 — `self` is a value in the enum, not a permission
+
+`registration_source` keeps `self` because the data model has it and
+Inception Report 5.1 may one day be revised. **No route produces it.** A
+future session reading the enum must not read it as "self-registration is
+allowed": it is allowed nowhere, and a farmer-facing application is on the
+unresolved list in `CLAUDE.md`. The database adds a CHECK that an
+officer-registered farmer always has a registering officer, so the only value
+any route can write is fully constrained.
+
+## B5 — the national id is returned to two people, and absent for everyone else
+
+Data model open question 2 — who may see national IDs — is unanswered by
+CORWADO. We chose the narrower reading: an administrator and the officer who
+registered that farmer. For a supervisor or read-only user the key is
+**absent, not masked**, because a masked field still tells you one exists.
+Recorded as our decision rather than their instruction, so it can be widened
+on request rather than discovered. Now criterion C-5.8, not only behaviour.
+
+## B5 — an administrator must name the registering officer
+
+A farmer in nobody's caseload is a farmer nobody visits. Caseload means "the
+records this officer registered", so an administrator registering a farmer
+names an active officer in that payam as `registered_by`, and the field is
+immutable thereafter (trigger, both directions tested).
+
+## B5 — how the farmer number cannot collide
+
+A per-county counter row, incremented by an upsert inside the registration's
+transaction. The upsert's row lock serialises concurrent registrations in the
+same county; nothing else is needed and nothing else is relied on. The UNIQUE
+on `farmer_number` is a backstop. The number is stored as text at insert and
+never re-derived, so a county code changing under I-07 leaves printed cards
+valid — storing rather than deriving is the important half. Alternative
+considered: one Postgres sequence per county, created on the fly. More moving
+parts, no gain.
+
+## B5 — consent and the farmer commit together, and consent is never removed
+
+Both `farmer.consent_id` and `consent.farmer_id` are NOT NULL with foreign keys
+DEFERRABLE INITIALLY DEFERRED, so the pair commits together or not at all —
+the database enforces it, not a route remembering. A test inserts a farmer
+without its consent row and the commit is refused. A consent that was not
+granted can only be a withdrawn one (CHECK): a farmer who declines is not
+recorded at all. There is **no trigger refusing DELETE on consent**, unlike
+`audit_event`: the test sweep must remove fabricated farmers and their consents
+as table owner, and a trigger would block it. "Never removed" is enforced by
+there being no code path that deletes one, and no role but the owner that can.
+
+## B5 — an officer changing another officer's farmer gets 404, not 403
+
+The brief's test list said 403. C-3.5 and C-5.7 say a farmer outside the
+caller's scope is indistinguishable from one that does not exist, and a 403
+would tell an officer that another officer's farmer exists at that id. So:
+not theirs → 404, exactly the read answer. 403 is reserved for the farmer
+that **is** theirs but is no longer pending (C-5.9), where existence is
+already known. Both are tested.
+
+## B5 — the concurrency test is 1,000 at the lock and 100 through the route
+
+The brief asked for 1,000 concurrent inserts. Two facts shaped the test:
+every registration appends two permanent audit rows, so 1,000 through the
+route would grow `audit_event` by 2,000 rows per run, forever; and the app's
+connection pool has one connection, so route-level "concurrency" is
+serialised before it reaches the database and proves nothing about the lock.
+So: 1,000 concurrent allocations on one county's counter row over ten real
+connections (proves the lock; the sweep removes the test county so nothing
+grows), and 100 concurrent registrations through the route (proves the whole
+path, 200 audit rows per run, recorded in PROJECT-STATE). Each test's name
+says what it proves. If the lock test fails on "can't reach database", that
+is the pooler, and the rule is to say so, not retry until green.
+
+## B5 — the audit log now strips given_name and family_name
+
+C-4.7 says a farmer's name never enters the audit log. `auditSafe` gained
+`given_name` and `family_name`; staff `name` stays recorded, as B4 decided,
+because a staff member is not a farmer and has one name field, not two. The
+farmer routes also pass only value-shaped fields to the audit, and a test reads
+the rows back to prove no name, phone or national id is in them.
+
+## B5 — a test county and payam exist only during a run
+
+The placeholder location list has payams only under Juba county. The
+out-of-state tests (a supervisor in Central Equatoria must get 404 for a
+farmer in Eastern Equatoria) need a payam in another state, so the test creates
+`EE-ZZT` / `EE-ZZT-TST` in `beforeAll` and the sweep removes them, farmers and
+counter row first. When I-07 arrives and every state has payams, the fixture
+can go.
+
+## 2026-09-05 — The "flaky pooler" was Prisma's five-second connect timeout
+
+From B2 onward, `PROJECT-STATE.md` carried a known condition: the session
+pooler "drops connections intermittently, one attempt in three; retry the
+command". The serial-test rule, the reseed's retries and five failed suite
+runs on 2026-09-05 were all built on it. It was a wrong diagnosis, and it
+survived three units because each failure was read as confirmation rather
+than measured.
+
+**The measurement.** Every Prisma failure, on both poolers, ended at 5.01 to
+5.02 seconds with `Can't reach database server`. Successes ended anywhere from
+2.4 to 6.3 seconds. A raw protocol handshake, and `psql`, reached the poolers
+every time — slowly, 1.3 to 8.7 seconds. Prisma's default `connect_timeout`
+is 5 seconds. With `connect_timeout=30` it connected three of three.
+
+**What changes.** `connect_timeout=30` on both URLs, in the operator's file,
+in `.env.example`'s documented shapes, and appended in code by
+`vitest.config.mts` so a test never depends on the operator's file. The serial
+test rule is re-tested rather than carried forward; the result is in
+`PROJECT-STATE.md`. "Retry the command" is withdrawn as advice: the next
+handshake sometimes beat five seconds, which is why it looked like it worked.
+
+**The serial-test rule, re-tested.** With the timeout fixed, the suite in
+parallel produced zero connection or pool errors and five files of
+cross-contamination: every database test file creates `zztest` principals and
+calls one global `sweep()`, so files deleted each other's accounts mid-run.
+The rule stays, as a fixture-isolation rule. It was never about connection
+slots.
+
+**And a second timeout behind the first.** Once connections stopped failing at
+five seconds, the app's client — one connection, as production wants — queued
+concurrent route calls past Prisma's ten-second pool wait and answered 500.
+The test process now runs that client with ten connections and a sixty-second
+wait, a deliberate difference from production, recorded in `PROJECT-STATE.md`.
+
+**The lesson, stated so it is not relearned.** A failure that always takes the
+same number of seconds is a timeout, not a fault. Read the clock before
+reading the message.
+
+## 2026-09-05 — A write transaction may not sit idle holding locks
+
+Seen in `pg_stat_activity` during B5's concurrency test: a server session idle
+in transaction for sixteen minutes, holding the farmer-number counter row,
+with registrations queued behind it until Postgres cancelled them at two
+minutes. The client had abandoned the transaction — Prisma gives up starting
+one after `maxWait` — but the pooler kept the server session, and the role
+has no idle-in-transaction timeout. The sessions outlived the client process.
+
+`audited()` now issues `SET LOCAL idle_in_transaction_session_timeout = '30s'`
+as the first statement of every write transaction. It is scoped to that
+transaction, changes nothing outside it, and means the field on a printed
+card can never be blocked by a dead client. A test proves it is set inside and
+not set outside. The cause on the test side — launching a thousand
+interactive transactions at a pool of ten — is fixed by bounding what is in
+flight to the pool; ten contending transactions prove the row lock as well as
+a thousand did.
+
+Not done, and put to the user: the same timeout, and a `lock_timeout`, at the
+role level on Supabase, which would also cover any path that does not use
+`audited()`. That is a database setting on CORWADO's project, not code.
+
+## 2026-09-05 — Two role settings on staging, because of run 3
+
+Applied by the user on the staging project's `postgres` role, alongside the
+existing `search_path`:
+
+- `idle_in_transaction_session_timeout = 60s`
+- `lock_timeout = 10s`
+
+The reason is run 3 of the B5 suite (next entry): a server session sat idle
+in transaction for sixteen minutes holding the farmer-number counter row
+because the role had neither setting, so nothing on the server ever ended it.
+The code-level guard in `audited()` (30 s, transaction-scoped) covers audited
+writes; these two cover every path, including scripts and any future code
+that does not go through it.
+
+**Production does not have them.** The production project is created new at
+B11, and a fresh project carries neither setting. They are applied by hand,
+not by migration, so nothing in the repository will carry them across. This
+entry is the reminder, and B11's checklist in `PROJECT-STATE.md` names them:
+this is exactly the kind of thing that gets forgotten when production finally
+holds real data.
+
+## 2026-09-05 — Run 3 was a production failure mode, not a test problem
+
+What happened in the test is what happens in the field. An officer's request
+reaches a route, the registration transaction takes the county counter row,
+and then the client dies — the phone loses signal, the serverless function is
+killed, the process crashes. The pooler keeps the server session alive with
+the transaction open. **Every registration in that county queues behind the
+held row**, and before this week each would wait until Postgres's two-minute
+statement timeout and then fail; the row stays held until someone notices.
+One dead request, one county, no registrations.
+
+**What now prevents it.**
+
+- `audited()` sets `idle_in_transaction_session_timeout = 30s` inside every
+  write transaction: a dead client's session is ended by the server within
+  30 s and the row is released.
+- The role's `idle_in_transaction_session_timeout = 60s` does the same for
+  any path that does not use `audited()`.
+- The role's `lock_timeout = 10s` means a registration waiting on the row
+  fails after ten seconds with a clear error instead of hanging for two
+  minutes; the officer's app retries a failed upload by design (C-5.12: same
+  id, no second row).
+- The test that produced the condition — a thousand transactions launched at
+  a pool of ten — now keeps ten in flight.
+
+**What still would not prevent it.**
+
+- A client that is alive and running a slow statement inside the
+  transaction is _active_, not idle, and neither idle timeout applies. The
+  backstop is `statement_timeout` at two minutes; during that window every
+  registration in the county fails at ten seconds. No statement in the
+  registration should take seconds, and none has, but nothing enforces it.
+- The exposure is per county by design: one counter row per county serialises
+  every registration there. At field scale — tens per county per day — this
+  is invisible; it would matter only if the design were reused for something
+  written thousands of times a minute.
+- Nothing here helps if the pooler itself keeps a session that Postgres has
+  already ended; that has not been observed.
+- The settings are on the role, on one project. Production gets them only if
+  someone applies them at B11.
+
+## 2026-09-05 — A false positive was removed from history, not allowlisted
+
+CI's secret scan reads every commit on every fetched ref and has no allowlist
+(CLAUDE.md §4). B5's branch failed it on every push from its first one. The
+cause: two documented connection-string shapes written into `.env.example`
+as full URLs with a placeholder user and password, which matched the
+repository's own rule for a Postgres URL carrying a password; and, later, a
+`PROJECT-STATE.md` note that quoted the same shape and added a third finding.
+Rewording the current tree fixed the tree and changed nothing about the
+verdict, because the earlier commits still carried the text.
+
+The branch was squashed to one commit on top of `main` — previous head
+**`7a1540f`** — so that no reachable diff contains the shape, and
+force-pushed. That is the non-allowlist fix: the pattern is gone, the rule is
+untouched, and the decision the user reserves, whether a false positive may
+be allowlisted, was not taken. The pull request is squash-merged anyway, so
+nothing that would have reached `main` was lost; the per-commit reasoning is
+in this file and in the pull request body.
+
+**The rule that follows, because this will recur.** Never write an example
+connection string that carries a password-shaped segment, even as a
+placeholder — not in `.env.example`, not in a document, not in a comment.
+Describe the shape in words: which host, which port, which query parameters.
+The scanner cannot tell a placeholder from a credential, and it should not
+have to. Now a standing rule in `PROJECT-STATE.md`.
+
+A note for the next person: a git-mode scan with the x86 build on an
+Apple-silicon machine checks nothing. The native arm64 build reproduces CI
+exactly.

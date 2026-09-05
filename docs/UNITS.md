@@ -23,7 +23,7 @@ saying "parked until B3" named a thing a reader could not look up.
 | **B2**   | Locations: state, county, payam     | Monkonmlah | Not started     |
 | **B3**   | Identity, roles, `requireRole`, RLS | Alieu      | Not started     |
 | **B4**   | Audit log, append-only              | Monkonmlah | Not started     |
-| **B5**   | Farmer core, consent, soft delete   | Alieu      | Not started     |
+| **B5**   | Farmer core, consent, soft delete   | Monkonmlah | In progress     |
 | **B6**   | Verification and escalation         | Monkonmlah | Not started     |
 | **B7**   | Farm boundaries and PostGIS         | Alieu      | Not started     |
 | **B8**   | Visit notes and attachments         | Monkonmlah | Not started     |

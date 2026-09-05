@@ -56,6 +56,12 @@ export type RouteResult =
       readonly data: unknown;
       readonly status?: number;
       readonly headers?: Record<string, string>;
+      /**
+       * CONVENTIONS §3.2. A warning is not an error: the write succeeded, and
+       * `warnings` sits beside `data`, never inside an error body. Present only
+       * when there is something to say.
+       */
+      readonly warnings?: Warnings;
     }
   | {
       readonly kind: 'page';
@@ -75,6 +81,24 @@ export const ok = (data: unknown, headers?: Record<string, string>): RouteResult
 
 /** 201 with the created object. CONVENTIONS section 3. */
 export const created = (data: unknown): RouteResult => ({ kind: 'data', data, status: 201 });
+
+/** The documented warning shapes. Pinned in CONVENTIONS §3.2. */
+export interface Warnings {
+  /** Ids of existing farmers that matched (C-5.6). Ids only — the caller looks them up. */
+  readonly duplicates?: readonly string[];
+}
+
+const withWarnings = (result: RouteResult, warnings: Warnings): RouteResult => {
+  if (result.kind !== 'data') return result;
+  const nonEmpty = Object.fromEntries(
+    Object.entries(warnings).filter(([, v]) => Array.isArray(v) && v.length > 0),
+  );
+  return Object.keys(nonEmpty).length > 0 ? { ...result, warnings: nonEmpty } : result;
+};
+export const okWith = (data: unknown, warnings: Warnings): RouteResult =>
+  withWarnings(ok(data), warnings);
+export const createdWith = (data: unknown, warnings: Warnings): RouteResult =>
+  withWarnings(created(data), warnings);
 
 /** A list. `{ data: [...], page: { cursor, hasMore } }` -- section 6.1. */
 export const paged = (
@@ -128,7 +152,11 @@ function respond(result: RouteResult, correlationId: string): NextResponse {
   if (result.kind === 'page') {
     return NextResponse.json({ data: result.data, page: result.page }, { status: 200, headers });
   }
-  return NextResponse.json({ data: result.data }, { status: result.status ?? 200, headers });
+  const body =
+    result.warnings !== undefined
+      ? { data: result.data, warnings: result.warnings }
+      : { data: result.data };
+  return NextResponse.json(body, { status: result.status ?? 200, headers });
 }
 
 function wrap<TBody>(definition: RouteDefinition<TBody>): NextRouteHandler {
