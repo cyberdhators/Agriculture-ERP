@@ -747,15 +747,32 @@ GitHub rather than copied. Grouped by who closes it.
 13. Confirming the Sentry IP-storage setting is on, by the next event.
 14. `SENTRY_ENVIRONMENT` in Vercel for preview and production.
 
+15. **Caseload reassignment — a growing hole, not a footnote.** Today a
+    farmer whose registering officer leaves is **frozen**: they cannot be
+    resubmitted if rejected (C-6.5 needs the registering officer), cannot
+    have a farm mapped (C-7 admits only an officer with the farmer in their
+    caseload), and after B8 cannot be visited. Nobody can act on that farmer
+    until an administrator reassigns them, and reassignment does not exist.
+    Every unit that binds field work to the registering officer widens it.
+    **Size, if it earns a unit:** one migration adding a `caseload_officer_id`
+    column that defaults to the registering officer, so `registered_by` stays
+    the immutable historical fact (C-5.9) and the caseload becomes a
+    reassignable pointer; the scope helper reads the new column; the three
+    "registering officer" checks (resubmit, mapping, visits) read it too; one
+    administrator route to reassign, with an audit action and a rule for who
+    may do it — administrator only, or a supervisor within their state, your
+    call; CONVENTIONS and the matrix. About a day. The decision: before B9,
+    or after the backend.
+
 **Lane 1 owes, in a unit or as housekeeping:**
 
-15. ~~The four foreign keys on P1's tables~~ — landed by migration 13 in this
+16. ~~The four foreign keys on P1's tables~~ — landed by migration 13 in this
     housekeeping, after being "owed" in three consecutive units.
-16. Production itself: created new at B11 with the checklist below; nothing
+17. Production itself: created new at B11 with the checklist below; nothing
     exists yet, and the credential boundary stays as recorded.
-17. `prisma migrate diff` noise for deferrable and hand-added keys: accepted;
+18. `prisma migrate diff` noise for deferrable and hand-added keys: accepted;
     `migrate status` is the gate.
-18. Per-run fixture isolation for tests, if serial runs ever become the
+19. Per-run fixture isolation for tests, if serial runs ever become the
     bottleneck (B5.5 chose the lock).
 
 **Known and accepted, not open:** staging growth per run; the ten-in-flight
