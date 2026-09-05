@@ -1317,8 +1317,10 @@ column to such a table recreates every such view in the same migration
 projects a subset, or aggregates, is not named after its table.
 
 **The test.** `tests/views-track-tables.test.ts` discovers every view in the
-schema, pairs each with a table by longest name prefix, refuses any view it
-cannot pair, and compares the column lists both directions. It runs in every
+schema, pairs each with a table by longest name prefix, and compares the
+column lists both directions. A view not named after any table is an
+aggregate or a subset by convention (`area_totals_v`, B7) and is exempt;
+the rule is about the name. It runs in every
 full suite run, locally and in CI.
 
 ## 2026-09-05 — The drift-test premise came from the user, and checking it found it false
@@ -1370,3 +1372,53 @@ this: a total copied from the view it is meant to check is worth nothing.
 The expected value comes from a second, independent path — a formula, a
 hand count of fixture rows, a known answer — never from the query, view or
 function being verified.
+
+## B7 — decisions in the farm unit
+
+**Accuracy grades: good at 10 m or better, poor over 10 to 30, unusable over 30.** Ours, taken because no threshold exists in any document, to be corrected
+when CORWADO or the field says otherwise. A consumer GPS under tree cover
+routinely reports 15 to 20 metres, so "poor" will be common rather than
+exceptional; the unusable threshold is the one that actually matters. The
+numbers are constants in `packages/shared` and the database CHECK is
+generated from them.
+
+**Four distinct vertices, the closing repeat not counted; a triangle is
+refused.** A three-sided plot exists in reality, but a three-point capture is
+far more likely an officer who stopped walking early, and the refusal says
+so in words they can act on.
+
+**The three refusals are sentences for a field, never the database's words.**
+Closure and the vertex count are judged in the module before the database,
+because the GeoJSON parser refuses an open ring with its own message;
+simplicity and validity are judged by PostGIS and mapped to one sentence.
+
+**Winding order is normalised.** A phone walking a plot produces either
+orientation depending on which way the officer walked. The stored ring is
+forced counter-clockwise on insert (`ST_ForcePolygonCCW`), the area is taken
+on the geography and is positive either way, and a test maps the same plot
+both ways and gets the same area. Nothing is refused for orientation and
+nothing goes negative.
+
+**Seasons: a four-digit year, a hyphen, `main` or `second`.** Ours until
+CORWADO confirms local names. A season the system cannot compare is a season
+B10 cannot report on.
+
+**History is kept, never overwritten, within a season as well as across
+seasons** (data model open question 6, unanswered). Discarding a boundary is
+irreversible; season-on-season comparison is what a donor report about land
+under cultivation eventually wants; and adding history later would mean
+migrating farms that already have visits and crops attached. Within a season
+the same reasoning applies and re-mapping after a poor reading is the
+common case, so a sequence with the latest current, one current per farm per
+season as a partial unique index. The reversible reading is our decision and
+can be narrowed on request.
+
+**Only an officer with the farmer in their caseload maps, and the schema says
+so.** The mapping officer column references the officer table; an
+administrator cannot be recorded as a mapper at all. The record tells
+"someone walked this" from "someone drew this" by shape, not by a flag. An
+administrator reads everything, including coordinates, and removes a farm
+softly; never creates, re-maps or re-grades.
+
+**Creating a farm is mapping it.** The first boundary comes with the farm;
+a farm without a boundary is not a thing an officer can record.

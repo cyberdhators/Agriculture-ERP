@@ -172,6 +172,7 @@ copy of any of these is a bug.
 | B5   | 1    | **Merged** — #32; C-5.13 and C-5.4 proven by run 5, locally         | #32 | —                                       |
 | B5.5 | 1    | **Merged** — #33; first CI database run 23/23                       | #33 | —                                       |
 | B6   | 1    | **Merged** — #34; 544/544 locally, 27/27 files in CI                | #34 | —                                       |
+| B7   | 1    | **In progress** — C-7 written; built on `feat/b7-farm-postgis`      | —   | —                                       |
 | P1   | 2    | **Merged** — database, validation, seed, tests. Routes not started. | #17 | B3 for routes, B4 for the audit rows    |
 | UI   | 2    | First portal skin — **closed unmerged** (#18), kept as reference    | #18 | — (superseded by UI-2)                  |
 | UI-2 | 2    | **PR open** — "The Register" re-skin + Farmers screens on fixtures  | #23 | Lane 1 review; C-5 farmer-number format |
@@ -624,5 +625,23 @@ know.
   of it; a migration adding a column recreates the view. `DECISIONS.md`.
 - The list of everything open across the backend before B7 is in
   `PROJECT-STATE.md`, _Open across the backend before B7_.
+
+— Monkon-Claude
+
+### 2026-09-05 — Lane 1 — B7, farm boundary mapping, built on `feat/b7-farm-postgis`
+
+- C-7 is written and confirmed. Migration 14 on staging: farms, boundaries
+  with PostGIS geography, crop declarations, `farm_active`, `farm_mapped_v`,
+  `area_totals_v`. Eight routes under `/api/farmers/:id/farms`, `/api/farms/…`.
+- **Lane 2:** the farm screens have routes. A farm carries `boundaries`
+  (current, one per season) and `crops`; `boundary`, `centroid` and
+  `gps_accuracy_m` are **absent** for supervisor and read-only sessions and
+  present for administrators and the mapping officer; `grade` and `area_ha`
+  are for everyone; the map is `GET /api/farms/geojson`, a paged
+  FeatureCollection, supervisor and administrator only. Only an officer can
+  create, re-map or declare crops; an administrator's UI must not offer those.
+- Shared objects added: `ACCURACY_THRESHOLDS_M`, `gradeAccuracy`,
+  `SEASON_NAMES`, `seasonSchema`, `geoJsonPolygonSchema`, `createFarmSchema`,
+  `addBoundarySchema`, `declareCropsSchema`; enum `accuracy_flag`.
 
 — Monkon-Claude

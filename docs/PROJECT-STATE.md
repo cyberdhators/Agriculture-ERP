@@ -803,6 +803,24 @@ owner said they were merging it and it had not happened in thirty minutes.
 Three earlier merges had been made on the owner's instruction; this one
 generalised from that precedent. No harm done, and it would have been merged
 — but **merges are the owner's action, and precedent is not permission.**
+## B7 — FARM BOUNDARY MAPPING (2026-09-05)
+
+**What exists.** Migration 14: `farm`, `farm_boundary`, `crop_declaration`,
+PostGIS geography columns schema-qualified, GIST indexes, the partial unique
+index that makes one-current-per-farm-per-season a database fact, the
+accuracy CHECK generated from the shared thresholds, `farm_active` and
+`farm_mapped_v` (whole-table filters) and `area_totals_v` (an aggregate,
+not named after a table, by the B6 rule), five audit keys. One geometry
+module writes every line of spatial SQL. Eight routes. CONVENTIONS §13.
+
+**If I-07 replaces the placeholder payam codes.** A farm carries its own
+`payam_id`, `county_id` and `state_id`, denormalised from its farmer at
+creation and enforced by the same two composite keys the farmer carries. The
+re-pointing migration named in the B5 section gains three columns:
+`farm.payam_id`, `.county_id`, `.state_id`, re-pointed in step with the
+farmer's, and the reseed's dependant check will name `farm` as a dependant of
+a payam alongside `farmer` and `officer`. Boundaries and crops reference the
+farm by id and need nothing. Farmer numbers still keep their old prefix.
 
 ## B11 CHECKLIST — WHAT A FRESH PRODUCTION PROJECT MUST BE GIVEN BY HAND
 

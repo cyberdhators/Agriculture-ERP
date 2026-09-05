@@ -35,6 +35,11 @@ export const AUDIT_ACTIONS = [
   'farmer.rejected',
   'farmer.merged',
   'farmer.resubmitted',
+  'farm.created',
+  'farm.boundary_added',
+  'farm.boundary_superseded',
+  'farm.crops_declared',
+  'farm.soft_deleted',
 ] as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];
@@ -75,6 +80,11 @@ const NEVER_RECORDED = new Set([
   'family_name',
   // C-6.3: the rejection note is prose about a named person. Never in the log.
   'note',
+  // C-7.10: a boundary is a location of a named person. Never in the log.
+  'boundary',
+  'centroid',
+  'coordinates',
+  'geometry',
   'phone',
   'alt_phone',
   'email',

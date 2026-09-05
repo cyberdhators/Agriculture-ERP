@@ -92,6 +92,16 @@ export const RULE_MESSAGES = {
   merge_target_not_found: 'The farmer named as the original could not be found.',
   merge_target_not_eligible: 'The farmer named as the original cannot receive a merge.',
   merge_across_states: 'A farmer cannot be merged into a record in another state.',
+  // B7 (C-7.2). Written for someone standing in a field, never the database's words.
+  boundary_not_closed:
+    'The boundary does not close: the last point must be the first point again. Go back to where you started and finish the shape.',
+  boundary_crosses_itself:
+    'The boundary crosses itself. Walk the edge of the plot in one direction without cutting across it.',
+  boundary_too_few_points:
+    'A boundary needs at least four corners. Keep walking to the next corner before you finish.',
+  farm_already_exists: 'A farm with that identifier has already been recorded.',
+  boundary_recorded_concurrently:
+    'Another boundary was recorded for this farm and season at the same moment. Load the farm again before re-mapping.',
 } as const;
 
 export type RuleKey = keyof typeof RULE_MESSAGES;

@@ -175,6 +175,18 @@ export async function sweep(prisma: PrismaClient): Promise<void> {
      SELECT auth_user_id FROM public."officer" WHERE name LIKE '${TEST_PREFIX}%'`,
   );
   for (const row of rows) await deleteAccount(row.auth_user_id);
+  // B7: farms hang off farmers and officers; boundaries and crops hang off farms.
+  await prisma.$executeRawUnsafe(
+    `DELETE FROM public.crop_declaration WHERE farm_id IN
+       (SELECT f.id FROM public.farm f JOIN public.farmer fr ON fr.id = f.farmer_id WHERE fr.family_name LIKE '${FARMER_TEST_FAMILY}%')`,
+  );
+  await prisma.$executeRawUnsafe(
+    `DELETE FROM public.farm_boundary WHERE farm_id IN
+       (SELECT f.id FROM public.farm f JOIN public.farmer fr ON fr.id = f.farmer_id WHERE fr.family_name LIKE '${FARMER_TEST_FAMILY}%')`,
+  );
+  await prisma.$executeRawUnsafe(
+    `DELETE FROM public.farm WHERE farmer_id IN (SELECT id FROM public.farmer WHERE family_name LIKE '${FARMER_TEST_FAMILY}%')`,
+  );
   // B6: verification events reference farmers, staff users and officers; they
   // go before any of those. A record of an event is never deleted in the
   // application; the sweep is the owner removing fabricated rows.
