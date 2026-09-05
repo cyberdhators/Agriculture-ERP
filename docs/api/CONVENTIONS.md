@@ -23,6 +23,12 @@ boundary.
 
 ## 2. HOW A SESSION IS PRESENTED
 
+> **B6.5.** When the sign-in service cannot be consulted — unreachable, a
+> deadline of ten seconds, a 5xx or 429 — the answer is `503 auth_unavailable`,
+> never `401`. A 401 says the session is bad and sends an officer to re-enter
+> credentials that were never wrong; a 503 says try again. The service's own
+> 400, 401, 403 and 404 mean the token is not a session and remain `401`.
+
 | Client                       | Credential                             |
 | ---------------------------- | -------------------------------------- |
 | Web portal                   | Supabase Auth session cookie           |
@@ -199,6 +205,7 @@ Exact. No discretion.
 | 415    | `unsupported_media_type` | A request with a body did not send `application/json`.                                                                 | Yes            |
 | 422    | `unprocessable`          | Input was valid but violates a business rule.                                                                          | Yes            |
 | 500    | `internal_error`         | Unexpected.                                                                                                            | Yes            |
+| 503    | `auth_unavailable`       | The sign-in service could not be consulted, so nothing is known about the session. Not a session failure.              | Yes            |
 
 **The "Emitted today?" column is part of the contract.** A code marked _No_ is
 documented, agreed and deliberately unreachable — no route can currently produce
@@ -248,6 +255,7 @@ character for character.
 | `payload_too_large`      | That request is too large to send.                                          |
 | `unsupported_media_type` | Send the request as application/json.                                       |
 | `internal_error`         | Something went wrong. Please try again.                                     |
+| `auth_unavailable`       | The sign-in service could not be reached. Try again in a moment.            |
 
 None of these is templated. Nothing is interpolated into any of them.
 

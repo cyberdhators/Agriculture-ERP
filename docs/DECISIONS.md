@@ -1338,3 +1338,23 @@ assertion entering the documents unchecked is exactly what the staleness
 audits keep finding. Nothing goes into the record on anyone's say-so,
 including the person who owns the project; the check comes first, and the
 correction is written down whichever direction it points.
+
+## B6.5 — An outage of the sign-in service is 503, never 401
+
+`requireRole` asked Supabase Auth to verify the token and turned any error
+into `401 unauthenticated`, whose sentence is "Sign in to continue". Seen in
+B5's run 4: seven valid sessions answered 401 while the service strained. In
+the field that message sends an officer to re-enter credentials that were
+never wrong — exactly the wrong response, produced by the system's own
+wording.
+
+Now the service's answers about the session — 400, 401, 403, 404 — remain
+401, and everything else — unreachable, a 5xx, a 429, a call that never
+returns — is `503 auth_unavailable`: "The sign-in service could not be
+reached. Try again in a moment." The call carries a ten-second deadline so a
+hung service cannot hang every route. Tested against a real failing service
+on a local port, four ways, and against the real service both ways.
+
+**Not reported to Sentry, deliberately.** An outage would produce one event
+per request; the signal belongs to a health check, which is B10's or later.
+Recorded so the silence is known to be chosen.

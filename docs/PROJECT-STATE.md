@@ -732,10 +732,13 @@ GitHub rather than copied. Grouped by who closes it.
 **The user closes:**
 
 9. The Supabase plan and point-in-time recovery question (B11 checklist).
-10. The `requireRole` defect: an Auth service outage reads as "sign in to
-    continue". Owner B3, Lane 1; scheduled, not started.
-11. Four orphan authentication accounts on staging with officer identifiers
-    and no officer row; surfaced by the admin list; theirs to remove.
+10. ~~The `requireRole` defect~~ — resolved by B6.5.
+11. ~~Four orphan authentication accounts on staging~~ — removed on
+    2026-09-05: all four were officer identifiers created on 2026-09-04 by
+    test runs, no user or officer row, no audit row naming them. B3's
+    compensating-transaction mechanism was confirmed twice in the act: the
+    admin list's first page reported `orphan_auth_accounts: 4` before the
+    deletion and `0` after.
 12. Lane 2's unmerged branches `feat/ui-farmer` and `docs/farmer-baseline`
     carrying the fourth out-of-scope instance.
 13. Confirming the Sentry IP-storage setting is on, by the next event.
@@ -785,10 +788,8 @@ compensating-transaction decision predicted. `GET /api/users`, first page, as
 an administrator, reported `orphan_auth_accounts: 4`. The mechanism works;
 those four are the user's to remove.
 
-**Owner: B3, the shared wrapper (`apps/web/lib/api/require-role.ts`), Lane 1.**
-Not changed in B5: it is B3's contract, and the fix touches the status table in
-CONVENTIONS and every forbidden-matrix expectation. Recorded here so it is a
-scheduled change, not a rediscovery.
+**Resolved by B6.5 (2026-09-05):** a service failure is now `503
+auth_unavailable` with a ten-second deadline; the service's own refusals stay 401. `docs/DECISIONS.md`, _An outage of the sign-in service is 503, never 401_.
 
 ## BLOCKED
 
