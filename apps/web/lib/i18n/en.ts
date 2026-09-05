@@ -28,7 +28,7 @@ export const en = {
   'spread.point1': 'Your record, verified by an extension officer',
   'spread.point2': 'Your plots, mapped as the officer walked them',
   'spread.point3': 'Your produce, listed for buyers across the state',
-  'spread.point4': 'Buyers reach you by phone — no middleman',
+  'spread.point4': 'Buyers reach you by phone, no middleman',
 
   // Login
   'login.title': 'Sign in',
@@ -75,7 +75,7 @@ export const en = {
   'register.back': 'Back',
   'register.next': 'Next',
   'register.submit': 'Register',
-  'register.doneTitle': 'Registered — pending verification',
+  'register.doneTitle': 'Registered: pending verification',
   'register.doneBody':
     'Thank you. An officer will check your details and verify your account. Until then your account is pending: you can add produce as a draft, but it goes live once you are verified.',
   'register.doneNumber': 'Farmer no.',
@@ -316,7 +316,7 @@ export const en = {
   // Marketplace
   'market.title': 'Marketplace',
   'market.lead':
-    'Produce offered by verified farmers — the price, the quantity, the payam and who to call.',
+    'Produce offered by verified farmers: the price, the quantity, the payam and who to call.',
   'market.filters': 'Filters',
   'market.category': 'Category',
   'market.allCategories': 'All categories',
@@ -355,7 +355,7 @@ export const en = {
   'market.withdrawBody':
     'The listing leaves the marketplace and the farmer sees your reason on it.',
   'market.withdrawReason': 'Reason',
-  'market.withdrawReasonError': 'Give a reason — it is recorded and shown to the farmer.',
+  'market.withdrawReasonError': 'Give a reason: it is recorded and shown to the farmer.',
   'market.withdrawn': 'Withdrawn from the marketplace.',
   'market.withdrawnBy': 'Withdrawn by staff',
   'market.search': 'Search produce, livestock, inputs…',
@@ -369,7 +369,7 @@ export const en = {
   'market.deliveryAvailable': 'Delivery available',
   'market.featured': 'Fresh this week',
   'market.trust': 'Verified sellers · Photos on every listing · Contact by call or SMS',
-  'market.emptyFiltered': 'No listings match — clear a filter or try another payam.',
+  'market.emptyFiltered': 'No listings match; clear a filter or try another payam.',
   'market.page': 'Page',
   'market.of': 'of',
   'market.prevPage': 'Previous',

@@ -133,7 +133,7 @@ export function ReviewQueue() {
                     <div className={styles.reviewHead}>
                       <Stamp kind={escalated ? 'escalated' : 'pending'}>
                         {escalated
-                          ? `${daysWaiting(farmer)}d — escalated`
+                          ? `${daysWaiting(farmer)}d, escalated`
                           : `${daysWaiting(farmer)}d waiting`}
                       </Stamp>
                       <div className={styles.reviewName}>

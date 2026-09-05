@@ -198,8 +198,8 @@ export function FarmerDossier({ id }: { id: string }) {
                 Merged into{' '}
                 <Link href={`/farmers/${survivor.id}`} className="mono">
                   {survivor.farmer_number}
-                </Link>{' '}
-                — {survivor.given_name} {survivor.family_name}. It is kept for the record.
+                </Link>
+                : {survivor.given_name} {survivor.family_name}. It is kept for the record.
               </p>
             </Notice>
           ) : null}
@@ -560,7 +560,7 @@ export function FarmerDossier({ id }: { id: string }) {
               <option value="">Select the surviving farmer…</option>
               {duplicates.map((d) => (
                 <option key={d.farmer.id} value={d.farmer.id}>
-                  {d.farmer.farmer_number} — {d.farmer.given_name} {d.farmer.family_name}
+                  {d.farmer.farmer_number}: {d.farmer.given_name} {d.farmer.family_name}
                 </option>
               ))}
             </Select>

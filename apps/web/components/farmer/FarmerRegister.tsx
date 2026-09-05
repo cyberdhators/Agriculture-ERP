@@ -209,7 +209,7 @@ export function FarmerRegister() {
     <div className={styles.sheet}>
       <div className={styles.progress}>
         <p className={styles.progressLabel}>
-          {t('register.step', language)} {step + 1} {t('register.of', language)} {LAST_STEP + 1} —{' '}
+          {t('register.step', language)} {step + 1} {t('register.of', language)} {LAST_STEP + 1}:{' '}
           {stepTitle}
         </p>
         <div className={styles.progressTrack} aria-hidden>
@@ -229,7 +229,7 @@ export function FarmerRegister() {
           <p className="small">
             A record with this phone or name already exists in{' '}
             {duplicates.map((d) => `${d.given_name} ${d.family_name}`).join(', ')}. You can still
-            register — an officer will check.
+            register, an officer will check.
           </p>
         </Notice>
       ) : null}

@@ -47,7 +47,7 @@ export const metadata: Metadata = {
     template: '%s · AgriOne',
   },
   description:
-    'AgriOne — Digital Agriculture & Agribusiness Ecosystem. Farmers, farms, produce and the marketplace that joins them.',
+    'AgriOne: Digital Agriculture & Agribusiness Ecosystem. Farmers, farms, produce and the marketplace that joins them.',
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
