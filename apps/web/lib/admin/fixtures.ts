@@ -2,7 +2,7 @@
 // sign-in endpoint exists (every live call is 401 until B3 auth ships). Not
 // real data. The screens read these when NEXT_PUBLIC_USE_LIVE_ADMIN is unset.
 
-import type { Officer, StaffUser } from './api';
+import type { AuditEvent, Officer, StaffUser } from './api';
 
 export const STAFF_FIXTURE: readonly StaffUser[] = [
   {
@@ -93,3 +93,67 @@ export const PAYAM_NAMES: Record<string, string> = {
   'CE-JUB-KAT': 'Kator',
   'WE-YAM-YAM': 'Yambio',
 };
+
+/** Sample audit rows for previewing the trail before sign-in exists. */
+export const AUDIT_FIXTURE: readonly AuditEvent[] = [
+  {
+    id: 'a-1',
+    entity_type: 'farmer',
+    entity_id: 'f-1024',
+    actor_type: 'officer',
+    actor_id: 'o-1',
+    action: 'farmer.created',
+    before: null,
+    after: { farmer_number: 'CE-JUB-001024' },
+    device_id: 'field-tablet-07',
+    occurred_at: '2026-09-05T07:42:00Z',
+  },
+  {
+    id: 'a-2',
+    entity_type: 'farmer',
+    entity_id: 'f-1024',
+    actor_type: 'supervisor',
+    actor_id: 'u-sup-ce',
+    action: 'farmer.verified',
+    before: { verification_status: 'pending' },
+    after: { verification_status: 'verified' },
+    device_id: null,
+    occurred_at: '2026-09-05T09:10:00Z',
+  },
+  {
+    id: 'a-3',
+    entity_type: 'officer',
+    entity_id: 'o-3',
+    actor_type: 'admin',
+    actor_id: 'u-admin-1',
+    action: 'officer.status_changed',
+    before: { status: 'active' },
+    after: { status: 'inactive' },
+    device_id: null,
+    occurred_at: '2026-09-04T16:20:00Z',
+  },
+  {
+    id: 'a-4',
+    entity_type: 'user',
+    entity_id: 'u-sup-we',
+    actor_type: 'admin',
+    actor_id: 'u-admin-1',
+    action: 'user.created',
+    before: null,
+    after: { role: 'supervisor', state_id: 'WE' },
+    device_id: null,
+    occurred_at: '2026-07-22T09:00:00Z',
+  },
+  {
+    id: 'a-5',
+    entity_type: 'farmer',
+    entity_id: 'f-0990',
+    actor_type: 'officer',
+    actor_id: 'o-2',
+    action: 'farmer.updated',
+    before: { phone: '+211921000990' },
+    after: { phone: '+211921000991' },
+    device_id: 'field-tablet-03',
+    occurred_at: '2026-09-03T11:35:00Z',
+  },
+];

@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 
-import { UserAdmin } from '@/components/admin/UserAdmin';
+import { AdminHub } from '@/components/admin/AdminHub';
 
-export const metadata: Metadata = { title: 'User administration' };
+export const metadata: Metadata = { title: 'Administration' };
 
 export default function AdminPage() {
-  return <UserAdmin />;
+  return <AdminHub />;
 }

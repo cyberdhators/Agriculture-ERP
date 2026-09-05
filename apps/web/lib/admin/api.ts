@@ -131,3 +131,49 @@ export async function patchOfficer(id: string, input: PatchOfficer): Promise<Off
 export function setOfficerActive(id: string, active: boolean): Promise<Officer> {
   return patchOfficer(id, { status: active ? 'active' : 'inactive' });
 }
+
+// ── Audit trail (deliverable (s), C-4) ──────────────────────────────────────
+
+/** One row of the append-only audit log, as `/api/audit` presents it. */
+export interface AuditEvent {
+  id: string;
+  entity_type: string;
+  entity_id: string;
+  actor_type: string;
+  actor_id: string | null;
+  action: string;
+  before: unknown;
+  after: unknown;
+  device_id: string | null;
+  occurred_at: string;
+}
+
+export interface AuditFilterParams {
+  entity_type?: string;
+  entity_id?: string;
+  actor_id?: string;
+  occurred_from?: string;
+  occurred_to?: string;
+  limit?: number;
+  cursor?: string;
+}
+
+export interface AuditResult {
+  events: AuditEvent[];
+  cursor: string | null;
+  hasMore: boolean;
+}
+
+export async function listAudit(params: AuditFilterParams = {}): Promise<AuditResult> {
+  const qs = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined && value !== '') qs.set(key, String(value));
+  }
+  const query = qs.toString();
+  const body = await request<AuditEvent[]>(`/api/audit${query ? `?${query}` : ''}`);
+  return {
+    events: body.data ?? [],
+    cursor: body.page?.cursor ?? null,
+    hasMore: body.page?.hasMore ?? false,
+  };
+}
