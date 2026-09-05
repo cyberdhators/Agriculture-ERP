@@ -421,6 +421,20 @@ no CI, no docs, no migration. Nothing merged after it depends on it. It is
 reachable on the preview deployment by URL only; the portal links to none of
 it.
 
+**A fifth and a sixth instance, 2026-09-05.** Four Lane 2 pull requests are
+open: #27 (2026-09-03, the C-18 "farmer web account and listings" baseline
+that C-18 has never existed for), #28 (the P1 routes, briefed in HANDOFF),
+#36 (2026-09-05 12:02, "AgriOne design system on the staff portal + user
+administration, hub") and #37 (2026-09-05 12:02, the farmer register wired
+to the live B5 routes, which HANDOFF asked for). #28 and #37 are briefed
+work. **#27 is the fifth instance**: excluded scope carried as an open pull
+request rather than a branch. **#36 is the sixth, and it is different in
+kind: it carries the "AgriOne" name from the branch reverted at #29 — the
+first time output from reverted work has come back, rather than only the
+pattern.** None of the four is touched by Lane 1; the user deals with them.
+Recorded at the time so the record shows when it started rather than
+reconstructing it later.
+
 **A fourth instance, 2026-09-04 07:05 and 07:09 UTC.** Lane 2 pushed to
 `origin/feat/ui-farmer` and `origin/docs/farmer-baseline`: a marketplace with
 e-commerce browse and a product page, and a farm survey sheet. The same
@@ -627,6 +641,35 @@ the reason the lock is in the database. The reverse happened the same day:
 a local probe held staging while CI's run on #35 began, and CI refused,
 naming `agri-erp-tests:monkonmlah`; it was re-run once the local run ended.
 A CI failure whose message names another run is not a failure of the code.
+
+**Held connections die under the pooler, and the guards now say so
+(2026-09-05, B7's runs).** Twice in one run a connection the app's client
+was holding was closed by the pooler: once discovered after a ten-minute
+wait ending in `P1017 Server has closed the connection`, the length of the
+operating system's retransmit limit on a dead socket; once as `25P03
+terminating connection due to idle-in-transaction timeout`, which is the
+B6 guard ending a registration transaction that had sat idle for thirty
+seconds because its client was stalled. Before the guards, the second case
+would have been a county counter row held until someone noticed. The tests
+that hit it fail; the same suite passes on CI's runner, four runs of four,
+in twenty to thirty minutes. Nothing in the code is implicated.
+
+Two full runs on this machine then stalled between files for hours with the
+database idle and the process at zero CPU — the shape a sweep of fifteen
+statements takes when every connection in the pool is dead and each waits
+its ten minutes. Prisma does not validate a pooled connection before reuse
+and exposes no keepalive. Both runs were killed and their lock sessions
+terminated. B7's own file passed alone in ten minutes; CI's runner, which
+has never shown this, is the full-suite arbiter for B7.
+
+**Recorded as an incident, not diagnosed further, on the user's decision.**
+The pooler's own logs would name the cause and are **unexamined**: they are
+reachable only through the Supabase MCP server, whose token had expired, and
+a token that can read the project is a standing cost for a one-off answer.
+The diagnosis in hand — `P1017`, "server has closed the connection", a
+ten-minute delay matching a dead-socket TCP retransmit — was judged
+sufficient. If it recurs, the logs are the first thing to read, with a token
+issued for that purpose and revoked after.
 
 **If a run is killed, the lock may outlive it.** The pooler keeps a server
 session after its client is killed (seen 2026-09-05: a killed local run held
