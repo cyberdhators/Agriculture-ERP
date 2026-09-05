@@ -15,7 +15,16 @@ import {
   sweep,
 } from './helpers/principals';
 import { makeTestPrisma, requireTestEnv } from './helpers/db';
-import { type CallOptions, type CallResult, type RouteModule, call } from './helpers/request';
+import { type CallResult } from './helpers/request';
+import {
+  GIVEN,
+  NATIONAL_ID,
+  checked,
+  data,
+  errorOf,
+  rememberPhone,
+  seenStatuses,
+} from './helpers/scan';
 
 /**
  * B5 — the farmer record (C-5). Every test here runs against staging with
@@ -47,9 +56,6 @@ const COUNTY_A = 'CE-JUB';
 const COUNTY_EE = `${TEST_LOCATION_PREFIX}`;
 const PAYAM_EE = `${TEST_LOCATION_PREFIX}-TST`;
 
-const GIVEN = 'Zzachol';
-const NATIONAL_ID = 'ZZ123456';
-
 let admin: TestPrincipal & { password: string };
 let supervisorA: TestPrincipal & { password: string };
 let supervisorB: TestPrincipal & { password: string };
@@ -60,51 +66,13 @@ let officerB: TestPrincipal & { password: string };
 let officerEE: TestPrincipal & { password: string };
 
 // ---------------------------------------------------------------------------
-// C-5.13: the scan. Every phone this file invents is remembered, so the scan
-// can look for it in both written forms.
+// C-5.13: the scan lives in helpers/scan.ts (extended by C-6.10 with the
+// rejection note). Every phone this file invents is registered there.
 // ---------------------------------------------------------------------------
-const phonesUsed = new Set<string>();
 let phoneSeq = 0;
 const freshPhone = (): string => {
   phoneSeq += 1;
-  const phone = `+21191${String(1_000_000 + phoneSeq).padStart(7, '0')}`;
-  phonesUsed.add(phone);
-  return phone;
-};
-const piiStrings = (): string[] => [
-  GIVEN,
-  FARMER_TEST_FAMILY,
-  NATIONAL_ID,
-  ...[...phonesUsed].flatMap((p) => [p, p.slice(1), `0${p.slice(4)}`]),
-];
-const seenStatuses = new Set<number>();
-function scan(result: CallResult, label: string): void {
-  seenStatuses.add(result.status);
-  const pii = piiStrings();
-  if (result.status >= 400) {
-    for (const needle of pii) {
-      expect(result.text, `${label}: ${result.status} response leaks personal data`).not.toContain(
-        needle,
-      );
-    }
-    expect(result.body, `${label}: an error carried warnings`).not.toHaveProperty('warnings');
-    return;
-  }
-  const outsideData = JSON.stringify({ ...result.body, data: undefined });
-  for (const needle of pii) {
-    expect(outsideData, `${label}: personal data outside data on a ${result.status}`).not.toContain(
-      needle,
-    );
-  }
-}
-const checked = async (
-  mod: RouteModule,
-  method: 'GET' | 'POST' | 'PATCH' | 'DELETE',
-  options: CallOptions = {},
-): Promise<CallResult> => {
-  const result = await call(mod, method, options);
-  scan(result, `${method} ${options.params?.id ? '/:id' : ''}`);
-  return result;
+  return rememberPhone(`+21191${String(1_000_000 + phoneSeq).padStart(7, '0')}`);
 };
 
 const body = (overrides: Record<string, unknown> = {}) => ({
@@ -119,7 +87,6 @@ const body = (overrides: Record<string, unknown> = {}) => ({
   consent: { text_version: 'v1.0-en', language: 'en', granted: true },
   ...overrides,
 });
-const data = (r: CallResult) => r.body.data as Record<string, unknown>;
 /** A registration that later steps depend on: asserted, so a failed setup fails here and not three tests later. */
 const register = async (as: TestPrincipal, payload: Record<string, unknown>) => {
   const r = await checked(farmers, 'POST', { as, body: payload });
@@ -127,8 +94,6 @@ const register = async (as: TestPrincipal, payload: Record<string, unknown>) => 
   return r;
 };
 const warnings = (r: CallResult) => r.body.warnings as { duplicates?: string[] } | undefined;
-const errorOf = (r: CallResult) =>
-  r.body.error as { code: string; message: string; fields?: Record<string, string> };
 
 beforeAll(async () => {
   await sweep(prisma);

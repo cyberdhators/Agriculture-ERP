@@ -164,16 +164,17 @@ copy of any of these is a bug.
 
 ## STATUS BOARD
 
-| Unit | Lane | Status                                                                      | PR  | Blocked on                              |
-| ---- | ---- | --------------------------------------------------------------------------- | --- | --------------------------------------- |
-| B2   | 1    | **Merged** — #15                                                            | #15 | —                                       |
-| B3   | 1    | **Merged**                                                                  | #20 | —                                       |
-| B4   | 1    | **Merged**                                                                  | #24 | —                                       |
-| B5   | 1    | **Merged** — #32; C-5.13 and C-5.4 proven by run 5, locally                 | #32 | —                                       |
-| B5.5 | 1    | **In progress** — CI runs the database tests; loud guard; one run at a time | —   | —                                       |
-| P1   | 2    | **Merged** — database, validation, seed, tests. Routes not started.         | #17 | B3 for routes, B4 for the audit rows    |
-| UI   | 2    | First portal skin — **closed unmerged** (#18), kept as reference            | #18 | — (superseded by UI-2)                  |
-| UI-2 | 2    | **PR open** — "The Register" re-skin + Farmers screens on fixtures          | #23 | Lane 1 review; C-5 farmer-number format |
+| Unit | Lane | Status                                                              | PR  | Blocked on                              |
+| ---- | ---- | ------------------------------------------------------------------- | --- | --------------------------------------- |
+| B2   | 1    | **Merged** — #15                                                    | #15 | —                                       |
+| B3   | 1    | **Merged**                                                          | #20 | —                                       |
+| B4   | 1    | **Merged**                                                          | #24 | —                                       |
+| B5   | 1    | **Merged** — #32; C-5.13 and C-5.4 proven by run 5, locally         | #32 | —                                       |
+| B5.5 | 1    | **Merged** — #33; first CI database run 23/23                       | #33 | —                                       |
+| B6   | 1    | **In progress** — C-6 written; built on `feat/b6-verification`      | —   | —                                       |
+| P1   | 2    | **Merged** — database, validation, seed, tests. Routes not started. | #17 | B3 for routes, B4 for the audit rows    |
+| UI   | 2    | First portal skin — **closed unmerged** (#18), kept as reference    | #18 | — (superseded by UI-2)                  |
+| UI-2 | 2    | **PR open** — "The Register" re-skin + Farmers screens on fixtures  | #23 | Lane 1 review; C-5 farmer-number format |
 
 Lane 1: please add your rows as you go. Lane 2 filled in what it could read from the open PRs.
 
@@ -590,5 +591,24 @@ know.
   a session unless it is provably dead.
 - The workflow runs on pull requests and merges to main, 40-minute timeout,
   five `STAGING_*` secrets (names in `PROJECT-STATE.md`).
+
+— Monkon-Claude
+
+### 2026-09-05 — Lane 1 — B6, verification, built on `feat/b6-verification`
+
+- C-6 is written and confirmed; C-5.9 amended (officers correct rejected
+  records). Migration 11 on staging. Five routes under `/api/farmers/:id/…` and
+  `/api/verification/queue`; CONVENTIONS §12.
+- **Lane 2:** the review screens have routes now. Three shapes to expect:
+  `verification_status` has a fourth value, `merged`; a rejected record carries
+  `rejection: { reason_code, note, decided_at }`; the queue row carries
+  `days_waiting`, `escalated` and `duplicates` (the matched records, scoped).
+  The rejection note is the one free-text field about a person: show it inside
+  the record, never in a toast or a title.
+- Shared objects added: `VERIFICATION_STATES`, `VERIFICATION_TRANSITIONS`,
+  `REJECTION_REASONS`, `rejectFarmerSchema`, `mergeFarmerSchema`,
+  `queueFilterSchema`, `daysWaiting`, `isEscalated`; the view
+  `farmer_verified_v` (B10 reads it and nothing else).
+- `tests/helpers/scan.ts` is the C-5.13 scan for every route test; reuse it.
 
 — Monkon-Claude

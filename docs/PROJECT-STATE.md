@@ -590,6 +590,12 @@ staging's; the test helpers refuse any project but staging by reference):
 Both connection strings carry `connect_timeout=30`; the vitest config adds it
 anyway if absent.
 
+**Projected across the backend, recorded so nobody is surprised by the
+numbers later.** At two runs per unit — one on the pull request, one on the
+merge — B6 through B11 is roughly twelve more runs: about 3,000 further
+audit rows and 13,000 counter values on staging before the backend is done.
+Fine on staging; production is born clean at B11.
+
 **Accepted cost per run**, recorded so it is expected: about 250 permanent
 `audit_event` rows, about 1,100 farmer-number counter values on the test
 county and about 110 on Juba county, about ten authentication accounts
@@ -617,6 +623,53 @@ on the transaction pooler, and 50 of 50 registrations at five in flight.
 are swept by the next run's setup, and its authentication accounts are
 removed when that sweep finds their rows. A run that finds the lock held
 fails at once and names the holder and how long it has run.
+
+## B6 — VERIFICATION, REJECTION, MERGING AND ESCALATION (2026-09-05)
+
+**What exists.** Migration 11: `verification_event`, `merged` as a fourth
+state, `pending_since` as the escalation clock guarded by the
+immutable-fields trigger, queue indexes, `farmer_verified_v`, four audit
+keys, and a reason-code CHECK generated from `REJECTION_REASONS` in
+`packages/shared` and checked equal to it. One state-machine module. Five
+routes: verify, reject, merge, resubmit, and the queue. CONVENTIONS §12.
+
+**The rejection note.** Data, not a message: returned inside the farmer
+record as `rejection` while the record is rejected, to whoever may read the
+record; never in an error, a warning, the audit log or error reporting; its
+field name is on the audit never-recorded list and the scrubber key list; the
+C-5.13 scan now searches for it too (`tests/helpers/scan.ts`). The standing
+rule is in `docs/DECISIONS.md`.
+
+**Reach figures read `farmer_verified_v` and nothing else.** B10 is bound by
+this. Pending, rejected and merged are counted separately, never folded in.
+
+**Nothing pending is stuck.** A pending record is decided by a supervisor of
+its state or an administrator, never by the registering officer, so a record
+whose officer has left is decidable. Only resubmission needs the officer; a
+rejected record whose officer is gone stays rejected, out of the queue,
+until an administrator reassigns it — a later decision.
+
+## A CLASS OF FAULT, NAMED: A GATE THAT REPORTS SUCCESS BECAUSE IT CHECKS NOTHING
+
+Three instances so far, each found by accident. Named so the next is looked
+for rather than stumbled on.
+
+1. **`tests/` outside the typecheck gate** (B1.1 to B4): `pnpm typecheck` was
+   green while never reading the test files. Found by B4; two latent defects
+   in tests came out when it did.
+2. **Eight database test files silently skipped in CI** (B2 to B5.5): every
+   file skipped itself when the variables were absent, CI had none, and every
+   run reported green for tests that never ran. Found in B5; closed by B5.5
+   with a guard that fails loudly.
+3. **Local gitleaks on an Apple-silicon machine** (2026-09-05): the x86 build
+   could not run git and reported "0 commits scanned, no leaks found". Four
+   such results were believed in one day.
+
+A near miss, recorded for the shape: the drift test was suspected of the same
+fault on 2026-09-05 and was not guilty, but the check exposed a table it had
+never guarded (`docs/DECISIONS.md`). **The question to ask of any green
+gate: what did it actually read?** A gate that can pass on an empty input
+must say so, or fail.
 
 ## B11 CHECKLIST — WHAT A FRESH PRODUCTION PROJECT MUST BE GIVEN BY HAND
 

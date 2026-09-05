@@ -1,7 +1,12 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import * as farmerItem from '../apps/web/app/api/farmers/[id]/route';
+import * as farmerMerge from '../apps/web/app/api/farmers/[id]/merge/route';
+import * as farmerReject from '../apps/web/app/api/farmers/[id]/reject/route';
+import * as farmerResubmit from '../apps/web/app/api/farmers/[id]/resubmit/route';
+import * as farmerVerify from '../apps/web/app/api/farmers/[id]/verify/route';
 import * as farmers from '../apps/web/app/api/farmers/route';
+import * as verificationQueue from '../apps/web/app/api/verification/queue/route';
 import * as locations from '../apps/web/app/api/locations/route';
 import * as me from '../apps/web/app/api/me/route';
 import * as officerItem from '../apps/web/app/api/officers/[id]/route';
@@ -214,6 +219,43 @@ const ROUTES = [
     method: 'DELETE' as const,
     allow: ['admin'],
     params: () => ({ id: farmerId }),
+  },
+  // B6 (C-6). The matrix farmer is pending and in state CE, the supervisor's state.
+  {
+    name: 'POST /api/farmers/:id/verify',
+    mod: farmerVerify,
+    method: 'POST' as const,
+    allow: ['admin', 'supervisor'],
+    params: () => ({ id: farmerId }),
+  },
+  {
+    name: 'POST /api/farmers/:id/reject',
+    mod: farmerReject,
+    method: 'POST' as const,
+    allow: ['admin', 'supervisor'],
+    params: () => ({ id: farmerId }),
+    body: () => ({ reason_code: 'other' }),
+  },
+  {
+    name: 'POST /api/farmers/:id/merge',
+    mod: farmerMerge,
+    method: 'POST' as const,
+    allow: ['admin', 'supervisor'],
+    params: () => ({ id: farmerId }),
+    body: () => ({ target_id: farmerId }),
+  },
+  {
+    name: 'POST /api/farmers/:id/resubmit',
+    mod: farmerResubmit,
+    method: 'POST' as const,
+    allow: ['officer'],
+    params: () => ({ id: farmerId }),
+  },
+  {
+    name: 'GET /api/verification/queue',
+    mod: verificationQueue,
+    method: 'GET' as const,
+    allow: ['admin', 'supervisor', 'read_only'],
   },
 ];
 
