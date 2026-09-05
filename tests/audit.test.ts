@@ -6,7 +6,12 @@ import * as officerItem from '../apps/web/app/api/officers/[id]/route';
 import * as officers from '../apps/web/app/api/officers/route';
 import * as userItem from '../apps/web/app/api/users/[id]/route';
 import * as users from '../apps/web/app/api/users/route';
-import { type AuditTx, audited, writeAudit } from '../apps/web/lib/api/audit';
+import {
+  type AuditTx,
+  IDLE_IN_TRANSACTION_TIMEOUT,
+  audited,
+  writeAudit,
+} from '../apps/web/lib/api/audit';
 import { officerAuthIdentifier } from '../packages/shared/src/identity';
 import { type TestPrincipal, createPrincipal, sweep } from './helpers/principals';
 import { call } from './helpers/request';
@@ -446,5 +451,21 @@ run('GET /api/audit: the forbidden matrix and the filters (C-4.8, C-4.9)', () =>
     expect((await call(audit, 'GET', { as: admin, query: { cursor: 'garbage' } })).status).toBe(
       400,
     );
+  });
+});
+
+run('an audited transaction cannot sit idle holding locks (found 2026-09-05)', () => {
+  it('sets the idle-in-transaction timeout inside the transaction, and leaves the session untouched outside it', async () => {
+    const inside = await audited(prisma, async (tx) => {
+      const [row] = await tx.$queryRawUnsafe<{ v: string }[]>(
+        'SHOW idle_in_transaction_session_timeout',
+      );
+      return row?.v;
+    });
+    expect(inside).toBe(IDLE_IN_TRANSACTION_TIMEOUT);
+    const [outside] = await prisma.$queryRawUnsafe<{ v: string }[]>(
+      'SHOW idle_in_transaction_session_timeout',
+    );
+    expect(outside?.v).toBe('0');
   });
 });

@@ -27,6 +27,10 @@ export const AUDIT_ACTIONS = [
   'location.created',
   'location.renamed',
   'location.soft_deleted',
+  'farmer.created',
+  'farmer.updated',
+  'farmer.soft_deleted',
+  'consent.recorded',
 ] as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];
@@ -61,6 +65,10 @@ const NEVER_RECORDED = new Set([
   'cookie',
   'auth_user_id',
   'national_id',
+  // C-4.7: a farmer's name never enters the audit log. Staff `name` stays, as
+  // B4 decided; a farmer is not staff and has two name fields of their own.
+  'given_name',
+  'family_name',
   'phone',
   'alt_phone',
   'email',

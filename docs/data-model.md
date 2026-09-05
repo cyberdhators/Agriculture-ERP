@@ -21,19 +21,27 @@ deliverables need, plus three gaps in this document that must be fixed first.
 ```
 farmer
   id                    uuid, client-generated
+  farmer_number         text, unique, CE-JUB-000123 -- B5: stored at insert, never re-derived
   given_name            text
   family_name           text
   sex                   enum f | m
   year_of_birth         int
   phone                 text, +211 stored E.164
-  national_id           text, nullable
+  national_id           text, nullable -- returned to admin and registering officer only
   payam_id              fk → payam
-  registered_by         fk → officer, nullable
-  registration_source   enum officer | self
+  county_id             fk → county, denormalised -- B5: composite key with payam
+  state_id              fk → state, denormalised -- B5: composite key with payam
+  registered_by         fk → officer, nullable, immutable
+  registration_source   enum officer | self -- self is a value, not a permission
   verification_status   enum pending | verified | rejected
   merged_into           fk → farmer, nullable
-  consent_id            fk → consent
+  consent_id            fk → consent, NOT NULL, deferred -- both rows commit together
+  duplicate_flag        boolean -- B5
+  duplicate_matches     uuid[] -- B5: ids of the farmers that matched
   created_at            timestamp
+  updated_at            timestamp
+  deleted_at            timestamp, nullable -- extension §1.3
+  deleted_by            fk → user, nullable
 ```
 
 ```

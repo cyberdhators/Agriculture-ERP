@@ -81,6 +81,11 @@ export const RULE_MESSAGES = {
   cannot_change_own_role: 'You cannot change your own role.',
   payam_not_found: 'That payam could not be found.',
   state_not_found: 'That state could not be found.',
+  // B5 (C-5). Every sentence names no person: a farmer is never described here.
+  consent_required: 'Consent must be recorded before a farmer can be registered.',
+  farmer_already_exists: 'A farmer with that identifier has already been registered.',
+  registering_officer_required: 'Name the extension officer who registered this farmer.',
+  registering_officer_not_found: 'The registering officer could not be found in that payam.',
 } as const;
 
 export type RuleKey = keyof typeof RULE_MESSAGES;

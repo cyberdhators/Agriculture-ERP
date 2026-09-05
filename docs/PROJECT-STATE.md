@@ -93,38 +93,88 @@ phone provider. See `docs/DECISIONS.md`.
 
 ---
 
-## KNOWN CONDITION — THE SESSION POOLER IS FLAKY
+## KNOWN CONDITION — CORRECTED: THE POOLER WAS NEVER FLAKY; PRISMA'S CONNECT TIMEOUT WAS TOO SHORT
 
 `DIRECT_URL` reaches staging through the **session pooler**
 (`...pooler.supabase.com:5432`), not the direct host. The direct host
 `db.<ref>.supabase.co` has **no A record — it is IPv6 only**, and IPv4 direct
 access is a paid add-on. A machine without an IPv6 route cannot use it at all.
+That part stands.
 
-**The connection drops intermittently.** Measured: roughly one attempt in three
-fails on the session pooler, and `prisma migrate deploy` needed three attempts
-to apply the housekeeping migration. The transaction pooler on `:6543` has been
-more reliable but is not immune.
+**What this section said from B2 to B5 was wrong.** It said the connection
+"drops intermittently, roughly one attempt in three", and told the operator to
+retry the command. The diagnosis on 2026-09-05, made after five failed suite
+runs in one day, is different and is backed by measurement:
 
-**When a command fails, retry the command.** A `P1001: Can't reach database
-server` is far more likely to be this than a real fault. Check twice before
-concluding anything is broken.
+- **Prisma's default connect timeout is 5 seconds.** Every failure, on both
+  poolers, landed at **5.01 to 5.02 seconds** with the text `Can't reach
+database server`. Successes landed anywhere from 2.4 to 6.3 seconds.
+- **The poolers were healthy throughout.** A raw Postgres protocol handshake
+  reached the authentication step in 2.2 seconds. `psql` answered `select 1`
+  on the session pooler three of three (1.9 to 2.9 s) and on the transaction
+  pooler three of three (1.3 to 8.7 s). Their TLS-plus-auth handshake is
+  simply slow, and variable.
+- **With `connect_timeout=30`, Prisma connected three of three** on the
+  session pooler, in 2.5 to 3.5 seconds.
 
-**Two settings this forced, both recorded so they are not "tidied away":**
+So the "drop" was Prisma giving up before the pooler finished saying hello.
+The transaction pooler seemed "more reliable" only because its handshake is
+sometimes faster. Retrying "worked" because the next handshake sometimes beat
+five seconds. Nothing was ever dropping.
 
-- **Database tests must run with `--no-file-parallelism`.** Vitest runs files in
-  parallel by default; each opens its own client, and the reseed tests spawn
-  subprocesses that open more. That exhausts the pooler's connection slots and
-  fails as `P1001`, which reads like the link being down when it is not. Serial:
-  6-7 of 7 pass. Parallel: 2 of 7.
-- **The reseed's interactive transaction is given a 300s budget.** Prisma's
-  default is 5 seconds. A full reseed is dozens of round trips at seconds each,
-  so the default closes the transaction mid-write and reports `P2028`. The
-  budget matches the work and the latency, not the other way round.
+**The fix, in three places.** `connect_timeout=30` on both URLs: in
+`.env.local` (the user, 2026-09-05), in the documented shapes in
+`.env.example`, and **appended in code by `vitest.config.mts`** to whatever
+URL a test process sees, so a test never depends on someone having got the
+value right in their own file — the same class of problem as `tests/` sitting
+outside the typecheck gate, and closed the same way. GitHub and Vercel secrets
+are the user's to update.
 
-**Do not add retry logic inside a test.** A test that retries hides the
-condition instead of surviving it, and — worse — it would also hide a genuine
-connection fault behind the same silence. Tests fail honestly; the operator
-retries the command.
+**Two settings this history left behind, re-examined:**
+
+- **`--no-file-parallelism` on database tests.** Recorded in B2 as necessary
+  because parallel files "exhaust the pooler's connection slots and fail as
+  P1001". That failure is the same five-second text, so it may have been the
+  same timeout, not exhaustion. **Tested on 2026-09-05, with the timeout
+  fixed: still needed, for a different reason.** In parallel, 23 files ran in
+  94 seconds with **zero** connection or pool errors — the slots were never the
+  problem — but five files failed with 401s and empty audit lists: every
+  database test file creates `zztest` principals and calls the same global
+  `sweep()`, so files were deleting each other's accounts mid-run. The rule
+  stays until the fixtures are per-file; it is a fixture-isolation rule, not a
+  pooler rule, and the flag's comment should say so.
+- **The app's client in a test process needs more than one connection.**
+  Production's `connection_limit=1` is right for one serverless instance. In
+  the test process it made every concurrent route call queue behind one
+  connection, and Prisma's 10-second pool wait turned the queue into 500s
+  (`P2024`, 47 times in the first run under the new timeout). `vitest.config.mts`
+  now gives the test process ten connections and a 60-second wait. Recorded
+  because it is a deliberate difference between test and production.
+- **Abandoned transactions hold locks forever, and did (2026-09-05).** Seen
+  live in `pg_stat_activity`: a server session _idle in transaction_ for
+  sixteen minutes, its last statement the farmer-number counter upsert, with
+  five live registrations queued behind it on the row lock and failing after
+  Postgres's two-minute `statement_timeout`. The client had given up — Prisma
+  abandons an interactive transaction it cannot start within `maxWait` — but
+  the pooler keeps the server session, and **this role has
+  `idle_in_transaction_session_timeout = 0` and `lock_timeout = 0`**: nothing
+  on the server ever ends such a session. The sessions survived the client
+  process being killed and were terminated by hand. Two things changed:
+  `audited()` now sets a transaction-scoped idle timeout of 30 s as its first
+  statement, so no write can hold a lock while its client is gone; and the
+  1,000-allocation test runs ten transactions in flight at a time, the size of
+  its pool, instead of launching a thousand at once. **Applied by the user on
+  2026-09-05, on staging's `postgres` role:**
+  `idle_in_transaction_session_timeout = 60s` and `lock_timeout = 10s`,
+  covering every path including those that do not use `audited()`. **Production
+  will not have them** — see the B11 checklist below.
+- **The reseed's 300 s interactive-transaction budget.** Still right: it
+  covers dozens of round trips inside one transaction, which is a different
+  thing from the connect timeout.
+
+**Do not add retry logic inside a test.** Still true, and now for a better
+reason: the one time it looked necessary, the right fix was a timeout value,
+which a retry would have hidden indefinitely.
 
 ---
 
@@ -252,6 +302,13 @@ streaming limit for sync batches.
 
 ## STANDING RULES
 
+**Never write an example connection string with a password-shaped segment,
+even as a placeholder.** Not in `.env.example`, not in a document, not in a
+comment. Describe the shape in words — host, port, query parameters. The
+secret scan reads every commit of every ref, has no allowlist, and cannot tell
+a placeholder from a credential; it should not have to. B5's branch had to be
+squashed to remove one (2026-09-05, `docs/DECISIONS.md`).
+
 **Guards are tested in both directions.** No unit is done until every guard it
 introduces has been tested both refusing _and_ accepting. A guard that refuses
 everything passes every refusal test perfectly. This has caught three defects so
@@ -364,6 +421,14 @@ no CI, no docs, no migration. Nothing merged after it depends on it. It is
 reachable on the preview deployment by URL only; the portal links to none of
 it.
 
+**A fourth instance, 2026-09-04 07:05 and 07:09 UTC.** Lane 2 pushed to
+`origin/feat/ui-farmer` and `origin/docs/farmer-baseline`: a marketplace with
+e-commerce browse and a product page, and a farm survey sheet. The same
+pattern as #29 — excluded scope (a farmer-facing application; produce
+listings are deliverable (h), phase 5) built against criteria that do not
+exist — the morning after #29 was reverted. Not merged. Those branches are
+not touched by Lane 1; recorded here for the user.
+
 **Status: reverted, 2026-09-04**, by a plain revert of the squash commit,
 which applied without conflict and left both modified files byte-identical to
 their pre-#29 state. The work lives on branch `feat/ui-farmer-account` on the remote, and in full in the reverted squash commit `141993d` on main's history. If CORWADO confirms the farmer
@@ -397,6 +462,123 @@ fault in the test's own typing, not in what it asserted — B2's behaviour and
 criteria are unaffected (see `docs/DECISIONS.md`, B4).
 
 ---
+
+## B5 — THE FARMER RECORD EXISTS, AND REAL PERSONAL DATA CAN NOW ENTER (2026-09-05)
+
+**What exists.** Migration 10: `farmer`, `consent`, `farmer_number_counter`,
+the `farmer_active` view, three enums, two composite foreign keys (payam ↔
+state, payam ↔ county), a trigger that refuses any change to `farmer_number`
+or `registered_by`, and the §10 indexes. Five routes under `/api/farmers`
+through the wrapper. Every input validated by `packages/shared/src/farmer.ts`.
+Four audit actions. The success envelope gained `warnings` (CONVENTIONS §3.2).
+
+**How the farmer number stays unique under concurrency.** One row per county
+in `farmer_number_counter`. Allocation is a single upsert on that row inside
+the registration's transaction; the row lock the upsert takes queues every
+concurrent registration in the same county behind it, so two transactions
+cannot read the same value. The UNIQUE constraint on `farmer_number` is the
+backstop, not the mechanism. Proved by `tests/farmers.test.ts`: 1,000
+concurrent allocations over ten real connections yield 1,000 distinct,
+contiguous values. The number is stored as text at insert and never derived
+again, so a county code changing later leaves every printed card valid.
+
+**If the I-07 boundary list replaces the placeholder payam codes.** Two cases.
+
+- _Renamed, same codes_ (names change, codes stay): nothing breaks. Farmers
+  reference payams by code, and `locations:reseed` updates names in place
+  (C-2.6).
+- _Replaced, new codes_: every farmer references its payam, county and state
+  by the old codes, with composite keys enforcing agreement. The reseed
+  **refuses** to remove a payam that farmers depend on and names it (C-2.7) —
+  which is the intended outcome, not a defect. What then has to be re-pointed,
+  in one migration written for that day, old code → new code: `farmer.payam_id`,
+  `.county_id`, `.state_id`; `officer.payam_id`, `.state_id`;
+  `directory_entry.payam_id`, `.state_id`; `farmer_number_counter.county_id`.
+  Farmer numbers are **not** re-pointed: an existing `CE-JUB-000123` keeps its
+  old prefix by design, and new registrations in the renamed county take the
+  new prefix from a fresh counter row — one county, two prefixes over time,
+  both valid, both unique. The location bundle's version changes and every
+  device re-downloads it (C-2.5).
+
+**Who sees the national id.** Administrators and the officer who registered
+the farmer. For supervisors and read-only users the key is absent, not
+masked. Data model open question 2, chosen narrow; `docs/DECISIONS.md`.
+
+**Known conditions from this unit.**
+
+- Each run of `tests/farmers.test.ts` appends roughly 250 permanent rows to
+  `audit_event` (two per registration; the 100-registration test alone is
+  200). The audit table is append-only by law; the growth is fabricated data in
+  staging and is recorded here so nobody is surprised by it. The 1,000-value
+  lock test allocates on a test county that the sweep removes, so it grows
+  nothing.
+- `prisma migrate diff` against staging has always reported hand-written
+  foreign keys Prisma cannot express (deferrable, and `deleted_by` keys added by
+  `ALTER TABLE`). B5's only line in that output is the deferrable consent key,
+  which is intended. `migrate status` is the gate; `migrate diff` is noise
+  until Prisma can say "deferrable".
+- `pnpm farmers:seed` writes twelve fabricated farmers (family name
+  `Placeholder`) and **requires one active officer in a placeholder payam** to
+  be the registering officer, and never a `zztest` one. It refuses otherwise,
+  with instructions. Its first run on staging (2026-09-05) coincided with a
+  test run and picked a test officer; the twelve rows were removed by hand the
+  same minute — hard-deleted, confirmed by counting the base table — and the
+  script now excludes test officers, tested in both directions by
+  `tests/farmers-seed.test.ts` (not yet run: see the pooler finding). Twenty-four
+  `system` audit rows from that run remain, append-only, none carrying a name. No permanent officer account
+  exists on staging yet; run the seed after the first real one is created.
+
+## KNOWN CONDITION — LOCAL GITLEAKS IS BLIND ON AN APPLE-SILICON MACHINE (2026-09-05)
+
+The x86_64 gitleaks build under Rosetta cannot invoke `git` on this machine
+(`xcrun` cannot load its library), so `gitleaks git .` reports **"0 commits
+scanned, no leaks found"** — a clean result that checked nothing. Four such
+"clean" scans were believed on 2026-09-05 while CI failed the secret scan on
+every push of the B5 branch. The filesystem mode (`gitleaks dir`) works and
+found the two findings in seconds. **A local git-mode result on this machine
+is not evidence; use `gitleaks dir` on a `git archive` export of tracked
+files, or the arm64 build.** CI's scan is the gate and always was.
+
+The two findings were the documented connection-string shapes in
+`.env.example`, written as a full connection URL with a placeholder user and
+password, which match the repository's own rule for a Postgres URL with a
+password. Placeholders, but
+the scan has no allowlist by law, so the text was reworded to describe the
+query string rather than resemble a credential. No rule changed.
+
+## B11 CHECKLIST — WHAT A FRESH PRODUCTION PROJECT MUST BE GIVEN BY HAND
+
+Migrations carry the schema, RLS and views automatically. These do not travel:
+
+- Role settings on `postgres`, applied on staging 2026-09-05 and required for
+  the same reason (`docs/DECISIONS.md`, _Run 3 was a production failure mode_):
+  `idle_in_transaction_session_timeout = 60s`, `lock_timeout = 10s`.
+- `connect_timeout=30` on both connection strings in Vercel and GitHub.
+- Self-signup disabled in Supabase Auth (B3).
+- `SENTRY_ENVIRONMENT=production` and the Sentry IP-storage setting (2026-09-04).
+- The Supabase plan and point-in-time recovery question (open).
+
+## DEFECT — AN AUTH SERVICE OUTAGE READS AS "SIGN IN TO CONTINUE" (found by B5, owned by B3)
+
+`requireRole` asks Supabase Auth to verify the bearer token, and any error from
+that call — including the service being down or rate-limiting — becomes `401
+unauthenticated`, whose message is _Sign in to continue_. Seen in run 4 of the
+B5 suite: seven valid sessions answered 401 while the service was straining.
+In the field an officer would re-enter credentials that were never the
+problem. The correct answer is a distinct failure — the request could not be
+checked, try again — not a claim about the session.
+
+**And one B3 mechanism confirmed working by B5, the same day.** Four
+authentication accounts with officer-style identifiers and no `officer` row
+were left on staging by killed test runs — exactly the orphans B3's
+compensating-transaction decision predicted. `GET /api/users`, first page, as
+an administrator, reported `orphan_auth_accounts: 4`. The mechanism works;
+those four are the user's to remove.
+
+**Owner: B3, the shared wrapper (`apps/web/lib/api/require-role.ts`), Lane 1.**
+Not changed in B5: it is B3's contract, and the fix touches the status table in
+CONVENTIONS and every forbidden-matrix expectation. Recorded here so it is a
+scheduled change, not a rediscovery.
 
 ## BLOCKED
 

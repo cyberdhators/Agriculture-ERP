@@ -1,13 +1,21 @@
 import { PrismaClient } from '@prisma/client';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
+import * as farmerItem from '../apps/web/app/api/farmers/[id]/route';
+import * as farmers from '../apps/web/app/api/farmers/route';
 import * as locations from '../apps/web/app/api/locations/route';
 import * as me from '../apps/web/app/api/me/route';
 import * as officerItem from '../apps/web/app/api/officers/[id]/route';
 import * as officers from '../apps/web/app/api/officers/route';
 import * as userItem from '../apps/web/app/api/users/[id]/route';
 import * as users from '../apps/web/app/api/users/route';
-import { type TestPrincipal, createPrincipal, sweep } from './helpers/principals';
+import { randomUUID } from 'node:crypto';
+import {
+  FARMER_TEST_FAMILY,
+  type TestPrincipal,
+  createPrincipal,
+  sweep,
+} from './helpers/principals';
 import { call } from './helpers/request';
 
 /**
@@ -52,6 +60,24 @@ beforeAll(async () => {
   supervisor = await createPrincipal(prisma, 'supervisor', { stateId: STATE_A });
   readOnly = await createPrincipal(prisma, 'read_only', { stateId: STATE_A });
   officer = await createPrincipal(prisma, 'officer', { payamId: PAYAM_A });
+  // B5: one farmer the officer registered, for the item routes.
+  const registered = await call(farmers, 'POST', { as: officer, body: farmerBody() });
+  if (registered.status !== 201) {
+    throw new Error(`matrix setup: could not register a farmer (${registered.status})`);
+  }
+  farmerId = (registered.body.data as { id: string }).id;
+});
+let farmerId = '';
+let phoneSeq = 0;
+const farmerBody = () => ({
+  id: randomUUID(),
+  given_name: 'Zzmatrix',
+  family_name: FARMER_TEST_FAMILY,
+  sex: 'f',
+  year_of_birth: 1985,
+  phone: `+21191${String(7_000_000 + Math.floor(Math.random() * 999_999) + (phoneSeq += 1)).padStart(7, '0')}`,
+  payam_id: PAYAM_A,
+  consent: { text_version: 'v1.0-en', language: 'en', granted: true },
 });
 
 afterAll(async () => {
@@ -156,6 +182,42 @@ const ROUTES = [
     method: 'DELETE' as const,
     allow: ['admin'],
     params: () => ({ id: officer.id }),
+  },
+  // B5 (C-5). The officer registered the farmer, so the item routes are in their caseload.
+  {
+    name: 'GET /api/farmers',
+    mod: farmers,
+    method: 'GET' as const,
+    allow: ['admin', 'supervisor', 'read_only', 'officer'],
+  },
+  {
+    name: 'POST /api/farmers',
+    mod: farmers,
+    method: 'POST' as const,
+    allow: ['admin', 'officer'],
+    body: () => farmerBody(),
+  },
+  {
+    name: 'GET /api/farmers/:id',
+    mod: farmerItem,
+    method: 'GET' as const,
+    allow: ['admin', 'supervisor', 'read_only', 'officer'],
+    params: () => ({ id: farmerId }),
+  },
+  {
+    name: 'PATCH /api/farmers/:id',
+    mod: farmerItem,
+    method: 'PATCH' as const,
+    allow: ['admin', 'officer'],
+    params: () => ({ id: farmerId }),
+    body: () => ({ given_name: 'Zzrenamed' }),
+  },
+  {
+    name: 'DELETE /api/farmers/:id',
+    mod: farmerItem,
+    method: 'DELETE' as const,
+    allow: ['admin'],
+    params: () => ({ id: farmerId }),
   },
 ];
 
