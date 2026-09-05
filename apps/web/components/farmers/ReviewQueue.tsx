@@ -133,7 +133,7 @@ export function ReviewQueue() {
                     <div className={styles.reviewHead}>
                       <Stamp kind={escalated ? 'escalated' : 'pending'}>
                         {escalated
-                          ? `${daysWaiting(farmer)}d — escalated`
+                          ? `${daysWaiting(farmer)}d, escalated`
                           : `${daysWaiting(farmer)}d waiting`}
                       </Stamp>
                       <div className={styles.reviewName}>
@@ -184,7 +184,7 @@ export function ReviewQueue() {
                           onClick={() =>
                             record(
                               farmer,
-                              `Recorded (preview — no server): ${farmer.given_name} ${farmer.family_name} verified.`,
+                              `Recorded (preview, no server): ${farmer.given_name} ${farmer.family_name} verified.`,
                             )
                           }
                         >
@@ -197,7 +197,7 @@ export function ReviewQueue() {
                             onClick={() =>
                               record(
                                 farmer,
-                                `Recorded (preview — no server): merged into ${duplicates[0]!.farmer.farmer_number}.`,
+                                `Recorded (preview, no server): merged into ${duplicates[0]!.farmer.farmer_number}.`,
                               )
                             }
                           >
@@ -243,7 +243,7 @@ export function ReviewQueue() {
                 if (reject)
                   record(
                     reject,
-                    `Recorded (preview — no server): ${reject.given_name} ${reject.family_name} rejected. Reason: ${reason.trim()}`,
+                    `Recorded (preview, no server): ${reject.given_name} ${reject.family_name} rejected. Reason: ${reason.trim()}`,
                   );
                 setReject(null);
               }}

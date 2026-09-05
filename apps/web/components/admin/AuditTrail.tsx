@@ -102,7 +102,7 @@ export function AuditTrail() {
         <h1 className={styles.h1}>Audit trail</h1>
         <p className={styles.lede}>
           Every create, change and deactivation across the system, newest first. The record is
-          append-only — it is never edited or deleted. Administrators only.
+          append-only; it is never edited or deleted. Administrators only.
         </p>
       </header>
 

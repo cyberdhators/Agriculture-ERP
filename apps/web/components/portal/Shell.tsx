@@ -91,7 +91,7 @@ export function Shell({ children }: { children: ReactNode }) {
               ref={searchRef}
               type="search"
               className={styles.searchInput}
-              placeholder="Search the register — farmers, cooperatives, directories"
+              placeholder="Search the register: farmers, cooperatives, directories"
               aria-label="Search the register by name, phone or number"
             />
             <button type="submit" className={styles.searchBtn} aria-label="Search the register">

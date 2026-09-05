@@ -196,10 +196,10 @@ export function RegisterFarmer() {
       <>
         <PageHeader eyebrow="Farmers" title="Register a farmer" />
         <div className={styles.recorded}>
-          <p className="label">Recorded (preview — no server)</p>
+          <p className="label">Recorded (preview, no server)</p>
           <p>
             {saved.name} would be created as pending and sent to the review queue. Nothing was
-            written — this preview build has no backend.
+            written; this preview build has no backend.
           </p>
           <div className={screens.formActions}>
             <Button variant="primary" onClick={reset}>
@@ -251,8 +251,8 @@ export function RegisterFarmer() {
                   }}
                 >
                   {FIELD_LABELS[k]}
-                </a>{' '}
-                — {errors[k]}
+                </a>
+                : {errors[k]}
               </li>
             ))}
           </ul>
@@ -530,7 +530,7 @@ export function RegisterFarmer() {
               <Notice kind="info" title="Duplicate check">
                 <p className="small">
                   As you fill in the phone number and name, any possible duplicate already on the
-                  register appears here. A match warns; it never blocks — the survivor is a
+                  register appears here. A match warns; it never blocks. The survivor is a
                   person&apos;s decision, taken from the dossier.
                 </p>
               </Notice>
@@ -540,14 +540,14 @@ export function RegisterFarmer() {
               <p className="label">After this step</p>
               <p className="small muted">
                 Crop declarations and the farm boundary are captured on the next screen once the
-                farmer exists —{' '}
+                farmer exists:{' '}
                 {CROPS.slice(0, 4)
                   .map((c) => CROP_LABELS[c])
                   .join(', ')}{' '}
                 and more. The intake form records the person and their consent only.
               </p>
               <p className="small muted">
-                Location is scoped to {payamName(values.payam_id) || 'Central Equatoria'} — the only
+                Location is scoped to {payamName(values.payam_id) || 'Central Equatoria'}, the only
                 state seeded in this preview.
               </p>
             </Card>

@@ -118,8 +118,7 @@ export function AdminHub() {
         <h1 className={styles.h1}>Administration</h1>
         <p className={styles.lede}>
           Everything reserved to an administrator: the people who use the system, the record of what
-          they did, and — as later phases land — coverage, verification oversight and reference
-          data.
+          they did and, as later phases land, coverage, verification oversight and reference data.
         </p>
       </header>
 
