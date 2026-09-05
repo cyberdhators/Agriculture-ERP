@@ -1,10 +1,10 @@
-import { PrismaClient } from '@prisma/client';
 import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore -- plain ESM script, typed loosely on purpose
 import { PLACEHOLDER_FAMILY, seedFarmerId, seedFarmers } from '../scripts/farmers-seed-lib.mjs';
 import { createPrincipal, deleteAccount, sweep } from './helpers/principals';
+import { makeTestPrisma, requireTestEnv } from './helpers/db';
 
 /**
  * The fabricated seed, both directions (C-5.14, C-5.1):
@@ -15,12 +15,9 @@ import { createPrincipal, deleteAccount, sweep } from './helpers/principals';
  * it from a real one.
  */
 vi.setConfig({ testTimeout: 300_000, hookTimeout: 300_000 });
-const HAS_ENV =
-  (process.env.DATABASE_URL ?? '') !== '' && (process.env.SUPABASE_SERVICE_ROLE_KEY ?? '') !== '';
-const run = HAS_ENV ? describe : describe.skip;
-const prisma = new PrismaClient({
-  datasources: { db: { url: process.env.DIRECT_URL ?? process.env.DATABASE_URL } },
-});
+requireTestEnv();
+const run = describe;
+const prisma = makeTestPrisma();
 const PAYAM = 'CE-JUB-KAT';
 const REAL_NAME = 'Seed check officer (fabricated)';
 let realOfficerId = '';
@@ -46,12 +43,11 @@ const removeRealOfficer = async () => {
 };
 
 beforeAll(async () => {
-  if (!HAS_ENV) return;
   await sweep(prisma);
   await removeSeedRows();
 });
 afterAll(async () => {
-  if (HAS_ENV) {
+  {
     await removeSeedRows();
     await removeRealOfficer();
     await sweep(prisma);

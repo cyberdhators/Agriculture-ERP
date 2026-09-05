@@ -1,4 +1,3 @@
-import { PrismaClient } from '@prisma/client';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import * as farmerItem from '../apps/web/app/api/farmers/[id]/route';
@@ -16,6 +15,7 @@ import {
   createPrincipal,
   sweep,
 } from './helpers/principals';
+import { makeTestPrisma, requireTestEnv } from './helpers/db';
 import { call } from './helpers/request';
 
 /**
@@ -37,13 +37,10 @@ import { call } from './helpers/request';
 
 vi.setConfig({ testTimeout: 300_000, hookTimeout: 300_000 });
 
-const HAS_ENV =
-  (process.env.DATABASE_URL ?? '') !== '' && (process.env.SUPABASE_SERVICE_ROLE_KEY ?? '') !== '';
-const run = HAS_ENV ? describe : describe.skip;
+requireTestEnv();
+const run = describe;
 
-const prisma = new PrismaClient({
-  datasources: { db: { url: process.env.DIRECT_URL ?? process.env.DATABASE_URL } },
-});
+const prisma = makeTestPrisma();
 
 let admin: TestPrincipal & { password: string };
 let supervisor: TestPrincipal & { password: string };
@@ -54,7 +51,6 @@ const STATE_A = 'CE';
 const PAYAM_A = 'CE-JUB-MUN';
 
 beforeAll(async () => {
-  if (!HAS_ENV) return;
   await sweep(prisma);
   admin = await createPrincipal(prisma, 'admin');
   supervisor = await createPrincipal(prisma, 'supervisor', { stateId: STATE_A });
@@ -81,7 +77,7 @@ const farmerBody = () => ({
 });
 
 afterAll(async () => {
-  if (HAS_ENV) await sweep(prisma);
+  await sweep(prisma);
   await prisma.$disconnect();
 });
 

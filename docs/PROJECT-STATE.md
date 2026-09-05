@@ -562,6 +562,59 @@ password. Placeholders, but
 the scan has no allowlist by law, so the text was reworded to describe the
 query string rather than resemble a credential. No rule changed.
 
+## B5.5 — CI RUNS THE DATABASE TESTS AGAINST STAGING (2026-09-05)
+
+**The finding.** From B2 to B5 every CI run skipped every database test file
+and reported green: the files skipped themselves when the variables were
+absent, and CI had no secrets. B3's authorization matrix and B4's audit
+proofs never ran anywhere but one laptop. `docs/DECISIONS.md`, _CI's green
+was a lie about eight files_.
+
+**What changed.** The guard fails loudly, naming the missing variable; test
+clients and scripts use the transaction pooler; a session-level advisory lock
+in `vitest.global-setup.ts` makes runs one at a time wherever they start; the
+workflow runs on pull requests and merges to main only, with a 40-minute job
+timeout, and maps five repository secrets onto the names the code expects.
+
+**The five GitHub repository secrets, set by the user** (values are
+staging's; the test helpers refuse any project but staging by reference):
+
+| Secret name                         | Becomes                         |
+| ----------------------------------- | ------------------------------- |
+| `STAGING_DATABASE_URL`              | `DATABASE_URL`                  |
+| `STAGING_DIRECT_URL`                | `DIRECT_URL`                    |
+| `STAGING_SUPABASE_URL`              | `NEXT_PUBLIC_SUPABASE_URL`      |
+| `STAGING_SUPABASE_ANON_KEY`         | `NEXT_PUBLIC_SUPABASE_ANON_KEY` |
+| `STAGING_SUPABASE_SERVICE_ROLE_KEY` | `SUPABASE_SERVICE_ROLE_KEY`     |
+
+Both connection strings carry `connect_timeout=30`; the vitest config adds it
+anyway if absent.
+
+**Accepted cost per run**, recorded so it is expected: about 250 permanent
+`audit_event` rows, about 1,100 farmer-number counter values on the test
+county and about 110 on Juba county, about ten authentication accounts
+created and deleted. The test county and its counter row are removed by the
+sweep; the audit rows and Juba's counter values are permanent by design.
+
+**What no CI run has yet proven.** B2, B3 and B4's database proofs — the
+location tests, the 85-cell authorization matrix, the scope tests, the audit
+tests — and B5's farmer suite have run on one laptop and never in CI. B5.5
+does not retroactively prove them. The first CI database run covers whatever
+exists at that point; until a full CI run passes over them, those proofs
+remain single-run local evidence. **First passing CI database run: none yet.**
+Update this line when one passes.
+
+**Proven on 2026-09-05, both directions each.** The guard: a run with one
+blank variable refused in one second, naming it. The lock: a second run
+while one held staging was refused in three seconds naming the holder; a
+third after the release proceeded. The new client: the audit file 28 of 28
+on the transaction pooler, and 50 of 50 registrations at five in flight.
+
+**If a run is killed** its session ends and the lock is released; its rows
+are swept by the next run's setup, and its authentication accounts are
+removed when that sweep finds their rows. A run that finds the lock held
+fails at once and names the holder and how long it has run.
+
 ## B11 CHECKLIST — WHAT A FRESH PRODUCTION PROJECT MUST BE GIVEN BY HAND
 
 Migrations carry the schema, RLS and views automatically. These do not travel:

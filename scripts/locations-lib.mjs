@@ -247,6 +247,7 @@ export async function dependantsOf(prisma, table, id) {
  * docs/PROJECT-STATE.md.
  */
 export function makePrisma(PrismaClient) {
-  const url = process.env.DIRECT_URL ?? process.env.DATABASE_URL;
+  // Transaction pooler first (B5.5): the session pooler is for migrations.
+  const url = process.env.DATABASE_URL ?? process.env.DIRECT_URL;
   return new PrismaClient({ datasources: { db: { url } } });
 }
