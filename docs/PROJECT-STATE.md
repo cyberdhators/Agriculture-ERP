@@ -760,9 +760,9 @@ GitHub rather than copied. Grouped by who closes it.
     reassignable pointer; the scope helper reads the new column; the three
     "registering officer" checks (resubmit, mapping, visits) read it too; one
     administrator route to reassign, with an audit action and a rule for who
-    may do it — administrator only, or a supervisor within their state, your
-    call; CONVENTIONS and the matrix. About a day. The decision: before B9,
-    or after the backend.
+    may do it; CONVENTIONS and the matrix. About a day. **Decided
+    2026-09-05: unit B8.5, between B8 and B9, administrator only, widened on
+    request — `docs/UNITS.md`.**
 
 **Lane 1 owes, in a unit or as housekeeping:**
 
