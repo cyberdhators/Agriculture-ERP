@@ -645,6 +645,13 @@ then. Every farmer query failed in B6's first run. The rule and the guard —
 `tests/views-track-tables.test.ts`, every active view against its table, both
 directions — are in `docs/DECISIONS.md`.
 
+**Run 2, 2026-09-05, from this machine, alone on staging under the lock: 27
+of 27 files, 544 of 544 tests.** Every C-6 criterion's test passed in that
+run, including every transition not in the table refused through a route,
+the atomic decision, the extended scan, and the view-tracking test. Run 1
+had failed on the stale view, the sweep's foreign-key order and two
+test-side faults, all recorded above and in `docs/DECISIONS.md`.
+
 **The rejection note.** Data, not a message: returned inside the farmer
 record as `rejection` while the record is rejected, to whoever may read the
 record; never in an error, a warning, the audit log or error reporting; its
