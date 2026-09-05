@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { makeTestPrisma, requireTestEnv } from './helpers/db';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 /**
@@ -19,15 +19,13 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 // budget; it does NOT retry, and a genuine failure still fails.
 vi.setConfig({ testTimeout: 120_000, hookTimeout: 120_000 });
 
-const HAS_DB = (process.env.DATABASE_URL ?? '') !== '';
-const run = HAS_DB ? describe : describe.skip;
+requireTestEnv();
+const run = describe;
 
 // Session pooler, not the transaction pooler. See makePrisma in
 // scripts/locations-lib.mjs for why, and docs/PROJECT-STATE.md for the
 // reliability difference.
-const prisma = new PrismaClient({
-  datasources: { db: { url: process.env.DIRECT_URL ?? process.env.DATABASE_URL } },
-});
+const prisma = makeTestPrisma();
 
 /** Test rows use a code prefix no real location will ever have. */
 const T = 'ZZTEST';
@@ -40,7 +38,6 @@ const cleanup = async () => {
 };
 
 beforeAll(async () => {
-  if (!HAS_DB) return;
   await cleanup();
   await prisma.state.create({ data: { id: `${T}`, name: 'Test State' } });
   await prisma.state.create({ data: { id: `${T}2`, name: 'Other Test State' } });
@@ -51,7 +48,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  if (HAS_DB) await cleanup();
+  await cleanup();
   await prisma.$disconnect();
 });
 

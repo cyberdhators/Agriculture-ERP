@@ -14,6 +14,7 @@ import {
   createPrincipal,
   sweep,
 } from './helpers/principals';
+import { makeTestPrisma, requireTestEnv } from './helpers/db';
 import { type CallOptions, type CallResult, type RouteModule, call } from './helpers/request';
 
 /**
@@ -33,13 +34,10 @@ import { type CallOptions, type CallResult, type RouteModule, call } from './hel
  */
 vi.setConfig({ testTimeout: 300_000, hookTimeout: 300_000 });
 
-const HAS_ENV =
-  (process.env.DATABASE_URL ?? '') !== '' && (process.env.SUPABASE_SERVICE_ROLE_KEY ?? '') !== '';
-const run = HAS_ENV ? describe : describe.skip;
+requireTestEnv();
+const run = describe;
 
-const prisma = new PrismaClient({
-  datasources: { db: { url: process.env.DIRECT_URL ?? process.env.DATABASE_URL } },
-});
+const prisma = makeTestPrisma();
 
 const STATE_A = 'CE';
 const STATE_B = 'EE';
@@ -133,7 +131,6 @@ const errorOf = (r: CallResult) =>
   r.body.error as { code: string; message: string; fields?: Record<string, string> };
 
 beforeAll(async () => {
-  if (!HAS_ENV) return;
   await sweep(prisma);
   await prisma.$executeRawUnsafe(
     `INSERT INTO public.county (id, name, state_id) VALUES ($1, 'zztest county', $2)
@@ -159,7 +156,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  if (HAS_ENV) await sweep(prisma);
+  await sweep(prisma);
   await prisma.$disconnect();
 });
 
@@ -689,16 +686,19 @@ run('the farmer number is unique under concurrency (C-5.4)', () => {
     }
   });
 
-  it('50 registrations through the route, ten at a time, all succeed with distinct farmer numbers — proves it end to end, including the audit rows; the lock is proved by the test above', async () => {
-    // Waves of ten, five waves. Ten overlapping registrations is real overlap
-    // at the counter row; the number of waves is a time budget, not a proof:
-    // from a laptop far from the database each registration is 3-6 s of round
-    // trips, and a hundred did not fit in five minutes (run 5, 2026-09-05).
+  it('50 registrations through the route, five at a time, all succeed with distinct farmer numbers — proves it end to end, including the audit rows; the lock is proved by the test above', async () => {
+    // Five in flight, ten waves. In one process every in-flight registration
+    // holds a pooled connection while it queues on the county counter row, so
+    // ten at once on a pool of ten left later transactions unable to start
+    // within their 30 s wait (targeted run, 2026-09-05: 22 of 50 succeeded).
+    // Production has one connection per serverless instance and no shared
+    // pool, so this contention is the test process's, not the design's; five
+    // still overlaps on the row, which is the point.
     const results: CallResult[] = [];
-    for (let wave = 0; wave < 5; wave += 1) {
+    for (let wave = 0; wave < 10; wave += 1) {
       results.push(
         ...(await Promise.all(
-          Array.from({ length: 10 }, () =>
+          Array.from({ length: 5 }, () =>
             checked(farmers, 'POST', { as: officerB, body: body({ payam_id: PAYAM_B }) }),
           ),
         )),

@@ -39,6 +39,9 @@ export default defineConfig({
   test: {
     include: ['apps/**/*.test.ts', 'packages/**/*.test.ts', 'tests/**/*.test.ts'],
     environment: 'node',
+    // B5.5: refuse to run without the staging environment, and hold the
+    // one-run-at-a-time advisory lock for the whole run.
+    globalSetup: ['./vitest.global-setup.ts'],
     env: {
       DATABASE_URL: forTestProcess(process.env.DATABASE_URL),
       DIRECT_URL: withConnectTimeout(process.env.DIRECT_URL),

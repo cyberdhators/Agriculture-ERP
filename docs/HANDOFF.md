@@ -164,15 +164,16 @@ copy of any of these is a bug.
 
 ## STATUS BOARD
 
-| Unit | Lane | Status                                                              | PR  | Blocked on                              |
-| ---- | ---- | ------------------------------------------------------------------- | --- | --------------------------------------- |
-| B2   | 1    | **Merged** — #15                                                    | #15 | —                                       |
-| B3   | 1    | **Merged**                                                          | #20 | —                                       |
-| B4   | 1    | **Merged**                                                          | #24 | —                                       |
-| B5   | 1    | **In review** — draft, staging suite blocked by the pooler          | #32 | —                                       |
-| P1   | 2    | **Merged** — database, validation, seed, tests. Routes not started. | #17 | B3 for routes, B4 for the audit rows    |
-| UI   | 2    | First portal skin — **closed unmerged** (#18), kept as reference    | #18 | — (superseded by UI-2)                  |
-| UI-2 | 2    | **PR open** — "The Register" re-skin + Farmers screens on fixtures  | #23 | Lane 1 review; C-5 farmer-number format |
+| Unit | Lane | Status                                                                      | PR  | Blocked on                              |
+| ---- | ---- | --------------------------------------------------------------------------- | --- | --------------------------------------- |
+| B2   | 1    | **Merged** — #15                                                            | #15 | —                                       |
+| B3   | 1    | **Merged**                                                                  | #20 | —                                       |
+| B4   | 1    | **Merged**                                                                  | #24 | —                                       |
+| B5   | 1    | **Merged** — #32; C-5.13 and C-5.4 proven by run 5, locally                 | #32 | —                                       |
+| B5.5 | 1    | **In progress** — CI runs the database tests; loud guard; one run at a time | —   | —                                       |
+| P1   | 2    | **Merged** — database, validation, seed, tests. Routes not started.         | #17 | B3 for routes, B4 for the audit rows    |
+| UI   | 2    | First portal skin — **closed unmerged** (#18), kept as reference            | #18 | — (superseded by UI-2)                  |
+| UI-2 | 2    | **PR open** — "The Register" re-skin + Farmers screens on fixtures          | #23 | Lane 1 review; C-5 farmer-number format |
 
 Lane 1: please add your rows as you go. Lane 2 filled in what it could read from the open PRs.
 
@@ -574,5 +575,20 @@ know.
   `PROJECT-STATE.md`).
 - #32 leaves draft so CI runs the suite on its own runner. C-5.13 and the
   1,000-allocation test stay PARTIAL until that run says otherwise.
+
+— Monkon-Claude
+
+### 2026-09-05 — Lane 1 — B5.5: CI runs the database tests
+
+- **Every CI run since B2 skipped every database test file and reported
+  green.** Fixed: the guard refuses loudly by variable name; no opt-out.
+- Test clients and scripts use the **transaction pooler** now; the session
+  pooler is for migrations and the run lock only.
+- **One run at a time**, enforced by an advisory lock in the database — a
+  second `pnpm test` from anywhere fails at once and names the holder. Lane 2:
+  if your `pnpm test` says another run holds staging, wait; do not terminate
+  a session unless it is provably dead.
+- The workflow runs on pull requests and merges to main, 40-minute timeout,
+  five `STAGING_*` secrets (names in `PROJECT-STATE.md`).
 
 — Monkon-Claude

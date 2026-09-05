@@ -1,4 +1,3 @@
-import { PrismaClient } from '@prisma/client';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import * as audit from '../apps/web/app/api/audit/route';
@@ -14,6 +13,7 @@ import {
 } from '../apps/web/lib/api/audit';
 import { officerAuthIdentifier } from '../packages/shared/src/identity';
 import { type TestPrincipal, createPrincipal, sweep } from './helpers/principals';
+import { makeTestPrisma, requireTestEnv } from './helpers/db';
 import { call } from './helpers/request';
 
 /**
@@ -27,13 +27,10 @@ import { call } from './helpers/request';
 
 vi.setConfig({ testTimeout: 300_000, hookTimeout: 300_000 });
 
-const HAS_ENV =
-  (process.env.DATABASE_URL ?? '') !== '' && (process.env.SUPABASE_SERVICE_ROLE_KEY ?? '') !== '';
-const run = HAS_ENV ? describe : describe.skip;
+requireTestEnv();
+const run = describe;
 
-const prisma = new PrismaClient({
-  datasources: { db: { url: process.env.DIRECT_URL ?? process.env.DATABASE_URL } },
-});
+const prisma = makeTestPrisma();
 
 const PAYAM_A = 'CE-JUB-MUN';
 const STATE_A = 'CE';
@@ -64,7 +61,6 @@ const countFor = async (entityType: string, entityId: string) =>
   (await rowsFor(entityType, entityId)).length;
 
 beforeAll(async () => {
-  if (!HAS_ENV) return;
   await sweep(prisma);
   admin = await createPrincipal(prisma, 'admin');
   supervisor = await createPrincipal(prisma, 'supervisor', { stateId: STATE_A });
@@ -73,7 +69,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  if (HAS_ENV) await sweep(prisma);
+  await sweep(prisma);
   await prisma.$disconnect();
 });
 

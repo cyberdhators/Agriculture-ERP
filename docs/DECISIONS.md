@@ -1145,3 +1145,68 @@ have to. Now a standing rule in `PROJECT-STATE.md`.
 A note for the next person: a git-mode scan with the x86 build on an
 Apple-silicon machine checks nothing. The native arm64 build reproduces CI
 exactly.
+
+## B5.5 — CI's green was a lie about eight files, and had been since B2
+
+Every database test file guarded itself with "skip if the variables are
+absent". CI had no secrets, so from B2 to B5 every CI run skipped the
+forbidden matrix, the audit tests, the location tests and, later, the farmer
+suite — and reported green. B3's 85-cell authorization matrix and B4's audit
+proofs ran on one laptop, once, and were assumed green after. That is the
+finding this unit exists for; the rest is plumbing.
+
+**The guard now fails, loudly, naming the variable.** A missing variable is
+a configuration fault and a fault is red. The five names the tests need are
+fixed in `tests/helpers/db.ts`; the global setup refuses before any file
+runs; a run with one blank variable exits in a second with the name in the
+message. There is no opt-out. A laptop without staging access runs the shared
+package's tests directly; it does not get a green `pnpm test`.
+
+**Test clients use the transaction pooler.** Run 5 showed the session
+pooler's fifteen server slots refusing new connections for minutes after the
+concurrency tests while the transaction pooler kept answering. The app has
+always used the transaction pooler; the tests now do too, and so do the
+scripts. The session pooler is for migrations, and for one connection: the
+lock below, which must outlive a transaction.
+
+**One run at a time, enforced in the database.** Every file creates
+principals under one prefix and calls one global sweep, so two runs at once
+delete each other's accounts mid-run. A workflow concurrency group cannot see
+a laptop; a session-level advisory lock can see everything. The global setup
+takes it and holds it for the run; a second run fails at once and names the
+holder; a killed run's session ends and the lock goes with it. Per-run
+isolation of fixtures was the alternative — more files to change, and the
+pooler's slots still bound how many runs could overlap — and can come later if
+serial runs become the bottleneck.
+
+**Triggers and cost.** Pull requests and merges to main, not every push. Each
+run appends about 250 permanent audit rows, consumes about 1,100 farmer-number
+counter values on the test county and about 110 on Juba, and creates and
+deletes about ten authentication accounts. Accepted, and written down so the
+growth is expected rather than discovered. Job timeout 40 minutes, so a hung
+run cannot hold the lock for six hours.
+
+**A finding on the way: five in flight, not ten — and what that does and
+does not say.** Ten concurrent registrations through the route in one test
+process, on a pool of ten, each held a pooled connection while queuing on the
+county counter row, and later transactions could not start within their
+30-second wait: 22 of 50 succeeded. **This is the test process's shared pool
+contending with itself. It is not evidence that the system cannot handle ten
+concurrent registrations.** Production runs one connection per serverless
+instance with no shared pool; the only shared thing there is the counter row,
+and run 5 showed that row serialising 1,000 concurrent allocations correctly
+with ten in flight. A future session reading "ten in flight failed" must read
+this sentence with it. The throughput test keeps five in flight, which still
+overlaps on the row, and that is a time-and-pool budget for a laptop, not a
+capacity claim about the design.
+
+## B5.5 — What the first CI database run does and does not prove
+
+Once B5.5 is merged, every unit from B2 onward has database evidence that
+ran on one laptop and never in CI: B2's location tests, B3's 85-cell
+authorization matrix and scope tests, B4's audit tests, B5's farmer suite.
+B5.5 does not retroactively prove any of them. The first CI database run
+covers whatever exists at that point, and B2, B3 and B4's proofs were
+single-run local evidence until a full CI run passed over them — which it did
+on 2026-09-05, workflow run 33941608043 on #33: 23 of 23 files in 19 minutes
+on a GitHub-hosted runner. `PROJECT-STATE.md`'s B5.5 section records it.
