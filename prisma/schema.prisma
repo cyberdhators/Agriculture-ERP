@@ -269,6 +269,8 @@ model DirectoryEntry {
   payam Payam @relation(fields: [payamId, stateId], references: [id, stateId], map: "directory_entry_payam_state_consistent_fkey")
   state State @relation(fields: [stateId], references: [id], map: "directory_entry_state_id_fkey")
 
+  verifier User? @relation("DirectoryEntryVerifiedBy", fields: [verifiedBy], references: [id], map: "directory_entry_verified_by_fkey")
+  deleter  User? @relation("DirectoryEntryDeletedBy", fields: [deletedBy], references: [id], map: "directory_entry_deleted_by_fkey")
   @@index([entryType, payamId, active], map: "directory_entry_lookup_idx")
   @@index([stateId], map: "directory_entry_state_id_idx")
   @@map("directory_entry")
@@ -298,6 +300,8 @@ model LearningResource {
   // Both indexes on this table are partial (deleted_at IS NULL) and the unique
   // on storage_path is too. Prisma cannot express partial indexes, so they live
   // in migration 6 only, as the _active indexes on the B2 tables do.
+  uploader User? @relation("LearningResourceUploadedBy", fields: [uploadedBy], references: [id], map: "learning_resource_uploaded_by_fkey")
+  deleter  User? @relation("LearningResourceDeletedBy", fields: [deletedBy], references: [id], map: "learning_resource_deleted_by_fkey")
   @@map("learning_resource")
 }
 /// Office staff. NO EMAIL COLUMN: email lives in auth.users and nowhere else,
@@ -317,6 +321,10 @@ model User {
 
   scopeState State? @relation(fields: [scopeStateId], references: [id])
   verificationDecisions VerificationEvent[]
+  directoryEntriesVerified DirectoryEntry[] @relation("DirectoryEntryVerifiedBy")
+  directoryEntriesDeleted  DirectoryEntry[] @relation("DirectoryEntryDeletedBy")
+  learningResourcesUploaded LearningResource[] @relation("LearningResourceUploadedBy")
+  learningResourcesDeleted  LearningResource[] @relation("LearningResourceDeletedBy")
 
   @@index([role], map: "user_role_idx")
   @@index([scopeStateId], map: "user_scope_state_id_idx")

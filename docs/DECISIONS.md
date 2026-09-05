@@ -1298,3 +1298,43 @@ table with an `_active` view recreates the view in the same migration.
 **The guard:** `tests/views-track-tables.test.ts` compares every active
 view's columns to its table's, in order, both directions, so a stale view
 fails a database test instead of the first route that reads it.
+
+## Standing rule — a view named after a table is a filter of it and carries every column
+
+A `SELECT *` view freezes its column list when it is created. A column added
+to the table later is invisible through the view until the view is
+recreated, and nothing in migration, typecheck, lint or the shared tests can
+see that: the table is right, the code is right, only the database knows.
+B6 lost its first full run to `farmer_active` lacking `pending_since`. B7
+adds farm columns, B8 visits, B10 views over all of them; this will recur
+unless it is a rule with a test.
+
+**The rule.** A view whose name begins with a table's name — `farmer_active`,
+`farmer_verified_v`, `farm_active` when it exists — is a filter of that table
+and carries every one of its columns, in order. A migration that adds a
+column to such a table recreates every such view in the same migration
+(`CREATE OR REPLACE VIEW` may append columns). A view that deliberately
+projects a subset, or aggregates, is not named after its table.
+
+**The test.** `tests/views-track-tables.test.ts` discovers every view in the
+schema, pairs each with a table by longest name prefix, refuses any view it
+cannot pair, and compares the column lists both directions. It runs in every
+full suite run, locally and in CI.
+
+## 2026-09-05 — The drift-test premise came from the user, and checking it found it false
+
+The record above under "A false alarm about the drift test" states what was
+true. This entry states where the premise came from, because that matters
+more than the finding: **the user asserted that the drift test had been
+matching on table padding and had stopped guarding between B5 and B6, and
+asked for it to be recorded as a finding. It was checked against the code
+before it was written down, and it was false.** The test trims each cell and
+had never been blind; the padding fault was in a session editing script. The
+check exposed a real gap beside it — one table the test had never covered —
+which was measured and closed.
+
+Recorded at the user's own request and in their words: the pattern of an
+assertion entering the documents unchecked is exactly what the staleness
+audits keep finding. Nothing goes into the record on anyone's say-so,
+including the person who owns the project; the check comes first, and the
+correction is written down whichever direction it points.

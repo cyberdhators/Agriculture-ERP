@@ -213,6 +213,18 @@ export async function sweep(prisma: PrismaClient): Promise<void> {
      WHERE deleted_by IN (SELECT id FROM public."user" WHERE name LIKE '${TEST_PREFIX}%')`,
   );
 
+  // Migration 13: P1's tables now reference user. Null any test-user reference first.
+  for (const [table, column] of [
+    ['directory_entry', 'verified_by'],
+    ['directory_entry', 'deleted_by'],
+    ['learning_resource', 'uploaded_by'],
+    ['learning_resource', 'deleted_by'],
+  ] as const) {
+    await prisma.$executeRawUnsafe(
+      `UPDATE public.${table} SET ${column} = NULL
+       WHERE ${column} IN (SELECT id FROM public."user" WHERE name LIKE '${TEST_PREFIX}%')`,
+    );
+  }
   await prisma.$executeRawUnsafe(`DELETE FROM public."officer" WHERE name LIKE '${TEST_PREFIX}%'`);
   await prisma.$executeRawUnsafe(`DELETE FROM public."user"    WHERE name LIKE '${TEST_PREFIX}%'`);
   // B5's out-of-state fixtures: a county and payam under EE that exist only during a run.
