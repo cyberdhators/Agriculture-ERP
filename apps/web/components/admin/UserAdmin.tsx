@@ -12,7 +12,13 @@ import {
 } from '@/lib/admin/api';
 import { OFFICERS_FIXTURE, PAYAM_NAMES, STAFF_FIXTURE, STATE_NAMES } from '@/lib/admin/fixtures';
 
+import { Button } from '@/components/ui';
+
+import { AccountForm } from './AccountForm';
 import styles from './admin.module.css';
+
+type OpenForm =
+  { kind: 'staff'; staff?: StaffUser } | { kind: 'officer'; officer?: Officer } | null;
 
 const ROLE_LABEL: Record<string, string> = {
   admin: 'Administrator',
@@ -46,6 +52,16 @@ export function UserAdmin() {
   const [loading, setLoading] = useState(LIVE_ADMIN);
   const [error, setError] = useState<string | undefined>();
   const [busy, setBusy] = useState<string | undefined>();
+  const [form, setForm] = useState<OpenForm>(null);
+
+  const upsertStaff = (u: StaffUser) =>
+    setStaff((list) =>
+      list.some((x) => x.id === u.id) ? list.map((x) => (x.id === u.id ? u : x)) : [u, ...list],
+    );
+  const upsertOfficer = (o: Officer) =>
+    setOfficers((list) =>
+      list.some((x) => x.id === o.id) ? list.map((x) => (x.id === o.id ? o : x)) : [o, ...list],
+    );
 
   useEffect(() => {
     if (!LIVE_ADMIN) return;
@@ -107,9 +123,14 @@ export function UserAdmin() {
       <section className={styles.section} aria-labelledby="staff-h">
         <div className={styles.sectionHead}>
           <h2 id="staff-h">Staff accounts</h2>
-          <span className={styles.count}>
-            {staff.length} account{staff.length === 1 ? '' : 's'}
-          </span>
+          <div className={styles.sectionActions}>
+            <span className={styles.count}>
+              {staff.length} account{staff.length === 1 ? '' : 's'}
+            </span>
+            <Button variant="primary" size="small" onClick={() => setForm({ kind: 'staff' })}>
+              Add staff account
+            </Button>
+          </div>
         </div>
         <div className={styles.tableWrap}>
           <table className={styles.table}>
@@ -119,6 +140,7 @@ export function UserAdmin() {
                 <th>Role</th>
                 <th>State</th>
                 <th>Last sign-in</th>
+                <th aria-label="Action" />
               </tr>
             </thead>
             <tbody>
@@ -130,11 +152,20 @@ export function UserAdmin() {
                   <td>{ROLE_LABEL[u.role] ?? u.role}</td>
                   <td>{stateName(u.state_id)}</td>
                   <td className={styles.num}>{fmtDate(u.last_login_at)}</td>
+                  <td className={styles.actionCell}>
+                    <button
+                      type="button"
+                      className={styles.action}
+                      onClick={() => setForm({ kind: 'staff', staff: u })}
+                    >
+                      Edit
+                    </button>
+                  </td>
                 </tr>
               ))}
               {staff.length === 0 && !loading ? (
                 <tr>
-                  <td colSpan={4} className={styles.empty}>
+                  <td colSpan={5} className={styles.empty}>
                     No staff accounts in scope.
                   </td>
                 </tr>
@@ -147,9 +178,14 @@ export function UserAdmin() {
       <section className={styles.section} aria-labelledby="officers-h">
         <div className={styles.sectionHead}>
           <h2 id="officers-h">Extension officers</h2>
-          <span className={styles.count}>
-            {activeOfficers} active · {officers.length} total
-          </span>
+          <div className={styles.sectionActions}>
+            <span className={styles.count}>
+              {activeOfficers} active · {officers.length} total
+            </span>
+            <Button variant="primary" size="small" onClick={() => setForm({ kind: 'officer' })}>
+              Add officer
+            </Button>
+          </div>
         </div>
         <div className={styles.tableWrap}>
           <table className={styles.table}>
@@ -180,14 +216,23 @@ export function UserAdmin() {
                     </span>
                   </td>
                   <td className={styles.actionCell}>
-                    <button
-                      type="button"
-                      className={styles.action}
-                      disabled={busy === o.id}
-                      onClick={() => toggleOfficer(o)}
-                    >
-                      {o.status === 'active' ? 'Deactivate' : 'Reactivate'}
-                    </button>
+                    <div className={styles.actionRow}>
+                      <button
+                        type="button"
+                        className={styles.action}
+                        onClick={() => setForm({ kind: 'officer', officer: o })}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        className={styles.action}
+                        disabled={busy === o.id}
+                        onClick={() => toggleOfficer(o)}
+                      >
+                        {o.status === 'active' ? 'Deactivate' : 'Reactivate'}
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -202,6 +247,17 @@ export function UserAdmin() {
           </table>
         </div>
       </section>
+
+      {form ? (
+        <AccountForm
+          kind={form.kind}
+          staff={form.kind === 'staff' ? form.staff : undefined}
+          officer={form.kind === 'officer' ? form.officer : undefined}
+          onClose={() => setForm(null)}
+          onSavedStaff={upsertStaff}
+          onSavedOfficer={upsertOfficer}
+        />
+      ) : null}
     </div>
   );
 }

@@ -148,3 +148,14 @@
   opacity: 0.55;
   cursor: default;
 }
+
+.sectionActions {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+}
+.actionRow {
+  display: flex;
+  gap: var(--s-2);
+  justify-content: flex-end;
+}
