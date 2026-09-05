@@ -86,6 +86,12 @@ export const RULE_MESSAGES = {
   farmer_already_exists: 'A farmer with that identifier has already been registered.',
   registering_officer_required: 'Name the extension officer who registered this farmer.',
   registering_officer_not_found: 'The registering officer could not be found in that payam.',
+  // B6 (C-6). Decisions about a record, never words about a person.
+  transition_not_allowed: 'That decision is not available for this record in its current state.',
+  reason_required: 'A rejection must carry a reason.',
+  merge_target_not_found: 'The farmer named as the original could not be found.',
+  merge_target_not_eligible: 'The farmer named as the original cannot receive a merge.',
+  merge_across_states: 'A farmer cannot be merged into a record in another state.',
 } as const;
 
 export type RuleKey = keyof typeof RULE_MESSAGES;

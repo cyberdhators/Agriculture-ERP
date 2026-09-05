@@ -289,9 +289,12 @@ C-5.8  A farmer's national ID is returned only to administrators and to the
        `docs/DECISIONS.md`, and can be widened on request.
 
 C-5.9  An officer may change a farmer they registered while that farmer's
-       verification is pending. An administrator may change any farmer at any
-       time. Nobody else changes a farmer. The farmer number and the registering
-       officer are never changed by anyone.
+       verification is pending or rejected. An administrator may change any
+       farmer at any time. Nobody else changes a farmer. The farmer number and
+       the registering officer are never changed by anyone.
+       (Amended by B6: the original said pending only. A rejected record must
+       be correctable before it can be resubmitted, C-6.5, so the original was
+       wrong.)
 
 C-5.10 Only an administrator removes a farmer, and removal is soft deletion. A
        removed farmer appears in no list, count, export or report, and their
@@ -334,6 +337,109 @@ produces it. It is a value, not a permission.
 **The placeholder payam codes.** Until I-07 arrives, every farmer references a
 placeholder payam. What that costs if the codes are replaced rather than
 renamed is stated in `docs/PROJECT-STATE.md` when B5 lands.
+
+---
+
+## C-6 — VERIFICATION, REJECTION, MERGING AND ESCALATION
+
+Deliverable: (c) farmer registration and profiling. Unit B6. The verified view
+this section creates is what (q) reporting reads.
+
+Source: `docs/data-model.md` section 1 (`verification_event`), section 3 (*Where
+a record can stall*, *Conflicts and duplicates*) and section 4 (the
+`verification_status` state machine). B5 created records and every one is
+pending; nothing counts toward a reach figure until a named person decides it
+is real, on a stated date. This is the section that makes a reach number
+defensible, and it is where the duplicate warning of C-5.6 gets its answer.
+
+C-6.1  A farmer record is in exactly one of four states: pending, verified,
+       rejected or merged. The only transitions are pending to verified,
+       pending to rejected, rejected to pending on resubmission, and any state
+       to merged. Every other transition is refused, and one module decides
+       that, not each route separately. A test proves each refusal.
+
+C-6.2  A supervisor of the farmer's state, or an administrator, verifies,
+       rejects or merges a farmer. Nobody else does. A supervisor's decisions
+       are confined to their state; a farmer outside it is indistinguishable
+       from one that does not exist (C-3.5). An officer never verifies,
+       including their own registrations. A read_only user reads the queue and
+       changes nothing (C-3.9).
+
+C-6.3  A rejection carries a reason code from a fixed list and may carry a
+       note of at most 280 characters. A rejection without a code is refused
+       as a business rule not met. The code and the note are returned to the
+       registering officer with the record so the correction can be made; the
+       note appears nowhere else — not in any error, warning or message, not in
+       the audit log. Its field name, `note`, is on the error scrubber's key
+       list, and a test in the shape of B1.5's proves an event carrying it
+       leaves without it. A test proves both halves.
+
+C-6.4  A merge names a target and sets the source's pointer to it. The source
+       row is kept and remains readable by id; neither row is ever deleted. A
+       target that is the source itself, is merged, is rejected or is
+       soft-deleted is refused. A source and target in different states are
+       refused, for every role including an administrator: a merge across
+       states would move a farmer between supervisors' scopes and between two
+       donor reach figures, and if CORWADO needs that it is their decision,
+       not a default.
+
+C-6.5  The registering officer, and nobody else, resubmits a rejected record
+       after correcting it (C-5.9 as amended). Resubmission returns the record
+       to pending and restarts the escalation clock. Resubmission from any
+       state but rejected is refused.
+
+C-6.6  Every transition writes a verification event naming the decider, the
+       decision, the reason code where there is one, the days the record had
+       waited, and the moment; and an audit event; both in the same
+       transaction as the status change, so a decision and its record succeed
+       or fail together (C-4.4).
+
+C-6.7  A record still pending after more than seven days is escalated. The
+       queue shows pending farmers oldest first with their days waiting, can
+       be filtered to escalated ones, and shows each farmer's duplicate matches
+       expanded beside it so the reviewer sees both records. Days waiting is
+       counted from registration, or from the latest resubmission. The clock
+       is not editable through any route, by any role.
+
+C-6.8  Reach figures read the verified-only view and nothing else. Pending,
+       rejected and merged records are counted separately and never folded
+       into a reach total. The view excludes soft-deleted records as well.
+
+C-6.9  A merged source appears in no queue, no count and no reach figure, but
+       is readable by id, with its pointer. The same proof B5 gave for
+       soft-deleted farmers is given for merged ones.
+
+C-6.10 No response in this deliverable carries a farmer's name, phone number,
+       national ID or rejection note outside the record it was asked for. The
+       C-5.13 scan is extended to cover the note, not duplicated.
+
+### Notes for the builder
+
+**The rejection note is data, not a message.** The reviewer writes about the
+record, not the person — a standing rule in `docs/DECISIONS.md` that will
+govern every free-text field this system gets. The code carries the meaning;
+the note carries the detail; the note travels only inside the verification
+record to the parties entitled to it.
+
+**The clock** is a `pending_since` column: set at registration, reset on
+resubmission, never editable. Days waiting is derived from it wherever shown.
+
+**The reason codes** — `duplicate`, `wrong_location`, `incomplete`,
+`not_a_farmer`, `consent_missing`, `other` — live in `packages/shared`, and
+the database CHECK is generated from that list, the same pattern as
+`AUDIT_ACTIONS` in B4, so the code and the database cannot drift.
+
+**Additive corrections to the data model**, recorded in B6: `merged` joins the
+verification status enum, with `merged_into` as the pointer; `resubmitted`
+joins the verification-event decision enum so every transition has an event.
+
+**A pending record can always be decided.** Verification, rejection and
+merging need only a supervisor of the state or an administrator, never the
+registering officer, so a record whose officer has since left is not stuck in
+the queue. Only resubmission needs the officer; a rejected record whose
+officer is gone stays rejected — out of the queue, counted as rejected —
+until an administrator reassigns it, which is a later decision, not this
+section's.
 
 ---
 
@@ -415,7 +521,6 @@ list. If yes, the officer role gets a write route and entries gain a
 Written one unit ahead of the build, not all at once, so that criteria reflect
 what the preceding unit actually produced.
 
-- C-6 — verification and approval workflow — (c)
 - C-7 — farm boundary mapping — (c)
 - C-8 — extension visit recording — (d)
 - C-9 — offline synchronisation — (b)

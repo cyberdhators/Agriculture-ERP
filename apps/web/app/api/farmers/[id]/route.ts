@@ -34,10 +34,13 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
     bodySchema: patchFarmerSchema,
     handler: async ({ auth, body, params }) => {
       requireWriter(auth);
-      // Not theirs → 404 (scope). Theirs but no longer pending → 403 (C-5.9).
+      // Not theirs → 404 (scope). Theirs but neither pending nor rejected →
+      // 403 (C-5.9 as amended by B6: a rejected record must be correctable).
       const target = await loadVisible(prisma, params.id ?? '', auth);
       if (auth.role === 'officer') {
-        if (target.verification_status !== 'pending') throw forbidden();
+        if (target.verification_status !== 'pending' && target.verification_status !== 'rejected') {
+          throw forbidden();
+        }
         if (
           body.payam_id !== undefined &&
           (auth.scope.kind !== 'caseload' || body.payam_id !== auth.scope.payamId)

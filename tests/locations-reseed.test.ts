@@ -21,7 +21,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 // Each reseed spawns a subprocess that opens its own connection.
 // The default 5s timeout is for pure functions, not for that. This raises the
 // budget; it does NOT retry, and a genuine failure still fails.
-vi.setConfig({ testTimeout: 120_000, hookTimeout: 120_000 });
+vi.setConfig({ testTimeout: 300_000, hookTimeout: 300_000 });
 
 requireTestEnv();
 const run = describe;

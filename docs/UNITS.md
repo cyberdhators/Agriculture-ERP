@@ -24,8 +24,8 @@ saying "parked until B3" named a thing a reader could not look up.
 | **B3**   | Identity, roles, `requireRole`, RLS | Alieu      | Not started     |
 | **B4**   | Audit log, append-only              | Monkonmlah | Not started     |
 | **B5**   | Farmer core, consent, soft delete   | Monkonmlah | Merged — #32    |
-| **B5.5** | CI runs the database tests          | Monkonmlah | In progress     |
-| **B6**   | Verification and escalation         | Monkonmlah | Not started     |
+| **B5.5** | CI runs the database tests          | Monkonmlah | Merged — #33    |
+| **B6**   | Verification and escalation         | Monkonmlah | In progress     |
 | **B7**   | Farm boundaries and PostGIS         | Alieu      | Not started     |
 | **B8**   | Visit notes and attachments         | Monkonmlah | Not started     |
 | **B9**   | Offline sync endpoint               | Alieu      | Not started     |

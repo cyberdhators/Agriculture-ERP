@@ -277,6 +277,11 @@ character.
 | `farmer_already_exists`         | A farmer with that identifier has already been registered.                                     |
 | `registering_officer_required`  | Name the extension officer who registered this farmer.                                         |
 | `registering_officer_not_found` | The registering officer could not be found in that payam.                                      |
+| `transition_not_allowed`        | That decision is not available for this record in its current state.                           |
+| `reason_required`               | A rejection must carry a reason.                                                               |
+| `merge_target_not_found`        | The farmer named as the original could not be found.                                           |
+| `merge_target_not_eligible`     | The farmer named as the original cannot receive a merge.                                       |
+| `merge_across_states`           | A farmer cannot be merged into a record in another state.                                      |
 
 **A route names a rule; it never writes a sentence.** `conflict()` and
 `unprocessable()` take a key from this registry, not a string. That is how the
@@ -317,6 +322,10 @@ change.
 | `farmer.updated`         |
 | `farmer.soft_deleted`    |
 | `consent.recorded`       |
+| `farmer.verified`        |
+| `farmer.rejected`        |
+| `farmer.merged`          |
+| `farmer.resubmitted`     |
 
 `before` and `after` hold **changed fields only**, never whole rows, and never a
 password, token, authentication identifier, national id, phone, email, given
@@ -328,42 +337,49 @@ caller passes (C-4.6, C-4.7).
 The `fields` map carries a reason per failing field, not the message above.
 These are also exact.
 
-| Situation                             | Exact reason                                                                       |
-| ------------------------------------- | ---------------------------------------------------------------------------------- |
-| A field the request may not send      | This field is not recognised.                                                      |
-| The body is not an object at all      | The request was not sent in the expected form.                                     |
-| Page marker: not text                 | The page marker must be text.                                                      |
-| Phone: nothing entered, or not text   | Enter a mobile number.                                                             |
-| Phone: contains a letter              | A mobile number contains digits only.                                              |
-| Phone: disallowed punctuation         | A mobile number may contain only digits, spaces and hyphens, and may begin with +. |
-| Phone: wrong or missing country code  | Enter a South Sudan mobile number starting +211.                                   |
-| Phone: too short                      | A South Sudan mobile number has nine digits after +211. This one has too few.      |
-| Phone: too long                       | A South Sudan mobile number has nine digits after +211. This one has too many.     |
-| Page size: not a number, or blank     | The page size must be a number.                                                    |
-| Page size: has a decimal point        | The page size must be a whole number.                                              |
-| Page size: below one                  | The page size must be at least 1.                                                  |
-| Farmer id: missing                    | A registration must carry its identifier.                                          |
-| Farmer id: not a UUID                 | The identifier is not in the expected form.                                        |
-| Given name: missing or blank          | Enter the given name.                                                              |
-| Family name: missing or blank         | Enter the family name.                                                             |
-| Name: over 100 characters             | A name can be at most 100 characters.                                              |
-| Name: digits, symbols or emoji        | A name contains letters, spaces, apostrophes and hyphens only.                     |
-| Sex: not f or m                       | Choose f or m.                                                                     |
-| Year of birth: not a whole number     | The year of birth must be a whole number.                                          |
-| Year of birth: after this year        | The year of birth cannot be in the future.                                         |
-| Year of birth: over 120 years back    | The year of birth cannot be more than 120 years ago.                               |
-| National ID: wrong shape              | A national ID is 6 to 20 characters: digits and capital letters only.              |
-| Payam: missing                        | Choose a payam.                                                                    |
-| Registering officer: not a UUID       | The registering officer is not in the expected form.                               |
-| Consent: not an object                | Consent must be recorded as an object.                                             |
-| Consent text version: missing         | Record which consent text was read.                                                |
-| Consent text version: over 32 chars   | The consent text version can be at most 32 characters.                             |
-| Consent language: not en or ar-juba   | Choose en or ar-juba for the consent language.                                     |
-| Consent granted: not true or false    | Say whether consent was granted, true or false.                                    |
-| Filter: verification status unknown   | Choose pending, verified or rejected.                                              |
-| Filter: date not ISO 8601             | Give the date as an ISO 8601 timestamp.                                            |
-| Filter: duplicate flag not true/false | Choose true or false.                                                              |
-| Filter: date range inverted           | The end of the date range is before its start.                                     |
+| Situation                              | Exact reason                                                                                    |
+| -------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| A field the request may not send       | This field is not recognised.                                                                   |
+| The body is not an object at all       | The request was not sent in the expected form.                                                  |
+| Page marker: not text                  | The page marker must be text.                                                                   |
+| Phone: nothing entered, or not text    | Enter a mobile number.                                                                          |
+| Phone: contains a letter               | A mobile number contains digits only.                                                           |
+| Phone: disallowed punctuation          | A mobile number may contain only digits, spaces and hyphens, and may begin with +.              |
+| Phone: wrong or missing country code   | Enter a South Sudan mobile number starting +211.                                                |
+| Phone: too short                       | A South Sudan mobile number has nine digits after +211. This one has too few.                   |
+| Phone: too long                        | A South Sudan mobile number has nine digits after +211. This one has too many.                  |
+| Page size: not a number, or blank      | The page size must be a number.                                                                 |
+| Page size: has a decimal point         | The page size must be a whole number.                                                           |
+| Page size: below one                   | The page size must be at least 1.                                                               |
+| Farmer id: missing                     | A registration must carry its identifier.                                                       |
+| Farmer id: not a UUID                  | The identifier is not in the expected form.                                                     |
+| Given name: missing or blank           | Enter the given name.                                                                           |
+| Family name: missing or blank          | Enter the family name.                                                                          |
+| Name: over 100 characters              | A name can be at most 100 characters.                                                           |
+| Name: digits, symbols or emoji         | A name contains letters, spaces, apostrophes and hyphens only.                                  |
+| Sex: not f or m                        | Choose f or m.                                                                                  |
+| Year of birth: not a whole number      | The year of birth must be a whole number.                                                       |
+| Year of birth: after this year         | The year of birth cannot be in the future.                                                      |
+| Year of birth: over 120 years back     | The year of birth cannot be more than 120 years ago.                                            |
+| National ID: wrong shape               | A national ID is 6 to 20 characters: digits and capital letters only.                           |
+| Payam: missing                         | Choose a payam.                                                                                 |
+| Registering officer: not a UUID        | The registering officer is not in the expected form.                                            |
+| Consent: not an object                 | Consent must be recorded as an object.                                                          |
+| Consent text version: missing          | Record which consent text was read.                                                             |
+| Consent text version: over 32 chars    | The consent text version can be at most 32 characters.                                          |
+| Consent language: not en or ar-juba    | Choose en or ar-juba for the consent language.                                                  |
+| Consent granted: not true or false     | Say whether consent was granted, true or false.                                                 |
+| Filter: verification status unknown    | Choose pending, verified or rejected.                                                           |
+| Filter: date not ISO 8601              | Give the date as an ISO 8601 timestamp.                                                         |
+| Filter: duplicate flag not true/false  | Choose true or false.                                                                           |
+| Filter: date range inverted            | The end of the date range is before its start.                                                  |
+| Rejection reason: not on the list      | Choose a reason: duplicate, wrong_location, incomplete, not_a_farmer, consent_missing or other. |
+| Note: not text                         | The note must be text.                                                                          |
+| Note: over 280 characters              | A note can be at most 280 characters.                                                           |
+| Note: control characters               | A note contains printable text only.                                                            |
+| Merge target: missing                  | Name the farmer this record is a duplicate of.                                                  |
+| Merge target: not a UUID               | The target is not in the expected form.                                                         |
+| Queue filter: escalated not true/false | Choose true or false.                                                                           |
 
 The key beside each reason is the field name, per section 4.1. An unrecognised
 field named `nickname` therefore produces `{ "nickname": "This field is not
@@ -694,3 +710,41 @@ farmer_already_exists` — the first registration stands, no second row exists.
 
 **`national_id`** is present in a response only for an administrator and for
 the officer who registered that farmer. For anyone else the key is absent.
+
+---
+
+## 12. VERIFICATION
+
+`POST /api/farmers/:id/verify`, `/reject`, `/merge`, `/resubmit`;
+`GET /api/verification/queue` (C-6, unit B6).
+
+**Who may do what.** Verify, reject and merge: administrator, or a supervisor
+of the farmer's state; a farmer outside the supervisor's state is `404`.
+Resubmit: the registering officer only, from `rejected` only; anyone else's
+farmer is `404`. The queue: administrator (all), supervisor and read_only
+(own state). read_only changes nothing.
+
+**The state machine** lives in one module. A decision the record cannot take
+in its state is `409 transition_not_allowed`, whatever the route.
+
+**Reject** takes `{ reason_code, note? }`. `reason_code` is one of
+`duplicate`, `wrong_location`, `incomplete`, `not_a_farmer`,
+`consent_missing`, `other`; missing is `422 reason_required`. `note` is at
+most 280 printable characters. **The note is data, not a message**: it is
+returned only inside the farmer record, as `rejection: { reason_code, note,
+decided_at }`, while the record is rejected; it is never in an error, a
+warning, the audit log or error reporting.
+
+**Merge** takes `{ target_id, note? }`. The target must be found in the
+caller's scope (`422 merge_target_not_found`), must not be the source, merged,
+rejected or soft-deleted (`409 merge_target_not_eligible`), and must be in the
+source's state, for every role (`409 merge_across_states`). The source keeps
+its row with `merged_into` set and stays readable by id.
+
+**The queue** returns pending farmers oldest first by `pending_since`, each
+with `days_waiting`, `escalated` (more than seven days), and `duplicates`, the
+matched farmer records the caller may see. Filters: `escalated`, `payam`,
+`county`, plus `limit` and `cursor`.
+
+**`pending_since`** is set at registration, reset on resubmission, and never
+editable through any route. `days_waiting` is derived from it.
