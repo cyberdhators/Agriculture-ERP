@@ -1206,7 +1206,7 @@ Once B5.5 is merged, every unit from B2 onward has database evidence that
 ran on one laptop and never in CI: B2's location tests, B3's 85-cell
 authorization matrix and scope tests, B4's audit tests, B5's farmer suite.
 B5.5 does not retroactively prove any of them. The first CI database run
-covers whatever exists at that point, and B2, B3 and B4's proofs remain
-single-run local evidence until a full CI run passes over them. When one
-does, `PROJECT-STATE.md`'s B5.5 section records the run and the date, and
-that sentence changes from "remain" to "were, until".
+covers whatever exists at that point, and B2, B3 and B4's proofs were
+single-run local evidence until a full CI run passed over them — which it did
+on 2026-09-05, workflow run 33941608043 on #33: 23 of 23 files in 19 minutes
+on a GitHub-hosted runner. `PROJECT-STATE.md`'s B5.5 section records it.

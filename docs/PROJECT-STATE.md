@@ -601,8 +601,11 @@ location tests, the 85-cell authorization matrix, the scope tests, the audit
 tests — and B5's farmer suite have run on one laptop and never in CI. B5.5
 does not retroactively prove them. The first CI database run covers whatever
 exists at that point; until a full CI run passes over them, those proofs
-remain single-run local evidence. **First passing CI database run: none yet.**
-Update this line when one passes.
+remain single-run local evidence. **First passing CI database run: 2026-09-05, workflow run 33941608043 on
+pull request #33 — 23 of 23 files, every database test included, in 19
+minutes 26 seconds on a GitHub-hosted runner, every step green including the
+secret scan.** From that run onward B2, B3, B4 and B5's proofs have run in CI;
+what they prove is what existed at that head.
 
 **Proven on 2026-09-05, both directions each.** The guard: a run with one
 blank variable refused in one second, naming it. The lock: a second run
