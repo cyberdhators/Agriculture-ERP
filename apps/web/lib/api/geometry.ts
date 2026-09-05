@@ -124,12 +124,17 @@ export async function insertBoundary(
       input.mappedBy,
     );
   } catch (failure) {
+    // 23505 on this insert can only be the partial unique index
+    // (farm_id, season) WHERE is_current: the race the index exists to lose.
+    // Prisma's message names the key, not the index, so the code is matched.
+    const meta =
+      failure instanceof Prisma.PrismaClientKnownRequestError
+        ? (failure.meta as { code?: unknown } | undefined)
+        : undefined;
     if (
       failure instanceof Prisma.PrismaClientKnownRequestError &&
       failure.code === 'P2010' &&
-      String((failure.meta as { message?: unknown } | undefined)?.message ?? '').includes(
-        'farm_boundary_one_current_per_season',
-      )
+      meta?.code === '23505'
     ) {
       throw conflict('boundary_recorded_concurrently');
     }

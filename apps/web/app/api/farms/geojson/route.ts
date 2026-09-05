@@ -8,7 +8,7 @@ import {
   zodErrorToApiError,
 } from '@agri-erp/shared';
 import { ApiFailure, invalidCursor } from '../../../../lib/api/errors';
-import { FARM_COLUMNS, FARM_FROM, type FarmRow, farmScopeClause } from '../../../../lib/api/farms';
+import { FARM_FROM, farmScopeClause } from '../../../../lib/api/farms';
 import { BOUNDARY_COLUMNS, type BoundaryRow } from '../../../../lib/api/geometry';
 import { defineRoutes, paged } from '../../../../lib/api/route';
 import { prisma } from '../../../../lib/db';
@@ -53,8 +53,16 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
         p.push(cursor.createdAt, cursor.id);
         where.push(`(f.created_at, f.id) < ($${p.length - 1}::timestamptz, $${p.length}::uuid)`);
       }
-      const rows = await prisma.$queryRawUnsafe<(FarmRow & BoundaryRow)[]>(
-        `SELECT ${FARM_COLUMNS}, ${BOUNDARY_COLUMNS} ${FARM_FROM}
+      const rows = await prisma.$queryRawUnsafe<
+        (BoundaryRow & {
+          farmer_id: string;
+          payam_id: string;
+          county_id: string;
+          state_id: string;
+          farm_created_at: Date;
+        })[]
+      >(
+        `SELECT ${BOUNDARY_COLUMNS}, f.farmer_id, f.payam_id, f.county_id, f.state_id, f.created_at AS farm_created_at ${FARM_FROM}
          JOIN public.farm_boundary b ON b.farm_id = f.id
          WHERE ${where.join(' AND ')}
          ORDER BY f.created_at DESC, f.id DESC, b.season DESC
@@ -67,10 +75,12 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       return paged(
         page.map((r) => ({
           type: 'Feature',
+          // One feature per current boundary: a farm appears once per season.
           id: r.id,
           geometry: JSON.parse(r.boundary_geojson) as unknown,
           properties: {
-            farm_id: r.id,
+            farm_id: r.farm_id,
+            boundary_id: r.id,
             farmer_id: r.farmer_id,
             payam_id: r.payam_id,
             county_id: r.county_id,
@@ -84,7 +94,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
         {
           cursor:
             hasMore && last
-              ? encodeCursor({ createdAt: toIso(last.created_at), id: last.id })
+              ? encodeCursor({ createdAt: toIso(last.farm_created_at), id: last.farm_id })
               : null,
           hasMore,
           type: 'FeatureCollection',

@@ -390,7 +390,9 @@ run('visibility, totals, the map (C-7.4, C-7.8, C-7.9)', () => {
       query: { payam: PAYAM_A, season: '2027-main', limit: '100' },
     });
     expect(map.status).toBe(200);
-    const ids = (map.body.data as { id: string }[]).map((f) => f.id);
+    const ids = (map.body.data as { properties: { farm_id: string } }[]).map(
+      (f) => f.properties.farm_id,
+    );
     expect(ids).toContain(good.id);
     expect(ids).not.toContain(bad.id);
     expect(ids).not.toContain(gone.id);
@@ -437,12 +439,11 @@ run('visibility, totals, the map (C-7.4, C-7.8, C-7.9)', () => {
       `SELECT action FROM public.audit_event WHERE entity_type = 'farm' AND entity_id = $1 ORDER BY occurred_at`,
       farm.id,
     );
-    expect(audit.map((a) => a.action)).toEqual([
-      'farm.created',
-      'farm.boundary_added',
-      'farm.crops_declared',
-      'farm.crops_declared',
-    ]);
+    // farm.created and farm.boundary_added share a transaction, so their
+    // occurred_at is the same instant and their order is a tie.
+    const actions = audit.map((a) => a.action);
+    expect(actions.slice(0, 2).sort()).toEqual(['farm.boundary_added', 'farm.created']);
+    expect(actions.slice(2)).toEqual(['farm.crops_declared', 'farm.crops_declared']);
   });
   it('every error status this unit produces was scanned', () => {
     for (const status of [403, 404, 422, 409])

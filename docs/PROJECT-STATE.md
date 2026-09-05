@@ -628,7 +628,15 @@ a local probe held staging while CI's run on #35 began, and CI refused,
 naming `agri-erp-tests:monkonmlah`; it was re-run once the local run ended.
 A CI failure whose message names another run is not a failure of the code.
 
-**If a run is killed** its session ends and the lock is released; its rows
+**If a run is killed, the lock may outlive it.** The pooler keeps a server
+session after its client is killed (seen 2026-09-05: a killed local run held
+the lock for an hour; the next run refused, naming it). The setup's message
+says what to do: with no test process alive on the machine that started it,
+terminate that session — `pg_stat_activity` rows whose `application_name`
+begins `agri-erp-tests:` holding an advisory lock — and run again. Never
+terminate one while a run that could own it is alive somewhere.
+
+**If a run is killed** its rows
 are swept by the next run's setup, and its authentication accounts are
 removed when that sweep finds their rows. A run that finds the lock held
 fails at once and names the holder and how long it has run.
