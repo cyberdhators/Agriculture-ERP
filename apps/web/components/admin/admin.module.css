@@ -1,0 +1,150 @@
+/* User administration. Built on the base design tokens, so it matches the
+   portal today and adopts whatever the tokens are remapped to later. */
+
+.page {
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding: var(--s-8);
+}
+
+.head {
+  margin-block-end: var(--s-6);
+}
+.eyebrow {
+  margin: 0 0 var(--s-2);
+  font-family: var(--font-mono);
+  font-size: var(--text-small);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--verified);
+}
+.h1 {
+  margin: 0 0 var(--s-3);
+  font-family: var(--font-display);
+  font-size: var(--text-h1);
+  line-height: 1.05;
+  color: var(--ink);
+}
+.lede {
+  margin: 0;
+  max-width: 68ch;
+  color: var(--ink-2);
+}
+
+.muted {
+  color: var(--muted);
+}
+.error {
+  margin: var(--s-4) 0;
+  padding: var(--s-3) var(--s-4);
+  background: var(--pending-tint);
+  border: 1px solid var(--pending);
+  border-radius: var(--radius-control);
+  color: var(--ink);
+}
+
+.section {
+  margin-block-start: var(--s-8);
+}
+.sectionHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-4);
+  border-block-end: 2px solid var(--ink);
+  padding-block-end: var(--s-2);
+}
+.sectionHead h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 20px;
+  color: var(--ink);
+}
+.count {
+  font-family: var(--font-mono);
+  font-size: var(--text-small);
+  color: var(--muted);
+}
+
+.tableWrap {
+  overflow-x: auto;
+}
+.table {
+  width: 100%;
+  min-width: 640px;
+  border-collapse: collapse;
+}
+.table th {
+  padding: var(--s-3) var(--s-3);
+  text-align: start;
+  font-family: var(--font-mono);
+  font-size: var(--text-small);
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  border-block-end: 1px solid var(--line-strong);
+}
+.table td {
+  padding: var(--s-3) var(--s-3);
+  border-block-end: 1px solid var(--line);
+  vertical-align: middle;
+  color: var(--ink-2);
+}
+.strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+.num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.empty {
+  padding: var(--s-6);
+  text-align: center;
+  color: var(--muted);
+}
+
+.stampActive,
+.stampInactive {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 2px;
+  border: 1px solid currentColor;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.stampActive {
+  color: var(--verified);
+  background: var(--verified-tint);
+}
+.stampInactive {
+  color: var(--muted);
+  background: var(--dust);
+}
+
+.actionCell {
+  text-align: end;
+}
+.action {
+  padding: var(--s-2) var(--s-4);
+  background: var(--card);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-control);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--text-small);
+  cursor: pointer;
+}
+.action:hover {
+  border-color: var(--ink);
+}
+.action:disabled {
+  opacity: 0.55;
+  cursor: default;
+}

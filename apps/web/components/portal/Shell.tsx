@@ -22,6 +22,7 @@ const NAV: ReadonlyArray<{ href: string; label: string }> = [
   { href: '/market', label: 'Market' },
   { href: '/library', label: 'Library' },
   { href: '/reports', label: 'Reports' },
+  { href: '/admin', label: 'Administration' },
 ];
 
 export function Shell({ children }: { children: ReactNode }) {
