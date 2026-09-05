@@ -465,8 +465,11 @@ run('the clock and the queue (C-6.7) and the view (C-6.8)', () => {
   });
   it('a decision and its audit row succeed or fail together', async () => {
     const id = await register(officerA, body());
+    // NOT VALID: earlier tests in this run already wrote farmer.verified rows, and
+    // a validated CHECK would refuse to be added. Only new rows are checked,
+    // which is exactly the write this test wants to fail.
     await prisma.$executeRawUnsafe(
-      `ALTER TABLE public.audit_event ADD CONSTRAINT zztest_block CHECK (action <> 'farmer.verified')`,
+      `ALTER TABLE public.audit_event ADD CONSTRAINT zztest_block CHECK (action <> 'farmer.verified') NOT VALID`,
     );
     try {
       const r = await checked(verify, 'POST', { as: admin, params: { id } });
