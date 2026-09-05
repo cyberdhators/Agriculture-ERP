@@ -619,6 +619,12 @@ while one held staging was refused in three seconds naming the holder; a
 third after the release proceeded. The new client: the audit file 28 of 28
 on the transaction pooler, and 50 of 50 registrations at five in flight.
 
+**The lock's first real collision, 2026-09-05 07:50 UTC.** Merging #33
+triggered CI's run on main, which held staging; a local `pnpm test` started
+two minutes later refused in seconds, naming `agri-erp-tests:33953566862`.
+That is the case the workflow's concurrency group could never see, and it is
+the reason the lock is in the database.
+
 **If a run is killed** its session ends and the lock is released; its rows
 are swept by the next run's setup, and its authentication accounts are
 removed when that sweep finds their rows. A run that finds the lock held
@@ -632,6 +638,12 @@ immutable-fields trigger, queue indexes, `farmer_verified_v`, four audit
 keys, and a reason-code CHECK generated from `REJECTION_REASONS` in
 `packages/shared` and checked equal to it. One state-machine module. Five
 routes: verify, reject, merge, resubmit, and the queue. CONVENTIONS §12.
+
+**Migration 12** recreates `farmer_active`: a `SELECT *` view freezes its
+columns at creation, and migration 11's `pending_since` was not in it until
+then. Every farmer query failed in B6's first run. The rule and the guard —
+`tests/views-track-tables.test.ts`, every active view against its table, both
+directions — are in `docs/DECISIONS.md`.
 
 **The rejection note.** Data, not a message: returned inside the farmer
 record as `rejection` while the record is rejected, to whoever may read the

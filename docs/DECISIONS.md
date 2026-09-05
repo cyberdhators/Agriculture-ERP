@@ -1280,3 +1280,21 @@ The distinction is recorded because it matters: the first would have been a
 gate reporting success while checking nothing (see the class in
 `PROJECT-STATE.md`); the second is a gate that never existed for one table.
 Both end the same way, a check that runs; only the second happened.
+
+## B6 — A `SELECT *` view freezes its columns, and every farmer query read one
+
+`farmer_active` was created in migration 10 as `SELECT * FROM farmer`.
+Migration 11 added `farmer.pending_since`. The view did not gain it — a view's
+column list is fixed when it is created, whatever the `*` suggests — and every
+farmer query in the system reads the view, so B6's first full run failed 62
+times with "column f.pending_since does not exist", from the first
+registration to the last. Nothing in migration, typecheck, lint or the shared
+tests could see it: the column exists on the table, the code is right, and
+only the database knew the view was stale.
+
+Migration 12 recreates the view; `CREATE OR REPLACE` may append columns,
+which is all this needs. **The rule:** a migration that adds a column to a
+table with an `_active` view recreates the view in the same migration.
+**The guard:** `tests/views-track-tables.test.ts` compares every active
+view's columns to its table's, in order, both directions, so a stale view
+fails a database test instead of the first route that reads it.
