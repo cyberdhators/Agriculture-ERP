@@ -1358,3 +1358,15 @@ on a local port, four ways, and against the real service both ways.
 **Not reported to Sentry, deliberately.** An outage would produce one event
 per request; the signal belongs to a health check, which is B10's or later.
 Recorded so the silence is known to be chosen.
+
+## Standing rule — a test that verifies a calculation computes the expected value independently
+
+A test that reads its expected value back from the thing under test proves
+only that the thing agrees with itself. B7's area test computes the expected
+hectares from the polygon's coordinates by a geodesic formula written in the
+test, and requires PostGIS to agree within one percent; the two must agree
+independently or the test says nothing. B10's reach figures face exactly
+this: a total copied from the view it is meant to check is worth nothing.
+The expected value comes from a second, independent path — a formula, a
+hand count of fixture rows, a known answer — never from the query, view or
+function being verified.

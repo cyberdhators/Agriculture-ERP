@@ -443,6 +443,81 @@ section's.
 
 ---
 
+## C-7 — FARM BOUNDARY MAPPING
+
+Deliverable: (c) farmer registration and profiling. Unit B7.
+
+Source: `docs/data-model.md` section 1 (`farm`, `crop_declaration`) and
+`docs/data-model-extension.md` §10. A boundary is the one record in this
+system that can only be created by physical presence: a name, a crop and a
+verification decision can be typed at a desk; a polygon cannot. The record
+tells "someone walked this" from "someone drew this" by shape — the mapping
+officer column references the officer table — not by a flag.
+
+C-7.1  A farm belongs to exactly one farmer and records the season it was
+       mapped for. A farmer may hold more than one farm.
+
+C-7.2  A boundary is a closed shape of at least four distinct points, the
+       closing repeat not counted. A shape that is not closed, or crosses
+       itself, or has fewer points, is refused with a message an officer can
+       act on standing in a field — never the database's words.
+
+C-7.3  The area is calculated from the boundary and stored in hectares. It is
+       never entered by hand.
+
+C-7.4  Every boundary records the GPS accuracy at capture, and is marked good
+       (10 metres or better), poor (over 10 to 30) or unusable (over 30) from
+       it. Unusable boundaries are saved but excluded from every area total.
+
+C-7.5  A re-mapped boundary is recorded alongside the previous one, not in
+       place of it, within a season as well as across seasons. Each boundary
+       names its farm, season, mapped-at moment and mapping officer; exactly
+       one is current per farm per season, and that is a database fact. Area
+       totals read current boundaries only and name the season they cover.
+       (Data model open question 6, unanswered by CORWADO; the reversible
+       reading is our decision and can be narrowed on request —
+       `docs/DECISIONS.md`.)
+
+C-7.6  An officer maps farms only for farmers in their own caseload, and only
+       an officer maps. A supervisor and a read_only user see farms in their
+       state. Out of scope is indistinguishable from not found. An
+       administrator reads everything and removes; an administrator never
+       creates, re-maps or re-grades, and cannot be recorded as a mapper.
+
+C-7.7  Crop declarations are recorded per farm per season, from the fixed crop
+       list, one declaration per crop per season, by the mapping officer.
+
+C-7.8  A farm's boundary, centroid and GPS accuracy are returned only to
+       administrators and the mapping officer, per the same reading as C-5.8.
+       To a supervisor or read_only user those keys are absent, not masked;
+       they receive the area, the grade, the season, the crops and the farmer.
+
+C-7.9  Removal is soft, by an administrator. A removed farm appears in no
+       list, count, area total or map, and its history remains readable.
+
+C-7.10 No response carries a farmer's name, phone or national ID outside the
+       record asked for. The C-5.13 scan extends to cover farm routes and the
+       geometry keys join the error scrubber's list.
+
+### Notes for the builder
+
+**Accuracy thresholds** are ours, taken because no threshold exists in any
+document, to be corrected when CORWADO or the field says otherwise. A consumer
+GPS under tree cover routinely reports 15 to 20 metres, so "poor" will be
+common; the unusable threshold is the one that matters.
+
+**Four distinct vertices**: a three-sided plot exists in reality, but a
+three-point capture is far more likely an officer who stopped walking early.
+
+**Seasons** are a four-digit year, a hyphen, and a name from a fixed list —
+`main`, `second` — ours until CORWADO confirms local names. A season the
+system cannot compare is a season reporting cannot report on.
+
+**Winding order** is normalised on insert; whichever way the officer walked
+the plot, the stored ring is counter-clockwise and the area is positive.
+
+---
+
 ## C-13 — DIRECTORIES AND LEARNING LIBRARY
 
 **Deliverables (i), (j), (k) and (m). Unit P1.**
@@ -521,7 +596,6 @@ list. If yes, the officer role gets a write route and entries gain a
 Written one unit ahead of the build, not all at once, so that criteria reflect
 what the preceding unit actually produced.
 
-- C-7 — farm boundary mapping — (c)
 - C-8 — extension visit recording — (d)
 - C-9 — offline synchronisation — (b)
 - C-10 — dashboards, reporting and export — (p), (q)

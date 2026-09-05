@@ -27,7 +27,7 @@ saying "parked until B3" named a thing a reader could not look up.
 | **B5.5** | CI runs the database tests          | Monkonmlah | Merged — #33    |
 | **B6**   | Verification and escalation         | Monkonmlah | Merged — #34    |
 | **B6.5** | Auth outage is 503, not 401         | Monkonmlah | In progress     |
-| **B7**   | Farm boundaries and PostGIS         | Alieu      | Not started     |
+| **B7**   | Farm boundaries and PostGIS         | Monkonmlah | In progress     |
 | **B8**   | Visit notes and attachments         | Monkonmlah | Not started     |
 | **B8.5** | Caseload reassignment (admin only)  | Monkonmlah | Not started     |
 | **B9**   | Offline sync endpoint               | Alieu      | Not started     |
