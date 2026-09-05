@@ -623,7 +623,10 @@ on the transaction pooler, and 50 of 50 registrations at five in flight.
 triggered CI's run on main, which held staging; a local `pnpm test` started
 two minutes later refused in seconds, naming `agri-erp-tests:33953566862`.
 That is the case the workflow's concurrency group could never see, and it is
-the reason the lock is in the database.
+the reason the lock is in the database. The reverse happened the same day:
+a local probe held staging while CI's run on #35 began, and CI refused,
+naming `agri-erp-tests:monkonmlah`; it was re-run once the local run ended.
+A CI failure whose message names another run is not a failure of the code.
 
 **If a run is killed** its session ends and the lock is released; its rows
 are swept by the next run's setup, and its authentication accounts are
