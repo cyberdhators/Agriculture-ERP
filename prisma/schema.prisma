@@ -316,6 +316,7 @@ model User {
   deletedBy    String?   @map("deleted_by") @db.Uuid
 
   scopeState State? @relation(fields: [scopeStateId], references: [id])
+  verificationDecisions VerificationEvent[]
 
   @@index([role], map: "user_role_idx")
   @@index([scopeStateId], map: "user_scope_state_id_idx")
@@ -354,6 +355,7 @@ model Officer {
   payam Payam @relation(fields: [payamId, stateId], references: [id, stateId], map: "officer_payam_state_consistent_fkey")
   state State @relation(fields: [stateId], references: [id], map: "officer_state_id_fkey")
   farmersRegistered Farmer[]
+  resubmissions     VerificationEvent[]
 
   @@index([payamId], map: "officer_payam_id_idx")
   @@index([stateId], map: "officer_state_id_idx")
@@ -424,6 +426,8 @@ enum VerificationStatus {
   pending
   verified
   rejected
+  /// B6: a state, with merged_into as the pointer.
+  merged
 
   @@map("verification_status")
 }
@@ -459,6 +463,8 @@ model Farmer {
   consentId          String             @map("consent_id") @db.Uuid
   duplicateFlag      Boolean            @default(false) @map("duplicate_flag")
   duplicateMatches   String[]           @default([]) @map("duplicate_matches") @db.Uuid
+  /// The escalation clock (C-6.7): set at registration, reset on resubmission, otherwise immutable (trigger).
+  pendingSince       DateTime           @default(now()) @map("pending_since") @db.Timestamptz(6)
   createdAt          DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt          DateTime           @default(now()) @map("updated_at") @db.Timestamptz(6)
   deletedAt          DateTime?          @map("deleted_at") @db.Timestamptz(6)
@@ -473,6 +479,8 @@ model Farmer {
   /// The current consent. Deferred foreign key: both rows commit together (C-5.3).
   consent      Consent  @relation("CurrentConsent", fields: [consentId], references: [id], map: "farmer_consent_id_fkey")
   consents     Consent[] @relation("FarmerConsents")
+  verificationEvents VerificationEvent[] @relation("FarmerVerificationEvents")
+  mergeTargetOf      VerificationEvent[] @relation("MergeTargetEvents")
 
   @@index([payamId, verificationStatus, deletedAt], map: "farmer_payam_status_idx")
   @@index([countyId], map: "farmer_county_id_idx")
@@ -494,4 +502,44 @@ model Consent {
 
   @@index([farmerId], map: "consent_farmer_id_idx")
   @@map("consent")
+}
+
+// -----------------------------------------------------------------------------
+// B6 — verification (C-6). Migration 11.
+// -----------------------------------------------------------------------------
+
+enum VerificationDecision {
+  verified
+  rejected
+  merged
+  resubmitted
+
+  @@map("verification_decision")
+}
+
+/// A record of an event. Never soft-deleted, never removed (data-model-extension §1.3).
+model VerificationEvent {
+  id            String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  farmerId      String               @map("farmer_id") @db.Uuid
+  /// Staff user for verified/rejected/merged; null for resubmitted.
+  reviewerId    String?              @map("reviewer_id") @db.Uuid
+  /// The registering officer, for resubmitted only.
+  officerId     String?              @map("officer_id") @db.Uuid
+  decision      VerificationDecision
+  mergeTargetId String?              @map("merge_target_id") @db.Uuid
+  /// Fixed key from REJECTION_REASONS; CHECK generated from the same list.
+  reasonCode    String?              @map("reason_code")
+  /// Free text about a named person. Data, not a message (C-6.3).
+  note          String?
+  daysWaiting   Int                  @map("days_waiting")
+  decidedAt     DateTime             @default(now()) @map("decided_at") @db.Timestamptz(6)
+
+  farmer      Farmer   @relation("FarmerVerificationEvents", fields: [farmerId], references: [id], map: "verification_event_farmer_id_fkey")
+  reviewer    User?    @relation(fields: [reviewerId], references: [id], map: "verification_event_reviewer_id_fkey")
+  officer     Officer? @relation(fields: [officerId], references: [id], map: "verification_event_officer_id_fkey")
+  mergeTarget Farmer?  @relation("MergeTargetEvents", fields: [mergeTargetId], references: [id], map: "verification_event_merge_target_id_fkey")
+
+  @@index([farmerId, decidedAt(sort: Desc)], map: "verification_event_farmer_idx")
+  @@index([reviewerId, decidedAt(sort: Desc)], map: "verification_event_reviewer_idx")
+  @@map("verification_event")
 }

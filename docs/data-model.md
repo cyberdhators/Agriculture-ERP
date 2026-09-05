@@ -33,8 +33,9 @@ farmer
   state_id              fk → state, denormalised -- B5: composite key with payam
   registered_by         fk → officer, nullable, immutable
   registration_source   enum officer | self -- self is a value, not a permission
-  verification_status   enum pending | verified | rejected
-  merged_into           fk → farmer, nullable
+  verification_status   enum pending | verified | rejected | merged -- B6: merged is a state
+  merged_into           fk → farmer, nullable -- the pointer, set when merged
+  pending_since         timestamp -- B6: the escalation clock; reset on resubmission, otherwise immutable
   consent_id            fk → consent, NOT NULL, deferred -- both rows commit together
   duplicate_flag        boolean -- B5
   duplicate_matches     uuid[] -- B5: ids of the farmers that matched
@@ -140,11 +141,13 @@ Per record, per device. The offline spine.
 verification_event
   id              uuid
   farmer_id       fk → farmer
-  reviewer_id     fk → user
-  decision        enum verified | merged | rejected
+  reviewer_id     fk → user, nullable    -- B6: the staff decider; null on resubmission
+  officer_id      fk → officer, nullable -- B6: the registering officer, on resubmission only
+  decision        enum verified | merged | rejected | resubmitted -- B6: every transition has an event
   merge_target_id fk → farmer, nullable
-  reason          text, required on reject
-  days_waiting    int, derived
+  reason_code     text, fixed keys, required on reject -- B6: CHECK generated from packages/shared
+  note            text, nullable, ≤ 280 -- B6: data, not a message; never in audit or error reporting
+  days_waiting    int, computed at decision from pending_since
   decided_at      timestamp
 ```
 
@@ -303,8 +306,10 @@ then pruned. Nothing is pruned in any other state.
 ### verification_status — per farmer record, server side
 
 ```
-pending → verified
-pending → rejected
+pending  → verified
+pending  → rejected
+rejected → pending      on resubmission after correction (B6)
+any      → merged       via merged_into (B6: a state, not only a pointer)
 ```
 
 A merge sets the source record's `merged_into` and keeps it; it is never

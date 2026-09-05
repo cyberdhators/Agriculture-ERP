@@ -1,4 +1,4 @@
-import { formatFarmerNumber, toIso } from '@agri-erp/shared';
+import { daysWaiting, formatFarmerNumber, toIso } from '@agri-erp/shared';
 import { Prisma } from '@prisma/client';
 import { type AuditTx } from './audit';
 import { conflict, notFound } from './errors';
@@ -29,6 +29,10 @@ export interface FarmerRow {
   duplicate_matches: string[];
   created_at: Date;
   updated_at: Date;
+  pending_since: Date;
+  rejection_reason_code: string | null;
+  rejection_note: string | null;
+  rejection_decided_at: Date | null;
   consent_id: string;
   consent_text_version: string;
   consent_language: string;
@@ -41,11 +45,18 @@ export const FARMER_COLUMNS = `
   f.phone, f.national_id, f.payam_id, f.county_id, f.state_id, f.registered_by,
   f.registration_source::text AS registration_source,
   f.verification_status::text AS verification_status, f.merged_into,
-  f.duplicate_flag, f.duplicate_matches, f.created_at, f.updated_at,
+  f.duplicate_flag, f.duplicate_matches, f.created_at, f.updated_at, f.pending_since,
+  r.reason_code AS rejection_reason_code, r.note AS rejection_note, r.decided_at AS rejection_decided_at,
   c.id AS consent_id, c.text_version AS consent_text_version,
   c.language::text AS consent_language, c.granted_at AS consent_granted_at`;
 
-export const FARMER_FROM = `FROM public.farmer_active f JOIN public.consent c ON c.id = f.consent_id`;
+/** The latest rejection, for the record's own response (C-6.3). */
+const LATEST_REJECTION = `LEFT JOIN LATERAL (
+    SELECT v.reason_code, v.note, v.decided_at FROM public.verification_event v
+    WHERE v.farmer_id = f.id AND v.decision = 'rejected' ORDER BY v.decided_at DESC LIMIT 1
+  ) r ON true`;
+
+export const FARMER_FROM = `FROM public.farmer_active f JOIN public.consent c ON c.id = f.consent_id ${LATEST_REJECTION}`;
 
 /**
  * C-5.8: the national ID is returned only to an administrator and to the
@@ -79,9 +90,20 @@ export function present(row: FarmerRow, auth: Authenticated): Record<string, unk
       language: row.consent_language,
       granted_at: toIso(row.consent_granted_at),
     },
+    pending_since: toIso(row.pending_since),
+    days_waiting: daysWaiting(row.pending_since),
     created_at: toIso(row.created_at),
     updated_at: toIso(row.updated_at),
   };
+  // C-6.3: the code and the note travel inside the record, to whoever may read
+  // the record, while it is rejected — that is who corrects it.
+  if (row.verification_status === 'rejected' && row.rejection_decided_at) {
+    out.rejection = {
+      reason_code: row.rejection_reason_code,
+      note: row.rejection_note,
+      decided_at: toIso(row.rejection_decided_at),
+    };
+  }
   if (canSeeNationalId(auth, row)) out.national_id = row.national_id;
   return out;
 }

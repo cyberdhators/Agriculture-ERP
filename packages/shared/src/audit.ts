@@ -31,6 +31,10 @@ export const AUDIT_ACTIONS = [
   'farmer.updated',
   'farmer.soft_deleted',
   'consent.recorded',
+  'farmer.verified',
+  'farmer.rejected',
+  'farmer.merged',
+  'farmer.resubmitted',
 ] as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];
@@ -69,6 +73,8 @@ const NEVER_RECORDED = new Set([
   // B4 decided; a farmer is not staff and has two name fields of their own.
   'given_name',
   'family_name',
+  // C-6.3: the rejection note is prose about a named person. Never in the log.
+  'note',
   'phone',
   'alt_phone',
   'email',
