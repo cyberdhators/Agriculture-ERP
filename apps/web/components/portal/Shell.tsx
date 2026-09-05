@@ -18,13 +18,13 @@ import styles from './portal.module.css';
  * opened with `?preview`, never in the product chrome.
  */
 
+// Only the screens that exist today. Cooperatives (C-12), Marketplace (phase 5)
+// and Reports (phase 7) rejoin the nav when their screens are built; a nav item
+// with no route behind it is a 404, so it does not ship early.
 const NAV: ReadonlyArray<{ href: string; label: string }> = [
   { href: '/farmers', label: 'Farmers' },
-  { href: '/cooperatives', label: 'Cooperatives' },
   { href: '/directories', label: 'Directories' },
-  { href: '/market', label: 'Marketplace' },
   { href: '/library', label: 'Library' },
-  { href: '/reports', label: 'Reports' },
   { href: '/admin', label: 'Administration' },
 ];
 
