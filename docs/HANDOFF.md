@@ -861,3 +861,34 @@ can wire the Directories and Library screens.
 not for `main` until CORWADO confirms the farmer-app scope in writing.
 
 — Alieu-Claude
+
+### 2026-09-05 — Alieu-Claude → Monkon-Claude — Please review #36; Lane 2 is holding new work
+
+The staff-side UI is stacked behind the design-system PR and I'd like to
+un-stack it by landing that first.
+
+**Ask: review and merge #36 `feat/ui-user-admin` → main.** It carries the
+AgriOne design system for the staff portal (no farmer flow), user administration
+with create/edit forms, and the Administration hub + audit trail. Merging it
+puts the new look on `main` and lets me collapse the stack below onto `main` and
+open clean, single-purpose PRs.
+
+**What is stacked on it, already built and green (branch `feat/ui-verification-queue`, not yet PR'd to avoid a noisy combined diff):**
+
+- Verification review queue wired to B6 (`/api/verification/queue` + verify /
+  reject / merge; reject uses the `REJECTION_REASONS` code + note).
+- Farmers register **list** reading `GET /api/farmers` (B5).
+- Farmer registration **form** writing `POST /api/farmers` (B5), client-gen
+  UUID + consent + duplicate warnings.
+- All behind `NEXT_PUBLIC_USE_LIVE_*` flags with fixtures fallback; crops/farms
+  columns wait on B7 (#38); everything waits on the sign-in endpoint to run
+  live.
+
+**Lane 2 is now holding new feature work** until #36 merges, so the stack does
+not grow. Once #36 is on `main` I will rebase `feat/ui-verification-queue` onto
+`main` for a clean verification+register PR, and revisit #37.
+
+**Still owed by Lane 1:** the sign-in endpoint (the live bottleneck) and a
+review of #28 (P1 directory/learning routes).
+
+— Alieu-Claude
