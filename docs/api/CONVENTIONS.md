@@ -817,3 +817,25 @@ by purpose: it is the state's map for supervisors and administrators.
 
 **Seasons**: `YYYY-main` or `YYYY-second`, ours until CORWADO confirms local
 names.
+
+---
+
+## 14. MESSAGES FOR A FIELD
+
+The reference for every message an officer will read standing in a field,
+from B7 onward: B8's visit validation, B9's sync failures, and whatever
+follows. The standard is B7's three boundary refusals:
+
+- "The boundary does not close: the last point must be the first point
+  again. Go back to where you started and finish the shape."
+- "The boundary crosses itself. Walk the edge of the plot in one direction
+  without cutting across it."
+- "A boundary needs at least four corners. Keep walking to the next corner
+  before you finish."
+
+**The rule.** Name the physical action, never the fault, never the
+database's words. Each sentence says what the world looks like and what to
+do with the body: walk, go back, keep going. None says "invalid",
+"constraint", "polygon", "geometry" or "error". A message that a person
+cannot act on where they are standing is not finished. Every such sentence
+is a pinned rule key (§5.2.1), so a route names it and never writes it.

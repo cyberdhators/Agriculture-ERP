@@ -1318,9 +1318,18 @@ projects a subset, or aggregates, is not named after its table.
 
 **The test.** `tests/views-track-tables.test.ts` discovers every view in the
 schema, pairs each with a table by longest name prefix, and compares the
-column lists both directions. A view not named after any table is an
-aggregate or a subset by convention (`area_totals_v`, B7) and is exempt;
-the rule is about the name. It runs in every
+column lists both directions.
+
+**Loosened on 2026-09-05, during B7, the first unit the guard was watching.**
+As written the day before, the test refused any view it could not pair. B7's
+`area_totals_v` is an aggregate and cannot pair with a table, so the test was
+changed: a view not named after any table is exempt by convention. The
+change is right and `area_totals_v` proves it — but it is a loosening of a
+guard made during a unit that the guard was watching, and it is recorded as
+that rather than as a clarification. The next loosening might not be as
+clearly right; a rule that quietly relaxes each time it is inconvenient
+stops being a rule. Any further change to what this test exempts is recorded
+here the same way, with the date and the reason. It runs in every
 full suite run, locally and in CI.
 
 ## 2026-09-05 — The drift-test premise came from the user, and checking it found it false
