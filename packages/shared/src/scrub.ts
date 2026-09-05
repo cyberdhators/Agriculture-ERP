@@ -73,6 +73,13 @@ const SENSITIVE_KEYS = [
    */
   'timezone',
   'locale',
+
+  /**
+   * The rejection note (C-6.3): a supervisor's prose about a named farmer,
+   * the one free-text field the system carries about a person. It travels
+   * only inside the verification record; it never travels here.
+   */
+  'note',
 ];
 
 const normaliseKey = (key: string): string => key.toLowerCase().replace(/[_\-\s]/g, '');

@@ -1210,3 +1210,91 @@ covers whatever exists at that point, and B2, B3 and B4's proofs were
 single-run local evidence until a full CI run passed over them — which it did
 on 2026-09-05, workflow run 33941608043 on #33: 23 of 23 files in 19 minutes
 on a GitHub-hosted runner. `PROJECT-STATE.md`'s B5.5 section records it.
+
+## Standing rule — the reviewer writes about the record, not the person
+
+Every free-text field this system carries about a person is written by
+staff, stored, returned and one day sent to a device. The first is B6's
+rejection note; visit advice in B8 is the next; there will be more. The rule
+for all of them: **a fixed code carries the meaning; the free text carries
+the detail; the text is data, never a message.** It travels only inside the
+record it belongs to, to the parties entitled to that record; it is never
+interpolated into an error, a warning or a message; its field name is on the
+audit log's never-recorded list and on the error scrubber's key list, and a
+test in B1.5's shape proves an event carrying it leaves without it. A
+reviewer is told to write about the record — what is missing, what is wrong,
+what to check — and not about the person.
+
+## B6 — decisions in the verification unit
+
+**`merged` is a state, with `merged_into` as the pointer.** The queue, the
+verified view and reporting each check one column. Additive to the enum.
+
+**`resubmitted` is a decision**, so every transition writes a verification
+event, and the event's actor is split: a staff `reviewer_id` for verified,
+rejected and merged; the registering `officer_id` for resubmitted; a CHECK
+ties which to the decision. The data model had one actor column.
+
+**A merge across states is refused for every role, administrators included.**
+It would move a farmer between supervisors' scopes and between two donor
+reach figures silently. If CORWADO needs cross-state merges, that is their
+decision, made in writing; it does not ship as a default.
+
+**`pending_since` is the escalation clock and an editable clock is not a
+clock.** Set at registration, reset on resubmission by the state machine, and
+the immutable-fields trigger refuses any other change — including through
+the row the administrator may otherwise edit freely. The unknown-field rule
+keeps it out of every request body.
+
+**The state machine is one module and a test attacks it from outside.** Every
+transition not in the table is attempted through a route and refused with
+the same rule key, and the row is unchanged afterwards. The optimistic update
+(`WHERE verification_status = from`) means two decisions racing on one record
+cannot both win.
+
+**C-5.9 was wrong and is amended.** A rejected record must be correctable or
+it cannot be resubmitted; officers may change their own registrations while
+pending or rejected.
+
+## 2026-09-05 — A false alarm about the drift test, and the real gap beside it
+
+It was believed for a moment that B1.4's drift test — the guarantee that
+CONVENTIONS and the code cannot diverge — had stopped guarding when prettier
+re-padded the document's tables after B5, and that it had been blind between
+B5 and B6. **That was not so.** The test reads a table row by splitting on
+the bar character and trimming each cell; padding cannot reach it. It ran and
+passed in every shared-test run in that window and in the first CI database
+run. What broke on padding was an editing script of the session's own,
+anchored on exact text; that is a tool, not a gate.
+
+**The real gap, found while checking.** The drift test lives in the shared
+package and pins four tables: status codes, messages, field reasons, audit
+keys. It has never pinned the fifth, the 409 and 422 rule sentences of §5.2.1,
+because the registry they mirror lives in the web app, which the shared
+package's test cannot import. That table has been unguarded since B3 wrote
+it on 2026-09-03. Measured on 2026-09-05: 17 rules documented, 17 in code,
+none missing on either side, no wording differs. Nothing drifted. It is
+guarded from now by `tests/conventions-rules.test.ts`, which imports both.
+
+The distinction is recorded because it matters: the first would have been a
+gate reporting success while checking nothing (see the class in
+`PROJECT-STATE.md`); the second is a gate that never existed for one table.
+Both end the same way, a check that runs; only the second happened.
+
+## B6 — A `SELECT *` view freezes its columns, and every farmer query read one
+
+`farmer_active` was created in migration 10 as `SELECT * FROM farmer`.
+Migration 11 added `farmer.pending_since`. The view did not gain it — a view's
+column list is fixed when it is created, whatever the `*` suggests — and every
+farmer query in the system reads the view, so B6's first full run failed 62
+times with "column f.pending_since does not exist", from the first
+registration to the last. Nothing in migration, typecheck, lint or the shared
+tests could see it: the column exists on the table, the code is right, and
+only the database knew the view was stale.
+
+Migration 12 recreates the view; `CREATE OR REPLACE` may append columns,
+which is all this needs. **The rule:** a migration that adds a column to a
+table with an `_active` view recreates the view in the same migration.
+**The guard:** `tests/views-track-tables.test.ts` compares every active
+view's columns to its table's, in order, both directions, so a stale view
+fails a database test instead of the first route that reads it.
