@@ -645,6 +645,9 @@ then. Every farmer query failed in B6's first run. The rule and the guard —
 `tests/views-track-tables.test.ts`, every active view against its table, both
 directions — are in `docs/DECISIONS.md`.
 
+**Merged as #34 on 2026-09-05; CI's run on the pull request: 27 of 27 files in
+32 minutes. B6 is complete.**
+
 **Run 2, 2026-09-05, from this machine, alone on staging under the lock: 27
 of 27 files, 544 of 544 tests.** Every C-6 criterion's test passed in that
 run, including every transition not in the table refused through a route,
@@ -684,11 +687,74 @@ for rather than stumbled on.
    could not run git and reported "0 commits scanned, no leaks found". Four
    such results were believed in one day.
 
+4. **Four foreign keys recorded as pending and never checked** (B3 to B6):
+   deferred in B2 "until B3 adds the constraint", restated as owed in B3's
+   handoff, as "landing next" in B4, as owed again in B5, and found still
+   missing on 2026-09-05 by asking the database catalogue. **The distinction:**
+   the first three were gates reporting success while checking nothing; this
+   was a record asserting a fact that nobody verified against the system. Not
+   a gate at all, but the same shape of false confidence, and it survived
+   three units because each session read the previous session's record and
+   believed it.
+
+**The question to ask of any green gate: what did it actually read?** Its
+companion, from the fourth instance: **when the record says something was
+done or is pending, ask the system rather than the record.** A migration
+folder, a catalogue query, a live route — not a sentence in a document.
+
 A near miss, recorded for the shape: the drift test was suspected of the same
 fault on 2026-09-05 and was not guilty, but the check exposed a table it had
 never guarded (`docs/DECISIONS.md`). **The question to ask of any green
 gate: what did it actually read?** A gate that can pass on an empty input
 must say so, or fail.
+
+## OPEN ACROSS THE BACKEND BEFORE B7 (2026-09-05)
+
+One list, gathered from every record and checked against the database and
+GitHub rather than copied. Grouped by who closes it.
+
+**CORWADO decides (recorded as their decision, not ours):**
+
+1. The I-07 boundary list. Every location, officer and farmer on staging
+   references placeholder codes. What re-pointing costs is in the B5 section.
+2. National ID format (C-5.2, CONVENTIONS §7): provisional shape until they
+   supply one.
+3. National ID visibility (C-5.8): narrow reading chosen; widen on request.
+4. Cross-state merges (C-6.4): refused for every role until they ask.
+5. Whether an officer may propose a directory entry from the field (C-13 note).
+6. The four scope items in `docs/scope-and-acceptance.md`, _Open against the
+   contract_: buyers who cannot log in (g, h), the farmer-facing application,
+   "Ask AI", Arabi Juba script and SMS cost.
+7. Data model open questions 1–6 (`docs/data-model.md` §5), including
+   retention and removal requests.
+8. WhatsApp (o): blocked on Meta business verification.
+
+**The user closes:**
+
+9. The Supabase plan and point-in-time recovery question (B11 checklist).
+10. The `requireRole` defect: an Auth service outage reads as "sign in to
+    continue". Owner B3, Lane 1; scheduled, not started.
+11. Four orphan authentication accounts on staging with officer identifiers
+    and no officer row; surfaced by the admin list; theirs to remove.
+12. Lane 2's unmerged branches `feat/ui-farmer` and `docs/farmer-baseline`
+    carrying the fourth out-of-scope instance.
+13. Confirming the Sentry IP-storage setting is on, by the next event.
+14. `SENTRY_ENVIRONMENT` in Vercel for preview and production.
+
+**Lane 1 owes, in a unit or as housekeeping:**
+
+15. ~~The four foreign keys on P1's tables~~ — landed by migration 13 in this
+    housekeeping, after being "owed" in three consecutive units.
+16. Production itself: created new at B11 with the checklist below; nothing
+    exists yet, and the credential boundary stays as recorded.
+17. `prisma migrate diff` noise for deferrable and hand-added keys: accepted;
+    `migrate status` is the gate.
+18. Per-run fixture isolation for tests, if serial runs ever become the
+    bottleneck (B5.5 chose the lock).
+
+**Known and accepted, not open:** staging growth per run; the ten-in-flight
+contention being the test process's; `registration_source = self` as a value
+no route produces; the 24 system audit rows from the accidental seed.
 
 ## B11 CHECKLIST — WHAT A FRESH PRODUCTION PROJECT MUST BE GIVEN BY HAND
 

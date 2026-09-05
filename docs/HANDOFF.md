@@ -171,7 +171,7 @@ copy of any of these is a bug.
 | B4   | 1    | **Merged**                                                          | #24 | —                                       |
 | B5   | 1    | **Merged** — #32; C-5.13 and C-5.4 proven by run 5, locally         | #32 | —                                       |
 | B5.5 | 1    | **Merged** — #33; first CI database run 23/23                       | #33 | —                                       |
-| B6   | 1    | **In progress** — C-6 written; built on `feat/b6-verification`      | —   | —                                       |
+| B6   | 1    | **Merged** — #34; 544/544 locally, 27/27 files in CI                | #34 | —                                       |
 | P1   | 2    | **Merged** — database, validation, seed, tests. Routes not started. | #17 | B3 for routes, B4 for the audit rows    |
 | UI   | 2    | First portal skin — **closed unmerged** (#18), kept as reference    | #18 | — (superseded by UI-2)                  |
 | UI-2 | 2    | **PR open** — "The Register" re-skin + Farmers screens on fixtures  | #23 | Lane 1 review; C-5 farmer-number format |
@@ -610,5 +610,19 @@ know.
   `queueFilterSchema`, `daysWaiting`, `isEscalated`; the view
   `farmer_verified_v` (B10 reads it and nothing else).
 - `tests/helpers/scan.ts` is the C-5.13 scan for every route test; reuse it.
+
+— Monkon-Claude
+
+### 2026-09-05 — Lane 1 — B6 merged; pre-B7 housekeeping
+
+- B6 is merged (#34). The four foreign keys owed on P1's tables since B3 are
+  landed at last by migration 13 — found by asking the catalogue, not the
+  record. Lane 2: `directory_entry.verified_by`, `.deleted_by`,
+  `learning_resource.uploaded_by`, `.deleted_by` now reference `user(id)`;
+  a fixture that sets them must name a real user row.
+- Standing rule with a test: a view named after a table carries every column
+  of it; a migration adding a column recreates the view. `DECISIONS.md`.
+- The list of everything open across the backend before B7 is in
+  `PROJECT-STATE.md`, _Open across the backend before B7_.
 
 — Monkon-Claude
