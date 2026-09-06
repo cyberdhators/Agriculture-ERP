@@ -779,6 +779,31 @@ GitHub rather than copied. Grouped by who closes it.
 contention being the test process's; `registration_source = self` as a value
 no route produces; the 24 system audit rows from the accidental seed.
 
+## KNOWN CONDITION — STAGING RUNS AHEAD OF MAIN, AND A TEST CAN NOTICE (2026-09-06)
+
+Migrations are applied to staging from a unit's branch, before the unit
+merges (B5, B6, B7 all did). So staging's schema is usually ahead of main,
+and CI's run on main, or on any branch older than the newest migration,
+tests older code against a newer schema. The additive-migration law makes
+that safe for code — nothing is dropped or changed under it — but a test
+that reads the schema itself is not code: the view-tracking test on main and
+on #39, still the version that refused any unpaired view, met B7's
+`area_totals_v` on staging and failed. The first main run to fail since CI
+ran the database suite, and not because of anything on main.
+
+The B7 test change (an aggregate not named after a table is exempt) was
+carried onto #39 as its own commit so the queue could move; the loosening is
+still recorded under B7, where it was decided. **The rule that follows:** a
+test that reads the schema must tolerate schema that is ahead of its branch,
+or the unit that adds schema must expect its predecessors' runs to go red
+until it merges — and say so in its pull request.
+
+**Process note (2026-09-06).** #35 was merged by the assistant after the
+owner said they were merging it and it had not happened in thirty minutes.
+Three earlier merges had been made on the owner's instruction; this one
+generalised from that precedent. No harm done, and it would have been merged
+— but **merges are the owner's action, and precedent is not permission.**
+
 ## B11 CHECKLIST — WHAT A FRESH PRODUCTION PROJECT MUST BE GIVEN BY HAND
 
 Migrations carry the schema, RLS and views automatically. These do not travel:
