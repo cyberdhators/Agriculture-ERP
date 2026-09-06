@@ -131,6 +131,60 @@ export function coverOf(listing: Pick<ProduceListing, 'photo_storage_paths'>): s
   return listing.photo_storage_paths[0] ?? null;
 }
 
+/**
+ * Placeholder produce photos in `public/crops/` (Wikimedia Commons, see
+ * `public/crops/CREDITS.md`), shown until a listing carries the farmer's own
+ * uploaded photo. Keyed by product name first, then category as a fallback, so
+ * every listing gets a recognisable cover rather than an empty frame.
+ */
+const CROP_IMAGE_BY_PRODUCT: Record<string, string> = {
+  sorghum: 'sorghum',
+  groundnut: 'groundnut',
+  'groundnut paste': 'groundnut-paste',
+  okra: 'okra',
+  sesame: 'sesame',
+  mango: 'mango',
+  cattle: 'cattle',
+  chicken: 'chicken',
+  milk: 'milk',
+  'nile perch': 'nile-perch',
+  'maize seed': 'maize',
+  maize: 'maize',
+  cowpea: 'cowpea',
+  tomato: 'tomato',
+  banana: 'banana',
+  charcoal: 'charcoal',
+};
+
+const CROP_IMAGE_BY_CATEGORY: Record<ListingCategory, string> = {
+  crop: 'sorghum',
+  vegetable: 'okra',
+  fruit: 'mango',
+  livestock: 'cattle',
+  poultry: 'chicken',
+  dairy: 'milk',
+  fish: 'nile-perch',
+  processed: 'groundnut-paste',
+  seeds_inputs: 'maize',
+  other: 'charcoal',
+};
+
+export function cropImageFor(productName: string, category: ListingCategory): string {
+  const slug =
+    CROP_IMAGE_BY_PRODUCT[productName.trim().toLowerCase()] ?? CROP_IMAGE_BY_CATEGORY[category];
+  return `/crops/${slug}.jpg`;
+}
+
+/** A renderable cover: the farmer's own photo if there is one, else a
+ *  placeholder produce photo for the product. */
+export function listingCover(
+  listing: Pick<ProduceListing, 'photo_storage_paths' | 'product_name' | 'category'>,
+): string {
+  const own = coverOf(listing);
+  if (own && (own.startsWith('blob:') || own.startsWith('data:'))) return own;
+  return cropImageFor(listing.product_name, listing.category);
+}
+
 /* ---- Form values and validation -------------------------------------- */
 
 /** What the listing form holds: every B12 point 5 field, as strings. */

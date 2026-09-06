@@ -17,6 +17,7 @@ import {
   UNIT_KEY,
   formatQuantity,
   formatSsp,
+  listingCover,
   listingStamp,
 } from '@/lib/farmers/listings';
 import { VERIFICATION_KEY, verificationStamp } from '@/lib/farmers/verification';
@@ -69,11 +70,7 @@ export function ProductPage({
   sellerListingsHref?: string;
 }) {
   const sources: Array<string | null> =
-    photos && photos.length > 0
-      ? photos
-      : listing.photo_storage_paths.length > 0
-        ? listing.photo_storage_paths
-        : [null];
+    photos && photos.length > 0 ? photos : [listingCover(listing)];
   const [index, setIndex] = useState(0);
   const thumbRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const current = sources[Math.min(index, sources.length - 1)] ?? null;

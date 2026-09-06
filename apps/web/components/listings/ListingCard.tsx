@@ -7,9 +7,9 @@ import {
   CATEGORY_KEY,
   STATUS_KEY,
   UNIT_KEY,
-  coverOf,
   formatQuantity,
   formatSsp,
+  listingCover,
   listingStamp,
 } from '@/lib/farmers/listings';
 import { formatDate } from '@/lib/format';
@@ -59,7 +59,7 @@ export function ListingCard({
     <article className={styles.card}>
       <div className={styles.cover}>
         <Photo
-          src={coverOf(listing)}
+          src={listingCover(listing)}
           category={listing.category}
           lang={lang}
           alt={listing.title}

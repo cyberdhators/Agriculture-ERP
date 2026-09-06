@@ -29,7 +29,9 @@ export function Photo({
   tag?: string;
   square?: boolean;
 }) {
-  const local = src !== null && (src.startsWith('blob:') || src.startsWith('data:'));
+  const local =
+    src !== null &&
+    (src.startsWith('blob:') || src.startsWith('data:') || src.startsWith('/crops/'));
   return (
     <div className={`${styles.frame} ${square ? styles.frameSquare : ''}`}>
       {local ? (
