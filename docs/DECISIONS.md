@@ -1370,6 +1370,23 @@ on a local port, four ways, and against the real service both ways.
 per request; the signal belongs to a health check, which is B10's or later.
 Recorded so the silence is known to be chosen.
 
+## Standing rule — a test that reads the schema tolerates objects it does not know
+
+Staging's schema runs ahead of main: migrations are applied from a unit's
+branch before it merges, so every run of main, or of an older branch, tests
+older code against a newer schema (PROJECT-STATE, _Staging's schema runs
+ahead of main_). The additive-migration law keeps code safe under that; a
+test that enumerates the schema and demands equality is not code, and it
+goes red on a view, a table, an enum value or a constraint it does not know.
+The view-tracking test did exactly that on #35's merge run.
+
+**The rule.** A test that reads the catalogue asserts what must hold for the
+objects it knows — every table has RLS on, every active view carries its
+table's columns, this constraint exists — and never that the set of objects
+equals a list. Found on 2026-09-06 while asking whether the view test was
+the only such test; it lives here, beside the view rule, because that is
+where the next person writing a schema-reading test will look.
+
 ## Standing rule — a test that verifies a calculation computes the expected value independently
 
 A test that reads its expected value back from the thing under test proves
