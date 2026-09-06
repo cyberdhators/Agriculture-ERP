@@ -1383,9 +1383,19 @@ The view-tracking test did exactly that on #35's merge run.
 **The rule.** A test that reads the catalogue asserts what must hold for the
 objects it knows — every table has RLS on, every active view carries its
 table's columns, this constraint exists — and never that the set of objects
-equals a list. Found on 2026-09-06 while asking whether the view test was
-the only such test; it lives here, beside the view rule, because that is
-where the next person writing a schema-reading test will look.
+equals a list. It lives here, beside the view rule, because that is where
+the next person writing a schema-reading test will look.
+
+**Looked, not assumed, on 2026-09-06.** Every test that reads the catalogue
+was read: the RLS checks on named tables, the security-invoker checks on
+named or pattern-matched views, the constraint-exists checks, and the
+view-tracking test are all on named sets or containment and tolerate what
+they do not know. One was not: the directories test asserted the `crop` and
+`language` enum labels equal a fixed list, so the first unit to add a crop
+or a language would have turned it red for a reason unrelated to that unit.
+It had not been bitten only because no unit had added one. It now asserts
+containment — every value the code knows exists in the database — which is
+the direction that matters.
 
 ## Standing rule — a test that verifies a calculation computes the expected value independently
 
