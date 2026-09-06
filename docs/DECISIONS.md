@@ -1431,3 +1431,24 @@ softly; never creates, re-maps or re-grades.
 
 **Creating a farm is mapping it.** The first boundary comes with the farm;
 a farm without a boundary is not a thing an officer can record.
+
+## 2026-09-06 — One CI concurrency group across all refs; the second CI edit since B1.2
+
+Every CI run holds the staging lock for twenty to forty minutes. A run on
+main triggered by a merge, and the next pull request's run, started seconds
+apart three times in a row under the sequential merge order, and the second
+refused each time, naming the first. The lock did exactly what B5.5 built it
+for; the cost was a manual re-run on every merge.
+
+The workflow now has one concurrency group across all refs with
+cancel-in-progress off, so GitHub queues runs instead of the lock refusing
+them. The trade, accepted: a superseded run on a branch is no longer
+cancelled by a newer push; it completes and the newer run waits, a run of
+staging time per superseded push. A cancelled run could leave its lock
+behind, so queueing is also the safer of the two. The lock stays: it is what
+protects staging from a laptop, which no workflow setting can see.
+
+**This is the second edit to the CI workflow since B1.2 wrote it; the first
+was B5.5.** Both were made because the unit was CI, and both are recorded
+here so that "do not touch the CI workflow", which every other unit's brief
+carries, is seen to have been honoured everywhere else.

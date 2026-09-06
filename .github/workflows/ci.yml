@@ -11,10 +11,18 @@ on:
   push:
     branches: [main]
 
-# A new push to a branch cancels that branch's previous run.
+# One test run at a time across ALL refs, queued, never cancelled: every run
+# holds the staging lock (vitest.global-setup.ts) for twenty to forty
+# minutes, and a run that starts while another holds it refuses. The lock
+# worked; the cost was a manual re-run on every merge, three in a row under
+# the sequential merge order (2026-09-06). GitHub queues them here instead.
+# The trade: a superseded run on a branch is no longer cancelled by a newer
+# push — it completes, and the newer run waits its turn. A run of staging
+# time per superseded push, accepted; a cancelled run could leave its lock
+# behind (PROJECT-STATE, "If a run is killed").
 concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  group: staging-tests
+  cancel-in-progress: false
 
 permissions:
   contents: read
