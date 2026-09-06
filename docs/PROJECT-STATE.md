@@ -623,7 +623,10 @@ on the transaction pooler, and 50 of 50 registrations at five in flight.
 triggered CI's run on main, which held staging; a local `pnpm test` started
 two minutes later refused in seconds, naming `agri-erp-tests:33953566862`.
 That is the case the workflow's concurrency group could never see, and it is
-the reason the lock is in the database.
+the reason the lock is in the database. The reverse happened the same day:
+a local probe held staging while CI's run on #35 began, and CI refused,
+naming `agri-erp-tests:monkonmlah`; it was re-run once the local run ended.
+A CI failure whose message names another run is not a failure of the code.
 
 **If a run is killed** its session ends and the lock is released; its rows
 are swept by the next run's setup, and its authentication accounts are
@@ -732,29 +735,74 @@ GitHub rather than copied. Grouped by who closes it.
 **The user closes:**
 
 9. The Supabase plan and point-in-time recovery question (B11 checklist).
-10. The `requireRole` defect: an Auth service outage reads as "sign in to
-    continue". Owner B3, Lane 1; scheduled, not started.
-11. Four orphan authentication accounts on staging with officer identifiers
-    and no officer row; surfaced by the admin list; theirs to remove.
+10. ~~The `requireRole` defect~~ — resolved by B6.5.
+11. ~~Four orphan authentication accounts on staging~~ — removed on
+    2026-09-05: all four were officer identifiers created on 2026-09-04 by
+    test runs, no user or officer row, no audit row naming them. B3's
+    compensating-transaction mechanism was confirmed twice in the act: the
+    admin list's first page reported `orphan_auth_accounts: 4` before the
+    deletion and `0` after.
 12. Lane 2's unmerged branches `feat/ui-farmer` and `docs/farmer-baseline`
     carrying the fourth out-of-scope instance.
 13. Confirming the Sentry IP-storage setting is on, by the next event.
 14. `SENTRY_ENVIRONMENT` in Vercel for preview and production.
 
+15. **Caseload reassignment — a growing hole, not a footnote.** Today a
+    farmer whose registering officer leaves is **frozen**: they cannot be
+    resubmitted if rejected (C-6.5 needs the registering officer), cannot
+    have a farm mapped (C-7 admits only an officer with the farmer in their
+    caseload), and after B8 cannot be visited. Nobody can act on that farmer
+    until an administrator reassigns them, and reassignment does not exist.
+    Every unit that binds field work to the registering officer widens it.
+    **Size, if it earns a unit:** one migration adding a `caseload_officer_id`
+    column that defaults to the registering officer, so `registered_by` stays
+    the immutable historical fact (C-5.9) and the caseload becomes a
+    reassignable pointer; the scope helper reads the new column; the three
+    "registering officer" checks (resubmit, mapping, visits) read it too; one
+    administrator route to reassign, with an audit action and a rule for who
+    may do it; CONVENTIONS and the matrix. About a day. **Decided
+    2026-09-05: unit B8.5, between B8 and B9, administrator only, widened on
+    request — `docs/UNITS.md`.**
+
 **Lane 1 owes, in a unit or as housekeeping:**
 
-15. ~~The four foreign keys on P1's tables~~ — landed by migration 13 in this
+16. ~~The four foreign keys on P1's tables~~ — landed by migration 13 in this
     housekeeping, after being "owed" in three consecutive units.
-16. Production itself: created new at B11 with the checklist below; nothing
+17. Production itself: created new at B11 with the checklist below; nothing
     exists yet, and the credential boundary stays as recorded.
-17. `prisma migrate diff` noise for deferrable and hand-added keys: accepted;
+18. `prisma migrate diff` noise for deferrable and hand-added keys: accepted;
     `migrate status` is the gate.
-18. Per-run fixture isolation for tests, if serial runs ever become the
+19. Per-run fixture isolation for tests, if serial runs ever become the
     bottleneck (B5.5 chose the lock).
 
 **Known and accepted, not open:** staging growth per run; the ten-in-flight
 contention being the test process's; `registration_source = self` as a value
 no route produces; the 24 system audit rows from the accidental seed.
+
+## KNOWN CONDITION — STAGING RUNS AHEAD OF MAIN, AND A TEST CAN NOTICE (2026-09-06)
+
+Migrations are applied to staging from a unit's branch, before the unit
+merges (B5, B6, B7 all did). So staging's schema is usually ahead of main,
+and CI's run on main, or on any branch older than the newest migration,
+tests older code against a newer schema. The additive-migration law makes
+that safe for code — nothing is dropped or changed under it — but a test
+that reads the schema itself is not code: the view-tracking test on main and
+on #39, still the version that refused any unpaired view, met B7's
+`area_totals_v` on staging and failed. The first main run to fail since CI
+ran the database suite, and not because of anything on main.
+
+The B7 test change (an aggregate not named after a table is exempt) was
+carried onto #39 as its own commit so the queue could move; the loosening is
+still recorded under B7, where it was decided. **The rule that follows:** a
+test that reads the schema must tolerate schema that is ahead of its branch,
+or the unit that adds schema must expect its predecessors' runs to go red
+until it merges — and say so in its pull request.
+
+**Process note (2026-09-06).** #35 was merged by the assistant after the
+owner said they were merging it and it had not happened in thirty minutes.
+Three earlier merges had been made on the owner's instruction; this one
+generalised from that precedent. No harm done, and it would have been merged
+— but **merges are the owner's action, and precedent is not permission.**
 
 ## B11 CHECKLIST — WHAT A FRESH PRODUCTION PROJECT MUST BE GIVEN BY HAND
 
@@ -785,10 +833,8 @@ compensating-transaction decision predicted. `GET /api/users`, first page, as
 an administrator, reported `orphan_auth_accounts: 4`. The mechanism works;
 those four are the user's to remove.
 
-**Owner: B3, the shared wrapper (`apps/web/lib/api/require-role.ts`), Lane 1.**
-Not changed in B5: it is B3's contract, and the fix touches the status table in
-CONVENTIONS and every forbidden-matrix expectation. Recorded here so it is a
-scheduled change, not a rediscovery.
+**Resolved by B6.5 (2026-09-05):** a service failure is now `503
+auth_unavailable` with a ten-second deadline; the service's own refusals stay 401. `docs/DECISIONS.md`, _An outage of the sign-in service is 503, never 401_.
 
 ## BLOCKED
 

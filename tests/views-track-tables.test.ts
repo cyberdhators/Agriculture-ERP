@@ -48,9 +48,16 @@ describe('every view named after a table carries exactly that table’s columns'
         .sort((a, b) => b.length - a.length)[0];
       if (table) paired.push([view, table]);
     }
-    // Every current view is a whole-table filter; a view that is not paired is
-    // either misnamed or a new kind that this rule must be told about.
-    expect(paired.map(([v]) => v).sort()).toEqual([...views].sort());
+    // A view named after a table is a whole-table filter and must pair. A view
+    // NOT named after any table is an aggregate or a subset by convention
+    // (B7: area_totals_v) and is exempt — the rule is about the name.
+    const unpaired = views.filter((v) => !paired.some(([pv]) => pv === v));
+    for (const v of unpaired) {
+      expect(
+        tables.some((t) => v.startsWith(t)),
+        `${v} looks table-named but paired with nothing`,
+      ).toBe(false);
+    }
     for (const [view, table] of paired) {
       expect(
         await columnsOf(view),

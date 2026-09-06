@@ -109,6 +109,13 @@ export const invalidCursor = () =>
   new ApiFailure(400, ERROR_CODES.invalidCursor, ERROR_MESSAGES.invalidCursor);
 
 /** The fixed sentence, every time. CONVENTIONS.md section 5.4. */
+/**
+ * B6.5: the sign-in service could not be consulted, so nothing is known about
+ * the session. NOT 401 — "sign in to continue" would send an officer in the
+ * field to re-enter credentials that were never wrong.
+ */
+export const authUnavailable = () =>
+  new ApiFailure(503, ERROR_CODES.authUnavailable, ERROR_MESSAGES.authUnavailable);
 export const internalError = () =>
   new ApiFailure(500, ERROR_CODES.internalError, ERROR_MESSAGES.internalError);
 
