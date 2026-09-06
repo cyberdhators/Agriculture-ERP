@@ -1397,6 +1397,15 @@ It had not been bitten only because no unit had added one. It now asserts
 containment — every value the code knows exists in the database — which is
 the direction that matters.
 
+**The distinction worth keeping.** This is the second instance of the same
+fault, and the first one this project has found by looking rather than by
+being bitten. Every earlier instance in the silent-gates class — the
+typecheck hole, the eight skipped files, the blind scanner, the unchecked
+keys, the strict view test — was discovered when it fired. This one was
+found by asking the question the class exists to prompt, before any unit
+added the thing it counted. Recorded so that the question keeps being
+asked.
+
 ## Standing rule — a test that verifies a calculation computes the expected value independently
 
 A test that reads its expected value back from the thing under test proves

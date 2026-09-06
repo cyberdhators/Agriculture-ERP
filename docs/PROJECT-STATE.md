@@ -756,6 +756,13 @@ companion, from the fourth instance: **when the record says something was
 done or is pending, ask the system rather than the record.** A migration
 folder, a catalogue query, a live route — not a sentence in a document.
 
+**One found before it fired (2026-09-06).** The directories test asserted the
+`crop` and `language` enum labels equal a fixed list; it would have gone red
+on the first unit to add a value. Found by reading every catalogue-reading
+test after the view test fired, and fixed to containment before any unit
+added one — the first instance of the class this project caught by looking
+rather than by being bitten. `docs/DECISIONS.md`, the schema-reading rule.
+
 A near miss, recorded for the shape: the drift test was suspected of the same
 fault on 2026-09-05 and was not guilty, but the check exposed a table it had
 never guarded (`docs/DECISIONS.md`). **The question to ask of any green
