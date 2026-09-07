@@ -735,6 +735,14 @@ C-9.13 `docs/data-model.md` §3 is corrected to state what the routes do: the
        header, the download direction, and true idempotency.
 C-9.14 Every record used to prove this unit, in staging and in tests, is
        invented.
+C-9.15 The device can act on every code in C-9.4 without a follow-up read.
+       For each, the response carries enough for the phone to decide keep,
+       retry or show the officer, and to know when to retry if it should: a
+       retryable outcome carries a Retry-After; a refusal carries the rule's
+       own sentence; a conflict names the identifier. A code that requires the
+       device to ask a second question before it knows what to do is a code
+       that will be handled wrong on a phone with no signal. One code is not a
+       server response at all — see the note.
 
 ### Notes for the builder
 
@@ -757,6 +765,22 @@ table's shape.
 
 **Captured-at** on farmer and farm is a schema change: two nullable columns,
 so records that predate the unit read "not recorded" rather than a guess.
+
+**The seven codes against C-9.15, checked before the build.** Six pass on the
+response alone: retry_later (500 and 503 carry `Retry-After`), sign_in_again
+(401), not_yet (409 `attachment_not_arrived` carries `Retry-After`), refused
+(the rule's sentence is in the body), left_caseload (404 on a farmer the
+device had acknowledged: keep, show, never retry), conflict (409 naming the
+identifier; the device holds its own copy and the next download brings the
+server's). **waiting_for_parent is never a server response.** The server
+cannot tell "parent not landed yet" from "parent not yours": both are 404 by
+design (§5.1). It is the device's own hold, decided from one local fact —
+whether the parent has been acknowledged — and a child is never sent before
+that fact is true (C-9.5). If a child is sent anyway, the server's 404 is
+read as left_caseload only when the parent was acknowledged, and as a device
+fault otherwise. A local fact is not a follow-up read; the code passes
+C-9.15 on that basis, and the officer app must implement the hold, not
+infer it from the server.
 
 **The seventh silent gate.** The audit law required the device on every
 entry, the column existed since B4, nothing sent it and no test asked; every
