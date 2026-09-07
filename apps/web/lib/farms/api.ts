@@ -34,7 +34,7 @@ export class FarmApiError extends Error {
 
 /* ---- API shapes (`present()`), the subset this client reads --------------- */
 
-interface BoundaryDto {
+export interface BoundaryDto {
   id: string;
   season: string;
   area_ha: number;
@@ -49,12 +49,12 @@ interface BoundaryDto {
   centroid?: GeoJsonPoint;
 }
 
-interface CropDto {
+export interface CropDto {
   season: string;
   crop: Crop;
 }
 
-interface FarmDto {
+export interface FarmDto {
   id: string;
   farmer_id: string;
   payam_id: string;
@@ -68,7 +68,7 @@ interface FarmDto {
   crops: CropDto[];
 }
 
-interface FeatureDto {
+export interface FeatureDto {
   type: 'Feature';
   id: string;
   geometry: GeoJsonPolygon;

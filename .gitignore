@@ -23,6 +23,9 @@ build/
 
 # test output
 coverage/
+# ...but the farm coverage screen is product, not test output.
+!apps/web/app/(portal)/coverage/
+!apps/web/components/coverage/
 
 # os
 .DS_Store

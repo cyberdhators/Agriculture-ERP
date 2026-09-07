@@ -1,0 +1,74 @@
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: var(--s-6);
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.mapFrame {
+  border: 1px solid var(--line);
+  background: var(--paper);
+  border-radius: var(--radius-card);
+  padding: var(--s-4);
+}
+
+.map {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.poly {
+  stroke: var(--paper);
+  stroke-width: 1.25;
+  stroke-linejoin: round;
+  fill-opacity: 0.82;
+}
+
+.caption {
+  margin-top: var(--s-3);
+  color: var(--muted);
+  font-size: var(--text-small);
+}
+
+.legend {
+  display: grid;
+  gap: var(--s-3);
+  margin-top: var(--s-4);
+}
+
+.legendRow {
+  display: grid;
+  grid-template-columns: 16px 1fr auto;
+  gap: var(--s-3);
+  align-items: center;
+}
+
+.swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: var(--radius-control);
+  border: 1px solid var(--line-strong);
+}
+
+.legendName {
+  font-size: var(--text-small);
+  color: var(--ink-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.legendValue {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--text-small);
+  color: var(--muted);
+  text-align: right;
+}
