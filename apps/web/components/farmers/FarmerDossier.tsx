@@ -1,8 +1,15 @@
 'use client';
 
 import Link from 'next/link';
-import { useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 
+import {
+  LIVE_FARMS,
+  listFarmsForFarmer,
+  summariseFarms,
+  type FarmBoundaryView,
+  type FarmView,
+} from '@/lib/farms/api';
 import { CROP_LABELS, LANGUAGE_LABELS, formatDate, formatPhone } from '@/lib/format';
 import {
   canReview,
@@ -31,6 +38,7 @@ import {
   syncForEntity,
   totalAreaHa,
   userById,
+  type Farm,
 } from '@/lib/fixtures/farmers';
 import { usePreview } from '@/lib/preview';
 
@@ -80,6 +88,23 @@ export function FarmerDossier({ id }: { id: string }) {
 
   const duplicates = useMemo(() => (farmer ? duplicatesOf(farmer) : []), [farmer]);
 
+  // With the farms flag on, the farms section reads this farmer's farms from B7;
+  // it keeps the fixtures until the answer arrives, and on any error. Coordinates
+  // and GPS accuracy are absent for roles that may not see them (C-7.8).
+  const farmerId = farmer?.id;
+  const [liveFarms, setLiveFarms] = useState<FarmView[] | null>(null);
+
+  useEffect(() => {
+    if (!LIVE_FARMS || !farmerId) return;
+    let live = true;
+    listFarmsForFarmer(farmerId)
+      .then((f) => live && setLiveFarms(f))
+      .catch(() => live && setLiveFarms(null));
+    return () => {
+      live = false;
+    };
+  }, [farmerId]);
+
   if (!farmer) {
     return (
       <>
@@ -114,6 +139,8 @@ export function FarmerDossier({ id }: { id: string }) {
   const escalated = isEscalated(farmer);
   const consent = consentForFarmer(farmer.id);
   const farms = farmsForFarmer(farmer.id);
+  const showLiveFarms = LIVE_FARMS && liveFarms !== null;
+  const liveSummary = showLiveFarms ? summariseFarms(liveFarms) : null;
   const memberships = membershipsForFarmer(farmer.id);
   const events = eventsForFarmer(farmer.id);
   const audit = auditForEntity(farmer.id);
@@ -315,60 +342,13 @@ export function FarmerDossier({ id }: { id: string }) {
           <Section
             no="03"
             title="Farms"
-            count={`${farms.length} · ${totalAreaHa(farmer.id).toFixed(2)} ha`}
+            count={
+              liveSummary
+                ? `${liveSummary.farmCount} · ${liveSummary.totalAreaHa.toFixed(2)} ha`
+                : `${farms.length} · ${totalAreaHa(farmer.id).toFixed(2)} ha`
+            }
           >
-            {farms.length === 0 ? (
-              <EmptyState
-                title="No farms mapped"
-                body="No plot has been walked for this farmer yet. A farm is added from the officer app in the field."
-              />
-            ) : (
-              <div>
-                {farms.map((farm) => (
-                  <div key={farm.id} className={styles.farmCard}>
-                    <Boundary farm={farm} size={360} showArea={false} />
-                    <div className={styles.farmFacts}>
-                      <div className={styles.farmFactsGrid}>
-                        <Mini label="Area" value={`${farm.area_ha.toFixed(2)} ha`} mono />
-                        <Mini label="Points" value={String(farm.point_count)} mono />
-                        <Mini label="GPS accuracy" value={`±${farm.gps_accuracy_m} m`} mono />
-                        <Mini
-                          label="Trace"
-                          value={
-                            <Stamp
-                              kind={
-                                farm.accuracy_flag === 'good'
-                                  ? 'verified'
-                                  : farm.accuracy_flag === 'poor'
-                                    ? 'pending'
-                                    : 'rejected'
-                              }
-                            >
-                              {farm.accuracy_flag}
-                            </Stamp>
-                          }
-                        />
-                        <Mini label="Season" value={farm.season} mono />
-                        <Mini
-                          label="Mapped"
-                          value={`${officerById(farm.mapped_by)?.name ?? 'Officer'} · ${formatDate(farm.mapped_at)}`}
-                        />
-                      </div>
-                      <div>
-                        <p className="label" style={{ marginBottom: 'var(--s-2)' }}>
-                          Crops declared
-                        </p>
-                        <p>
-                          {cropsForFarm(farm.id)
-                            .map((d) => CROP_LABELS[d.crop])
-                            .join(', ') || '—'}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+            {showLiveFarms ? <LiveFarms farms={liveFarms} /> : <FixtureFarms farms={farms} />}
           </Section>
 
           <Section
@@ -648,4 +628,147 @@ function Mini({ label, value, mono }: { label: string; value: ReactNode; mono?: 
 
 function titleCase(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+function gradeStampKind(flag: string): 'verified' | 'pending' | 'rejected' {
+  return flag === 'good' ? 'verified' : flag === 'poor' ? 'pending' : 'rejected';
+}
+
+/** The farms section drawn from the fixtures. */
+function FixtureFarms({ farms }: { farms: readonly Farm[] }) {
+  if (farms.length === 0) {
+    return (
+      <EmptyState
+        title="No farms mapped"
+        body="No plot has been walked for this farmer yet. A farm is added from the officer app in the field."
+      />
+    );
+  }
+  return (
+    <div>
+      {farms.map((farm) => (
+        <div key={farm.id} className={styles.farmCard}>
+          <Boundary farm={farm} size={360} showArea={false} />
+          <div className={styles.farmFacts}>
+            <div className={styles.farmFactsGrid}>
+              <Mini label="Area" value={`${farm.area_ha.toFixed(2)} ha`} mono />
+              <Mini label="Points" value={String(farm.point_count)} mono />
+              <Mini label="GPS accuracy" value={`±${farm.gps_accuracy_m} m`} mono />
+              <Mini
+                label="Trace"
+                value={
+                  <Stamp kind={gradeStampKind(farm.accuracy_flag)}>{farm.accuracy_flag}</Stamp>
+                }
+              />
+              <Mini label="Season" value={farm.season} mono />
+              <Mini
+                label="Mapped"
+                value={`${officerById(farm.mapped_by)?.name ?? 'Officer'} · ${formatDate(farm.mapped_at)}`}
+              />
+            </div>
+            <div>
+              <p className="label" style={{ marginBottom: 'var(--s-2)' }}>
+                Crops declared
+              </p>
+              <p>
+                {cropsForFarm(farm.id)
+                  .map((d) => CROP_LABELS[d.crop])
+                  .join(', ') || '—'}
+              </p>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** The farms section drawn from B7, one card per current boundary. */
+function LiveFarms({ farms }: { farms: readonly FarmView[] }) {
+  const cards = farms.flatMap((farm) => farm.boundaries.map((b) => ({ farm, b })));
+  if (cards.length === 0) {
+    return (
+      <EmptyState
+        title="No farms mapped"
+        body="No plot has been walked for this farmer yet. A farm is added from the officer app in the field."
+      />
+    );
+  }
+  return (
+    <div>
+      {cards.map(({ farm, b }) => {
+        const crops = farm.crops.filter((c) => c.season === b.season);
+        return (
+          <div key={b.id} className={styles.farmCard}>
+            {b.boundary ? (
+              <Boundary farm={boundaryFarm(farm, b)} size={360} showArea={false} />
+            ) : (
+              <div
+                className={styles.boundaryEmpty}
+                style={{ width: 360, height: 360 }}
+                role="img"
+                aria-label="Coordinates are shown to administrators and the mapping officer"
+              >
+                <svg viewBox="0 0 360 360" width={360} height={360} aria-hidden="true">
+                  <rect
+                    x={18}
+                    y={18}
+                    width={324}
+                    height={324}
+                    className={styles.boundaryEmptyRect}
+                  />
+                </svg>
+                <span className={styles.boundaryEmptyLabel}>
+                  Coordinates shown to administrators and the mapping officer
+                </span>
+              </div>
+            )}
+            <div className={styles.farmFacts}>
+              <div className={styles.farmFactsGrid}>
+                <Mini label="Area" value={`${b.areaHa.toFixed(2)} ha`} mono />
+                <Mini label="Points" value={String(b.pointCount)} mono />
+                <Mini
+                  label="GPS accuracy"
+                  value={b.gpsAccuracyM !== null ? `±${b.gpsAccuracyM} m` : 'Not shown'}
+                  mono
+                />
+                <Mini
+                  label="Trace"
+                  value={<Stamp kind={gradeStampKind(b.grade)}>{b.grade}</Stamp>}
+                />
+                <Mini label="Season" value={b.season} mono />
+                <Mini label="Mapped" value={formatDate(b.mappedAt)} />
+              </div>
+              <div>
+                <p className="label" style={{ marginBottom: 'var(--s-2)' }}>
+                  Crops declared
+                </p>
+                <p>{crops.map((c) => CROP_LABELS[c.crop]).join(', ') || '—'}</p>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/** Shape one live boundary as the fixture farm the SVG drawer reads. Called only
+ *  when the coordinates are present, so the ring is real. */
+function boundaryFarm(farm: FarmView, b: FarmBoundaryView): Farm {
+  return {
+    id: b.id,
+    farmer_id: farm.farmerId,
+    boundary: b.boundary as unknown as Farm['boundary'],
+    centroid: b.centroid
+      ? { lon: b.centroid.coordinates[0], lat: b.centroid.coordinates[1] }
+      : { lon: 0, lat: 0 },
+    area_ha: b.areaHa,
+    point_count: b.pointCount,
+    gps_accuracy_m: b.gpsAccuracyM ?? 0,
+    accuracy_flag: b.grade,
+    mapped_by: b.mappedBy,
+    mapped_at: b.mappedAt,
+    season: b.season,
+  };
 }

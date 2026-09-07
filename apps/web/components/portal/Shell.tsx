@@ -23,6 +23,7 @@ import styles from './portal.module.css';
 // with no route behind it is a 404, so it does not ship early.
 const NAV: ReadonlyArray<{ href: string; label: string }> = [
   { href: '/farmers', label: 'Farmers' },
+  { href: '/coverage', label: 'Coverage' },
   { href: '/desk', label: 'Field desk' },
   { href: '/directories', label: 'Directories' },
   { href: '/library', label: 'Library' },

@@ -11,6 +11,13 @@ import {
   type FarmView,
 } from './api';
 
+const ring: [number, number][] = [
+  [31.5, 4.8],
+  [31.6, 4.8],
+  [31.6, 4.9],
+  [31.5, 4.8],
+];
+
 const boundaryWithGeometry = {
   id: 'b-1',
   season: '2026-main',
@@ -21,7 +28,7 @@ const boundaryWithGeometry = {
   mapped_at: '2026-07-23T00:00:00Z',
   is_current: true,
   gps_accuracy_m: 6,
-  boundary: { type: 'Polygon' as const, coordinates: [[[31.5, 4.8], [31.6, 4.8], [31.6, 4.9], [31.5, 4.8]]] },
+  boundary: { type: 'Polygon' as const, coordinates: [ring] },
   centroid: { type: 'Point' as const, coordinates: [31.55, 4.83] as [number, number] },
 };
 

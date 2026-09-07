@@ -253,9 +253,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<Envelope<T>
 
 /** GET /api/farmers/:id/farms — a farmer's farms, scoped, geometry per C-7.8. */
 export async function listFarmsForFarmer(farmerId: string): Promise<FarmView[]> {
-  const body = await request<FarmDto[]>(
-    `/api/farmers/${encodeURIComponent(farmerId)}/farms`,
-  );
+  const body = await request<FarmDto[]>(`/api/farmers/${encodeURIComponent(farmerId)}/farms`);
   return (body.data ?? []).map(toFarm);
 }
 

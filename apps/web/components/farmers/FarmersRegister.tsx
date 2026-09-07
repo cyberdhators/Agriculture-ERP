@@ -4,6 +4,12 @@ import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 
 import { LIVE_FARMERS, listFarmers } from '@/lib/farmers/api';
+import {
+  LIVE_FARMS,
+  listFarmsForFarmer,
+  summariseFarms,
+  type FarmerFarmSummary,
+} from '@/lib/farms/api';
 import { CROP_LABELS, formatPhone, pluralise } from '@/lib/format';
 import {
   canRegister,
@@ -85,9 +91,9 @@ export function FarmersRegister() {
   const showChecks = hydrated && canReview(role);
 
   // The pool is the fixtures until NEXT_PUBLIC_USE_LIVE_FARMERS is set, then the
-  // live B5 list. Crops, farms and cooperative membership still come from the
-  // fixtures below (their backend is B7 / cooperatives), so those columns and
-  // filters are inert on live data until those units land.
+  // live B5 list. The Crops and Farms/area columns read the fixtures until
+  // NEXT_PUBLIC_USE_LIVE_FARMS is set, then the live B7 farms per farmer.
+  // Cooperative membership still comes from the fixtures until that unit lands.
   const [livePool, setLivePool] = useState<Farmer[] | null>(null);
   const [loadError, setLoadError] = useState<string | undefined>();
 
@@ -108,6 +114,45 @@ export function FarmersRegister() {
 
   // Everything a non-admin may not see is removed before any filter runs.
   const scoped = useMemo(() => scopeFarmers(pool, role), [pool, role]);
+
+  // With the farms flag on, each farmer's crops, farm count and total area come
+  // from B7. There is no cross-farmer farms endpoint, so the register asks per
+  // farmer in scope and folds the answers into a map the columns read; a farmer
+  // still without a live answer keeps the fixture figures.
+  const [farmSummaries, setFarmSummaries] = useState<Map<string, FarmerFarmSummary>>(new Map());
+
+  useEffect(() => {
+    if (!LIVE_FARMS) return;
+    const ids = scoped.map((f) => f.id);
+    if (ids.length === 0) return;
+    let live = true;
+    void Promise.allSettled(
+      ids.map((id) => listFarmsForFarmer(id).then((farms) => [id, summariseFarms(farms)] as const)),
+    ).then((results) => {
+      if (!live) return;
+      const map = new Map<string, FarmerFarmSummary>();
+      for (const r of results) if (r.status === 'fulfilled') map.set(r.value[0], r.value[1]);
+      setFarmSummaries(map);
+    });
+    return () => {
+      live = false;
+    };
+  }, [scoped]);
+
+  // Read a farmer's crops, farm count and area from the live summary when it has
+  // arrived, otherwise from the fixtures. The columns never go blank on a swap.
+  const cropsOf = (id: string): Crop[] => {
+    const live = LIVE_FARMS ? farmSummaries.get(id) : undefined;
+    return live ? live.crops : cropsForFarmer(id);
+  };
+  const farmCountOf = (id: string): number => {
+    const live = LIVE_FARMS ? farmSummaries.get(id) : undefined;
+    return live ? live.farmCount : farmsForFarmer(id).length;
+  };
+  const areaOf = (id: string): number => {
+    const live = LIVE_FARMS ? farmSummaries.get(id) : undefined;
+    return live ? live.totalAreaHa : totalAreaHa(id);
+  };
 
   const q = get('q').trim().toLowerCase();
   const fState = get('state');
@@ -138,13 +183,28 @@ export function FarmersRegister() {
       }
       if (fSource && f.registration_source !== fSource) return false;
       if (fOfficer && f.registered_by !== fOfficer) return false;
-      if (fCrop && !cropsForFarmer(f.id).includes(fCrop as Crop)) return false;
+      if (fCrop && !cropsOf(f.id).includes(fCrop as Crop)) return false;
       if (fDup === '1' && !dupIds.has(f.id)) return false;
       if (fCoop && !membershipsForFarmer(f.id).some((m) => m.cooperative_id === fCoop))
         return false;
       return true;
     });
-  }, [pool, scoped, q, fState, fPayam, fStatus, fSex, fAge, fSource, fOfficer, fCrop, fDup, fCoop]);
+  }, [
+    pool,
+    scoped,
+    q,
+    fState,
+    fPayam,
+    fStatus,
+    fSex,
+    fAge,
+    fSource,
+    fOfficer,
+    fCrop,
+    fDup,
+    fCoop,
+    farmSummaries,
+  ]);
 
   const sorted = useMemo(() => {
     const dir = sort.dir === 'asc' ? 1 : -1;
@@ -159,9 +219,9 @@ export function FarmersRegister() {
         case 'age':
           return ageOf(f);
         case 'farms':
-          return farmsForFarmer(f.id).length;
+          return farmCountOf(f.id);
         case 'area':
-          return totalAreaHa(f.id);
+          return areaOf(f.id);
         case 'wait':
           return daysWaiting(f);
         case 'status':
@@ -175,7 +235,7 @@ export function FarmersRegister() {
       if (va > vb) return 1 * dir;
       return a.farmer_number.localeCompare(b.farmer_number);
     });
-  }, [rows, sort]);
+  }, [rows, sort, farmSummaries]);
 
   const kpis = useMemo(() => {
     let verified = 0;
@@ -480,8 +540,9 @@ export function FarmersRegister() {
                 </thead>
                 <tbody>
                   {sorted.map((f) => {
-                    const farms = farmsForFarmer(f.id);
-                    const crops = cropsForFarmer(f.id).map((c) => CROP_LABELS[c]);
+                    const farmCount = farmCountOf(f.id);
+                    const areaHa = areaOf(f.id);
+                    const crops = cropsOf(f.id).map((c) => CROP_LABELS[c]);
                     const officer = officerById(f.registered_by);
                     const status = effectiveStatus(f);
                     const escalated = isEscalated(f);
@@ -526,9 +587,9 @@ export function FarmersRegister() {
                           </span>
                         </td>
                         <td className={screens.tdNum}>
-                          {farms.length}
-                          {farms.length ? (
-                            <span className="muted"> · {totalAreaHa(f.id).toFixed(1)} ha</span>
+                          {farmCount}
+                          {farmCount ? (
+                            <span className="muted"> · {areaHa.toFixed(1)} ha</span>
                           ) : null}
                         </td>
                         <td className={screens.tdNowrap}>{officer ? officer.name : 'Self'}</td>
