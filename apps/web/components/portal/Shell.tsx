@@ -24,6 +24,7 @@ import styles from './portal.module.css';
 const NAV: ReadonlyArray<{ href: string; label: string }> = [
   { href: '/farmers', label: 'Farmers' },
   { href: '/desk', label: 'Field desk' },
+  { href: '/visits', label: 'Visits' },
   { href: '/directories', label: 'Directories' },
   { href: '/library', label: 'Library' },
   { href: '/admin', label: 'Administration' },
