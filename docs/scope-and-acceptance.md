@@ -518,6 +518,96 @@ the plot, the stored ring is counter-clockwise and the area is positive.
 
 ---
 
+## C-8 — EXTENSION VISITS AND ATTACHMENTS
+
+Deliverable: (d) extension services. Unit B8.
+
+Source: `docs/data-model-extension.md` §2 (`visit_note`, `visit_attachment`).
+Written by the owner on 2026-09-07 after B7 merged. The visit is the second
+record in this system that requires physical presence, and the first whose
+substance is prose: what an officer saw and what they advised is the
+deliverable CORWADO reports to the donor.
+
+C-8.1  An extension officer records a visit to a farmer in their caseload,
+       capturing where and when it happened, what was observed, and what advice
+       was given. Advice is required: a visit with no advice is not a visit,
+       and extension coverage is what CORWADO reports to the donor.
+C-8.2  A visit records the topics it covered from a fixed list, and may record
+       its duration and how many people attended.
+C-8.3  A visit may be a follow-up to an earlier visit, and the chain is readable
+       in order. The earlier visit belongs to the same farmer, is not removed,
+       and following it back never reaches this visit — a retried sync could
+       produce the cycle an officer never would.
+C-8.4  A visit records the position at which it was captured and its accuracy in
+       metres. The value is stored and shown; it is not graded. The boundary
+       grades were set for a walked polygon where error compounds across every
+       vertex, and a single standing point is a different measurement. A grade
+       is added if the field asks for one.
+C-8.5  A visit records both the moment the officer's device reported and the
+       moment the server received it. Coverage figures are computed from the
+       server's moment, never the device's, because a phone offline for a week
+       may be wrong by days. Both are shown wherever a date is shown.
+C-8.6  A visit may carry photographs or audio. An attachment is a separate
+       record that travels separately: a failed or pending attachment never
+       blocks the visit it belongs to, and a visit is complete without them.
+C-8.7  For any visit, its officer can tell whether each attachment has arrived,
+       is still waiting, or has failed, and what to do about it. The message
+       names the action, not the fault (§14).
+C-8.8  Attachment files are private. Access is granted per request, expires, and
+       is refused outside the caller's scope.
+C-8.9  An officer records and reads visits for farmers in their caseload. A
+       supervisor and a read-only user read visits in their state. Out of scope
+       is indistinguishable from not found.
+C-8.10 An officer may correct their own visit within twenty-four hours of
+       recording it. After that only an administrator may. An administrator
+       never records a visit, as with boundaries — a visit is a journey.
+C-8.11 Removal is soft, administrator only. A removed visit appears in no list,
+       count or coverage figure, and its history remains readable.
+C-8.12 Every visit, attachment and correction writes an audit entry in the same
+       transaction as the change.
+C-8.13 Observation and advice are free text and are the substance of this
+       deliverable, not an aside. The B6 rule holds — the officer writes about
+       the visit, not the person — but it cannot be enforced by a closed list,
+       because no list can say what to do about armyworm in a particular field.
+       It is enforced by where the text travels: inside the visit record only,
+       to the parties entitled to it; never in an error, a warning or a message;
+       never in the audit log; redacted by the scrubber; covered by the scan.
+C-8.14 Every visit and attachment in staging, in tests and in seed data is
+       invented.
+
+### Notes for the builder
+
+**Decided with the owner, 2026-09-07, before the build.** Bytes never pass
+through a route: the API issues a signed upload grant for one attachment id,
+the phone uploads to Storage, and the API confirms arrival against the
+declared size and type; reading is a signed link per request. The grant
+expires in minutes; the confirm step verifies existence, size and type; the
+bucket is private with no public policy, and one server module touches
+Storage. Any non-removed farmer may be visited, whatever their verification
+status; coverage counts visits to verified farmers, with the rest beside and
+never folded in. The twenty-four hours run from the server's moment. A
+correction may change what was observed, advised, covered, how long and how
+many, and the follow-up link; never the farmer, the officer, the position or
+either moment — those five make the record evidence rather than a note.
+
+**Topics** are nine, from `docs/data-model-extension.md` §2: land
+preparation, planting, weeding, pest, disease, harvest, storage, market,
+other. Short on purpose: a list an officer scrolls past is a list they tick
+the first item on.
+
+**Ceilings** with room: photos to 15 MB (a mid-range Android's JPEG is 3 to 6,
+a 48-megapixel one up to 10) as JPEG, PNG or WebP; audio to 25 MB (about ten
+minutes of AAC is 10) as M4A, AAC, MP3, OGG or WebM. A file over the ceiling
+is refused at declaration, before any byte travels, with a sentence naming
+the action.
+
+**The upload grant's life** is a provider fact: Supabase's upload token lives
+two hours and cannot be shortened. Ours is fifteen minutes, recorded on the
+row and enforced at confirm; an object that arrives after it is removed and
+the row fails.
+
+---
+
 ## C-13 — DIRECTORIES AND LEARNING LIBRARY
 
 **Deliverables (i), (j), (k) and (m). Unit P1.**
@@ -596,7 +686,6 @@ list. If yes, the officer role gets a write route and entries gain a
 Written one unit ahead of the build, not all at once, so that criteria reflect
 what the preceding unit actually produced.
 
-- C-8 — extension visit recording — (d)
 - C-9 — offline synchronisation — (b)
 - C-10 — dashboards, reporting and export — (p), (q)
 - C-11 — backup and disaster recovery — (t)

@@ -102,6 +102,23 @@ export const RULE_MESSAGES = {
   farm_already_exists: 'A farm with that identifier has already been recorded.',
   boundary_recorded_concurrently:
     'Another boundary was recorded for this farm and season at the same moment. Load the farm again before re-mapping.',
+  // B8 (C-8). For an officer in a field: the action, never the fault (§14).
+  visit_already_exists: 'A visit with that identifier has already been recorded.',
+  follow_up_not_found:
+    "The earlier visit could not be found for this farmer. Choose it from this farmer's visits, or leave the link out.",
+  follow_up_cycle:
+    'That earlier visit already follows this one. Choose a visit from before it, or leave the link out.',
+  correction_window_closed:
+    'A day has passed since this visit was received. Ask an administrator to make the correction.',
+  attachment_already_exists: 'An attachment with that identifier has already been declared.',
+  attachment_not_arrived:
+    'The file has not reached the server yet. Keep the phone on with signal and try again in a moment.',
+  attachment_already_failed: 'This attachment did not send. Open the visit and send it again.',
+  attachment_mismatch:
+    'The file that arrived is not the one declared. Open the visit and send it again.',
+  attachment_grant_expired: 'The upload took too long. Open the visit and send it again.',
+  attachment_not_received:
+    'This attachment has not been received, so there is nothing to open yet.',
 } as const;
 
 export type RuleKey = keyof typeof RULE_MESSAGES;

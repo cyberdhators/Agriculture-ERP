@@ -40,6 +40,12 @@ export const AUDIT_ACTIONS = [
   'farm.boundary_superseded',
   'farm.crops_declared',
   'farm.soft_deleted',
+  'visit.recorded',
+  'visit.corrected',
+  'visit.soft_deleted',
+  'visit.attachment_declared',
+  'visit.attachment_arrived',
+  'visit.attachment_failed',
 ] as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];
@@ -85,6 +91,11 @@ const NEVER_RECORDED = new Set([
   'centroid',
   'coordinates',
   'geometry',
+  // C-8.13: observation and advice are the substance of a visit and prose about
+  // a named person's field. Never in the log. The standing point likewise (C-8.4).
+  'observation',
+  'advice',
+  'position',
   'phone',
   'alt_phone',
   'email',

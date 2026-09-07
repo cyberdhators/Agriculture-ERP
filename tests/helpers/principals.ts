@@ -175,6 +175,18 @@ export async function sweep(prisma: PrismaClient): Promise<void> {
      SELECT auth_user_id FROM public."officer" WHERE name LIKE '${TEST_PREFIX}%'`,
   );
   for (const row of rows) await deleteAccount(row.auth_user_id);
+  // B8: attachments hang off visits; visits off farmers and officers, and off
+  // each other (follow_up_of, NO ACTION, checked at statement end — one DELETE
+  // takes a whole chain).
+  await prisma.$executeRawUnsafe(
+    `DELETE FROM public.visit_attachment WHERE visit_id IN
+       (SELECT v.id FROM public.visit v JOIN public.farmer fr ON fr.id = v.farmer_id WHERE fr.family_name LIKE '${FARMER_TEST_FAMILY}%')
+       OR created_by IN (SELECT id FROM public.officer WHERE name LIKE '${TEST_PREFIX}%')`,
+  );
+  await prisma.$executeRawUnsafe(
+    `DELETE FROM public.visit WHERE farmer_id IN (SELECT id FROM public.farmer WHERE family_name LIKE '${FARMER_TEST_FAMILY}%')
+       OR officer_id IN (SELECT id FROM public.officer WHERE name LIKE '${TEST_PREFIX}%')`,
+  );
   // B7: farms hang off farmers and officers; boundaries and crops hang off farms.
   await prisma.$executeRawUnsafe(
     `DELETE FROM public.crop_declaration WHERE farm_id IN
