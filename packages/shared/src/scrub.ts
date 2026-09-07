@@ -80,6 +80,15 @@ const SENSITIVE_KEYS = [
    * only inside the verification record; it never travels here.
    */
   'note',
+
+  /** C-7.10: a farm boundary is a location of a named person. */
+  'boundary',
+  'centroid',
+  'coordinates',
+  'geometry',
+  'gps',
+  'latitude',
+  'longitude',
 ];
 
 const normaliseKey = (key: string): string => key.toLowerCase().replace(/[_\-\s]/g, '');

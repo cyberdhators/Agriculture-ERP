@@ -55,7 +55,7 @@ export function scan(result: CallResult, label: string): void {
 
 export const checked = async (
   mod: RouteModule,
-  method: 'GET' | 'POST' | 'PATCH' | 'DELETE',
+  method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE',
   options: CallOptions = {},
 ): Promise<CallResult> => {
   if (options.body && typeof options.body === 'object' && 'phone' in options.body) {

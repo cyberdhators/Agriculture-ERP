@@ -1317,8 +1317,19 @@ column to such a table recreates every such view in the same migration
 projects a subset, or aggregates, is not named after its table.
 
 **The test.** `tests/views-track-tables.test.ts` discovers every view in the
-schema, pairs each with a table by longest name prefix, refuses any view it
-cannot pair, and compares the column lists both directions. It runs in every
+schema, pairs each with a table by longest name prefix, and compares the
+column lists both directions.
+
+**Loosened on 2026-09-05, during B7, the first unit the guard was watching.**
+As written the day before, the test refused any view it could not pair. B7's
+`area_totals_v` is an aggregate and cannot pair with a table, so the test was
+changed: a view not named after any table is exempt by convention. The
+change is right and `area_totals_v` proves it — but it is a loosening of a
+guard made during a unit that the guard was watching, and it is recorded as
+that rather than as a clarification. The next loosening might not be as
+clearly right; a rule that quietly relaxes each time it is inconvenient
+stops being a rule. Any further change to what this test exempts is recorded
+here the same way, with the date and the reason. It runs in every
 full suite run, locally and in CI.
 
 ## 2026-09-05 — The drift-test premise came from the user, and checking it found it false
@@ -1358,3 +1369,148 @@ on a local port, four ways, and against the real service both ways.
 **Not reported to Sentry, deliberately.** An outage would produce one event
 per request; the signal belongs to a health check, which is B10's or later.
 Recorded so the silence is known to be chosen.
+
+## Standing rule — a test that reads the schema tolerates objects it does not know
+
+Staging's schema runs ahead of main: migrations are applied from a unit's
+branch before it merges, so every run of main, or of an older branch, tests
+older code against a newer schema (PROJECT-STATE, _Staging's schema runs
+ahead of main_). The additive-migration law keeps code safe under that; a
+test that enumerates the schema and demands equality is not code, and it
+goes red on a view, a table, an enum value or a constraint it does not know.
+The view-tracking test did exactly that on #35's merge run.
+
+**The rule.** A test that reads the catalogue asserts what must hold for the
+objects it knows — every table has RLS on, every active view carries its
+table's columns, this constraint exists — and never that the set of objects
+equals a list. It lives here, beside the view rule, because that is where
+the next person writing a schema-reading test will look.
+
+**Looked, not assumed, on 2026-09-06.** Every test that reads the catalogue
+was read: the RLS checks on named tables, the security-invoker checks on
+named or pattern-matched views, the constraint-exists checks, and the
+view-tracking test are all on named sets or containment and tolerate what
+they do not know. One was not: the directories test asserted the `crop` and
+`language` enum labels equal a fixed list, so the first unit to add a crop
+or a language would have turned it red for a reason unrelated to that unit.
+It had not been bitten only because no unit had added one. It now asserts
+containment — every value the code knows exists in the database — which is
+the direction that matters.
+
+**The distinction worth keeping.** This is the second instance of the same
+fault, and the first one this project has found by looking rather than by
+being bitten. Every earlier instance in the silent-gates class — the
+typecheck hole, the eight skipped files, the blind scanner, the unchecked
+keys, the strict view test — was discovered when it fired. This one was
+found by asking the question the class exists to prompt, before any unit
+added the thing it counted. Recorded so that the question keeps being
+asked.
+
+## Standing rule — a test that verifies a calculation computes the expected value independently
+
+A test that reads its expected value back from the thing under test proves
+only that the thing agrees with itself. B7's area test computes the expected
+hectares from the polygon's coordinates by a geodesic formula written in the
+test, and requires PostGIS to agree within one percent; the two must agree
+independently or the test says nothing. B10's reach figures face exactly
+this: a total copied from the view it is meant to check is worth nothing.
+The expected value comes from a second, independent path — a formula, a
+hand count of fixture rows, a known answer — never from the query, view or
+function being verified.
+
+## B7 — decisions in the farm unit
+
+**Accuracy grades: good at 10 m or better, poor over 10 to 30, unusable over 30.** Ours, taken because no threshold exists in any document, to be corrected
+when CORWADO or the field says otherwise. A consumer GPS under tree cover
+routinely reports 15 to 20 metres, so "poor" will be common rather than
+exceptional; the unusable threshold is the one that actually matters. The
+numbers are constants in `packages/shared` and the database CHECK is
+generated from them.
+
+**Four distinct vertices, the closing repeat not counted; a triangle is
+refused.** A three-sided plot exists in reality, but a three-point capture is
+far more likely an officer who stopped walking early, and the refusal says
+so in words they can act on.
+
+**The three refusals are sentences for a field, never the database's words.**
+Closure and the vertex count are judged in the module before the database,
+because the GeoJSON parser refuses an open ring with its own message;
+simplicity and validity are judged by PostGIS and mapped to one sentence.
+
+**Winding order is normalised.** A phone walking a plot produces either
+orientation depending on which way the officer walked. The stored ring is
+forced counter-clockwise on insert (`ST_ForcePolygonCCW`), the area is taken
+on the geography and is positive either way, and a test maps the same plot
+both ways and gets the same area. Nothing is refused for orientation and
+nothing goes negative.
+
+**Seasons: a four-digit year, a hyphen, `main` or `second`.** Ours until
+CORWADO confirms local names. A season the system cannot compare is a season
+B10 cannot report on.
+
+**History is kept, never overwritten, within a season as well as across
+seasons** (data model open question 6, unanswered). Discarding a boundary is
+irreversible; season-on-season comparison is what a donor report about land
+under cultivation eventually wants; and adding history later would mean
+migrating farms that already have visits and crops attached. Within a season
+the same reasoning applies and re-mapping after a poor reading is the
+common case, so a sequence with the latest current, one current per farm per
+season as a partial unique index. The reversible reading is our decision and
+can be narrowed on request.
+
+**Only an officer with the farmer in their caseload maps, and the schema says
+so.** The mapping officer column references the officer table; an
+administrator cannot be recorded as a mapper at all. The record tells
+"someone walked this" from "someone drew this" by shape, not by a flag. An
+administrator reads everything, including coordinates, and removes a farm
+softly; never creates, re-maps or re-grades.
+
+**Creating a farm is mapping it.** The first boundary comes with the farm;
+a farm without a boundary is not a thing an officer can record.
+
+## 2026-09-06 — One CI concurrency group across all refs; the second CI edit since B1.2
+
+Every CI run holds the staging lock for twenty to forty minutes. A run on
+main triggered by a merge, and the next pull request's run, started seconds
+apart three times in a row under the sequential merge order, and the second
+refused each time, naming the first. The lock did exactly what B5.5 built it
+for; the cost was a manual re-run on every merge.
+
+The workflow now has one concurrency group across all refs with
+cancel-in-progress off, so GitHub queues runs instead of the lock refusing
+them. The trade, accepted: a superseded run on a branch is no longer
+cancelled by a newer push; it completes and the newer run waits, a run of
+staging time per superseded push. A cancelled run could leave its lock
+behind, so queueing is also the safer of the two. The lock stays: it is what
+protects staging from a laptop, which no workflow setting can see.
+
+**This is the second edit to the CI workflow since B1.2 wrote it; the first
+was B5.5.** Both were made because the unit was CI, and both are recorded
+here so that "do not touch the CI workflow", which every other unit's brief
+carries, is seen to have been honoured everywhere else.
+
+## 2026-09-07 — The CI timeout is sixty minutes; the third CI edit since B1.2
+
+**The finding.** The same suite on the same code takes between twenty-six and
+over forty minutes depending on the day. The 40-minute timeout was set at
+B5.5 for the fast end; B6 and B7 added about fifteen minutes on a slow run,
+and B8, B9 and B10 each add a file. On 2026-09-06 a run was cancelled at
+forty minutes with half its files still to go, not stalled, still completing
+files when it was cut. The last green B7 run before it had eighty seconds to
+spare. Details in `docs/PROJECT-STATE.md`, under B5.5.
+
+**The decision, the owner's.** `timeout-minutes` goes from 40 to 60. The
+alternative — shrinking the two concurrency proofs in the farmer file, which
+are most of its eleven minutes — was refused: shrinking a concurrency proof
+to fit a runner's clock weakens what it proves, and those two proofs are the
+reason B5 and B7 are trustworthy. A runner's clock is not a reason to prove
+less.
+
+**The rule that goes with it.** A run cut by the timeout while it is still
+completing files is re-run, not investigated. A run that stops completing
+files and is then cut is the pooler incident's shape, and is investigated.
+The log's per-file timestamps tell the two apart.
+
+**Why it counts as a CI edit.** The workflow file is changed only on the
+owner's written approval (the first edit was B5.5, the second the
+concurrency group). This is the third, approved in writing on 2026-09-07.

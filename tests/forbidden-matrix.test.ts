@@ -1,6 +1,11 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
+import * as farmerFarms from '../apps/web/app/api/farmers/[id]/farms/route';
 import * as farmerItem from '../apps/web/app/api/farmers/[id]/route';
+import * as farmBoundaries from '../apps/web/app/api/farms/[id]/boundaries/route';
+import * as farmCrops from '../apps/web/app/api/farms/[id]/crops/route';
+import * as farmItem from '../apps/web/app/api/farms/[id]/route';
+import * as farmsGeojson from '../apps/web/app/api/farms/geojson/route';
 import * as farmerMerge from '../apps/web/app/api/farmers/[id]/merge/route';
 import * as farmerReject from '../apps/web/app/api/farmers/[id]/reject/route';
 import * as farmerResubmit from '../apps/web/app/api/farmers/[id]/resubmit/route';
@@ -67,6 +72,34 @@ beforeAll(async () => {
     throw new Error(`matrix setup: could not register a farmer (${registered.status})`);
   }
   farmerId = (registered.body.data as { id: string }).id;
+  // B7: one farm the officer mapped, for the farm routes.
+  const mapped = await call(farmerFarms, 'POST', {
+    as: officer,
+    body: farmBody(),
+    params: { id: farmerId },
+  });
+  if (mapped.status !== 201)
+    throw new Error(`matrix setup: could not map a farm (${mapped.status})`);
+  farmId = (mapped.body.data as { id: string }).id;
+});
+let farmId = '';
+const SQUARE = {
+  type: 'Polygon',
+  coordinates: [
+    [
+      [31.6, 4.85],
+      [31.6009, 4.85],
+      [31.6009, 4.8509],
+      [31.6, 4.8509],
+      [31.6, 4.85],
+    ],
+  ],
+};
+const farmBody = () => ({
+  id: randomUUID(),
+  season: '2026-main',
+  boundary: SQUARE,
+  gps_accuracy_m: 6,
 });
 let farmerId = '';
 let phoneSeq = 0;
@@ -256,6 +289,65 @@ const ROUTES = [
     mod: verificationQueue,
     method: 'GET' as const,
     allow: ['admin', 'supervisor', 'read_only'],
+  },
+  // B7 (C-7). The officer mapped the farm; the admin may only read and remove.
+  {
+    name: 'POST /api/farmers/:id/farms',
+    mod: farmerFarms,
+    method: 'POST' as const,
+    allow: ['officer'],
+    params: () => ({ id: farmerId }),
+    body: () => farmBody(),
+  },
+  {
+    name: 'GET /api/farmers/:id/farms',
+    mod: farmerFarms,
+    method: 'GET' as const,
+    allow: ['admin', 'supervisor', 'read_only', 'officer'],
+    params: () => ({ id: farmerId }),
+  },
+  {
+    name: 'GET /api/farms/:id',
+    mod: farmItem,
+    method: 'GET' as const,
+    allow: ['admin', 'supervisor', 'read_only', 'officer'],
+    params: () => ({ id: farmId }),
+  },
+  {
+    name: 'POST /api/farms/:id/boundaries',
+    mod: farmBoundaries,
+    method: 'POST' as const,
+    allow: ['officer'],
+    params: () => ({ id: farmId }),
+    body: () => ({ season: '2026-second', boundary: SQUARE, gps_accuracy_m: 6 }),
+  },
+  {
+    name: 'GET /api/farms/:id/boundaries',
+    mod: farmBoundaries,
+    method: 'GET' as const,
+    allow: ['admin', 'supervisor', 'read_only', 'officer'],
+    params: () => ({ id: farmId }),
+  },
+  {
+    name: 'PUT /api/farms/:id/crops',
+    mod: farmCrops,
+    method: 'PUT' as const,
+    allow: ['officer'],
+    params: () => ({ id: farmId }),
+    body: () => ({ season: '2026-main', crops: ['maize'] }),
+  },
+  {
+    name: 'GET /api/farms/geojson',
+    mod: farmsGeojson,
+    method: 'GET' as const,
+    allow: ['admin', 'supervisor'],
+  },
+  {
+    name: 'DELETE /api/farms/:id',
+    mod: farmItem,
+    method: 'DELETE' as const,
+    allow: ['admin'],
+    params: () => ({ id: farmId }),
   },
 ];
 

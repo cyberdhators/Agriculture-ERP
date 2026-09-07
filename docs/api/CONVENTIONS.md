@@ -271,25 +271,30 @@ Section 5.2 says 422 has no generic sentence and each rule states its own. These
 are B3's, and they are pinned the same way: a test may assert them character for
 character.
 
-| Rule                            | Exact message                                                                                  |
-| ------------------------------- | ---------------------------------------------------------------------------------------------- |
-| `phone_already_registered`      | That phone number is already registered to another officer.                                    |
-| `account_already_exists`        | An account already exists for that address.                                                    |
-| `last_admin_cannot_be_removed`  | This is the only administrator account. Create another administrator before removing this one. |
-| `last_admin_cannot_be_demoted`  | This is the only administrator account. Create another administrator before changing this one. |
-| `cannot_remove_own_account`     | You cannot remove your own account.                                                            |
-| `cannot_change_own_role`        | You cannot change your own role.                                                               |
-| `payam_not_found`               | That payam could not be found.                                                                 |
-| `state_not_found`               | That state could not be found.                                                                 |
-| `consent_required`              | Consent must be recorded before a farmer can be registered.                                    |
-| `farmer_already_exists`         | A farmer with that identifier has already been registered.                                     |
-| `registering_officer_required`  | Name the extension officer who registered this farmer.                                         |
-| `registering_officer_not_found` | The registering officer could not be found in that payam.                                      |
-| `transition_not_allowed`        | That decision is not available for this record in its current state.                           |
-| `reason_required`               | A rejection must carry a reason.                                                               |
-| `merge_target_not_found`        | The farmer named as the original could not be found.                                           |
-| `merge_target_not_eligible`     | The farmer named as the original cannot receive a merge.                                       |
-| `merge_across_states`           | A farmer cannot be merged into a record in another state.                                      |
+| Rule                             | Exact message                                                                                                                 |
+| -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `phone_already_registered`       | That phone number is already registered to another officer.                                                                   |
+| `account_already_exists`         | An account already exists for that address.                                                                                   |
+| `last_admin_cannot_be_removed`   | This is the only administrator account. Create another administrator before removing this one.                                |
+| `last_admin_cannot_be_demoted`   | This is the only administrator account. Create another administrator before changing this one.                                |
+| `cannot_remove_own_account`      | You cannot remove your own account.                                                                                           |
+| `cannot_change_own_role`         | You cannot change your own role.                                                                                              |
+| `payam_not_found`                | That payam could not be found.                                                                                                |
+| `state_not_found`                | That state could not be found.                                                                                                |
+| `consent_required`               | Consent must be recorded before a farmer can be registered.                                                                   |
+| `farmer_already_exists`          | A farmer with that identifier has already been registered.                                                                    |
+| `registering_officer_required`   | Name the extension officer who registered this farmer.                                                                        |
+| `registering_officer_not_found`  | The registering officer could not be found in that payam.                                                                     |
+| `transition_not_allowed`         | That decision is not available for this record in its current state.                                                          |
+| `reason_required`                | A rejection must carry a reason.                                                                                              |
+| `merge_target_not_found`         | The farmer named as the original could not be found.                                                                          |
+| `merge_target_not_eligible`      | The farmer named as the original cannot receive a merge.                                                                      |
+| `merge_across_states`            | A farmer cannot be merged into a record in another state.                                                                     |
+| `boundary_not_closed`            | The boundary does not close: the last point must be the first point again. Go back to where you started and finish the shape. |
+| `boundary_crosses_itself`        | The boundary crosses itself. Walk the edge of the plot in one direction without cutting across it.                            |
+| `boundary_too_few_points`        | A boundary needs at least four corners. Keep walking to the next corner before you finish.                                    |
+| `farm_already_exists`            | A farm with that identifier has already been recorded.                                                                        |
+| `boundary_recorded_concurrently` | Another boundary was recorded for this farm and season at the same moment. Load the farm again before re-mapping.             |
 
 **A route names a rule; it never writes a sentence.** `conflict()` and
 `unprocessable()` take a key from this registry, not a string. That is how the
@@ -309,31 +314,36 @@ same list, so a key that is not here is refused at the database. Adding one
 means editing `AUDIT_ACTIONS` in `packages/shared` and this table in the same
 change.
 
-| Action key               |
-| ------------------------ |
-| `user.created`           |
-| `user.updated`           |
-| `user.password_set`      |
-| `user.soft_deleted`      |
-| `officer.created`        |
-| `officer.updated`        |
-| `officer.status_changed` |
-| `officer.password_set`   |
-| `officer.soft_deleted`   |
-| `auth.disabled`          |
-| `auth.disable_failed`    |
-| `auth.account_orphaned`  |
-| `location.created`       |
-| `location.renamed`       |
-| `location.soft_deleted`  |
-| `farmer.created`         |
-| `farmer.updated`         |
-| `farmer.soft_deleted`    |
-| `consent.recorded`       |
-| `farmer.verified`        |
-| `farmer.rejected`        |
-| `farmer.merged`          |
-| `farmer.resubmitted`     |
+| Action key                 |
+| -------------------------- |
+| `user.created`             |
+| `user.updated`             |
+| `user.password_set`        |
+| `user.soft_deleted`        |
+| `officer.created`          |
+| `officer.updated`          |
+| `officer.status_changed`   |
+| `officer.password_set`     |
+| `officer.soft_deleted`     |
+| `auth.disabled`            |
+| `auth.disable_failed`      |
+| `auth.account_orphaned`    |
+| `location.created`         |
+| `location.renamed`         |
+| `location.soft_deleted`    |
+| `farmer.created`           |
+| `farmer.updated`           |
+| `farmer.soft_deleted`      |
+| `consent.recorded`         |
+| `farmer.verified`          |
+| `farmer.rejected`          |
+| `farmer.merged`            |
+| `farmer.resubmitted`       |
+| `farm.created`             |
+| `farm.boundary_added`      |
+| `farm.boundary_superseded` |
+| `farm.crops_declared`      |
+| `farm.soft_deleted`        |
 
 `before` and `after` hold **changed fields only**, never whole rows, and never a
 password, token, authentication identifier, national id, phone, email, given
@@ -388,6 +398,18 @@ These are also exact.
 | Merge target: missing                  | Name the farmer this record is a duplicate of.                                                  |
 | Merge target: not a UUID               | The target is not in the expected form.                                                         |
 | Queue filter: escalated not true/false | Choose true or false.                                                                           |
+| Farm id: missing                       | A farm must carry its identifier.                                                               |
+| Farm id: not a UUID                    | The farm identifier is not in the expected form.                                                |
+| Season: wrong shape                    | Give the season as a year and a name: 2026-main or 2026-second.                                 |
+| GPS accuracy: missing                  | Record the GPS accuracy in metres at capture.                                                   |
+| GPS accuracy: not a number of metres   | GPS accuracy is a number of metres, zero or more.                                               |
+| Boundary: not a one-ring Polygon       | Send the boundary as a GeoJSON Polygon with one ring.                                           |
+| Boundary point: not a pair             | Each boundary point is a pair: longitude, then latitude.                                        |
+| Boundary point: out of range           | Longitude is between -180 and 180; latitude between -90 and 90.                                 |
+| Boundary: over 2000 points             | A boundary can have at most 2000 points.                                                        |
+| Crop: not on the list                  | Choose a crop from the list: sorghum, groundnut, sesame, maize or cowpea.                       |
+| Crops: repeated                        | Each crop once per season.                                                                      |
+| Crops: not a list                      | Send the crops as a list.                                                                       |
 
 The key beside each reason is the field name, per section 4.1. An unrecognised
 field named `nickname` therefore produces `{ "nickname": "This field is not
@@ -756,3 +778,64 @@ matched farmer records the caller may see. Filters: `escalated`, `payam`,
 
 **`pending_since`** is set at registration, reset on resubmission, and never
 editable through any route. `days_waiting` is derived from it.
+
+---
+
+## 13. FARMS
+
+`POST|GET /api/farmers/:id/farms`, `GET|DELETE /api/farms/:id`,
+`POST|GET /api/farms/:id/boundaries`, `PUT /api/farms/:id/crops`,
+`GET /api/farms/geojson` (C-7, unit B7).
+
+**Who may do what.** Create a farm, add or supersede a boundary, declare
+crops: an officer with the farmer in their caseload, and nobody else — the
+mapping officer column references the officer table, so an administrator
+cannot be recorded as a mapper. Read: everyone within scope. Remove:
+administrator, softly. The map (`geojson`): administrator and supervisor,
+scoped.
+
+**Creating a farm is mapping it**: the body carries the first boundary and
+the GPS accuracy at capture. A boundary is a GeoJSON Polygon with one ring;
+the shape is judged by the shared schema, and closure, vertex count and
+self-crossing by the geometry module, each refusal a pinned sentence above.
+Winding is normalised on insert.
+
+**Grades**: good at 10 m or better, poor over 10 to 30, unusable over 30 —
+constants in `packages/shared`, the database CHECK generated from them.
+Unusable boundaries are saved and excluded from every area total and from
+the map.
+
+**History**: a new boundary for a season becomes current and the previous is
+kept; `GET …/boundaries` is the history; one current per farm per season is
+a database fact, and a race on it is `409 boundary_recorded_concurrently`.
+
+**Visibility** (C-7.8): `boundary`, `centroid` and `gps_accuracy_m` appear
+only for administrators and the boundary's mapping officer; for supervisors
+and read_only those keys are absent. `area_ha`, `grade`, `season`, crops and
+the farmer link are for everyone in scope. The map route is the exception,
+by purpose: it is the state's map for supervisors and administrators.
+
+**Seasons**: `YYYY-main` or `YYYY-second`, ours until CORWADO confirms local
+names.
+
+---
+
+## 14. MESSAGES FOR A FIELD
+
+The reference for every message an officer will read standing in a field,
+from B7 onward: B8's visit validation, B9's sync failures, and whatever
+follows. The standard is B7's three boundary refusals:
+
+- "The boundary does not close: the last point must be the first point
+  again. Go back to where you started and finish the shape."
+- "The boundary crosses itself. Walk the edge of the plot in one direction
+  without cutting across it."
+- "A boundary needs at least four corners. Keep walking to the next corner
+  before you finish."
+
+**The rule.** Name the physical action, never the fault, never the
+database's words. Each sentence says what the world looks like and what to
+do with the body: walk, go back, keep going. None says "invalid",
+"constraint", "polygon", "geometry" or "error". A message that a person
+cannot act on where they are standing is not finished. Every such sentence
+is a pinned rule key (§5.2.1), so a route names it and never writes it.

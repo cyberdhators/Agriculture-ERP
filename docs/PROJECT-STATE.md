@@ -421,6 +421,20 @@ no CI, no docs, no migration. Nothing merged after it depends on it. It is
 reachable on the preview deployment by URL only; the portal links to none of
 it.
 
+**A fifth and a sixth instance, 2026-09-05.** Four Lane 2 pull requests are
+open: #27 (2026-09-03, the C-18 "farmer web account and listings" baseline
+that C-18 has never existed for), #28 (the P1 routes, briefed in HANDOFF),
+#36 (2026-09-05 12:02, "AgriOne design system on the staff portal + user
+administration, hub") and #37 (2026-09-05 12:02, the farmer register wired
+to the live B5 routes, which HANDOFF asked for). #28 and #37 are briefed
+work. **#27 is the fifth instance**: excluded scope carried as an open pull
+request rather than a branch. **#36 is the sixth, and it is different in
+kind: it carries the "AgriOne" name from the branch reverted at #29 — the
+first time output from reverted work has come back, rather than only the
+pattern.** None of the four is touched by Lane 1; the user deals with them.
+Recorded at the time so the record shows when it started rather than
+reconstructing it later.
+
 **A fourth instance, 2026-09-04 07:05 and 07:09 UTC.** Lane 2 pushed to
 `origin/feat/ui-farmer` and `origin/docs/farmer-baseline`: a marketplace with
 e-commerce browse and a product page, and a farm survey sheet. The same
@@ -628,7 +642,59 @@ a local probe held staging while CI's run on #35 began, and CI refused,
 naming `agri-erp-tests:monkonmlah`; it was re-run once the local run ended.
 A CI failure whose message names another run is not a failure of the code.
 
-**If a run is killed** its session ends and the lock is released; its rows
+**Held connections die under the pooler, and the guards now say so
+(2026-09-05, B7's runs).** Twice in one run a connection the app's client
+was holding was closed by the pooler: once discovered after a ten-minute
+wait ending in `P1017 Server has closed the connection`, the length of the
+operating system's retransmit limit on a dead socket; once as `25P03
+terminating connection due to idle-in-transaction timeout`, which is the
+B6 guard ending a registration transaction that had sat idle for thirty
+seconds because its client was stalled. Before the guards, the second case
+would have been a county counter row held until someone noticed. The tests
+that hit it fail; the same suite passes on CI's runner, four runs of four,
+in twenty to thirty minutes. Nothing in the code is implicated.
+
+Two full runs on this machine then stalled between files for hours with the
+database idle and the process at zero CPU — the shape a sweep of fifteen
+statements takes when every connection in the pool is dead and each waits
+its ten minutes. Prisma does not validate a pooled connection before reuse
+and exposes no keepalive. Both runs were killed and their lock sessions
+terminated. B7's own file passed alone in ten minutes; CI's runner, which
+has never shown this, is the full-suite arbiter for B7.
+
+**Recorded as an incident, not diagnosed further, on the user's decision.**
+The pooler's own logs would name the cause and are **unexamined**: they are
+reachable only through the Supabase MCP server, whose token had expired, and
+a token that can read the project is a standing cost for a one-off answer.
+The diagnosis in hand — `P1017`, "server has closed the connection", a
+ten-minute delay matching a dead-socket TCP retransmit — was judged
+sufficient. If it recurs, the logs are the first thing to read, with a token
+issued for that purpose and revoked after.
+
+**If a run is killed, the lock may outlive it.** The pooler keeps a server
+session after its client is killed (seen 2026-09-05: a killed local run held
+the lock for an hour; the next run refused, naming it). The setup's message
+says what to do: with no test process alive on the machine that started it,
+terminate that session — `pg_stat_activity` rows whose `application_name`
+begins `agri-erp-tests:` holding an advisory lock — and run again. Never
+terminate one while a run that could own it is alive somewhere.
+
+**The suite's run time varies by half, and the timeout is set for the fast
+half (2026-09-07).** The same code, the same runner class, the same staging:
+one run of the #38 suite took 26 minutes and the previous one was cancelled
+at 40, the workflow timeout, with half its files still to go — not stalled,
+still completing files at the moment it was cut. The last green B7 run had
+eighty seconds to spare. The 40-minute timeout was set at B5.5, before B6
+and B7 added their database files (about fifteen minutes between them on a
+slow run); the farmer file alone is eleven, most of it the two concurrency
+proofs. B8, B9 and B10 each add a file. So the timeout will be crossed on a
+slow day, and a red from it says nothing about the code. **Decided
+2026-09-07, by the owner:** the timeout is 60 minutes; the concurrency proofs
+are not shrunk. The reasoning is in `docs/DECISIONS.md`, the third CI edit.
+A run cancelled by the timeout while still completing files is re-run, not
+investigated.
+
+**If a run is killed** its rows
 are swept by the next run's setup, and its authentication accounts are
 removed when that sweep finds their rows. A run that finds the lock held
 fails at once and names the holder and how long it has run.
@@ -705,6 +771,13 @@ companion, from the fourth instance: **when the record says something was
 done or is pending, ask the system rather than the record.** A migration
 folder, a catalogue query, a live route — not a sentence in a document.
 
+**One found before it fired (2026-09-06).** The directories test asserted the
+`crop` and `language` enum labels equal a fixed list; it would have gone red
+on the first unit to add a value. Found by reading every catalogue-reading
+test after the view test fired, and fixed to containment before any unit
+added one — the first instance of the class this project caught by looking
+rather than by being bitten. `docs/DECISIONS.md`, the schema-reading rule.
+
 A near miss, recorded for the shape: the drift test was suspected of the same
 fault on 2026-09-05 and was not guilty, but the check exposed a table it had
 never guarded (`docs/DECISIONS.md`). **The question to ask of any green
@@ -779,30 +852,73 @@ GitHub rather than copied. Grouped by who closes it.
 contention being the test process's; `registration_source = self` as a value
 no route produces; the 24 system audit rows from the accidental seed.
 
-## KNOWN CONDITION — STAGING RUNS AHEAD OF MAIN, AND A TEST CAN NOTICE (2026-09-06)
+## STANDING CONDITION — STAGING'S SCHEMA RUNS AHEAD OF MAIN (2026-09-06)
 
-Migrations are applied to staging from a unit's branch, before the unit
-merges (B5, B6, B7 all did). So staging's schema is usually ahead of main,
-and CI's run on main, or on any branch older than the newest migration,
-tests older code against a newer schema. The additive-migration law makes
-that safe for code — nothing is dropped or changed under it — but a test
-that reads the schema itself is not code: the view-tracking test on main and
-on #39, still the version that refused any unpaired view, met B7's
-`area_totals_v` on staging and failed. The first main run to fail since CI
-ran the database suite, and not because of anything on main.
+**The shape.** One staging database; migrations applied at build time, from
+the unit's branch, before the unit merges; merges serialised. So between a
+unit's migration and its merge, every run of main — and of any branch older
+than that migration — tests older code against a newer schema. It happened
+on #35's merge run and on #39: main's view test, still the strict version
+that refused any unpaired view, met B7's `area_totals_v` on staging and went
+red for a reason that had nothing to do with main. The first main run to
+fail since CI ran the database suite. B8, B9 and B10 each add a migration;
+it will happen three more times.
 
-The B7 test change (an aggregate not named after a table is exempt) was
-carried onto #39 as its own commit so the queue could move; the loosening is
-still recorded under B7, where it was decided. **The rule that follows:** a
-test that reads the schema must tolerate schema that is ahead of its branch,
-or the unit that adds schema must expect its predecessors' runs to go red
-until it merges — and say so in its pull request.
+**What was done that time.** The B7 test change (an aggregate not named
+after a table is exempt) was carried onto #39 as its own commit so the queue
+could move; the loosening is still recorded under B7, where it was decided.
+
+**Acceptable, deliberately, with one rule.** The additive-migration law
+(CLAUDE.md §4) means newer schema never breaks older code: nothing is
+dropped, renamed or retyped, and a wider CHECK, an extra column or an extra
+view is invisible to code that does not name it. The only thing that can go
+red is a test that enumerates the schema and demands equality — the view
+test was that, once, and is now tolerant; the directories enum test was
+that too, and was found by looking (the silent-gates class, above). **The
+rule:** a test that reads the schema tolerates objects it does not know. A
+red main under this shape means a test broke that rule, not that main broke,
+and the pull request adding the migration says so in advance. Two related
+refusals are harmless and expected: `pnpm db:migrate` from an older branch
+refuses, because staging holds migrations that branch's folder lacks; and a
+branch's own migration must be applied before its tests can run, which is
+why the window exists at all.
+
+**If it ever needs a fix — none taken, none recommended while the additive
+law holds:** a database per branch (Supabase branching: the cleanest, and a
+plan cost); applying migrations only at merge (would stop a unit testing its
+own schema before merge, so no); a second staging for main alone (two
+databases to keep in step, for little gain).
 
 **Process note (2026-09-06).** #35 was merged by the assistant after the
 owner said they were merging it and it had not happened in thirty minutes.
 Three earlier merges had been made on the owner's instruction; this one
 generalised from that precedent. No harm done, and it would have been merged
 — but **merges are the owner's action, and precedent is not permission.**
+#39 was merged by the assistant on the owner's written instruction, after
+the owner's own merge had not landed twice: the owner said "merging #39
+now", it did not land, and said it again. The reason, recorded because this
+note is about process rather than blame: GitHub asks twice to squash-merge,
+and the second confirmation is easy to miss. A merge that "did not land" is
+most likely a merge whose second confirmation was not given.
+
+## B7 — FARM BOUNDARY MAPPING (2026-09-05)
+
+**What exists.** Migration 14: `farm`, `farm_boundary`, `crop_declaration`,
+PostGIS geography columns schema-qualified, GIST indexes, the partial unique
+index that makes one-current-per-farm-per-season a database fact, the
+accuracy CHECK generated from the shared thresholds, `farm_active` and
+`farm_mapped_v` (whole-table filters) and `area_totals_v` (an aggregate,
+not named after a table, by the B6 rule), five audit keys. One geometry
+module writes every line of spatial SQL. Eight routes. CONVENTIONS §13.
+
+**If I-07 replaces the placeholder payam codes.** A farm carries its own
+`payam_id`, `county_id` and `state_id`, denormalised from its farmer at
+creation and enforced by the same two composite keys the farmer carries. The
+re-pointing migration named in the B5 section gains three columns:
+`farm.payam_id`, `.county_id`, `.state_id`, re-pointed in step with the
+farmer's, and the reseed's dependant check will name `farm` as a dependant of
+a payam alongside `farmer` and `officer`. Boundaries and crops reference the
+farm by id and need nothing. Farmer numbers still keep their old prefix.
 
 ## B11 CHECKLIST — WHAT A FRESH PRODUCTION PROJECT MUST BE GIVEN BY HAND
 
