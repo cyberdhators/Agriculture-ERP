@@ -119,6 +119,10 @@ export const RULE_MESSAGES = {
   attachment_grant_expired: 'The upload took too long. Open the visit and send it again.',
   attachment_not_received:
     'This attachment has not been received, so there is nothing to open yet.',
+  // B8.5 (C-8R). One sentence for missing, inactive and elsewhere: naming which would confirm an officer exists.
+  reassign_officer_not_found:
+    "No active officer with that identifier works in this farmer's payam. Choose one who does.",
+  reassign_same_officer: 'This farmer is already with that officer. Nothing to change.',
 } as const;
 
 export type RuleKey = keyof typeof RULE_MESSAGES;

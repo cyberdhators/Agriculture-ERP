@@ -161,8 +161,8 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
           await tx.$executeRawUnsafe(
             `INSERT INTO public.farmer
                (id, farmer_number, given_name, family_name, sex, year_of_birth, phone, national_id,
-                payam_id, county_id, state_id, registered_by, registration_source, consent_id)
-             VALUES ($1::uuid, $2, $3, $4, $5::public.sex, $6, $7, $8, $9, $10, $11, $12::uuid,
+                payam_id, county_id, state_id, registered_by, caseload_officer_id, registration_source, consent_id)
+             VALUES ($1::uuid, $2, $3, $4, $5::public.sex, $6, $7, $8, $9, $10, $11, $12::uuid, $12::uuid,
                      'officer', $13::uuid)`,
             body.id,
             farmerNumber,

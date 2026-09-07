@@ -1,6 +1,7 @@
 import { declareCropsSchema } from '@agri-erp/shared';
 import { audited, writeAudit } from '../../../../../lib/api/audit';
 import { forbidden } from '../../../../../lib/api/errors';
+import { inCaseloadOf } from '../../../../../lib/api/farmers';
 import { type CropRow, loadVisibleFarm } from '../../../../../lib/api/farms';
 import { defineRoutes, ok } from '../../../../../lib/api/route';
 import { requireWriter } from '../../../../../lib/api/scope';
@@ -14,8 +15,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
     handler: async ({ auth, body, params }) => {
       requireWriter(auth);
       const farm = await loadVisibleFarm(prisma, params.id ?? '', auth);
-      if (auth.scope.kind !== 'caseload' || farm.registered_by !== auth.principal.id)
-        throw forbidden();
+      if (!inCaseloadOf(auth, farm)) throw forbidden();
       const rows = await audited(prisma, async (tx) => {
         const before = await tx.$queryRawUnsafe<{ crop: string }[]>(
           `DELETE FROM public.crop_declaration WHERE farm_id = $1::uuid AND season = $2 RETURNING crop::text AS crop`,

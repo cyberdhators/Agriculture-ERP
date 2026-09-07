@@ -1669,3 +1669,62 @@ is not a secret. Production needs `pnpm storage:buckets` run once against it
 afterAll; the sweep removes rows. A run killed mid-way may leave objects in
 the staging bucket; they are a few hundred invented bytes each, and a later
 run's declarations never collide with them because every id is fresh.
+
+## B8.5 — decisions in the caseload reassignment unit (2026-09-07)
+
+**The section is C-8R, not C-8.5.** The owner's rule: "C-8.5" already names
+the criterion about device and server moments, and two things with the same
+name in a document a session reads without asking is exactly the shape that
+has bitten us. Grep for one never finds the other.
+
+**Two officers on a farmer, and which one each check reads.** `registered_by`
+is history and never changes (C-5.9). `caseload_officer_id` is who works the
+farmer today; it starts equal and an administrator moves it. Every caseload
+check reads the pointer — the farmer scope clause, the farm and visit scope
+clauses (through the farmer join), the write checks for resubmit, map and
+visit (one helper, `inCaseloadOf`), and the national ID's visibility. Farms
+and visits carry no officer pointer of their own for scope, which is why they
+follow the farmer with no change: B7 and B8 were built to reach the caseload
+through the farmer so that this unit would be one pass, and it was.
+
+**The new officer is active and in the farmer's payam.** Registration's rule,
+for registration's reason: an officer who is not where the farmer is cannot
+visit them. Widening to the county is one condition in one query, to be made
+if CORWADO says payam coverage is thinner than assumed — a field fact we do
+not have. Owner, 2026-09-07.
+
+**One sentence for three refusals.** A target officer that does not exist,
+is inactive, or is in another payam gets the same sentence, because naming
+which would confirm that an officer exists to a caller who has only guessed
+an id. Same principle as the follow-up target in B8 and the 404 rule.
+
+**The same officer is refused as a no-op.** An audit entry recording a move
+that was not one is worse than no entry: it makes the log say something
+false. Owner's reasoning, confirmed.
+
+**Deactivation stays allowed with farmers attached, and says how many.** No
+refusal, no count on the officer record — a number in the response to the
+act that creates the problem. An administrator who sets an officer inactive
+and reads "23 farmers are now unassigned" reassigns them; one who reads
+nothing finds out when an officer in the field cannot record a visit. It was
+three lines, so it is in this unit. Soft-deleting an officer (DELETE) does
+not carry the number: it returns no body, and the owner's addition named
+deactivation. Recorded as the next small thing if it is wanted there too.
+
+**Attachments keep checking the visit's own officer** — a fact about phones,
+not a rule to fix. An attachment is uploaded by the phone that took it. In
+plain terms: a reassigned farmer's waiting attachments are completable only
+by the phone that took them, and if that officer has left, those attachments
+never arrive. The visit stands without them, which is what C-8.6 is for.
+
+**The national ID goes to the caseload officer.** C-5.8 says "the officer who
+registered that farmer"; the reason it gave the id to that officer was that
+they do the work, and after a reassignment the new officer does. The old
+officer no longer sees the farmer at all. Read this way rather than
+literally, and recorded so the next reader of C-5.8 knows why the presenter
+checks the pointer.
+
+**A trigger sets the pointer for any writer that forgets it.** The
+application sets both columns at registration; the seed, the reseed and any
+future writer that sets only `registered_by` get the pointer from the
+trigger. The backfill in the migration did the same for every existing row.

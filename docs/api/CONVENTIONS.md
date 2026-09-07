@@ -305,6 +305,8 @@ character.
 | `attachment_mismatch`            | The file that arrived is not the one declared. Open the visit and send it again.                                              |
 | `attachment_grant_expired`       | The upload took too long. Open the visit and send it again.                                                                   |
 | `attachment_not_received`        | This attachment has not been received, so there is nothing to open yet.                                                       |
+| `reassign_officer_not_found`     | No active officer with that identifier works in this farmer's payam. Choose one who does.                                     |
+| `reassign_same_officer`          | This farmer is already with that officer. Nothing to change.                                                                  |
 
 **A route names a rule; it never writes a sentence.** `conflict()` and
 `unprocessable()` take a key from this registry, not a string. That is how the
@@ -349,6 +351,7 @@ change.
 | `farmer.rejected`              |
 | `farmer.merged`                |
 | `farmer.resubmitted`           |
+| `farmer.reassigned`            |
 | `farm.created`                 |
 | `farm.boundary_added`          |
 | `farm.boundary_superseded`     |
@@ -455,6 +458,8 @@ These are also exact.
 | Captured at: not a date and time       | Record when the attachment was captured as a date and time.                                     |
 | Visit filter: date malformed           | Give the date as a full date and time with its offset.                                          |
 | Visit filter: officer malformed        | The officer identifier is not in the expected form.                                             |
+| Reassign: no officer named             | Name the officer who will now work with this farmer.                                            |
+| Reassign: officer identifier malformed | The officer identifier is not in the expected form.                                             |
 
 The key beside each reason is the field name, per section 4.1. An unrecognised
 field named `nickname` therefore produces `{ "nickname": "This field is not
@@ -785,6 +790,17 @@ farmer_already_exists` — the first registration stands, no second row exists.
 
 **`national_id`** is present in a response only for an administrator and for
 the officer who registered that farmer. For anyone else the key is absent.
+
+**Caseload (C-8R, unit B8.5).** A farmer carries two officers:
+`registered_by`, the officer who registered them, immutable (C-5.9); and
+`caseload_officer_id`, the officer who works them today, set to the
+registering officer at creation and moved by `POST /api/farmers/:id/reassign`
+(administrator only; body `{ officer_id }`; the new officer active and in the
+farmer's payam; the same officer refused as a no-op). Every caseload scope —
+farmers, farms, boundaries, crops, visits, the national ID's visibility —
+reads `caseload_officer_id`. Farms and visits follow the farmer. When an
+officer is set inactive the response carries `unassigned_farmers`, the number
+of farmers now without a working officer.
 
 ---
 

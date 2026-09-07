@@ -15,6 +15,7 @@ import * as farmCrops from '../apps/web/app/api/farms/[id]/crops/route';
 import * as farmItem from '../apps/web/app/api/farms/[id]/route';
 import * as farmsGeojson from '../apps/web/app/api/farms/geojson/route';
 import * as farmerMerge from '../apps/web/app/api/farmers/[id]/merge/route';
+import * as farmerReassign from '../apps/web/app/api/farmers/[id]/reassign/route';
 import * as farmerReject from '../apps/web/app/api/farmers/[id]/reject/route';
 import * as farmerResubmit from '../apps/web/app/api/farmers/[id]/resubmit/route';
 import * as farmerVerify from '../apps/web/app/api/farmers/[id]/verify/route';
@@ -416,6 +417,15 @@ const ROUTES = [
     method: 'DELETE' as const,
     allow: ['admin'],
     params: () => ({ id: farmId }),
+  },
+  // B8.5 (C-8R). Only an administrator moves a caseload.
+  {
+    name: 'POST /api/farmers/:id/reassign',
+    mod: farmerReassign,
+    method: 'POST' as const,
+    allow: ['admin'],
+    params: () => ({ id: farmerId }),
+    body: () => ({ officer_id: randomUUID() }),
   },
   // B8 (C-8). The officer visited; the admin corrects and removes; everyone in scope reads.
   {

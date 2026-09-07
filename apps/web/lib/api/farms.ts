@@ -14,8 +14,8 @@ export interface FarmRow {
   created_by: string;
   created_at: Date;
   updated_at: Date;
-  /** The farmer's registering officer: the caseload key (C-7.6). */
-  registered_by: string | null;
+  /** The farmer's caseload officer: the caseload key (C-7.6, C-8R). */
+  caseload_officer_id: string | null;
 }
 
 export interface CropRow {
@@ -26,12 +26,12 @@ export interface CropRow {
 
 export const FARM_COLUMNS = `
   f.id, f.farmer_id, f.payam_id, f.county_id, f.state_id, f.season, f.created_by,
-  f.created_at, f.updated_at, fr.registered_by`;
+  f.created_at, f.updated_at, fr.caseload_officer_id`;
 export const FARM_FROM = `FROM public.farm_active f JOIN public.farmer fr ON fr.id = f.farmer_id`;
 
 type Db = { $queryRawUnsafe: Prisma.TransactionClient['$queryRawUnsafe'] };
 
-/** Caseload: the farmer's registering officer. State: the farm's state. Admin: all. */
+/** Caseload: the farmer's caseload officer. State: the farm's state. Admin: all. */
 export function farmScopeClause(auth: Authenticated, params: unknown[]): string[] {
   if (auth.scope.kind === 'state') {
     params.push(auth.scope.stateId);
@@ -39,7 +39,7 @@ export function farmScopeClause(auth: Authenticated, params: unknown[]): string[
   }
   if (auth.scope.kind === 'caseload') {
     params.push(auth.scope.officerId);
-    return [`fr.registered_by = $${params.length}::uuid`];
+    return [`fr.caseload_officer_id = $${params.length}::uuid`];
   }
   return [];
 }

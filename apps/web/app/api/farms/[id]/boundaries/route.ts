@@ -1,6 +1,7 @@
 import { addBoundarySchema } from '@agri-erp/shared';
 import { audited, writeAudit } from '../../../../../lib/api/audit';
 import { forbidden } from '../../../../../lib/api/errors';
+import { inCaseloadOf } from '../../../../../lib/api/farmers';
 import { loadVisibleFarm, presentBoundary } from '../../../../../lib/api/farms';
 import { boundaryHistory, insertBoundary } from '../../../../../lib/api/geometry';
 import { created, defineRoutes, ok } from '../../../../../lib/api/route';
@@ -27,8 +28,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
     handler: async ({ auth, body, params }) => {
       requireWriter(auth);
       const farm = await loadVisibleFarm(prisma, params.id ?? '', auth);
-      if (auth.scope.kind !== 'caseload' || farm.registered_by !== auth.principal.id)
-        throw forbidden();
+      if (!inCaseloadOf(auth, farm)) throw forbidden();
       const { row, superseded } = await audited(prisma, async (tx) => {
         const result = await insertBoundary(tx, {
           farmId: farm.id,
