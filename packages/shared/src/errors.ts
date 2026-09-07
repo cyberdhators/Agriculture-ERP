@@ -29,6 +29,7 @@ export const ERROR_CODES = {
   payloadTooLarge: 'payload_too_large',
   unprocessable: 'unprocessable',
   internalError: 'internal_error',
+  authUnavailable: 'auth_unavailable',
 } as const;
 
 export const ERROR_MESSAGES = {
@@ -44,6 +45,7 @@ export const ERROR_MESSAGES = {
   payloadTooLarge: 'That request is too large to send.',
   /** Fixed sentence, never varied. CONVENTIONS.md section 5.3. */
   internalError: 'Something went wrong. Please try again.',
+  authUnavailable: 'The sign-in service could not be reached. Try again in a moment.',
   /**
    * `unprocessable` (422) deliberately has no entry here. Its sentence is
    * written by the business rule that rejected the request, because a generic
