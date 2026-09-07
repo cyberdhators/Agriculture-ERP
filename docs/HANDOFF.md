@@ -650,7 +650,7 @@ know.
 ### 2026-09-07 — Lane 1 — #39 merged; #38 rebased onto main and green
 
 - #39 (B6.5) merged by squash on the owner's written instruction, after the
-  owner's own merge had not landed three times; main confirmed moved before
+  owner's own merge had not landed twice; main confirmed moved before
   the rebase. #38 rebased from the cut point, ten commits carried, including
   the CI concurrency group, the schema-reading rule, the enum-test fix and
   the record of it as the first silent-gate found by looking.

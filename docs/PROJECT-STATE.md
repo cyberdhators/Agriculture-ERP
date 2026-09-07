@@ -688,11 +688,11 @@ eighty seconds to spare. The 40-minute timeout was set at B5.5, before B6
 and B7 added their database files (about fifteen minutes between them on a
 slow run); the farmer file alone is eleven, most of it the two concurrency
 proofs. B8, B9 and B10 each add a file. So the timeout will be crossed on a
-slow day, and a red from it says nothing about the code. **Decision pending
-with the owner:** raise the timeout to 60 minutes (a workflow edit) or shrink
-the concurrency proofs (a test-design change). Neither taken without a
-written yes. Until then: a run cancelled by the timeout while still
-completing files is re-run, not investigated.
+slow day, and a red from it says nothing about the code. **Decided
+2026-09-07, by the owner:** the timeout is 60 minutes; the concurrency proofs
+are not shrunk. The reasoning is in `docs/DECISIONS.md`, the third CI edit.
+A run cancelled by the timeout while still completing files is re-run, not
+investigated.
 
 **If a run is killed** its rows
 are swept by the next run's setup, and its authentication accounts are
@@ -895,7 +895,11 @@ Three earlier merges had been made on the owner's instruction; this one
 generalised from that precedent. No harm done, and it would have been merged
 — but **merges are the owner's action, and precedent is not permission.**
 #39 was merged by the assistant on the owner's written instruction, after
-the owner's own merge had not landed three times.
+the owner's own merge had not landed twice: the owner said "merging #39
+now", it did not land, and said it again. The reason, recorded because this
+note is about process rather than blame: GitHub asks twice to squash-merge,
+and the second confirmation is easy to miss. A merge that "did not land" is
+most likely a merge whose second confirmation was not given.
 
 ## B7 — FARM BOUNDARY MAPPING (2026-09-05)
 

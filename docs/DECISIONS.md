@@ -1488,3 +1488,29 @@ protects staging from a laptop, which no workflow setting can see.
 was B5.5.** Both were made because the unit was CI, and both are recorded
 here so that "do not touch the CI workflow", which every other unit's brief
 carries, is seen to have been honoured everywhere else.
+
+## 2026-09-07 — The CI timeout is sixty minutes; the third CI edit since B1.2
+
+**The finding.** The same suite on the same code takes between twenty-six and
+over forty minutes depending on the day. The 40-minute timeout was set at
+B5.5 for the fast end; B6 and B7 added about fifteen minutes on a slow run,
+and B8, B9 and B10 each add a file. On 2026-09-06 a run was cancelled at
+forty minutes with half its files still to go, not stalled, still completing
+files when it was cut. The last green B7 run before it had eighty seconds to
+spare. Details in `docs/PROJECT-STATE.md`, under B5.5.
+
+**The decision, the owner's.** `timeout-minutes` goes from 40 to 60. The
+alternative — shrinking the two concurrency proofs in the farmer file, which
+are most of its eleven minutes — was refused: shrinking a concurrency proof
+to fit a runner's clock weakens what it proves, and those two proofs are the
+reason B5 and B7 are trustworthy. A runner's clock is not a reason to prove
+less.
+
+**The rule that goes with it.** A run cut by the timeout while it is still
+completing files is re-run, not investigated. A run that stops completing
+files and is then cut is the pooler incident's shape, and is investigated.
+The log's per-file timestamps tell the two apart.
+
+**Why it counts as a CI edit.** The workflow file is changed only on the
+owner's written approval (the first edit was B5.5, the second the
+concurrency group). This is the third, approved in writing on 2026-09-07.
