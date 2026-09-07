@@ -679,6 +679,21 @@ terminate that session — `pg_stat_activity` rows whose `application_name`
 begins `agri-erp-tests:` holding an advisory lock — and run again. Never
 terminate one while a run that could own it is alive somewhere.
 
+**The suite's run time varies by half, and the timeout is set for the fast
+half (2026-09-07).** The same code, the same runner class, the same staging:
+one run of the #38 suite took 26 minutes and the previous one was cancelled
+at 40, the workflow timeout, with half its files still to go — not stalled,
+still completing files at the moment it was cut. The last green B7 run had
+eighty seconds to spare. The 40-minute timeout was set at B5.5, before B6
+and B7 added their database files (about fifteen minutes between them on a
+slow run); the farmer file alone is eleven, most of it the two concurrency
+proofs. B8, B9 and B10 each add a file. So the timeout will be crossed on a
+slow day, and a red from it says nothing about the code. **Decision pending
+with the owner:** raise the timeout to 60 minutes (a workflow edit) or shrink
+the concurrency proofs (a test-design change). Neither taken without a
+written yes. Until then: a run cancelled by the timeout while still
+completing files is re-run, not investigated.
+
 **If a run is killed** its rows
 are swept by the next run's setup, and its authentication accounts are
 removed when that sweep finds their rows. A run that finds the lock held

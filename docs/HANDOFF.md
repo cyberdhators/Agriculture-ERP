@@ -164,18 +164,19 @@ copy of any of these is a bug.
 
 ## STATUS BOARD
 
-| Unit | Lane | Status                                                              | PR  | Blocked on                              |
-| ---- | ---- | ------------------------------------------------------------------- | --- | --------------------------------------- |
-| B2   | 1    | **Merged** — #15                                                    | #15 | —                                       |
-| B3   | 1    | **Merged**                                                          | #20 | —                                       |
-| B4   | 1    | **Merged**                                                          | #24 | —                                       |
-| B5   | 1    | **Merged** — #32; C-5.13 and C-5.4 proven by run 5, locally         | #32 | —                                       |
-| B5.5 | 1    | **Merged** — #33; first CI database run 23/23                       | #33 | —                                       |
-| B6   | 1    | **Merged** — #34; 544/544 locally, 27/27 files in CI                | #34 | —                                       |
-| B7   | 1    | **In progress** — C-7 written; built on `feat/b7-farm-postgis`      | —   | —                                       |
-| P1   | 2    | **Merged** — database, validation, seed, tests. Routes not started. | #17 | B3 for routes, B4 for the audit rows    |
-| UI   | 2    | First portal skin — **closed unmerged** (#18), kept as reference    | #18 | — (superseded by UI-2)                  |
-| UI-2 | 2    | **PR open** — "The Register" re-skin + Farmers screens on fixtures  | #23 | Lane 1 review; C-5 farmer-number format |
+| Unit | Lane | Status                                                               | PR  | Blocked on                              |
+| ---- | ---- | -------------------------------------------------------------------- | --- | --------------------------------------- |
+| B2   | 1    | **Merged** — #15                                                     | #15 | —                                       |
+| B3   | 1    | **Merged**                                                           | #20 | —                                       |
+| B4   | 1    | **Merged**                                                           | #24 | —                                       |
+| B5   | 1    | **Merged** — #32; C-5.13 and C-5.4 proven by run 5, locally          | #32 | —                                       |
+| B5.5 | 1    | **Merged** — #33; first CI database run 23/23                        | #33 | —                                       |
+| B6   | 1    | **Merged** — #34; 544/544 locally, 27/27 files in CI                 | #34 | —                                       |
+| B6.5 | 1    | **Merged** #39 — sign-in outage is 503 `auth_unavailable`, never 401 | —   | —                                       |
+| B7   | 1    | **In progress** — C-7 written; built on `feat/b7-farm-postgis`       | —   | —                                       |
+| P1   | 2    | **Merged** — database, validation, seed, tests. Routes not started.  | #17 | B3 for routes, B4 for the audit rows    |
+| UI   | 2    | First portal skin — **closed unmerged** (#18), kept as reference     | #18 | — (superseded by UI-2)                  |
+| UI-2 | 2    | **PR open** — "The Register" re-skin + Farmers screens on fixtures   | #23 | Lane 1 review; C-5 farmer-number format |
 
 Lane 1: please add your rows as you go. Lane 2 filled in what it could read from the open PRs.
 
@@ -643,5 +644,25 @@ know.
 - Shared objects added: `ACCURACY_THRESHOLDS_M`, `gradeAccuracy`,
   `SEASON_NAMES`, `seasonSchema`, `geoJsonPolygonSchema`, `createFarmSchema`,
   `addBoundarySchema`, `declareCropsSchema`; enum `accuracy_flag`.
+
+— Monkon-Claude
+
+### 2026-09-07 — Lane 1 — #39 merged; #38 rebased onto main and green
+
+- #39 (B6.5) merged by squash on the owner's written instruction, after the
+  owner's own merge had not landed three times; main confirmed moved before
+  the rebase. #38 rebased from the cut point, ten commits carried, including
+  the CI concurrency group, the schema-reading rule, the enum-test fix and
+  the record of it as the first silent-gate found by looking.
+- The two staging-ahead sections in `docs/PROJECT-STATE.md` are one.
+- CI on the rebased #38: attempt 1 refused (main's #39 run held the lock;
+  expected until the concurrency group is on main), attempt 2 cancelled by
+  the 40-minute timeout while still completing files, attempt 3 green, 30 of
+  30 files. The timeout finding and the pending decision are in
+  `docs/PROJECT-STATE.md` under B5.5.
+- **Lane 2:** nothing new on the routes. Note that a run cut by the
+  timeout with files still completing is a re-run, not a defect.
+- Next: the owner decides the timeout; B8 (extension visits) once C-8 is
+  written.
 
 — Monkon-Claude
