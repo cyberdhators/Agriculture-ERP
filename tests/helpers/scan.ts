@@ -16,6 +16,9 @@ export const FAMILY = 'Zztestfamily';
 export const NATIONAL_ID = 'ZZ123456';
 /** A note that reads like the real thing: prose about a named person. */
 export const NOTE = 'Zzachol says the plot near the river is her brother Zzdeng’s';
+/** C-8.13: a visit's substance reads like the real thing too, and travels only inside the visit. */
+export const OBSERVATION = 'Zzachol’s sorghum by the river shows armyworm on the lower leaves';
+export const ADVICE = 'Told Zzachol to hand-pick at dawn and spray the Zzriver plot on Thursday';
 
 const phones = new Set<string>();
 export const rememberPhone = (phone: string): string => {
@@ -27,7 +30,12 @@ const needles = (): string[] => [
   FAMILY,
   NATIONAL_ID,
   NOTE,
+  OBSERVATION,
+  ADVICE,
   'Zzdeng',
+  'Zzriver',
+  'armyworm on the lower leaves',
+  'hand-pick at dawn',
   ...[...phones].flatMap((p) => [p, p.slice(1), `0${p.slice(4)}`]),
 ];
 

@@ -671,6 +671,17 @@ ten-minute delay matching a dead-socket TCP retransmit — was judged
 sufficient. If it recurs, the logs are the first thing to read, with a token
 issued for that purpose and revoked after.
 
+**Recurred 2026-09-07, during B8's local run — the third unit.** The visits
+file, nineteen tests with real uploads to Storage, stalled on its last test
+705 seconds before vitest cut it; the same test passed alone in under a
+minute, and the probe run during the stall could not get a connection at
+all. The shape is the one above; nothing new was learned and nothing was
+changed. **Frequency, for the record rather than memory:** B5's runs
+(abandoned transactions holding the counter row, 2026-09-05), B7's runs
+(dead pooled connections, 2026-09-05), B8's run (2026-09-07). Three units of
+three whose local suites ran long enough to meet it; CI's runner has met it
+in none of its runs. CI remains the arbiter.
+
 **If a run is killed, the lock may outlive it.** The pooler keeps a server
 session after its client is killed (seen 2026-09-05: a killed local run held
 the lock for an hour; the next run refused, naming it). The setup's message
@@ -921,6 +932,37 @@ farmer's, and the reseed's dependant check will name `farm` as a dependant of
 a payam alongside `farmer` and `officer`. Boundaries and crops reference the
 farm by id and need nothing. Farmer numbers still keep their old prefix.
 
+## B8 — EXTENSION VISITS AND ATTACHMENTS (2026-09-07)
+
+**What exists.** Migration 15: `visit` (PostGIS point, two moments, topics as
+an enum array, follow-up self-reference), `visit_attachment` (kind, state,
+declared size and type, our grant expiry), two triggers (the follow-up guard;
+the five evidence columns immutable), `visit_active`, `extension_coverage_v`
+(an aggregate, not named after a table), six audit keys. Eleven route
+handlers in eight files under `/api/farmers/:id/visits`, `/api/visits`.
+Storage operations in the one service-role module; the private bucket
+`visit-attachments` created on staging by `pnpm storage:buckets`. CONVENTIONS
+§15. Decisions in `docs/DECISIONS.md`, B8.
+
+**The shape that matters.** A visit is complete when it lands and carries no
+file. An attachment's row travels right behind the visit; its bytes travel
+when the phone can, straight to Storage on a grant the API issued for that one
+object. Once the row is on the server, "waiting" is what the officer and the
+supervisor both read — not "missing" — so nobody re-takes a photo that is
+still in a queue. Confirm checks what arrived against what was declared and
+removes what does not match. See the DECISIONS entry for the reasoning and
+the provider fact about the grant's life.
+
+**Awaiting the owner.** The nine-topic list (proposed from
+`docs/data-model-extension.md` §2; additive to amend). Position visibility
+follows C-7.8 (administrators and the visit's officer) by the assistant's
+decision, reversible in one line.
+
+**If I-07 replaces the placeholder payam codes.** A visit carries `payam_id`,
+`county_id` and `state_id` denormalised from its farmer, with the same two
+composite keys; the re-pointing migration gains three more columns, as farm
+did, and the reseed's dependant check names `visit`.
+
 ## B11 CHECKLIST — WHAT A FRESH PRODUCTION PROJECT MUST BE GIVEN BY HAND
 
 Migrations carry the schema, RLS and views automatically. These do not travel:
@@ -932,6 +974,9 @@ Migrations carry the schema, RLS and views automatically. These do not travel:
 - Self-signup disabled in Supabase Auth (B3).
 - `SENTRY_ENVIRONMENT=production` and the Sentry IP-storage setting (2026-09-04).
 - The Supabase plan and point-in-time recovery question (open).
+- The private attachment bucket (B8): `pnpm storage:buckets` once against the
+  production project, with `.env.local` pointing at it. Idempotent; it refuses
+  a bucket that exists and is public rather than accepting it.
 
 ## DEFECT — AN AUTH SERVICE OUTAGE READS AS "SIGN IN TO CONTINUE" (found by B5, owned by B3)
 

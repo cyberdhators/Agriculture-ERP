@@ -295,6 +295,16 @@ character.
 | `boundary_too_few_points`        | A boundary needs at least four corners. Keep walking to the next corner before you finish.                                    |
 | `farm_already_exists`            | A farm with that identifier has already been recorded.                                                                        |
 | `boundary_recorded_concurrently` | Another boundary was recorded for this farm and season at the same moment. Load the farm again before re-mapping.             |
+| `visit_already_exists`           | A visit with that identifier has already been recorded.                                                                       |
+| `follow_up_not_found`            | The earlier visit could not be found for this farmer. Choose it from this farmer's visits, or leave the link out.             |
+| `follow_up_cycle`                | That earlier visit already follows this one. Choose a visit from before it, or leave the link out.                            |
+| `correction_window_closed`       | A day has passed since this visit was received. Ask an administrator to make the correction.                                  |
+| `attachment_already_exists`      | An attachment with that identifier has already been declared.                                                                 |
+| `attachment_not_arrived`         | The file has not reached the server yet. Keep the phone on with signal and try again in a moment.                             |
+| `attachment_already_failed`      | This attachment did not send. Open the visit and send it again.                                                               |
+| `attachment_mismatch`            | The file that arrived is not the one declared. Open the visit and send it again.                                              |
+| `attachment_grant_expired`       | The upload took too long. Open the visit and send it again.                                                                   |
+| `attachment_not_received`        | This attachment has not been received, so there is nothing to open yet.                                                       |
 
 **A route names a rule; it never writes a sentence.** `conflict()` and
 `unprocessable()` take a key from this registry, not a string. That is how the
@@ -314,36 +324,43 @@ same list, so a key that is not here is refused at the database. Adding one
 means editing `AUDIT_ACTIONS` in `packages/shared` and this table in the same
 change.
 
-| Action key                 |
-| -------------------------- |
-| `user.created`             |
-| `user.updated`             |
-| `user.password_set`        |
-| `user.soft_deleted`        |
-| `officer.created`          |
-| `officer.updated`          |
-| `officer.status_changed`   |
-| `officer.password_set`     |
-| `officer.soft_deleted`     |
-| `auth.disabled`            |
-| `auth.disable_failed`      |
-| `auth.account_orphaned`    |
-| `location.created`         |
-| `location.renamed`         |
-| `location.soft_deleted`    |
-| `farmer.created`           |
-| `farmer.updated`           |
-| `farmer.soft_deleted`      |
-| `consent.recorded`         |
-| `farmer.verified`          |
-| `farmer.rejected`          |
-| `farmer.merged`            |
-| `farmer.resubmitted`       |
-| `farm.created`             |
-| `farm.boundary_added`      |
-| `farm.boundary_superseded` |
-| `farm.crops_declared`      |
-| `farm.soft_deleted`        |
+| Action key                     |
+| ------------------------------ |
+| `user.created`                 |
+| `user.updated`                 |
+| `user.password_set`            |
+| `user.soft_deleted`            |
+| `officer.created`              |
+| `officer.updated`              |
+| `officer.status_changed`       |
+| `officer.password_set`         |
+| `officer.soft_deleted`         |
+| `auth.disabled`                |
+| `auth.disable_failed`          |
+| `auth.account_orphaned`        |
+| `location.created`             |
+| `location.renamed`             |
+| `location.soft_deleted`        |
+| `farmer.created`               |
+| `farmer.updated`               |
+| `farmer.soft_deleted`          |
+| `consent.recorded`             |
+| `farmer.verified`              |
+| `farmer.rejected`              |
+| `farmer.merged`                |
+| `farmer.resubmitted`           |
+| `farm.created`                 |
+| `farm.boundary_added`          |
+| `farm.boundary_superseded`     |
+| `farm.crops_declared`          |
+| `farm.soft_deleted`            |
+| `visit.recorded`               |
+| `visit.corrected`              |
+| `visit.soft_deleted`           |
+| `visit.attachment_declared`    |
+| `visit.attachment_arrived`     |
+| `visit.attachment_failed`      |
+| `visit.attachment_link_issued` |
 
 `before` and `after` hold **changed fields only**, never whole rows, and never a
 password, token, authentication identifier, national id, phone, email, given
@@ -410,6 +427,34 @@ These are also exact.
 | Crop: not on the list                  | Choose a crop from the list: sorghum, groundnut, sesame, maize or cowpea.                       |
 | Crops: repeated                        | Each crop once per season.                                                                      |
 | Crops: not a list                      | Send the crops as a list.                                                                       |
+| Visit: no identifier                   | A visit must carry its identifier.                                                              |
+| Visit: identifier malformed            | The visit identifier is not in the expected form.                                               |
+| Advice: missing or blank               | Write the advice you gave. A visit with no advice is not a visit.                               |
+| Advice: over 4000 characters           | The advice is too long to save. Shorten it to about six hundred words.                          |
+| Observation: over 4000 characters      | The observation is too long to save. Shorten it to about six hundred words.                     |
+| Observation: sent but blank            | Leave the observation out, or write something in it.                                            |
+| Topics: none ticked                    | Tick at least one topic the visit covered.                                                      |
+| Topic: not on the list                 | Choose the topics from the list.                                                                |
+| Topics: repeated                       | Each topic once.                                                                                |
+| Duration: not whole minutes 1–1440     | Give the duration as whole minutes, up to a day.                                                |
+| Attendance: not a whole number 1–10000 | Give the attendance as a whole number of people.                                                |
+| Visited at: not a date and time        | Record when the visit happened as a date and time.                                              |
+| Position: not a GeoJSON Point          | Send the position as a GeoJSON Point: longitude, then latitude.                                 |
+| Position: out of range                 | Longitude is between -180 and 180; latitude between -90 and 90.                                 |
+| GPS accuracy: missing                  | Record the GPS accuracy in metres at capture.                                                   |
+| GPS accuracy: negative or absurd       | GPS accuracy is a number of metres, zero or more.                                               |
+| Follow-up: identifier malformed        | The earlier visit is not in the expected form.                                                  |
+| Correction: changes nothing            | Change at least one thing, or leave the visit as it is.                                         |
+| Attachment: identifier malformed       | The attachment identifier is not in the expected form.                                          |
+| Attachment: kind not photo or audio    | An attachment is a photo or an audio recording.                                                 |
+| Attachment: type not accepted          | Save the photo as JPEG, PNG or WebP, or the recording as M4A, AAC, MP3, OGG or WebM.            |
+| Attachment: type does not match kind   | The file type does not match the kind of attachment.                                            |
+| Attachment: size not whole bytes       | The file size must be a whole number of bytes.                                                  |
+| Photo: over 15 MB                      | This photo is too large to send. Set the camera to a smaller picture size and take it again.    |
+| Audio: over 25 MB                      | This recording is too long to send. Record it again in shorter pieces.                          |
+| Captured at: not a date and time       | Record when the attachment was captured as a date and time.                                     |
+| Visit filter: date malformed           | Give the date as a full date and time with its offset.                                          |
+| Visit filter: officer malformed        | The officer identifier is not in the expected form.                                             |
 
 The key beside each reason is the field name, per section 4.1. An unrecognised
 field named `nickname` therefore produces `{ "nickname": "This field is not
@@ -839,3 +884,66 @@ do with the body: walk, go back, keep going. None says "invalid",
 "constraint", "polygon", "geometry" or "error". A message that a person
 cannot act on where they are standing is not finished. Every such sentence
 is a pinned rule key (§5.2.1), so a route names it and never writes it.
+
+---
+
+## 15. VISITS
+
+`POST|GET /api/farmers/:id/visits`, `GET /api/visits`, `GET|PATCH|DELETE
+/api/visits/:id`, `GET /api/visits/:id/chain`, `POST|GET
+/api/visits/:id/attachments`, `POST …/attachments/:aid/confirm`, `POST
+…/attachments/:aid/fail`, `GET …/attachments/:aid/link` (C-8, unit B8).
+
+**Who may do what.** Record a visit, declare, confirm or fail an attachment:
+the visit's officer, with the farmer in their caseload, and nobody else —
+the officer column references the officer table, so an administrator cannot
+be recorded as having visited. Correct: the visit's officer within
+twenty-four hours of the SERVER's moment, an administrator at any time.
+Remove: administrator, softly. Read, including a read link: everyone within
+scope. Any non-removed farmer may be visited, whatever their verification
+status.
+
+**Two moments** on every visit: `visited_at` is the device's, `received_at`
+the server's. Lists sort and page on `received_at`; the `from`/`to` filters
+apply to it; coverage counts it; the correction window runs from it. Both
+appear wherever a date appears.
+
+**The substance** — `observation` and `advice` — travels inside the visit
+record to everyone in scope, and nowhere else: never in an error, warning or
+message; never in the audit log, which records that the advice changed and
+not what it said; redacted by the scrubber; covered by the scan.
+
+**Position** (C-8.4): a GeoJSON Point and `gps_accuracy_m`, stored and shown,
+not graded. Visible to administrators and the visit's own officer; absent
+for supervisors and read_only, as a boundary is (C-7.8).
+
+**Follow-ups** (C-8.3): `follow_up_of` names an earlier visit of the same
+farmer that is not removed and does not, followed back, reach this visit.
+Each refusal is a sentence in 5.2.1; the database refuses too. `GET …/chain`
+returns `earlier` (root first), `visit`, `follow_ups`; a removed earlier
+visit is `{ id, removed: true }`.
+
+**Attachments** (C-8.6–C-8.8) are separate records that travel separately.
+Declare first: `POST …/attachments` with the id, kind, type, size and capture
+moment. The size and type are judged before any grant is issued (photo ≤ 15
+MB as JPEG, PNG or WebP; audio ≤ 25 MB as M4A, AAC, MP3, OGG or WebM), so a
+file over the ceiling is refused before a byte travels, with a sentence
+naming the action. The response carries `upload: { url, token, expires_at }`
+— a grant for one object path, ours to expire in fifteen minutes. The phone
+uploads to Storage, then `POST …/confirm`; the server checks the object
+exists and matches the declared size and type. A mismatch or a late arrival
+removes the object and fails the row. Declaring the same id again is "send
+it again": a waiting or failed attachment gets a fresh grant; an arrived one
+is returned unchanged with no grant. `POST …/fail` is the phone giving up.
+Every attachment carries `status` (`waiting`, `arrived`, `failed`) and a
+`message` — one fixed sentence per state, naming the action (C-8.7).
+`GET …/link` returns a read link that expires in five minutes, for an
+arrived attachment only, and its issuing is audited —
+`visit.attachment_link_issued`: who asked, for which attachment, when; never
+the link — the one read this system records, because the link outlives the
+request. The bucket is private; one server module touches Storage.
+
+**Coverage** is the view `extension_coverage_v`: by state, county, payam and
+month of `received_at`, visits to verified farmers and the farmers they
+reached, with visits to farmers in any other state counted beside them and
+never folded in. Removed visits are in no figure.

@@ -28,7 +28,7 @@ saying "parked until B3" named a thing a reader could not look up.
 | **B6**   | Verification and escalation         | Monkonmlah | Merged — #34    |
 | **B6.5** | Auth outage is 503, not 401         | Monkonmlah | Merged #39      |
 | **B7**   | Farm boundaries and PostGIS         | Monkonmlah | Merged #38      |
-| **B8**   | Visit notes and attachments         | Monkonmlah | Not started     |
+| **B8**   | Visit notes and attachments         | Monkonmlah | In progress     |
 | **B8.5** | Caseload reassignment (admin only)  | Monkonmlah | Not started     |
 | **B9**   | Offline sync endpoint               | Alieu      | Not started     |
 | **B10**  | Reporting views and export record   | Monkonmlah | Not started     |

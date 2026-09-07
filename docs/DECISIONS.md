@@ -1514,3 +1514,158 @@ The log's per-file timestamps tell the two apart.
 **Why it counts as a CI edit.** The workflow file is changed only on the
 owner's written approval (the first edit was B5.5, the second the
 concurrency group). This is the third, approved in writing on 2026-09-07.
+
+## B8 — decisions in the visits unit (2026-09-07)
+
+**The attachment row travels with the visit; the bytes travel alone.** A
+visit is one record, complete when it lands, carrying no file. An attachment
+is a row of its own — id, visit, kind, type, size, capture moment, state —
+and its bytes live in Storage. The row is two kilobytes and goes right behind
+the visit; the bytes go when the phone can. Once the server holds the row it
+knows a photo exists and has not arrived, and can say "waiting" to the
+officer and to the supervisor alike. An officer who reads "waiting" does not
+re-take the photo; an officer who reads nothing does. That distinction is the
+reason the row and the bytes are separate records, and the reason the row
+does not wait for the bytes. Owner and assistant, in the restate.
+
+**Bytes never pass through a route.** The API issues a signed upload grant for
+ONE object path, chosen by the server from the visit id and the attachment
+id; the phone puts the bytes straight to Storage; the API confirms. A route
+on Vercel has a small body limit and no business holding a photo in memory.
+Reading is the same shape in reverse: a signed link per request, five
+minutes, for an arrived attachment only, refused outside the visit's scope.
+Owner's decision, with three conditions, all met: one id per grant, minutes
+not hours, and a confirm that verifies existence AND size AND type.
+
+**The grant's life is a provider fact; ours is enforced at confirm; the gap
+between them is a STATED LIMIT, not a solved problem.** Supabase's upload
+token lives two hours and `createSignedUploadUrl` takes no expiry (checked in
+`@supabase/storage-js` 2.114.0, not assumed). The row carries
+`grant_expires_at`, fifteen minutes, and confirm enforces it: an object that
+arrives after it is removed and the row fails with `grant_expired`.
+
+Read this exactly. **Between minute fifteen and minute one hundred and
+twenty, a valid upload token exists that our row will refuse.** During that
+window a holder of the token can still put an object at that one path,
+within the bucket's ceiling and allowed types, and it will sit in Storage
+until a confirm removes it — or, if no confirm ever comes, indefinitely. The
+expiry is fifteen minutes only for the row; for the provider it is two
+hours; "the grant expires in fifteen minutes" is true of what the API will
+accept and false of what Storage will accept. Nothing bad follows from it
+today because confirm is the gate to the record, the object is removed on
+mismatch or late arrival, the path admits one object, and the bucket bounds
+size and type. What does not follow: the provider will not hold an unwanted
+object for us, and a token that leaked in the window is usable for the rest
+of it. A future session that needs a true fifteen-minute token has two
+routes — a provider option if one appears, or a route that proxies the bytes
+with its own clock — and should not read the row's expiry as either.
+Fifteen minutes is generous for a 3 MB photo on a slow link (about eight
+minutes at 50 kbps) and short enough to be "minutes". Recorded as a limit at
+the owner's instruction, 2026-09-07.
+
+**Confirm checks the provider's facts, not the phone's claim.** `info(path)`
+returns the stored size and content type; both must equal the declaration. A
+mismatch removes the object and fails the row (`size_mismatch`,
+`type_mismatch`). The bucket is private, created by `pnpm storage:buckets`
+with the same ceiling and types the schema and the CHECK use; only
+`apps/web/lib/supabase/admin.ts` touches Storage, the module that already
+alone reads the service-role key. Its rule 3 now says "Auth or Storage".
+
+**"Send it again" is re-declaring the same id.** A waiting or failed
+attachment declared again gets a fresh grant and returns to waiting; an
+arrived one is returned unchanged with no grant; the same attachment id on a
+different visit is a 409. The phone therefore never needs a new id to retry,
+which is what B9's idempotency asks for. A re-declaration with a different
+type moves the storage path; the old object is removed best-effort.
+
+**Refused before the bytes travel.** The size and type are judged by the
+declaration schema, before any grant is issued: photo over 15 MB, audio over
+25 MB, a type the kind does not admit, a type not on the list. Each refusal
+is a sentence naming the action ("Set the camera to a smaller picture size
+and take it again"). Ceilings from the owner's instruction: a mid-range
+Android's 12-megapixel JPEG weighs 3 to 6 MB, a 48-megapixel one up to 10;
+ten minutes of AAC is about 10 MB. Set above with room, not at.
+
+**Position visibility: administrators and the visit's own officer, as for a
+boundary.** Decided by the owner 2026-09-07. A visit's position is where a
+named farmer's plot is: a point that, joined to the farmer record the same
+response carries, places a person. C-5.8 withheld the national ID from
+supervisors and read_only users because a field that identifies a person is
+returned only to those who need it to do their work — the registering
+officer, and an administrator — and is absent rather than masked, because a
+masked field still says one exists. The same reading applies here for the
+same reason: a supervisor verifies that visits happen and what was advised,
+which the two moments, the topics and the substance show; they do not need
+the coordinates, and a state-wide list of coordinates is a map of where
+farmers live. C-7.8 applied this to boundaries; C-8.4 says "stored and
+shown" and this decision says to whom. If the field asks for supervisors to
+see positions, the presenter's one condition is the place, and the question
+to answer first is what they would do with them.
+
+**Observation is optional; advice is required.** C-8.1 singles out advice as
+required and says nothing of observation. An officer who saw nothing new but
+advised is still a visit. Observation, if sent, is not blank.
+
+**Topics: nine, proposed, provisional.** From `docs/data-model-extension.md`
+§2, the repository's derivation of the report; the report itself, as held
+here, names no list. land_preparation, planting, weeding, pest, disease,
+harvest, storage, market, other. Built as an enum so amending it is additive
+(`ALTER TYPE … ADD VALUE`). Awaiting the owner's approval of the list.
+
+**Follow-ups: one sentence for three refusals, and a trigger behind them.**
+A target that does not exist, belongs to another farmer, or is removed gets
+the same sentence — "could not be found for this farmer" — because saying
+which would confirm another farmer's record exists (the 404 principle, §5.1).
+A cycle gets its own sentence. The route judges first, with a recursive walk;
+the trigger `visit_follow_up_guard` refuses the same four things for any
+writer, because a retried sync is exactly what would produce a loop no
+officer intends. The chain route returns earlier visits from the root, this
+visit, then direct follow-ups; a removed earlier visit keeps its place as
+`{ id, removed: true }` so the order survives a removal (C-8.11 says its
+history remains readable; the chain is part of that history).
+
+**Five columns are evidence and cannot change.** Farmer, officer, position
+(with its accuracy), visited_at, received_at. Not in the correction schema,
+so refused as unknown fields; and a trigger refuses any UPDATE that changes
+them, whoever issues it. The correction window is twenty-four hours from
+`received_at`, the server's moment: a device clock cannot govern a
+correction window for the same reason it cannot govern a reporting period
+(owner). The audit row for a correction records that the advice or
+observation changed — `advice_changed: true` — and never the words (C-8.13).
+
+**Coverage is a view, not a route, in B8.** `extension_coverage_v` groups by
+state, county, payam and month of `received_at`: visits to verified farmers
+and the farmers reached, with visits to farmers in any other state counted
+beside them and never folded in. The reporting unit reads it; B8 proves its
+shape and that a removed visit leaves it.
+
+**The read link's issuing IS audited — the one exception to "reads are not
+audited", and why.** B4's audit list covers writes because writes are what
+change state; reads leave the record as they found it, and a log of every
+read would bury the log. An expiring link to a farmer's photograph is
+different in kind: it is the one read in this system that produces an
+artefact outliving the request — a URL that works for minutes, that can be
+copied, forwarded, or opened by whoever the caller shows their screen to.
+What is recorded is the issuing: who asked, for which attachment, when, and
+how long the link was to live. Never the link itself, which would make the
+audit log a second copy of the thing being guarded. The row is written
+before the link is issued, so a link can never exist that no row accounts
+for. Action key `visit.attachment_link_issued`, migration 16. The rule for
+reads stands; this is its one exception, and the test for the next one is
+the same: does the read leave something behind that works after the
+response is gone? Owner's decision, 2026-09-07, reversing the assistant's
+first call.
+
+**Any non-removed farmer may be visited**, whatever their verification
+status, including merged — the owner's words were "regardless of
+verification status", read literally. If a merged record should refuse
+visits (they belong to the surviving record), that is one rule sentence.
+
+**No new environment variable.** The bucket name is a constant; a bucket name
+is not a secret. Production needs `pnpm storage:buckets` run once against it
+— added to the production checklist in PROJECT-STATE.
+
+**Test objects.** The visits test removes every object it uploaded in its
+afterAll; the sweep removes rows. A run killed mid-way may leave objects in
+the staging bucket; they are a few hundred invented bytes each, and a later
+run's declarations never collide with them because every id is fresh.
