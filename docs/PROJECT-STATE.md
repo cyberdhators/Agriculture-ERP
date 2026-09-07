@@ -692,7 +692,8 @@ slow day, and a red from it says nothing about the code. **Decided
 2026-09-07, by the owner:** the timeout is 60 minutes; the concurrency proofs
 are not shrunk. The reasoning is in `docs/DECISIONS.md`, the third CI edit.
 A run cancelled by the timeout while still completing files is re-run, not
-investigated.
+investigated. The first run under the new timeout, the one that gated #38's
+merge, took 42 minutes and passed; the old timeout would have cut it.
 
 **If a run is killed** its rows
 are swept by the next run's setup, and its authentication accounts are

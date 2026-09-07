@@ -173,7 +173,7 @@ copy of any of these is a bug.
 | B5.5 | 1    | **Merged** — #33; first CI database run 23/23                        | #33 | —                                       |
 | B6   | 1    | **Merged** — #34; 544/544 locally, 27/27 files in CI                 | #34 | —                                       |
 | B6.5 | 1    | **Merged** #39 — sign-in outage is 503 `auth_unavailable`, never 401 | —   | —                                       |
-| B7   | 1    | **In progress** — C-7 written; built on `feat/b7-farm-postgis`       | —   | —                                       |
+| B7   | 1    | **Merged** — #38; 30/30 files in CI, four runs on the rebased branch | #38 | —                                       |
 | P1   | 2    | **Merged** — database, validation, seed, tests. Routes not started.  | #17 | B3 for routes, B4 for the audit rows    |
 | UI   | 2    | First portal skin — **closed unmerged** (#18), kept as reference     | #18 | — (superseded by UI-2)                  |
 | UI-2 | 2    | **PR open** — "The Register" re-skin + Farmers screens on fixtures   | #23 | Lane 1 review; C-5 farmer-number format |
@@ -662,7 +662,8 @@ know.
   `docs/PROJECT-STATE.md` under B5.5.
 - **Lane 2:** nothing new on the routes. Note that a run cut by the
   timeout with files still completing is a re-run, not a defect.
-- Next: the owner decides the timeout; B8 (extension visits) once C-8 is
-  written.
+- #38 merged on the owner's instruction after the timeout commit's run went
+  green (42 minutes — the old timeout would have cut it). B7 is done.
+- Next: B8 (extension visits) once C-8 is written.
 
 — Monkon-Claude
