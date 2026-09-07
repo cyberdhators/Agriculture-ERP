@@ -11,28 +11,35 @@ saying "parked until B3" named a thing a reader could not look up.
 
 ## Backend
 
-| Unit     | What it covers                      | Owner      | Status          |
-| -------- | ----------------------------------- | ---------- | --------------- |
-| **B0**   | Accounts                            | Alieu      | Done            |
-| **B1.1** | Repository skeleton                 | Alieu      | Done            |
-| **B1.2** | CI pipeline                         | Alieu      | Done            |
-| **B1.3** | Prisma to staging Supabase          | Alieu      | Done            |
-| **B1.4** | API conventions, Zod, error shape   | Alieu      | Done            |
-| **B1.5** | Sentry and the scrubber             | Alieu      | Done            |
-| **B1.6** | README and project state            | Alieu      | **In progress** |
-| **B2**   | Locations: state, county, payam     | Monkonmlah | Not started     |
-| **B3**   | Identity, roles, `requireRole`, RLS | Alieu      | Not started     |
-| **B4**   | Audit log, append-only              | Monkonmlah | Not started     |
-| **B5**   | Farmer core, consent, soft delete   | Monkonmlah | Merged — #32    |
-| **B5.5** | CI runs the database tests          | Monkonmlah | Merged — #33    |
-| **B6**   | Verification and escalation         | Monkonmlah | Merged — #34    |
-| **B6.5** | Auth outage is 503, not 401         | Monkonmlah | Merged #39      |
-| **B7**   | Farm boundaries and PostGIS         | Monkonmlah | Merged #38      |
-| **B8**   | Visit notes and attachments         | Monkonmlah | Merged #41      |
-| **B8.5** | Caseload reassignment (admin only)  | Monkonmlah | In progress     |
-| **B9**   | Offline sync endpoint               | Alieu      | Not started     |
-| **B10**  | Reporting views and export record   | Monkonmlah | Not started     |
-| **B11**  | Backup and restore drill            | Alieu      | Not started     |
+Owner of every backend unit from B2 on: Monkonmlah (Lane 1, Monkon-Claude), as
+`docs/HANDOFF.md` says — "the spine, units B2–B11". The rows below said
+otherwise for B3, B9 and B11 until 2026-09-08; they were the plan of
+2026-09-02, before B5 and B7 were moved, and nobody had re-read this table
+against the lane statement. A fresh session reads this table to learn who
+owns what, so it now agrees with HANDOFF row for row.
+
+| Unit     | What it covers                      | Owner      | Status       |
+| -------- | ----------------------------------- | ---------- | ------------ |
+| **B0**   | Accounts                            | Alieu      | Done         |
+| **B1.1** | Repository skeleton                 | Alieu      | Done         |
+| **B1.2** | CI pipeline                         | Alieu      | Done         |
+| **B1.3** | Prisma to staging Supabase          | Alieu      | Done         |
+| **B1.4** | API conventions, Zod, error shape   | Alieu      | Done         |
+| **B1.5** | Sentry and the scrubber             | Alieu      | Done         |
+| **B1.6** | README and project state            | Alieu      | Done — #12   |
+| **B2**   | Locations: state, county, payam     | Monkonmlah | Merged — #15 |
+| **B3**   | Identity, roles, `requireRole`, RLS | Monkonmlah | Merged — #20 |
+| **B4**   | Audit log, append-only              | Monkonmlah | Merged — #24 |
+| **B5**   | Farmer core, consent, soft delete   | Monkonmlah | Merged — #32 |
+| **B5.5** | CI runs the database tests          | Monkonmlah | Merged — #33 |
+| **B6**   | Verification and escalation         | Monkonmlah | Merged — #34 |
+| **B6.5** | Auth outage is 503, not 401         | Monkonmlah | Merged #39   |
+| **B7**   | Farm boundaries and PostGIS         | Monkonmlah | Merged #38   |
+| **B8**   | Visit notes and attachments         | Monkonmlah | Merged #41   |
+| **B8.5** | Caseload reassignment (admin only)  | Monkonmlah | Merged #42   |
+| **B9**   | Offline sync endpoint               | Monkonmlah | In progress  |
+| **B10**  | Reporting views and export record   | Monkonmlah | Not started  |
+| **B11**  | Backup and restore drill            | Monkonmlah | Not started  |
 
 ## Parallel units — Lane 2 (Alieu-Claude)
 
