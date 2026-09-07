@@ -324,42 +324,43 @@ same list, so a key that is not here is refused at the database. Adding one
 means editing `AUDIT_ACTIONS` in `packages/shared` and this table in the same
 change.
 
-| Action key                  |
-| --------------------------- |
-| `user.created`              |
-| `user.updated`              |
-| `user.password_set`         |
-| `user.soft_deleted`         |
-| `officer.created`           |
-| `officer.updated`           |
-| `officer.status_changed`    |
-| `officer.password_set`      |
-| `officer.soft_deleted`      |
-| `auth.disabled`             |
-| `auth.disable_failed`       |
-| `auth.account_orphaned`     |
-| `location.created`          |
-| `location.renamed`          |
-| `location.soft_deleted`     |
-| `farmer.created`            |
-| `farmer.updated`            |
-| `farmer.soft_deleted`       |
-| `consent.recorded`          |
-| `farmer.verified`           |
-| `farmer.rejected`           |
-| `farmer.merged`             |
-| `farmer.resubmitted`        |
-| `farm.created`              |
-| `farm.boundary_added`       |
-| `farm.boundary_superseded`  |
-| `farm.crops_declared`       |
-| `farm.soft_deleted`         |
-| `visit.recorded`            |
-| `visit.corrected`           |
-| `visit.soft_deleted`        |
-| `visit.attachment_declared` |
-| `visit.attachment_arrived`  |
-| `visit.attachment_failed`   |
+| Action key                     |
+| ------------------------------ |
+| `user.created`                 |
+| `user.updated`                 |
+| `user.password_set`            |
+| `user.soft_deleted`            |
+| `officer.created`              |
+| `officer.updated`              |
+| `officer.status_changed`       |
+| `officer.password_set`         |
+| `officer.soft_deleted`         |
+| `auth.disabled`                |
+| `auth.disable_failed`          |
+| `auth.account_orphaned`        |
+| `location.created`             |
+| `location.renamed`             |
+| `location.soft_deleted`        |
+| `farmer.created`               |
+| `farmer.updated`               |
+| `farmer.soft_deleted`          |
+| `consent.recorded`             |
+| `farmer.verified`              |
+| `farmer.rejected`              |
+| `farmer.merged`                |
+| `farmer.resubmitted`           |
+| `farm.created`                 |
+| `farm.boundary_added`          |
+| `farm.boundary_superseded`     |
+| `farm.crops_declared`          |
+| `farm.soft_deleted`            |
+| `visit.recorded`               |
+| `visit.corrected`              |
+| `visit.soft_deleted`           |
+| `visit.attachment_declared`    |
+| `visit.attachment_arrived`     |
+| `visit.attachment_failed`      |
+| `visit.attachment_link_issued` |
 
 `before` and `after` hold **changed fields only**, never whole rows, and never a
 password, token, authentication identifier, national id, phone, email, given
@@ -937,8 +938,10 @@ is returned unchanged with no grant. `POST …/fail` is the phone giving up.
 Every attachment carries `status` (`waiting`, `arrived`, `failed`) and a
 `message` — one fixed sentence per state, naming the action (C-8.7).
 `GET …/link` returns a read link that expires in five minutes, for an
-arrived attachment only. The bucket is private; one server module touches
-Storage.
+arrived attachment only, and its issuing is audited —
+`visit.attachment_link_issued`: who asked, for which attachment, when; never
+the link — the one read this system records, because the link outlives the
+request. The bucket is private; one server module touches Storage.
 
 **Coverage** is the view `extension_coverage_v`: by state, county, payam and
 month of `received_at`, visits to verified farmers and the farmers they

@@ -1,4 +1,5 @@
 import { ATTACHMENT_LIMITS, VISIT_ATTACHMENT_BUCKET, toIso } from '@agri-erp/shared';
+import { audited, writeAudit } from '../../../../../../../lib/api/audit';
 import { conflict } from '../../../../../../../lib/api/errors';
 import { defineRoutes, ok } from '../../../../../../../lib/api/route';
 import { loadAttachment, loadVisibleVisit } from '../../../../../../../lib/api/visits';
@@ -18,6 +19,25 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       const visit = await loadVisibleVisit(prisma, params.id ?? '', auth);
       const attachment = await loadAttachment(prisma, visit.id, params.aid ?? '');
       if (attachment.status !== 'arrived') throw conflict('attachment_not_received');
+      // The one audited read (owner, 2026-09-07): the link outlives the request
+      // and can be copied or forwarded, so who asked, for what, when is
+      // recorded — never the link. The row is written before the link is
+      // issued: an audit row without a link is a request that failed; a link
+      // without an audit row would be an access nobody can account for.
+      await audited(prisma, (tx) =>
+        writeAudit(tx, {
+          entityType: 'visit',
+          entityId: visit.id,
+          actorType: auth.role,
+          actorId: auth.principal.id,
+          action: 'visit.attachment_link_issued',
+          after: {
+            attachment_id: attachment.id,
+            kind: attachment.kind,
+            expires_in_seconds: ATTACHMENT_LIMITS.readLinkSeconds,
+          },
+        }),
+      );
       const link = await issueReadLink(
         VISIT_ATTACHMENT_BUCKET,
         attachment.storage_path,

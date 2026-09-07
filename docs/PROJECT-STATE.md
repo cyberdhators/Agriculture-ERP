@@ -671,12 +671,16 @@ ten-minute delay matching a dead-socket TCP retransmit — was judged
 sufficient. If it recurs, the logs are the first thing to read, with a token
 issued for that purpose and revoked after.
 
-**Recurred 2026-09-07, during B8's local run.** The visits file, nineteen
-tests with real uploads to Storage, stalled on its last test 705 seconds
-before vitest cut it; the same test passed alone in under a minute, and the
-probe run during the stall could not get a connection at all. The shape is
-the one above; nothing new was learned and nothing was changed. CI remains
-the arbiter.
+**Recurred 2026-09-07, during B8's local run — the third unit.** The visits
+file, nineteen tests with real uploads to Storage, stalled on its last test
+705 seconds before vitest cut it; the same test passed alone in under a
+minute, and the probe run during the stall could not get a connection at
+all. The shape is the one above; nothing new was learned and nothing was
+changed. **Frequency, for the record rather than memory:** B5's runs
+(abandoned transactions holding the counter row, 2026-09-05), B7's runs
+(dead pooled connections, 2026-09-05), B8's run (2026-09-07). Three units of
+three whose local suites ran long enough to meet it; CI's runner has met it
+in none of its runs. CI remains the arbiter.
 
 **If a run is killed, the lock may outlive it.** The pooler keeps a server
 session after its client is killed (seen 2026-09-05: a killed local run held

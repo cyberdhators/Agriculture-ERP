@@ -460,12 +460,20 @@ run('attachments (C-8.6, C-8.7, C-8.8)', () => {
       });
       expect(link.status, who.role).toBe(404);
     }
-    const actions = (await auditActions(v.id as string)).map((r) => r.action);
-    expect(actions).toEqual([
+    // Four in-scope readers opened a link; each issuing is a row naming who,
+    // which attachment and when — and never the link (the one audited read).
+    const rows = await auditActions(v.id as string);
+    expect(rows.map((r) => r.action)).toEqual([
       'visit.recorded',
       'visit.attachment_declared',
       'visit.attachment_arrived',
+      ...Array(4).fill('visit.attachment_link_issued'),
     ]);
+    for (const r of rows.filter((r) => r.action === 'visit.attachment_link_issued')) {
+      expect(r.text).toContain(a.id as string);
+      expect(r.text).not.toMatch(/https?:\/\//);
+      expect(r.text).not.toContain('token');
+    }
   });
 
   it('a file that is not the one declared is removed and the row fails with the action to take; declaring the same id again is "send it again"', async () => {

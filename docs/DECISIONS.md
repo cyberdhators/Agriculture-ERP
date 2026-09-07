@@ -1537,16 +1537,31 @@ minutes, for an arrived attachment only, refused outside the visit's scope.
 Owner's decision, with three conditions, all met: one id per grant, minutes
 not hours, and a confirm that verifies existence AND size AND type.
 
-**The grant's life is a provider fact, so the expiry is ours.** Supabase's
-upload token lives two hours and `createSignedUploadUrl` takes no expiry
-(checked in `@supabase/storage-js` 2.114.0, not assumed). The row carries
+**The grant's life is a provider fact; ours is enforced at confirm; the gap
+between them is a STATED LIMIT, not a solved problem.** Supabase's upload
+token lives two hours and `createSignedUploadUrl` takes no expiry (checked in
+`@supabase/storage-js` 2.114.0, not assumed). The row carries
 `grant_expires_at`, fifteen minutes, and confirm enforces it: an object that
-arrives after it is removed and the row fails with `grant_expired`. So the
-provider's two hours cannot be used to store anything: the bucket refuses
-anything over the ceiling or outside the allowed types at upload, and confirm
-refuses anything that is not the declared file. Fifteen minutes is generous
-for a 3 MB photo on a slow link (about eight minutes at 50 kbps) and short
-enough to be "minutes".
+arrives after it is removed and the row fails with `grant_expired`.
+
+Read this exactly. **Between minute fifteen and minute one hundred and
+twenty, a valid upload token exists that our row will refuse.** During that
+window a holder of the token can still put an object at that one path,
+within the bucket's ceiling and allowed types, and it will sit in Storage
+until a confirm removes it — or, if no confirm ever comes, indefinitely. The
+expiry is fifteen minutes only for the row; for the provider it is two
+hours; "the grant expires in fifteen minutes" is true of what the API will
+accept and false of what Storage will accept. Nothing bad follows from it
+today because confirm is the gate to the record, the object is removed on
+mismatch or late arrival, the path admits one object, and the bucket bounds
+size and type. What does not follow: the provider will not hold an unwanted
+object for us, and a token that leaked in the window is usable for the rest
+of it. A future session that needs a true fifteen-minute token has two
+routes — a provider option if one appears, or a route that proxies the bytes
+with its own clock — and should not read the row's expiry as either.
+Fifteen minutes is generous for a 3 MB photo on a slow link (about eight
+minutes at 50 kbps) and short enough to be "minutes". Recorded as a limit at
+the owner's instruction, 2026-09-07.
 
 **Confirm checks the provider's facts, not the phone's claim.** `info(path)`
 returns the stored size and content type; both must equal the declaration. A
@@ -1571,12 +1586,21 @@ and take it again"). Ceilings from the owner's instruction: a mid-range
 Android's 12-megapixel JPEG weighs 3 to 6 MB, a 48-megapixel one up to 10;
 ten minutes of AAC is about 10 MB. Set above with room, not at.
 
-**Position visibility mirrors C-7.8.** The standing point and its accuracy
-appear for administrators and the visit's own officer; supervisors and
-read_only see neither. C-8.4 says "stored and shown" without saying to whom;
-a visit's position is a named person's field as a boundary is, so the
-boundary's rule is applied. Assistant's decision, reversible in one presenter
-line if the owner wants supervisors to see where officers stood.
+**Position visibility: administrators and the visit's own officer, as for a
+boundary.** Decided by the owner 2026-09-07. A visit's position is where a
+named farmer's plot is: a point that, joined to the farmer record the same
+response carries, places a person. C-5.8 withheld the national ID from
+supervisors and read_only users because a field that identifies a person is
+returned only to those who need it to do their work — the registering
+officer, and an administrator — and is absent rather than masked, because a
+masked field still says one exists. The same reading applies here for the
+same reason: a supervisor verifies that visits happen and what was advised,
+which the two moments, the topics and the substance show; they do not need
+the coordinates, and a state-wide list of coordinates is a map of where
+farmers live. C-7.8 applied this to boundaries; C-8.4 says "stored and
+shown" and this decision says to whom. If the field asks for supervisors to
+see positions, the presenter's one condition is the place, and the question
+to answer first is what they would do with them.
 
 **Observation is optional; advice is required.** C-8.1 singles out advice as
 required and says nothing of observation. An officer who saw nothing new but
@@ -1615,10 +1639,22 @@ and the farmers reached, with visits to farmers in any other state counted
 beside them and never folded in. The reporting unit reads it; B8 proves its
 shape and that a removed visit leaves it.
 
-**A read link is not audited.** Issuing one is a read, and the audit law
-names create, update and delete. Storage's own logs hold the access. If the
-owner wants read grants on the audit trail, it is one `writeAudit` call in
-the link route and a new action key.
+**The read link's issuing IS audited — the one exception to "reads are not
+audited", and why.** B4's audit list covers writes because writes are what
+change state; reads leave the record as they found it, and a log of every
+read would bury the log. An expiring link to a farmer's photograph is
+different in kind: it is the one read in this system that produces an
+artefact outliving the request — a URL that works for minutes, that can be
+copied, forwarded, or opened by whoever the caller shows their screen to.
+What is recorded is the issuing: who asked, for which attachment, when, and
+how long the link was to live. Never the link itself, which would make the
+audit log a second copy of the thing being guarded. The row is written
+before the link is issued, so a link can never exist that no row accounts
+for. Action key `visit.attachment_link_issued`, migration 16. The rule for
+reads stands; this is its one exception, and the test for the next one is
+the same: does the read leave something behind that works after the
+response is gone? Owner's decision, 2026-09-07, reversing the assistant's
+first call.
 
 **Any non-removed farmer may be visited**, whatever their verification
 status, including merged — the owner's words were "regardless of

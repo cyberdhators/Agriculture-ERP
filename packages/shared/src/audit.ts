@@ -46,6 +46,9 @@ export const AUDIT_ACTIONS = [
   'visit.attachment_declared',
   'visit.attachment_arrived',
   'visit.attachment_failed',
+  // The one read that is audited: issuing an expiring link to a farmer's
+  // photograph produces an artefact that outlives the request (B8, owner).
+  'visit.attachment_link_issued',
 ] as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];
