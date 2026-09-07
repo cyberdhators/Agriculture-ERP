@@ -783,6 +783,20 @@ companion, from the fourth instance: **when the record says something was
 done or is pending, ask the system rather than the record.** A migration
 folder, a catalogue query, a live route — not a sentence in a document.
 
+**The seventh instance, found in a design document (2026-09-08).** The audit
+law says every entry carries the device. `audit_event.device_id` has existed
+since B4 and `writeAudit` accepts it. No route wrapper reads a device from a
+request, no request carries one, and no test asked whether the column was
+ever non-null — so every audit row written since B4 has a null device. Found
+by reading the sync contract in `docs/data-model.md` §3 against the routes,
+at the owner's request, before C-9 was written: the first of the class found
+in a document rather than by a test or by being bitten. **The rows are
+permanently null.** Nothing recorded the device anywhere else — not the
+session, not the request log, not Sentry, which scrubs identifiers — so there
+is nothing to backfill from, and a guessed device would be a false record.
+Fixed in B9: a header, read by the wrapper, passed to every audit write
+(C-9.8). Rows before that carry null and the record says so.
+
 **One found before it fired (2026-09-06).** The directories test asserted the
 `crop` and `language` enum labels equal a fixed list; it would have gone red
 on the first unit to add a value. Found by reading every catalogue-reading

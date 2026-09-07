@@ -1728,3 +1728,42 @@ checks the pointer.
 application sets both columns at registration; the seed, the reseed and any
 future writer that sets only `registered_by` get the pointer from the
 trigger. The backfill in the migration did the same for every existing row.
+## C-9 — eight decisions from reading the sync contract against the routes (2026-09-08)
+
+The owner asked, before writing C-9, where `docs/data-model.md` §3 was already
+wrong or incomplete against B5–B8.5. Eight findings, eight decisions, all the
+owner's, recorded here because the data model section is corrected in B9 and
+the reasoning would otherwise vanish with the old text.
+
+1. **True idempotency, not a documented 409.** A retried create whose body
+   matches returns 200 with the record; 409 only when the id matches and the
+   body does not. The attachment route's pattern, applied to farmer, farm,
+   boundary and visit. Reason: a phone that must read back to learn whether
+   its own write landed will re-send.
+2. **Boundaries get a client id.** The one place a retry wrote a second row,
+   and it produced a supersession that never happened in the field — a false
+   record, not a duplicate. Schema change, approved, done in B9 rather than
+   carried.
+3. **Seven outcome codes replace the model's five**, each with a pinned
+   sentence (§14). The two the old list could not express: 503 must never send
+   an officer to re-enter credentials, and "left the caseload" means keep it,
+   show the officer, do not retry.
+4. **Parent-first release**, a child held until its parent is acknowledged by
+   id; a terminally refused parent leaves its children stuck with its reason,
+   and the officer sees which parent and why.
+5. **Attachments get their own four-step lifecycle**; grant expired on confirm
+   means re-declare with the same id.
+6. **The entity list** loses `ai_question` and gains boundaries, crop
+   declarations and attachments.
+7. **The device id**: a header, read by the wrapper, passed to every audit
+   write. The seventh silent gate; rows since B4 are permanently null
+   (PROJECT-STATE).
+8. **Download direction**: an updated-since filter on the caseload lists, not a
+   change feed — smaller and enough; plus a caseload-ids endpoint so a device
+   learns what has left its caseload and removes it, keeping nothing, because
+   the officer has no right to that farmer's data any more.
+
+**And captured-at on farmer and farm.** A farmer registered on Monday in a
+village and uploaded on Friday in town was registered on Monday. The server's
+moment stays authoritative for reporting (C-8.5's principle); the field's date
+was a fact being discarded and is now kept.
