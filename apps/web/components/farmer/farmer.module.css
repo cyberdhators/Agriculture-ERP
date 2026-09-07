@@ -1570,11 +1570,3 @@
   color: var(--muted);
   font-size: 13px;
 }
-
-.entryLogo {
-  display: block;
-  width: auto;
-  max-width: 340px;
-  height: auto;
-  margin-inline: auto;
-}
