@@ -1,6 +1,19 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
+import * as farmerFarms from '../apps/web/app/api/farmers/[id]/farms/route';
+import * as farmerVisits from '../apps/web/app/api/farmers/[id]/visits/route';
+import * as attachmentConfirm from '../apps/web/app/api/visits/[id]/attachments/[aid]/confirm/route';
+import * as attachmentFail from '../apps/web/app/api/visits/[id]/attachments/[aid]/fail/route';
+import * as attachmentLink from '../apps/web/app/api/visits/[id]/attachments/[aid]/link/route';
+import * as visitAttachments from '../apps/web/app/api/visits/[id]/attachments/route';
+import * as visitChain from '../apps/web/app/api/visits/[id]/chain/route';
+import * as visitItem from '../apps/web/app/api/visits/[id]/route';
+import * as visitsList from '../apps/web/app/api/visits/route';
 import * as farmerItem from '../apps/web/app/api/farmers/[id]/route';
+import * as farmBoundaries from '../apps/web/app/api/farms/[id]/boundaries/route';
+import * as farmCrops from '../apps/web/app/api/farms/[id]/crops/route';
+import * as farmItem from '../apps/web/app/api/farms/[id]/route';
+import * as farmsGeojson from '../apps/web/app/api/farms/geojson/route';
 import * as farmerMerge from '../apps/web/app/api/farmers/[id]/merge/route';
 import * as farmerReject from '../apps/web/app/api/farmers/[id]/reject/route';
 import * as farmerResubmit from '../apps/web/app/api/farmers/[id]/resubmit/route';
@@ -20,6 +33,8 @@ import {
   createPrincipal,
   sweep,
 } from './helpers/principals';
+import { removeStoredObject } from '../apps/web/lib/supabase/admin';
+import { VISIT_ATTACHMENT_BUCKET } from '../packages/shared/src/visit';
 import { makeTestPrisma, requireTestEnv } from './helpers/db';
 import { call } from './helpers/request';
 
@@ -67,6 +82,91 @@ beforeAll(async () => {
     throw new Error(`matrix setup: could not register a farmer (${registered.status})`);
   }
   farmerId = (registered.body.data as { id: string }).id;
+  // B7: one farm the officer mapped, for the farm routes.
+  const mapped = await call(farmerFarms, 'POST', {
+    as: officer,
+    body: farmBody(),
+    params: { id: farmerId },
+  });
+  if (mapped.status !== 201)
+    throw new Error(`matrix setup: could not map a farm (${mapped.status})`);
+  farmId = (mapped.body.data as { id: string }).id;
+  // B8: one visit the officer recorded, with one photo that has arrived, so
+  // the link route has something to open for every role allowed to read it.
+  const visited = await call(farmerVisits, 'POST', {
+    as: officer,
+    body: visitBody(),
+    params: { id: farmerId },
+  });
+  if (visited.status !== 201)
+    throw new Error(`matrix setup: could not record a visit (${visited.status})`);
+  visitId = (visited.body.data as { id: string }).id;
+  const declared = await call(visitAttachments, 'POST', {
+    as: officer,
+    body: {
+      id: randomUUID(),
+      kind: 'photo',
+      content_type: 'image/jpeg',
+      byte_size: FAKE_JPEG.length,
+      captured_at: new Date().toISOString(),
+    },
+    params: { id: visitId },
+  });
+  if (declared.status !== 201)
+    throw new Error(`matrix setup: could not declare an attachment (${declared.status})`);
+  const attachment = declared.body.data as { id: string; upload: { url: string } };
+  attachmentId = attachment.id;
+  const put = await fetch(attachment.upload.url, {
+    method: 'PUT',
+    headers: { 'content-type': 'image/jpeg', 'x-upsert': 'false' },
+    body: new Uint8Array(FAKE_JPEG),
+  });
+  if (put.status !== 200) throw new Error(`matrix setup: upload refused (${put.status})`);
+  uploadedPath = decodeURIComponent(
+    new URL(attachment.upload.url).pathname.split('/object/upload/sign/')[1] ?? '',
+  ).replace(`${VISIT_ATTACHMENT_BUCKET}/`, '');
+  const confirmed = await call(attachmentConfirm, 'POST', {
+    as: officer,
+    body: {},
+    params: { id: visitId, aid: attachmentId },
+  });
+  if (confirmed.status !== 200)
+    throw new Error(`matrix setup: could not confirm the attachment (${confirmed.status})`);
+});
+let visitId = '';
+let attachmentId = '';
+let uploadedPath = '';
+const FAKE_JPEG = Buffer.concat([
+  Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00]),
+  Buffer.from('zztest-not-a-real-photo-'.repeat(20)),
+  Buffer.from([0xff, 0xd9]),
+]);
+const visitBody = () => ({
+  id: randomUUID(),
+  visited_at: new Date(Date.now() - 3_600_000).toISOString(),
+  position: { type: 'Point', coordinates: [31.6004, 4.8503] },
+  gps_accuracy_m: 6,
+  advice: 'Zztest advice: weed the lower plot before the rains.',
+  topics: ['weeding'],
+});
+let farmId = '';
+const SQUARE = {
+  type: 'Polygon',
+  coordinates: [
+    [
+      [31.6, 4.85],
+      [31.6009, 4.85],
+      [31.6009, 4.8509],
+      [31.6, 4.8509],
+      [31.6, 4.85],
+    ],
+  ],
+};
+const farmBody = () => ({
+  id: randomUUID(),
+  season: '2026-main',
+  boundary: SQUARE,
+  gps_accuracy_m: 6,
 });
 let farmerId = '';
 let phoneSeq = 0;
@@ -82,6 +182,7 @@ const farmerBody = () => ({
 });
 
 afterAll(async () => {
+  if (uploadedPath) await removeStoredObject(VISIT_ATTACHMENT_BUCKET, uploadedPath).catch(() => {});
   await sweep(prisma);
   await prisma.$disconnect();
 });
@@ -256,6 +357,160 @@ const ROUTES = [
     mod: verificationQueue,
     method: 'GET' as const,
     allow: ['admin', 'supervisor', 'read_only'],
+  },
+  // B7 (C-7). The officer mapped the farm; the admin may only read and remove.
+  {
+    name: 'POST /api/farmers/:id/farms',
+    mod: farmerFarms,
+    method: 'POST' as const,
+    allow: ['officer'],
+    params: () => ({ id: farmerId }),
+    body: () => farmBody(),
+  },
+  {
+    name: 'GET /api/farmers/:id/farms',
+    mod: farmerFarms,
+    method: 'GET' as const,
+    allow: ['admin', 'supervisor', 'read_only', 'officer'],
+    params: () => ({ id: farmerId }),
+  },
+  {
+    name: 'GET /api/farms/:id',
+    mod: farmItem,
+    method: 'GET' as const,
+    allow: ['admin', 'supervisor', 'read_only', 'officer'],
+    params: () => ({ id: farmId }),
+  },
+  {
+    name: 'POST /api/farms/:id/boundaries',
+    mod: farmBoundaries,
+    method: 'POST' as const,
+    allow: ['officer'],
+    params: () => ({ id: farmId }),
+    body: () => ({ season: '2026-second', boundary: SQUARE, gps_accuracy_m: 6 }),
+  },
+  {
+    name: 'GET /api/farms/:id/boundaries',
+    mod: farmBoundaries,
+    method: 'GET' as const,
+    allow: ['admin', 'supervisor', 'read_only', 'officer'],
+    params: () => ({ id: farmId }),
+  },
+  {
+    name: 'PUT /api/farms/:id/crops',
+    mod: farmCrops,
+    method: 'PUT' as const,
+    allow: ['officer'],
+    params: () => ({ id: farmId }),
+    body: () => ({ season: '2026-main', crops: ['maize'] }),
+  },
+  {
+    name: 'GET /api/farms/geojson',
+    mod: farmsGeojson,
+    method: 'GET' as const,
+    allow: ['admin', 'supervisor'],
+  },
+  {
+    name: 'DELETE /api/farms/:id',
+    mod: farmItem,
+    method: 'DELETE' as const,
+    allow: ['admin'],
+    params: () => ({ id: farmId }),
+  },
+  // B8 (C-8). The officer visited; the admin corrects and removes; everyone in scope reads.
+  {
+    name: 'POST /api/farmers/:id/visits',
+    mod: farmerVisits,
+    method: 'POST' as const,
+    allow: ['officer'],
+    params: () => ({ id: farmerId }),
+    body: () => visitBody(),
+  },
+  {
+    name: 'GET /api/farmers/:id/visits',
+    mod: farmerVisits,
+    method: 'GET' as const,
+    allow: ['admin', 'supervisor', 'read_only', 'officer'],
+    params: () => ({ id: farmerId }),
+  },
+  {
+    name: 'GET /api/visits',
+    mod: visitsList,
+    method: 'GET' as const,
+    allow: ['admin', 'supervisor', 'read_only', 'officer'],
+  },
+  {
+    name: 'GET /api/visits/:id',
+    mod: visitItem,
+    method: 'GET' as const,
+    allow: ['admin', 'supervisor', 'read_only', 'officer'],
+    params: () => ({ id: visitId }),
+  },
+  {
+    name: 'PATCH /api/visits/:id',
+    mod: visitItem,
+    method: 'PATCH' as const,
+    allow: ['admin', 'officer'],
+    params: () => ({ id: visitId }),
+    body: () => ({ topics: ['weeding', 'planting'] }),
+  },
+  {
+    name: 'DELETE /api/visits/:id',
+    mod: visitItem,
+    method: 'DELETE' as const,
+    allow: ['admin'],
+    params: () => ({ id: visitId }),
+  },
+  {
+    name: 'GET /api/visits/:id/chain',
+    mod: visitChain,
+    method: 'GET' as const,
+    allow: ['admin', 'supervisor', 'read_only', 'officer'],
+    params: () => ({ id: visitId }),
+  },
+  {
+    name: 'POST /api/visits/:id/attachments',
+    mod: visitAttachments,
+    method: 'POST' as const,
+    allow: ['officer'],
+    params: () => ({ id: visitId }),
+    body: () => ({
+      id: randomUUID(),
+      kind: 'photo',
+      content_type: 'image/jpeg',
+      byte_size: 1234,
+      captured_at: new Date().toISOString(),
+    }),
+  },
+  {
+    name: 'GET /api/visits/:id/attachments',
+    mod: visitAttachments,
+    method: 'GET' as const,
+    allow: ['admin', 'supervisor', 'read_only', 'officer'],
+    params: () => ({ id: visitId }),
+  },
+  {
+    name: 'POST /api/visits/:id/attachments/:aid/confirm',
+    mod: attachmentConfirm,
+    method: 'POST' as const,
+    allow: ['officer'],
+    params: () => ({ id: visitId, aid: attachmentId }),
+    body: () => ({}),
+  },
+  {
+    name: 'POST /api/visits/:id/attachments/:aid/fail',
+    mod: attachmentFail,
+    method: 'POST' as const,
+    allow: ['officer'],
+    params: () => ({ id: visitId, aid: attachmentId }),
+    body: () => ({}),
+  },
+  {
+    name: 'GET /api/visits/:id/attachments/:aid/link',
+    mod: attachmentLink,
+    method: 'GET' as const,
+    allow: ['admin', 'supervisor', 'read_only', 'officer'],
+    params: () => ({ id: visitId, aid: attachmentId }),
   },
 ];
 
