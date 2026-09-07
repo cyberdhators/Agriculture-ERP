@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 
-import { Wordmark } from '@/components/brand/Wordmark';
 import { useFarmerSession } from '@/lib/farmer-session';
 import { t } from '@/lib/i18n';
 
@@ -23,7 +22,11 @@ export function EntrySpread({ children }: { children: ReactNode }) {
   return (
     <div className={styles.entryPage}>
       <header className={styles.entryHead}>
-        <Wordmark href="/farmer" size={30} />
+        <img
+          src="/brand/agrione-logo.jpeg"
+          alt="AgriOne — Digital Agriculture Marketplace"
+          className={styles.entryLogo}
+        />
         <div className={styles.entryLang}>
           <LanguageSwitch />
         </div>
