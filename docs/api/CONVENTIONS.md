@@ -365,6 +365,9 @@ change.
 | `visit.attachment_arrived`     |
 | `visit.attachment_failed`      |
 | `visit.attachment_link_issued` |
+| `farm.repointed`               |
+| `visit.repointed`              |
+| `report.exported`              |
 
 `before` and `after` hold **changed fields only**, never whole rows, and never a
 password, token, authentication identifier, national id, phone, email, given
@@ -465,6 +468,12 @@ These are also exact.
 | Farmer captured at: not a date and time | Record when the registration was captured as a date and time.                                   |
 | Farm captured at: not a date and time   | Record when the farm was captured as a date and time.                                           |
 | Boundary: identifier malformed          | The boundary identifier is not in the expected form.                                            |
+| Report cut-off: not a date              | Give the data cut-off as a date: YYYY-MM-DD.                                                    |
+| Report cut-off: in the future           | The data cut-off cannot be after today.                                                         |
+| Report period: malformed                | Give the period start and end as full dates and times with their offset.                        |
+| Report period: ends before it starts    | The period ends before it starts.                                                               |
+| Report season: malformed                | Give the season as a year and a name: 2026-main or 2026-second.                                 |
+| Report type: unknown                    | Choose a report: summary or farmers.                                                            |
 
 The key beside each reason is the field name, per section 4.1. An unrecognised
 field named `nickname` therefore produces `{ "nickname": "This field is not
@@ -1016,3 +1025,46 @@ device removes it and everything under it, keeping nothing.
 
 **Captured-at (C-9.10).** `captured_at` on farmer and farm: the device's
 moment, optional, shown beside `created_at`; null reads "not recorded".
+
+---
+
+## 17. REPORTS
+
+`GET /api/reports/summary`, `POST|GET /api/reports/exports` (C-10, unit B10).
+
+**One builder, two callers (C-10.9).** The dashboard figure and the export run
+the same SQL from the same filters — `cutoff` (a date; every "as of" count is
+bounded by the server's moment at the end of that day), `from`/`to` (the period
+for reach and visits, by the server's moment of receipt), `season` (the land
+figures'; the latest present if omitted), `state`, `county`, `payam`
+(narrowing within scope, never beyond it).
+
+**What the figures are.** `farmers` by status — verified, pending, rejected,
+merged — never folded (C-10.3). `reach.farmers_reached`: distinct verified
+farmers with at least one visit in the period, computed from visits, never
+summed from the monthly view (C-10.2, C-10.7); `visits` beside it;
+`other_farmers_visited` for the rest. `land`: mapped farms and hectares of
+current, usable boundaries in the season, read through the farmer, located by
+the **farm's** payam; people are located by the farmer's (C-10.4's note).
+`by`: sex, age band, state, county, payam — verified and reached — and crop,
+a farmer once per crop with at least one farm declaring it (C-10.6). `notes`
+carry the three sentences a report must show (verified-only, age approximate,
+crop rows do not sum).
+
+**Scope (C-10.10).** Officer: caseload. Supervisor and read_only: state.
+Administrator: all.
+
+**Exports (C-10.8).** `POST /api/reports/exports` with `report_type`
+(`summary` or `farmers`) and `filters` runs the report and logs it in
+`report_export`: who, the SQL as it ran with its parameters inlined, the
+filters, the scope, the cut-off, the row count; audited as `report.exported`.
+Administrators and supervisors; a read-only user reads the dashboard and
+creates no record (C-3.9). The farmer list carries farmer numbers only, never
+a name, phone or national ID (C-10.11). `GET /api/reports/exports` is the
+log, newest first: an administrator sees all, a supervisor their state's.
+
+**A merge moves the land and the visits.** Since B10 a merge repoints the
+source's farms and visits to the survivor inside the merge transaction, one
+audit entry per moved record (`farm.repointed`, `visit.repointed`), and the
+merge's own entry names both payams when they differ. A farm keeps its own
+payam: that is where the plot is.

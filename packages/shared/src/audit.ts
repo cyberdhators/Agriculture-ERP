@@ -41,6 +41,7 @@ export const AUDIT_ACTIONS = [
   'farm.boundary_superseded',
   'farm.crops_declared',
   'farm.soft_deleted',
+  'farm.repointed',
   'visit.recorded',
   'visit.corrected',
   'visit.soft_deleted',
@@ -50,6 +51,8 @@ export const AUDIT_ACTIONS = [
   // The one read that is audited: issuing an expiring link to a farmer's
   // photograph produces an artefact that outlives the request (B8, owner).
   'visit.attachment_link_issued',
+  'visit.repointed',
+  'report.exported',
 ] as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];

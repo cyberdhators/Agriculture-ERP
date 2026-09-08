@@ -175,6 +175,12 @@ export async function sweep(prisma: PrismaClient): Promise<void> {
      SELECT auth_user_id FROM public."officer" WHERE name LIKE '${TEST_PREFIX}%'`,
   );
   for (const row of rows) await deleteAccount(row.auth_user_id);
+  // B10: export log rows reference the staff users who ran them. The log is
+  // append-only in the application; the sweep is the owner removing rows an
+  // invented user made.
+  await prisma.$executeRawUnsafe(
+    `DELETE FROM public.report_export WHERE exported_by IN (SELECT id FROM public."user" WHERE name LIKE '${TEST_PREFIX}%')`,
+  );
   // B8: attachments hang off visits; visits off farmers and officers, and off
   // each other (follow_up_of, NO ACTION, checked at statement end — one DELETE
   // takes a whole chain).

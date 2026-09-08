@@ -1011,6 +1011,25 @@ must do (CONVENTIONS §16; data-model §3's table).
 **The stated limit carried forward.** The upload grant's provider life is two
 hours against our fifteen minutes (DECISIONS, B8). Nothing in B9 changes it.
 
+## B10 — DASHBOARDS, REPORTING AND EXPORT (2026-09-08)
+
+**What exists.** Migration 20: `report_export`; the merge repoints farms and
+visits to the survivor (a one-off backfill for existing merges, system
+audited); the visit evidence trigger admits that one move; `farm_active`,
+`farm_mapped_v`, `area_totals_v` and `visit_active` read through the farmer.
+One reporting builder; `GET /api/reports/summary` for every role in scope;
+`POST|GET /api/reports/exports` for administrators and supervisors; farmer
+lists by number only. Three audit keys. CONVENTIONS §17;
+`docs/data-model-extension.md` §9 corrected. Decisions in DECISIONS, B10.
+
+**What B10 does not build.** The PDF and the screens: the web portal renders
+the summary and the export data (Lane 2). The SMS tile (needs (n)) and the
+directory freshness tile (needs a merged route writing `last_verified_at`).
+
+**The backend bar one.** With B10, every backend unit from B2 to B10 is built
+and merged or open. B11 is the production drill; its checklist is below and
+is the next thing to read.
+
 ## B11 CHECKLIST — WHAT A FRESH PRODUCTION PROJECT MUST BE GIVEN BY HAND
 
 Migrations carry the schema, RLS and views automatically. These do not travel:
@@ -1025,6 +1044,32 @@ Migrations carry the schema, RLS and views automatically. These do not travel:
 - The private attachment bucket (B8): `pnpm storage:buckets` once against the
   production project, with `.env.local` pointing at it. Idempotent; it refuses
   a bucket that exists and is public rather than accepting it.
+- The location seed (B2): `pnpm locations:reseed` against production, from the
+  bundle, before any farmer can be registered — a farmer needs a payam that
+  exists. Staging got it by the reseed; production has never been seeded.
+- The directories and library seed (P1): `pnpm directories:seed`, if CORWADO's
+  real directory is not loaded another way. Staging's is invented.
+- Staff accounts: at least one administrator, created by hand through the
+  first-admin path (B3), before anything else can be done; every other account
+  through the routes.
+- Vercel: every environment variable in `.env.example`, with production values
+  — `DATABASE_URL` (transaction pooler), `DIRECT_URL`, the Supabase URL and
+  keys, the Sentry DSN, `SENTRY_ENVIRONMENT=production`. GitHub Actions: the
+  five `STAGING_*` secrets stay staging's; production is never a CI target.
+- The CI concurrency group and the sixty-minute timeout are in the workflow
+  and travel; the advisory lock is in the tests and travels. Nothing to do.
+- Supabase Auth: self-signup disabled (B3); the officer auth domain as
+  configured for staging; password policy as staging's.
+- Row-level security is enabled by every migration; there are no policies by
+  design. Nothing to do, but the advisor will list it — that is the intended
+  deny-by-default state (memory: never add a permissive policy).
+- Storage: the bucket above is the only one. Public buckets: none, ever.
+- Backups: the Supabase plan's point-in-time recovery (open question), and
+  B11's own restore drill — restore staging from a production backup into a
+  scratch project and run the suite against it — before real farmer data
+  exists, not after.
+- Real farmer data exists in production only (CLAUDE.md §4). Staging keeps its
+  invented data; nothing real is ever loaded there "to try".
 
 ## DEFECT — AN AUTH SERVICE OUTAGE READS AS "SIGN IN TO CONTINUE" (found by B5, owned by B3)
 

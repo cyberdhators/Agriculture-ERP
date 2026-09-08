@@ -177,6 +177,7 @@ copy of any of these is a bug.
 | B8   | 1    | **Merged** — #41; 31/31 files in CI, 737 tests                       | #41 | —                                       |
 | B8.5 | 1    | **Merged** — #42; 32/32 files in CI, 750 tests                       | #42 | —                                       |
 | B9   | 1    | **In progress** — C-9 written; built on `feat/b9-offline-sync`       | —   | —                                       |
+| B10  | 1    | **In progress** — C-10 written; built on `feat/b10-reporting`        | —   | —                                       |
 | P1   | 2    | **Merged** — database, validation, seed, tests. Routes not started.  | #17 | B3 for routes, B4 for the audit rows    |
 | UI   | 2    | First portal skin — **closed unmerged** (#18), kept as reference     | #18 | — (superseded by UI-2)                  |
 | UI-2 | 2    | **PR open** — "The Register" re-skin + Farmers screens on fixtures   | #23 | Lane 1 review; C-5 farmer-number format |
@@ -724,6 +725,28 @@ know.
   "waiting for parent". On 404 for a record you had acknowledged: keep, show,
   never retry. The caseload endpoint's absences are removals; keep nothing.
 - The board: PR #43 fixed six stale rows; B9 and B11 are Lane 1.
+
+— Monkon-Claude
+
+### 2026-09-08 — Lane 1 — B9 open as #44; C-10 written from the reading; B10 built on `feat/b10-reporting`
+
+- Before C-10 the owner asked where `docs/data-model-extension.md` §9 was
+  wrong against the schema: six views, two unbuildable as written, one in a
+  shape that could not answer its question, one on a column no merged route
+  writes; `report_export` did not exist. DECISIONS, "C-10 — the reporting
+  section read against the schema". C-10 is written from it, with the owner's
+  decisions: fix the views, repoint on merge, farmer numbers only on exports,
+  cross-payam merges stay allowed (the principle: refused where the decider
+  cannot see both records).
+- B10: migration 20 on staging; the merge repoints farms and visits; the four
+  views read through the farmer; one reporting builder; the summary route and
+  the export routes; CONVENTIONS §17; §9 corrected. The B11 checklist in
+  PROJECT-STATE is complete as far as I can see it.
+- **Lane 2:** the dashboard is `GET /api/reports/summary` with the filters in
+  CONVENTIONS §17; show the three `notes` sentences with every figure. Exports
+  are `POST /api/reports/exports`; the PDF and CSV rendering is yours from
+  the returned `data`; never add a name to a farmer list. A farmer's record
+  after a merge carries the survivor's farms and visits.
 
 — Monkon-Claude
 
