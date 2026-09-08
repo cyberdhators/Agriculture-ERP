@@ -164,20 +164,21 @@ copy of any of these is a bug.
 
 ## STATUS BOARD
 
-| Unit | Lane | Status                                                               | PR  | Blocked on                              |
-| ---- | ---- | -------------------------------------------------------------------- | --- | --------------------------------------- |
-| B2   | 1    | **Merged** — #15                                                     | #15 | —                                       |
-| B3   | 1    | **Merged**                                                           | #20 | —                                       |
-| B4   | 1    | **Merged**                                                           | #24 | —                                       |
-| B5   | 1    | **Merged** — #32; C-5.13 and C-5.4 proven by run 5, locally          | #32 | —                                       |
-| B5.5 | 1    | **Merged** — #33; first CI database run 23/23                        | #33 | —                                       |
-| B6   | 1    | **Merged** — #34; 544/544 locally, 27/27 files in CI                 | #34 | —                                       |
-| B6.5 | 1    | **Merged** #39 — sign-in outage is 503 `auth_unavailable`, never 401 | —   | —                                       |
-| B7   | 1    | **Merged** — #38; 30/30 files in CI, four runs on the rebased branch | #38 | —                                       |
-| B8   | 1    | **In progress** — C-8 written; built on `feat/b8-extension-visits`   | —   | —                                       |
-| P1   | 2    | **Merged** — database, validation, seed, tests. Routes not started.  | #17 | B3 for routes, B4 for the audit rows    |
-| UI   | 2    | First portal skin — **closed unmerged** (#18), kept as reference     | #18 | — (superseded by UI-2)                  |
-| UI-2 | 2    | **PR open** — "The Register" re-skin + Farmers screens on fixtures   | #23 | Lane 1 review; C-5 farmer-number format |
+| Unit | Lane | Status                                                                     | PR  | Blocked on                              |
+| ---- | ---- | -------------------------------------------------------------------------- | --- | --------------------------------------- |
+| B2   | 1    | **Merged** — #15                                                           | #15 | —                                       |
+| B3   | 1    | **Merged**                                                                 | #20 | —                                       |
+| B4   | 1    | **Merged**                                                                 | #24 | —                                       |
+| B5   | 1    | **Merged** — #32; C-5.13 and C-5.4 proven by run 5, locally                | #32 | —                                       |
+| B5.5 | 1    | **Merged** — #33; first CI database run 23/23                              | #33 | —                                       |
+| B6   | 1    | **Merged** — #34; 544/544 locally, 27/27 files in CI                       | #34 | —                                       |
+| B6.5 | 1    | **Merged** #39 — sign-in outage is 503 `auth_unavailable`, never 401       | —   | —                                       |
+| B7   | 1    | **Merged** — #38; 30/30 files in CI, four runs on the rebased branch       | #38 | —                                       |
+| B8   | 1    | **Merged** — #41; 31/31 files in CI, 737 tests                             | #41 | —                                       |
+| B8.5 | 1    | **In progress** — C-8R written; built on `feat/b8-5-caseload-reassignment` | —   | —                                       |
+| P1   | 2    | **Merged** — database, validation, seed, tests. Routes not started.        | #17 | B3 for routes, B4 for the audit rows    |
+| UI   | 2    | First portal skin — **closed unmerged** (#18), kept as reference           | #18 | — (superseded by UI-2)                  |
+| UI-2 | 2    | **PR open** — "The Register" re-skin + Farmers screens on fixtures         | #23 | Lane 1 review; C-5 farmer-number format |
 
 Lane 1: please add your rows as you go. Lane 2 filled in what it could read from the open PRs.
 
@@ -675,6 +676,29 @@ know.
   (mirrors C-7.8 by my decision).
 - Locally 19/19 passed, 18 in one run and the last alone after a pooler
   stall of the recorded shape; CI is the arbiter.
+
+— Monkon-Claude
+
+### 2026-09-07 — Lane 1 — B8 merged; B8.5, caseload reassignment, built on `feat/b8-5-caseload-reassignment`
+
+- #41 merged after its rebased run went green (31 files, 737 tests). Before
+  the merge, at the owner's instruction: the read link's issuing is audited
+  (`visit.attachment_link_issued`, migration 16, the one audited read);
+  position visibility recorded as the owner's decision with the C-5.8
+  reasoning; the two-hour token against the fifteen-minute row recorded as a
+  stated limit; the pooler stall's third unit in the incident record.
+- B8.5 as C-8R (its own letter, so it never collides with C-8.5). Migration
+  17 on staging: `caseload_officer_id` on farmer, backfilled, a trigger
+  defaulting it, both farmer views recreated, one audit key. One route: `POST
+/api/farmers/:id/reassign` (administrator; officer active and in the
+  farmer's payam; same officer refused). Every caseload check reads the
+  pointer. Setting an officer inactive returns `unassigned_farmers`.
+- **Lane 2:** a farmer now carries `caseload_officer_id` beside
+  `registered_by`; show the first as "officer" and the second as history.
+  The reassign action is administrator-only; the deactivation response's
+  `unassigned_farmers` is the number to put in front of the administrator.
+- Attachments still check the visit's own officer: a reassigned farmer's
+  waiting attachments are completable only by the phone that took them.
 
 — Monkon-Claude
 

@@ -608,6 +608,54 @@ the row fails.
 
 ---
 
+## C-8R — CASELOAD REASSIGNMENT
+
+Deliverable: (c) farmer registration and profiling. Unit B8.5.
+
+Source: `docs/UNITS.md`, B8.5, decided 2026-09-05. These criteria restate a
+decision already made, written by the assistant on the owner's instruction
+(2026-09-07). The section is lettered R rather than numbered 8.5 because
+"C-8.5" is already the criterion about device and server moments in C-8, and
+two things with the same name in a document a session reads without asking
+is a known way to be bitten.
+
+C-8R.1 A farmer carries a caseload officer, set to the registering officer at
+       creation. The registering officer never changes (C-5.9).
+C-8R.2 An administrator reassigns a farmer to another officer, who is active
+       and in the farmer's payam. Nobody else can. Reassigning to the officer
+       who already holds the farmer is refused, so the log never records a
+       move that was not one.
+C-8R.3 After reassignment the new officer reads, resubmits, maps and visits
+       the farmer; the old officer is told not found on all of it. When an
+       administrator sets an officer inactive, the response says how many
+       farmers are now without a working officer; nothing is refused.
+C-8R.4 Farms, boundaries, crops and visits follow the farmer without being
+       touched: they reach the caseload through the farmer.
+C-8R.5 Reassignment writes an audit entry carrying the old and new officer, in
+       the same transaction.
+C-8R.6 A farmer's response shows both officers.
+C-8R.7 Every caseload check in the system reads the caseload officer. One
+       helper, not five copies.
+
+### Notes for the builder
+
+**The new officer's payam** is registration's rule for registration's reason:
+an officer who is not where the farmer is cannot visit them. Widening to the
+county is one condition in one query, to be made if CORWADO says payam
+coverage is thinner than assumed — a field fact we do not have.
+
+**Attachments** keep checking the visit's own officer, not the caseload,
+because an attachment is uploaded by the phone that took it. In plain terms:
+a reassigned farmer's waiting attachments are completable only by the phone
+that took them, and if that officer has left, those attachments never
+arrive. The visit stands without them, which is what C-8.6 is for.
+
+**The national ID** (C-5.8) goes to the caseload officer. C-5.8 said "the
+officer who registered" because that officer did the work; after a
+reassignment the new officer does it.
+
+---
+
 ## C-13 — DIRECTORIES AND LEARNING LIBRARY
 
 **Deliverables (i), (j), (k) and (m). Unit P1.**

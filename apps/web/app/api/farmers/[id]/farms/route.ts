@@ -1,7 +1,7 @@
 import { createFarmSchema } from '@agri-erp/shared';
 import { audited, writeAudit } from '../../../../../lib/api/audit';
 import { conflict, forbidden } from '../../../../../lib/api/errors';
-import { loadVisible } from '../../../../../lib/api/farmers';
+import { inCaseloadOf, loadVisible } from '../../../../../lib/api/farmers';
 import {
   FARM_COLUMNS,
   FARM_FROM,
@@ -46,7 +46,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       requireWriter(auth);
       // Caseload scope: a farmer outside it is a 404 (C-7.6).
       const farmer = await loadVisible(prisma, params.id ?? '', auth);
-      if (auth.scope.kind !== 'caseload' || farmer.registered_by !== auth.principal.id) {
+      if (!inCaseloadOf(auth, farmer)) {
         throw forbidden();
       }
       const [existing] = await prisma.$queryRawUnsafe<{ id: string }[]>(

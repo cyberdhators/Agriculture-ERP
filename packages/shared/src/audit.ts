@@ -35,6 +35,7 @@ export const AUDIT_ACTIONS = [
   'farmer.rejected',
   'farmer.merged',
   'farmer.resubmitted',
+  'farmer.reassigned',
   'farm.created',
   'farm.boundary_added',
   'farm.boundary_superseded',

@@ -51,8 +51,8 @@ export interface VisitRow {
   created_at: Date;
   updated_at: Date;
   deleted_at: Date | null;
-  /** The farmer's registering officer: the caseload key (C-8.9). */
-  registered_by: string | null;
+  /** The farmer's caseload officer: the caseload key (C-8.9, C-8R). */
+  caseload_officer_id: string | null;
 }
 
 export interface AttachmentRow {
@@ -81,7 +81,7 @@ export const VISIT_COLUMNS = `
   v.gps_accuracy_m::text AS gps_accuracy_m,
   v.observation, v.advice, v.topics::text[] AS topics, v.duration_minutes, v.attendee_count,
   v.follow_up_of, v.visited_at, v.received_at, v.created_at, v.updated_at, v.deleted_at,
-  fr.registered_by`;
+  fr.caseload_officer_id`;
 export const VISIT_FROM = `FROM public.visit_active v JOIN public.farmer fr ON fr.id = v.farmer_id`;
 
 export const ATTACHMENT_COLUMNS = `
@@ -91,7 +91,7 @@ export const ATTACHMENT_COLUMNS = `
 
 type Db = { $queryRawUnsafe: Prisma.TransactionClient['$queryRawUnsafe'] };
 
-/** Caseload: the farmer's registering officer. State: the visit's state. Admin: all (C-8.9). */
+/** Caseload: the farmer's caseload officer. State: the visit's state. Admin: all (C-8.9). */
 export function visitScopeClause(auth: Authenticated, params: unknown[]): string[] {
   if (auth.scope.kind === 'state') {
     params.push(auth.scope.stateId);
@@ -99,7 +99,7 @@ export function visitScopeClause(auth: Authenticated, params: unknown[]): string
   }
   if (auth.scope.kind === 'caseload') {
     params.push(auth.scope.officerId);
-    return [`fr.registered_by = $${params.length}::uuid`];
+    return [`fr.caseload_officer_id = $${params.length}::uuid`];
   }
   return [];
 }

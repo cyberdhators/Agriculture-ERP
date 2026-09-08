@@ -847,7 +847,9 @@ GitHub rather than copied. Grouped by who closes it.
     administrator route to reassign, with an audit action and a rule for who
     may do it; CONVENTIONS and the matrix. About a day. **Decided
     2026-09-05: unit B8.5, between B8 and B9, administrator only, widened on
-    request — `docs/UNITS.md`.**
+    request — `docs/UNITS.md`. Built 2026-09-07 as C-8R (migration 17,
+    `POST /api/farmers/:id/reassign`, the deactivation response's
+    `unassigned_farmers`); the hole is closed.**
 
 **Lane 1 owes, in a unit or as housekeeping:**
 
