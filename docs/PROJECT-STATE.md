@@ -979,6 +979,28 @@ decision, reversible in one line.
 composite keys; the re-pointing migration gains three more columns, as farm
 did, and the reseed's dependant check names `visit`.
 
+## B9 — OFFLINE SYNCHRONISATION, THE SERVER SIDE (2026-09-08)
+
+**What exists.** Migration 18: the boundary's id is the client's (no server
+default), `captured_at` on farmer and farm, an `updated_at` trigger on the
+three synced parents, indexes for the download filter, the SELECT * views
+recreated. True idempotency on farmer, farm, boundary and visit creates (200
+with the record when the body matches; 409 "with different details"). The
+device header, read once by the wrapper and carried to every audit write
+through a request context. Retry-After on 500, 503 and the not-yet 409.
+`updated_since` on the farmer, farm and visit lists; `GET /api/farms`; `GET
+/api/sync/caseload`. `packages/shared/src/sync.ts` — the seven outcomes with
+sentences and actions, the header, the entities. CONVENTIONS §16;
+`docs/data-model.md` §3 rewritten to match. Decisions in DECISIONS, B9.
+
+**What B9 does not build.** The officer app. B9 is what the app is built
+against; the app's queue, its parent-first hold and its handling of the
+seven outcomes are the app's, and the contract now says exactly what they
+must do (CONVENTIONS §16; data-model §3's table).
+
+**The stated limit carried forward.** The upload grant's provider life is two
+hours against our fifteen minutes (DECISIONS, B8). Nothing in B9 changes it.
+
 ## B11 CHECKLIST — WHAT A FRESH PRODUCTION PROJECT MUST BE GIVEN BY HAND
 
 Migrations carry the schema, RLS and views automatically. These do not travel:

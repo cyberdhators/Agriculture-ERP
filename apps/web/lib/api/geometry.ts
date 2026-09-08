@@ -68,6 +68,8 @@ export function isClosed(polygon: GeoJsonPolygon): boolean {
 export async function insertBoundary(
   tx: AuditTx,
   input: {
+    /** The client's id (C-9.1): a retry is the same boundary, never a second one. */
+    id: string;
     farmId: string;
     season: string;
     polygon: GeoJsonPolygon;
@@ -106,8 +108,8 @@ export async function insertBoundary(
        ),
        b AS (
          INSERT INTO public.farm_boundary
-           (farm_id, season, boundary, centroid, area_ha, point_count, gps_accuracy_m, accuracy_flag, mapped_by, is_current)
-         SELECT $1::uuid, $2, g.geog,
+           (id, farm_id, season, boundary, centroid, area_ha, point_count, gps_accuracy_m, accuracy_flag, mapped_by, is_current)
+         SELECT $8::uuid, $1::uuid, $2, g.geog,
                 extensions.ST_Centroid(g.geog),
                 round((extensions.ST_Area(g.geog) / 10000)::numeric, 4),
                 $4, $5, $6::public.accuracy_flag, $7::uuid, true
@@ -122,11 +124,14 @@ export async function insertBoundary(
       input.gpsAccuracyM,
       grade,
       input.mappedBy,
+      input.id,
     );
   } catch (failure) {
-    // 23505 on this insert can only be the partial unique index
-    // (farm_id, season) WHERE is_current: the race the index exists to lose.
-    // Prisma's message names the key, not the index, so the code is matched.
+    // 23505 on this insert is one of two things: the primary key — the same
+    // client id arrived twice at once, which the route's read-before-write
+    // did not see — or the partial unique index (farm_id, season) WHERE
+    // is_current, the race the index exists to lose. Both are "recorded at
+    // the same moment; load and compare"; the sentence serves both.
     const meta =
       failure instanceof Prisma.PrismaClientKnownRequestError
         ? (failure.meta as { code?: unknown } | undefined)
@@ -167,4 +172,30 @@ export async function boundaryHistory(
      WHERE b.farm_id = $1::uuid ORDER BY b.season DESC, b.mapped_at DESC`,
     farmId,
   );
+}
+
+/**
+ * C-9.2: does a stored boundary describe the ring, season and accuracy the
+ * client sent? Geometry compared by PostGIS after the same winding
+ * normalisation the insert applies, so the direction walked does not matter.
+ */
+export async function boundaryMatches(
+  db: { $queryRawUnsafe: AuditTx['$queryRawUnsafe'] },
+  boundaryId: string,
+  input: { farmId: string; season: string; polygon: GeoJsonPolygon; gpsAccuracyM: number },
+): Promise<boolean> {
+  const [row] = await db.$queryRawUnsafe<{ same: boolean }[]>(
+    `SELECT b.farm_id = $2::uuid AND b.season = $3 AND b.gps_accuracy_m = $5
+            AND extensions.ST_Equals(
+                  b.boundary::extensions.geometry,
+                  extensions.ST_ForcePolygonCCW(extensions.ST_SetSRID(extensions.ST_GeomFromGeoJSON($4), 4326))
+                ) AS same
+     FROM public.farm_boundary b WHERE b.id = $1::uuid`,
+    boundaryId,
+    input.farmId,
+    input.season,
+    JSON.stringify(input.polygon),
+    input.gpsAccuracyM,
+  );
+  return row?.same === true;
 }

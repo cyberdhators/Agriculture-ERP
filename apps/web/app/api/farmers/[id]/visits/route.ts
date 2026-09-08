@@ -2,14 +2,17 @@ import { recordVisitSchema } from '@agri-erp/shared';
 import { audited, writeAudit } from '../../../../../lib/api/audit';
 import { conflict, forbidden } from '../../../../../lib/api/errors';
 import { inCaseloadOf, loadVisible } from '../../../../../lib/api/farmers';
-import { created, defineRoutes } from '../../../../../lib/api/route';
+import { created, defineRoutes, ok } from '../../../../../lib/api/route';
 import { requireWriter } from '../../../../../lib/api/scope';
 import {
+  attachmentsOf,
   insertVisit,
+  loadVisibleVisit,
   pageVisits,
   parseVisitFilter,
   presentVisit,
   visitAuditFields,
+  visitMatches,
 } from '../../../../../lib/api/visits';
 import { prisma } from '../../../../../lib/db';
 
@@ -38,11 +41,23 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       if (!inCaseloadOf(auth, farmer)) {
         throw forbidden();
       }
+      // C-9.2: a retry of a visit that landed is 200 with the visit; the same
+      // id wearing different details is a conflict.
       const [existing] = await prisma.$queryRawUnsafe<{ id: string }[]>(
         'SELECT id FROM public.visit WHERE id = $1::uuid',
         body.id,
       );
-      if (existing) throw conflict('visit_already_exists');
+      if (existing) {
+        const stored = await loadVisibleVisit(prisma, body.id, auth).catch(() => null);
+        if (
+          stored &&
+          stored.farmer_id === farmer.id &&
+          visitMatches(body, stored, auth.principal.id)
+        ) {
+          return ok(presentVisit(stored, await attachmentsOf(prisma, [stored.id]), auth));
+        }
+        throw conflict('visit_already_exists');
+      }
 
       const row = await audited(prisma, async (tx) => {
         const visit = await insertVisit(tx, { body, farmer, officerId: auth.principal.id });

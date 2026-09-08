@@ -308,16 +308,34 @@ run('the record (C-8.1, C-8.2, C-8.4, C-8.5)', () => {
     }
   });
 
-  it('the same visit id twice is 409, and a different farmer’s visit id is 409 too: the id is the record', async () => {
+  it('the same visit sent twice is 200 with the visit, once; the same id with different details is 409 (C-9.2)', async () => {
     const farmerId = await registerFarmer(officerA);
-    const v = await recordVisit(officerA, farmerId);
+    const sent = visitBody();
+    const first = await checked(farmerVisits, 'POST', {
+      as: officerA,
+      params: { id: farmerId },
+      body: sent,
+    });
+    expect(first.status).toBe(201);
     const again = await checked(farmerVisits, 'POST', {
       as: officerA,
       params: { id: farmerId },
-      body: visitBody({ id: v.id }),
+      body: sent,
     });
-    expect(again.status).toBe(409);
-    expect(errorOf(again).message).toBe(RULE_MESSAGES.visit_already_exists);
+    expect(again.status).toBe(200);
+    expect(data(again).id).toBe(sent.id);
+    const changed = await checked(farmerVisits, 'POST', {
+      as: officerA,
+      params: { id: farmerId },
+      body: { ...sent, advice: `${ADVICE} — and something else` },
+    });
+    expect(changed.status).toBe(409);
+    expect(errorOf(changed).message).toBe(RULE_MESSAGES.visit_already_exists);
+    const [count] = await prisma.$queryRawUnsafe<{ n: number }[]>(
+      `SELECT count(*)::int AS n FROM public.visit WHERE id = $1::uuid`,
+      sent.id,
+    );
+    expect(count?.n).toBe(1);
   });
 });
 

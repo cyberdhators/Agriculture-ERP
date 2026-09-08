@@ -45,6 +45,7 @@ describe('the season shape', () => {
 
 describe('the registration body (C-7.1, C-7.2 structure)', () => {
   const valid = () => ({
+    boundary_id: '11111111-2222-4333-8444-555555555555',
     id: '11111111-2222-4333-8444-555555555555',
     season: '2026-main',
     boundary: square,

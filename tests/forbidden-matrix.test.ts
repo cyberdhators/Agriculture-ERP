@@ -14,6 +14,8 @@ import * as farmBoundaries from '../apps/web/app/api/farms/[id]/boundaries/route
 import * as farmCrops from '../apps/web/app/api/farms/[id]/crops/route';
 import * as farmItem from '../apps/web/app/api/farms/[id]/route';
 import * as farmsGeojson from '../apps/web/app/api/farms/geojson/route';
+import * as farmsList from '../apps/web/app/api/farms/route';
+import * as syncCaseload from '../apps/web/app/api/sync/caseload/route';
 import * as farmerMerge from '../apps/web/app/api/farmers/[id]/merge/route';
 import * as farmerReassign from '../apps/web/app/api/farmers/[id]/reassign/route';
 import * as farmerReject from '../apps/web/app/api/farmers/[id]/reject/route';
@@ -165,6 +167,7 @@ const SQUARE = {
 };
 const farmBody = () => ({
   id: randomUUID(),
+  boundary_id: randomUUID(),
   season: '2026-main',
   boundary: SQUARE,
   gps_accuracy_m: 6,
@@ -388,7 +391,7 @@ const ROUTES = [
     method: 'POST' as const,
     allow: ['officer'],
     params: () => ({ id: farmId }),
-    body: () => ({ season: '2026-second', boundary: SQUARE, gps_accuracy_m: 6 }),
+    body: () => ({ id: randomUUID(), season: '2026-second', boundary: SQUARE, gps_accuracy_m: 6 }),
   },
   {
     name: 'GET /api/farms/:id/boundaries',
@@ -417,6 +420,19 @@ const ROUTES = [
     method: 'DELETE' as const,
     allow: ['admin'],
     params: () => ({ id: farmId }),
+  },
+  // B9 (C-9). The farms list for everyone in scope; the caseload for officers only.
+  {
+    name: 'GET /api/farms',
+    mod: farmsList,
+    method: 'GET' as const,
+    allow: ['admin', 'supervisor', 'read_only', 'officer'],
+  },
+  {
+    name: 'GET /api/sync/caseload',
+    mod: syncCaseload,
+    method: 'GET' as const,
+    allow: ['officer'],
   },
   // B8.5 (C-8R). Only an administrator moves a caseload.
   {

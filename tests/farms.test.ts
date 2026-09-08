@@ -85,6 +85,7 @@ const reversed = (p: typeof SQUARE) => ({
 });
 const farmBody = (overrides: Record<string, unknown> = {}) => ({
   id: randomUUID(),
+  boundary_id: randomUUID(),
   season: '2026-main',
   boundary: SQUARE,
   gps_accuracy_m: 6,
@@ -168,7 +169,7 @@ run('who maps (C-7.6)', () => {
         await checked(farmBoundaries, 'POST', {
           as: admin,
           params: { id: farm.id as string },
-          body: { season: '2026-second', boundary: SQUARE, gps_accuracy_m: 5 },
+          body: { id: randomUUID(), season: '2026-second', boundary: SQUARE, gps_accuracy_m: 5 },
         })
       ).status,
     ).toBe(403);
@@ -184,8 +185,8 @@ run('who maps (C-7.6)', () => {
     // The schema: mapped_by references officer, so an administrator's id is refused by the database itself.
     await expect(
       prisma.$executeRawUnsafe(
-        `INSERT INTO public.farm_boundary (farm_id, season, boundary, centroid, area_ha, point_count, gps_accuracy_m, accuracy_flag, mapped_by, is_current)
-         SELECT $1::uuid, '2027-main', b.boundary, b.centroid, b.area_ha, b.point_count, b.gps_accuracy_m, b.accuracy_flag, $2::uuid, true
+        `INSERT INTO public.farm_boundary (id, farm_id, season, boundary, centroid, area_ha, point_count, gps_accuracy_m, accuracy_flag, mapped_by, is_current)
+         SELECT gen_random_uuid(), $1::uuid, '2027-main', b.boundary, b.centroid, b.area_ha, b.point_count, b.gps_accuracy_m, b.accuracy_flag, $2::uuid, true
          FROM public.farm_boundary b WHERE b.farm_id = $1::uuid LIMIT 1`,
         farm.id,
         admin.id,
@@ -209,7 +210,7 @@ run('who maps (C-7.6)', () => {
         await checked(farmBoundaries, 'POST', {
           as: officerB,
           params: { id: farm.id as string },
-          body: { season: '2026-second', boundary: SQUARE, gps_accuracy_m: 5 },
+          body: { id: randomUUID(), season: '2026-second', boundary: SQUARE, gps_accuracy_m: 5 },
         })
       ).status,
     ).toBe(404);
@@ -310,7 +311,12 @@ run('history and superseding (C-7.5)', () => {
     const r = await checked(farmBoundaries, 'POST', {
       as: officerA,
       params: { id: farm.id as string },
-      body: { season: '2026-main', boundary: reversed(SQUARE), gps_accuracy_m: 12 },
+      body: {
+        id: randomUUID(),
+        season: '2026-main',
+        boundary: reversed(SQUARE),
+        gps_accuracy_m: 12,
+      },
     });
     expect(r.status).toBe(201);
     expect(data(r).superseded).toBeTruthy();
@@ -331,7 +337,7 @@ run('history and superseding (C-7.5)', () => {
         checked(farmBoundaries, 'POST', {
           as: officerA,
           params: { id: farm.id as string },
-          body: { season: '2026-main', boundary: SQUARE, gps_accuracy_m: 5 + i },
+          body: { id: randomUUID(), season: '2026-main', boundary: SQUARE, gps_accuracy_m: 5 + i },
         }),
       ),
     );

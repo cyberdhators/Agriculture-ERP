@@ -274,6 +274,8 @@ export const visitFilterSchema = z.strictObject({
   payam: z.string().trim().min(1).optional(),
   from: isoDateTime(VISIT_MESSAGES.filterDateInvalid).optional(),
   to: isoDateTime(VISIT_MESSAGES.filterDateInvalid).optional(),
+  /** C-9.9: visits whose server moment of last change is after this. */
+  updated_since: isoDateTime(VISIT_MESSAGES.filterDateInvalid).optional(),
   limit: z.string().optional(),
   cursor: z.string().optional(),
 });

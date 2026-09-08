@@ -164,21 +164,22 @@ copy of any of these is a bug.
 
 ## STATUS BOARD
 
-| Unit | Lane | Status                                                                     | PR  | Blocked on                              |
-| ---- | ---- | -------------------------------------------------------------------------- | --- | --------------------------------------- |
-| B2   | 1    | **Merged** — #15                                                           | #15 | —                                       |
-| B3   | 1    | **Merged**                                                                 | #20 | —                                       |
-| B4   | 1    | **Merged**                                                                 | #24 | —                                       |
-| B5   | 1    | **Merged** — #32; C-5.13 and C-5.4 proven by run 5, locally                | #32 | —                                       |
-| B5.5 | 1    | **Merged** — #33; first CI database run 23/23                              | #33 | —                                       |
-| B6   | 1    | **Merged** — #34; 544/544 locally, 27/27 files in CI                       | #34 | —                                       |
-| B6.5 | 1    | **Merged** #39 — sign-in outage is 503 `auth_unavailable`, never 401       | —   | —                                       |
-| B7   | 1    | **Merged** — #38; 30/30 files in CI, four runs on the rebased branch       | #38 | —                                       |
-| B8   | 1    | **Merged** — #41; 31/31 files in CI, 737 tests                             | #41 | —                                       |
-| B8.5 | 1    | **In progress** — C-8R written; built on `feat/b8-5-caseload-reassignment` | —   | —                                       |
-| P1   | 2    | **Merged** — database, validation, seed, tests. Routes not started.        | #17 | B3 for routes, B4 for the audit rows    |
-| UI   | 2    | First portal skin — **closed unmerged** (#18), kept as reference           | #18 | — (superseded by UI-2)                  |
-| UI-2 | 2    | **PR open** — "The Register" re-skin + Farmers screens on fixtures         | #23 | Lane 1 review; C-5 farmer-number format |
+| Unit | Lane | Status                                                               | PR  | Blocked on                              |
+| ---- | ---- | -------------------------------------------------------------------- | --- | --------------------------------------- |
+| B2   | 1    | **Merged** — #15                                                     | #15 | —                                       |
+| B3   | 1    | **Merged**                                                           | #20 | —                                       |
+| B4   | 1    | **Merged**                                                           | #24 | —                                       |
+| B5   | 1    | **Merged** — #32; C-5.13 and C-5.4 proven by run 5, locally          | #32 | —                                       |
+| B5.5 | 1    | **Merged** — #33; first CI database run 23/23                        | #33 | —                                       |
+| B6   | 1    | **Merged** — #34; 544/544 locally, 27/27 files in CI                 | #34 | —                                       |
+| B6.5 | 1    | **Merged** #39 — sign-in outage is 503 `auth_unavailable`, never 401 | —   | —                                       |
+| B7   | 1    | **Merged** — #38; 30/30 files in CI, four runs on the rebased branch | #38 | —                                       |
+| B8   | 1    | **Merged** — #41; 31/31 files in CI, 737 tests                       | #41 | —                                       |
+| B8.5 | 1    | **Merged** — #42; 32/32 files in CI, 750 tests                       | #42 | —                                       |
+| B9   | 1    | **In progress** — C-9 written; built on `feat/b9-offline-sync`       | —   | —                                       |
+| P1   | 2    | **Merged** — database, validation, seed, tests. Routes not started.  | #17 | B3 for routes, B4 for the audit rows    |
+| UI   | 2    | First portal skin — **closed unmerged** (#18), kept as reference     | #18 | — (superseded by UI-2)                  |
+| UI-2 | 2    | **PR open** — "The Register" re-skin + Farmers screens on fixtures   | #23 | Lane 1 review; C-5 farmer-number format |
 
 Lane 1: please add your rows as you go. Lane 2 filled in what it could read from the open PRs.
 
@@ -699,6 +700,30 @@ know.
   `unassigned_farmers` is the number to put in front of the administrator.
 - Attachments still check the visit's own officer: a reassigned farmer's
   waiting attachments are completable only by the phone that took them.
+
+— Monkon-Claude
+
+### 2026-09-08 — Lane 1 — B8.5 merged; C-9 written from the routes; B9 built on `feat/b9-offline-sync`
+
+- Before C-9 the owner asked where `docs/data-model.md` §3 was wrong against
+  B5–B8.5: eight findings, eight decisions (DECISIONS, "C-9 — eight
+  decisions"). C-9 is written from those, with C-9.15 (the device acts on
+  every code without a follow-up read) and the seven codes checked against it.
+- The seventh silent gate: `audit_event.device_id` existed since B4, nothing
+  sent it, no test asked. Rows since B4 are permanently null. Fixed in B9.
+- B9: migration 18 on staging; true idempotency on every create; the client
+  id on boundaries; the device header on every audit write; Retry-After on
+  the retryable outcomes; `updated_since` on the three lists; `GET /api/farms`;
+  `GET /api/sync/caseload`; `packages/shared/src/sync.ts`; CONVENTIONS §16;
+  data-model §3 corrected.
+- **Lane 2:** the officer app is built against CONVENTIONS §16 and
+  `sync.ts`. Send `x-device-id` on every request. Create bodies now carry
+  `captured_at` (farmer, farm) and `boundary_id` (create-farm) / `id`
+  (add-boundary). A retry is safe: 200 with the record. Read `Retry-After`.
+  Hold children until the parent is acknowledged by id; the server never says
+  "waiting for parent". On 404 for a record you had acknowledged: keep, show,
+  never retry. The caseload endpoint's absences are removals; keep nothing.
+- The board: PR #43 fixed six stale rows; B9 and B11 are Lane 1.
 
 — Monkon-Claude
 

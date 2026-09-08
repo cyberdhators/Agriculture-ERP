@@ -1728,6 +1728,7 @@ checks the pointer.
 application sets both columns at registration; the seed, the reseed and any
 future writer that sets only `registered_by` get the pointer from the
 trigger. The backfill in the migration did the same for every existing row.
+
 ## C-9 — eight decisions from reading the sync contract against the routes (2026-09-08)
 
 The owner asked, before writing C-9, where `docs/data-model.md` §3 was already
@@ -1767,3 +1768,58 @@ the reasoning would otherwise vanish with the old text.
 village and uploaded on Friday in town was registered on Monday. The server's
 moment stays authoritative for reporting (C-8.5's principle); the field's date
 was a fact being discarded and is now kept.
+
+## B9 — decisions in the offline sync unit (2026-09-08)
+
+**Matching is judged by the module that owns the entity, in one place each.**
+`farmerMatches`, `boundaryMatches` (PostGIS `ST_Equals` after the same
+winding normalisation the insert applies, so the direction walked does not
+matter), `visitMatches` (topics as a set, the point by its coordinates), and
+the farm's own three fields plus its first boundary. Each compares the fields
+the client sent after the shared schema's normalisation and nothing the
+server set. A retry from a phone is byte-identical; the comparison exists to
+catch a different record wearing a reused id.
+
+**A matching body outside the caller's scope is still a conflict.** The
+stored record is loaded through the scoped loader; if the caller cannot see
+it, the answer is 409, never the record. Returning another officer's farmer
+because the bodies happened to match would be a read of a stranger's record
+through a write.
+
+**The device travels in an AsyncLocalStorage, not a parameter.** The wrapper
+runs the handler inside a request context carrying the correlation id and the
+validated device id; `writeAudit` reads the device from it unless the caller
+named one. Every route gained the device with no route changing — which is the
+point: the seventh silent gate was a column nothing sent, and a fix that
+depended on every future route remembering to pass it would reopen it.
+
+**A malformed device header is a 400 naming the header as the field.** A
+missing one is a browser and is null. The identifier is opaque: 8 to 64 of
+letters, digits, dots, hyphens, underscores; never the handset's hardware
+identity, which would be a second identifier for a person.
+
+**Retry-After is set from the contract, in one place.** `SYNC_OUTCOME_SPECS`
+holds the seconds; `errors.ts` reads them for 500, 503 and the one 409 that
+means "not yet". A terminal outcome never carries the header, so a device that
+honours it never retries a refusal.
+
+**updated_at is a trigger's job.** No route set it consistently and the
+verification transitions did not set it at all, so an updated-since filter
+would have missed the decisions the phone most needs. One trigger function on
+farmer, farm and visit; every writer, present and future, bumps it.
+
+**The caseload endpoint returns ids, not records, and the server's clock.**
+Ids only, because the lists carry the records and the endpoint's job is
+removal: a record the device holds that is absent has left. `as_of` is the
+server's now, for the device's next `updated_since` — a phone's clock cannot
+be trusted to bound a server-side filter (C-8.5's principle). Visits are
+included although a removed visit is rare, because leaving them out would
+leave a stale visit on a phone with no way to learn it was removed.
+
+**The four "already exists" sentences changed.** They now say "with different
+details", because under true idempotency a 409 never means "you sent this
+twice"; it means the id is wearing a record it should not.
+
+**The boundary's id has no server default any more.** A writer that omits it
+is refused by the database, as farmer, farm and visit already were; a missing
+id is an error, not a silently different row.

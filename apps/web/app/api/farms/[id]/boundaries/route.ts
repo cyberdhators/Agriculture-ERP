@@ -1,9 +1,9 @@
 import { addBoundarySchema } from '@agri-erp/shared';
 import { audited, writeAudit } from '../../../../../lib/api/audit';
-import { forbidden } from '../../../../../lib/api/errors';
+import { conflict, forbidden } from '../../../../../lib/api/errors';
 import { inCaseloadOf } from '../../../../../lib/api/farmers';
 import { loadVisibleFarm, presentBoundary } from '../../../../../lib/api/farms';
-import { boundaryHistory, insertBoundary } from '../../../../../lib/api/geometry';
+import { boundaryHistory, boundaryMatches, insertBoundary } from '../../../../../lib/api/geometry';
 import { created, defineRoutes, ok } from '../../../../../lib/api/route';
 import { requireWriter } from '../../../../../lib/api/scope';
 import { prisma } from '../../../../../lib/db';
@@ -29,8 +29,29 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       requireWriter(auth);
       const farm = await loadVisibleFarm(prisma, params.id ?? '', auth);
       if (!inCaseloadOf(auth, farm)) throw forbidden();
+      // C-9.2: a retry of a re-mapping that landed is 200 with that boundary,
+      // current or since superseded; the same id on another farm or with a
+      // different ring is a conflict — and never a second boundary (C-9.1).
+      const [existing] = await prisma.$queryRawUnsafe<{ id: string }[]>(
+        'SELECT id FROM public.farm_boundary WHERE id = $1::uuid',
+        body.id,
+      );
+      if (existing) {
+        const same = await boundaryMatches(prisma, body.id, {
+          farmId: farm.id,
+          season: body.season,
+          polygon: body.boundary,
+          gpsAccuracyM: body.gps_accuracy_m,
+        });
+        if (!same) throw conflict('boundary_already_exists');
+        const history = await boundaryHistory(prisma, farm.id);
+        const stored = history.find((h) => h.id === body.id);
+        if (!stored) throw conflict('boundary_already_exists');
+        return ok({ ...presentBoundary(stored, auth), superseded: null });
+      }
       const { row, superseded } = await audited(prisma, async (tx) => {
         const result = await insertBoundary(tx, {
+          id: body.id,
           farmId: farm.id,
           season: body.season,
           polygon: body.boundary,

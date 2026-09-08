@@ -123,7 +123,7 @@ crop_declaration
 ```
 sync_record
   id               uuid
-  entity_type      enum farmer | farm | visit_note | ai_question
+  entity_type      enum farmer | farm | farm_boundary | crop_declaration | visit | visit_attachment
   entity_id        uuid
   device_id        text
   officer_id       fk → officer
@@ -236,54 +236,108 @@ here because the designs assume it.
 
 ## 3. DATA FLOW, FIELD TO DONOR REPORT
 
+Corrected 2026-09-08 (unit B9, C-9.13) to state what the routes built in B5
+through B8.5 actually do. The earlier text of this section was written before
+any of them existed; where it disagreed with the code, the code was right and
+this text now follows it. The authoritative statement of the contract is
+`docs/api/CONVENTIONS.md` §16 and `packages/shared/src/sync.ts`; this section
+is the narrative.
+
 The network edge is the only place a record can stall.
 
-**1 · Capture, offline.** Officer registers a farmer or walks a boundary.
-Location lists and validation are already on the device. Inserts farmer, farm
-and boundary points, and a `sync_record` set to waiting. Stored in device
-SQLite. Nothing has left the phone.
+**1 · Capture, offline.** The officer registers a farmer, walks a boundary,
+records a visit, takes a photo. Location lists and the shared validation
+schemas are already on the device, so what the phone accepts the server
+accepts (C-9.12). Every record is created with a client-generated id — farmer,
+farm, boundary, crop declaration, visit, attachment — and the device's moment
+of capture is kept beside it (C-9.10). Nothing has left the phone.
 
-**2 · Queue on device.** Records wait as long as needed. The app bar shows
-offline and the home screen shows the pending count. Retry with backoff when
-signal returns. Retained until acknowledged.
+**2 · Queue on device, parent first.** Records wait as long as needed, and
+they wait in order: a farmer before its farms and visits, a farm before its
+boundaries and crops, an earlier visit before its follow-up, a visit before
+its attachment rows, a row before its bytes, bytes before confirm. A child is
+held until its parent is acknowledged by id — that hold is the device's own
+decision from a local fact, never something the server tells it (C-9.5,
+C-9.15). Retry with backoff when signal returns. Retained until acknowledged.
 
-**3 · Upload and acknowledge.** One transaction per record, idempotent on the
-client uuid. Failure sets a reason code and keeps the local row. Duplicate check
-runs and warns only. Server row created, `audit_event` appended.
+**3 · Upload and acknowledge.** One transaction per record; a server row is
+never partially written; the audit entry is written in the same transaction
+and carries the device's identifier from the request header (C-9.8). A
+retried create whose body matches what was stored is answered 200 with the
+record — true idempotency, not a documented conflict — and 409 only when the
+same id arrives wearing different details (C-9.2). The duplicate check runs
+and warns only. The device removes a record only on acknowledgement by id
+(C-9.3).
 
-**4 · Review and verify.** Supervisor compares against any duplicate and
-decides. Pending past 7 days escalates on the dashboard. A `verification_event`
-is written and `verification_status` set. Reject reason returns to the phone.
-Rejected and merged rows are kept, not deleted.
+**4 · Attachments, separately.** A photo or recording is its own record with
+its own four-step life: declared (the row, with an upload grant for one
+object path), uploading (the phone puts the bytes straight to Storage),
+confirmed (the server checks existence, size and type), or failed (with a
+code). A grant that expired on confirm means re-declare with the same id; a
+device that gives up says so. The visit stands without its attachments
+(C-8.6, C-9.6).
 
-**5 · Report to donors.** Reach figures read a verified-only view and say so on
-screen and in the PDF. Disaggregated by sex, age and payam. `report_export` logs
-the query. No new farmer data, only the export record.
+**5 · Download.** The caseload lists take `updated_since`, the server's
+moment of last change kept current by a trigger for every writer, so the
+device learns verification decisions and their reasons, merges, corrections
+and new records without re-downloading. The caseload endpoint returns the
+ids currently in the officer's caseload with the server's clock; a record
+the device holds that is absent has left the caseload — reassigned, merged
+away or removed — and the device removes it and everything under it, keeping
+nothing (C-9.9).
 
-### Where a record can stall
+**6 · Review and verify.** A supervisor compares against any duplicate and
+decides. Pending past 7 days escalates. A `verification_event` is written and
+`verification_status` set; the reason returns to the phone through the
+download. Rejected and merged rows are kept, not deleted.
 
-Only at the network edge. A failed upload sets `sync_status = failed` with a
-reason code, keeps the local row, and schedules a retry. The server row is never
-partially written.
+**7 · Report to donors.** Reach figures read a verified-only view and say so.
+Disaggregated by sex, age and payam. `report_export` logs the query. No new
+farmer data, only the export record. Coverage counts the server's moment,
+never the device's (C-8.5).
 
-Reason codes: `no_network`, `payload_too_large`, `auth_expired`,
-`server_error`, `conflict`.
+### Where a record can stall, and what the device does
+
+Seven outcomes, each a code with a sentence for the officer and an action
+(C-9.4). The device can act on every one without a follow-up read (C-9.15).
+
+| Outcome              | Server says                                  | Device does                                    |
+| -------------------- | -------------------------------------------- | ---------------------------------------------- |
+| `retry_later`        | no network; 500; 503, with `Retry-After`     | keep, retry after the given seconds            |
+| `sign_in_again`      | 401                                          | re-authenticate; nothing is lost               |
+| `not_yet`            | 409 `attachment_not_arrived`, `Retry-After`  | confirm again after the given seconds          |
+| `waiting_for_parent` | nothing — the device's own hold              | hold until the parent is acknowledged by id    |
+| `refused`            | 400, 413, 422 with the rule's sentence       | stop; show the sentence; the officer corrects  |
+| `left_caseload`      | 404 on a record the device had acknowledged  | stop; keep; show the officer; never retry      |
+| `conflict`           | 409 "with different details"                 | stop; show the officer; compare before resend  |
+
+When a parent is terminally refused, its children are not retryable: they are
+marked stuck with the parent's id and reason, and the officer sees which
+parent and why (C-9.5).
+
+`sync_record` in §1 is the device's bookkeeping for the record states
+(waiting, sending, synced, failed); the attachment lifecycle above is its own
+and is not expressed in those four. The server keeps no sync table: the
+acknowledgement is the response, and the audit log is the record of what
+arrived.
 
 ### Conflicts and duplicates
 
-Records are created with a client-side UUID, so a retried upload is idempotent,
-never a second row. Duplicate detection runs server-side on phone number, and on
-name plus payam, producing a `duplicate_flag`. **It warns the reviewer. It never
-blocks the save.**
+Records are created with a client-side UUID, so a retried upload is the same
+record, answered 200 — never a second row and never a supersession that did
+not happen in the field. A different record wearing a reused id is 409.
+Duplicate detection runs server-side on phone number, and on name plus payam,
+producing a `duplicate_flag` and a `warnings.duplicates` list. **It warns the
+reviewer. It never blocks the save.**
 
-Resolution: `verify_as_new`, `merge_into(target_id)`, `reject(reason)`.
+Resolution: `verify`, `merge_into(target_id)`, `reject(reason_code, note)`.
 
 ### What reaches a donor report
 
 Reporting reads a verified-only view. Pending and rejected rows are counted
-separately and never folded into reach figures. Every export records the query,
-the filters and the data cut-off date, so a number in a PDF can be traced back
-to rows.
+separately and never folded into reach figures. Every export records the
+query, the filters and the data cut-off date, so a number in a PDF can be
+traced back to rows.
 
 ---
 

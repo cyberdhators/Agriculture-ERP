@@ -1,4 +1,4 @@
-import { daysWaiting, formatFarmerNumber, toIso } from '@agri-erp/shared';
+import { type CreateFarmer, daysWaiting, formatFarmerNumber, toIso } from '@agri-erp/shared';
 import { Prisma } from '@prisma/client';
 import { type AuditTx } from './audit';
 import { conflict, notFound } from './errors';
@@ -25,6 +25,8 @@ export interface FarmerRow {
   /** Who works this farmer today: the reassignable pointer (C-8R). registered_by is history. */
   caseload_officer_id: string | null;
   registration_source: string;
+  /** The device's moment (C-9.10); null reads "not recorded". */
+  captured_at: Date | null;
   verification_status: string;
   merged_into: string | null;
   duplicate_flag: boolean;
@@ -45,7 +47,7 @@ export interface FarmerRow {
 export const FARMER_COLUMNS = `
   f.id, f.farmer_number, f.given_name, f.family_name, f.sex::text AS sex, f.year_of_birth,
   f.phone, f.national_id, f.payam_id, f.county_id, f.state_id, f.registered_by, f.caseload_officer_id,
-  f.registration_source::text AS registration_source,
+  f.registration_source::text AS registration_source, f.captured_at,
   f.verification_status::text AS verification_status, f.merged_into,
   f.duplicate_flag, f.duplicate_matches, f.created_at, f.updated_at, f.pending_since,
   r.reason_code AS rejection_reason_code, r.note AS rejection_note, r.decided_at AS rejection_decided_at,
@@ -87,6 +89,7 @@ export function present(row: FarmerRow, auth: Authenticated): Record<string, unk
     registered_by: row.registered_by,
     caseload_officer_id: row.caseload_officer_id,
     registration_source: row.registration_source,
+    captured_at: row.captured_at ? toIso(row.captured_at) : null,
     verification_status: row.verification_status,
     merged_into: row.merged_into,
     duplicate_flag: row.duplicate_flag,
@@ -243,3 +246,32 @@ export const auditFields = (row: FarmerRow): Record<string, unknown> => ({
   duplicate_flag: row.duplicate_flag,
   duplicate_matches: row.duplicate_matches,
 });
+
+/** Two moments compared as instants; null and undefined are the same "not given". */
+export const sameInstant = (a: string | null | undefined, b: Date | string | null | undefined) => {
+  if (a == null && b == null) return true;
+  if (a == null || b == null) return false;
+  return new Date(a).getTime() === new Date(b).getTime();
+};
+
+/**
+ * C-9.2: does a retried registration describe the record already stored? The
+ * fields the client sent, after the schema's normalisation, against what was
+ * stored; nothing the server set. A retry from a phone is the same request
+ * byte for byte; this exists to catch a different record wearing a reused id.
+ */
+export function farmerMatches(body: CreateFarmer, row: FarmerRow, registeredBy: string): boolean {
+  return (
+    row.given_name === body.given_name &&
+    row.family_name === body.family_name &&
+    row.sex === body.sex &&
+    row.year_of_birth === body.year_of_birth &&
+    row.phone === body.phone &&
+    (row.national_id ?? null) === (body.national_id ?? null) &&
+    row.payam_id === body.payam_id &&
+    row.registered_by === registeredBy &&
+    row.consent_text_version === body.consent?.text_version &&
+    row.consent_language === body.consent?.language &&
+    sameInstant(body.captured_at, row.captured_at)
+  );
+}

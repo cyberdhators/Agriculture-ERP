@@ -12,6 +12,8 @@ export interface FarmRow {
   state_id: string;
   season: string;
   created_by: string;
+  /** The device's moment (C-9.10); null reads "not recorded". */
+  captured_at: Date | null;
   created_at: Date;
   updated_at: Date;
   /** The farmer's caseload officer: the caseload key (C-7.6, C-8R). */
@@ -25,7 +27,7 @@ export interface CropRow {
 }
 
 export const FARM_COLUMNS = `
-  f.id, f.farmer_id, f.payam_id, f.county_id, f.state_id, f.season, f.created_by,
+  f.id, f.farmer_id, f.payam_id, f.county_id, f.state_id, f.season, f.created_by, f.captured_at,
   f.created_at, f.updated_at, fr.caseload_officer_id`;
 export const FARM_FROM = `FROM public.farm_active f JOIN public.farmer fr ON fr.id = f.farmer_id`;
 
@@ -93,6 +95,7 @@ export function presentFarm(
     state_id: f.state_id,
     season: f.season,
     created_by: f.created_by,
+    captured_at: f.captured_at ? toIso(f.captured_at) : null,
     created_at: toIso(f.created_at),
     updated_at: toIso(f.updated_at),
     boundaries: boundaries.filter((b) => b.farm_id === f.id).map((b) => presentBoundary(b, auth)),

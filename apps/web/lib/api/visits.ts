@@ -374,6 +374,8 @@ export async function pageVisits(
   if (filter.payam) add((i) => `v.payam_id = $${i}`, filter.payam);
   if (filter.from) add((i) => `v.received_at >= $${i}::timestamptz`, filter.from);
   if (filter.to) add((i) => `v.received_at <= $${i}::timestamptz`, filter.to);
+  // C-9.9: the download filter, on the server's moment of last change.
+  if (filter.updated_since) add((i) => `v.updated_at > $${i}::timestamptz`, filter.updated_since);
   if (filter.cursor !== undefined) {
     const cursor = decodeCursor(filter.cursor);
     if (!cursor) throw invalidCursor();
@@ -414,4 +416,29 @@ export function parseVisitFilter(request: Request): VisitFilter {
     throw new ApiFailure(400, body.error.code, body.error.message, body.error.fields);
   }
   return parsed.data;
+}
+
+/**
+ * C-9.2: does a retried visit describe the one already stored? The fields the
+ * client sent, after the schema's normalisation; topics as a set; the point
+ * by its coordinates; nothing the server set.
+ */
+export function visitMatches(body: RecordVisit, row: VisitRow, officerId: string): boolean {
+  const stored = JSON.parse(row.position_geojson) as { coordinates: [number, number] };
+  const sameSet = (a: readonly string[], b: readonly string[]) =>
+    a.length === b.length && [...a].sort().join('|') === [...b].sort().join('|');
+  const same = (a: unknown, b: unknown) => (a ?? null) === (b ?? null);
+  return (
+    row.officer_id === officerId &&
+    new Date(row.visited_at).getTime() === new Date(body.visited_at).getTime() &&
+    stored.coordinates[0] === body.position.coordinates[0] &&
+    stored.coordinates[1] === body.position.coordinates[1] &&
+    Number(row.gps_accuracy_m) === body.gps_accuracy_m &&
+    same(row.observation, body.observation) &&
+    row.advice === body.advice &&
+    sameSet(row.topics, body.topics) &&
+    same(row.duration_minutes, body.duration_minutes) &&
+    same(row.attendee_count, body.attendee_count) &&
+    same(row.follow_up_of, body.follow_up_of)
+  );
 }
