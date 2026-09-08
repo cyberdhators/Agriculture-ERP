@@ -1803,10 +1803,16 @@ holds the seconds; `errors.ts` reads them for 500, 503 and the one 409 that
 means "not yet". A terminal outcome never carries the header, so a device that
 honours it never retries a refusal.
 
-**updated_at is a trigger's job.** No route set it consistently and the
-verification transitions did not set it at all, so an updated-since filter
-would have missed the decisions the phone most needs. One trigger function on
-farmer, farm and visit; every writer, present and future, bumps it.
+**updated_at is a trigger's job — and its absence is the eighth silent gate.**
+Nothing kept `updated_at` current: no trigger, and the verification
+transitions never set it. The download filter, the whole point of C-9.9,
+would therefore have returned nothing when a supervisor verified a farmer; a
+phone would never have learned of a decision, and the feature would have
+looked implemented and worked on nothing. A column that existed, was read by
+a new feature, and was never written. Found while building the filter, before
+any test of it was written — recorded in PROJECT-STATE's silent-gates class.
+One trigger function on farmer, farm and visit; every writer, present and
+future, bumps it.
 
 **The caseload endpoint returns ids, not records, and the server's clock.**
 Ids only, because the lists carry the records and the endpoint's job is
@@ -1820,6 +1826,17 @@ leave a stale visit on a phone with no way to learn it was removed.
 details", because under true idempotency a 409 never means "you sent this
 twice"; it means the id is wearing a record it should not.
 
-**The boundary's id has no server default any more.** A writer that omits it
-is refused by the database, as farmer, farm and visit already were; a missing
-id is an error, not a silently different row.
+**The boundary's id keeps its server default — and why it briefly did not.**
+Migration 18 dropped the default so a boundary without a client id would be
+an error, as farmer, farm and visit already are. That was not additive, and
+the standing condition "staging's schema runs ahead of main" rests entirely
+on the additive law: the moment 18 was applied, main's code — B7, which does
+not send a boundary id — failed every mapping on staging with a not-null
+error. #43's run, a docs-only change on main, went red on all twelve farm
+tests and the matrix setup. Migration 19 restored the default the same day.
+The guarantee C-9.1 wants lives at the door instead: the shared schema
+requires the id and the route always sends it, and a body without one is 400. **The rule this sharpens:** "additive" means older code keeps working
+against the newer schema — a dropped default is a removal even though no
+column went, and a unit that needs one must wait until its own code is on
+main, or not need one. Recorded as the assistant's error, found by a run
+that was not its own.

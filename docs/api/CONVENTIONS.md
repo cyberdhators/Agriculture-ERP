@@ -978,7 +978,8 @@ against this section and `packages/shared/src/sync.ts`.
 
 **Client ids on every create.** Farmer, farm, boundary (`boundary_id` on the
 create-farm body, `id` on add-boundary), visit and attachment declaration all
-carry the client's id. The database no longer invents a boundary id.
+carry the client's id, required by the shared schema; the route always
+sends it. The column's server default remains for writers that predate B9.
 
 **True idempotency (C-9.2).** A retried create whose body matches the stored
 record — the fields the client sent, after the schema's normalisation, never

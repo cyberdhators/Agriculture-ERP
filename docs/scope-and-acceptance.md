@@ -758,10 +758,14 @@ different record wearing a reused identifier.
 generates once, not the handset's hardware identity. It names a device, and
 through the session an officer; it is staff data, not a farmer's.
 
-**Boundaries' client id** is a schema change: `farm_boundary.id` stops
-defaulting on the server and the create-farm body carries a `boundary_id`
-beside the farm's. Migration in this unit, additive to the body, not to the
-table's shape.
+**Boundaries' client id** is a body change, not a column change: the
+create-farm body carries a `boundary_id` beside the farm's, add-boundary
+carries `id`, both required by the shared schema, and the route always sends
+them. The column's server default stays. Migration 18 dropped it and
+migration 19 put it back the same day: dropping it was not additive, and
+main's code, which did not yet send an id, failed every mapping on staging
+while the two differed. The guarantee lives at the door, where older code is
+not broken by it.
 
 **Captured-at** on farmer and farm is a schema change: two nullable columns,
 so records that predate the unit read "not recorded" rather than a guess.

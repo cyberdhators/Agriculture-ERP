@@ -201,16 +201,15 @@ run('true idempotency (C-9.1, C-9.2, C-9.3)', () => {
     );
     expect(otherFarm.status).toBe(409);
     expect(errorOf(otherFarm).message).toBe(RULE_MESSAGES.boundary_already_exists);
-    // And the database no longer invents a boundary id: a row without one is refused.
-    await expect(
-      prisma.$executeRawUnsafe(
-        `INSERT INTO public.farm_boundary (farm_id, season, boundary, centroid, area_ha, point_count, gps_accuracy_m, accuracy_flag, mapped_by)
-         SELECT $1::uuid, '2027-main', boundary, centroid, area_ha, point_count, gps_accuracy_m, accuracy_flag, mapped_by
-         FROM public.farm_boundary WHERE id = $2::uuid`,
-        sent.id,
-        remap.id,
-      ),
-    ).rejects.toThrow(/23502|null value/);
+    // The id is required at the door: a body without one is refused before anything is written.
+    const noId = await post(
+      farmBoundaries,
+      officerA,
+      { season: '2027-main', boundary: SQUARE, gps_accuracy_m: 6 },
+      sent.id as string,
+    );
+    expect(noId.status).toBe(400);
+    expect(errorOf(noId).fields?.id).toBeDefined();
   });
 });
 

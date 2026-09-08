@@ -783,6 +783,16 @@ companion, from the fourth instance: **when the record says something was
 done or is pending, ask the system rather than the record.** A migration
 folder, a catalogue query, a live route — not a sentence in a document.
 
+**The eighth instance, a column read by a new feature and never written
+(2026-09-08).** `updated_at` on farmer, farm and visit had no trigger, and the
+verification transitions never set it; only a few routes did. C-9.9's
+download filter reads it. Had B9 shipped the filter on the column as it was,
+a supervisor's verification would have changed nothing the phone could see:
+the feature would have looked implemented and worked on nothing. Found by
+reading what the filter would read against what wrote it, before the test
+existed. Fixed by a trigger in migration 18; the test now proves any writer
+bumps it.
+
 **The seventh instance, found in a design document (2026-09-08).** The audit
 law says every entry carries the device. `audit_event.device_id` has existed
 since B4 and `writeAudit` accepts it. No route wrapper reads a device from a
