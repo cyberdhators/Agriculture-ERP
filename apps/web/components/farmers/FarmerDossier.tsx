@@ -22,6 +22,7 @@ import {
   coopById,
   cropsForFarm,
   eventsForFarmer,
+  activeOfficersInPayam,
   farmerById,
   farmerPayamName,
   farmsForFarmer,
@@ -68,7 +69,7 @@ function maskNid(nid: string): string {
   return `${'•'.repeat(Math.max(0, nid.length - 4))}${nid.slice(-4)}`;
 }
 
-type ActionKind = 'verify' | 'merge' | 'reject' | null;
+type ActionKind = 'verify' | 'merge' | 'reject' | 'reassign' | null;
 
 export function FarmerDossier({ id }: { id: string }) {
   const { role, hydrated } = usePreview();
@@ -76,6 +77,7 @@ export function FarmerDossier({ id }: { id: string }) {
   const [action, setAction] = useState<ActionKind>(null);
   const [reason, setReason] = useState('');
   const [mergeTarget, setMergeTarget] = useState('');
+  const [newOfficer, setNewOfficer] = useState('');
   const [recorded, setRecorded] = useState<string | null>(null);
 
   const duplicates = useMemo(() => (farmer ? duplicatesOf(farmer) : []), [farmer]);
@@ -121,6 +123,15 @@ export function FarmerDossier({ id }: { id: string }) {
   const survivor = farmer.merged_into ? farmerById(farmer.merged_into) : null;
   const age = TODAY_YEAR - farmer.year_of_birth;
   const showActions = hydrated && canReview(role) && status === 'pending';
+  // C-8R.2: only an administrator reassigns a caseload, and only to another
+  // active officer in the farmer's own payam. `caseload_officer_id` is who
+  // works them now; `registered_by` is history and stands in when it is absent.
+  const caseloadOfficerId = farmer.caseload_officer_id ?? farmer.registered_by;
+  const caseloadOfficer = officerById(caseloadOfficerId);
+  const reassignTargets = activeOfficersInPayam(farmer.payam_id).filter(
+    (o) => o.id !== caseloadOfficerId,
+  );
+  const canReassign = hydrated && role === 'admin' && !survivor;
 
   function submit(kind: Exclude<ActionKind, null>) {
     const who = `${farmer!.given_name} ${farmer!.family_name}`;
@@ -134,9 +145,16 @@ export function FarmerDossier({ id }: { id: string }) {
         `Recorded (preview, no server): ${who} merged into ${target ? target.farmer_number : mergeTarget}.`,
       );
     }
+    if (kind === 'reassign') {
+      const target = officerById(newOfficer);
+      setRecorded(
+        `Recorded (preview, no server): caseload moved to ${target ? target.name : newOfficer}.`,
+      );
+    }
     setAction(null);
     setReason('');
     setMergeTarget('');
+    setNewOfficer('');
   }
 
   return (
@@ -189,6 +207,10 @@ export function FarmerDossier({ id }: { id: string }) {
                 },
                 { term: 'Registered by', value: officer ? officer.name : 'Self-registration' },
                 {
+                  term: 'Caseload officer',
+                  value: caseloadOfficer ? caseloadOfficer.name : 'Unassigned',
+                },
+                {
                   term: 'Sync',
                   value: <SyncChip status={syncStatusOf(syncForEntity(farmer.id))} />,
                 },
@@ -234,6 +256,29 @@ export function FarmerDossier({ id }: { id: string }) {
                   Reject
                 </Button>
               </div>
+            </Card>
+          ) : null}
+
+          {canReassign ? (
+            <Card padded>
+              <p className="label" style={{ marginBottom: 'var(--s-3)' }}>
+                Caseload
+              </p>
+              <p className="small muted" style={{ marginBottom: 'var(--s-3)' }}>
+                Worked by {caseloadOfficer ? caseloadOfficer.name : 'no officer yet'}.
+              </p>
+              <Button
+                variant="secondary"
+                onClick={() => setAction('reassign')}
+                disabled={reassignTargets.length === 0}
+              >
+                Reassign officer
+              </Button>
+              {reassignTargets.length === 0 ? (
+                <p className="small muted" style={{ marginTop: 'var(--s-2)' }}>
+                  No other active officer serves this payam.
+                </p>
+              ) : null}
             </Card>
           ) : null}
         </aside>
@@ -609,6 +654,45 @@ export function FarmerDossier({ id }: { id: string }) {
             />
           )}
         </Field>
+      </Dialog>
+
+      <Dialog
+        open={action === 'reassign'}
+        onClose={() => setAction(null)}
+        title="Reassign the caseload"
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setAction(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              onClick={() => submit('reassign')}
+              disabled={newOfficer === ''}
+            >
+              Reassign
+            </Button>
+          </>
+        }
+      >
+        <p>
+          Move {farmer.given_name} {farmer.family_name} to another officer. Only active officers in{' '}
+          {farmerPayamName(farmer.payam_id)} are offered, because an officer visits only where the
+          farmer is. Their farms and visits stay with them.
+        </p>
+        <Field label="New officer" error={undefined}>
+          {(ids) => (
+            <Select {...ids} value={newOfficer} onChange={(e) => setNewOfficer(e.target.value)}>
+              <option value="">Select an officer…</option>
+              {reassignTargets.map((o) => (
+                <option key={o.id} value={o.id}>
+                  {o.name}
+                </option>
+              ))}
+            </Select>
+          )}
+        </Field>
+        <p className="small muted">Preview only; nothing is written to a server.</p>
       </Dialog>
     </>
   );

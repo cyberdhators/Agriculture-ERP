@@ -5,7 +5,7 @@
 // swap, not a rewrite. Authorization, scope and validation all live on the
 // server; this module never talks to the database.
 
-import type { CreateFarmer, PatchFarmer } from '@agri-erp/shared';
+import { reassignFarmerSchema, type CreateFarmer, type PatchFarmer } from '@agri-erp/shared';
 
 import type { Farmer } from '@/lib/fixtures/farmers';
 
@@ -38,6 +38,7 @@ interface FarmerRowDto {
   payam_id: string;
   state_id: string;
   registered_by: string | null;
+  caseload_officer_id?: string | null;
   registration_source: Farmer['registration_source'];
   verification_status: Farmer['verification_status'];
   merged_into: string | null;
@@ -61,6 +62,7 @@ export function toFarmer(row: FarmerRowDto): Farmer {
     payam_id: row.payam_id,
     state_id: row.state_id,
     registered_by: row.registered_by,
+    caseload_officer_id: row.caseload_officer_id ?? null,
     registration_source: row.registration_source,
     verification_status: row.verification_status,
     merged_into: row.merged_into,
@@ -154,4 +156,23 @@ export async function patchFarmer(id: string, input: PatchFarmer): Promise<Farme
   });
   if (!body.data) throw new FarmerApiError(500, 'empty', 'No farmer in the response');
   return { farmer: toFarmer(body.data), duplicates: body.warnings?.duplicates ?? [] };
+}
+
+/**
+ * Move a farmer's caseload to another officer (C-8R.2), `admin` only. The body
+ * is validated by the shared `reassignFarmerSchema` before it is sent, so the
+ * client and the route cannot disagree about what is valid. The server checks
+ * the officer is active and in the farmer's payam and refuses a no-op move;
+ * those come back as `FarmerApiError` with `reassign_officer_not_found` or
+ * `reassign_same_officer`. On success it returns the farmer worked by the new
+ * officer; `registered_by` is unchanged (C-5.9).
+ */
+export async function reassignFarmer(id: string, officerId: string): Promise<Farmer> {
+  const input = reassignFarmerSchema.parse({ officer_id: officerId });
+  const body = await request<FarmerRowDto>(`/api/farmers/${encodeURIComponent(id)}/reassign`, {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+  if (!body.data) throw new FarmerApiError(500, 'empty', 'No farmer in the response');
+  return toFarmer(body.data);
 }

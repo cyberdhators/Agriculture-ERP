@@ -78,6 +78,11 @@ export interface Farmer {
   payam_id: string;
   state_id: string;
   registered_by: string | null;
+  /** Who works this farmer today (C-8R): the reassignable caseload pointer.
+   *  `registered_by` is history and never changes. Optional here because the
+   *  fixtures predate B8.5; when absent, the caseload officer is the one who
+   *  registered them. */
+  caseload_officer_id?: string | null;
   registration_source: RegistrationSource;
   verification_status: VerificationStatus;
   merged_into: string | null;
@@ -1366,6 +1371,11 @@ export function farmerById(id: string): Farmer | undefined {
 }
 export function officerById(id: string | null): Officer | undefined {
   return id ? OFFICERS.find((o) => o.id === id) : undefined;
+}
+/** Active officers in a payam — the only officers a farmer there can be
+ *  reassigned to (C-8R.2). The server enforces the same rule. */
+export function activeOfficersInPayam(payamId: string): Officer[] {
+  return OFFICERS.filter((o) => o.status === 'active' && o.payam_id === payamId);
 }
 export function userById(id: string): User | undefined {
   return USERS.find((u) => u.id === id);
