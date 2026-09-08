@@ -1893,3 +1893,36 @@ B10 figure would read a column nobody writes. The reading, kept here because
 - Columns nobody writes: only `directory_entry.last_verified_at` and
   `verified_by`, until #28 merges. `captured_at` is null before B9, so reports
   use the server's moment as the law says.
+
+## B10 — cross-payam merges stay allowed, as a decision (2026-09-08)
+
+**The question.** B6 refuses a merge whose source and target are in different
+states and says nothing about payams. C-10.1's repointing of farms and visits
+to the survivor makes the consequence of a cross-payam merge visible: land in
+one payam attached to a person in another. Refuse those merges too, or allow
+them and explain the figure?
+
+**What the code says B6's refusal is for.** The merge target is loaded through
+the caller's scope; a supervisor's scope is one state, so a target in another
+state is not visible to them. The cross-state refusal exists so that a merge
+is never decided by someone who cannot see both records it joins. That is the
+principle, not "a farmer must not change state".
+
+**Decision: allowed, by the owner, 2026-09-08.** Within a state one supervisor
+sees both records, both payams and both officers' work, so the decision is
+made by someone who sees everything it touches. And the cross-payam pair is
+the realistic duplicate — a farmer registered by their own payam's officer and
+again by a neighbour's at a market — which the duplicate check exists to flag.
+Refusing the merge would leave two verified records of one person, and reach
+would count them twice for as long as the system runs: a false figure to a
+donor. The location oddity after a merge is a true figure that needs one
+sentence (C-10.4's note). Between a false number and a true number that needs
+explaining, the true one.
+
+**The principle, stated so the next case is decided the same way:** a merge is
+refused where the decider cannot see both records, and allowed where they can.
+
+**Made traceable, not only documented.** The merge audit entry records both
+payams when they differ, and each repointed farm's entry records the farm's
+payam beside the survivor's, so a report's disagreement between land and
+people can be traced to the merge that made it.
