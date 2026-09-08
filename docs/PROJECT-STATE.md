@@ -706,6 +706,25 @@ A run cancelled by the timeout while still completing files is re-run, not
 investigated. The first run under the new timeout, the one that gated #38's
 merge, took 42 minutes and passed; the old timeout would have cut it.
 
+**The sixty-minute ceiling crossed (2026-09-08).** #44's rebased run was cut
+at sixty minutes with nine files still to go, every file about sixty percent
+slower than the same files on the green run of that morning (visits 10.5
+minutes against 6.5; farmers likewise). The re-run was cut at the same file
+with a minute-for-minute identical timeline. **The mechanism, measured rather
+than guessed:** staging's tables are tiny (the audit log, the largest, has
+fifteen thousand rows), no session is idle in transaction, and a count over
+the repaired views returns in the same time as a bare `select 1`. Every query
+is fast; every round trip is slow. The suite is thousands of small sequential
+queries, so its duration is set by where GitHub places the runner relative to
+Frankfurt — a lottery we do not draw. The morning's runner was close enough
+for forty-one minutes; the evening's two were not close enough for sixty.
+Four runs have now been cut by a timeout, at two ceilings, all still
+completing files. **Decision pending with the owner:** ninety minutes (a
+fourth CI edit, covering the far placement for the suite at its size and a
+few more units), or a change of shape — files owning their fixtures so they
+run in parallel and divide the round trips, or a self-hosted runner near the
+database (infrastructure, and a paid service) — which is a unit, not a line.
+
 **If a run is killed** its rows
 are swept by the next run's setup, and its authentication accounts are
 removed when that sweep finds their rows. A run that finds the lock held
