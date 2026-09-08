@@ -3,17 +3,16 @@ import Link from 'next/link';
 import styles from './brand.module.css';
 
 /**
- * The AgriOne wordmark, set in Fraunces: "Agri" regular, "One" semibold, and
- * the tittle of the i replaced by one sprout-green dot. A dotless ı carries
- * the letterform so the dot is ours, not the font's. Optionally the tagline
- * beneath in 11px letter-spaced caps. `onBand` inverts it for the forest band.
+ * The AgriOne brand lockup: the logo image. On the forest band (`onBand`) it
+ * sits in a white chip so the dark-green wordmark stays legible; on light
+ * surfaces it renders plain. `size` sets its height in px. The optional
+ * `tagline`/`taglineText` props are kept for call-site compatibility; the
+ * tagline is part of the logo art, so they are no longer rendered separately.
  */
 export function Wordmark({
   size = 22,
-  tagline = false,
   onBand = false,
   href,
-  taglineText = 'Digital Agriculture & Agribusiness Ecosystem',
 }: {
   size?: number;
   tagline?: boolean;
@@ -23,25 +22,15 @@ export function Wordmark({
 }) {
   const className = `${styles.wordmark} ${onBand ? styles.onBand : ''}`;
   const body = (
-    <>
-      <span
-        className={styles.name}
-        style={{ ['--wordmark-size' as string]: `${size}px` }}
-        aria-label="AgriOne"
-        role="img"
-      >
-        <span aria-hidden>
-          Agr<span className={styles.i}>ı</span>
-        </span>
-        <span className={styles.one} aria-hidden>
-          One
-        </span>
-      </span>
-      {tagline ? <span className={styles.tagline}>{taglineText}</span> : null}
-    </>
+    <img
+      src="/brand/agrione-logo.png"
+      alt="AgriOne — Digital Agriculture Marketplace"
+      className={styles.logo}
+      style={{ height: `${Math.round(size * 1.7)}px` }}
+    />
   );
   return href ? (
-    <Link href={href} className={className}>
+    <Link href={href} className={className} aria-label="AgriOne">
       {body}
     </Link>
   ) : (
