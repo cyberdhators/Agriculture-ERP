@@ -22,6 +22,8 @@ export interface FarmerRow {
   county_id: string;
   state_id: string;
   registered_by: string | null;
+  /** Who works this farmer today: the reassignable pointer (C-8R). registered_by is history. */
+  caseload_officer_id: string | null;
   registration_source: string;
   verification_status: string;
   merged_into: string | null;
@@ -42,7 +44,7 @@ export interface FarmerRow {
 /** Selected from farmer (f) joined to its current consent (c). */
 export const FARMER_COLUMNS = `
   f.id, f.farmer_number, f.given_name, f.family_name, f.sex::text AS sex, f.year_of_birth,
-  f.phone, f.national_id, f.payam_id, f.county_id, f.state_id, f.registered_by,
+  f.phone, f.national_id, f.payam_id, f.county_id, f.state_id, f.registered_by, f.caseload_officer_id,
   f.registration_source::text AS registration_source,
   f.verification_status::text AS verification_status, f.merged_into,
   f.duplicate_flag, f.duplicate_matches, f.created_at, f.updated_at, f.pending_since,
@@ -60,11 +62,15 @@ export const FARMER_FROM = `FROM public.farmer_active f JOIN public.consent c ON
 
 /**
  * C-5.8: the national ID is returned only to an administrator and to the
- * officer who registered that farmer. For anyone else the key is ABSENT, not
- * masked — a masked field still says one exists.
+ * officer who works that farmer. For anyone else the key is ABSENT, not
+ * masked — a masked field still says one exists. Since C-8R "the officer who
+ * registered" reads as the caseload officer: the reason C-5.8 gave the id to
+ * that officer was that they do the work, and after a reassignment that is the
+ * new officer (docs/DECISIONS.md, B8.5).
  */
 export const canSeeNationalId = (auth: Authenticated, row: FarmerRow): boolean =>
-  auth.role === 'admin' || (auth.role === 'officer' && row.registered_by === auth.principal.id);
+  auth.role === 'admin' ||
+  (auth.role === 'officer' && row.caseload_officer_id === auth.principal.id);
 
 export function present(row: FarmerRow, auth: Authenticated): Record<string, unknown> {
   const out: Record<string, unknown> = {
@@ -79,6 +85,7 @@ export function present(row: FarmerRow, auth: Authenticated): Record<string, unk
     county_id: row.county_id,
     state_id: row.state_id,
     registered_by: row.registered_by,
+    caseload_officer_id: row.caseload_officer_id,
     registration_source: row.registration_source,
     verification_status: row.verification_status,
     merged_into: row.merged_into,
@@ -108,7 +115,11 @@ export function present(row: FarmerRow, auth: Authenticated): Record<string, unk
   return out;
 }
 
-/** The scope clause for lists and item loads. An officer's caseload is what they registered. */
+/**
+ * The scope clause for lists and item loads. An officer's caseload is the
+ * farmers whose caseload pointer names them (C-8R): what they registered,
+ * until an administrator moves one.
+ */
 export function scopeClause(auth: Authenticated, params: unknown[]): string[] {
   if (auth.scope.kind === 'state') {
     params.push(auth.scope.stateId);
@@ -116,10 +127,14 @@ export function scopeClause(auth: Authenticated, params: unknown[]): string[] {
   }
   if (auth.scope.kind === 'caseload') {
     params.push(auth.scope.officerId);
-    return [`f.registered_by = $${params.length}::uuid`];
+    return [`f.caseload_officer_id = $${params.length}::uuid`];
   }
   return [];
 }
+
+/** C-8R.3: the write checks — resubmit, map, visit — ask this, never registered_by. */
+export const inCaseloadOf = (auth: Authenticated, row: { caseload_officer_id: string | null }) =>
+  auth.scope.kind === 'caseload' && row.caseload_officer_id === auth.principal.id;
 
 type Db =
   Prisma.TransactionClient | { $queryRawUnsafe: Prisma.TransactionClient['$queryRawUnsafe'] };
@@ -222,6 +237,7 @@ export const auditFields = (row: FarmerRow): Record<string, unknown> => ({
   county_id: row.county_id,
   state_id: row.state_id,
   registered_by: row.registered_by,
+  caseload_officer_id: row.caseload_officer_id,
   registration_source: row.registration_source,
   verification_status: row.verification_status,
   duplicate_flag: row.duplicate_flag,

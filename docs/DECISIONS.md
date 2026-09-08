@@ -1298,3 +1298,433 @@ table with an `_active` view recreates the view in the same migration.
 **The guard:** `tests/views-track-tables.test.ts` compares every active
 view's columns to its table's, in order, both directions, so a stale view
 fails a database test instead of the first route that reads it.
+
+## Standing rule — a view named after a table is a filter of it and carries every column
+
+A `SELECT *` view freezes its column list when it is created. A column added
+to the table later is invisible through the view until the view is
+recreated, and nothing in migration, typecheck, lint or the shared tests can
+see that: the table is right, the code is right, only the database knows.
+B6 lost its first full run to `farmer_active` lacking `pending_since`. B7
+adds farm columns, B8 visits, B10 views over all of them; this will recur
+unless it is a rule with a test.
+
+**The rule.** A view whose name begins with a table's name — `farmer_active`,
+`farmer_verified_v`, `farm_active` when it exists — is a filter of that table
+and carries every one of its columns, in order. A migration that adds a
+column to such a table recreates every such view in the same migration
+(`CREATE OR REPLACE VIEW` may append columns). A view that deliberately
+projects a subset, or aggregates, is not named after its table.
+
+**The test.** `tests/views-track-tables.test.ts` discovers every view in the
+schema, pairs each with a table by longest name prefix, and compares the
+column lists both directions.
+
+**Loosened on 2026-09-05, during B7, the first unit the guard was watching.**
+As written the day before, the test refused any view it could not pair. B7's
+`area_totals_v` is an aggregate and cannot pair with a table, so the test was
+changed: a view not named after any table is exempt by convention. The
+change is right and `area_totals_v` proves it — but it is a loosening of a
+guard made during a unit that the guard was watching, and it is recorded as
+that rather than as a clarification. The next loosening might not be as
+clearly right; a rule that quietly relaxes each time it is inconvenient
+stops being a rule. Any further change to what this test exempts is recorded
+here the same way, with the date and the reason. It runs in every
+full suite run, locally and in CI.
+
+## 2026-09-05 — The drift-test premise came from the user, and checking it found it false
+
+The record above under "A false alarm about the drift test" states what was
+true. This entry states where the premise came from, because that matters
+more than the finding: **the user asserted that the drift test had been
+matching on table padding and had stopped guarding between B5 and B6, and
+asked for it to be recorded as a finding. It was checked against the code
+before it was written down, and it was false.** The test trims each cell and
+had never been blind; the padding fault was in a session editing script. The
+check exposed a real gap beside it — one table the test had never covered —
+which was measured and closed.
+
+Recorded at the user's own request and in their words: the pattern of an
+assertion entering the documents unchecked is exactly what the staleness
+audits keep finding. Nothing goes into the record on anyone's say-so,
+including the person who owns the project; the check comes first, and the
+correction is written down whichever direction it points.
+
+## B6.5 — An outage of the sign-in service is 503, never 401
+
+`requireRole` asked Supabase Auth to verify the token and turned any error
+into `401 unauthenticated`, whose sentence is "Sign in to continue". Seen in
+B5's run 4: seven valid sessions answered 401 while the service strained. In
+the field that message sends an officer to re-enter credentials that were
+never wrong — exactly the wrong response, produced by the system's own
+wording.
+
+Now the service's answers about the session — 400, 401, 403, 404 — remain
+401, and everything else — unreachable, a 5xx, a 429, a call that never
+returns — is `503 auth_unavailable`: "The sign-in service could not be
+reached. Try again in a moment." The call carries a ten-second deadline so a
+hung service cannot hang every route. Tested against a real failing service
+on a local port, four ways, and against the real service both ways.
+
+**Not reported to Sentry, deliberately.** An outage would produce one event
+per request; the signal belongs to a health check, which is B10's or later.
+Recorded so the silence is known to be chosen.
+
+## Standing rule — a test that reads the schema tolerates objects it does not know
+
+Staging's schema runs ahead of main: migrations are applied from a unit's
+branch before it merges, so every run of main, or of an older branch, tests
+older code against a newer schema (PROJECT-STATE, _Staging's schema runs
+ahead of main_). The additive-migration law keeps code safe under that; a
+test that enumerates the schema and demands equality is not code, and it
+goes red on a view, a table, an enum value or a constraint it does not know.
+The view-tracking test did exactly that on #35's merge run.
+
+**The rule.** A test that reads the catalogue asserts what must hold for the
+objects it knows — every table has RLS on, every active view carries its
+table's columns, this constraint exists — and never that the set of objects
+equals a list. It lives here, beside the view rule, because that is where
+the next person writing a schema-reading test will look.
+
+**Looked, not assumed, on 2026-09-06.** Every test that reads the catalogue
+was read: the RLS checks on named tables, the security-invoker checks on
+named or pattern-matched views, the constraint-exists checks, and the
+view-tracking test are all on named sets or containment and tolerate what
+they do not know. One was not: the directories test asserted the `crop` and
+`language` enum labels equal a fixed list, so the first unit to add a crop
+or a language would have turned it red for a reason unrelated to that unit.
+It had not been bitten only because no unit had added one. It now asserts
+containment — every value the code knows exists in the database — which is
+the direction that matters.
+
+**The distinction worth keeping.** This is the second instance of the same
+fault, and the first one this project has found by looking rather than by
+being bitten. Every earlier instance in the silent-gates class — the
+typecheck hole, the eight skipped files, the blind scanner, the unchecked
+keys, the strict view test — was discovered when it fired. This one was
+found by asking the question the class exists to prompt, before any unit
+added the thing it counted. Recorded so that the question keeps being
+asked.
+
+## Standing rule — a test that verifies a calculation computes the expected value independently
+
+A test that reads its expected value back from the thing under test proves
+only that the thing agrees with itself. B7's area test computes the expected
+hectares from the polygon's coordinates by a geodesic formula written in the
+test, and requires PostGIS to agree within one percent; the two must agree
+independently or the test says nothing. B10's reach figures face exactly
+this: a total copied from the view it is meant to check is worth nothing.
+The expected value comes from a second, independent path — a formula, a
+hand count of fixture rows, a known answer — never from the query, view or
+function being verified.
+
+## B7 — decisions in the farm unit
+
+**Accuracy grades: good at 10 m or better, poor over 10 to 30, unusable over 30.** Ours, taken because no threshold exists in any document, to be corrected
+when CORWADO or the field says otherwise. A consumer GPS under tree cover
+routinely reports 15 to 20 metres, so "poor" will be common rather than
+exceptional; the unusable threshold is the one that actually matters. The
+numbers are constants in `packages/shared` and the database CHECK is
+generated from them.
+
+**Four distinct vertices, the closing repeat not counted; a triangle is
+refused.** A three-sided plot exists in reality, but a three-point capture is
+far more likely an officer who stopped walking early, and the refusal says
+so in words they can act on.
+
+**The three refusals are sentences for a field, never the database's words.**
+Closure and the vertex count are judged in the module before the database,
+because the GeoJSON parser refuses an open ring with its own message;
+simplicity and validity are judged by PostGIS and mapped to one sentence.
+
+**Winding order is normalised.** A phone walking a plot produces either
+orientation depending on which way the officer walked. The stored ring is
+forced counter-clockwise on insert (`ST_ForcePolygonCCW`), the area is taken
+on the geography and is positive either way, and a test maps the same plot
+both ways and gets the same area. Nothing is refused for orientation and
+nothing goes negative.
+
+**Seasons: a four-digit year, a hyphen, `main` or `second`.** Ours until
+CORWADO confirms local names. A season the system cannot compare is a season
+B10 cannot report on.
+
+**History is kept, never overwritten, within a season as well as across
+seasons** (data model open question 6, unanswered). Discarding a boundary is
+irreversible; season-on-season comparison is what a donor report about land
+under cultivation eventually wants; and adding history later would mean
+migrating farms that already have visits and crops attached. Within a season
+the same reasoning applies and re-mapping after a poor reading is the
+common case, so a sequence with the latest current, one current per farm per
+season as a partial unique index. The reversible reading is our decision and
+can be narrowed on request.
+
+**Only an officer with the farmer in their caseload maps, and the schema says
+so.** The mapping officer column references the officer table; an
+administrator cannot be recorded as a mapper at all. The record tells
+"someone walked this" from "someone drew this" by shape, not by a flag. An
+administrator reads everything, including coordinates, and removes a farm
+softly; never creates, re-maps or re-grades.
+
+**Creating a farm is mapping it.** The first boundary comes with the farm;
+a farm without a boundary is not a thing an officer can record.
+
+## 2026-09-06 — One CI concurrency group across all refs; the second CI edit since B1.2
+
+Every CI run holds the staging lock for twenty to forty minutes. A run on
+main triggered by a merge, and the next pull request's run, started seconds
+apart three times in a row under the sequential merge order, and the second
+refused each time, naming the first. The lock did exactly what B5.5 built it
+for; the cost was a manual re-run on every merge.
+
+The workflow now has one concurrency group across all refs with
+cancel-in-progress off, so GitHub queues runs instead of the lock refusing
+them. The trade, accepted: a superseded run on a branch is no longer
+cancelled by a newer push; it completes and the newer run waits, a run of
+staging time per superseded push. A cancelled run could leave its lock
+behind, so queueing is also the safer of the two. The lock stays: it is what
+protects staging from a laptop, which no workflow setting can see.
+
+**This is the second edit to the CI workflow since B1.2 wrote it; the first
+was B5.5.** Both were made because the unit was CI, and both are recorded
+here so that "do not touch the CI workflow", which every other unit's brief
+carries, is seen to have been honoured everywhere else.
+
+## 2026-09-07 — The CI timeout is sixty minutes; the third CI edit since B1.2
+
+**The finding.** The same suite on the same code takes between twenty-six and
+over forty minutes depending on the day. The 40-minute timeout was set at
+B5.5 for the fast end; B6 and B7 added about fifteen minutes on a slow run,
+and B8, B9 and B10 each add a file. On 2026-09-06 a run was cancelled at
+forty minutes with half its files still to go, not stalled, still completing
+files when it was cut. The last green B7 run before it had eighty seconds to
+spare. Details in `docs/PROJECT-STATE.md`, under B5.5.
+
+**The decision, the owner's.** `timeout-minutes` goes from 40 to 60. The
+alternative — shrinking the two concurrency proofs in the farmer file, which
+are most of its eleven minutes — was refused: shrinking a concurrency proof
+to fit a runner's clock weakens what it proves, and those two proofs are the
+reason B5 and B7 are trustworthy. A runner's clock is not a reason to prove
+less.
+
+**The rule that goes with it.** A run cut by the timeout while it is still
+completing files is re-run, not investigated. A run that stops completing
+files and is then cut is the pooler incident's shape, and is investigated.
+The log's per-file timestamps tell the two apart.
+
+**Why it counts as a CI edit.** The workflow file is changed only on the
+owner's written approval (the first edit was B5.5, the second the
+concurrency group). This is the third, approved in writing on 2026-09-07.
+
+## B8 — decisions in the visits unit (2026-09-07)
+
+**The attachment row travels with the visit; the bytes travel alone.** A
+visit is one record, complete when it lands, carrying no file. An attachment
+is a row of its own — id, visit, kind, type, size, capture moment, state —
+and its bytes live in Storage. The row is two kilobytes and goes right behind
+the visit; the bytes go when the phone can. Once the server holds the row it
+knows a photo exists and has not arrived, and can say "waiting" to the
+officer and to the supervisor alike. An officer who reads "waiting" does not
+re-take the photo; an officer who reads nothing does. That distinction is the
+reason the row and the bytes are separate records, and the reason the row
+does not wait for the bytes. Owner and assistant, in the restate.
+
+**Bytes never pass through a route.** The API issues a signed upload grant for
+ONE object path, chosen by the server from the visit id and the attachment
+id; the phone puts the bytes straight to Storage; the API confirms. A route
+on Vercel has a small body limit and no business holding a photo in memory.
+Reading is the same shape in reverse: a signed link per request, five
+minutes, for an arrived attachment only, refused outside the visit's scope.
+Owner's decision, with three conditions, all met: one id per grant, minutes
+not hours, and a confirm that verifies existence AND size AND type.
+
+**The grant's life is a provider fact; ours is enforced at confirm; the gap
+between them is a STATED LIMIT, not a solved problem.** Supabase's upload
+token lives two hours and `createSignedUploadUrl` takes no expiry (checked in
+`@supabase/storage-js` 2.114.0, not assumed). The row carries
+`grant_expires_at`, fifteen minutes, and confirm enforces it: an object that
+arrives after it is removed and the row fails with `grant_expired`.
+
+Read this exactly. **Between minute fifteen and minute one hundred and
+twenty, a valid upload token exists that our row will refuse.** During that
+window a holder of the token can still put an object at that one path,
+within the bucket's ceiling and allowed types, and it will sit in Storage
+until a confirm removes it — or, if no confirm ever comes, indefinitely. The
+expiry is fifteen minutes only for the row; for the provider it is two
+hours; "the grant expires in fifteen minutes" is true of what the API will
+accept and false of what Storage will accept. Nothing bad follows from it
+today because confirm is the gate to the record, the object is removed on
+mismatch or late arrival, the path admits one object, and the bucket bounds
+size and type. What does not follow: the provider will not hold an unwanted
+object for us, and a token that leaked in the window is usable for the rest
+of it. A future session that needs a true fifteen-minute token has two
+routes — a provider option if one appears, or a route that proxies the bytes
+with its own clock — and should not read the row's expiry as either.
+Fifteen minutes is generous for a 3 MB photo on a slow link (about eight
+minutes at 50 kbps) and short enough to be "minutes". Recorded as a limit at
+the owner's instruction, 2026-09-07.
+
+**Confirm checks the provider's facts, not the phone's claim.** `info(path)`
+returns the stored size and content type; both must equal the declaration. A
+mismatch removes the object and fails the row (`size_mismatch`,
+`type_mismatch`). The bucket is private, created by `pnpm storage:buckets`
+with the same ceiling and types the schema and the CHECK use; only
+`apps/web/lib/supabase/admin.ts` touches Storage, the module that already
+alone reads the service-role key. Its rule 3 now says "Auth or Storage".
+
+**"Send it again" is re-declaring the same id.** A waiting or failed
+attachment declared again gets a fresh grant and returns to waiting; an
+arrived one is returned unchanged with no grant; the same attachment id on a
+different visit is a 409. The phone therefore never needs a new id to retry,
+which is what B9's idempotency asks for. A re-declaration with a different
+type moves the storage path; the old object is removed best-effort.
+
+**Refused before the bytes travel.** The size and type are judged by the
+declaration schema, before any grant is issued: photo over 15 MB, audio over
+25 MB, a type the kind does not admit, a type not on the list. Each refusal
+is a sentence naming the action ("Set the camera to a smaller picture size
+and take it again"). Ceilings from the owner's instruction: a mid-range
+Android's 12-megapixel JPEG weighs 3 to 6 MB, a 48-megapixel one up to 10;
+ten minutes of AAC is about 10 MB. Set above with room, not at.
+
+**Position visibility: administrators and the visit's own officer, as for a
+boundary.** Decided by the owner 2026-09-07. A visit's position is where a
+named farmer's plot is: a point that, joined to the farmer record the same
+response carries, places a person. C-5.8 withheld the national ID from
+supervisors and read_only users because a field that identifies a person is
+returned only to those who need it to do their work — the registering
+officer, and an administrator — and is absent rather than masked, because a
+masked field still says one exists. The same reading applies here for the
+same reason: a supervisor verifies that visits happen and what was advised,
+which the two moments, the topics and the substance show; they do not need
+the coordinates, and a state-wide list of coordinates is a map of where
+farmers live. C-7.8 applied this to boundaries; C-8.4 says "stored and
+shown" and this decision says to whom. If the field asks for supervisors to
+see positions, the presenter's one condition is the place, and the question
+to answer first is what they would do with them.
+
+**Observation is optional; advice is required.** C-8.1 singles out advice as
+required and says nothing of observation. An officer who saw nothing new but
+advised is still a visit. Observation, if sent, is not blank.
+
+**Topics: nine, proposed, provisional.** From `docs/data-model-extension.md`
+§2, the repository's derivation of the report; the report itself, as held
+here, names no list. land_preparation, planting, weeding, pest, disease,
+harvest, storage, market, other. Built as an enum so amending it is additive
+(`ALTER TYPE … ADD VALUE`). Awaiting the owner's approval of the list.
+
+**Follow-ups: one sentence for three refusals, and a trigger behind them.**
+A target that does not exist, belongs to another farmer, or is removed gets
+the same sentence — "could not be found for this farmer" — because saying
+which would confirm another farmer's record exists (the 404 principle, §5.1).
+A cycle gets its own sentence. The route judges first, with a recursive walk;
+the trigger `visit_follow_up_guard` refuses the same four things for any
+writer, because a retried sync is exactly what would produce a loop no
+officer intends. The chain route returns earlier visits from the root, this
+visit, then direct follow-ups; a removed earlier visit keeps its place as
+`{ id, removed: true }` so the order survives a removal (C-8.11 says its
+history remains readable; the chain is part of that history).
+
+**Five columns are evidence and cannot change.** Farmer, officer, position
+(with its accuracy), visited_at, received_at. Not in the correction schema,
+so refused as unknown fields; and a trigger refuses any UPDATE that changes
+them, whoever issues it. The correction window is twenty-four hours from
+`received_at`, the server's moment: a device clock cannot govern a
+correction window for the same reason it cannot govern a reporting period
+(owner). The audit row for a correction records that the advice or
+observation changed — `advice_changed: true` — and never the words (C-8.13).
+
+**Coverage is a view, not a route, in B8.** `extension_coverage_v` groups by
+state, county, payam and month of `received_at`: visits to verified farmers
+and the farmers reached, with visits to farmers in any other state counted
+beside them and never folded in. The reporting unit reads it; B8 proves its
+shape and that a removed visit leaves it.
+
+**The read link's issuing IS audited — the one exception to "reads are not
+audited", and why.** B4's audit list covers writes because writes are what
+change state; reads leave the record as they found it, and a log of every
+read would bury the log. An expiring link to a farmer's photograph is
+different in kind: it is the one read in this system that produces an
+artefact outliving the request — a URL that works for minutes, that can be
+copied, forwarded, or opened by whoever the caller shows their screen to.
+What is recorded is the issuing: who asked, for which attachment, when, and
+how long the link was to live. Never the link itself, which would make the
+audit log a second copy of the thing being guarded. The row is written
+before the link is issued, so a link can never exist that no row accounts
+for. Action key `visit.attachment_link_issued`, migration 16. The rule for
+reads stands; this is its one exception, and the test for the next one is
+the same: does the read leave something behind that works after the
+response is gone? Owner's decision, 2026-09-07, reversing the assistant's
+first call.
+
+**Any non-removed farmer may be visited**, whatever their verification
+status, including merged — the owner's words were "regardless of
+verification status", read literally. If a merged record should refuse
+visits (they belong to the surviving record), that is one rule sentence.
+
+**No new environment variable.** The bucket name is a constant; a bucket name
+is not a secret. Production needs `pnpm storage:buckets` run once against it
+— added to the production checklist in PROJECT-STATE.
+
+**Test objects.** The visits test removes every object it uploaded in its
+afterAll; the sweep removes rows. A run killed mid-way may leave objects in
+the staging bucket; they are a few hundred invented bytes each, and a later
+run's declarations never collide with them because every id is fresh.
+
+## B8.5 — decisions in the caseload reassignment unit (2026-09-07)
+
+**The section is C-8R, not C-8.5.** The owner's rule: "C-8.5" already names
+the criterion about device and server moments, and two things with the same
+name in a document a session reads without asking is exactly the shape that
+has bitten us. Grep for one never finds the other.
+
+**Two officers on a farmer, and which one each check reads.** `registered_by`
+is history and never changes (C-5.9). `caseload_officer_id` is who works the
+farmer today; it starts equal and an administrator moves it. Every caseload
+check reads the pointer — the farmer scope clause, the farm and visit scope
+clauses (through the farmer join), the write checks for resubmit, map and
+visit (one helper, `inCaseloadOf`), and the national ID's visibility. Farms
+and visits carry no officer pointer of their own for scope, which is why they
+follow the farmer with no change: B7 and B8 were built to reach the caseload
+through the farmer so that this unit would be one pass, and it was.
+
+**The new officer is active and in the farmer's payam.** Registration's rule,
+for registration's reason: an officer who is not where the farmer is cannot
+visit them. Widening to the county is one condition in one query, to be made
+if CORWADO says payam coverage is thinner than assumed — a field fact we do
+not have. Owner, 2026-09-07.
+
+**One sentence for three refusals.** A target officer that does not exist,
+is inactive, or is in another payam gets the same sentence, because naming
+which would confirm that an officer exists to a caller who has only guessed
+an id. Same principle as the follow-up target in B8 and the 404 rule.
+
+**The same officer is refused as a no-op.** An audit entry recording a move
+that was not one is worse than no entry: it makes the log say something
+false. Owner's reasoning, confirmed.
+
+**Deactivation stays allowed with farmers attached, and says how many.** No
+refusal, no count on the officer record — a number in the response to the
+act that creates the problem. An administrator who sets an officer inactive
+and reads "23 farmers are now unassigned" reassigns them; one who reads
+nothing finds out when an officer in the field cannot record a visit. It was
+three lines, so it is in this unit. Soft-deleting an officer (DELETE) does
+not carry the number: it returns no body, and the owner's addition named
+deactivation. Recorded as the next small thing if it is wanted there too.
+
+**Attachments keep checking the visit's own officer** — a fact about phones,
+not a rule to fix. An attachment is uploaded by the phone that took it. In
+plain terms: a reassigned farmer's waiting attachments are completable only
+by the phone that took them, and if that officer has left, those attachments
+never arrive. The visit stands without them, which is what C-8.6 is for.
+
+**The national ID goes to the caseload officer.** C-5.8 says "the officer who
+registered that farmer"; the reason it gave the id to that officer was that
+they do the work, and after a reassignment the new officer does. The old
+officer no longer sees the farmer at all. Read this way rather than
+literally, and recorded so the next reader of C-5.8 knows why the presenter
+checks the pointer.
+
+**A trigger sets the pointer for any writer that forgets it.** The
+application sets both columns at registration; the seed, the reseed and any
+future writer that sets only `registered_by` get the pointer from the
+trigger. The backfill in the migration did the same for every existing row.

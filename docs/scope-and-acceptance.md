@@ -443,6 +443,219 @@ section's.
 
 ---
 
+## C-7 — FARM BOUNDARY MAPPING
+
+Deliverable: (c) farmer registration and profiling. Unit B7.
+
+Source: `docs/data-model.md` section 1 (`farm`, `crop_declaration`) and
+`docs/data-model-extension.md` §10. A boundary is the one record in this
+system that can only be created by physical presence: a name, a crop and a
+verification decision can be typed at a desk; a polygon cannot. The record
+tells "someone walked this" from "someone drew this" by shape — the mapping
+officer column references the officer table — not by a flag.
+
+C-7.1  A farm belongs to exactly one farmer and records the season it was
+       mapped for. A farmer may hold more than one farm.
+
+C-7.2  A boundary is a closed shape of at least four distinct points, the
+       closing repeat not counted. A shape that is not closed, or crosses
+       itself, or has fewer points, is refused with a message an officer can
+       act on standing in a field — never the database's words.
+
+C-7.3  The area is calculated from the boundary and stored in hectares. It is
+       never entered by hand.
+
+C-7.4  Every boundary records the GPS accuracy at capture, and is marked good
+       (10 metres or better), poor (over 10 to 30) or unusable (over 30) from
+       it. Unusable boundaries are saved but excluded from every area total.
+
+C-7.5  A re-mapped boundary is recorded alongside the previous one, not in
+       place of it, within a season as well as across seasons. Each boundary
+       names its farm, season, mapped-at moment and mapping officer; exactly
+       one is current per farm per season, and that is a database fact. Area
+       totals read current boundaries only and name the season they cover.
+       (Data model open question 6, unanswered by CORWADO; the reversible
+       reading is our decision and can be narrowed on request —
+       `docs/DECISIONS.md`.)
+
+C-7.6  An officer maps farms only for farmers in their own caseload, and only
+       an officer maps. A supervisor and a read_only user see farms in their
+       state. Out of scope is indistinguishable from not found. An
+       administrator reads everything and removes; an administrator never
+       creates, re-maps or re-grades, and cannot be recorded as a mapper.
+
+C-7.7  Crop declarations are recorded per farm per season, from the fixed crop
+       list, one declaration per crop per season, by the mapping officer.
+
+C-7.8  A farm's boundary, centroid and GPS accuracy are returned only to
+       administrators and the mapping officer, per the same reading as C-5.8.
+       To a supervisor or read_only user those keys are absent, not masked;
+       they receive the area, the grade, the season, the crops and the farmer.
+
+C-7.9  Removal is soft, by an administrator. A removed farm appears in no
+       list, count, area total or map, and its history remains readable.
+
+C-7.10 No response carries a farmer's name, phone or national ID outside the
+       record asked for. The C-5.13 scan extends to cover farm routes and the
+       geometry keys join the error scrubber's list.
+
+### Notes for the builder
+
+**Accuracy thresholds** are ours, taken because no threshold exists in any
+document, to be corrected when CORWADO or the field says otherwise. A consumer
+GPS under tree cover routinely reports 15 to 20 metres, so "poor" will be
+common; the unusable threshold is the one that matters.
+
+**Four distinct vertices**: a three-sided plot exists in reality, but a
+three-point capture is far more likely an officer who stopped walking early.
+
+**Seasons** are a four-digit year, a hyphen, and a name from a fixed list —
+`main`, `second` — ours until CORWADO confirms local names. A season the
+system cannot compare is a season reporting cannot report on.
+
+**Winding order** is normalised on insert; whichever way the officer walked
+the plot, the stored ring is counter-clockwise and the area is positive.
+
+---
+
+## C-8 — EXTENSION VISITS AND ATTACHMENTS
+
+Deliverable: (d) extension services. Unit B8.
+
+Source: `docs/data-model-extension.md` §2 (`visit_note`, `visit_attachment`).
+Written by the owner on 2026-09-07 after B7 merged. The visit is the second
+record in this system that requires physical presence, and the first whose
+substance is prose: what an officer saw and what they advised is the
+deliverable CORWADO reports to the donor.
+
+C-8.1  An extension officer records a visit to a farmer in their caseload,
+       capturing where and when it happened, what was observed, and what advice
+       was given. Advice is required: a visit with no advice is not a visit,
+       and extension coverage is what CORWADO reports to the donor.
+C-8.2  A visit records the topics it covered from a fixed list, and may record
+       its duration and how many people attended.
+C-8.3  A visit may be a follow-up to an earlier visit, and the chain is readable
+       in order. The earlier visit belongs to the same farmer, is not removed,
+       and following it back never reaches this visit — a retried sync could
+       produce the cycle an officer never would.
+C-8.4  A visit records the position at which it was captured and its accuracy in
+       metres. The value is stored and shown; it is not graded. The boundary
+       grades were set for a walked polygon where error compounds across every
+       vertex, and a single standing point is a different measurement. A grade
+       is added if the field asks for one.
+C-8.5  A visit records both the moment the officer's device reported and the
+       moment the server received it. Coverage figures are computed from the
+       server's moment, never the device's, because a phone offline for a week
+       may be wrong by days. Both are shown wherever a date is shown.
+C-8.6  A visit may carry photographs or audio. An attachment is a separate
+       record that travels separately: a failed or pending attachment never
+       blocks the visit it belongs to, and a visit is complete without them.
+C-8.7  For any visit, its officer can tell whether each attachment has arrived,
+       is still waiting, or has failed, and what to do about it. The message
+       names the action, not the fault (§14).
+C-8.8  Attachment files are private. Access is granted per request, expires, and
+       is refused outside the caller's scope.
+C-8.9  An officer records and reads visits for farmers in their caseload. A
+       supervisor and a read-only user read visits in their state. Out of scope
+       is indistinguishable from not found.
+C-8.10 An officer may correct their own visit within twenty-four hours of
+       recording it. After that only an administrator may. An administrator
+       never records a visit, as with boundaries — a visit is a journey.
+C-8.11 Removal is soft, administrator only. A removed visit appears in no list,
+       count or coverage figure, and its history remains readable.
+C-8.12 Every visit, attachment and correction writes an audit entry in the same
+       transaction as the change.
+C-8.13 Observation and advice are free text and are the substance of this
+       deliverable, not an aside. The B6 rule holds — the officer writes about
+       the visit, not the person — but it cannot be enforced by a closed list,
+       because no list can say what to do about armyworm in a particular field.
+       It is enforced by where the text travels: inside the visit record only,
+       to the parties entitled to it; never in an error, a warning or a message;
+       never in the audit log; redacted by the scrubber; covered by the scan.
+C-8.14 Every visit and attachment in staging, in tests and in seed data is
+       invented.
+
+### Notes for the builder
+
+**Decided with the owner, 2026-09-07, before the build.** Bytes never pass
+through a route: the API issues a signed upload grant for one attachment id,
+the phone uploads to Storage, and the API confirms arrival against the
+declared size and type; reading is a signed link per request. The grant
+expires in minutes; the confirm step verifies existence, size and type; the
+bucket is private with no public policy, and one server module touches
+Storage. Any non-removed farmer may be visited, whatever their verification
+status; coverage counts visits to verified farmers, with the rest beside and
+never folded in. The twenty-four hours run from the server's moment. A
+correction may change what was observed, advised, covered, how long and how
+many, and the follow-up link; never the farmer, the officer, the position or
+either moment — those five make the record evidence rather than a note.
+
+**Topics** are nine, from `docs/data-model-extension.md` §2: land
+preparation, planting, weeding, pest, disease, harvest, storage, market,
+other. Short on purpose: a list an officer scrolls past is a list they tick
+the first item on.
+
+**Ceilings** with room: photos to 15 MB (a mid-range Android's JPEG is 3 to 6,
+a 48-megapixel one up to 10) as JPEG, PNG or WebP; audio to 25 MB (about ten
+minutes of AAC is 10) as M4A, AAC, MP3, OGG or WebM. A file over the ceiling
+is refused at declaration, before any byte travels, with a sentence naming
+the action.
+
+**The upload grant's life** is a provider fact: Supabase's upload token lives
+two hours and cannot be shortened. Ours is fifteen minutes, recorded on the
+row and enforced at confirm; an object that arrives after it is removed and
+the row fails.
+
+---
+
+## C-8R — CASELOAD REASSIGNMENT
+
+Deliverable: (c) farmer registration and profiling. Unit B8.5.
+
+Source: `docs/UNITS.md`, B8.5, decided 2026-09-05. These criteria restate a
+decision already made, written by the assistant on the owner's instruction
+(2026-09-07). The section is lettered R rather than numbered 8.5 because
+"C-8.5" is already the criterion about device and server moments in C-8, and
+two things with the same name in a document a session reads without asking
+is a known way to be bitten.
+
+C-8R.1 A farmer carries a caseload officer, set to the registering officer at
+       creation. The registering officer never changes (C-5.9).
+C-8R.2 An administrator reassigns a farmer to another officer, who is active
+       and in the farmer's payam. Nobody else can. Reassigning to the officer
+       who already holds the farmer is refused, so the log never records a
+       move that was not one.
+C-8R.3 After reassignment the new officer reads, resubmits, maps and visits
+       the farmer; the old officer is told not found on all of it. When an
+       administrator sets an officer inactive, the response says how many
+       farmers are now without a working officer; nothing is refused.
+C-8R.4 Farms, boundaries, crops and visits follow the farmer without being
+       touched: they reach the caseload through the farmer.
+C-8R.5 Reassignment writes an audit entry carrying the old and new officer, in
+       the same transaction.
+C-8R.6 A farmer's response shows both officers.
+C-8R.7 Every caseload check in the system reads the caseload officer. One
+       helper, not five copies.
+
+### Notes for the builder
+
+**The new officer's payam** is registration's rule for registration's reason:
+an officer who is not where the farmer is cannot visit them. Widening to the
+county is one condition in one query, to be made if CORWADO says payam
+coverage is thinner than assumed — a field fact we do not have.
+
+**Attachments** keep checking the visit's own officer, not the caseload,
+because an attachment is uploaded by the phone that took it. In plain terms:
+a reassigned farmer's waiting attachments are completable only by the phone
+that took them, and if that officer has left, those attachments never
+arrive. The visit stands without them, which is what C-8.6 is for.
+
+**The national ID** (C-5.8) goes to the caseload officer. C-5.8 said "the
+officer who registered" because that officer did the work; after a
+reassignment the new officer does it.
+
+---
+
 ## C-13 — DIRECTORIES AND LEARNING LIBRARY
 
 **Deliverables (i), (j), (k) and (m). Unit P1.**
@@ -521,8 +734,6 @@ list. If yes, the officer role gets a write route and entries gain a
 Written one unit ahead of the build, not all at once, so that criteria reflect
 what the preceding unit actually produced.
 
-- C-7 — farm boundary mapping — (c)
-- C-8 — extension visit recording — (d)
 - C-9 — offline synchronisation — (b)
 - C-10 — dashboards, reporting and export — (p), (q)
 - C-11 — backup and disaster recovery — (t)

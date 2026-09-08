@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 
 import { prisma } from '../db';
-import { forbidden, unauthenticated } from './errors';
+import { authUnavailable, forbidden, unauthenticated } from './errors';
 
 /**
  * THE ONLY PLACE A SESSION IS READ. CONVENTIONS.md section 2.
@@ -41,35 +41,67 @@ async function resolveAuthUserId(request: Request): Promise<string | null> {
   const header = request.headers.get('authorization');
   if (header?.toLowerCase().startsWith('bearer ')) {
     const token = header.slice(7).trim();
-    const { data, error } = await createClient(url, anon, {
-      auth: { autoRefreshToken: false, persistSession: false },
-    }).auth.getUser(token);
-    // A banned or deleted auth account fails here, which is half of C-3.6.
-    return error || !data.user ? null : data.user.id;
+    let result: Awaited<ReturnType<ReturnType<typeof createClient>['auth']['getUser']>>;
+    try {
+      result = await createClient(url, anon, {
+        auth: { autoRefreshToken: false, persistSession: false },
+        global: { fetch: fetchWithDeadline },
+      }).auth.getUser(token);
+    } catch {
+      // The call itself failed: the service is unreachable, not the session (B6.5).
+      throw authUnavailable();
+    }
+    const { data, error } = result;
+    if (error) {
+      if (isSessionRefusal(error.status)) return null;
+      throw authUnavailable();
+    }
+    return data.user ? data.user.id : null;
   }
 
-  // No bearer token, so look for a session cookie.
-  //
-  // `cookies()` THROWS outside a request scope rather than returning empty, and
-  // an unhandled throw here becomes a 500 for what is simply an unauthenticated
-  // request. The forbidden matrix caught this: every no-session case returned
-  // 500 instead of 401. No cookie store means no session, which is a 401.
+  // Cookie session (the web portal). Outside a request scope cookies() throws;
+  // that is "no session", not a fault.
   let store: Awaited<ReturnType<typeof cookies>>;
   try {
     store = await cookies();
   } catch {
     return null;
   }
-
-  const { data, error } = await createServerClient(url, anon, {
-    cookies: {
-      getAll: () => store.getAll(),
-      // A route never writes a session cookie; sign-in does that on the client.
-      setAll: () => undefined,
-    },
-  }).auth.getUser();
-  return error || !data.user ? null : data.user.id;
+  let result: Awaited<ReturnType<ReturnType<typeof createServerClient>['auth']['getUser']>>;
+  try {
+    result = await createServerClient(url, anon, {
+      cookies: {
+        getAll: () => store.getAll(),
+        // A route never writes a session cookie; sign-in does that on the client.
+        setAll: () => undefined,
+      },
+      global: { fetch: fetchWithDeadline },
+    }).auth.getUser();
+  } catch {
+    throw authUnavailable();
+  }
+  const { data, error } = result;
+  if (error) {
+    if (isSessionRefusal(error.status)) return null;
+    throw authUnavailable();
+  }
+  return data.user ? data.user.id : null;
 }
+
+/**
+ * B6.5. The service answered about the session: 400, 401, 403 and 404 are
+ * "this token is not a session" and stay 401 unauthenticated. Anything else
+ * — 429, 5xx, a network failure (status 0 or undefined), a deadline — is the
+ * service failing to answer, and is 503 auth_unavailable. Proved by a test
+ * that stands up a failing service, not by this comment.
+ */
+export const isSessionRefusal = (status: number | undefined): boolean =>
+  status === 400 || status === 401 || status === 403 || status === 404;
+
+/** A hung sign-in service must not hang every route: ten seconds, then 503. */
+export const AUTH_CALL_DEADLINE_MS = 10_000;
+const fetchWithDeadline: typeof fetch = (input, init) =>
+  fetch(input, { ...init, signal: AbortSignal.timeout(AUTH_CALL_DEADLINE_MS) });
 
 /**
  * Authenticates, authorises, and resolves what the caller may see.

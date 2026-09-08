@@ -35,6 +35,21 @@ export const AUDIT_ACTIONS = [
   'farmer.rejected',
   'farmer.merged',
   'farmer.resubmitted',
+  'farmer.reassigned',
+  'farm.created',
+  'farm.boundary_added',
+  'farm.boundary_superseded',
+  'farm.crops_declared',
+  'farm.soft_deleted',
+  'visit.recorded',
+  'visit.corrected',
+  'visit.soft_deleted',
+  'visit.attachment_declared',
+  'visit.attachment_arrived',
+  'visit.attachment_failed',
+  // The one read that is audited: issuing an expiring link to a farmer's
+  // photograph produces an artefact that outlives the request (B8, owner).
+  'visit.attachment_link_issued',
 ] as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];
@@ -75,6 +90,16 @@ const NEVER_RECORDED = new Set([
   'family_name',
   // C-6.3: the rejection note is prose about a named person. Never in the log.
   'note',
+  // C-7.10: a boundary is a location of a named person. Never in the log.
+  'boundary',
+  'centroid',
+  'coordinates',
+  'geometry',
+  // C-8.13: observation and advice are the substance of a visit and prose about
+  // a named person's field. Never in the log. The standing point likewise (C-8.4).
+  'observation',
+  'advice',
+  'position',
   'phone',
   'alt_phone',
   'email',

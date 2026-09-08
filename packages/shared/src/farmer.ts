@@ -30,6 +30,8 @@ export const FARMER_LIMITS = {
 } as const;
 
 export const FARMER_MESSAGES = {
+  reassignOfficerRequired: 'Name the officer who will now work with this farmer.',
+  reassignOfficerNotUuid: 'The officer identifier is not in the expected form.',
   idRequired: 'A registration must carry its identifier.',
   idNotUuid: 'The identifier is not in the expected form.',
   givenNameRequired: 'Enter the given name.',
@@ -196,3 +198,14 @@ export const nameMatchKey = (name: string): string => name.trim().normalize('NFC
 export const FARMER_NUMBER_PATTERN = /^[A-Z]{2}-[A-Z]{3}-[0-9]{6}$/;
 export const formatFarmerNumber = (countyId: string, sequence: number): string =>
   `${countyId}-${String(sequence).padStart(6, '0')}`;
+
+/** C-8R.2: an administrator moves a farmer's caseload to another officer. */
+export const reassignFarmerSchema = z.strictObject({
+  officer_id: z
+    .string({ error: () => FARMER_MESSAGES.reassignOfficerRequired })
+    .regex(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+      FARMER_MESSAGES.reassignOfficerNotUuid,
+    ),
+});
+export type ReassignFarmer = z.infer<typeof reassignFarmerSchema>;
