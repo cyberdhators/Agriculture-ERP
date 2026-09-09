@@ -36,7 +36,7 @@ jobs:
     runs-on: ubuntu-latest
     # The database suite is 10-20 minutes from a runner; a hung run must not
     # hold the staging lock for the default six hours.
-    timeout-minutes: 60
+    timeout-minutes: 90
     steps:
       # Full history: the secret scan reads every commit on the branch, not
       # just the tip. A secret added and then "removed" is still a leak.

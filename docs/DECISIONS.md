@@ -1840,3 +1840,26 @@ against the newer schema — a dropped default is a removal even though no
 column went, and a unit that needs one must wait until its own code is on
 main, or not need one. Recorded as the assistant's error, found by a run
 that was not its own.
+
+## 2026-09-09 — The CI timeout is ninety minutes; the fourth CI edit since B1.2
+
+**The finding, measured.** #44's rebased run was cut at sixty minutes with
+nine files to go; its re-run was cut at the same file with a minute-for-minute
+identical timeline. Every file ran about sixty percent slower than the same
+files on a green run the same morning. Staging was checked and cleared: tiny
+tables, no idle transactions, a count over the repaired views as fast as a
+bare `select 1`. Every query is fast; every round trip is slow. The suite is
+thousands of small sequential queries, so its duration is set by the round-trip
+latency between the runner GitHub assigns and the database in Frankfurt — a
+placement we do not choose. Both cut attempts drew a farther runner. And the
+suite grows with every unit: about five minutes a unit on a near runner.
+
+**The decision, the owner's.** `timeout-minutes` goes from 60 to 90, to sit
+above the far placement for the suite at its size and a few more units. The
+rule from the third edit stands: a run cut while still completing files is
+re-run, not investigated; a run that stops completing files is investigated.
+
+**What this does not do.** It buys time. The suite's duration is bounded by
+a lottery, and the ceiling only decides how much of the lottery we tolerate.
+The alternatives are sized in PROJECT-STATE, "The shape of the alternative to
+the ceiling", so that the fifth edit is not the answer to the next cut.
