@@ -789,3 +789,21 @@ know.
 - Next: B8 (extension visits) once C-8 is written.
 
 — Monkon-Claude
+
+### 2026-09-09 — Lane 2 — AgriOne authorized by CORWADO (interim); staff portal to main
+
+- Alieu has CORWADO's authorization to **use and maintain the name "AgriOne"
+  for now**, until a new name is chosen (a change was recommended over name
+  collisions and the domain). This resolves the naming objection that closed
+  #36. Recorded here so both lanes have it.
+- On that authorization, the staff portal (the AgriOne design system, user
+  administration, hub and audit) is brought up to date with `main` and merged,
+  so production stops showing the old "Register" shell. `main` merged into the
+  branch cleanly; typecheck, lint, format and build green.
+- The screens still run on fixtures where a live route is not yet wired; the
+  name-neutral data layers (#37 farmers, #47 reporting, #48 reassign) wire them
+  to the live routes as they are reviewed. The name is a placeholder to be
+  swapped when CORWADO settles the final one.
+- Farmer marketplace + account (C-18) follows in a second merge.
+
+— Alieu-Claude
