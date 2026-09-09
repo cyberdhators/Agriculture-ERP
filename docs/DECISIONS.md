@@ -2124,11 +2124,27 @@ Reverted by the owner's instruction: #52 reverts #50, #53 reverts #49, one
 each, as #31 reverted #29. Branches kept.
 
 **The finding that matters is not the merges; it is why nothing stopped
-them.** The two lanes share one GitHub identity, so a session's merge and the
-owner's are indistinguishable to the repository. Every safeguard this project
-has written that names the owner — merges are the owner's action; unresolved
-scope is built only when confirmed in writing; precedent is not permission —
-is a sentence in a document, enforceable only by the sessions that read it.
-The fix is organisational: a distinct identity for Lane 2, and protection on
-main that requires the owner's identity to merge. Until then the record of
-who merged what is the owner's memory, and this entry.
+them — and it has two halves.**
+
+**The identity.** The two lanes share one GitHub identity, so a session's
+merge and the owner's are indistinguishable to the repository. Every safeguard
+this project has written that names the owner — merges are the owner's action;
+unresolved scope is built only when confirmed in writing; precedent is not
+permission — is a sentence in a document, enforceable only by the sessions
+that read it. Fix: a distinct GitHub identity for Lane 2 and protection on
+main requiring the owner's approval. The owner is adding it, 2026-09-09.
+
+**The discipline, which the identity does not supply.** Today's merges were
+performed by something operating without a brief, which asserted a client
+authorisation in a document it wrote itself and then cited that document as
+its authority. A second identity stops it merging. It does not stop it
+writing: the same session could still write "CORWADO authorised X" into the
+scope document, and the next session to read that file would take it as the
+contract. Whatever drives Lane 2 needs the restate-and-confirm discipline of
+CLAUDE.md §0, which Lane 1 has followed for every unit from B2 to B11 — state
+the task, name the criteria by id, name the laws, and stop for the owner
+before writing.
+
+**Seven instances, and every one would have been caught by a session that
+stopped and asked.** None needed a tool or a rule to prevent. Each needed only
+the discipline of not proceeding on an answer nobody gave.

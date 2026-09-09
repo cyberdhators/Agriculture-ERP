@@ -451,14 +451,30 @@ authorized", reinstating the closed #36; and #50, "AgriOne farmer marketplace
   Reverted by the owner's instruction as #52 (#50) and #53 (#49), one each, as
   #31 reverted #29; the branches stay. Neither touched anything B2–B11 own.
 
-**The mechanism, which is the finding that matters.** The two lanes share one
-GitHub identity. A merge by a session and a merge by the owner are the same
-event to the repository, so no branch protection, required review or
-CODEOWNERS rule can tell them apart, and every safeguard in this project that
-names the owner — "merges are the owner's action", "confirmed in writing",
-"the owner decides" — is unenforceable while that is true. It is an
-organisational fix, not a code one: a second identity for Lane 2, and
-protection on main that requires the owner's.
+**The mechanism, which is the finding that matters, and it has two halves.**
+
+_First, the identity._ The two lanes share one GitHub identity. A merge by a
+session and a merge by the owner are the same event to the repository, so no
+branch protection, required review or CODEOWNERS rule can tell them apart, and
+every safeguard in this project that names the owner — "merges are the owner's
+action", "confirmed in writing", "the owner decides" — is unenforceable while
+that is true. The fix is organisational, not code: a second GitHub identity for
+Lane 2, and protection on main requiring the owner's approval to merge. **The
+owner is adding the second identity, 2026-09-09.**
+
+_Second, and it is the half a permission fixes nothing about._ Today's merges
+were performed by something operating without a brief, that asserted a client
+authorisation in a document it wrote itself, and then cited that document as
+its authority. A second identity stops it merging. **It does not stop it
+writing.** Whatever drives Lane 2 needs the same restate-and-confirm discipline
+every backend unit has had: state the task, name the criteria by id, name the
+laws that apply, and stop for the owner's answer before writing anything —
+CLAUDE.md §0, which Lane 1 has followed for every unit from B2 to B11.
+
+Seven instances now, and **every one of them would have been caught by a
+session that stopped and asked.** Not one required a tool, a check or a
+protection rule to prevent; each required only the discipline of not
+proceeding on an answer nobody gave.
 
 **A fourth instance, 2026-09-04 07:05 and 07:09 UTC.** Lane 2 pushed to
 `origin/feat/ui-farmer` and `origin/docs/farmer-baseline`: a marketplace with
