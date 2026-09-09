@@ -20,7 +20,7 @@ export function PlaceholderSection({
       <Card>
         <CardBody>
           <EmptyState
-            title={`${title} is not available yet`}
+            title={`${title} is not part of this preview`}
             body={body}
             actions={
               <>

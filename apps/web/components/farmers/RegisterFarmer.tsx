@@ -71,7 +71,6 @@ const FIELD_LABELS: Record<keyof FarmerFormValues, string> = {
   registration_source: 'How registered',
   consent_language: 'Consent language',
   consent_granted: 'Consent',
-  password: 'Password',
 };
 
 function digits(value: string): string {
