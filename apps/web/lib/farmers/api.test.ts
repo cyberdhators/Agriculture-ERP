@@ -15,6 +15,7 @@ const row = {
   county_id: 'CE-JUB',
   state_id: 'CE',
   registered_by: 'o-3',
+  caseload_officer_id: 'o-3',
   registration_source: 'officer' as const,
   verification_status: 'verified' as const,
   merged_into: null,
@@ -41,6 +42,7 @@ describe('toFarmer', () => {
     const f = toFarmer(row);
     expect(f.consent_id).toBe('c-1');
     expect(f.farmer_number).toBe('CE-JUB-000101');
+    expect(f.caseload_officer_id).toBe('o-3');
     expect(f.national_id).toBe('99A2211455');
     expect(f.verification_status).toBe('verified');
     // county_id / updated_at / duplicate_flag are not part of the view type

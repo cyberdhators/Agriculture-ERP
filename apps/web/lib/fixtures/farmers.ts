@@ -78,6 +78,8 @@ export interface Farmer {
   payam_id: string;
   state_id: string;
   registered_by: string | null;
+  /** Who works this farmer today (C-8R); equals registered_by until an administrator moves it. */
+  caseload_officer_id: string | null;
   registration_source: RegistrationSource;
   verification_status: VerificationStatus;
   merged_into: string | null;
@@ -1182,6 +1184,7 @@ const farmers: Farmer[] = SEEDS.map((seed, i) => {
     payam_id: seed.payam,
     state_id: state,
     registered_by: seed.officer === null ? null : OFFICERS[seed.officer]!.id,
+    caseload_officer_id: seed.officer === null ? null : OFFICERS[seed.officer]!.id,
     registration_source: seed.src,
     verification_status: seed.status,
     merged_into: seed.mergedIntoIdx ? fid(seed.mergedIntoIdx) : null,
@@ -1419,7 +1422,7 @@ export function totalAreaHa(farmerId: string): number {
   );
 }
 export function caseloadCount(officerId: string): number {
-  return FARMERS.filter((f) => f.registered_by === officerId && f.merged_into === null).length;
+  return FARMERS.filter((f) => f.caseload_officer_id === officerId && f.merged_into === null).length;
 }
 
 /* ---- Produce listings (C-18 / B12 point 5) --------------------------- */
