@@ -724,6 +724,48 @@ fourth CI edit, covering the far placement for the suite at its size and a
 few more units), or a change of shape — files owning their fixtures so they
 run in parallel and divide the round trips, or a self-hosted runner near the
 database (infrastructure, and a paid service) — which is a unit, not a line.
+**Decided 2026-09-09:** ninety minutes (the fourth CI edit, DECISIONS). The
+alternative is sized below.
+
+## THE SHAPE OF THE ALTERNATIVE TO THE CEILING (2026-09-09, sized, not built)
+
+The suite is 775 tests in 34 files, run serially because every file sweeps
+the shared test prefix in its setup, against a database in Frankfurt from a
+runner GitHub places where it will. Two directions, priced.
+
+**Per-run isolation, so files run in parallel.** The prefix, the test family
+name and the test location code become run-scoped in the helper; each file's
+sweep removes only its run's rows; a scheduled cleanup (a fifth CI edit and a
+new script) removes anything a day old; about eighteen database test files
+change their constants and phone ranges; vitest runs two projects — a
+parallel one, and a serial one for the five files that do global things no
+prefix isolates (verification's check constraint on the audit table, farms'
+constraints, reporting's disabled trigger, the locations reseed, the farmers
+seed). **Three to four days:** half for helper and config, half across the
+files, two to three for the parallel run failing in ways the serial run never
+showed. **Risk medium to high, and specific:** four workers creating
+principals through Supabase Auth at once is the strain already seen,
+multiplied; forty client connections on fifteen server connections is the
+dead-pooled-connection incident's neighbourhood; the farmer-number counter
+lock becomes contended across files. **Gain:** the suite is round-trip bound,
+so four workers divide the wait — a forty-minute near run to perhaps fifteen,
+a sixty-plus far run to perhaps twenty-five.
+
+**Geography.** A staging project nearer the runners: half a day, low
+technical risk, and wrong — it moves staging away from where production will
+be, and South Sudan is nearer Frankfurt than Virginia, so staging would stop
+being production-like in exactly the latency the field will feel. Not to be
+done. A self-hosted runner near Frankfurt: a small machine, a day to set up,
+ongoing maintenance, a paid service under CORWADO's name (never ours). Low
+technical risk, real organisational cost, for twenty minutes a run.
+
+**The answer given, 2026-09-09: neither before the backend ends.** Ninety
+minutes covers the far placement for B11 and the two small follow-ups.
+Per-run isolation is the right change and is half-scoped, but its cost is in
+the risk column, and three days of debugging parallel Auth calls before the
+last backend unit is the wrong order. It is the first unit after B11. If the
+suite is cut again before B11 lands, that is the signal to pull it forward,
+not to raise the ceiling a fifth time.
 
 **If a run is killed** its rows
 are swept by the next run's setup, and its authentication accounts are
