@@ -2,7 +2,6 @@
 
 import { useMemo, useRef, useState, type ReactNode } from 'react';
 
-import { LIVE_FARMERS, createFarmer } from '@/lib/farmers/api';
 import { CROP_LABELS, LANGUAGE_LABELS } from '@/lib/format';
 import { canRegister } from '@/lib/farmers/presentation';
 import {
@@ -93,9 +92,6 @@ export function RegisterFarmer() {
   const [errors, setErrors] = useState<FarmerErrors>({});
   const [touched, setTouched] = useState<Partial<Record<keyof FarmerFormValues, boolean>>>({});
   const [saved, setSaved] = useState<{ name: string } | null>(null);
-  const [submitting, setSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState<string | undefined>();
-  const [serverDupes, setServerDupes] = useState(0);
   const summaryRef = useRef<HTMLDivElement | null>(null);
 
   const counties = useMemo(
@@ -145,7 +141,7 @@ export function RegisterFarmer() {
     setErrors((prev) => ({ ...prev, [key]: message }));
   }
 
-  async function onSubmit(e: React.FormEvent) {
+  function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     const result = validateFarmer(values, REFERENCE);
     if (!result.ok) {
@@ -163,39 +159,7 @@ export function RegisterFarmer() {
       return;
     }
     setErrors({});
-    setSubmitError(undefined);
-    const v = result.values;
-
-    if (!LIVE_FARMERS) {
-      setSaved({ name: `${v.given_name} ${v.family_name}` });
-      return;
-    }
-
-    setSubmitting(true);
-    try {
-      const res = await createFarmer({
-        id: crypto.randomUUID(),
-        given_name: v.given_name,
-        family_name: v.family_name,
-        sex: v.sex,
-        year_of_birth: v.year_of_birth,
-        phone: v.phone,
-        national_id: v.national_id,
-        payam_id: v.payam_id,
-        consent: {
-          text_version: CONSENT_VERSION[v.consent_language],
-          language: v.consent_language,
-          granted: v.consent_granted,
-        },
-      });
-      setServerDupes(res.duplicates.length);
-      setSaved({ name: `${v.given_name} ${v.family_name}` });
-    } catch (err) {
-      setSubmitError(err instanceof Error ? err.message : 'Could not register the farmer.');
-      requestAnimationFrame(() => summaryRef.current?.focus());
-    } finally {
-      setSubmitting(false);
-    }
+    setSaved({ name: `${result.values.given_name} ${result.values.family_name}` });
   }
 
   function reset() {
@@ -203,8 +167,6 @@ export function RegisterFarmer() {
     setErrors({});
     setTouched({});
     setSaved(null);
-    setSubmitError(undefined);
-    setServerDupes(0);
   }
 
   function focusField(key: keyof FarmerFormValues) {
@@ -234,15 +196,10 @@ export function RegisterFarmer() {
       <>
         <PageHeader eyebrow="Farmers" title="Register a farmer" />
         <div className={styles.recorded}>
-          <p className="label">{LIVE_FARMERS ? 'Registered' : 'Recorded (preview, no server)'}</p>
+          <p className="label">Recorded (preview — no server)</p>
           <p>
-            {LIVE_FARMERS
-              ? `${saved.name} was registered as pending and sent to the review queue.${
-                  serverDupes > 0
-                    ? ` ${serverDupes} possible duplicate${serverDupes > 1 ? 's were' : ' was'} flagged for a reviewer.`
-                    : ''
-                }`
-              : `${saved.name} would be created as pending and sent to the review queue. Nothing was written; this preview build has no backend.`}
+            {saved.name} would be created as pending and sent to the review queue. Nothing was
+            written — this preview build has no backend.
           </p>
           <div className={screens.formActions}>
             <Button variant="primary" onClick={reset}>
@@ -294,18 +251,11 @@ export function RegisterFarmer() {
                   }}
                 >
                   {FIELD_LABELS[k]}
-                </a>
-                : {errors[k]}
+                </a>{' '}
+                — {errors[k]}
               </li>
             ))}
           </ul>
-        </div>
-      ) : null}
-
-      {submitError ? (
-        <div className={styles.errorSummary} ref={summaryRef} tabIndex={-1} role="alert">
-          <p className="label">The farmer was not registered</p>
-          <p>{submitError}</p>
         </div>
       ) : null}
 
@@ -547,10 +497,10 @@ export function RegisterFarmer() {
             </Card>
 
             <div className={screens.formActions}>
-              <Button type="submit" variant="primary" disabled={submitting}>
-                {submitting ? 'Registering…' : 'Register farmer'}
+              <Button type="submit" variant="primary">
+                Register farmer
               </Button>
-              <Button type="button" variant="ghost" onClick={reset} disabled={submitting}>
+              <Button type="button" variant="ghost" onClick={reset}>
                 Clear form
               </Button>
             </div>
@@ -580,7 +530,7 @@ export function RegisterFarmer() {
               <Notice kind="info" title="Duplicate check">
                 <p className="small">
                   As you fill in the phone number and name, any possible duplicate already on the
-                  register appears here. A match warns; it never blocks. The survivor is a
+                  register appears here. A match warns; it never blocks — the survivor is a
                   person&apos;s decision, taken from the dossier.
                 </p>
               </Notice>
@@ -590,14 +540,14 @@ export function RegisterFarmer() {
               <p className="label">After this step</p>
               <p className="small muted">
                 Crop declarations and the farm boundary are captured on the next screen once the
-                farmer exists:{' '}
+                farmer exists —{' '}
                 {CROPS.slice(0, 4)
                   .map((c) => CROP_LABELS[c])
                   .join(', ')}{' '}
                 and more. The intake form records the person and their consent only.
               </p>
               <p className="small muted">
-                Location is scoped to {payamName(values.payam_id) || 'Central Equatoria'}, the only
+                Location is scoped to {payamName(values.payam_id) || 'Central Equatoria'} — the only
                 state seeded in this preview.
               </p>
             </Card>

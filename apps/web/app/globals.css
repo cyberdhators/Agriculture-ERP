@@ -1,9 +1,7 @@
 /*
- * "The Register" — design tokens for AgriOne.
+ * "The Register" — design tokens for the CORWADO Agricultural Register.
  *
- * A working register of a farming economy: editorial, dense, warm, precise,
- * coloured like the land it records — a living green for every real action,
- * harvest gold for money and sales, earth for secondary surfaces.
+ * A working register of a farming economy: editorial, dense, warm, precise.
  * Not a SaaS dashboard. Structure is carried by hairline rules and 1px
  * borders; shadow is used once, for a dialog. Every colour, size and radius
  * lives here — a raw hex outside this file is a bug.
@@ -21,65 +19,43 @@
     sans-serif;
   --font-mono: var(--font-jetbrains), ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
-  /* ---- Ground: light natural off-white with a green cast ------------ */
-  --paper: #f5f7f1; /* ground */
-  --card: #ffffff; /* raised surfaces */
-  --dust: #e9ede3; /* wells, insets, skeletons, disabled fills. Never text. */
-  --line: #d6dccf; /* hairline rule */
-  --line-strong: #aeb8a6; /* structural rule, strong border */
+  /* ---- Surfaces: bone paper, raised leaf, sunken well ---------------- */
+  --paper: #f3eee3; /* ground */
+  --card: #fbf8f1; /* raised surfaces */
+  --dust: #eae3d3; /* wells, insets, skeletons, disabled fills. Never text. */
+  --line: #d9d0bc; /* hairline rule */
+  --line-strong: #b9ae95; /* structural rule, strong border */
 
   /* ---- Ink ----------------------------------------------------------- */
-  --ink: #132a1c; /* forest, primary text */
-  --ink-2: #3b4f41; /* secondary text */
-  --muted: #5e6c60; /* captions, helper text, labels — 5.1:1 on paper */
+  --ink: #12261b; /* forest, primary text */
+  --ink-2: #3e4f44; /* secondary text */
+  --muted: #6f7d73; /* captions, helper text, labels */
 
-  /* ---- Dark band (masthead, entry spread panel) --------------------- */
-  --band: #0f2e1c;
-  --band-ink: #f2f6ee;
-  --band-line: #23492f;
+  /* ---- Dark band (masthead only) ------------------------------------ */
+  --band: #0f1f16;
+  --band-ink: #f3eee3;
+  --band-line: #2b3a30;
 
-  /* ---- Primary: a living green, used for real ----------------------- */
-  --green-deep: #14532d; /* masthead accents, headings on dark, placeholder words */
-  --green: #1f7a3f; /* primary buttons, links, active tab rule, focus ring */
-  --green-hover: #165f31;
-  --sprout: #7cb342; /* highlights, success moments, the wordmark tittle, plot motif */
-  --green-tint: #e4f1e3; /* selected rows, chips, tints */
-
-  /* ---- Harvest gold: the second accent. Prices, "List it", sold, KPIs. */
-  --harvest: #e0a526; /* fills only — never text on white */
-  --harvest-deep: #b8841a; /* the text form of harvest, large figures only */
-  --harvest-ink: color-mix(
-    in srgb,
-    var(--harvest-deep) 75%,
-    var(--ink)
-  ); /* gold as small text, 4.8:1 */
-  --harvest-tint: #fbf0d2;
-
-  /* ---- Earth: secondary surfaces and secondary buttons -------------- */
-  --soil: #6b4a2b;
-  --soil-tint: #efe6db;
-
-  /* ---- Accent aliases: what every control reads --------------------- */
-  --accent: var(--green);
-  --accent-hover: var(--green-hover);
-  --accent-tint: var(--green-tint);
+  /* ---- Accent: harvest amber. Rare on purpose. ---------------------- */
+  --accent: #d8811a;
+  --accent-hover: #b86a0f;
+  --accent-tint: #f7e4c8;
 
   /* ---- Status inks (stamp foreground + tint fill) ------------------- */
-  /* Distinct from the brand green so a stamp never reads as a button. */
-  --verified: #2e7d32;
-  --verified-tint: #dff0df;
-  --pending: #9a6b0f;
-  --pending-tint: #f6ebcc;
-  --danger: #a32d1e;
-  --danger-tint: #f5dcd7;
-  --info: #1d5a85;
-  --info-tint: #dce8f1;
-  --neutral: #55625b;
-  --neutral-tint: #e4e7e2;
+  --verified: #1f6b3a;
+  --verified-tint: #dcebdf;
+  --pending: #8a5a0b;
+  --pending-tint: #f3e6c5;
+  --danger: #9b2c1e;
+  --danger-tint: #f2dad5;
+  --info: #1e4e79;
+  --info-tint: #dce6ef;
+  --neutral: #4f5b63;
+  --neutral-tint: #e3e0d6;
 
   /* ---- Legacy status aliases (directories/library screens) ---------- */
   --nile: var(--info);
-  --nile-deep: #164666;
+  --nile-deep: #163a5a;
   --nile-tint: var(--info-tint);
   --leaf: var(--verified);
   --leaf-tint: var(--verified-tint);
@@ -109,116 +85,20 @@
   --s-4: 16px;
   --s-5: 20px;
   --s-6: 24px;
-  --s-7: 28px;
   --s-8: 32px;
   --s-10: 40px;
 
-  /* One soft shadow, dialogs only; one lift, product cards on hover. */
+  /* One soft shadow, dialogs only. */
   --shadow-card: none;
-  --shadow-card-hover: 0 8px 24px -12px rgba(15, 31, 22, 0.25);
-  --shadow-dialog: 0 24px 64px -20px rgba(15, 46, 28, 0.35);
+  --shadow-dialog: 0 24px 64px -20px rgba(15, 31, 22, 0.35);
 
-  /* Focus ring: 2px green, offset 2px. */
+  /* Focus ring: 2px amber, offset 2px. */
   --ring: 0 0 0 2px var(--paper), 0 0 0 4px var(--accent);
 
   --content-max: 1600px;
   --masthead-h: 56px;
 
   color-scheme: light;
-}
-
-/*
- * ─────────────────────────────────────────────────────────────────────
- *  ".shop" — the Amazon-style farmer + marketplace scope.
- *
- *  A DELIBERATE divergence from "The Register" above, requested by the
- *  client lead: the farmer-facing surfaces (the (farmer) entry/account and
- *  the (market) browse/product pages) are dressed as an Amazon-style
- *  shopping experience — Open Sans, cool-grey ground, white cards, 8px
- *  radius, soft hover shadow, a green focus glow — while KEEPING AgriOne's
- *  green palette (green is Amazon's cart-yellow here). The staff portal
- *  (app/(portal)/**) is never wrapped in `.shop` and stays exactly as the
- *  Register defines it. Everything here is tokens; no raw hex in components.
- * ───────────────────────────────────────────────────────────────────── */
-
-.shop {
-  /* ---- Amazon neutrals (a hair green, never pure) ------------------- */
-  --az-bg: #eaeeeb;
-  --az-card: #ffffff;
-  --az-dust: #f0f2f0;
-  --az-line: #d5d9d9;
-  --az-line-strong: #b8bfbe;
-  --az-ink: #0f1111;
-  --az-ink-2: #333b3b;
-  --az-muted: #565f5f;
-
-  /* ---- Amazon shapes & feedback (green where Amazon is orange) ------ */
-  --az-radius: 8px;
-  --az-radius-pill: 999px;
-  --az-shadow-hover: 0 2px 8px rgba(15, 17, 17, 0.15);
-  --az-focus: 0 0 0 3px rgba(31, 122, 63, 0.5);
-  --az-strip: #16482c; /* the second, lighter-green category strip */
-  --az-btn-ink: #ffffff; /* text on the solid-green CTA pill */
-  --az-btn-top: rgba(255, 255, 255, 0.28); /* CTA top inner-highlight */
-
-  /* ---- Remap the Register's base tokens onto the Amazon values ------ */
-  --font-display: var(--font-open-sans), system-ui, 'Segoe UI', Roboto, Arial, sans-serif;
-  --font-body: var(--font-open-sans), system-ui, 'Segoe UI', Roboto, Arial, sans-serif;
-  --font-mono: var(--font-open-sans), system-ui, 'Segoe UI', Roboto, Arial, sans-serif;
-
-  --paper: var(--az-bg);
-  --card: var(--az-card);
-  --dust: var(--az-dust);
-  --line: var(--az-line);
-  --line-strong: var(--az-line-strong);
-  --ink: var(--az-ink);
-  --ink-2: var(--az-ink-2);
-  --muted: var(--az-muted);
-
-  --radius-card: var(--az-radius);
-  --radius-control: var(--az-radius);
-  --radius-pill: var(--az-radius-pill);
-
-  --shadow-card-hover: var(--az-shadow-hover);
-  --ring: var(--az-focus);
-
-  font-family: var(--font-body);
-  color: var(--ink);
-  background: var(--paper);
-}
-
-/* Mono numerals keep tabular figures but ride the Open Sans face here. */
-.shop .mono,
-.shop .num {
-  font-family: var(--font-body);
-  font-variant-numeric: tabular-nums;
-}
-
-/* Amazon headings are the same humanist face, not a display serif. */
-.shop h1,
-.shop h2,
-.shop h3,
-.shop h4 {
-  font-family: var(--font-body);
-  font-weight: 700;
-  letter-spacing: -0.01em;
-  font-variation-settings: normal;
-}
-
-/* Amazon links: ink text, green underline on hover. */
-.shop a {
-  text-decoration-color: transparent;
-}
-
-.shop a:hover {
-  color: var(--ink);
-  text-decoration-color: var(--green);
-}
-
-/* Amazon focus is a soft green glow, not the offset ring. */
-.shop :focus-visible {
-  box-shadow: var(--az-focus);
-  border-radius: var(--az-radius);
 }
 
 /* ---- Reset ---------------------------------------------------------- */

@@ -468,7 +468,7 @@ export function EntryForm({ existing }: { existing: DirectoryEntryRow | null }) 
                 </Field>
                 {existing ? (
                   <Checkbox
-                    label="Active, shown to officers"
+                    label="Active — shown to officers"
                     checked={form.active}
                     onChange={(event) => update('active', event.target.checked)}
                   />
