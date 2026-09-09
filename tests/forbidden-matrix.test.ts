@@ -1,13 +1,46 @@
-import { PrismaClient } from '@prisma/client';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
+import * as farmerFarms from '../apps/web/app/api/farmers/[id]/farms/route';
+import * as farmerVisits from '../apps/web/app/api/farmers/[id]/visits/route';
+import * as attachmentConfirm from '../apps/web/app/api/visits/[id]/attachments/[aid]/confirm/route';
+import * as attachmentFail from '../apps/web/app/api/visits/[id]/attachments/[aid]/fail/route';
+import * as attachmentLink from '../apps/web/app/api/visits/[id]/attachments/[aid]/link/route';
+import * as visitAttachments from '../apps/web/app/api/visits/[id]/attachments/route';
+import * as visitChain from '../apps/web/app/api/visits/[id]/chain/route';
+import * as visitItem from '../apps/web/app/api/visits/[id]/route';
+import * as visitsList from '../apps/web/app/api/visits/route';
+import * as farmerItem from '../apps/web/app/api/farmers/[id]/route';
+import * as farmBoundaries from '../apps/web/app/api/farms/[id]/boundaries/route';
+import * as farmCrops from '../apps/web/app/api/farms/[id]/crops/route';
+import * as farmItem from '../apps/web/app/api/farms/[id]/route';
+import * as farmsGeojson from '../apps/web/app/api/farms/geojson/route';
+import * as farmsList from '../apps/web/app/api/farms/route';
+import * as reportExports from '../apps/web/app/api/reports/exports/route';
+import * as reportSummary from '../apps/web/app/api/reports/summary/route';
+import * as syncCaseload from '../apps/web/app/api/sync/caseload/route';
+import * as farmerMerge from '../apps/web/app/api/farmers/[id]/merge/route';
+import * as farmerReassign from '../apps/web/app/api/farmers/[id]/reassign/route';
+import * as farmerReject from '../apps/web/app/api/farmers/[id]/reject/route';
+import * as farmerResubmit from '../apps/web/app/api/farmers/[id]/resubmit/route';
+import * as farmerVerify from '../apps/web/app/api/farmers/[id]/verify/route';
+import * as farmers from '../apps/web/app/api/farmers/route';
+import * as verificationQueue from '../apps/web/app/api/verification/queue/route';
 import * as locations from '../apps/web/app/api/locations/route';
 import * as me from '../apps/web/app/api/me/route';
 import * as officerItem from '../apps/web/app/api/officers/[id]/route';
 import * as officers from '../apps/web/app/api/officers/route';
 import * as userItem from '../apps/web/app/api/users/[id]/route';
 import * as users from '../apps/web/app/api/users/route';
-import { type TestPrincipal, createPrincipal, sweep } from './helpers/principals';
+import { randomUUID } from 'node:crypto';
+import {
+  FARMER_TEST_FAMILY,
+  type TestPrincipal,
+  createPrincipal,
+  sweep,
+} from './helpers/principals';
+import { removeStoredObject } from '../apps/web/lib/supabase/admin';
+import { VISIT_ATTACHMENT_BUCKET } from '../packages/shared/src/visit';
+import { makeTestPrisma, requireTestEnv } from './helpers/db';
 import { call } from './helpers/request';
 
 /**
@@ -29,13 +62,10 @@ import { call } from './helpers/request';
 
 vi.setConfig({ testTimeout: 300_000, hookTimeout: 300_000 });
 
-const HAS_ENV =
-  (process.env.DATABASE_URL ?? '') !== '' && (process.env.SUPABASE_SERVICE_ROLE_KEY ?? '') !== '';
-const run = HAS_ENV ? describe : describe.skip;
+requireTestEnv();
+const run = describe;
 
-const prisma = new PrismaClient({
-  datasources: { db: { url: process.env.DIRECT_URL ?? process.env.DATABASE_URL } },
-});
+const prisma = makeTestPrisma();
 
 let admin: TestPrincipal & { password: string };
 let supervisor: TestPrincipal & { password: string };
@@ -46,16 +76,120 @@ const STATE_A = 'CE';
 const PAYAM_A = 'CE-JUB-MUN';
 
 beforeAll(async () => {
-  if (!HAS_ENV) return;
   await sweep(prisma);
   admin = await createPrincipal(prisma, 'admin');
   supervisor = await createPrincipal(prisma, 'supervisor', { stateId: STATE_A });
   readOnly = await createPrincipal(prisma, 'read_only', { stateId: STATE_A });
   officer = await createPrincipal(prisma, 'officer', { payamId: PAYAM_A });
+  // B5: one farmer the officer registered, for the item routes.
+  const registered = await call(farmers, 'POST', { as: officer, body: farmerBody() });
+  if (registered.status !== 201) {
+    throw new Error(`matrix setup: could not register a farmer (${registered.status})`);
+  }
+  farmerId = (registered.body.data as { id: string }).id;
+  // B7: one farm the officer mapped, for the farm routes.
+  const mapped = await call(farmerFarms, 'POST', {
+    as: officer,
+    body: farmBody(),
+    params: { id: farmerId },
+  });
+  if (mapped.status !== 201)
+    throw new Error(`matrix setup: could not map a farm (${mapped.status})`);
+  farmId = (mapped.body.data as { id: string }).id;
+  // B8: one visit the officer recorded, with one photo that has arrived, so
+  // the link route has something to open for every role allowed to read it.
+  const visited = await call(farmerVisits, 'POST', {
+    as: officer,
+    body: visitBody(),
+    params: { id: farmerId },
+  });
+  if (visited.status !== 201)
+    throw new Error(`matrix setup: could not record a visit (${visited.status})`);
+  visitId = (visited.body.data as { id: string }).id;
+  const declared = await call(visitAttachments, 'POST', {
+    as: officer,
+    body: {
+      id: randomUUID(),
+      kind: 'photo',
+      content_type: 'image/jpeg',
+      byte_size: FAKE_JPEG.length,
+      captured_at: new Date().toISOString(),
+    },
+    params: { id: visitId },
+  });
+  if (declared.status !== 201)
+    throw new Error(`matrix setup: could not declare an attachment (${declared.status})`);
+  const attachment = declared.body.data as { id: string; upload: { url: string } };
+  attachmentId = attachment.id;
+  const put = await fetch(attachment.upload.url, {
+    method: 'PUT',
+    headers: { 'content-type': 'image/jpeg', 'x-upsert': 'false' },
+    body: new Uint8Array(FAKE_JPEG),
+  });
+  if (put.status !== 200) throw new Error(`matrix setup: upload refused (${put.status})`);
+  uploadedPath = decodeURIComponent(
+    new URL(attachment.upload.url).pathname.split('/object/upload/sign/')[1] ?? '',
+  ).replace(`${VISIT_ATTACHMENT_BUCKET}/`, '');
+  const confirmed = await call(attachmentConfirm, 'POST', {
+    as: officer,
+    body: {},
+    params: { id: visitId, aid: attachmentId },
+  });
+  if (confirmed.status !== 200)
+    throw new Error(`matrix setup: could not confirm the attachment (${confirmed.status})`);
+});
+let visitId = '';
+let attachmentId = '';
+let uploadedPath = '';
+const FAKE_JPEG = Buffer.concat([
+  Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00]),
+  Buffer.from('zztest-not-a-real-photo-'.repeat(20)),
+  Buffer.from([0xff, 0xd9]),
+]);
+const visitBody = () => ({
+  id: randomUUID(),
+  visited_at: new Date(Date.now() - 3_600_000).toISOString(),
+  position: { type: 'Point', coordinates: [31.6004, 4.8503] },
+  gps_accuracy_m: 6,
+  advice: 'Zztest advice: weed the lower plot before the rains.',
+  topics: ['weeding'],
+});
+let farmId = '';
+const SQUARE = {
+  type: 'Polygon',
+  coordinates: [
+    [
+      [31.6, 4.85],
+      [31.6009, 4.85],
+      [31.6009, 4.8509],
+      [31.6, 4.8509],
+      [31.6, 4.85],
+    ],
+  ],
+};
+const farmBody = () => ({
+  id: randomUUID(),
+  boundary_id: randomUUID(),
+  season: '2026-main',
+  boundary: SQUARE,
+  gps_accuracy_m: 6,
+});
+let farmerId = '';
+let phoneSeq = 0;
+const farmerBody = () => ({
+  id: randomUUID(),
+  given_name: 'Zzmatrix',
+  family_name: FARMER_TEST_FAMILY,
+  sex: 'f',
+  year_of_birth: 1985,
+  phone: `+21191${String(7_000_000 + Math.floor(Math.random() * 999_999) + (phoneSeq += 1)).padStart(7, '0')}`,
+  payam_id: PAYAM_A,
+  consent: { text_version: 'v1.0-en', language: 'en', granted: true },
 });
 
 afterAll(async () => {
-  if (HAS_ENV) await sweep(prisma);
+  if (uploadedPath) await removeStoredObject(VISIT_ATTACHMENT_BUCKET, uploadedPath).catch(() => {});
+  await sweep(prisma);
   await prisma.$disconnect();
 });
 
@@ -156,6 +290,275 @@ const ROUTES = [
     method: 'DELETE' as const,
     allow: ['admin'],
     params: () => ({ id: officer.id }),
+  },
+  // B5 (C-5). The officer registered the farmer, so the item routes are in their caseload.
+  {
+    name: 'GET /api/farmers',
+    mod: farmers,
+    method: 'GET' as const,
+    allow: ['admin', 'supervisor', 'read_only', 'officer'],
+  },
+  {
+    name: 'POST /api/farmers',
+    mod: farmers,
+    method: 'POST' as const,
+    allow: ['admin', 'officer'],
+    body: () => farmerBody(),
+  },
+  {
+    name: 'GET /api/farmers/:id',
+    mod: farmerItem,
+    method: 'GET' as const,
+    allow: ['admin', 'supervisor', 'read_only', 'officer'],
+    params: () => ({ id: farmerId }),
+  },
+  {
+    name: 'PATCH /api/farmers/:id',
+    mod: farmerItem,
+    method: 'PATCH' as const,
+    allow: ['admin', 'officer'],
+    params: () => ({ id: farmerId }),
+    body: () => ({ given_name: 'Zzrenamed' }),
+  },
+  {
+    name: 'DELETE /api/farmers/:id',
+    mod: farmerItem,
+    method: 'DELETE' as const,
+    allow: ['admin'],
+    params: () => ({ id: farmerId }),
+  },
+  // B6 (C-6). The matrix farmer is pending and in state CE, the supervisor's state.
+  {
+    name: 'POST /api/farmers/:id/verify',
+    mod: farmerVerify,
+    method: 'POST' as const,
+    allow: ['admin', 'supervisor'],
+    params: () => ({ id: farmerId }),
+  },
+  {
+    name: 'POST /api/farmers/:id/reject',
+    mod: farmerReject,
+    method: 'POST' as const,
+    allow: ['admin', 'supervisor'],
+    params: () => ({ id: farmerId }),
+    body: () => ({ reason_code: 'other' }),
+  },
+  {
+    name: 'POST /api/farmers/:id/merge',
+    mod: farmerMerge,
+    method: 'POST' as const,
+    allow: ['admin', 'supervisor'],
+    params: () => ({ id: farmerId }),
+    body: () => ({ target_id: farmerId }),
+  },
+  {
+    name: 'POST /api/farmers/:id/resubmit',
+    mod: farmerResubmit,
+    method: 'POST' as const,
+    allow: ['officer'],
+    params: () => ({ id: farmerId }),
+  },
+  {
+    name: 'GET /api/verification/queue',
+    mod: verificationQueue,
+    method: 'GET' as const,
+    allow: ['admin', 'supervisor', 'read_only'],
+  },
+  // B7 (C-7). The officer mapped the farm; the admin may only read and remove.
+  {
+    name: 'POST /api/farmers/:id/farms',
+    mod: farmerFarms,
+    method: 'POST' as const,
+    allow: ['officer'],
+    params: () => ({ id: farmerId }),
+    body: () => farmBody(),
+  },
+  {
+    name: 'GET /api/farmers/:id/farms',
+    mod: farmerFarms,
+    method: 'GET' as const,
+    allow: ['admin', 'supervisor', 'read_only', 'officer'],
+    params: () => ({ id: farmerId }),
+  },
+  {
+    name: 'GET /api/farms/:id',
+    mod: farmItem,
+    method: 'GET' as const,
+    allow: ['admin', 'supervisor', 'read_only', 'officer'],
+    params: () => ({ id: farmId }),
+  },
+  {
+    name: 'POST /api/farms/:id/boundaries',
+    mod: farmBoundaries,
+    method: 'POST' as const,
+    allow: ['officer'],
+    params: () => ({ id: farmId }),
+    body: () => ({ id: randomUUID(), season: '2026-second', boundary: SQUARE, gps_accuracy_m: 6 }),
+  },
+  {
+    name: 'GET /api/farms/:id/boundaries',
+    mod: farmBoundaries,
+    method: 'GET' as const,
+    allow: ['admin', 'supervisor', 'read_only', 'officer'],
+    params: () => ({ id: farmId }),
+  },
+  {
+    name: 'PUT /api/farms/:id/crops',
+    mod: farmCrops,
+    method: 'PUT' as const,
+    allow: ['officer'],
+    params: () => ({ id: farmId }),
+    body: () => ({ season: '2026-main', crops: ['maize'] }),
+  },
+  {
+    name: 'GET /api/farms/geojson',
+    mod: farmsGeojson,
+    method: 'GET' as const,
+    allow: ['admin', 'supervisor'],
+  },
+  {
+    name: 'DELETE /api/farms/:id',
+    mod: farmItem,
+    method: 'DELETE' as const,
+    allow: ['admin'],
+    params: () => ({ id: farmId }),
+  },
+  // B10 (C-10). The dashboard for everyone in scope; exports and their log for administrators and supervisors.
+  {
+    name: 'GET /api/reports/summary',
+    mod: reportSummary,
+    method: 'GET' as const,
+    allow: ['admin', 'supervisor', 'read_only', 'officer'],
+  },
+  {
+    name: 'GET /api/reports/exports',
+    mod: reportExports,
+    method: 'GET' as const,
+    allow: ['admin', 'supervisor'],
+  },
+  {
+    name: 'POST /api/reports/exports',
+    mod: reportExports,
+    method: 'POST' as const,
+    allow: ['admin', 'supervisor'],
+    body: () => ({ report_type: 'summary' }),
+  },
+  // B9 (C-9). The farms list for everyone in scope; the caseload for officers only.
+  {
+    name: 'GET /api/farms',
+    mod: farmsList,
+    method: 'GET' as const,
+    allow: ['admin', 'supervisor', 'read_only', 'officer'],
+  },
+  {
+    name: 'GET /api/sync/caseload',
+    mod: syncCaseload,
+    method: 'GET' as const,
+    allow: ['officer'],
+  },
+  // B8.5 (C-8R). Only an administrator moves a caseload.
+  {
+    name: 'POST /api/farmers/:id/reassign',
+    mod: farmerReassign,
+    method: 'POST' as const,
+    allow: ['admin'],
+    params: () => ({ id: farmerId }),
+    body: () => ({ officer_id: randomUUID() }),
+  },
+  // B8 (C-8). The officer visited; the admin corrects and removes; everyone in scope reads.
+  {
+    name: 'POST /api/farmers/:id/visits',
+    mod: farmerVisits,
+    method: 'POST' as const,
+    allow: ['officer'],
+    params: () => ({ id: farmerId }),
+    body: () => visitBody(),
+  },
+  {
+    name: 'GET /api/farmers/:id/visits',
+    mod: farmerVisits,
+    method: 'GET' as const,
+    allow: ['admin', 'supervisor', 'read_only', 'officer'],
+    params: () => ({ id: farmerId }),
+  },
+  {
+    name: 'GET /api/visits',
+    mod: visitsList,
+    method: 'GET' as const,
+    allow: ['admin', 'supervisor', 'read_only', 'officer'],
+  },
+  {
+    name: 'GET /api/visits/:id',
+    mod: visitItem,
+    method: 'GET' as const,
+    allow: ['admin', 'supervisor', 'read_only', 'officer'],
+    params: () => ({ id: visitId }),
+  },
+  {
+    name: 'PATCH /api/visits/:id',
+    mod: visitItem,
+    method: 'PATCH' as const,
+    allow: ['admin', 'officer'],
+    params: () => ({ id: visitId }),
+    body: () => ({ topics: ['weeding', 'planting'] }),
+  },
+  {
+    name: 'DELETE /api/visits/:id',
+    mod: visitItem,
+    method: 'DELETE' as const,
+    allow: ['admin'],
+    params: () => ({ id: visitId }),
+  },
+  {
+    name: 'GET /api/visits/:id/chain',
+    mod: visitChain,
+    method: 'GET' as const,
+    allow: ['admin', 'supervisor', 'read_only', 'officer'],
+    params: () => ({ id: visitId }),
+  },
+  {
+    name: 'POST /api/visits/:id/attachments',
+    mod: visitAttachments,
+    method: 'POST' as const,
+    allow: ['officer'],
+    params: () => ({ id: visitId }),
+    body: () => ({
+      id: randomUUID(),
+      kind: 'photo',
+      content_type: 'image/jpeg',
+      byte_size: 1234,
+      captured_at: new Date().toISOString(),
+    }),
+  },
+  {
+    name: 'GET /api/visits/:id/attachments',
+    mod: visitAttachments,
+    method: 'GET' as const,
+    allow: ['admin', 'supervisor', 'read_only', 'officer'],
+    params: () => ({ id: visitId }),
+  },
+  {
+    name: 'POST /api/visits/:id/attachments/:aid/confirm',
+    mod: attachmentConfirm,
+    method: 'POST' as const,
+    allow: ['officer'],
+    params: () => ({ id: visitId, aid: attachmentId }),
+    body: () => ({}),
+  },
+  {
+    name: 'POST /api/visits/:id/attachments/:aid/fail',
+    mod: attachmentFail,
+    method: 'POST' as const,
+    allow: ['officer'],
+    params: () => ({ id: visitId, aid: attachmentId }),
+    body: () => ({}),
+  },
+  {
+    name: 'GET /api/visits/:id/attachments/:aid/link',
+    mod: attachmentLink,
+    method: 'GET' as const,
+    allow: ['admin', 'supervisor', 'read_only', 'officer'],
+    params: () => ({ id: visitId, aid: attachmentId }),
   },
 ];
 

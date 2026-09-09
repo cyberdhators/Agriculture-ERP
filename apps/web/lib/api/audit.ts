@@ -2,6 +2,7 @@ import { type AuditAction, type AuditActorType, auditSafe } from '@agri-erp/shar
 import type { Prisma, PrismaClient } from '@prisma/client';
 
 import { prisma } from '../db';
+import { currentRequestContext } from './request-context';
 
 /**
  * writeAudit, and why it cannot be called outside a transaction. Unit B4.
@@ -22,6 +23,9 @@ import { prisma } from '../db';
  */
 
 const AUDIT_TX = Symbol.for('agri-erp.audit-tx');
+
+/** How long a write transaction may sit idle before the server ends it. Exported for the test that proves it is set. */
+export const IDLE_IN_TRANSACTION_TIMEOUT = '30s';
 
 /** A transaction client that `audited()` has stamped. Nothing else can make one. */
 export type AuditTx = Prisma.TransactionClient & { readonly [AUDIT_TX]: true };
@@ -51,6 +55,15 @@ export async function audited<T>(
 ): Promise<T> {
   return client.$transaction(
     async (tx) => {
+      // An abandoned transaction must never hold a lock for long. Found
+      // 2026-09-05: a client that gives up on a transaction leaves the server
+      // session "idle in transaction" through the pooler, this role has no
+      // idle_in_transaction_session_timeout, and the farmer-number counter row
+      // stayed locked for sixteen minutes. SET LOCAL is scoped to this
+      // transaction, so nothing outside it changes.
+      await tx.$executeRawUnsafe(
+        `SET LOCAL idle_in_transaction_session_timeout = '${IDLE_IN_TRANSACTION_TIMEOUT}'`,
+      );
       Object.defineProperty(tx, AUDIT_TX, { value: true, enumerable: false });
       return fn(tx as AuditTx);
     },
@@ -88,7 +101,9 @@ export async function writeAudit(tx: AuditTx, entry: AuditEntry): Promise<void> 
     entry.action,
     JSON.stringify(auditSafe(entry.before)),
     JSON.stringify(auditSafe(entry.after)),
-    entry.deviceId ?? null,
+    // C-9.8: the device from the request, unless the caller named one. Rows
+    // written before B9 carry null and always will (PROJECT-STATE).
+    entry.deviceId ?? currentRequestContext()?.deviceId ?? null,
   );
 }
 

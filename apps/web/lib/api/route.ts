@@ -7,12 +7,16 @@ import {
   apiError,
   isJsonMediaType,
   zodErrorToApiError,
+  DEVICE_ID_HEADER,
+  SYNC_MESSAGES,
+  deviceIdSchema,
 } from '@agri-erp/shared';
 import * as Sentry from '@sentry/nextjs';
 import { NextResponse } from 'next/server';
 import { randomUUID } from 'node:crypto';
 
 import { ApiFailure, failureResponse, internalError } from './errors';
+import { runWithRequestContext } from './request-context';
 import { type Authenticated, requireRole } from './require-role';
 
 /**
@@ -56,6 +60,12 @@ export type RouteResult =
       readonly data: unknown;
       readonly status?: number;
       readonly headers?: Record<string, string>;
+      /**
+       * CONVENTIONS §3.2. A warning is not an error: the write succeeded, and
+       * `warnings` sits beside `data`, never inside an error body. Present only
+       * when there is something to say.
+       */
+      readonly warnings?: Warnings;
     }
   | {
       readonly kind: 'page';
@@ -75,6 +85,24 @@ export const ok = (data: unknown, headers?: Record<string, string>): RouteResult
 
 /** 201 with the created object. CONVENTIONS section 3. */
 export const created = (data: unknown): RouteResult => ({ kind: 'data', data, status: 201 });
+
+/** The documented warning shapes. Pinned in CONVENTIONS §3.2. */
+export interface Warnings {
+  /** Ids of existing farmers that matched (C-5.6). Ids only — the caller looks them up. */
+  readonly duplicates?: readonly string[];
+}
+
+const withWarnings = (result: RouteResult, warnings: Warnings): RouteResult => {
+  if (result.kind !== 'data') return result;
+  const nonEmpty = Object.fromEntries(
+    Object.entries(warnings).filter(([, v]) => Array.isArray(v) && v.length > 0),
+  );
+  return Object.keys(nonEmpty).length > 0 ? { ...result, warnings: nonEmpty } : result;
+};
+export const okWith = (data: unknown, warnings: Warnings): RouteResult =>
+  withWarnings(ok(data), warnings);
+export const createdWith = (data: unknown, warnings: Warnings): RouteResult =>
+  withWarnings(created(data), warnings);
 
 /** A list. `{ data: [...], page: { cursor, hasMore } }` -- section 6.1. */
 export const paged = (
@@ -97,6 +125,8 @@ export interface RouteContext<TBody> {
   readonly body: TBody;
   readonly params: Record<string, string>;
   readonly correlationId: string;
+  /** The device header (C-9.8), or null for a browser session. */
+  readonly deviceId: string | null;
 }
 
 export interface RouteDefinition<TBody = undefined> {
@@ -128,7 +158,11 @@ function respond(result: RouteResult, correlationId: string): NextResponse {
   if (result.kind === 'page') {
     return NextResponse.json({ data: result.data, page: result.page }, { status: 200, headers });
   }
-  return NextResponse.json({ data: result.data }, { status: result.status ?? 200, headers });
+  const body =
+    result.warnings !== undefined
+      ? { data: result.data, warnings: result.warnings }
+      : { data: result.data };
+  return NextResponse.json(body, { status: result.status ?? 200, headers });
 }
 
 function wrap<TBody>(definition: RouteDefinition<TBody>): NextRouteHandler {
@@ -139,6 +173,20 @@ function wrap<TBody>(definition: RouteDefinition<TBody>): NextRouteHandler {
     const correlationId = request.headers.get('x-correlation-id') ?? randomUUID();
 
     try {
+      // C-9.8: the device, if the request names one. A malformed header is a
+      // 400 like any other malformed input; a missing one is a browser.
+      const rawDevice = request.headers.get(DEVICE_ID_HEADER);
+      let deviceId: string | null = null;
+      if (rawDevice !== null) {
+        const parsedDevice = deviceIdSchema.safeParse(rawDevice.trim());
+        if (!parsedDevice.success) {
+          throw new ApiFailure(400, ERROR_CODES.invalidInput, ERROR_MESSAGES.invalidInput, {
+            [DEVICE_ID_HEADER]: SYNC_MESSAGES.deviceIdShape,
+          });
+        }
+        deviceId = parsedDevice.data;
+      }
+
       // 1. Authenticate and authorise BEFORE anything reads the body or the
       //    database. An unauthenticated caller learns nothing about the shape
       //    of the request they got wrong.
@@ -180,9 +228,12 @@ function wrap<TBody>(definition: RouteDefinition<TBody>): NextRouteHandler {
       }
 
       const params = (await context?.params) ?? {};
-      return respond(
-        await definition.handler({ request, auth, body, params, correlationId }),
-        correlationId,
+      // Every audit write inside the handler reads the device from here (C-9.8).
+      return await runWithRequestContext({ correlationId, deviceId }, async () =>
+        respond(
+          await definition.handler({ request, auth, body, params, correlationId, deviceId }),
+          correlationId,
+        ),
       );
     } catch (failure) {
       // A documented outcome for the caller -- 401, 404, 422 and so on. Not an

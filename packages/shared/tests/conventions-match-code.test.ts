@@ -7,7 +7,13 @@ import {
   AUDIT_ACTIONS,
   ERROR_CODES,
   ERROR_MESSAGES,
+  FARM_MESSAGES,
+  VISIT_MESSAGES,
+  SYNC_MESSAGES,
+  REPORT_MESSAGES,
+  FARMER_MESSAGES,
   PAGINATION_MESSAGES,
+  VERIFICATION_MESSAGES,
   PHONE_MESSAGES,
 } from '../src/index';
 
@@ -142,6 +148,12 @@ describe('the documented field reasons match the ones the code actually sends', 
   const reasonsInCode = [
     ...Object.values(PHONE_MESSAGES),
     ...Object.values(PAGINATION_MESSAGES),
+    ...Object.values(FARMER_MESSAGES),
+    ...Object.values(VERIFICATION_MESSAGES),
+    ...Object.values(FARM_MESSAGES),
+    ...Object.values(VISIT_MESSAGES),
+    ...Object.values(SYNC_MESSAGES),
+    ...Object.values(REPORT_MESSAGES),
     ERROR_MESSAGES.unknownField,
     ERROR_MESSAGES.bodyNotExpectedForm,
   ];

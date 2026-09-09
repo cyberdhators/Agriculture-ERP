@@ -102,6 +102,8 @@ model State {
   directoryEntries DirectoryEntry[]
   users    User[]
   officers Officer[]
+  farmers  Farmer[]
+  farms    Farm[]
 
   @@map("state")
 }
@@ -116,6 +118,9 @@ model County {
 
   state  State   @relation(fields: [stateId], references: [id])
   payams Payam[]
+  farmers Farmer[]
+  farms   Farm[]
+  farmerNumberCounter FarmerNumberCounter?
 
   /// Target of the composite key on payam that enforces C-2.3.
   @@unique([id, stateId], map: "county_id_state_id_key")
@@ -139,9 +144,13 @@ model Payam {
   directoryEntries DirectoryEntry[]
 
   officers Officer[]
+  farmers  Farmer[]
+  farms    Farm[]
 
   /// Target of the composite key on officer.
   @@unique([id, stateId], map: "payam_id_state_id_key")
+  /// Target of farmer's second composite key (C-5.5): county must match. B5, migration 10.
+  @@unique([id, countyId], map: "payam_id_county_id_key")
   @@index([countyId], map: "payam_county_id_idx")
   /// Target of the composite key on every table below payam that carries a
   /// denormalised state_id. Added by migration 6 (P1); B5 onward reuse it.
@@ -263,6 +272,8 @@ model DirectoryEntry {
   payam Payam @relation(fields: [payamId, stateId], references: [id, stateId], map: "directory_entry_payam_state_consistent_fkey")
   state State @relation(fields: [stateId], references: [id], map: "directory_entry_state_id_fkey")
 
+  verifier User? @relation("DirectoryEntryVerifiedBy", fields: [verifiedBy], references: [id], map: "directory_entry_verified_by_fkey")
+  deleter  User? @relation("DirectoryEntryDeletedBy", fields: [deletedBy], references: [id], map: "directory_entry_deleted_by_fkey")
   @@index([entryType, payamId, active], map: "directory_entry_lookup_idx")
   @@index([stateId], map: "directory_entry_state_id_idx")
   @@map("directory_entry")
@@ -292,6 +303,8 @@ model LearningResource {
   // Both indexes on this table are partial (deleted_at IS NULL) and the unique
   // on storage_path is too. Prisma cannot express partial indexes, so they live
   // in migration 6 only, as the _active indexes on the B2 tables do.
+  uploader User? @relation("LearningResourceUploadedBy", fields: [uploadedBy], references: [id], map: "learning_resource_uploaded_by_fkey")
+  deleter  User? @relation("LearningResourceDeletedBy", fields: [deletedBy], references: [id], map: "learning_resource_deleted_by_fkey")
   @@map("learning_resource")
 }
 /// Office staff. NO EMAIL COLUMN: email lives in auth.users and nowhere else,
@@ -310,6 +323,12 @@ model User {
   deletedBy    String?   @map("deleted_by") @db.Uuid
 
   scopeState State? @relation(fields: [scopeStateId], references: [id])
+  verificationDecisions VerificationEvent[]
+  farmsDeleted          Farm[]              @relation("FarmDeletedBy")
+  directoryEntriesVerified DirectoryEntry[] @relation("DirectoryEntryVerifiedBy")
+  directoryEntriesDeleted  DirectoryEntry[] @relation("DirectoryEntryDeletedBy")
+  learningResourcesUploaded LearningResource[] @relation("LearningResourceUploadedBy")
+  learningResourcesDeleted  LearningResource[] @relation("LearningResourceDeletedBy")
 
   @@index([role], map: "user_role_idx")
   @@index([scopeStateId], map: "user_scope_state_id_idx")
@@ -347,6 +366,11 @@ model Officer {
   /// with the state of their payam.
   payam Payam @relation(fields: [payamId, stateId], references: [id, stateId], map: "officer_payam_state_consistent_fkey")
   state State @relation(fields: [stateId], references: [id], map: "officer_state_id_fkey")
+  farmersRegistered Farmer[]
+  resubmissions     VerificationEvent[]
+  farmsCreated      Farm[]           @relation("FarmCreatedBy")
+  boundariesMapped  FarmBoundary[]
+  cropsDeclared     CropDeclaration[]
 
   @@index([payamId], map: "officer_payam_id_idx")
   @@index([stateId], map: "officer_state_id_idx")
@@ -393,3 +417,224 @@ enum AuditActorType {
   @@map("audit_actor_type")
 }
 
+
+// -----------------------------------------------------------------------------
+// B5 — the farmer record (C-5). Migration 10.
+// -----------------------------------------------------------------------------
+
+enum Sex {
+  f
+  m
+
+  @@map("sex")
+}
+
+enum RegistrationSource {
+  officer
+  /// In the enum because the data model has it. No route produces it: a value, not a permission.
+  self
+
+  @@map("registration_source")
+}
+
+enum VerificationStatus {
+  pending
+  verified
+  rejected
+  /// B6: a state, with merged_into as the pointer.
+  merged
+
+  @@map("verification_status")
+}
+
+/// One row per county; the row lock on the upsert is what makes farmer numbers unique (C-5.4).
+model FarmerNumberCounter {
+  countyId  String @id @map("county_id")
+  nextValue Int    @default(1) @map("next_value")
+
+  county County @relation(fields: [countyId], references: [id])
+
+  @@map("farmer_number_counter")
+}
+
+model Farmer {
+  /// Client-generated (C-5.12). No default.
+  id                 String             @id @db.Uuid
+  /// Stored at insert, never re-derived (C-5.4).
+  farmerNumber       String             @unique(map: "farmer_farmer_number_key") @map("farmer_number")
+  givenName          String             @map("given_name")
+  familyName         String             @map("family_name")
+  sex                Sex
+  yearOfBirth        Int                @map("year_of_birth")
+  phone              String
+  nationalId         String?            @map("national_id")
+  payamId            String             @map("payam_id")
+  countyId           String             @map("county_id")
+  stateId            String             @map("state_id")
+  registeredBy       String?            @map("registered_by") @db.Uuid
+  registrationSource RegistrationSource @default(officer) @map("registration_source")
+  verificationStatus VerificationStatus @default(pending) @map("verification_status")
+  mergedInto         String?            @map("merged_into") @db.Uuid
+  consentId          String             @map("consent_id") @db.Uuid
+  duplicateFlag      Boolean            @default(false) @map("duplicate_flag")
+  duplicateMatches   String[]           @default([]) @map("duplicate_matches") @db.Uuid
+  /// The escalation clock (C-6.7): set at registration, reset on resubmission, otherwise immutable (trigger).
+  pendingSince       DateTime           @default(now()) @map("pending_since") @db.Timestamptz(6)
+  createdAt          DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime           @default(now()) @map("updated_at") @db.Timestamptz(6)
+  deletedAt          DateTime?          @map("deleted_at") @db.Timestamptz(6)
+  deletedBy          String?            @map("deleted_by") @db.Uuid
+
+  payam        Payam    @relation(fields: [payamId, stateId], references: [id, stateId], map: "farmer_payam_state_consistent_fkey")
+  county       County   @relation(fields: [countyId], references: [id], map: "farmer_county_id_fkey")
+  state        State    @relation(fields: [stateId], references: [id], map: "farmer_state_id_fkey")
+  registrar    Officer? @relation(fields: [registeredBy], references: [id], map: "farmer_registered_by_fkey")
+  mergedTarget Farmer?  @relation("FarmerMerge", fields: [mergedInto], references: [id], map: "farmer_merged_into_fkey")
+  mergedFrom   Farmer[] @relation("FarmerMerge")
+  /// The current consent. Deferred foreign key: both rows commit together (C-5.3).
+  consent      Consent  @relation("CurrentConsent", fields: [consentId], references: [id], map: "farmer_consent_id_fkey")
+  consents     Consent[] @relation("FarmerConsents")
+  verificationEvents VerificationEvent[] @relation("FarmerVerificationEvents")
+  farms              Farm[]
+  mergeTargetOf      VerificationEvent[] @relation("MergeTargetEvents")
+
+  @@index([payamId, verificationStatus, deletedAt], map: "farmer_payam_status_idx")
+  @@index([countyId], map: "farmer_county_id_idx")
+  @@map("farmer")
+}
+
+/// A record of an event. Never soft-deleted, never removed (data-model-extension §1.3).
+model Consent {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  farmerId    String    @map("farmer_id") @db.Uuid
+  textVersion String    @map("text_version")
+  language    Language
+  granted     Boolean
+  grantedAt   DateTime  @default(now()) @map("granted_at") @db.Timestamptz(6)
+  withdrawnAt DateTime? @map("withdrawn_at") @db.Timestamptz(6)
+
+  farmer    Farmer   @relation("FarmerConsents", fields: [farmerId], references: [id], map: "consent_farmer_id_fkey")
+  currentOf Farmer[] @relation("CurrentConsent")
+
+  @@index([farmerId], map: "consent_farmer_id_idx")
+  @@map("consent")
+}
+
+// -----------------------------------------------------------------------------
+// B6 — verification (C-6). Migration 11.
+// -----------------------------------------------------------------------------
+
+enum VerificationDecision {
+  verified
+  rejected
+  merged
+  resubmitted
+
+  @@map("verification_decision")
+}
+
+/// A record of an event. Never soft-deleted, never removed (data-model-extension §1.3).
+model VerificationEvent {
+  id            String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  farmerId      String               @map("farmer_id") @db.Uuid
+  /// Staff user for verified/rejected/merged; null for resubmitted.
+  reviewerId    String?              @map("reviewer_id") @db.Uuid
+  /// The registering officer, for resubmitted only.
+  officerId     String?              @map("officer_id") @db.Uuid
+  decision      VerificationDecision
+  mergeTargetId String?              @map("merge_target_id") @db.Uuid
+  /// Fixed key from REJECTION_REASONS; CHECK generated from the same list.
+  reasonCode    String?              @map("reason_code")
+  /// Free text about a named person. Data, not a message (C-6.3).
+  note          String?
+  daysWaiting   Int                  @map("days_waiting")
+  decidedAt     DateTime             @default(now()) @map("decided_at") @db.Timestamptz(6)
+
+  farmer      Farmer   @relation("FarmerVerificationEvents", fields: [farmerId], references: [id], map: "verification_event_farmer_id_fkey")
+  reviewer    User?    @relation(fields: [reviewerId], references: [id], map: "verification_event_reviewer_id_fkey")
+  officer     Officer? @relation(fields: [officerId], references: [id], map: "verification_event_officer_id_fkey")
+  mergeTarget Farmer?  @relation("MergeTargetEvents", fields: [mergeTargetId], references: [id], map: "verification_event_merge_target_id_fkey")
+
+  @@index([farmerId, decidedAt(sort: Desc)], map: "verification_event_farmer_idx")
+  @@index([reviewerId, decidedAt(sort: Desc)], map: "verification_event_reviewer_idx")
+  @@map("verification_event")
+}
+
+// -----------------------------------------------------------------------------
+// B7 — farms, boundaries, crop declarations (C-7). Migration 14.
+// -----------------------------------------------------------------------------
+
+enum AccuracyFlag {
+  good
+  poor
+  unusable
+
+  @@map("accuracy_flag")
+}
+
+model Farm {
+  /// Client-generated (B9). No default.
+  id        String    @id @db.Uuid
+  farmerId  String    @map("farmer_id") @db.Uuid
+  payamId   String    @map("payam_id")
+  countyId  String    @map("county_id")
+  stateId   String    @map("state_id")
+  /// First season mapped: YYYY-main | YYYY-second (SEASON_NAMES).
+  season    String
+  /// The officer who walked it first. Never a user (C-7.6).
+  createdBy String    @map("created_by") @db.Uuid
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime  @default(now()) @map("updated_at") @db.Timestamptz(6)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+  deletedBy String?   @map("deleted_by") @db.Uuid
+
+  farmer     Farmer            @relation(fields: [farmerId], references: [id], map: "farm_farmer_id_fkey")
+  payam      Payam             @relation(fields: [payamId, stateId], references: [id, stateId], map: "farm_payam_state_consistent_fkey")
+  county     County            @relation(fields: [countyId], references: [id], map: "farm_county_id_fkey")
+  state      State             @relation(fields: [stateId], references: [id], map: "farm_state_id_fkey")
+  creator    Officer           @relation("FarmCreatedBy", fields: [createdBy], references: [id], map: "farm_created_by_fkey")
+  deleter    User?             @relation("FarmDeletedBy", fields: [deletedBy], references: [id], map: "farm_deleted_by_fkey")
+  boundaries FarmBoundary[]
+  crops      CropDeclaration[]
+
+  @@index([farmerId], map: "farm_farmer_id_idx")
+  @@map("farm")
+}
+
+/// History kept, never overwritten; one current per farm per season (partial unique index, raw SQL).
+model FarmBoundary {
+  id           String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  farmId       String       @map("farm_id") @db.Uuid
+  season       String
+  boundary     Unsupported("extensions.geography(Polygon, 4326)")
+  centroid     Unsupported("extensions.geography(Point, 4326)")
+  areaHa       Decimal      @map("area_ha") @db.Decimal(12, 4)
+  pointCount   Int          @map("point_count")
+  gpsAccuracyM Decimal      @map("gps_accuracy_m") @db.Decimal(7, 1)
+  accuracyFlag AccuracyFlag @map("accuracy_flag")
+  mappedBy     String       @map("mapped_by") @db.Uuid
+  mappedAt     DateTime     @default(now()) @map("mapped_at") @db.Timestamptz(6)
+  isCurrent    Boolean      @default(true) @map("is_current")
+  createdAt    DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  farm   Farm    @relation(fields: [farmId], references: [id], map: "farm_boundary_farm_id_fkey")
+  mapper Officer @relation(fields: [mappedBy], references: [id], map: "farm_boundary_mapped_by_fkey")
+
+  @@index([farmId, season, mappedAt(sort: Desc)], map: "farm_boundary_history_idx")
+  @@map("farm_boundary")
+}
+
+model CropDeclaration {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  farmId     String   @map("farm_id") @db.Uuid
+  season     String
+  crop       Crop
+  declaredBy String   @map("declared_by") @db.Uuid
+  declaredAt DateTime @default(now()) @map("declared_at") @db.Timestamptz(6)
+
+  farm     Farm    @relation(fields: [farmId], references: [id], map: "crop_declaration_farm_id_fkey")
+  declarer Officer @relation(fields: [declaredBy], references: [id], map: "crop_declaration_declared_by_fkey")
+
+  @@unique([farmId, season, crop], map: "crop_declaration_one_per_crop_per_season")
+  @@map("crop_declaration")
+}

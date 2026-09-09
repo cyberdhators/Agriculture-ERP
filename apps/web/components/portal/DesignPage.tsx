@@ -26,34 +26,13 @@ import {
   Tabs,
   Textarea,
 } from '../ui';
-import { Wordmark } from '../brand/Wordmark';
 import { Boundary } from '../farmers/Boundary';
-import { CategoryGlyph } from '../listings/CategoryGlyph';
-import { ListingCard } from '../listings/ListingCard';
-import { Photo } from '../listings/Photo';
-import { PlotMap } from '../farmer/PlotMap';
-import { LanguageButtons } from '../farmer/LanguageSwitch';
-import { PasswordInput } from '../ui';
-import {
-  FARMS,
-  FARMER_FIXTURE_PASSWORD,
-  FARMER_LOGIN_PHONES,
-  FARMER_NUMBER_FORMAT,
-  LISTINGS,
-  LISTING_CATEGORIES,
-  farmerById,
-} from '@/lib/fixtures/farmers';
-import { CATEGORY_LABELS } from '@/lib/farmers/listings';
-import { formatPhone } from '@/lib/format';
-import type { Language } from '@/lib/i18n';
+import { FARMS, FARMER_NUMBER_FORMAT } from '@/lib/fixtures/farmers';
 import * as Icons from '../ui/icons';
 import styles from './design.module.css';
-import farmer from '../farmer/farmer.module.css';
-import listings from '../listings/listings.module.css';
 
 const GOOD_FARM = FARMS.find((f) => f.boundary && f.accuracy_flag === 'good') ?? FARMS[0]!;
 const UNUSABLE_FARM = FARMS.find((f) => f.accuracy_flag === 'unusable') ?? FARMS[0]!;
-const MAP_FARMS = FARMS.filter((f) => f.farmer_id === GOOD_FARM.farmer_id);
 
 /**
  * The design system, rendered from the same tokens and components the
@@ -63,44 +42,21 @@ const MAP_FARMS = FARMS.filter((f) => f.farmer_id === GOOD_FARM.farmer_id);
  */
 
 const PALETTE = [
-  { name: 'paper', hex: '#F5F7F1', use: 'Ground. The pale field the whole product sits on.' },
-  { name: 'card', hex: '#FFFFFF', use: 'Raised surfaces: cards, inputs, menus.' },
-  { name: 'dust', hex: '#E9EDE3', use: 'Wells, insets, skeletons, disabled fills. Never text.' },
-  { name: 'line', hex: '#D6DCCF', use: 'Hairline rule. Carries most of the structure.' },
-  { name: 'line-strong', hex: '#AEB8A6', use: 'Structural rule, strong border, section heads.' },
-  { name: 'ink', hex: '#132A1C', use: 'Forest. Primary text and headings.' },
-  { name: 'ink-2', hex: '#3B4F41', use: 'Secondary text, body copy on cards.' },
-  { name: 'muted', hex: '#5E6C60', use: 'Captions, helper text, labels. 5.1:1 on paper.' },
-  { name: 'green-deep', hex: '#14532D', use: 'Placeholder words, the public spread, deep fills.' },
-  {
-    name: 'green',
-    hex: '#1F7A3F',
-    use: 'Primary buttons, links, the active tab rule, the focus ring.',
-  },
-  { name: 'green-hover', hex: '#165F31', use: 'Primary button hover.' },
-  { name: 'sprout', hex: '#7CB342', use: 'Highlights, success, the tittle on the wordmark.' },
-  { name: 'green-tint', hex: '#E4F1E3', use: 'Selected rows, photo placeholders, soft fills.' },
-  {
-    name: 'harvest',
-    hex: '#E0A526',
-    use: 'Harvest gold, fills only: List it, sold stamps, KPI rules. Never text on white.',
-  },
-  { name: 'harvest-deep', hex: '#B8841A', use: 'Harvest gold as large text: KPI figures.' },
-  {
-    name: 'harvest-ink',
-    hex: '#8F6E1B',
-    use: 'Harvest gold as small text: prices on cards and product pages, 4.8:1.',
-  },
-  { name: 'harvest-tint', hex: '#FBF0D2', use: 'Gold tint behind a price or a sold mark.' },
-  { name: 'soil', hex: '#6B4A2B', use: 'Earth. Secondary buttons and moderation surfaces.' },
-  { name: 'soil-tint', hex: '#EFE6DB', use: 'Earth tint for secondary surfaces.' },
-  { name: 'clay', hex: '#A32D1E', use: 'Danger. Rejected, errors, destructive outline.' },
-  { name: 'verified', hex: '#2E7D32', use: 'Verified stamp and its tint #DFF0DF.' },
-  { name: 'pending', hex: '#9A6B0F', use: 'Pending and escalated stamps, tint #F6EBCC.' },
-  { name: 'danger', hex: '#A32D1E', use: 'Rejected stamp, tint #F5DCD7.' },
-  { name: 'info', hex: '#1D5A85', use: 'Information notices and sold, tint #DCE8F1.' },
-  { name: 'neutral', hex: '#55625B', use: 'Draft, merged, neutral facts, tint #E4E7E2.' },
-  { name: 'band', hex: '#0F2E1C', use: 'The masthead band and the public spread panel.' },
+  { name: 'paper', hex: '#F3EEE3', use: 'Ground. The bone paper the register sits on.' },
+  { name: 'card', hex: '#FBF8F1', use: 'Raised surfaces: cards, inputs, menus.' },
+  { name: 'dust', hex: '#EAE3D3', use: 'Wells, insets, skeletons, disabled fills. Never text.' },
+  { name: 'line', hex: '#D9D0BC', use: 'Hairline rule. Carries most of the structure.' },
+  { name: 'line-strong', hex: '#B9AE95', use: 'Structural rule, strong border, section heads.' },
+  { name: 'ink', hex: '#12261B', use: 'Forest. Primary text and headings.' },
+  { name: 'ink-2', hex: '#3E4F44', use: 'Secondary text, body copy on cards.' },
+  { name: 'muted', hex: '#6F7D73', use: 'Captions, helper text, labels.' },
+  { name: 'accent', hex: '#D8811A', use: 'Harvest amber. The one action colour; rare on purpose.' },
+  { name: 'verified', hex: '#1F6B3A', use: 'Verified stamp and its tint fill.' },
+  { name: 'pending', hex: '#8A5A0B', use: 'Pending and escalated stamps.' },
+  { name: 'danger', hex: '#9B2C1E', use: 'Rejected, errors, destructive outline.' },
+  { name: 'info', hex: '#1E4E79', use: 'Information notices and merged links.' },
+  { name: 'neutral', hex: '#4F5B63', use: 'Draft, neutral facts.' },
+  { name: 'band', hex: '#0F1F16', use: 'The masthead band only.' },
 ] as const;
 
 const TYPE = [
@@ -201,18 +157,12 @@ const SECTIONS = [
   ['cards', 'Cards and skeletons'],
   ['dialog', 'Dialog'],
   ['icons', 'Icons'],
-  ['brand', 'Wordmark'],
-  ['listings', 'Listings and photos'],
-  ['market', 'Marketplace'],
-  ['survey', 'Farm survey map'],
-  ['farmer', 'Farmer flow'],
   ['rules', 'Rules'],
 ] as const;
 
 export function DesignPage() {
   const [tab, setTab] = useState<'all' | 'a' | 'b'>('all');
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [designLang, setDesignLang] = useState<Language>('en');
 
   return (
     <div className={styles.page}>
@@ -240,12 +190,10 @@ export function DesignPage() {
         <div className={styles.sectionHead}>
           <h2 id="h-palette">Palette</h2>
           <p>
-            AgriOne reads as agriculture: a pale field ground, forest ink, growing green as the
-            action colour with sprout for highlights, harvest gold as the second accent for prices
-            and sales, and earth for secondary surfaces. Structure is carried by the two rule
-            tokens, not by fills or shadow. Every text pairing is at or above 4.5:1; amber text on
-            white is not allowed; harvest-deep carries gold as text, harvest as a fill. Dust is a
-            fill and never a text colour.
+            &ldquo;The Register&rdquo;: a bone-paper ground, forest ink, and harvest amber as the
+            one action colour, used rarely. Structure is carried by the two rule tokens, not by
+            fills or shadow. Contrast is pushed past WCAG AA because the portal is read in sunlight.
+            Dust is a fill and never a text colour.
           </p>
         </div>
         <div className={styles.swatches}>
@@ -286,7 +234,7 @@ export function DesignPage() {
         <div className={styles.sectionHead}>
           <h2 id="h-shape">Shape and spacing</h2>
           <p>
-            Near-square: cards 4px radius, controls 2px. No pills: the register is ruled, not
+            Near-square: cards 4px radius, controls 2px. No pills; the register is ruled, not
             rounded. Every interactive element is at least 40×40. Spacing steps: 4, 8, 12, 16, 20,
             24, 32, 40.
           </p>
@@ -429,7 +377,7 @@ export function DesignPage() {
         <div className={styles.sectionHead}>
           <h2 id="h-boundary">Farm boundary</h2>
           <p>
-            The walked plot, drawn as an inline SVG polygon straight from the fixture GeoJSON, no
+            The walked plot, drawn as an inline SVG polygon straight from the fixture GeoJSON: no
             map library, no tiles, no network. Two sizes: 96px in the register table, 360px in the
             dossier. A plot with no usable trace says so in the same box rather than drawing a shape
             that would lie about the land.
@@ -519,7 +467,7 @@ export function DesignPage() {
               <Field label="Disabled">
                 {(ids) => <Input {...ids} defaultValue="Cannot be changed here" disabled />}
               </Field>
-              <Checkbox label="Published: visible to officers" defaultChecked />
+              <Checkbox label="Published, visible to officers" defaultChecked />
             </div>
           </div>
         </Card>
@@ -680,242 +628,6 @@ export function DesignPage() {
             </div>
           ))}
         </div>
-      </section>
-
-      <section id="brand" className={styles.section} aria-labelledby="h-brand">
-        <div className={styles.sectionHead}>
-          <h2 id="h-brand">Wordmark</h2>
-          <p>
-            AgriOne in Fraunces: &ldquo;Agri&rdquo; regular, &ldquo;One&rdquo; semibold, the tittle
-            on the i drawn in sprout. Drawn from type and one CSS dot, never an image. The tagline
-            sits beneath it in 11px letter-spaced caps. On the band the wordmark inverts to
-            band-ink; the tittle stays sprout. Minimum size 18px; never stretched, recoloured or
-            placed on a photograph.
-          </p>
-        </div>
-        <div className={styles.row} style={{ alignItems: 'flex-end', gap: 'var(--s-7)' }}>
-          <Wordmark size={40} tagline />
-          <Wordmark size={22} tagline />
-          <Wordmark size={18} />
-          <span
-            style={{
-              background: 'var(--band)',
-              padding: 'var(--s-4) var(--s-5)',
-              borderRadius: 'var(--radius-card)',
-            }}
-          >
-            <Wordmark size={28} tagline onBand />
-          </span>
-        </div>
-      </section>
-
-      <section id="listings" className={styles.section} aria-labelledby="h-listings">
-        <div className={styles.sectionHead}>
-          <h2 id="h-listings">Listings and photos</h2>
-          <p>
-            A marketplace card: cover photo in a 4:3 frame with a hairline, category, title, the
-            price in mono as &ldquo;SSP 1,250 / 50 kg bag&rdquo;, the quantity, the seller with
-            their verification stamp and payam. A missing photo is a tokenised placeholder that
-            names the category, never a broken image. Each category has one 16px glyph in a single
-            colour, always beside its word.
-          </p>
-        </div>
-        <div className={styles.grid2}>
-          <div className={listings.grid}>
-            {LISTINGS.filter((l) => l.status === 'listed')
-              .slice(0, 2)
-              .map((l) => (
-                <ListingCard
-                  key={l.id}
-                  listing={l}
-                  lang="en"
-                  href="#listings"
-                  seller={farmerById(l.farmer_id)}
-                />
-              ))}
-          </div>
-          <div>
-            <p className="small muted">Photo placeholder, 4:3 and square</p>
-            <div className={styles.row}>
-              <div style={{ width: 200 }}>
-                <Photo src={null} category="vegetable" lang="en" />
-              </div>
-              <div style={{ width: 120 }}>
-                <Photo src={null} category="livestock" lang="en" square />
-              </div>
-            </div>
-            <p className="small muted" style={{ marginTop: 'var(--s-5)' }}>
-              Category glyphs
-            </p>
-            <div className={styles.row}>
-              {LISTING_CATEGORIES.map((c) => (
-                <span key={c} className={styles.icon}>
-                  <CategoryGlyph category={c} />
-                  {CATEGORY_LABELS[c]}
-                </span>
-              ))}
-            </div>
-            <p className="small muted" style={{ marginTop: 'var(--s-5)' }}>
-              Listing status
-            </p>
-            <div className={styles.row}>
-              <Stamp kind="neutral">Draft</Stamp>
-              <Stamp kind="verified">Listed</Stamp>
-              <Stamp kind="merged">Withdrawn</Stamp>
-              <Stamp kind="info">Sold</Stamp>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section id="market" className={styles.section} aria-labelledby="h-market">
-        <div className={styles.sectionHead}>
-          <h2 id="h-market">Marketplace</h2>
-          <p>
-            The browse chrome: a 48px search field with a submit glyph, a category chip strip whose
-            active chip fills green with band ink, and the two price sizes &mdash; 20px mono on the
-            card, 28px mono on the product page. Prices read in ink; the unit follows in muted.
-          </p>
-        </div>
-
-        <p className="small muted">Search field</p>
-        <form className={listings.searchField} role="search" onSubmit={(e) => e.preventDefault()}>
-          <Icons.IconSearch size={20} />
-          <input
-            type="search"
-            placeholder="Search produce, livestock, inputs…"
-            aria-label="Search the marketplace"
-            readOnly
-          />
-          <button type="submit" className={listings.searchSubmit} aria-label="Search">
-            <Icons.IconSearch size={18} />
-          </button>
-        </form>
-
-        <p className="small muted" style={{ marginTop: 'var(--s-5)' }}>
-          Category chip strip
-        </p>
-        <div className={listings.chipStrip} role="group" aria-label="Category">
-          <button type="button" className={listings.chip} aria-pressed>
-            All produce
-          </button>
-          {LISTING_CATEGORIES.slice(0, 4).map((c) => (
-            <button key={c} type="button" className={listings.chip} aria-pressed={false}>
-              <CategoryGlyph category={c} size={15} />
-              {CATEGORY_LABELS[c]}
-            </button>
-          ))}
-        </div>
-
-        <p className="small muted" style={{ marginTop: 'var(--s-5)' }}>
-          Price &mdash; card (20) and product (28)
-        </p>
-        <div className={styles.row}>
-          <div className={listings.cardPrice}>
-            SSP 1,250 <small>/ 50 kg bag</small>
-          </div>
-          <div className={listings.productPrice}>
-            <span>SSP 1,250</span>
-            <small>/ 50 kg bag</small>
-            <span className={listings.negChip}>Negotiable</span>
-          </div>
-        </div>
-      </section>
-
-      <section id="survey" className={styles.section} aria-labelledby="h-survey">
-        <div className={styles.sectionHead}>
-          <h2 id="h-survey">Farm survey map</h2>
-          <p>
-            The farmer&rsquo;s whole holding on one survey map: every walked plot fitted into a
-            single frame &mdash; longitude compressed by the cosine of the latitude &mdash; with a
-            north arrow, a metric scale bar read from the extents, and each plot&rsquo;s hectares
-            stamped in mono at its centroid. No map library, no tiles, no network.
-          </p>
-        </div>
-        <div className={farmer.surveyMap} style={{ maxWidth: 520 }}>
-          <PlotMap farms={MAP_FARMS} selectedId={MAP_FARMS[0]?.id} lang="en" />
-        </div>
-      </section>
-
-      <section id="farmer" className={styles.section} aria-labelledby="h-farmer">
-        <div className={styles.sectionHead}>
-          <h2 id="h-farmer">Farmer flow</h2>
-          <p>
-            The farmer&apos;s screens use the same tokens at a larger control (48px) and fewer words
-            per view. Language is a two-button switch in the masthead; sign-in is phone and
-            password; the farmer number reads as an em dash until it is assigned. Section rules on
-            the farmer side are a double hairline in sprout.
-          </p>
-        </div>
-        <Card padded as="div">
-          <div className={farmer.scope} style={{ background: 'transparent' }}>
-            <p className="small muted">Language switch</p>
-            <div className={farmer.compactBand} style={{ display: 'flex' }}>
-              <Wordmark size={20} />
-              <LanguageButtons value={designLang} onChange={setDesignLang} />
-            </div>
-
-            <div className={styles.grid2} style={{ marginTop: 'var(--s-5)' }}>
-              <Field label="Phone">
-                {(ids) => (
-                  <PrefixedInput
-                    {...ids}
-                    prefix="+211"
-                    inputMode="tel"
-                    defaultValue="92 000 0000"
-                  />
-                )}
-              </Field>
-              <Field label="Password">
-                {(ids) => (
-                  <PasswordInput
-                    {...ids}
-                    defaultValue="password"
-                    showLabel="Show"
-                    hideLabel="Hide"
-                  />
-                )}
-              </Field>
-            </div>
-
-            <div className={farmer.pageHead} style={{ marginTop: 'var(--s-5)' }}>
-              <div className={farmer.pageTitle}>
-                <h3>Overview</h3>
-                <p className={farmer.pageLead}>A farmer-side page head with its double rule.</p>
-              </div>
-            </div>
-
-            <dl className={farmer.recordRows}>
-              <div className={farmer.recordRow}>
-                <dt className={farmer.recordTerm}>Farmer no.</dt>
-                <dd className={farmer.recordValueMono}>
-                  —
-                  <span className={farmer.recordNote}>
-                    Assigned when your registration is verified.
-                  </span>
-                </dd>
-              </div>
-              <div className={farmer.recordRow}>
-                <dt className={farmer.recordTerm}>Farmer no.</dt>
-                <dd className={farmer.recordValueMono}>{FARMER_NUMBER_FORMAT}</dd>
-              </div>
-            </dl>
-
-            <Notice kind="info" title="Fixture sign-in (this page only)">
-              <p className="small">
-                Until the auth route lands, these fixture numbers sign in with the password{' '}
-                <code className="mono">{FARMER_FIXTURE_PASSWORD}</code>:
-              </p>
-              <ul className="small">
-                {FARMER_LOGIN_PHONES.map((f) => (
-                  <li key={f.phone}>
-                    <span className="mono">{formatPhone(f.phone)}</span>: {f.who}
-                  </li>
-                ))}
-              </ul>
-            </Notice>
-          </div>
-        </Card>
       </section>
 
       <section id="rules" className={styles.section} aria-labelledby="h-rules">

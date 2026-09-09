@@ -2,6 +2,7 @@
 
 import { useMemo, useRef, useState, type ReactNode } from 'react';
 
+import { LIVE_FARMERS, createFarmer } from '@/lib/farmers/api';
 import { CROP_LABELS, LANGUAGE_LABELS } from '@/lib/format';
 import { canRegister } from '@/lib/farmers/presentation';
 import {
@@ -11,7 +12,7 @@ import {
   type FarmerErrors,
   type FarmerFormValues,
 } from '@/lib/farmers/schema';
-import { FARMERS, type Farmer } from '@/lib/fixtures/farmers';
+import { FARMERS, FARMER_NUMBER_FORMAT, type Farmer } from '@/lib/fixtures/farmers';
 import { COUNTIES, PAYAMS, STATES, payamName } from '@/lib/fixtures/p1';
 import { ROLE_LABELS, usePreview } from '@/lib/preview';
 import { CROPS } from '@agri-erp/shared';
@@ -26,7 +27,6 @@ import {
   Input,
   Notice,
   PageHeader,
-  PasswordInput,
   PrefixedInput,
   Select,
 } from '../ui';
@@ -56,7 +56,6 @@ const EMPTY: FarmerFormValues = {
   registration_source: 'officer',
   consent_language: '',
   consent_granted: false,
-  password: '',
 };
 
 const FIELD_LABELS: Record<keyof FarmerFormValues, string> = {
@@ -72,7 +71,6 @@ const FIELD_LABELS: Record<keyof FarmerFormValues, string> = {
   registration_source: 'How registered',
   consent_language: 'Consent language',
   consent_granted: 'Consent',
-  password: 'Initial password',
 };
 
 function digits(value: string): string {
@@ -95,6 +93,9 @@ export function RegisterFarmer() {
   const [errors, setErrors] = useState<FarmerErrors>({});
   const [touched, setTouched] = useState<Partial<Record<keyof FarmerFormValues, boolean>>>({});
   const [saved, setSaved] = useState<{ name: string } | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | undefined>();
+  const [serverDupes, setServerDupes] = useState(0);
   const summaryRef = useRef<HTMLDivElement | null>(null);
 
   const counties = useMemo(
@@ -139,14 +140,14 @@ export function RegisterFarmer() {
 
   function blur(key: keyof FarmerFormValues) {
     setTouched((prev) => ({ ...prev, [key]: true }));
-    const result = validateFarmer(values, REFERENCE, { requirePassword: true });
+    const result = validateFarmer(values, REFERENCE);
     const message = result.ok ? undefined : result.errors[key];
     setErrors((prev) => ({ ...prev, [key]: message }));
   }
 
-  function onSubmit(e: React.FormEvent) {
+  async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const result = validateFarmer(values, REFERENCE, { requirePassword: true });
+    const result = validateFarmer(values, REFERENCE);
     if (!result.ok) {
       setErrors(result.errors);
       setTouched((prev) => {
@@ -162,7 +163,39 @@ export function RegisterFarmer() {
       return;
     }
     setErrors({});
-    setSaved({ name: `${result.values.given_name} ${result.values.family_name}` });
+    setSubmitError(undefined);
+    const v = result.values;
+
+    if (!LIVE_FARMERS) {
+      setSaved({ name: `${v.given_name} ${v.family_name}` });
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const res = await createFarmer({
+        id: crypto.randomUUID(),
+        given_name: v.given_name,
+        family_name: v.family_name,
+        sex: v.sex,
+        year_of_birth: v.year_of_birth,
+        phone: v.phone,
+        national_id: v.national_id,
+        payam_id: v.payam_id,
+        consent: {
+          text_version: CONSENT_VERSION[v.consent_language],
+          language: v.consent_language,
+          granted: v.consent_granted,
+        },
+      });
+      setServerDupes(res.duplicates.length);
+      setSaved({ name: `${v.given_name} ${v.family_name}` });
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : 'Could not register the farmer.');
+      requestAnimationFrame(() => summaryRef.current?.focus());
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   function reset() {
@@ -170,6 +203,8 @@ export function RegisterFarmer() {
     setErrors({});
     setTouched({});
     setSaved(null);
+    setSubmitError(undefined);
+    setServerDupes(0);
   }
 
   function focusField(key: keyof FarmerFormValues) {
@@ -187,7 +222,7 @@ export function RegisterFarmer() {
         <EmptyState
           error
           title="Only an administrator or field officer registers farmers"
-          body={`You are signed in as ${ROLE_LABELS[role]}. Registration writes to a field officer's caseload and is open to officers and administrators.`}
+          body={`You are previewing as ${ROLE_LABELS[role]}. Registration writes to a field officer's caseload; the live portal returns 403 for a supervisor or read-only account.`}
           actions={<ButtonLink href="/farmers">Back to the register</ButtonLink>}
         />
       </>
@@ -199,10 +234,15 @@ export function RegisterFarmer() {
       <>
         <PageHeader eyebrow="Farmers" title="Register a farmer" />
         <div className={styles.recorded}>
-          <p className="label">Recorded</p>
+          <p className="label">{LIVE_FARMERS ? 'Registered' : 'Recorded (preview, no server)'}</p>
           <p>
-            {saved.name} is registered as pending and sent to the review queue. A farmer number is
-            assigned when the record is verified.
+            {LIVE_FARMERS
+              ? `${saved.name} was registered as pending and sent to the review queue.${
+                  serverDupes > 0
+                    ? ` ${serverDupes} possible duplicate${serverDupes > 1 ? 's were' : ' was'} flagged for a reviewer.`
+                    : ''
+                }`
+              : `${saved.name} would be created as pending and sent to the review queue. Nothing was written; this preview build has no backend.`}
           </p>
           <div className={screens.formActions}>
             <Button variant="primary" onClick={reset}>
@@ -230,7 +270,7 @@ export function RegisterFarmer() {
       <PageHeader
         eyebrow="Farmers"
         title="Register a farmer"
-        subtitle="New farmers enter as pending. The farmer number is assigned when the record is verified."
+        subtitle={`New farmers enter as pending. The farmer number ${FARMER_NUMBER_FORMAT} is a placeholder until the numbering rule (C-5) is written.`}
         actions={
           <ButtonLink href="/farmers" variant="secondary">
             Cancel
@@ -259,6 +299,13 @@ export function RegisterFarmer() {
               </li>
             ))}
           </ul>
+        </div>
+      ) : null}
+
+      {submitError ? (
+        <div className={styles.errorSummary} ref={summaryRef} tabIndex={-1} role="alert">
+          <p className="label">The farmer was not registered</p>
+          <p>{submitError}</p>
         </div>
       ) : null}
 
@@ -480,23 +527,6 @@ export function RegisterFarmer() {
                     )}
                   </Field>
                 </Row>
-                <Row name="password">
-                  <Field
-                    label={FIELD_LABELS.password}
-                    hint="Tell the farmer this password; they can change it after signing in."
-                    error={shown('password')}
-                  >
-                    {(ids) => (
-                      <PasswordInput
-                        {...ids}
-                        autoComplete="new-password"
-                        value={values.password ?? ''}
-                        onChange={(e) => set('password', e.target.value)}
-                        onBlur={() => blur('password')}
-                      />
-                    )}
-                  </Field>
-                </Row>
                 <div className={screens.span2}>
                   <Row name="consent_granted">
                     <Field label={FIELD_LABELS.consent_granted} error={shown('consent_granted')}>
@@ -517,10 +547,10 @@ export function RegisterFarmer() {
             </Card>
 
             <div className={screens.formActions}>
-              <Button type="submit" variant="primary">
-                Register farmer
+              <Button type="submit" variant="primary" disabled={submitting}>
+                {submitting ? 'Registering…' : 'Register farmer'}
               </Button>
-              <Button type="button" variant="ghost" onClick={reset}>
+              <Button type="button" variant="ghost" onClick={reset} disabled={submitting}>
                 Clear form
               </Button>
             </div>
@@ -567,7 +597,8 @@ export function RegisterFarmer() {
                 and more. The intake form records the person and their consent only.
               </p>
               <p className="small muted">
-                Location is scoped to {payamName(values.payam_id) || 'Central Equatoria'}.
+                Location is scoped to {payamName(values.payam_id) || 'Central Equatoria'}, the only
+                state seeded in this preview.
               </p>
             </Card>
           </aside>

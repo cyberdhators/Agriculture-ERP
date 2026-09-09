@@ -60,6 +60,42 @@ const SENSITIVE_KEYS = [
   'context_line',
   'pre_context',
   'post_context',
+
+  /**
+   * The SDK's culture context: `contexts.culture.timezone` and `.locale`.
+   *
+   * Reachable -- the SDK attaches it before `beforeSend`, and the 2026-09-04
+   * verification event showed `Asia/Calcutta` arriving. Not needed for
+   * diagnosis, and it narrows a person's location: once staff in South Sudan
+   * are using the system, every error would say where the device was. Listed
+   * as keys rather than by stripping the context, so the rule holds wherever
+   * a timezone or locale turns up, not only in that one place.
+   */
+  'timezone',
+  'locale',
+
+  /**
+   * The rejection note (C-6.3): a supervisor's prose about a named farmer,
+   * the one free-text field the system carries about a person. It travels
+   * only inside the verification record; it never travels here.
+   */
+  'note',
+
+  /** C-7.10: a farm boundary is a location of a named person. */
+  'boundary',
+  'centroid',
+  'coordinates',
+  'geometry',
+  'gps',
+  'latitude',
+  'longitude',
+  /**
+   * A visit's substance (C-8.13): what an officer saw in a named person's
+   * field and what they advised. Inside the visit record only.
+   */
+  'observation',
+  'advice',
+  'position',
 ];
 
 const normaliseKey = (key: string): string => key.toLowerCase().replace(/[_\-\s]/g, '');

@@ -27,6 +27,10 @@ const STAGING_PROJECT_REF = 'xmmxbrxmfgodhpwolrvk';
 
 /** The prefix on every account, row and name this helper creates. */
 export const TEST_PREFIX = 'zztest';
+/** Every test farmer carries this family name, so the sweep can find them and no reader mistakes them for people. */
+export const FARMER_TEST_FAMILY = 'Zztestfamily';
+/** Test county/payam codes under state EE. Created by tests/farmers.test.ts, removed by sweep. */
+export const TEST_LOCATION_PREFIX = 'EE-ZZT';
 
 export function assertStaging(): void {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
@@ -171,6 +175,60 @@ export async function sweep(prisma: PrismaClient): Promise<void> {
      SELECT auth_user_id FROM public."officer" WHERE name LIKE '${TEST_PREFIX}%'`,
   );
   for (const row of rows) await deleteAccount(row.auth_user_id);
+  // B10: export log rows reference the staff users who ran them. The log is
+  // append-only in the application; the sweep is the owner removing rows an
+  // invented user made.
+  await prisma.$executeRawUnsafe(
+    `DELETE FROM public.report_export WHERE exported_by IN (SELECT id FROM public."user" WHERE name LIKE '${TEST_PREFIX}%')`,
+  );
+  // B8: attachments hang off visits; visits off farmers and officers, and off
+  // each other (follow_up_of, NO ACTION, checked at statement end — one DELETE
+  // takes a whole chain).
+  await prisma.$executeRawUnsafe(
+    `DELETE FROM public.visit_attachment WHERE visit_id IN
+       (SELECT v.id FROM public.visit v JOIN public.farmer fr ON fr.id = v.farmer_id WHERE fr.family_name LIKE '${FARMER_TEST_FAMILY}%')
+       OR created_by IN (SELECT id FROM public.officer WHERE name LIKE '${TEST_PREFIX}%')`,
+  );
+  await prisma.$executeRawUnsafe(
+    `DELETE FROM public.visit WHERE farmer_id IN (SELECT id FROM public.farmer WHERE family_name LIKE '${FARMER_TEST_FAMILY}%')
+       OR officer_id IN (SELECT id FROM public.officer WHERE name LIKE '${TEST_PREFIX}%')`,
+  );
+  // B7: farms hang off farmers and officers; boundaries and crops hang off farms.
+  await prisma.$executeRawUnsafe(
+    `DELETE FROM public.crop_declaration WHERE farm_id IN
+       (SELECT f.id FROM public.farm f JOIN public.farmer fr ON fr.id = f.farmer_id WHERE fr.family_name LIKE '${FARMER_TEST_FAMILY}%')`,
+  );
+  await prisma.$executeRawUnsafe(
+    `DELETE FROM public.farm_boundary WHERE farm_id IN
+       (SELECT f.id FROM public.farm f JOIN public.farmer fr ON fr.id = f.farmer_id WHERE fr.family_name LIKE '${FARMER_TEST_FAMILY}%')`,
+  );
+  await prisma.$executeRawUnsafe(
+    `DELETE FROM public.farm WHERE farmer_id IN (SELECT id FROM public.farmer WHERE family_name LIKE '${FARMER_TEST_FAMILY}%')`,
+  );
+  // B6: verification events reference farmers, staff users and officers; they
+  // go before any of those. A record of an event is never deleted in the
+  // application; the sweep is the owner removing fabricated rows.
+  await prisma.$executeRawUnsafe(
+    `DELETE FROM public.verification_event WHERE
+       farmer_id IN (SELECT id FROM public.farmer WHERE family_name LIKE '${FARMER_TEST_FAMILY}%')
+       OR merge_target_id IN (SELECT id FROM public.farmer WHERE family_name LIKE '${FARMER_TEST_FAMILY}%')
+       OR reviewer_id IN (SELECT id FROM public."user" WHERE name LIKE '${TEST_PREFIX}%')
+       OR officer_id IN (SELECT id FROM public.officer WHERE name LIKE '${TEST_PREFIX}%')`,
+  );
+  // B5: test farmers first (they reference officers). Farmer and consent point
+  // at each other with deferred keys, so both go in one transaction.
+  await prisma.$transaction([
+    prisma.$executeRawUnsafe(
+      `DELETE FROM public.consent WHERE farmer_id IN
+         (SELECT id FROM public.farmer WHERE family_name LIKE '${FARMER_TEST_FAMILY}%')`,
+    ),
+    prisma.$executeRawUnsafe(
+      `DELETE FROM public.farmer WHERE family_name LIKE '${FARMER_TEST_FAMILY}%'`,
+    ),
+  ]);
+  await prisma.$executeRawUnsafe(
+    `DELETE FROM public.farmer_number_counter WHERE county_id LIKE '${TEST_LOCATION_PREFIX}%'`,
+  );
 
   // deleted_by points at the user who did the deleting, so a test admin that
   // soft-deleted anything is referenced by that row and cannot be removed until
@@ -185,8 +243,27 @@ export async function sweep(prisma: PrismaClient): Promise<void> {
      WHERE deleted_by IN (SELECT id FROM public."user" WHERE name LIKE '${TEST_PREFIX}%')`,
   );
 
+  // Migration 13: P1's tables now reference user. Null any test-user reference first.
+  for (const [table, column] of [
+    ['directory_entry', 'verified_by'],
+    ['directory_entry', 'deleted_by'],
+    ['learning_resource', 'uploaded_by'],
+    ['learning_resource', 'deleted_by'],
+  ] as const) {
+    await prisma.$executeRawUnsafe(
+      `UPDATE public.${table} SET ${column} = NULL
+       WHERE ${column} IN (SELECT id FROM public."user" WHERE name LIKE '${TEST_PREFIX}%')`,
+    );
+  }
   await prisma.$executeRawUnsafe(`DELETE FROM public."officer" WHERE name LIKE '${TEST_PREFIX}%'`);
   await prisma.$executeRawUnsafe(`DELETE FROM public."user"    WHERE name LIKE '${TEST_PREFIX}%'`);
+  // B5's out-of-state fixtures: a county and payam under EE that exist only during a run.
+  await prisma.$executeRawUnsafe(
+    `DELETE FROM public.payam  WHERE id LIKE '${TEST_LOCATION_PREFIX}%'`,
+  );
+  await prisma.$executeRawUnsafe(
+    `DELETE FROM public.county WHERE id LIKE '${TEST_LOCATION_PREFIX}%'`,
+  );
 }
 
 /**

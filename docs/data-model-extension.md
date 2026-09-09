@@ -470,27 +470,55 @@ makes the home screen work. But it is scope that appears in no signed document
 
 ## 9. DELIVERABLES (p) AND (q) — DASHBOARDS AND REPORTING
 
-No new stored entities beyond `report_export`, which already exists. These are
-views, and they must be defined as views so that "verified only" is enforced in
-one place rather than in fourteen queries.
+Corrected 2026-09-08 (unit B10, C-10) to state what exists. The earlier text
+listed six views, two of which could not be built as written, one which
+existed in a shape that could not answer its question, and one which read a
+column no merged route writes; it also said `report_export` "already exists",
+which it did not. The reading is in `docs/DECISIONS.md`, "C-10 — the
+reporting section read against the schema". The authoritative statement of
+the figures is `docs/api/CONVENTIONS.md` §17 and `apps/web/lib/api/reporting.ts`.
+
+**One builder, not fourteen queries.** "Verified only" is enforced in one
+place: the reporting module builds every figure and every export from the
+same filters, and the export log holds the SQL as it ran.
 
 ```
-farmer_verified_v      existing — verification_status = verified,
-                       deleted_at IS NULL
-farm_mapped_v          farms with accuracy_flag <> unusable
-visit_activity_v       visit_note joined to officer and payam, deleted_at IS NULL
-extension_coverage_v   verified farmers with at least one visit in a period
-directory_current_v    directory_entry, active, last_verified_at within 180 days
-sms_delivery_v         per campaign: sent, delivered, failed, cost estimate
+report_export          who, actor type, report type, the query as run, filters,
+                       scope, data cut-off, row count, exported at (C-10.8)
+farmer_verified_v      verified, not removed — as before
+farm_active            farms, through the farmer: neither removed (C-10.1)
+farm_mapped_v          farms with a current usable boundary, through the farmer
+area_totals_v          by state, county, payam, season — through the farmer
+visit_active           visits, through the farmer: neither removed
+extension_coverage_v   by place and MONTH of the server's moment; verified
+                       beside other. A dashboard tile, never a period's reach:
+                       distinct farmers do not sum across months (C-10.2)
 ```
 
-Every dashboard figure and every export reads a view from this list. A query
-that reaches a base table directly is a finding for Prompt D.
+**Reach** is not a view. It is distinct verified farmers with at least one
+visit in the period asked for, computed from `visit` joined to `farmer` at
+the server's moment (C-10.2, C-10.7). Pending, rejected and merged are counted
+beside it, never folded in (C-10.3).
 
-Disaggregation for donor reporting is by sex, age band derived from
-`year_of_birth`, state, county, payam and crop. Age band is computed at query
-time from the data cut-off date, never stored, or every report will disagree
-with every other report.
+**A merge moves the land and the visits** to the survivor at merge time
+(C-10.1), one audit entry per moved record. A farm keeps its own payam: land
+breakdowns read the farm's payam, people breakdowns the farmer's, and after a
+cross-payam merge within a state — allowed, by decision — the two differ.
+That is the truth of where the plot is (C-10.4's note in the scope document).
+
+**Disaggregation** is by sex, age band, state, county, payam and crop. Age band
+is computed at the data cut-off from `year_of_birth`, never stored, and is
+approximate to within a year; every report says so (C-10.5). Crop is a
+farm-season attribute: a farmer counts once per crop with at least one farm
+declaring it, and the crop rows do not sum to the total (C-10.6).
+
+**Not in B10, and why.** `sms_delivery_v` needs deliverable (n), not built.
+`directory_current_v` would read `last_verified_at`, written by the seed and by
+no merged route while the directory routes (#28) are open; built then, not
+before.
+
+**Exports carry farmer numbers only** (C-10.11): a name on screen disappears
+with the page; a name in a file outlives the scope check that allowed it.
 
 ---
 

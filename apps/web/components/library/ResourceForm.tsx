@@ -204,8 +204,9 @@ export function ResourceForm({ existing }: { existing: LearningResourceRow | nul
       />
 
       {saved ? (
-        <Notice kind="success" title="Saved" className="no-print">
-          The resource is saved{saved.published ? ' and published' : ' as a draft'}.{' '}
+        <Notice kind="success" title="Saved (preview)" className="no-print">
+          Validated with the shared schema and written to this session’s preview store only. In the
+          live portal this is a {existing ? 'PATCH' : 'POST'} to /api/learning-resources.{' '}
           <Link
             href={`/library?resource=${existing?.id ?? ''}${saved.published ? '' : '&drafts=1'}`}
           >
@@ -263,7 +264,8 @@ export function ResourceForm({ existing }: { existing: LearningResourceRow | nul
                   </Button>
                 </div>
                 <p className="small muted">
-                  The file is uploaded first, then this card is saved against it.
+                  Preview: the file is read for its name and size only and is not uploaded. The live
+                  portal uploads to Supabase Storage first and then saves this card.
                 </p>
               </div>
 
@@ -396,7 +398,7 @@ export function ResourceForm({ existing }: { existing: LearningResourceRow | nul
                 </div>
                 <div className={styles.span2}>
                   <Checkbox
-                    label="Published: visible to officers"
+                    label="Published, visible to officers"
                     checked={form.published}
                     onChange={(event) => update('published', event.target.checked)}
                   />
@@ -419,16 +421,16 @@ export function ResourceForm({ existing }: { existing: LearningResourceRow | nul
           </Card>
         </form>
 
-        <aside className={styles.aside} aria-label="Record">
+        <aside className={styles.aside} aria-label="Preview of the request">
           <Card padded as="div">
-            <h3>Record</h3>
+            <h3>What will be sent</h3>
             <p className="small muted" style={{ margin: 'var(--s-2) 0 var(--s-4)' }}>
-              The resource as it is stored, after validation.
+              The body of the request after the shared schema has normalised it.
             </p>
             {saved ? (
               <pre className={styles.previewJson}>{JSON.stringify(saved, null, 2)}</pre>
             ) : (
-              <p className="small muted">Save the form to see the record.</p>
+              <p className="small muted">Save the form to see the validated body.</p>
             )}
           </Card>
         </aside>

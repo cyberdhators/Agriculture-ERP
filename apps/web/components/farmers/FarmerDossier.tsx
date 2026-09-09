@@ -124,11 +124,15 @@ export function FarmerDossier({ id }: { id: string }) {
 
   function submit(kind: Exclude<ActionKind, null>) {
     const who = `${farmer!.given_name} ${farmer!.family_name}`;
-    if (kind === 'verify') setRecorded(`Recorded: ${who} verified as a new farmer.`);
-    if (kind === 'reject') setRecorded(`Recorded: ${who} rejected. Reason: ${reason.trim()}`);
+    if (kind === 'verify')
+      setRecorded(`Recorded (preview, no server): ${who} verified as a new farmer.`);
+    if (kind === 'reject')
+      setRecorded(`Recorded (preview, no server): ${who} rejected. Reason: ${reason.trim()}`);
     if (kind === 'merge') {
       const target = farmerById(mergeTarget);
-      setRecorded(`Recorded: ${who} merged into ${target ? target.farmer_number : mergeTarget}.`);
+      setRecorded(
+        `Recorded (preview, no server): ${who} merged into ${target ? target.farmer_number : mergeTarget}.`,
+      );
     }
     setAction(null);
     setReason('');
@@ -199,7 +203,7 @@ export function FarmerDossier({ id }: { id: string }) {
                 <Link href={`/farmers/${survivor.id}`} className="mono">
                   {survivor.farmer_number}
                 </Link>
-                : {survivor.given_name} {survivor.family_name}. It is kept for the record.
+                , {survivor.given_name} {survivor.family_name}. It is kept for the record.
               </p>
             </Notice>
           ) : null}
@@ -536,6 +540,7 @@ export function FarmerDossier({ id }: { id: string }) {
           Confirm {farmer.given_name} {farmer.family_name} is a distinct farmer and the record is
           sound. This adds a verification event and counts the farmer toward reach.
         </p>
+        <p className="small muted">Preview only; nothing is written to a server.</p>
       </Dialog>
 
       <Dialog
@@ -560,7 +565,7 @@ export function FarmerDossier({ id }: { id: string }) {
               <option value="">Select the surviving farmer…</option>
               {duplicates.map((d) => (
                 <option key={d.farmer.id} value={d.farmer.id}>
-                  {d.farmer.farmer_number}: {d.farmer.given_name} {d.farmer.family_name}
+                  {d.farmer.farmer_number}, {d.farmer.given_name} {d.farmer.family_name}
                 </option>
               ))}
             </Select>

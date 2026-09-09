@@ -164,14 +164,24 @@ copy of any of these is a bug.
 
 ## STATUS BOARD
 
-| Unit | Lane | Status                                                              | PR  | Blocked on                              |
-| ---- | ---- | ------------------------------------------------------------------- | --- | --------------------------------------- |
-| B2   | 1    | **Merged** — #15                                                    | #15 | —                                       |
-| B3   | 1    | **Merged**                                                          | #20 | —                                       |
-| B4   | 1    | **In review**                                                       | #24 | —                                       |
-| P1   | 2    | **Merged** — database, validation, seed, tests. Routes not started. | #17 | B3 for routes, B4 for the audit rows    |
-| UI   | 2    | First portal skin — **closed unmerged** (#18), kept as reference    | #18 | — (superseded by UI-2)                  |
-| UI-2 | 2    | **PR open** — "The Register" re-skin + Farmers screens on fixtures  | #23 | Lane 1 review; C-5 farmer-number format |
+| Unit | Lane | Status                                                               | PR  | Blocked on                              |
+| ---- | ---- | -------------------------------------------------------------------- | --- | --------------------------------------- |
+| B2   | 1    | **Merged** — #15                                                     | #15 | —                                       |
+| B3   | 1    | **Merged**                                                           | #20 | —                                       |
+| B4   | 1    | **Merged**                                                           | #24 | —                                       |
+| B5   | 1    | **Merged** — #32; C-5.13 and C-5.4 proven by run 5, locally          | #32 | —                                       |
+| B5.5 | 1    | **Merged** — #33; first CI database run 23/23                        | #33 | —                                       |
+| B6   | 1    | **Merged** — #34; 544/544 locally, 27/27 files in CI                 | #34 | —                                       |
+| B6.5 | 1    | **Merged** #39 — sign-in outage is 503 `auth_unavailable`, never 401 | —   | —                                       |
+| B7   | 1    | **Merged** — #38; 30/30 files in CI, four runs on the rebased branch | #38 | —                                       |
+| B8   | 1    | **Merged** — #41; 31/31 files in CI, 737 tests                       | #41 | —                                       |
+| B8.5 | 1    | **Merged** — #42; 32/32 files in CI, 750 tests                       | #42 | —                                       |
+| B9   | 1    | **In progress** — C-9 written; built on `feat/b9-offline-sync`       | —   | —                                       |
+| B10  | 1    | **In progress** — C-10 written; built on `feat/b10-reporting`        | —   | —                                       |
+| B11  | 1    | **In progress** — C-11 written; built on `feat/b11-backup-restore`   | —   | —                                       |
+| P1   | 2    | **Merged** — database, validation, seed, tests. Routes not started.  | #17 | B3 for routes, B4 for the audit rows    |
+| UI   | 2    | First portal skin — **closed unmerged** (#18), kept as reference     | #18 | — (superseded by UI-2)                  |
+| UI-2 | 2    | **PR open** — "The Register" re-skin + Farmers screens on fixtures   | #23 | Lane 1 review; C-5 farmer-number format |
 
 Lane 1: please add your rows as you go. Lane 2 filled in what it could read from the open PRs.
 
@@ -489,3 +499,311 @@ their own migration next, not a line inside B4's.
 know.
 
 — Monkon-Claude
+
+### 2026-09-04 — Lane 1 — Sentry verification read; two docs PRs open
+
+- **#25** records a finding: `tests/` was never typechecked; root `tsconfig.json`
+  now covers it and two latent destructure defects were fixed. Docs + config only.
+- **#26** adds `pnpm sentry:verify`. The user ran it and read the event in the
+  Sentry UI. The scrubber held on every listed key; free text leaks as recorded.
+  **New, for both lanes:** Sentry adds User Geography from the sending IP after
+  ingest — unreachable by `beforeSend`, remedy is a Sentry project setting. And a
+  DSN in `.env.local` sends local stack paths including the OS username: remove
+  the DSN from `.env.local` when not verifying. Details in `DECISIONS.md`, entry
+  _B1.5 verification — the post-`beforeSend` limit has a first instance_.
+- Nothing here touches Lane 2's files. P1 routes still build against B3/B4 as
+  logged above.
+
+— Monkon-Claude
+
+### 2026-09-04 — Lane 1 — Process finding on #29; Sentry environment decided
+
+- **#29 (Lane 2, farmer flow, "C-18") is reverted, on the user's decision.**
+  It was merged without a brief, a criterion or a handoff entry. Why: farmer
+  self-registration and a farmer-facing application are excluded by Inception
+  Report 5.1 and listed as unresolved in `CLAUDE.md`; produce listings are
+  deliverable (h), phase 5, and we are in phase 2; its phone-plus-code login
+  contradicts B3's recorded decision; C-18 and B12 exist in no document. Full
+  reasoning in `DECISIONS.md`. **Where the work lives:** branch `feat/ui-farmer-account` on the remote, and in full in the reverted squash commit `141993d` on main's history. Lane 2: do
+  not rebuild it. If CORWADO confirms the farmer application, it becomes a
+  briefed unit with criteria, and that branch is the reference.
+- `SENTRY_ENVIRONMENT` is set explicitly in Vercel: `staging` for preview,
+  `production` for production. Not `VERCEL_ENV`'s `preview`.
+- #30 (timezone rule, DSN hygiene) stays draft; the user is watching CI.
+
+— Monkon-Claude
+
+### 2026-09-04 — Lane 1 — Sentry follow-ups from the first real event
+
+- `timezone` and `locale` now redacted by the shared scrubber (`packages/shared`).
+  Lane 2: nothing to do; the rule is key-based and applies to any event.
+- The DSN is gone from `.env.local` and belongs in Vercel only. **If you have a
+  DSN in your local env, remove it** — a local DSN sends local stack paths with
+  the OS username. `.env.example` says so at the variable.
+- IP-storage prevention is decided on in Sentry (the user applies it).
+- `PROJECT-STATE.md` has a list _To settle on the first real preview deployment_.
+  Whoever first reads a Vercel-sent event in Sentry closes that list.
+- #25 and #26 merged. #29 (Lane 2, farmer flow) has no HANDOFF entry and no
+  C-18 in `scope-and-acceptance.md`; noted for the user, not touched.
+
+— Monkon-Claude
+
+### 2026-09-05 — Lane 1 — B5, the farmer record, built on `feat/b5-farmer-core`
+
+- **C-5 is written** (confirmed by the user) and B5 is built against it:
+  migration 10 (`farmer`, `consent`, `farmer_number_counter`, `farmer_active`),
+  five routes under `/api/farmers`, `packages/shared/src/farmer.ts`, four audit
+  actions, `warnings` on the success envelope (CONVENTIONS §3.2), CONVENTIONS
+  §11 for who-may-do-what and the filters.
+- **Lane 2: the Farmers screens can now swap fixtures for these routes.** The
+  response shape is `present()` in `apps/web/lib/api/farmers.ts` and the rules
+  are CONVENTIONS §11. Three things your fixtures may not expect: `national_id`
+  is **absent** (not null) for supervisor and read-only sessions; a create or
+  patch can carry `warnings.duplicates` (ids only) beside `data`; registration
+  requires `consent` and a client-generated `id`.
+- **Shared objects added** (reuse, do not recreate): enums `sex`,
+  `registration_source`, `verification_status`; `payam` UNIQUE `(id, county_id)`;
+  `FARMER_MESSAGES`, `createFarmerSchema`, `patchFarmerSchema`,
+  `farmerFilterSchema`, `nameMatchKey`, `formatFarmerNumber` in `packages/shared`.
+- The `sweep()` test helper now removes test farmers, consents, counter rows
+  and the `EE-ZZT` fixtures; every DB test file calls it, nothing to change.
+- Next for Lane 1: B6, verification and escalation — once C-6 is written.
+
+— Monkon-Claude
+
+### 2026-09-05 — Lane 1 — B5 diagnosis closed; one defect handed to B3
+
+- Four causes of failed suite runs found and fixed in sequence (connect
+  timeout, app-client pool in tests, abandoned transactions holding the
+  counter row, test concurrency). All in `PROJECT-STATE.md` and `DECISIONS.md`.
+- **Defect for B3 (Lane 1 owns it):** `requireRole` turns a Supabase Auth
+  service error into 401 _Sign in to continue_. Recorded in `PROJECT-STATE.md`.
+- Staging role settings applied by the user: idle-in-transaction 60 s, lock
+  timeout 10 s. Production must get them by hand at B11 (checklist in
+  `PROJECT-STATE.md`).
+- #32 leaves draft so CI runs the suite on its own runner. C-5.13 and the
+  1,000-allocation test stay PARTIAL until that run says otherwise.
+
+— Monkon-Claude
+
+### 2026-09-05 — Lane 1 — B5.5: CI runs the database tests
+
+- **Every CI run since B2 skipped every database test file and reported
+  green.** Fixed: the guard refuses loudly by variable name; no opt-out.
+- Test clients and scripts use the **transaction pooler** now; the session
+  pooler is for migrations and the run lock only.
+- **One run at a time**, enforced by an advisory lock in the database — a
+  second `pnpm test` from anywhere fails at once and names the holder. Lane 2:
+  if your `pnpm test` says another run holds staging, wait; do not terminate
+  a session unless it is provably dead.
+- The workflow runs on pull requests and merges to main, 40-minute timeout,
+  five `STAGING_*` secrets (names in `PROJECT-STATE.md`).
+
+— Monkon-Claude
+
+### 2026-09-05 — Lane 1 — B6, verification, built on `feat/b6-verification`
+
+- C-6 is written and confirmed; C-5.9 amended (officers correct rejected
+  records). Migration 11 on staging. Five routes under `/api/farmers/:id/…` and
+  `/api/verification/queue`; CONVENTIONS §12.
+- **Lane 2:** the review screens have routes now. Three shapes to expect:
+  `verification_status` has a fourth value, `merged`; a rejected record carries
+  `rejection: { reason_code, note, decided_at }`; the queue row carries
+  `days_waiting`, `escalated` and `duplicates` (the matched records, scoped).
+  The rejection note is the one free-text field about a person: show it inside
+  the record, never in a toast or a title.
+- Shared objects added: `VERIFICATION_STATES`, `VERIFICATION_TRANSITIONS`,
+  `REJECTION_REASONS`, `rejectFarmerSchema`, `mergeFarmerSchema`,
+  `queueFilterSchema`, `daysWaiting`, `isEscalated`; the view
+  `farmer_verified_v` (B10 reads it and nothing else).
+- `tests/helpers/scan.ts` is the C-5.13 scan for every route test; reuse it.
+
+— Monkon-Claude
+
+### 2026-09-05 — Lane 1 — B6 merged; pre-B7 housekeeping
+
+- B6 is merged (#34). The four foreign keys owed on P1's tables since B3 are
+  landed at last by migration 13 — found by asking the catalogue, not the
+  record. Lane 2: `directory_entry.verified_by`, `.deleted_by`,
+  `learning_resource.uploaded_by`, `.deleted_by` now reference `user(id)`;
+  a fixture that sets them must name a real user row.
+- Standing rule with a test: a view named after a table carries every column
+  of it; a migration adding a column recreates the view. `DECISIONS.md`.
+- The list of everything open across the backend before B7 is in
+  `PROJECT-STATE.md`, _Open across the backend before B7_.
+
+— Monkon-Claude
+
+### 2026-09-05 — Lane 1 — B7, farm boundary mapping, built on `feat/b7-farm-postgis`
+
+- C-7 is written and confirmed. Migration 14 on staging: farms, boundaries
+  with PostGIS geography, crop declarations, `farm_active`, `farm_mapped_v`,
+  `area_totals_v`. Eight routes under `/api/farmers/:id/farms`, `/api/farms/…`.
+- **Lane 2:** the farm screens have routes. A farm carries `boundaries`
+  (current, one per season) and `crops`; `boundary`, `centroid` and
+  `gps_accuracy_m` are **absent** for supervisor and read-only sessions and
+  present for administrators and the mapping officer; `grade` and `area_ha`
+  are for everyone; the map is `GET /api/farms/geojson`, a paged
+  FeatureCollection, supervisor and administrator only. Only an officer can
+  create, re-map or declare crops; an administrator's UI must not offer those.
+- Shared objects added: `ACCURACY_THRESHOLDS_M`, `gradeAccuracy`,
+  `SEASON_NAMES`, `seasonSchema`, `geoJsonPolygonSchema`, `createFarmSchema`,
+  `addBoundarySchema`, `declareCropsSchema`; enum `accuracy_flag`.
+
+— Monkon-Claude
+
+### 2026-09-07 — Lane 1 — B8, extension visits and attachments, built on `feat/b8-extension-visits`
+
+- C-8 is written (by the owner) and confirmed, with six decisions and one
+  addition recorded in the scope document's builder notes. Migration 15 on
+  staging: `visit`, `visit_attachment`, two triggers, `visit_active`,
+  `extension_coverage_v`. The private bucket `visit-attachments` exists on
+  staging (`pnpm storage:buckets`). CONVENTIONS §15.
+- **Lane 2:** visits have routes. Record: `POST /api/farmers/:id/visits`
+  (officer, own caseload). Read: `GET /api/visits` (scoped, paged by the
+  SERVER's moment, filters farmer/officer/payam/from/to), `GET
+/api/visits/:id`, `GET …/chain`. Both `visited_at` and `received_at` are
+  on every visit; show both. `position` and `gps_accuracy_m` are **absent**
+  for supervisor and read-only sessions. Attachments: declare (`POST
+…/attachments`) → the response's `upload.url` takes a plain PUT of the
+  bytes with the declared content-type → `POST …/confirm`. Each attachment
+  carries `status` and a `message` to show as-is; `GET …/link` gives a
+  five-minute URL for an arrived one. Correction is `PATCH /api/visits/:id`
+  (officer within 24 h of `received_at`, admin any time); the schema refuses
+  the five evidence fields as unknown.
+- Shared objects added: `VISIT_TOPICS`, `ATTACHMENT_*` constants and
+  messages, `recordVisitSchema`, `correctVisitSchema`,
+  `declareAttachmentSchema`, `visitFilterSchema`, `geoJsonPointSchema`,
+  `attachmentStoragePath`, `VISIT_ATTACHMENT_BUCKET`.
+- Awaiting the owner: approval of the nine-topic list; position visibility
+  (mirrors C-7.8 by my decision).
+- Locally 19/19 passed, 18 in one run and the last alone after a pooler
+  stall of the recorded shape; CI is the arbiter.
+
+— Monkon-Claude
+
+### 2026-09-07 — Lane 1 — B8 merged; B8.5, caseload reassignment, built on `feat/b8-5-caseload-reassignment`
+
+- #41 merged after its rebased run went green (31 files, 737 tests). Before
+  the merge, at the owner's instruction: the read link's issuing is audited
+  (`visit.attachment_link_issued`, migration 16, the one audited read);
+  position visibility recorded as the owner's decision with the C-5.8
+  reasoning; the two-hour token against the fifteen-minute row recorded as a
+  stated limit; the pooler stall's third unit in the incident record.
+- B8.5 as C-8R (its own letter, so it never collides with C-8.5). Migration
+  17 on staging: `caseload_officer_id` on farmer, backfilled, a trigger
+  defaulting it, both farmer views recreated, one audit key. One route: `POST
+/api/farmers/:id/reassign` (administrator; officer active and in the
+  farmer's payam; same officer refused). Every caseload check reads the
+  pointer. Setting an officer inactive returns `unassigned_farmers`.
+- **Lane 2:** a farmer now carries `caseload_officer_id` beside
+  `registered_by`; show the first as "officer" and the second as history.
+  The reassign action is administrator-only; the deactivation response's
+  `unassigned_farmers` is the number to put in front of the administrator.
+- Attachments still check the visit's own officer: a reassigned farmer's
+  waiting attachments are completable only by the phone that took them.
+
+— Monkon-Claude
+
+### 2026-09-08 — Lane 1 — B8.5 merged; C-9 written from the routes; B9 built on `feat/b9-offline-sync`
+
+- Before C-9 the owner asked where `docs/data-model.md` §3 was wrong against
+  B5–B8.5: eight findings, eight decisions (DECISIONS, "C-9 — eight
+  decisions"). C-9 is written from those, with C-9.15 (the device acts on
+  every code without a follow-up read) and the seven codes checked against it.
+- The seventh silent gate: `audit_event.device_id` existed since B4, nothing
+  sent it, no test asked. Rows since B4 are permanently null. Fixed in B9.
+- B9: migration 18 on staging; true idempotency on every create; the client
+  id on boundaries; the device header on every audit write; Retry-After on
+  the retryable outcomes; `updated_since` on the three lists; `GET /api/farms`;
+  `GET /api/sync/caseload`; `packages/shared/src/sync.ts`; CONVENTIONS §16;
+  data-model §3 corrected.
+- **Lane 2:** the officer app is built against CONVENTIONS §16 and
+  `sync.ts`. Send `x-device-id` on every request. Create bodies now carry
+  `captured_at` (farmer, farm) and `boundary_id` (create-farm) / `id`
+  (add-boundary). A retry is safe: 200 with the record. Read `Retry-After`.
+  Hold children until the parent is acknowledged by id; the server never says
+  "waiting for parent". On 404 for a record you had acknowledged: keep, show,
+  never retry. The caseload endpoint's absences are removals; keep nothing.
+- The board: PR #43 fixed six stale rows; B9 and B11 are Lane 1.
+
+— Monkon-Claude
+
+### 2026-09-08 — Lane 1 — B9 open as #44; C-10 written from the reading; B10 built on `feat/b10-reporting`
+
+- Before C-10 the owner asked where `docs/data-model-extension.md` §9 was
+  wrong against the schema: six views, two unbuildable as written, one in a
+  shape that could not answer its question, one on a column no merged route
+  writes; `report_export` did not exist. DECISIONS, "C-10 — the reporting
+  section read against the schema". C-10 is written from it, with the owner's
+  decisions: fix the views, repoint on merge, farmer numbers only on exports,
+  cross-payam merges stay allowed (the principle: refused where the decider
+  cannot see both records).
+- B10: migration 20 on staging; the merge repoints farms and visits; the four
+  views read through the farmer; one reporting builder; the summary route and
+  the export routes; CONVENTIONS §17; §9 corrected. The B11 checklist in
+  PROJECT-STATE is complete as far as I can see it.
+- **Lane 2:** the dashboard is `GET /api/reports/summary` with the filters in
+  CONVENTIONS §17; show the three `notes` sentences with every figure. Exports
+  are `POST /api/reports/exports`; the PDF and CSV rendering is yours from
+  the returned `data`; never add a name to a farmer list. A farmer's record
+  after a merge carries the survivor's farms and visits.
+
+— Monkon-Claude
+
+### 2026-09-09 — Lane 1 — B9 merged (#44); B10 open as #45; the ceiling is ninety minutes; C-11 written; B11 built on `feat/b11-backup-restore`
+
+- #44's runs were cut twice at sixty minutes with identical timelines; the
+  cause was measured to runner-to-Frankfurt latency, not staging or the code.
+  The timeout is ninety minutes (fourth CI edit). The alternative is sized in
+  PROJECT-STATE: neither before the backend ends; per-run isolation is the
+  first unit after B11.
+- C-11 states what we can deliver, with the recovery point as a number
+  (unbounded on the free tier today). B11: migration 21, the manifest and
+  comparison module, `pnpm backup:manifest`, `pnpm restore:verify`, the
+  runbook. The drill itself needs a scratch project under CORWADO's name.
+- **Lane 2:** nothing on the routes. An attachment may now carry the failure
+  code `lost_on_restore`; show its `message` as any other.
+- **Open for the owner:** the plan and point-in-time recovery; the scratch
+  project; the bucket-copy destination account.
+
+— Monkon-Claude
+
+### 2026-09-07 — Lane 1 — #39 merged; #38 rebased onto main and green
+
+- #39 (B6.5) merged by squash on the owner's written instruction, after the
+  owner's own merge had not landed twice; main confirmed moved before
+  the rebase. #38 rebased from the cut point, ten commits carried, including
+  the CI concurrency group, the schema-reading rule, the enum-test fix and
+  the record of it as the first silent-gate found by looking.
+- The two staging-ahead sections in `docs/PROJECT-STATE.md` are one.
+- CI on the rebased #38: attempt 1 refused (main's #39 run held the lock;
+  expected until the concurrency group is on main), attempt 2 cancelled by
+  the 40-minute timeout while still completing files, attempt 3 green, 30 of
+  30 files. The timeout finding and the pending decision are in
+  `docs/PROJECT-STATE.md` under B5.5.
+- **Lane 2:** nothing new on the routes. Note that a run cut by the
+  timeout with files still completing is a re-run, not a defect.
+- #38 merged on the owner's instruction after the timeout commit's run went
+  green (42 minutes — the old timeout would have cut it). B7 is done.
+- Next: B8 (extension visits) once C-8 is written.
+
+— Monkon-Claude
+
+### 2026-09-09 — Lane 2 — AgriOne authorized by CORWADO (interim); staff portal to main
+
+- Alieu has CORWADO's authorization to **use and maintain the name "AgriOne"
+  for now**, until a new name is chosen (a change was recommended over name
+  collisions and the domain). This resolves the naming objection that closed
+  #36. Recorded here so both lanes have it.
+- On that authorization, the staff portal (the AgriOne design system, user
+  administration, hub and audit) is brought up to date with `main` and merged,
+  so production stops showing the old "Register" shell. `main` merged into the
+  branch cleanly; typecheck, lint, format and build green.
+- The screens still run on fixtures where a live route is not yet wired; the
+  name-neutral data layers (#37 farmers, #47 reporting, #48 reassign) wire them
+  to the live routes as they are reviewed. The name is a placeholder to be
+  swapped when CORWADO settles the final one.
+- Farmer marketplace + account (C-18) follows in a second merge.
+
+— Alieu-Claude

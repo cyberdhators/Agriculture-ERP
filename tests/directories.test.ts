@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { makeTestPrisma, requireTestEnv } from './helpers/db';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 /**
@@ -11,12 +11,10 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 vi.setConfig({ testTimeout: 120_000, hookTimeout: 120_000 });
 
-const HAS_DB = (process.env.DATABASE_URL ?? '') !== '';
-const run = HAS_DB ? describe : describe.skip;
+requireTestEnv();
+const run = describe;
 
-const prisma = new PrismaClient({
-  datasources: { db: { url: process.env.DIRECT_URL ?? process.env.DATABASE_URL } },
-});
+const prisma = makeTestPrisma();
 
 /** Test locations use a code prefix no real location will ever have. */
 const T = 'ZZP1';
@@ -44,7 +42,6 @@ const dealer = {
 };
 
 beforeAll(async () => {
-  if (!HAS_DB) return;
   await cleanup();
   await prisma.state.create({ data: { id: T, name: 'P1 Test State' } });
   await prisma.state.create({ data: { id: `${T}2`, name: 'P1 Other State' } });
@@ -55,7 +52,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  if (HAS_DB) await cleanup();
+  await cleanup();
   await prisma.$disconnect();
 });
 
@@ -199,8 +196,14 @@ run('the backstop and the shared types', () => {
        GROUP BY t.typname`,
     );
     const byName = Object.fromEntries(types.map((t) => [t.typname, t.labels]));
-    expect(byName['crop']).toEqual(['sorghum', 'groundnut', 'sesame', 'maize', 'cowpea']);
-    expect(byName['language']).toEqual(['en', 'ar-juba']);
+    // Containment, not equality: a later unit may add a crop or a language,
+    // and staging holds it before that unit merges (DECISIONS, "a test that
+    // reads the schema tolerates objects it does not know"). What must hold
+    // is that every value the code knows exists in the database.
+    expect(byName['crop']).toEqual(
+      expect.arrayContaining(['sorghum', 'groundnut', 'sesame', 'maize', 'cowpea']),
+    );
+    expect(byName['language']).toEqual(expect.arrayContaining(['en', 'ar-juba']));
   });
 
   it('payam carries the composite target every scoped table needs', async () => {
