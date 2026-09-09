@@ -897,6 +897,117 @@ eighth silent gate, found before the view existed.
 
 ---
 
+## C-11 — BACKUP AND RECOVERY
+
+Deliverable: (t) backup and disaster recovery. Unit B11.
+
+Source: written 2026-09-09 by the assistant on the owner's instruction, from
+the reading of what the platform provides against what the system now stores
+(DECISIONS, "C-11 — what backup has to cover"). No earlier document describes
+backup; the Inception Report is not in the repository. This section states
+**what we can deliver**, not what deliverable (t) assumes, and it holds
+whichever plan CORWADO's projects are on: the recovery point is a stated
+number, never an assumption.
+
+C-11.1  The recovery point — how much recent work a restore can lose — is a
+        number written in this section and in the runbook, and changes only
+        when the plan or the backup schedule changes. **As of 2026-09-09 the
+        projects are on the free tier, which takes no backups: the recovery
+        point is unbounded until a scheduled dump exists or the plan changes.**
+        With daily backups it is up to 24 hours. With point-in-time recovery
+        it is minutes.
+C-11.2  What a backup covers is stated exactly: the database, including the
+        authentication schema so staff accounts restore with their data; the
+        schema itself, which the repository rebuilds from its migrations; the
+        location hierarchy, which the repository rebuilds from its bundle.
+        Farmer records, visits and the audit log are the thing backed up and
+        cannot be rebuilt from anywhere else.
+C-11.3  **Storage is not covered by a database backup.** Photographs and
+        recordings live in the bucket; no backup of the database includes them.
+        A restore that left attachment rows saying "arrived" while the files
+        were gone would have C-8.7 telling an officer their photo is safe when
+        it is not. So: on every restore, every attachment marked arrived whose
+        file is absent is corrected to failed with the code `lost_on_restore`
+        and the sentence that names what happened; and the bucket is copied to
+        a second place under CORWADO's name on the schedule the recovery point
+        requires, or this section says it is not and why. The recommendation
+        and the cost of each are in the notes.
+C-11.4  **A restore is the one event that removes entries from the append-only
+        audit log, and it must leave a note saying so.** The first write into a
+        restored database is a system audit entry recording the restore: the
+        backup restored, the recovery point, who performed it, the last audit
+        entry before the gap and the first after. The verification cannot
+        report success without having written it. This is the only
+        circumstance in which the system loses audit history, and it is
+        impossible to do silently.
+C-11.5  A manifest of the database — migrations applied, rows per table, the
+        last audit entry, arrived attachments, objects in the bucket — is taken
+        before a backup and again after a restore, and the two are compared
+        line by line. A restore is verified only when every migration matches
+        and every count is explained by the recovery point.
+C-11.6  **The sync consequence, stated as a risk with a number.** A phone deletes
+        a record only when the server acknowledges it (C-9.3). Records
+        acknowledged after the restore point are gone from the server and
+        already gone from the phones, and nothing re-sends them. With daily
+        backups, up to one day of field work — every visit, registration and
+        boundary uploaded that day — is unrecoverable anywhere. With
+        point-in-time recovery the same loss is minutes. That is the argument
+        for the paid add-on and it is written here, where CORWADO reads it.
+C-11.7  The restore drill is performed before any real data exists: a backup of
+        staging is restored into a scratch project under CORWADO's name, the
+        manifest is compared, the attachments are corrected, the restore entry
+        is written, and the result is recorded in PROJECT-STATE with its date.
+        Production receives its first migration only after the drill has passed.
+C-11.8  A runbook exists that a CORWADO administrator can follow with no
+        session present: how to take a manifest, how to restore, how to verify,
+        how to correct attachments, how to record the restore, and the
+        production checklist. Every command in it is a repository script that
+        reads its connection strings from the environment and nothing else.
+C-11.9  A free-tier project pauses after a week without traffic. Production
+        cannot be on the free tier; this is stated so that the plan decision is
+        made before the first migration, not after the first pause.
+C-11.10 No dump, manifest or backup of production ever enters the repository, a
+        CI artifact or a machine that is not CORWADO's. Staging's data is
+        invented and the drill uses it.
+C-11.11 Every script in this unit is proved against staging: the manifest
+        equals independent counts; the comparison reports every difference;
+        the restore entry is written as the system's, with the gap it explains.
+
+### Notes for the builder
+
+**What the platform gives, by plan.** Free: no backups, projects pause after a
+week idle. Pro: daily backups kept seven days; point-in-time recovery as a
+paid add-on with a recovery point of about two minutes. The owner is
+confirming the free tier's provision and whether the add-on is purchasable;
+C-11.1's number is updated when that is known and the section holds either
+way.
+
+**Storage: the recommendation, with costs.** Two things, not one.
+*Correction on restore* is mandatory whatever else is decided: a script step
+that lists arrived attachments, asks Storage whether each object exists, and
+marks the absent ones `lost_on_restore` with the sentence "This file was lost
+when the system was restored. Take it again if it still matters." Cost: a
+day, in this unit. *Copying the bucket* to a second private bucket in another
+CORWADO project, or an object store under CORWADO's name, on a nightly
+schedule: half a day of script, a scheduled workflow (a fifth CI edit), and a
+destination account that CORWADO must create, since no account is ever ours.
+Recommendation: build the correction now; build the copy before production
+goes live, because a field photograph cannot be taken again after the moment
+has passed, and "take it again" is honest only for a visit made this week.
+The decision and the account are CORWADO's.
+
+**The restore entry** is `system.restored`, actor `system`, written by the
+verification script as its first act, carrying the backup identity, the
+recovery point, the administrator's name as typed, the last audit entry
+before the gap and the first after it. The script refuses to print "verified"
+until the entry is in the database.
+
+**The recovery point and the phones.** Nothing in the sync design can close
+C-11.6's gap from the device side: a record the phone has deleted on
+acknowledgement is not on the phone. The only lever is the recovery point.
+
+---
+
 ## C-13 — DIRECTORIES AND LEARNING LIBRARY
 
 **Deliverables (i), (j), (k) and (m). Unit P1.**
@@ -975,7 +1086,6 @@ list. If yes, the officer role gets a write route and entries gain a
 Written one unit ahead of the build, not all at once, so that criteria reflect
 what the preceding unit actually produced.
 
-- C-11 — backup and disaster recovery — (t)
 - C-12 — cooperatives — (l)
 - C-14 — market prices, produce listings, buyer matching — (f), (g), (h)
 - C-15 — SMS notifications — (n)
