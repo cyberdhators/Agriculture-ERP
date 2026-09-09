@@ -1,36 +1,33 @@
-import Link from 'next/link';
+import type { Metadata } from 'next';
+import { cookies } from 'next/headers';
 
-import styles from './page.module.css';
+import { EntrySpread } from '@/components/farmer/EntrySpread';
+import { FarmerLogin } from '@/components/farmer/FarmerLogin';
+import { FarmerShell } from '@/components/farmer/FarmerShell';
+import { FarmerSessionProvider } from '@/lib/farmer-session';
+import { DEFAULT_LANGUAGE, LANG_COOKIE, isLanguage } from '@/lib/i18n';
 
-export default function Home() {
+export const metadata: Metadata = { title: { absolute: 'AgriOne' } };
+
+/**
+ * The public entry: the AgriOne spread with sign-in, registration, the staff
+ * link and the language switch. Composed the same way as the farmer route
+ * group so the first paint is already in the chosen language.
+ */
+export default async function Home() {
+  const store = await cookies();
+  const cookieLang = store.get(LANG_COOKIE)?.value;
+  const initialLanguage = isLanguage(cookieLang) ? cookieLang : DEFAULT_LANGUAGE;
+
   return (
-    <main className={styles.landing}>
-      <div className={styles.panel}>
-        <div className={styles.wordmark}>
-          <span className={styles.tile} aria-hidden>
-            A
-          </span>
-          <div>
-            <h1>Agriculture ERP</h1>
-            <p className="muted">LAST Project · CORWADO · Central Equatoria</p>
-          </div>
-        </div>
-        <p>
-          Web portal for programme staff. Sign-in arrives with unit B3; until then the portal opens
-          directly and shows fixture data.
-        </p>
-        <nav className={styles.links} aria-label="Portal sections">
-          <Link href="/directories" className={styles.link}>
-            Directories <span>agro-dealers, input suppliers, financial services</span>
-          </Link>
-          <Link href="/library" className={styles.link}>
-            Learning library <span>guides, audio and video for officers</span>
-          </Link>
-          <Link href="/design" className={styles.link}>
-            Design system <span>tokens, components and rules</span>
-          </Link>
-        </nav>
+    <FarmerSessionProvider initialLanguage={initialLanguage}>
+      <div className="shop">
+        <FarmerShell>
+          <EntrySpread>
+            <FarmerLogin />
+          </EntrySpread>
+        </FarmerShell>
       </div>
-    </main>
+    </FarmerSessionProvider>
   );
 }

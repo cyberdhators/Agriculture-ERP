@@ -102,9 +102,9 @@ export function EntryDetail({ entry }: { entry: DirectoryEntryRow }) {
 
       {removed ? (
         <div className={styles.detailSection}>
-          <Notice kind="success" title="Removed (preview)">
+          <Notice kind="success" title="Removed">
             The entry is now inactive. It stays on the record with the reason you gave; nothing is
-            deleted. In the live portal this writes an audit event.
+            deleted.
           </Notice>
         </div>
       ) : null}

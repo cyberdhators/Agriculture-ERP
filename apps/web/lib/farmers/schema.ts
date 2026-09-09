@@ -29,6 +29,13 @@ export interface FarmerFormValues {
   registration_source: RegistrationSource | '';
   consent_language: Language | '';
   consent_granted: boolean;
+  /**
+   * The account password, created at registration (B12 point 2): by the farmer
+   * on the self-registration form, or by the officer as the initial password on
+   * the intake form. Optional in the shape so older callers and fixtures need
+   * not carry one; a form that creates an account passes `requirePassword`.
+   */
+  password?: string;
 }
 
 export interface ParsedFarmer {
@@ -44,6 +51,7 @@ export interface ParsedFarmer {
   registration_source: RegistrationSource;
   consent_language: Language;
   consent_granted: true;
+  password: string | null;
 }
 
 export type FarmerErrors = Partial<Record<keyof FarmerFormValues, string>>;
@@ -63,6 +71,20 @@ export const MIN_YEAR = 1920;
 
 export function maxBirthYear(now: Date = new Date()): number {
   return now.getUTCFullYear() - MIN_AGE;
+}
+
+/**
+ * Password rule (B12 point 2): at least six characters and nothing else — no
+ * composition rule, because farmers sign in from feature phones and many are
+ * new to reading. The sentence is the one the form shows.
+ */
+export const PASSWORD_MIN = 6;
+export const PASSWORD_RULE = `Choose ${PASSWORD_MIN} or more characters you will remember.`;
+
+export function validatePassword(value: string): string | undefined {
+  if (value.length === 0) return 'Enter a password.';
+  if (value.length < PASSWORD_MIN) return PASSWORD_RULE;
+  return undefined;
 }
 
 const NAME_MAX = 80;
@@ -86,12 +108,22 @@ const FIELD_ORDER: readonly (keyof FarmerFormValues)[] = [
   'state_id',
   'county_id',
   'payam_id',
+  'password',
   'registration_source',
   'consent_language',
   'consent_granted',
 ];
 
-export function validateFarmer(input: FarmerFormValues, now: Date = new Date()): FarmerParseResult {
+export interface ValidateFarmerOptions {
+  /** The form creates an account, so the password is required, not optional. */
+  requirePassword?: boolean;
+}
+
+export function validateFarmer(
+  input: FarmerFormValues,
+  now: Date = new Date(),
+  options: ValidateFarmerOptions = {},
+): FarmerParseResult {
   const errors: FarmerErrors = {};
 
   const given = input.given_name.trim();
@@ -128,6 +160,12 @@ export function validateFarmer(input: FarmerFormValues, now: Date = new Date()):
   if (input.county_id.trim() === '') errors.county_id = 'Select a county.';
   if (input.payam_id.trim() === '') errors.payam_id = 'Select a payam.';
 
+  const password = input.password ?? '';
+  if (options.requirePassword || password !== '') {
+    const passwordError = validatePassword(password);
+    if (passwordError) errors.password = passwordError;
+  }
+
   if (input.registration_source !== 'officer' && input.registration_source !== 'self')
     errors.registration_source = 'Record how the farmer was registered.';
 
@@ -155,6 +193,7 @@ export function validateFarmer(input: FarmerFormValues, now: Date = new Date()):
       registration_source: input.registration_source as RegistrationSource,
       consent_language: input.consent_language as Language,
       consent_granted: true,
+      password: password === '' ? null : password,
     },
   };
 }
