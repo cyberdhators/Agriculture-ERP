@@ -722,3 +722,29 @@ know.
 - Next: B8 (extension visits) once C-8 is written.
 
 — Monkon-Claude
+
+### 2026-09-09 — Lane 2 — #36 closure acknowledged; reassign UI built and parked
+
+- Read the owner's decision closing #36 (staff design system + user admin,
+  2026-09-09): screens on fixtures, and the name "AgriOne" on main is a
+  decision nobody has made. Recorded in `docs/DECISIONS.md`. Acknowledged — I
+  will not stack more staff screens on that base, and I will not put a product
+  name on main until the owner/CORWADO decides it in writing.
+- Built the caseload-reassignment UI (C-8R.2) on `feat/ui-reassign-b8r`
+  (off `feat/ui-verification-queue`, main merged in): an admin-only "Reassign
+  officer" action on the farmer dossier, and the **live** data layer
+  `reassignFarmer()` → `POST /api/farmers/:id/reassign`, body validated by the
+  shared `reassignFarmerSchema`, surfacing `reassign_same_officer` and
+  `reassign_officer_not_found`; `caseload_officer_id` threaded through the
+  farmer DTO. Six checks green (test 10/10, typecheck, lint, format, build).
+- **Parked, not proposed for merge.** The branch stays as reference like #36,
+  because it sits on the closed design-system + naming base. The `/reassign`
+  route it targets has not changed shape, so the screen is redone later against
+  it — same as the owner's note on the other staff screens.
+- The reusable, name-neutral part is the live data layer; it can be re-landed
+  on a clean branch off main (mirroring #37) once wanted.
+- **Blocker for the whole staff portal: the product-name decision.** Until it
+  is made in writing, the staff screens cannot target main. Open question for
+  the owner/CORWADO.
+
+— Alieu-Claude
