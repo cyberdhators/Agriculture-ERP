@@ -164,17 +164,24 @@ copy of any of these is a bug.
 
 ## STATUS BOARD
 
-| Unit | Lane | Status                                                              | PR  | Blocked on                              |
-| ---- | ---- | ------------------------------------------------------------------- | --- | --------------------------------------- |
-| B2   | 1    | **Merged** — #15                                                    | #15 | —                                       |
-| B3   | 1    | **Merged**                                                          | #20 | —                                       |
-| B4   | 1    | **Merged**                                                          | #24 | —                                       |
-| B5   | 1    | **Merged** — #32; C-5.13 and C-5.4 proven by run 5, locally         | #32 | —                                       |
-| B5.5 | 1    | **Merged** — #33; first CI database run 23/23                       | #33 | —                                       |
-| B6   | 1    | **In progress** — C-6 written; built on `feat/b6-verification`      | —   | —                                       |
-| P1   | 2    | **Merged** — database, validation, seed, tests. Routes not started. | #17 | B3 for routes, B4 for the audit rows    |
-| UI   | 2    | First portal skin — **closed unmerged** (#18), kept as reference    | #18 | — (superseded by UI-2)                  |
-| UI-2 | 2    | **PR open** — "The Register" re-skin + Farmers screens on fixtures  | #23 | Lane 1 review; C-5 farmer-number format |
+| Unit | Lane | Status                                                               | PR  | Blocked on                              |
+| ---- | ---- | -------------------------------------------------------------------- | --- | --------------------------------------- |
+| B2   | 1    | **Merged** — #15                                                     | #15 | —                                       |
+| B3   | 1    | **Merged**                                                           | #20 | —                                       |
+| B4   | 1    | **Merged**                                                           | #24 | —                                       |
+| B5   | 1    | **Merged** — #32; C-5.13 and C-5.4 proven by run 5, locally          | #32 | —                                       |
+| B5.5 | 1    | **Merged** — #33; first CI database run 23/23                        | #33 | —                                       |
+| B6   | 1    | **Merged** — #34; 544/544 locally, 27/27 files in CI                 | #34 | —                                       |
+| B6.5 | 1    | **Merged** #39 — sign-in outage is 503 `auth_unavailable`, never 401 | —   | —                                       |
+| B7   | 1    | **Merged** — #38; 30/30 files in CI, four runs on the rebased branch | #38 | —                                       |
+| B8   | 1    | **Merged** — #41; 31/31 files in CI, 737 tests                       | #41 | —                                       |
+| B8.5 | 1    | **Merged** — #42; 32/32 files in CI, 750 tests                       | #42 | —                                       |
+| B9   | 1    | **In progress** — C-9 written; built on `feat/b9-offline-sync`       | —   | —                                       |
+| B10  | 1    | **In progress** — C-10 written; built on `feat/b10-reporting`        | —   | —                                       |
+| B11  | 1    | **In progress** — C-11 written; built on `feat/b11-backup-restore`   | —   | —                                       |
+| P1   | 2    | **Merged** — database, validation, seed, tests. Routes not started.  | #17 | B3 for routes, B4 for the audit rows    |
+| UI   | 2    | First portal skin — **closed unmerged** (#18), kept as reference     | #18 | — (superseded by UI-2)                  |
+| UI-2 | 2    | **PR open** — "The Register" re-skin + Farmers screens on fixtures   | #23 | Lane 1 review; C-5 farmer-number format |
 
 Lane 1: please add your rows as you go. Lane 2 filled in what it could read from the open PRs.
 
@@ -610,5 +617,175 @@ know.
   `queueFilterSchema`, `daysWaiting`, `isEscalated`; the view
   `farmer_verified_v` (B10 reads it and nothing else).
 - `tests/helpers/scan.ts` is the C-5.13 scan for every route test; reuse it.
+
+— Monkon-Claude
+
+### 2026-09-05 — Lane 1 — B6 merged; pre-B7 housekeeping
+
+- B6 is merged (#34). The four foreign keys owed on P1's tables since B3 are
+  landed at last by migration 13 — found by asking the catalogue, not the
+  record. Lane 2: `directory_entry.verified_by`, `.deleted_by`,
+  `learning_resource.uploaded_by`, `.deleted_by` now reference `user(id)`;
+  a fixture that sets them must name a real user row.
+- Standing rule with a test: a view named after a table carries every column
+  of it; a migration adding a column recreates the view. `DECISIONS.md`.
+- The list of everything open across the backend before B7 is in
+  `PROJECT-STATE.md`, _Open across the backend before B7_.
+
+— Monkon-Claude
+
+### 2026-09-05 — Lane 1 — B7, farm boundary mapping, built on `feat/b7-farm-postgis`
+
+- C-7 is written and confirmed. Migration 14 on staging: farms, boundaries
+  with PostGIS geography, crop declarations, `farm_active`, `farm_mapped_v`,
+  `area_totals_v`. Eight routes under `/api/farmers/:id/farms`, `/api/farms/…`.
+- **Lane 2:** the farm screens have routes. A farm carries `boundaries`
+  (current, one per season) and `crops`; `boundary`, `centroid` and
+  `gps_accuracy_m` are **absent** for supervisor and read-only sessions and
+  present for administrators and the mapping officer; `grade` and `area_ha`
+  are for everyone; the map is `GET /api/farms/geojson`, a paged
+  FeatureCollection, supervisor and administrator only. Only an officer can
+  create, re-map or declare crops; an administrator's UI must not offer those.
+- Shared objects added: `ACCURACY_THRESHOLDS_M`, `gradeAccuracy`,
+  `SEASON_NAMES`, `seasonSchema`, `geoJsonPolygonSchema`, `createFarmSchema`,
+  `addBoundarySchema`, `declareCropsSchema`; enum `accuracy_flag`.
+
+— Monkon-Claude
+
+### 2026-09-07 — Lane 1 — B8, extension visits and attachments, built on `feat/b8-extension-visits`
+
+- C-8 is written (by the owner) and confirmed, with six decisions and one
+  addition recorded in the scope document's builder notes. Migration 15 on
+  staging: `visit`, `visit_attachment`, two triggers, `visit_active`,
+  `extension_coverage_v`. The private bucket `visit-attachments` exists on
+  staging (`pnpm storage:buckets`). CONVENTIONS §15.
+- **Lane 2:** visits have routes. Record: `POST /api/farmers/:id/visits`
+  (officer, own caseload). Read: `GET /api/visits` (scoped, paged by the
+  SERVER's moment, filters farmer/officer/payam/from/to), `GET
+/api/visits/:id`, `GET …/chain`. Both `visited_at` and `received_at` are
+  on every visit; show both. `position` and `gps_accuracy_m` are **absent**
+  for supervisor and read-only sessions. Attachments: declare (`POST
+…/attachments`) → the response's `upload.url` takes a plain PUT of the
+  bytes with the declared content-type → `POST …/confirm`. Each attachment
+  carries `status` and a `message` to show as-is; `GET …/link` gives a
+  five-minute URL for an arrived one. Correction is `PATCH /api/visits/:id`
+  (officer within 24 h of `received_at`, admin any time); the schema refuses
+  the five evidence fields as unknown.
+- Shared objects added: `VISIT_TOPICS`, `ATTACHMENT_*` constants and
+  messages, `recordVisitSchema`, `correctVisitSchema`,
+  `declareAttachmentSchema`, `visitFilterSchema`, `geoJsonPointSchema`,
+  `attachmentStoragePath`, `VISIT_ATTACHMENT_BUCKET`.
+- Awaiting the owner: approval of the nine-topic list; position visibility
+  (mirrors C-7.8 by my decision).
+- Locally 19/19 passed, 18 in one run and the last alone after a pooler
+  stall of the recorded shape; CI is the arbiter.
+
+— Monkon-Claude
+
+### 2026-09-07 — Lane 1 — B8 merged; B8.5, caseload reassignment, built on `feat/b8-5-caseload-reassignment`
+
+- #41 merged after its rebased run went green (31 files, 737 tests). Before
+  the merge, at the owner's instruction: the read link's issuing is audited
+  (`visit.attachment_link_issued`, migration 16, the one audited read);
+  position visibility recorded as the owner's decision with the C-5.8
+  reasoning; the two-hour token against the fifteen-minute row recorded as a
+  stated limit; the pooler stall's third unit in the incident record.
+- B8.5 as C-8R (its own letter, so it never collides with C-8.5). Migration
+  17 on staging: `caseload_officer_id` on farmer, backfilled, a trigger
+  defaulting it, both farmer views recreated, one audit key. One route: `POST
+/api/farmers/:id/reassign` (administrator; officer active and in the
+  farmer's payam; same officer refused). Every caseload check reads the
+  pointer. Setting an officer inactive returns `unassigned_farmers`.
+- **Lane 2:** a farmer now carries `caseload_officer_id` beside
+  `registered_by`; show the first as "officer" and the second as history.
+  The reassign action is administrator-only; the deactivation response's
+  `unassigned_farmers` is the number to put in front of the administrator.
+- Attachments still check the visit's own officer: a reassigned farmer's
+  waiting attachments are completable only by the phone that took them.
+
+— Monkon-Claude
+
+### 2026-09-08 — Lane 1 — B8.5 merged; C-9 written from the routes; B9 built on `feat/b9-offline-sync`
+
+- Before C-9 the owner asked where `docs/data-model.md` §3 was wrong against
+  B5–B8.5: eight findings, eight decisions (DECISIONS, "C-9 — eight
+  decisions"). C-9 is written from those, with C-9.15 (the device acts on
+  every code without a follow-up read) and the seven codes checked against it.
+- The seventh silent gate: `audit_event.device_id` existed since B4, nothing
+  sent it, no test asked. Rows since B4 are permanently null. Fixed in B9.
+- B9: migration 18 on staging; true idempotency on every create; the client
+  id on boundaries; the device header on every audit write; Retry-After on
+  the retryable outcomes; `updated_since` on the three lists; `GET /api/farms`;
+  `GET /api/sync/caseload`; `packages/shared/src/sync.ts`; CONVENTIONS §16;
+  data-model §3 corrected.
+- **Lane 2:** the officer app is built against CONVENTIONS §16 and
+  `sync.ts`. Send `x-device-id` on every request. Create bodies now carry
+  `captured_at` (farmer, farm) and `boundary_id` (create-farm) / `id`
+  (add-boundary). A retry is safe: 200 with the record. Read `Retry-After`.
+  Hold children until the parent is acknowledged by id; the server never says
+  "waiting for parent". On 404 for a record you had acknowledged: keep, show,
+  never retry. The caseload endpoint's absences are removals; keep nothing.
+- The board: PR #43 fixed six stale rows; B9 and B11 are Lane 1.
+
+— Monkon-Claude
+
+### 2026-09-08 — Lane 1 — B9 open as #44; C-10 written from the reading; B10 built on `feat/b10-reporting`
+
+- Before C-10 the owner asked where `docs/data-model-extension.md` §9 was
+  wrong against the schema: six views, two unbuildable as written, one in a
+  shape that could not answer its question, one on a column no merged route
+  writes; `report_export` did not exist. DECISIONS, "C-10 — the reporting
+  section read against the schema". C-10 is written from it, with the owner's
+  decisions: fix the views, repoint on merge, farmer numbers only on exports,
+  cross-payam merges stay allowed (the principle: refused where the decider
+  cannot see both records).
+- B10: migration 20 on staging; the merge repoints farms and visits; the four
+  views read through the farmer; one reporting builder; the summary route and
+  the export routes; CONVENTIONS §17; §9 corrected. The B11 checklist in
+  PROJECT-STATE is complete as far as I can see it.
+- **Lane 2:** the dashboard is `GET /api/reports/summary` with the filters in
+  CONVENTIONS §17; show the three `notes` sentences with every figure. Exports
+  are `POST /api/reports/exports`; the PDF and CSV rendering is yours from
+  the returned `data`; never add a name to a farmer list. A farmer's record
+  after a merge carries the survivor's farms and visits.
+
+— Monkon-Claude
+
+### 2026-09-09 — Lane 1 — B9 merged (#44); B10 open as #45; the ceiling is ninety minutes; C-11 written; B11 built on `feat/b11-backup-restore`
+
+- #44's runs were cut twice at sixty minutes with identical timelines; the
+  cause was measured to runner-to-Frankfurt latency, not staging or the code.
+  The timeout is ninety minutes (fourth CI edit). The alternative is sized in
+  PROJECT-STATE: neither before the backend ends; per-run isolation is the
+  first unit after B11.
+- C-11 states what we can deliver, with the recovery point as a number
+  (unbounded on the free tier today). B11: migration 21, the manifest and
+  comparison module, `pnpm backup:manifest`, `pnpm restore:verify`, the
+  runbook. The drill itself needs a scratch project under CORWADO's name.
+- **Lane 2:** nothing on the routes. An attachment may now carry the failure
+  code `lost_on_restore`; show its `message` as any other.
+- **Open for the owner:** the plan and point-in-time recovery; the scratch
+  project; the bucket-copy destination account.
+
+— Monkon-Claude
+
+### 2026-09-07 — Lane 1 — #39 merged; #38 rebased onto main and green
+
+- #39 (B6.5) merged by squash on the owner's written instruction, after the
+  owner's own merge had not landed twice; main confirmed moved before
+  the rebase. #38 rebased from the cut point, ten commits carried, including
+  the CI concurrency group, the schema-reading rule, the enum-test fix and
+  the record of it as the first silent-gate found by looking.
+- The two staging-ahead sections in `docs/PROJECT-STATE.md` are one.
+- CI on the rebased #38: attempt 1 refused (main's #39 run held the lock;
+  expected until the concurrency group is on main), attempt 2 cancelled by
+  the 40-minute timeout while still completing files, attempt 3 green, 30 of
+  30 files. The timeout finding and the pending decision are in
+  `docs/PROJECT-STATE.md` under B5.5.
+- **Lane 2:** nothing new on the routes. Note that a run cut by the
+  timeout with files still completing is a re-run, not a defect.
+- #38 merged on the owner's instruction after the timeout commit's run went
+  green (42 minutes — the old timeout would have cut it). B7 is done.
+- Next: B8 (extension visits) once C-8 is written.
 
 — Monkon-Claude

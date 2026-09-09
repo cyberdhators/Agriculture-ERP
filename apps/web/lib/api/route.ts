@@ -7,12 +7,16 @@ import {
   apiError,
   isJsonMediaType,
   zodErrorToApiError,
+  DEVICE_ID_HEADER,
+  SYNC_MESSAGES,
+  deviceIdSchema,
 } from '@agri-erp/shared';
 import * as Sentry from '@sentry/nextjs';
 import { NextResponse } from 'next/server';
 import { randomUUID } from 'node:crypto';
 
 import { ApiFailure, failureResponse, internalError } from './errors';
+import { runWithRequestContext } from './request-context';
 import { type Authenticated, requireRole } from './require-role';
 
 /**
@@ -121,6 +125,8 @@ export interface RouteContext<TBody> {
   readonly body: TBody;
   readonly params: Record<string, string>;
   readonly correlationId: string;
+  /** The device header (C-9.8), or null for a browser session. */
+  readonly deviceId: string | null;
 }
 
 export interface RouteDefinition<TBody = undefined> {
@@ -167,6 +173,20 @@ function wrap<TBody>(definition: RouteDefinition<TBody>): NextRouteHandler {
     const correlationId = request.headers.get('x-correlation-id') ?? randomUUID();
 
     try {
+      // C-9.8: the device, if the request names one. A malformed header is a
+      // 400 like any other malformed input; a missing one is a browser.
+      const rawDevice = request.headers.get(DEVICE_ID_HEADER);
+      let deviceId: string | null = null;
+      if (rawDevice !== null) {
+        const parsedDevice = deviceIdSchema.safeParse(rawDevice.trim());
+        if (!parsedDevice.success) {
+          throw new ApiFailure(400, ERROR_CODES.invalidInput, ERROR_MESSAGES.invalidInput, {
+            [DEVICE_ID_HEADER]: SYNC_MESSAGES.deviceIdShape,
+          });
+        }
+        deviceId = parsedDevice.data;
+      }
+
       // 1. Authenticate and authorise BEFORE anything reads the body or the
       //    database. An unauthenticated caller learns nothing about the shape
       //    of the request they got wrong.
@@ -208,9 +228,12 @@ function wrap<TBody>(definition: RouteDefinition<TBody>): NextRouteHandler {
       }
 
       const params = (await context?.params) ?? {};
-      return respond(
-        await definition.handler({ request, auth, body, params, correlationId }),
-        correlationId,
+      // Every audit write inside the handler reads the device from here (C-9.8).
+      return await runWithRequestContext({ correlationId, deviceId }, async () =>
+        respond(
+          await definition.handler({ request, auth, body, params, correlationId, deviceId }),
+          correlationId,
+        ),
       );
     } catch (failure) {
       // A documented outcome for the caller -- 401, 404, 422 and so on. Not an

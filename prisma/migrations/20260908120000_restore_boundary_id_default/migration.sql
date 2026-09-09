@@ -1,0 +1,14 @@
+-- Migration 19 (B9): restore the server default on farm_boundary.id.
+--
+-- Migration 18 dropped it so that a boundary without a client id would be an
+-- error. That was not additive: staging's schema runs ahead of main, and
+-- main's code (B7) does not yet send a boundary id, so every mapping on a
+-- main run failed with a not-null error the moment 18 was applied (seen on
+-- #43's run, 2026-09-07 22:33). The standing condition "staging ahead of main
+-- is acceptable" rests on the additive law; this change broke the premise.
+--
+-- The guarantee C-9.1 wants — a boundary carries the client's id, so a retry
+-- is the same boundary — lives where it can be enforced without breaking older
+-- code: the shared schema requires the id and the route always sends it. The
+-- default remains for any writer that predates B9. docs/DECISIONS.md, B9.
+ALTER TABLE "public"."farm_boundary" ALTER COLUMN "id" SET DEFAULT gen_random_uuid();

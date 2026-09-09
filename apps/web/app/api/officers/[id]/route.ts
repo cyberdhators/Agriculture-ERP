@@ -212,6 +212,16 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
         });
       }
 
+      // C-8R.3 addition (owner): the act that leaves farmers without a working
+      // officer says how many. Not a refusal, not a field on the officer record
+      // — a number in the response to the deactivation itself.
+      if (statusChanging && body.status === 'inactive') {
+        const [count] = await prisma.$queryRawUnsafe<{ n: number }[]>(
+          `SELECT count(*)::int AS n FROM public.farmer WHERE caseload_officer_id = $1::uuid AND deleted_at IS NULL`,
+          target.id,
+        );
+        return ok({ ...present(row), unassigned_farmers: count?.n ?? 0 });
+      }
       return ok(present(row));
     },
   },

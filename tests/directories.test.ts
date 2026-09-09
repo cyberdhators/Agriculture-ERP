@@ -196,8 +196,14 @@ run('the backstop and the shared types', () => {
        GROUP BY t.typname`,
     );
     const byName = Object.fromEntries(types.map((t) => [t.typname, t.labels]));
-    expect(byName['crop']).toEqual(['sorghum', 'groundnut', 'sesame', 'maize', 'cowpea']);
-    expect(byName['language']).toEqual(['en', 'ar-juba']);
+    // Containment, not equality: a later unit may add a crop or a language,
+    // and staging holds it before that unit merges (DECISIONS, "a test that
+    // reads the schema tolerates objects it does not know"). What must hold
+    // is that every value the code knows exists in the database.
+    expect(byName['crop']).toEqual(
+      expect.arrayContaining(['sorghum', 'groundnut', 'sesame', 'maize', 'cowpea']),
+    );
+    expect(byName['language']).toEqual(expect.arrayContaining(['en', 'ar-juba']));
   });
 
   it('payam carries the composite target every scoped table needs', async () => {

@@ -443,6 +443,571 @@ section's.
 
 ---
 
+## C-7 — FARM BOUNDARY MAPPING
+
+Deliverable: (c) farmer registration and profiling. Unit B7.
+
+Source: `docs/data-model.md` section 1 (`farm`, `crop_declaration`) and
+`docs/data-model-extension.md` §10. A boundary is the one record in this
+system that can only be created by physical presence: a name, a crop and a
+verification decision can be typed at a desk; a polygon cannot. The record
+tells "someone walked this" from "someone drew this" by shape — the mapping
+officer column references the officer table — not by a flag.
+
+C-7.1  A farm belongs to exactly one farmer and records the season it was
+       mapped for. A farmer may hold more than one farm.
+
+C-7.2  A boundary is a closed shape of at least four distinct points, the
+       closing repeat not counted. A shape that is not closed, or crosses
+       itself, or has fewer points, is refused with a message an officer can
+       act on standing in a field — never the database's words.
+
+C-7.3  The area is calculated from the boundary and stored in hectares. It is
+       never entered by hand.
+
+C-7.4  Every boundary records the GPS accuracy at capture, and is marked good
+       (10 metres or better), poor (over 10 to 30) or unusable (over 30) from
+       it. Unusable boundaries are saved but excluded from every area total.
+
+C-7.5  A re-mapped boundary is recorded alongside the previous one, not in
+       place of it, within a season as well as across seasons. Each boundary
+       names its farm, season, mapped-at moment and mapping officer; exactly
+       one is current per farm per season, and that is a database fact. Area
+       totals read current boundaries only and name the season they cover.
+       (Data model open question 6, unanswered by CORWADO; the reversible
+       reading is our decision and can be narrowed on request —
+       `docs/DECISIONS.md`.)
+
+C-7.6  An officer maps farms only for farmers in their own caseload, and only
+       an officer maps. A supervisor and a read_only user see farms in their
+       state. Out of scope is indistinguishable from not found. An
+       administrator reads everything and removes; an administrator never
+       creates, re-maps or re-grades, and cannot be recorded as a mapper.
+
+C-7.7  Crop declarations are recorded per farm per season, from the fixed crop
+       list, one declaration per crop per season, by the mapping officer.
+
+C-7.8  A farm's boundary, centroid and GPS accuracy are returned only to
+       administrators and the mapping officer, per the same reading as C-5.8.
+       To a supervisor or read_only user those keys are absent, not masked;
+       they receive the area, the grade, the season, the crops and the farmer.
+
+C-7.9  Removal is soft, by an administrator. A removed farm appears in no
+       list, count, area total or map, and its history remains readable.
+
+C-7.10 No response carries a farmer's name, phone or national ID outside the
+       record asked for. The C-5.13 scan extends to cover farm routes and the
+       geometry keys join the error scrubber's list.
+
+### Notes for the builder
+
+**Accuracy thresholds** are ours, taken because no threshold exists in any
+document, to be corrected when CORWADO or the field says otherwise. A consumer
+GPS under tree cover routinely reports 15 to 20 metres, so "poor" will be
+common; the unusable threshold is the one that matters.
+
+**Four distinct vertices**: a three-sided plot exists in reality, but a
+three-point capture is far more likely an officer who stopped walking early.
+
+**Seasons** are a four-digit year, a hyphen, and a name from a fixed list —
+`main`, `second` — ours until CORWADO confirms local names. A season the
+system cannot compare is a season reporting cannot report on.
+
+**Winding order** is normalised on insert; whichever way the officer walked
+the plot, the stored ring is counter-clockwise and the area is positive.
+
+---
+
+## C-8 — EXTENSION VISITS AND ATTACHMENTS
+
+Deliverable: (d) extension services. Unit B8.
+
+Source: `docs/data-model-extension.md` §2 (`visit_note`, `visit_attachment`).
+Written by the owner on 2026-09-07 after B7 merged. The visit is the second
+record in this system that requires physical presence, and the first whose
+substance is prose: what an officer saw and what they advised is the
+deliverable CORWADO reports to the donor.
+
+C-8.1  An extension officer records a visit to a farmer in their caseload,
+       capturing where and when it happened, what was observed, and what advice
+       was given. Advice is required: a visit with no advice is not a visit,
+       and extension coverage is what CORWADO reports to the donor.
+C-8.2  A visit records the topics it covered from a fixed list, and may record
+       its duration and how many people attended.
+C-8.3  A visit may be a follow-up to an earlier visit, and the chain is readable
+       in order. The earlier visit belongs to the same farmer, is not removed,
+       and following it back never reaches this visit — a retried sync could
+       produce the cycle an officer never would.
+C-8.4  A visit records the position at which it was captured and its accuracy in
+       metres. The value is stored and shown; it is not graded. The boundary
+       grades were set for a walked polygon where error compounds across every
+       vertex, and a single standing point is a different measurement. A grade
+       is added if the field asks for one.
+C-8.5  A visit records both the moment the officer's device reported and the
+       moment the server received it. Coverage figures are computed from the
+       server's moment, never the device's, because a phone offline for a week
+       may be wrong by days. Both are shown wherever a date is shown.
+C-8.6  A visit may carry photographs or audio. An attachment is a separate
+       record that travels separately: a failed or pending attachment never
+       blocks the visit it belongs to, and a visit is complete without them.
+C-8.7  For any visit, its officer can tell whether each attachment has arrived,
+       is still waiting, or has failed, and what to do about it. The message
+       names the action, not the fault (§14).
+C-8.8  Attachment files are private. Access is granted per request, expires, and
+       is refused outside the caller's scope.
+C-8.9  An officer records and reads visits for farmers in their caseload. A
+       supervisor and a read-only user read visits in their state. Out of scope
+       is indistinguishable from not found.
+C-8.10 An officer may correct their own visit within twenty-four hours of
+       recording it. After that only an administrator may. An administrator
+       never records a visit, as with boundaries — a visit is a journey.
+C-8.11 Removal is soft, administrator only. A removed visit appears in no list,
+       count or coverage figure, and its history remains readable.
+C-8.12 Every visit, attachment and correction writes an audit entry in the same
+       transaction as the change.
+C-8.13 Observation and advice are free text and are the substance of this
+       deliverable, not an aside. The B6 rule holds — the officer writes about
+       the visit, not the person — but it cannot be enforced by a closed list,
+       because no list can say what to do about armyworm in a particular field.
+       It is enforced by where the text travels: inside the visit record only,
+       to the parties entitled to it; never in an error, a warning or a message;
+       never in the audit log; redacted by the scrubber; covered by the scan.
+C-8.14 Every visit and attachment in staging, in tests and in seed data is
+       invented.
+
+### Notes for the builder
+
+**Decided with the owner, 2026-09-07, before the build.** Bytes never pass
+through a route: the API issues a signed upload grant for one attachment id,
+the phone uploads to Storage, and the API confirms arrival against the
+declared size and type; reading is a signed link per request. The grant
+expires in minutes; the confirm step verifies existence, size and type; the
+bucket is private with no public policy, and one server module touches
+Storage. Any non-removed farmer may be visited, whatever their verification
+status; coverage counts visits to verified farmers, with the rest beside and
+never folded in. The twenty-four hours run from the server's moment. A
+correction may change what was observed, advised, covered, how long and how
+many, and the follow-up link; never the farmer, the officer, the position or
+either moment — those five make the record evidence rather than a note.
+
+**Topics** are nine, from `docs/data-model-extension.md` §2: land
+preparation, planting, weeding, pest, disease, harvest, storage, market,
+other. Short on purpose: a list an officer scrolls past is a list they tick
+the first item on.
+
+**Ceilings** with room: photos to 15 MB (a mid-range Android's JPEG is 3 to 6,
+a 48-megapixel one up to 10) as JPEG, PNG or WebP; audio to 25 MB (about ten
+minutes of AAC is 10) as M4A, AAC, MP3, OGG or WebM. A file over the ceiling
+is refused at declaration, before any byte travels, with a sentence naming
+the action.
+
+**The upload grant's life** is a provider fact: Supabase's upload token lives
+two hours and cannot be shortened. Ours is fifteen minutes, recorded on the
+row and enforced at confirm; an object that arrives after it is removed and
+the row fails.
+
+---
+
+## C-8R — CASELOAD REASSIGNMENT
+
+Deliverable: (c) farmer registration and profiling. Unit B8.5.
+
+Source: `docs/UNITS.md`, B8.5, decided 2026-09-05. These criteria restate a
+decision already made, written by the assistant on the owner's instruction
+(2026-09-07). The section is lettered R rather than numbered 8.5 because
+"C-8.5" is already the criterion about device and server moments in C-8, and
+two things with the same name in a document a session reads without asking
+is a known way to be bitten.
+
+C-8R.1 A farmer carries a caseload officer, set to the registering officer at
+       creation. The registering officer never changes (C-5.9).
+C-8R.2 An administrator reassigns a farmer to another officer, who is active
+       and in the farmer's payam. Nobody else can. Reassigning to the officer
+       who already holds the farmer is refused, so the log never records a
+       move that was not one.
+C-8R.3 After reassignment the new officer reads, resubmits, maps and visits
+       the farmer; the old officer is told not found on all of it. When an
+       administrator sets an officer inactive, the response says how many
+       farmers are now without a working officer; nothing is refused.
+C-8R.4 Farms, boundaries, crops and visits follow the farmer without being
+       touched: they reach the caseload through the farmer.
+C-8R.5 Reassignment writes an audit entry carrying the old and new officer, in
+       the same transaction.
+C-8R.6 A farmer's response shows both officers.
+C-8R.7 Every caseload check in the system reads the caseload officer. One
+       helper, not five copies.
+
+### Notes for the builder
+
+**The new officer's payam** is registration's rule for registration's reason:
+an officer who is not where the farmer is cannot visit them. Widening to the
+county is one condition in one query, to be made if CORWADO says payam
+coverage is thinner than assumed — a field fact we do not have.
+
+**Attachments** keep checking the visit's own officer, not the caseload,
+because an attachment is uploaded by the phone that took it. In plain terms:
+a reassigned farmer's waiting attachments are completable only by the phone
+that took them, and if that officer has left, those attachments never
+arrive. The visit stands without them, which is what C-8.6 is for.
+
+**The national ID** (C-5.8) goes to the caseload officer. C-5.8 said "the
+officer who registered" because that officer did the work; after a
+reassignment the new officer does it.
+## C-9 — OFFLINE SYNCHRONISATION
+
+Deliverable: (b) offline-first data capture. Unit B9.
+
+Source: the owner's eight decisions of 2026-09-08, taken after the sync
+contract in `docs/data-model.md` §3 was read against what the routes built in
+B5 through B8.5 actually do. That section was written before any of them
+existed and is corrected as part of this unit (C-9.13). B9 is the server side
+of sync: the routes, the codes, the contract and the shared constants the
+officer app is built against. The app itself is a later surface.
+
+C-9.1  Every record an officer creates in the field carries a client-generated
+       identifier: farmer, farm, boundary, crop declaration, visit, attachment.
+       A boundary gains one — today its id is the server's, so a retried
+       add-boundary after a lost acknowledgement recorded a second boundary
+       that superseded the first: a supersession that never happened in the
+       field, a false record and not merely a duplicate.
+C-9.2  A retried create is idempotent in fact, not by documentation: when the
+       identifier matches a stored record and the body matches what was
+       stored, the response is 200 with the record. 409 only when the
+       identifier matches and the body does not — a real conflict, terminal,
+       and the officer is told. Farmer, farm, boundary, visit and attachment
+       declaration all behave so; the attachment route already did. A phone
+       that must read back to learn whether its own write landed is a phone
+       that will re-send.
+C-9.3  One transaction per record; a server row is never partially written; a
+       record is removed from the device only when the server has acknowledged
+       it by identifier.
+C-9.4  Seven outcomes, each a code with a sentence for the officer (§14) and a
+       device action: **retry_later** (no network, 500, and 503 — the sign-in
+       service could not be reached; never a prompt to re-enter credentials);
+       **sign_in_again** (401); **not_yet** (an attachment confirmed before its
+       bytes arrived; retry soon); **waiting_for_parent** (the record's parent
+       has not been acknowledged; hold, do not retry on a timer);
+       **refused** (400, 413, 422 — a rule refused it; will not succeed on
+       retry; show the rule's own sentence); **left_caseload** (404 on a farmer
+       the device holds — reassigned while offline; keep it, show the officer,
+       never retry); **conflict** (409 with a differing body; terminal; show
+       the officer). The data model's five codes are replaced by these.
+C-9.5  Parent-first release. A farmer before its farms and visits; a farm
+       before its boundaries and crops; an earlier visit before its follow-up;
+       a visit before its attachment rows; a row before its bytes; bytes before
+       confirm. A child is held until its parent is acknowledged by identifier.
+       When a parent is terminally refused, its children are not retryable:
+       they are marked stuck with the parent's identifier and reason, and the
+       officer can see which parent and why.
+C-9.6  Attachments have their own lifecycle, distinct from record sync states:
+       declared, uploading, confirmed, failed. A grant that expired on confirm
+       means re-declare with the same identifier, not give up. A device that
+       gives up says so, so the visit shows "did not send" rather than
+       "waiting" for ever (C-8.7).
+C-9.7  The entities that sync are farmer, farm, farm boundary, crop
+       declaration, visit and visit attachment. Nothing else — "ai question"
+       is on the do-not-build list and leaves the model.
+C-9.8  Every request from the officer app carries a device identifier in a
+       header; the route wrapper reads it and every audit entry written in that
+       request records it. Audit rows written before this unit carry no device
+       and never will; the record says so.
+C-9.9  Download. The caseload lists — farmers, farms, visits — accept an
+       updated-since filter on the server's moment of last change, so a device
+       learns verification decisions and their reasons, merges, corrections and
+       new records without re-downloading its caseload. A caseload endpoint
+       returns the identifiers currently in the officer's caseload; a farmer
+       the device holds that is absent from it has left the caseload, and the
+       device removes that farmer and everything under them, keeping nothing:
+       the officer has no right to that data any more.
+C-9.10 A farmer and a farm carry the device's moment of capture beside the
+       server's moment of receipt, as a visit does (C-8.5). A farmer registered
+       on Monday in a village and uploaded on Friday in town was registered on
+       Monday. The server's moment stays authoritative for reporting; the
+       field's date is no longer discarded. Both are shown wherever a date is
+       shown.
+C-9.11 No sync response, success or failure, carries a farmer's name, phone,
+       national ID, note, observation, advice or position outside `data`
+       (C-5.13, C-8.13). The shared scan covers every sync route.
+C-9.12 Every sync payload is validated by the same shared schema on the device
+       and on the server, so the two cannot disagree about what is valid.
+C-9.13 `docs/data-model.md` §3 is corrected to state what the routes do: the
+       entity list, the codes, the order, the attachment lifecycle, the device
+       header, the download direction, and true idempotency.
+C-9.14 Every record used to prove this unit, in staging and in tests, is
+       invented.
+C-9.15 The device can act on every code in C-9.4 without a follow-up read.
+       For each, the response carries enough for the phone to decide keep,
+       retry or show the officer, and to know when to retry if it should: a
+       retryable outcome carries a Retry-After; a refusal carries the rule's
+       own sentence; a conflict names the identifier. A code that requires the
+       device to ask a second question before it knows what to do is a code
+       that will be handled wrong on a phone with no signal. One code is not a
+       server response at all — see the note.
+
+### Notes for the builder
+
+**"The body matches"** means: the fields the client sent, after the shared
+schema's normalisation (trimmed strings, a phone in canonical form, a
+polygon's ring compared point by point in stored winding), equal what was
+stored; fields the server sets — moments of receipt, numbers it allocated,
+denormalised location — are not compared. A retry from a phone is byte-for-
+byte the same request, so the comparison exists to catch the other case: a
+different record wearing a reused identifier.
+
+**The device identifier** is an opaque installation identifier the app
+generates once, not the handset's hardware identity. It names a device, and
+through the session an officer; it is staff data, not a farmer's.
+
+**Boundaries' client id** is a body change, not a column change: the
+create-farm body carries a `boundary_id` beside the farm's, add-boundary
+carries `id`, both required by the shared schema, and the route always sends
+them. The column's server default stays. Migration 18 dropped it and
+migration 19 put it back the same day: dropping it was not additive, and
+main's code, which did not yet send an id, failed every mapping on staging
+while the two differed. The guarantee lives at the door, where older code is
+not broken by it.
+
+**Captured-at** on farmer and farm is a schema change: two nullable columns,
+so records that predate the unit read "not recorded" rather than a guess.
+
+**The seven codes against C-9.15, checked before the build.** Six pass on the
+response alone: retry_later (500 and 503 carry `Retry-After`), sign_in_again
+(401), not_yet (409 `attachment_not_arrived` carries `Retry-After`), refused
+(the rule's sentence is in the body), left_caseload (404 on a farmer the
+device had acknowledged: keep, show, never retry), conflict (409 naming the
+identifier; the device holds its own copy and the next download brings the
+server's). **waiting_for_parent is never a server response.** The server
+cannot tell "parent not landed yet" from "parent not yours": both are 404 by
+design (§5.1). It is the device's own hold, decided from one local fact —
+whether the parent has been acknowledged — and a child is never sent before
+that fact is true (C-9.5). If a child is sent anyway, the server's 404 is
+read as left_caseload only when the parent was acknowledged, and as a device
+fault otherwise. A local fact is not a follow-up read; the code passes
+C-9.15 on that basis, and the officer app must implement the hold, not
+infer it from the server.
+
+**The seventh silent gate.** The audit law required the device on every
+entry, the column existed since B4, nothing sent it and no test asked; every
+audit row since B4 has a null device. Found 2026-09-08 by reading a design
+document against the code, the first of the class found that way. Recorded in
+`docs/PROJECT-STATE.md`.
+
+---
+
+## C-10 — DASHBOARDS, REPORTING AND EXPORT
+
+Deliverables: (p) interactive user dashboard, (q) reporting and analytics
+dashboard. Unit B10.
+
+Source: written by the owner on 2026-09-08 from the assistant's reading of
+`docs/data-model-extension.md` §9 against the tables and views as they were
+after B9 (DECISIONS, "C-10 — the reporting section read against the schema").
+
+**On the deliverable wording, plainly.** The Inception Report is not in the
+repository. No session can read it. What we hold is the derivation table at
+the top of this file, and that table is the authority we actually have; the
+wording above is the table's. Where the table and the report disagree, the
+report wins — but nobody here can check that without the report in hand.
+
+C-10.1  Every figure reads through the farmer's own status. A removed or merged
+        farmer's farms, hectares and visits appear in no count, no total and no
+        export. A land figure never contradicts the farmer figure beside it.
+C-10.2  Reach is the count of distinct verified farmers, computed for the period
+        asked for. It is never summed from a per-month view, because a farmer
+        visited in two months is one farmer.
+C-10.3  Pending, rejected and merged farmers are counted and shown beside every
+        verified figure, never folded into it.
+C-10.4  Every figure is disaggregated by sex, age band, state, county and payam.
+C-10.5  Age band is computed at the data cut-off from a year of birth, and every
+        report says so and says it is approximate to within a year.
+C-10.6  Reach by crop counts a farmer once per crop they have at least one farm
+        declaring in the season. The crop breakdown does not sum to the total,
+        and the report says why.
+C-10.7  Extension coverage is verified farmers with at least one visit in the
+        period, computed from visits, using the server's moment.
+C-10.8  Every export records who ran it, the query, the filters, the data
+        cut-off date and the row count, so a number in a PDF traces to rows.
+C-10.9  A figure and its export made with the same filters and cut-off agree.
+C-10.10 An officer sees their own caseload. A supervisor and a read-only user
+        see their state. An administrator sees all. No figure crosses scope.
+C-10.11 No dashboard figure and no export carries a farmer's name, phone or
+        national ID. A farmer-list export carries farmer numbers only. A name on
+        screen disappears with the page; a name in a file outlives the scope
+        check that allowed it — copied, forwarded, left on a laptop. A farmer
+        number traces a figure to a row for anyone with access to the system
+        and means nothing to anyone without. The officer's field list is the
+        phone's job from its own caseload, not an export. If CORWADO asks for a
+        named list later, that is a decision with a reason attached, and the
+        export log records who ran it.
+C-10.12 The SMS delivery figure is not in this deliverable. It needs (n), which
+        is not built.
+C-10.13 The directory freshness figure is not in this deliverable while no
+        merged route writes the verification date it reads.
+C-10.14 Every figure proved in this deliverable is proved against invented data,
+        and every expected total is computed independently of the view it checks.
+
+### Notes for the builder
+
+**Why C-10.1 exists, and what it decided.** The farmer soft-delete and the
+merge touch the farmer row alone; farms and visits are left active underneath.
+Decided by the owner 2026-09-08: a merge repoints the source's farms and
+visits to the survivor at merge time, inside the merge transaction, with an
+audit entry per moved record; a one-off migration does the same for merges
+already made. The land exists and someone farms it; a visit to the merged
+record was a real visit to the surviving person; and an officer's caseload
+after a merge shows the survivor with everything under them, not a pointer to
+follow. Built in B10, because C-10.1 cannot be met honestly without it. `farm_mapped_v` and
+`area_totals_v` filter on the farm's own removal only, so a hectare total read
+from them counts a removed farmer's land, one join away from a law that says a
+soft-deleted row appears in no count or report. Found by reading §9 against
+the views, before any B10 figure existed.
+
+**Why C-10.2 exists.** `extension_coverage_v` (B8) counts by state, county,
+payam and month. Distinct farmers do not sum across months: a farmer visited
+in March and April is two in the monthly view and one in the quarter. Any
+period other than a calendar month cannot be read from it. It stays for the
+tile it is right for; reach is computed from visits at the period asked.
+
+**C-10.4's location consequence — read this before reading a report.** Land
+breakdowns read the farm's payam; people breakdowns read the farmer's. A farm
+carries its own payam, county and state, denormalised at creation from the
+farmer it belonged to then. After a merge across payams within a state — which
+B6 allows: the merge check refuses only a source and target in different
+states (`merge_across_states`), confirmed in the code on 2026-09-08 — the
+survivor's farms may carry a payam the survivor's own record does not. A
+report that shows three farmers in one payam and four farms' worth of hectares
+in another is not wrong. That is the truth of where the plots are. A reporting
+session that sees the two disagree should read this paragraph, not file a
+defect.
+
+**Two decisions the owner took rather than left (2026-09-08).** Fix the views,
+do not work around them: `farm_mapped_v` and `area_totals_v` gain the farmer
+join as an additive replacement, because a view that is right only when the
+caller remembers to join is a view that will be read wrong. And no view is
+named after `visit` unless it carries every visit column; a subset or a join
+gets a name that is not a table's, per the view rule.
+
+**Not built here, and why.** `report_export` does not exist yet and the
+model's shape lacks the query the law requires logged; B10 creates it with
+the query. The SMS tile needs (n). The directory freshness tile reads
+`last_verified_at`, written by the seed and by no merged route (the directory
+routes are Lane 2's #28, open), so it would be right today and empty itself
+180 days after the seed with no route able to refresh it — the shape of the
+eighth silent gate, found before the view existed.
+
+---
+
+## C-11 — BACKUP AND RECOVERY
+
+Deliverable: (t) backup and disaster recovery. Unit B11.
+
+Source: written 2026-09-09 by the assistant on the owner's instruction, from
+the reading of what the platform provides against what the system now stores
+(DECISIONS, "C-11 — what backup has to cover"). No earlier document describes
+backup; the Inception Report is not in the repository. This section states
+**what we can deliver**, not what deliverable (t) assumes, and it holds
+whichever plan CORWADO's projects are on: the recovery point is a stated
+number, never an assumption.
+
+C-11.1  The recovery point — how much recent work a restore can lose — is a
+        number written in this section and in the runbook, and changes only
+        when the plan or the backup schedule changes. **As of 2026-09-09 the
+        projects are on the free tier, which takes no backups: the recovery
+        point is unbounded until a scheduled dump exists or the plan changes.**
+        With daily backups it is up to 24 hours. With point-in-time recovery
+        it is minutes.
+C-11.2  What a backup covers is stated exactly: the database, including the
+        authentication schema so staff accounts restore with their data; the
+        schema itself, which the repository rebuilds from its migrations; the
+        location hierarchy, which the repository rebuilds from its bundle.
+        Farmer records, visits and the audit log are the thing backed up and
+        cannot be rebuilt from anywhere else.
+C-11.3  **Storage is not covered by a database backup.** Photographs and
+        recordings live in the bucket; no backup of the database includes them.
+        A restore that left attachment rows saying "arrived" while the files
+        were gone would have C-8.7 telling an officer their photo is safe when
+        it is not. So: on every restore, every attachment marked arrived whose
+        file is absent is corrected to failed with the code `lost_on_restore`
+        and the sentence that names what happened; and the bucket is copied to
+        a second place under CORWADO's name on the schedule the recovery point
+        requires, or this section says it is not and why. The recommendation
+        and the cost of each are in the notes.
+C-11.4  **A restore is the one event that removes entries from the append-only
+        audit log, and it must leave a note saying so.** The first write into a
+        restored database is a system audit entry recording the restore: the
+        backup restored, the recovery point, who performed it, the last audit
+        entry before the gap and the first after. The verification cannot
+        report success without having written it. This is the only
+        circumstance in which the system loses audit history, and it is
+        impossible to do silently.
+C-11.5  A manifest of the database — migrations applied, rows per table, the
+        last audit entry, arrived attachments, objects in the bucket — is taken
+        before a backup and again after a restore, and the two are compared
+        line by line. A restore is verified only when every migration matches
+        and every count is explained by the recovery point.
+C-11.6  **The sync consequence, stated as a risk with a number.** A phone deletes
+        a record only when the server acknowledges it (C-9.3). Records
+        acknowledged after the restore point are gone from the server and
+        already gone from the phones, and nothing re-sends them. With daily
+        backups, up to one day of field work — every visit, registration and
+        boundary uploaded that day — is unrecoverable anywhere. With
+        point-in-time recovery the same loss is minutes. That is the argument
+        for the paid add-on and it is written here, where CORWADO reads it.
+C-11.7  The restore drill is performed before any real data exists: a backup of
+        staging is restored into a scratch project under CORWADO's name, the
+        manifest is compared, the attachments are corrected, the restore entry
+        is written, and the result is recorded in PROJECT-STATE with its date.
+        Production receives its first migration only after the drill has passed.
+C-11.8  A runbook exists that a CORWADO administrator can follow with no
+        session present: how to take a manifest, how to restore, how to verify,
+        how to correct attachments, how to record the restore, and the
+        production checklist. Every command in it is a repository script that
+        reads its connection strings from the environment and nothing else.
+C-11.9  A free-tier project pauses after a week without traffic. Production
+        cannot be on the free tier; this is stated so that the plan decision is
+        made before the first migration, not after the first pause.
+C-11.10 No dump, manifest or backup of production ever enters the repository, a
+        CI artifact or a machine that is not CORWADO's. Staging's data is
+        invented and the drill uses it.
+C-11.11 Every script in this unit is proved against staging: the manifest
+        equals independent counts; the comparison reports every difference;
+        the restore entry is written as the system's, with the gap it explains.
+
+### Notes for the builder
+
+**What the platform gives, by plan.** Free: no backups, projects pause after a
+week idle. Pro: daily backups kept seven days; point-in-time recovery as a
+paid add-on with a recovery point of about two minutes. The owner is
+confirming the free tier's provision and whether the add-on is purchasable;
+C-11.1's number is updated when that is known and the section holds either
+way.
+
+**Storage: the recommendation, with costs.** Two things, not one.
+*Correction on restore* is mandatory whatever else is decided: a script step
+that lists arrived attachments, asks Storage whether each object exists, and
+marks the absent ones `lost_on_restore` with the sentence "This file was lost
+when the system was restored. Take it again if it still matters." Cost: a
+day, in this unit. *Copying the bucket* to a second private bucket in another
+CORWADO project, or an object store under CORWADO's name, on a nightly
+schedule: half a day of script, a scheduled workflow (a fifth CI edit), and a
+destination account that CORWADO must create, since no account is ever ours.
+Recommendation: build the correction now; build the copy before production
+goes live, because a field photograph cannot be taken again after the moment
+has passed, and "take it again" is honest only for a visit made this week.
+The decision and the account are CORWADO's.
+
+**The restore entry** is `system.restored`, actor `system`, written by the
+verification script as its first act, carrying the backup identity, the
+recovery point, the administrator's name as typed, the last audit entry
+before the gap and the first after it. The script refuses to print "verified"
+until the entry is in the database.
+
+**The recovery point and the phones.** Nothing in the sync design can close
+C-11.6's gap from the device side: a record the phone has deleted on
+acknowledgement is not on the phone. The only lever is the recovery point.
+
+---
+
 ## C-13 — DIRECTORIES AND LEARNING LIBRARY
 
 **Deliverables (i), (j), (k) and (m). Unit P1.**
@@ -521,11 +1086,6 @@ list. If yes, the officer role gets a write route and entries gain a
 Written one unit ahead of the build, not all at once, so that criteria reflect
 what the preceding unit actually produced.
 
-- C-7 — farm boundary mapping — (c)
-- C-8 — extension visit recording — (d)
-- C-9 — offline synchronisation — (b)
-- C-10 — dashboards, reporting and export — (p), (q)
-- C-11 — backup and disaster recovery — (t)
 - C-12 — cooperatives — (l)
 - C-14 — market prices, produce listings, buyer matching — (f), (g), (h)
 - C-15 — SMS notifications — (n)

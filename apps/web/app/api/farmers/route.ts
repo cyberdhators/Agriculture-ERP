@@ -28,8 +28,10 @@ import {
   recordDuplicates,
   rethrowAsConflictIfSameId,
   scopeClause,
+  farmerMatches,
+  loadVisible,
 } from '../../../lib/api/farmers';
-import { createdWith, defineRoutes, paged } from '../../../lib/api/route';
+import { createdWith, defineRoutes, okWith, paged } from '../../../lib/api/route';
 import { requireWriter } from '../../../lib/api/scope';
 import { prisma } from '../../../lib/db';
 
@@ -80,6 +82,9 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
         add((i) => `f.created_at <= $${i}::timestamptz`, filter.registered_to);
       if (filter.duplicate_flag)
         add((i) => `f.duplicate_flag = $${i}`, filter.duplicate_flag === 'true');
+      // C-9.9: the download filter, on the server's moment of last change.
+      if (filter.updated_since)
+        add((i) => `f.updated_at > $${i}::timestamptz`, filter.updated_since);
       if (filter.cursor !== undefined) {
         const cursor = decodeCursor(filter.cursor);
         if (!cursor) throw invalidCursor();
@@ -147,11 +152,20 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       // C-5.3: valid input, rule not met — 422, not 400.
       if (!body.consent || body.consent.granted !== true) throw unprocessable('consent_required');
 
+      // C-9.2: a retry of a registration that landed is 200 with the record;
+      // the same id wearing different details, or one outside the caller's
+      // scope, is a real conflict.
       const [existing] = await prisma.$queryRawUnsafe<{ id: string }[]>(
         'SELECT id FROM public.farmer WHERE id = $1::uuid',
         body.id,
       );
-      if (existing) throw conflict('farmer_already_exists');
+      if (existing) {
+        const stored = await loadVisible(prisma, body.id, auth).catch(() => null);
+        if (stored && farmerMatches(body, stored, registeredBy)) {
+          return okWith(present(stored, auth), { duplicates: stored.duplicate_matches });
+        }
+        throw conflict('farmer_already_exists');
+      }
 
       const consentId = randomUUID();
       let matches: string[] = [];
@@ -161,9 +175,9 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
           await tx.$executeRawUnsafe(
             `INSERT INTO public.farmer
                (id, farmer_number, given_name, family_name, sex, year_of_birth, phone, national_id,
-                payam_id, county_id, state_id, registered_by, registration_source, consent_id)
-             VALUES ($1::uuid, $2, $3, $4, $5::public.sex, $6, $7, $8, $9, $10, $11, $12::uuid,
-                     'officer', $13::uuid)`,
+                payam_id, county_id, state_id, registered_by, caseload_officer_id, registration_source, consent_id, captured_at)
+             VALUES ($1::uuid, $2, $3, $4, $5::public.sex, $6, $7, $8, $9, $10, $11, $12::uuid, $12::uuid,
+                     'officer', $13::uuid, $14::timestamptz)`,
             body.id,
             farmerNumber,
             body.given_name,
@@ -177,6 +191,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
             payam.state_id,
             registeredBy,
             consentId,
+            body.captured_at ?? null,
           );
         } catch (failure) {
           rethrowAsConflictIfSameId(failure);

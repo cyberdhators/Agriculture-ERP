@@ -30,6 +30,8 @@ export const FARMER_LIMITS = {
 } as const;
 
 export const FARMER_MESSAGES = {
+  reassignOfficerRequired: 'Name the officer who will now work with this farmer.',
+  reassignOfficerNotUuid: 'The officer identifier is not in the expected form.',
   idRequired: 'A registration must carry its identifier.',
   idNotUuid: 'The identifier is not in the expected form.',
   givenNameRequired: 'Enter the given name.',
@@ -50,6 +52,7 @@ export const FARMER_MESSAGES = {
   consentGrantedNotBoolean: 'Say whether consent was granted, true or false.',
   filterStatusInvalid: 'Choose pending, verified or rejected.',
   filterDateInvalid: 'Give the date as an ISO 8601 timestamp.',
+  capturedAtInvalid: 'Record when the registration was captured as a date and time.',
   filterDuplicateInvalid: 'Choose true or false.',
   filterRangeInverted: 'The end of the date range is before its start.',
 } as const;
@@ -130,6 +133,12 @@ export const createFarmerSchema = z.strictObject({
   /** Admin only: the officer who registered this farmer. An officer never sends it. */
   registered_by: uuidSchema(FARMER_MESSAGES.officerNotUuid).optional(),
   consent: consentInputSchema.optional(),
+  /** The device's moment (C-9.10). Nullable: a record without it reads "not recorded". */
+  captured_at: z
+    .string({ error: () => FARMER_MESSAGES.capturedAtInvalid })
+    .datetime({ offset: true, message: FARMER_MESSAGES.capturedAtInvalid })
+    .nullable()
+    .optional(),
 });
 
 export const patchFarmerSchema = z.strictObject({
@@ -161,6 +170,8 @@ export const farmerFilterSchema = z
     sex: sexSchema.optional(),
     registered_from: isoTimestamp.optional(),
     registered_to: isoTimestamp.optional(),
+    /** C-9.9: rows whose server moment of last change is after this. */
+    updated_since: isoTimestamp.optional(),
     duplicate_flag: z
       .enum(['true', 'false'], { error: () => FARMER_MESSAGES.filterDuplicateInvalid })
       .optional(),
@@ -196,3 +207,14 @@ export const nameMatchKey = (name: string): string => name.trim().normalize('NFC
 export const FARMER_NUMBER_PATTERN = /^[A-Z]{2}-[A-Z]{3}-[0-9]{6}$/;
 export const formatFarmerNumber = (countyId: string, sequence: number): string =>
   `${countyId}-${String(sequence).padStart(6, '0')}`;
+
+/** C-8R.2: an administrator moves a farmer's caseload to another officer. */
+export const reassignFarmerSchema = z.strictObject({
+  officer_id: z
+    .string({ error: () => FARMER_MESSAGES.reassignOfficerRequired })
+    .regex(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+      FARMER_MESSAGES.reassignOfficerNotUuid,
+    ),
+});
+export type ReassignFarmer = z.infer<typeof reassignFarmerSchema>;
