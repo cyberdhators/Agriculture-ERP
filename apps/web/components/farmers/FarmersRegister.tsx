@@ -579,7 +579,8 @@ export function FarmersRegister() {
           so the file can be reproduced.
         </p>
         <p className="small muted">
-          The filters and the cut-off date in force are captured with the file and logged.
+          This preview has no server, so nothing is written and no file is produced. The dialog is
+          here to show the shape of the act: filters and cut-off captured, then logged.
         </p>
       </Dialog>
     </>
