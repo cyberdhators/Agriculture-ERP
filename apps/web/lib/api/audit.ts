@@ -2,6 +2,7 @@ import { type AuditAction, type AuditActorType, auditSafe } from '@agri-erp/shar
 import type { Prisma, PrismaClient } from '@prisma/client';
 
 import { prisma } from '../db';
+import { currentRequestContext } from './request-context';
 
 /**
  * writeAudit, and why it cannot be called outside a transaction. Unit B4.
@@ -100,7 +101,9 @@ export async function writeAudit(tx: AuditTx, entry: AuditEntry): Promise<void> 
     entry.action,
     JSON.stringify(auditSafe(entry.before)),
     JSON.stringify(auditSafe(entry.after)),
-    entry.deviceId ?? null,
+    // C-9.8: the device from the request, unless the caller named one. Rows
+    // written before B9 carry null and always will (PROJECT-STATE).
+    entry.deviceId ?? currentRequestContext()?.deviceId ?? null,
   );
 }
 

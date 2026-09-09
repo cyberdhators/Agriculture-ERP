@@ -52,6 +52,7 @@ export const FARMER_MESSAGES = {
   consentGrantedNotBoolean: 'Say whether consent was granted, true or false.',
   filterStatusInvalid: 'Choose pending, verified or rejected.',
   filterDateInvalid: 'Give the date as an ISO 8601 timestamp.',
+  capturedAtInvalid: 'Record when the registration was captured as a date and time.',
   filterDuplicateInvalid: 'Choose true or false.',
   filterRangeInverted: 'The end of the date range is before its start.',
 } as const;
@@ -132,6 +133,12 @@ export const createFarmerSchema = z.strictObject({
   /** Admin only: the officer who registered this farmer. An officer never sends it. */
   registered_by: uuidSchema(FARMER_MESSAGES.officerNotUuid).optional(),
   consent: consentInputSchema.optional(),
+  /** The device's moment (C-9.10). Nullable: a record without it reads "not recorded". */
+  captured_at: z
+    .string({ error: () => FARMER_MESSAGES.capturedAtInvalid })
+    .datetime({ offset: true, message: FARMER_MESSAGES.capturedAtInvalid })
+    .nullable()
+    .optional(),
 });
 
 export const patchFarmerSchema = z.strictObject({
@@ -163,6 +170,8 @@ export const farmerFilterSchema = z
     sex: sexSchema.optional(),
     registered_from: isoTimestamp.optional(),
     registered_to: isoTimestamp.optional(),
+    /** C-9.9: rows whose server moment of last change is after this. */
+    updated_since: isoTimestamp.optional(),
     duplicate_flag: z
       .enum(['true', 'false'], { error: () => FARMER_MESSAGES.filterDuplicateInvalid })
       .optional(),

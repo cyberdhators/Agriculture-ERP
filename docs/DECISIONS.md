@@ -1728,3 +1728,138 @@ checks the pointer.
 application sets both columns at registration; the seed, the reseed and any
 future writer that sets only `registered_by` get the pointer from the
 trigger. The backfill in the migration did the same for every existing row.
+
+## C-9 — eight decisions from reading the sync contract against the routes (2026-09-08)
+
+The owner asked, before writing C-9, where `docs/data-model.md` §3 was already
+wrong or incomplete against B5–B8.5. Eight findings, eight decisions, all the
+owner's, recorded here because the data model section is corrected in B9 and
+the reasoning would otherwise vanish with the old text.
+
+1. **True idempotency, not a documented 409.** A retried create whose body
+   matches returns 200 with the record; 409 only when the id matches and the
+   body does not. The attachment route's pattern, applied to farmer, farm,
+   boundary and visit. Reason: a phone that must read back to learn whether
+   its own write landed will re-send.
+2. **Boundaries get a client id.** The one place a retry wrote a second row,
+   and it produced a supersession that never happened in the field — a false
+   record, not a duplicate. Schema change, approved, done in B9 rather than
+   carried.
+3. **Seven outcome codes replace the model's five**, each with a pinned
+   sentence (§14). The two the old list could not express: 503 must never send
+   an officer to re-enter credentials, and "left the caseload" means keep it,
+   show the officer, do not retry.
+4. **Parent-first release**, a child held until its parent is acknowledged by
+   id; a terminally refused parent leaves its children stuck with its reason,
+   and the officer sees which parent and why.
+5. **Attachments get their own four-step lifecycle**; grant expired on confirm
+   means re-declare with the same id.
+6. **The entity list** loses `ai_question` and gains boundaries, crop
+   declarations and attachments.
+7. **The device id**: a header, read by the wrapper, passed to every audit
+   write. The seventh silent gate; rows since B4 are permanently null
+   (PROJECT-STATE).
+8. **Download direction**: an updated-since filter on the caseload lists, not a
+   change feed — smaller and enough; plus a caseload-ids endpoint so a device
+   learns what has left its caseload and removes it, keeping nothing, because
+   the officer has no right to that farmer's data any more.
+
+**And captured-at on farmer and farm.** A farmer registered on Monday in a
+village and uploaded on Friday in town was registered on Monday. The server's
+moment stays authoritative for reporting (C-8.5's principle); the field's date
+was a fact being discarded and is now kept.
+
+## B9 — decisions in the offline sync unit (2026-09-08)
+
+**Matching is judged by the module that owns the entity, in one place each.**
+`farmerMatches`, `boundaryMatches` (PostGIS `ST_Equals` after the same
+winding normalisation the insert applies, so the direction walked does not
+matter), `visitMatches` (topics as a set, the point by its coordinates), and
+the farm's own three fields plus its first boundary. Each compares the fields
+the client sent after the shared schema's normalisation and nothing the
+server set. A retry from a phone is byte-identical; the comparison exists to
+catch a different record wearing a reused id.
+
+**A matching body outside the caller's scope is still a conflict.** The
+stored record is loaded through the scoped loader; if the caller cannot see
+it, the answer is 409, never the record. Returning another officer's farmer
+because the bodies happened to match would be a read of a stranger's record
+through a write.
+
+**The device travels in an AsyncLocalStorage, not a parameter.** The wrapper
+runs the handler inside a request context carrying the correlation id and the
+validated device id; `writeAudit` reads the device from it unless the caller
+named one. Every route gained the device with no route changing — which is the
+point: the seventh silent gate was a column nothing sent, and a fix that
+depended on every future route remembering to pass it would reopen it.
+
+**A malformed device header is a 400 naming the header as the field.** A
+missing one is a browser and is null. The identifier is opaque: 8 to 64 of
+letters, digits, dots, hyphens, underscores; never the handset's hardware
+identity, which would be a second identifier for a person.
+
+**Retry-After is set from the contract, in one place.** `SYNC_OUTCOME_SPECS`
+holds the seconds; `errors.ts` reads them for 500, 503 and the one 409 that
+means "not yet". A terminal outcome never carries the header, so a device that
+honours it never retries a refusal.
+
+**updated_at is a trigger's job — and its absence is the eighth silent gate.**
+Nothing kept `updated_at` current: no trigger, and the verification
+transitions never set it. The download filter, the whole point of C-9.9,
+would therefore have returned nothing when a supervisor verified a farmer; a
+phone would never have learned of a decision, and the feature would have
+looked implemented and worked on nothing. A column that existed, was read by
+a new feature, and was never written. Found while building the filter, before
+any test of it was written — recorded in PROJECT-STATE's silent-gates class.
+One trigger function on farmer, farm and visit; every writer, present and
+future, bumps it.
+
+**The caseload endpoint returns ids, not records, and the server's clock.**
+Ids only, because the lists carry the records and the endpoint's job is
+removal: a record the device holds that is absent has left. `as_of` is the
+server's now, for the device's next `updated_since` — a phone's clock cannot
+be trusted to bound a server-side filter (C-8.5's principle). Visits are
+included although a removed visit is rare, because leaving them out would
+leave a stale visit on a phone with no way to learn it was removed.
+
+**The four "already exists" sentences changed.** They now say "with different
+details", because under true idempotency a 409 never means "you sent this
+twice"; it means the id is wearing a record it should not.
+
+**The boundary's id keeps its server default — and why it briefly did not.**
+Migration 18 dropped the default so a boundary without a client id would be
+an error, as farmer, farm and visit already are. That was not additive, and
+the standing condition "staging's schema runs ahead of main" rests entirely
+on the additive law: the moment 18 was applied, main's code — B7, which does
+not send a boundary id — failed every mapping on staging with a not-null
+error. #43's run, a docs-only change on main, went red on all twelve farm
+tests and the matrix setup. Migration 19 restored the default the same day.
+The guarantee C-9.1 wants lives at the door instead: the shared schema
+requires the id and the route always sends it, and a body without one is 400. **The rule this sharpens:** "additive" means older code keeps working
+against the newer schema — a dropped default is a removal even though no
+column went, and a unit that needs one must wait until its own code is on
+main, or not need one. Recorded as the assistant's error, found by a run
+that was not its own.
+
+## 2026-09-09 — The CI timeout is ninety minutes; the fourth CI edit since B1.2
+
+**The finding, measured.** #44's rebased run was cut at sixty minutes with
+nine files to go; its re-run was cut at the same file with a minute-for-minute
+identical timeline. Every file ran about sixty percent slower than the same
+files on a green run the same morning. Staging was checked and cleared: tiny
+tables, no idle transactions, a count over the repaired views as fast as a
+bare `select 1`. Every query is fast; every round trip is slow. The suite is
+thousands of small sequential queries, so its duration is set by the round-trip
+latency between the runner GitHub assigns and the database in Frankfurt — a
+placement we do not choose. Both cut attempts drew a farther runner. And the
+suite grows with every unit: about five minutes a unit on a near runner.
+
+**The decision, the owner's.** `timeout-minutes` goes from 60 to 90, to sit
+above the far placement for the suite at its size and a few more units. The
+rule from the third edit stands: a run cut while still completing files is
+re-run, not investigated; a run that stops completing files is investigated.
+
+**What this does not do.** It buys time. The suite's duration is bounded by
+a lottery, and the ceiling only decides how much of the lottery we tolerate.
+The alternatives are sized in PROJECT-STATE, "The shape of the alternative to
+the ceiling", so that the fifth edit is not the answer to the next cut.

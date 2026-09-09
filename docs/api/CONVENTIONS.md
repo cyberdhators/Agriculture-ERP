@@ -191,21 +191,21 @@ the top level.
 
 Exact. No discretion.
 
-| Status | Code                     | When                                                                                                                   | Emitted today? |
-| ------ | ------------------------ | ---------------------------------------------------------------------------------------------------------------------- | -------------- |
-| 400    | `invalid_input`          | Input failed validation. Carries `fields`.                                                                             | Yes            |
-| 400    | `invalid_json`           | The body could not be parsed as JSON.                                                                                  | Yes            |
-| 400    | `invalid_cursor`         | The pagination cursor is unreadable.                                                                                   | Yes            |
-| 401    | `unauthenticated`        | No session, expired session, or invalid session.                                                                       | Yes            |
-| 403    | `forbidden`              | Authenticated, but this role may not do this.                                                                          | Yes            |
-| 404    | `not_found`              | Not found, soft-deleted, **or** outside the caller's scope.                                                            | Yes            |
-| 405    | `method_not_allowed`     | The route exists, but does not accept `GET`, `PUT`, `PATCH` or `DELETE`. `OPTIONS` and `HEAD` are different — see 5.3. | Yes            |
-| 409    | `conflict`               | E.g. the same client UUID submitted with a different payload.                                                          | **No — B2**    |
-| 413    | `payload_too_large`      | Body exceeds 1 MB.                                                                                                     | Yes            |
-| 415    | `unsupported_media_type` | A request with a body did not send `application/json`.                                                                 | Yes            |
-| 422    | `unprocessable`          | Input was valid but violates a business rule.                                                                          | Yes            |
-| 500    | `internal_error`         | Unexpected.                                                                                                            | Yes            |
-| 503    | `auth_unavailable`       | The sign-in service could not be consulted, so nothing is known about the session. Not a session failure.              | Yes            |
+| Status | Code                     | When                                                                                                                     | Emitted today? |
+| ------ | ------------------------ | ------------------------------------------------------------------------------------------------------------------------ | -------------- |
+| 400    | `invalid_input`          | Input failed validation. Carries `fields`.                                                                               | Yes            |
+| 400    | `invalid_json`           | The body could not be parsed as JSON.                                                                                    | Yes            |
+| 400    | `invalid_cursor`         | The pagination cursor is unreadable.                                                                                     | Yes            |
+| 401    | `unauthenticated`        | No session, expired session, or invalid session.                                                                         | Yes            |
+| 403    | `forbidden`              | Authenticated, but this role may not do this.                                                                            | Yes            |
+| 404    | `not_found`              | Not found, soft-deleted, **or** outside the caller's scope.                                                              | Yes            |
+| 405    | `method_not_allowed`     | The route exists, but does not accept `GET`, `PUT`, `PATCH` or `DELETE`. `OPTIONS` and `HEAD` are different — see 5.3.   | Yes            |
+| 409    | `conflict`               | The same client id with a different body (C-9.2); a boundary recorded at the same moment; an attachment not yet arrived. | Yes            |
+| 413    | `payload_too_large`      | Body exceeds 1 MB.                                                                                                       | Yes            |
+| 415    | `unsupported_media_type` | A request with a body did not send `application/json`.                                                                   | Yes            |
+| 422    | `unprocessable`          | Input was valid but violates a business rule.                                                                            | Yes            |
+| 500    | `internal_error`         | Unexpected.                                                                                                              | Yes            |
+| 503    | `auth_unavailable`       | The sign-in service could not be consulted, so nothing is known about the session. Not a session failure.                | Yes            |
 
 **The "Emitted today?" column is part of the contract.** A code marked _No_ is
 documented, agreed and deliberately unreachable — no route can currently produce
@@ -282,7 +282,7 @@ character.
 | `payam_not_found`                | That payam could not be found.                                                                                                |
 | `state_not_found`                | That state could not be found.                                                                                                |
 | `consent_required`               | Consent must be recorded before a farmer can be registered.                                                                   |
-| `farmer_already_exists`          | A farmer with that identifier has already been registered.                                                                    |
+| `farmer_already_exists`          | A farmer with that identifier has already been registered with different details. Open it and compare before sending again.   |
 | `registering_officer_required`   | Name the extension officer who registered this farmer.                                                                        |
 | `registering_officer_not_found`  | The registering officer could not be found in that payam.                                                                     |
 | `transition_not_allowed`         | That decision is not available for this record in its current state.                                                          |
@@ -293,9 +293,10 @@ character.
 | `boundary_not_closed`            | The boundary does not close: the last point must be the first point again. Go back to where you started and finish the shape. |
 | `boundary_crosses_itself`        | The boundary crosses itself. Walk the edge of the plot in one direction without cutting across it.                            |
 | `boundary_too_few_points`        | A boundary needs at least four corners. Keep walking to the next corner before you finish.                                    |
-| `farm_already_exists`            | A farm with that identifier has already been recorded.                                                                        |
+| `farm_already_exists`            | A farm with that identifier has already been recorded with different details. Open it and compare before sending again.       |
+| `boundary_already_exists`        | A boundary with that identifier has already been recorded with different details. Open it and compare before sending again.   |
 | `boundary_recorded_concurrently` | Another boundary was recorded for this farm and season at the same moment. Load the farm again before re-mapping.             |
-| `visit_already_exists`           | A visit with that identifier has already been recorded.                                                                       |
+| `visit_already_exists`           | A visit with that identifier has already been recorded with different details. Open it and compare before sending again.      |
 | `follow_up_not_found`            | The earlier visit could not be found for this farmer. Choose it from this farmer's visits, or leave the link out.             |
 | `follow_up_cycle`                | That earlier visit already follows this one. Choose a visit from before it, or leave the link out.                            |
 | `correction_window_closed`       | A day has passed since this visit was received. Ask an administrator to make the correction.                                  |
@@ -375,91 +376,95 @@ caller passes (C-4.6, C-4.7).
 The `fields` map carries a reason per failing field, not the message above.
 These are also exact.
 
-| Situation                              | Exact reason                                                                                    |
-| -------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| A field the request may not send       | This field is not recognised.                                                                   |
-| The body is not an object at all       | The request was not sent in the expected form.                                                  |
-| Page marker: not text                  | The page marker must be text.                                                                   |
-| Phone: nothing entered, or not text    | Enter a mobile number.                                                                          |
-| Phone: contains a letter               | A mobile number contains digits only.                                                           |
-| Phone: disallowed punctuation          | A mobile number may contain only digits, spaces and hyphens, and may begin with +.              |
-| Phone: wrong or missing country code   | Enter a South Sudan mobile number starting +211.                                                |
-| Phone: too short                       | A South Sudan mobile number has nine digits after +211. This one has too few.                   |
-| Phone: too long                        | A South Sudan mobile number has nine digits after +211. This one has too many.                  |
-| Page size: not a number, or blank      | The page size must be a number.                                                                 |
-| Page size: has a decimal point         | The page size must be a whole number.                                                           |
-| Page size: below one                   | The page size must be at least 1.                                                               |
-| Farmer id: missing                     | A registration must carry its identifier.                                                       |
-| Farmer id: not a UUID                  | The identifier is not in the expected form.                                                     |
-| Given name: missing or blank           | Enter the given name.                                                                           |
-| Family name: missing or blank          | Enter the family name.                                                                          |
-| Name: over 100 characters              | A name can be at most 100 characters.                                                           |
-| Name: digits, symbols or emoji         | A name contains letters, spaces, apostrophes and hyphens only.                                  |
-| Sex: not f or m                        | Choose f or m.                                                                                  |
-| Year of birth: not a whole number      | The year of birth must be a whole number.                                                       |
-| Year of birth: after this year         | The year of birth cannot be in the future.                                                      |
-| Year of birth: over 120 years back     | The year of birth cannot be more than 120 years ago.                                            |
-| National ID: wrong shape               | A national ID is 6 to 20 characters: digits and capital letters only.                           |
-| Payam: missing                         | Choose a payam.                                                                                 |
-| Registering officer: not a UUID        | The registering officer is not in the expected form.                                            |
-| Consent: not an object                 | Consent must be recorded as an object.                                                          |
-| Consent text version: missing          | Record which consent text was read.                                                             |
-| Consent text version: over 32 chars    | The consent text version can be at most 32 characters.                                          |
-| Consent language: not en or ar-juba    | Choose en or ar-juba for the consent language.                                                  |
-| Consent granted: not true or false     | Say whether consent was granted, true or false.                                                 |
-| Filter: verification status unknown    | Choose pending, verified or rejected.                                                           |
-| Filter: date not ISO 8601              | Give the date as an ISO 8601 timestamp.                                                         |
-| Filter: duplicate flag not true/false  | Choose true or false.                                                                           |
-| Filter: date range inverted            | The end of the date range is before its start.                                                  |
-| Rejection reason: not on the list      | Choose a reason: duplicate, wrong_location, incomplete, not_a_farmer, consent_missing or other. |
-| Note: not text                         | The note must be text.                                                                          |
-| Note: over 280 characters              | A note can be at most 280 characters.                                                           |
-| Note: control characters               | A note contains printable text only.                                                            |
-| Merge target: missing                  | Name the farmer this record is a duplicate of.                                                  |
-| Merge target: not a UUID               | The target is not in the expected form.                                                         |
-| Queue filter: escalated not true/false | Choose true or false.                                                                           |
-| Farm id: missing                       | A farm must carry its identifier.                                                               |
-| Farm id: not a UUID                    | The farm identifier is not in the expected form.                                                |
-| Season: wrong shape                    | Give the season as a year and a name: 2026-main or 2026-second.                                 |
-| GPS accuracy: missing                  | Record the GPS accuracy in metres at capture.                                                   |
-| GPS accuracy: not a number of metres   | GPS accuracy is a number of metres, zero or more.                                               |
-| Boundary: not a one-ring Polygon       | Send the boundary as a GeoJSON Polygon with one ring.                                           |
-| Boundary point: not a pair             | Each boundary point is a pair: longitude, then latitude.                                        |
-| Boundary point: out of range           | Longitude is between -180 and 180; latitude between -90 and 90.                                 |
-| Boundary: over 2000 points             | A boundary can have at most 2000 points.                                                        |
-| Crop: not on the list                  | Choose a crop from the list: sorghum, groundnut, sesame, maize or cowpea.                       |
-| Crops: repeated                        | Each crop once per season.                                                                      |
-| Crops: not a list                      | Send the crops as a list.                                                                       |
-| Visit: no identifier                   | A visit must carry its identifier.                                                              |
-| Visit: identifier malformed            | The visit identifier is not in the expected form.                                               |
-| Advice: missing or blank               | Write the advice you gave. A visit with no advice is not a visit.                               |
-| Advice: over 4000 characters           | The advice is too long to save. Shorten it to about six hundred words.                          |
-| Observation: over 4000 characters      | The observation is too long to save. Shorten it to about six hundred words.                     |
-| Observation: sent but blank            | Leave the observation out, or write something in it.                                            |
-| Topics: none ticked                    | Tick at least one topic the visit covered.                                                      |
-| Topic: not on the list                 | Choose the topics from the list.                                                                |
-| Topics: repeated                       | Each topic once.                                                                                |
-| Duration: not whole minutes 1–1440     | Give the duration as whole minutes, up to a day.                                                |
-| Attendance: not a whole number 1–10000 | Give the attendance as a whole number of people.                                                |
-| Visited at: not a date and time        | Record when the visit happened as a date and time.                                              |
-| Position: not a GeoJSON Point          | Send the position as a GeoJSON Point: longitude, then latitude.                                 |
-| Position: out of range                 | Longitude is between -180 and 180; latitude between -90 and 90.                                 |
-| GPS accuracy: missing                  | Record the GPS accuracy in metres at capture.                                                   |
-| GPS accuracy: negative or absurd       | GPS accuracy is a number of metres, zero or more.                                               |
-| Follow-up: identifier malformed        | The earlier visit is not in the expected form.                                                  |
-| Correction: changes nothing            | Change at least one thing, or leave the visit as it is.                                         |
-| Attachment: identifier malformed       | The attachment identifier is not in the expected form.                                          |
-| Attachment: kind not photo or audio    | An attachment is a photo or an audio recording.                                                 |
-| Attachment: type not accepted          | Save the photo as JPEG, PNG or WebP, or the recording as M4A, AAC, MP3, OGG or WebM.            |
-| Attachment: type does not match kind   | The file type does not match the kind of attachment.                                            |
-| Attachment: size not whole bytes       | The file size must be a whole number of bytes.                                                  |
-| Photo: over 15 MB                      | This photo is too large to send. Set the camera to a smaller picture size and take it again.    |
-| Audio: over 25 MB                      | This recording is too long to send. Record it again in shorter pieces.                          |
-| Captured at: not a date and time       | Record when the attachment was captured as a date and time.                                     |
-| Visit filter: date malformed           | Give the date as a full date and time with its offset.                                          |
-| Visit filter: officer malformed        | The officer identifier is not in the expected form.                                             |
-| Reassign: no officer named             | Name the officer who will now work with this farmer.                                            |
-| Reassign: officer identifier malformed | The officer identifier is not in the expected form.                                             |
+| Situation                               | Exact reason                                                                                    |
+| --------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| A field the request may not send        | This field is not recognised.                                                                   |
+| The body is not an object at all        | The request was not sent in the expected form.                                                  |
+| Page marker: not text                   | The page marker must be text.                                                                   |
+| Phone: nothing entered, or not text     | Enter a mobile number.                                                                          |
+| Phone: contains a letter                | A mobile number contains digits only.                                                           |
+| Phone: disallowed punctuation           | A mobile number may contain only digits, spaces and hyphens, and may begin with +.              |
+| Phone: wrong or missing country code    | Enter a South Sudan mobile number starting +211.                                                |
+| Phone: too short                        | A South Sudan mobile number has nine digits after +211. This one has too few.                   |
+| Phone: too long                         | A South Sudan mobile number has nine digits after +211. This one has too many.                  |
+| Page size: not a number, or blank       | The page size must be a number.                                                                 |
+| Page size: has a decimal point          | The page size must be a whole number.                                                           |
+| Page size: below one                    | The page size must be at least 1.                                                               |
+| Farmer id: missing                      | A registration must carry its identifier.                                                       |
+| Farmer id: not a UUID                   | The identifier is not in the expected form.                                                     |
+| Given name: missing or blank            | Enter the given name.                                                                           |
+| Family name: missing or blank           | Enter the family name.                                                                          |
+| Name: over 100 characters               | A name can be at most 100 characters.                                                           |
+| Name: digits, symbols or emoji          | A name contains letters, spaces, apostrophes and hyphens only.                                  |
+| Sex: not f or m                         | Choose f or m.                                                                                  |
+| Year of birth: not a whole number       | The year of birth must be a whole number.                                                       |
+| Year of birth: after this year          | The year of birth cannot be in the future.                                                      |
+| Year of birth: over 120 years back      | The year of birth cannot be more than 120 years ago.                                            |
+| National ID: wrong shape                | A national ID is 6 to 20 characters: digits and capital letters only.                           |
+| Payam: missing                          | Choose a payam.                                                                                 |
+| Registering officer: not a UUID         | The registering officer is not in the expected form.                                            |
+| Consent: not an object                  | Consent must be recorded as an object.                                                          |
+| Consent text version: missing           | Record which consent text was read.                                                             |
+| Consent text version: over 32 chars     | The consent text version can be at most 32 characters.                                          |
+| Consent language: not en or ar-juba     | Choose en or ar-juba for the consent language.                                                  |
+| Consent granted: not true or false      | Say whether consent was granted, true or false.                                                 |
+| Filter: verification status unknown     | Choose pending, verified or rejected.                                                           |
+| Filter: date not ISO 8601               | Give the date as an ISO 8601 timestamp.                                                         |
+| Filter: duplicate flag not true/false   | Choose true or false.                                                                           |
+| Filter: date range inverted             | The end of the date range is before its start.                                                  |
+| Rejection reason: not on the list       | Choose a reason: duplicate, wrong_location, incomplete, not_a_farmer, consent_missing or other. |
+| Note: not text                          | The note must be text.                                                                          |
+| Note: over 280 characters               | A note can be at most 280 characters.                                                           |
+| Note: control characters                | A note contains printable text only.                                                            |
+| Merge target: missing                   | Name the farmer this record is a duplicate of.                                                  |
+| Merge target: not a UUID                | The target is not in the expected form.                                                         |
+| Queue filter: escalated not true/false  | Choose true or false.                                                                           |
+| Farm id: missing                        | A farm must carry its identifier.                                                               |
+| Farm id: not a UUID                     | The farm identifier is not in the expected form.                                                |
+| Season: wrong shape                     | Give the season as a year and a name: 2026-main or 2026-second.                                 |
+| GPS accuracy: missing                   | Record the GPS accuracy in metres at capture.                                                   |
+| GPS accuracy: not a number of metres    | GPS accuracy is a number of metres, zero or more.                                               |
+| Boundary: not a one-ring Polygon        | Send the boundary as a GeoJSON Polygon with one ring.                                           |
+| Boundary point: not a pair              | Each boundary point is a pair: longitude, then latitude.                                        |
+| Boundary point: out of range            | Longitude is between -180 and 180; latitude between -90 and 90.                                 |
+| Boundary: over 2000 points              | A boundary can have at most 2000 points.                                                        |
+| Crop: not on the list                   | Choose a crop from the list: sorghum, groundnut, sesame, maize or cowpea.                       |
+| Crops: repeated                         | Each crop once per season.                                                                      |
+| Crops: not a list                       | Send the crops as a list.                                                                       |
+| Visit: no identifier                    | A visit must carry its identifier.                                                              |
+| Visit: identifier malformed             | The visit identifier is not in the expected form.                                               |
+| Advice: missing or blank                | Write the advice you gave. A visit with no advice is not a visit.                               |
+| Advice: over 4000 characters            | The advice is too long to save. Shorten it to about six hundred words.                          |
+| Observation: over 4000 characters       | The observation is too long to save. Shorten it to about six hundred words.                     |
+| Observation: sent but blank             | Leave the observation out, or write something in it.                                            |
+| Topics: none ticked                     | Tick at least one topic the visit covered.                                                      |
+| Topic: not on the list                  | Choose the topics from the list.                                                                |
+| Topics: repeated                        | Each topic once.                                                                                |
+| Duration: not whole minutes 1–1440      | Give the duration as whole minutes, up to a day.                                                |
+| Attendance: not a whole number 1–10000  | Give the attendance as a whole number of people.                                                |
+| Visited at: not a date and time         | Record when the visit happened as a date and time.                                              |
+| Position: not a GeoJSON Point           | Send the position as a GeoJSON Point: longitude, then latitude.                                 |
+| Position: out of range                  | Longitude is between -180 and 180; latitude between -90 and 90.                                 |
+| GPS accuracy: missing                   | Record the GPS accuracy in metres at capture.                                                   |
+| GPS accuracy: negative or absurd        | GPS accuracy is a number of metres, zero or more.                                               |
+| Follow-up: identifier malformed         | The earlier visit is not in the expected form.                                                  |
+| Correction: changes nothing             | Change at least one thing, or leave the visit as it is.                                         |
+| Attachment: identifier malformed        | The attachment identifier is not in the expected form.                                          |
+| Attachment: kind not photo or audio     | An attachment is a photo or an audio recording.                                                 |
+| Attachment: type not accepted           | Save the photo as JPEG, PNG or WebP, or the recording as M4A, AAC, MP3, OGG or WebM.            |
+| Attachment: type does not match kind    | The file type does not match the kind of attachment.                                            |
+| Attachment: size not whole bytes        | The file size must be a whole number of bytes.                                                  |
+| Photo: over 15 MB                       | This photo is too large to send. Set the camera to a smaller picture size and take it again.    |
+| Audio: over 25 MB                       | This recording is too long to send. Record it again in shorter pieces.                          |
+| Captured at: not a date and time        | Record when the attachment was captured as a date and time.                                     |
+| Visit filter: date malformed            | Give the date as a full date and time with its offset.                                          |
+| Visit filter: officer malformed         | The officer identifier is not in the expected form.                                             |
+| Reassign: no officer named              | Name the officer who will now work with this farmer.                                            |
+| Reassign: officer identifier malformed  | The officer identifier is not in the expected form.                                             |
+| Device header malformed                 | The device identifier is 8 to 64 letters, digits, dots, hyphens or underscores.                 |
+| Farmer captured at: not a date and time | Record when the registration was captured as a date and time.                                   |
+| Farm captured at: not a date and time   | Record when the farm was captured as a date and time.                                           |
+| Boundary: identifier malformed          | The boundary identifier is not in the expected form.                                            |
 
 The key beside each reason is the field name, per section 4.1. An unrecognised
 field named `nickname` therefore produces `{ "nickname": "This field is not
@@ -963,3 +968,51 @@ request. The bucket is private; one server module touches Storage.
 month of `received_at`, visits to verified farmers and the farmers they
 reached, with visits to farmers in any other state counted beside them and
 never folded in. Removed visits are in no figure.
+
+---
+
+## 16. SYNC
+
+The server side of offline sync (C-9, unit B9). The officer app is built
+against this section and `packages/shared/src/sync.ts`.
+
+**Client ids on every create.** Farmer, farm, boundary (`boundary_id` on the
+create-farm body, `id` on add-boundary), visit and attachment declaration all
+carry the client's id, required by the shared schema; the route always
+sends it. The column's server default remains for writers that predate B9.
+
+**True idempotency (C-9.2).** A retried create whose body matches the stored
+record — the fields the client sent, after the schema's normalisation, never
+the fields the server set — is `200` with the record. `409` only when the id
+matches and the body does not, or the record is outside the caller's scope:
+a real conflict, terminal. The 409 sentences say "with different details".
+
+**Seven outcomes (C-9.4, C-9.15)**, in `SYNC_OUTCOME_SPECS`, each with a
+device action and a sentence: `retry_later` (5xx, 503; `Retry-After: 60`),
+`sign_in_again` (401), `not_yet` (409 `attachment_not_arrived`;
+`Retry-After: 10`), `waiting_for_parent` (the device's own hold — never a
+server response), `refused` (400, 413, 422; the rule's own sentence),
+`left_caseload` (404 on a record the device had acknowledged), `conflict`
+(409). `syncOutcomeFor(status, code)` is the mapping. A terminal outcome
+never carries `Retry-After`.
+
+**Parent-first (C-9.5).** Farmer → farms, visits; farm → boundaries, crops;
+earlier visit → follow-up; visit → attachment row → bytes → confirm. A child
+is held on the device until its parent is acknowledged by id.
+
+**The device header (C-9.8).** `x-device-id`, an opaque installation
+identifier (8–64 of `[A-Za-z0-9._-]`), on every request from the officer
+app. The wrapper validates it (malformed: `400` with the header as the field)
+and every audit row written in that request carries it. Rows before B9 carry
+null and always will.
+
+**Download (C-9.9).** `GET /api/farmers`, `GET /api/farms` and `GET
+/api/visits` take `updated_since` (ISO 8601, the server's moment of last
+change, kept current by a trigger for every writer). `GET /api/sync/caseload`
+(officers only) returns `as_of` — the server's clock, for the next
+`updated_since` — and the ids of every farmer, farm and visit currently in
+the caseload; a record the device holds that is absent has left it, and the
+device removes it and everything under it, keeping nothing.
+
+**Captured-at (C-9.10).** `captured_at` on farmer and farm: the device's
+moment, optional, shown beside `created_at`; null reads "not recorded".

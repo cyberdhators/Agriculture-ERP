@@ -30,6 +30,9 @@ export const FARM_LIMITS = { maxVertices: 2000, maxAccuracyM: 9999 } as const;
 export const FARM_MESSAGES = {
   idRequired: 'A farm must carry its identifier.',
   idNotUuid: 'The farm identifier is not in the expected form.',
+  boundaryIdNotUuid: 'The boundary identifier is not in the expected form.',
+  capturedAtInvalid: 'Record when the farm was captured as a date and time.',
+  filterDateInvalid: 'Give the date as an ISO 8601 timestamp.',
   seasonShape: 'Give the season as a year and a name: 2026-main or 2026-second.',
   accuracyRequired: 'Record the GPS accuracy in metres at capture.',
   accuracyInvalid: 'GPS accuracy is a number of metres, zero or more.',
@@ -90,18 +93,41 @@ const accuracySchema = z
   .max(FARM_LIMITS.maxAccuracyM, FARM_MESSAGES.accuracyInvalid);
 
 /** Creating a farm IS mapping it: the first boundary comes with it. */
+const capturedAtSchema = z
+  .string({ error: () => FARM_MESSAGES.capturedAtInvalid })
+  .datetime({ offset: true, message: FARM_MESSAGES.capturedAtInvalid })
+  .nullable()
+  .optional();
+
+/** The first boundary carries its own client id (C-9.1): a retry is the same boundary. */
 export const createFarmSchema = z.strictObject({
   id: uuid(FARM_MESSAGES.idNotUuid),
+  boundary_id: uuid(FARM_MESSAGES.boundaryIdNotUuid),
+  season: seasonSchema,
+  boundary: geoJsonPolygonSchema,
+  gps_accuracy_m: accuracySchema,
+  captured_at: capturedAtSchema,
+});
+
+export const addBoundarySchema = z.strictObject({
+  id: uuid(FARM_MESSAGES.boundaryIdNotUuid),
   season: seasonSchema,
   boundary: geoJsonPolygonSchema,
   gps_accuracy_m: accuracySchema,
 });
 
-export const addBoundarySchema = z.strictObject({
-  season: seasonSchema,
-  boundary: geoJsonPolygonSchema,
-  gps_accuracy_m: accuracySchema,
+/** GET /api/farms (C-9.9): scoped, paged, with the download filter. */
+export const farmFilterSchema = z.strictObject({
+  farmer: uuid(FARM_MESSAGES.idNotUuid).optional(),
+  payam: z.string().trim().min(1).optional(),
+  updated_since: z
+    .string({ error: () => FARM_MESSAGES.filterDateInvalid })
+    .datetime({ offset: true, message: FARM_MESSAGES.filterDateInvalid })
+    .optional(),
+  limit: z.string().optional(),
+  cursor: z.string().optional(),
 });
+export type FarmFilter = z.infer<typeof farmFilterSchema>;
 
 const cropSchema = z.enum(CROPS, { error: () => FARM_MESSAGES.cropUnknown });
 export const declareCropsSchema = z.strictObject({

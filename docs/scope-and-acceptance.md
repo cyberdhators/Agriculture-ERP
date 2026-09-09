@@ -653,6 +653,144 @@ arrive. The visit stands without them, which is what C-8.6 is for.
 **The national ID** (C-5.8) goes to the caseload officer. C-5.8 said "the
 officer who registered" because that officer did the work; after a
 reassignment the new officer does it.
+## C-9 — OFFLINE SYNCHRONISATION
+
+Deliverable: (b) offline-first data capture. Unit B9.
+
+Source: the owner's eight decisions of 2026-09-08, taken after the sync
+contract in `docs/data-model.md` §3 was read against what the routes built in
+B5 through B8.5 actually do. That section was written before any of them
+existed and is corrected as part of this unit (C-9.13). B9 is the server side
+of sync: the routes, the codes, the contract and the shared constants the
+officer app is built against. The app itself is a later surface.
+
+C-9.1  Every record an officer creates in the field carries a client-generated
+       identifier: farmer, farm, boundary, crop declaration, visit, attachment.
+       A boundary gains one — today its id is the server's, so a retried
+       add-boundary after a lost acknowledgement recorded a second boundary
+       that superseded the first: a supersession that never happened in the
+       field, a false record and not merely a duplicate.
+C-9.2  A retried create is idempotent in fact, not by documentation: when the
+       identifier matches a stored record and the body matches what was
+       stored, the response is 200 with the record. 409 only when the
+       identifier matches and the body does not — a real conflict, terminal,
+       and the officer is told. Farmer, farm, boundary, visit and attachment
+       declaration all behave so; the attachment route already did. A phone
+       that must read back to learn whether its own write landed is a phone
+       that will re-send.
+C-9.3  One transaction per record; a server row is never partially written; a
+       record is removed from the device only when the server has acknowledged
+       it by identifier.
+C-9.4  Seven outcomes, each a code with a sentence for the officer (§14) and a
+       device action: **retry_later** (no network, 500, and 503 — the sign-in
+       service could not be reached; never a prompt to re-enter credentials);
+       **sign_in_again** (401); **not_yet** (an attachment confirmed before its
+       bytes arrived; retry soon); **waiting_for_parent** (the record's parent
+       has not been acknowledged; hold, do not retry on a timer);
+       **refused** (400, 413, 422 — a rule refused it; will not succeed on
+       retry; show the rule's own sentence); **left_caseload** (404 on a farmer
+       the device holds — reassigned while offline; keep it, show the officer,
+       never retry); **conflict** (409 with a differing body; terminal; show
+       the officer). The data model's five codes are replaced by these.
+C-9.5  Parent-first release. A farmer before its farms and visits; a farm
+       before its boundaries and crops; an earlier visit before its follow-up;
+       a visit before its attachment rows; a row before its bytes; bytes before
+       confirm. A child is held until its parent is acknowledged by identifier.
+       When a parent is terminally refused, its children are not retryable:
+       they are marked stuck with the parent's identifier and reason, and the
+       officer can see which parent and why.
+C-9.6  Attachments have their own lifecycle, distinct from record sync states:
+       declared, uploading, confirmed, failed. A grant that expired on confirm
+       means re-declare with the same identifier, not give up. A device that
+       gives up says so, so the visit shows "did not send" rather than
+       "waiting" for ever (C-8.7).
+C-9.7  The entities that sync are farmer, farm, farm boundary, crop
+       declaration, visit and visit attachment. Nothing else — "ai question"
+       is on the do-not-build list and leaves the model.
+C-9.8  Every request from the officer app carries a device identifier in a
+       header; the route wrapper reads it and every audit entry written in that
+       request records it. Audit rows written before this unit carry no device
+       and never will; the record says so.
+C-9.9  Download. The caseload lists — farmers, farms, visits — accept an
+       updated-since filter on the server's moment of last change, so a device
+       learns verification decisions and their reasons, merges, corrections and
+       new records without re-downloading its caseload. A caseload endpoint
+       returns the identifiers currently in the officer's caseload; a farmer
+       the device holds that is absent from it has left the caseload, and the
+       device removes that farmer and everything under them, keeping nothing:
+       the officer has no right to that data any more.
+C-9.10 A farmer and a farm carry the device's moment of capture beside the
+       server's moment of receipt, as a visit does (C-8.5). A farmer registered
+       on Monday in a village and uploaded on Friday in town was registered on
+       Monday. The server's moment stays authoritative for reporting; the
+       field's date is no longer discarded. Both are shown wherever a date is
+       shown.
+C-9.11 No sync response, success or failure, carries a farmer's name, phone,
+       national ID, note, observation, advice or position outside `data`
+       (C-5.13, C-8.13). The shared scan covers every sync route.
+C-9.12 Every sync payload is validated by the same shared schema on the device
+       and on the server, so the two cannot disagree about what is valid.
+C-9.13 `docs/data-model.md` §3 is corrected to state what the routes do: the
+       entity list, the codes, the order, the attachment lifecycle, the device
+       header, the download direction, and true idempotency.
+C-9.14 Every record used to prove this unit, in staging and in tests, is
+       invented.
+C-9.15 The device can act on every code in C-9.4 without a follow-up read.
+       For each, the response carries enough for the phone to decide keep,
+       retry or show the officer, and to know when to retry if it should: a
+       retryable outcome carries a Retry-After; a refusal carries the rule's
+       own sentence; a conflict names the identifier. A code that requires the
+       device to ask a second question before it knows what to do is a code
+       that will be handled wrong on a phone with no signal. One code is not a
+       server response at all — see the note.
+
+### Notes for the builder
+
+**"The body matches"** means: the fields the client sent, after the shared
+schema's normalisation (trimmed strings, a phone in canonical form, a
+polygon's ring compared point by point in stored winding), equal what was
+stored; fields the server sets — moments of receipt, numbers it allocated,
+denormalised location — are not compared. A retry from a phone is byte-for-
+byte the same request, so the comparison exists to catch the other case: a
+different record wearing a reused identifier.
+
+**The device identifier** is an opaque installation identifier the app
+generates once, not the handset's hardware identity. It names a device, and
+through the session an officer; it is staff data, not a farmer's.
+
+**Boundaries' client id** is a body change, not a column change: the
+create-farm body carries a `boundary_id` beside the farm's, add-boundary
+carries `id`, both required by the shared schema, and the route always sends
+them. The column's server default stays. Migration 18 dropped it and
+migration 19 put it back the same day: dropping it was not additive, and
+main's code, which did not yet send an id, failed every mapping on staging
+while the two differed. The guarantee lives at the door, where older code is
+not broken by it.
+
+**Captured-at** on farmer and farm is a schema change: two nullable columns,
+so records that predate the unit read "not recorded" rather than a guess.
+
+**The seven codes against C-9.15, checked before the build.** Six pass on the
+response alone: retry_later (500 and 503 carry `Retry-After`), sign_in_again
+(401), not_yet (409 `attachment_not_arrived` carries `Retry-After`), refused
+(the rule's sentence is in the body), left_caseload (404 on a farmer the
+device had acknowledged: keep, show, never retry), conflict (409 naming the
+identifier; the device holds its own copy and the next download brings the
+server's). **waiting_for_parent is never a server response.** The server
+cannot tell "parent not landed yet" from "parent not yours": both are 404 by
+design (§5.1). It is the device's own hold, decided from one local fact —
+whether the parent has been acknowledged — and a child is never sent before
+that fact is true (C-9.5). If a child is sent anyway, the server's 404 is
+read as left_caseload only when the parent was acknowledged, and as a device
+fault otherwise. A local fact is not a follow-up read; the code passes
+C-9.15 on that basis, and the officer app must implement the hold, not
+infer it from the server.
+
+**The seventh silent gate.** The audit law required the device on every
+entry, the column existed since B4, nothing sent it and no test asked; every
+audit row since B4 has a null device. Found 2026-09-08 by reading a design
+document against the code, the first of the class found that way. Recorded in
+`docs/PROJECT-STATE.md`.
 
 ---
 
@@ -734,7 +872,6 @@ list. If yes, the officer role gets a write route and entries gain a
 Written one unit ahead of the build, not all at once, so that criteria reflect
 what the preceding unit actually produced.
 
-- C-9 — offline synchronisation — (b)
 - C-10 — dashboards, reporting and export — (p), (q)
 - C-11 — backup and disaster recovery — (t)
 - C-12 — cooperatives — (l)

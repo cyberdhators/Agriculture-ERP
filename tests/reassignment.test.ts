@@ -81,7 +81,13 @@ const mapFarm = async (as: TestPrincipal, farmerId: string) => {
   const r = await checked(farmerFarms, 'POST', {
     as,
     params: { id: farmerId },
-    body: { id: randomUUID(), season: '2026-main', boundary: SQUARE, gps_accuracy_m: 6 },
+    body: {
+      id: randomUUID(),
+      boundary_id: randomUUID(),
+      season: '2026-main',
+      boundary: SQUARE,
+      gps_accuracy_m: 6,
+    },
   });
   expect(r.status, `setup farm: ${r.text}`).toBe(201);
   return data(r).id as string;
@@ -238,7 +244,7 @@ run('everything follows the farmer (C-8R.3, C-8R.4, C-8R.7)', () => {
         await checked(farmBoundaries, 'POST', {
           as: officerA,
           params: { id: farmId },
-          body: { season: '2026-second', boundary: SQUARE, gps_accuracy_m: 6 },
+          body: { id: randomUUID(), season: '2026-second', boundary: SQUARE, gps_accuracy_m: 6 },
         }),
       ],
     ] as const) {
@@ -265,7 +271,7 @@ run('everything follows the farmer (C-8R.3, C-8R.4, C-8R.7)', () => {
         await checked(farmBoundaries, 'POST', {
           as: officerA2,
           params: { id: farmId },
-          body: { season: '2026-second', boundary: SQUARE, gps_accuracy_m: 6 },
+          body: { id: randomUUID(), season: '2026-second', boundary: SQUARE, gps_accuracy_m: 6 },
         })
       ).status,
     ).toBe(201);

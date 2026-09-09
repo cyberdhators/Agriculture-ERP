@@ -1,16 +1,21 @@
 import { createFarmSchema } from '@agri-erp/shared';
 import { audited, writeAudit } from '../../../../../lib/api/audit';
 import { conflict, forbidden } from '../../../../../lib/api/errors';
-import { inCaseloadOf, loadVisible } from '../../../../../lib/api/farmers';
+import { inCaseloadOf, loadVisible, sameInstant } from '../../../../../lib/api/farmers';
 import {
   FARM_COLUMNS,
   FARM_FROM,
   type FarmRow,
   cropsOf,
   farmScopeClause,
+  loadVisibleFarm,
   presentFarm,
 } from '../../../../../lib/api/farms';
-import { currentBoundaries, insertBoundary } from '../../../../../lib/api/geometry';
+import {
+  boundaryMatches,
+  currentBoundaries,
+  insertBoundary,
+} from '../../../../../lib/api/geometry';
 import { created, defineRoutes, ok } from '../../../../../lib/api/route';
 import { requireWriter } from '../../../../../lib/api/scope';
 import { prisma } from '../../../../../lib/db';
@@ -49,16 +54,44 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       if (!inCaseloadOf(auth, farmer)) {
         throw forbidden();
       }
+      // C-9.2: a retry of a mapping that landed is 200 with the farm; the same
+      // id wearing a different season, capture moment or boundary is a conflict.
       const [existing] = await prisma.$queryRawUnsafe<{ id: string }[]>(
         'SELECT id FROM public.farm WHERE id = $1::uuid',
         body.id,
       );
-      if (existing) throw conflict('farm_already_exists');
+      if (existing) {
+        const stored = await loadVisibleFarm(prisma, body.id, auth).catch(() => null);
+        if (
+          stored &&
+          stored.farmer_id === farmer.id &&
+          stored.season === body.season &&
+          sameInstant(body.captured_at, stored.captured_at) &&
+          (await boundaryMatches(prisma, body.boundary_id, {
+            farmId: stored.id,
+            season: body.season,
+            polygon: body.boundary,
+            gpsAccuracyM: body.gps_accuracy_m,
+          }))
+        ) {
+          const [bounds, crops] = await Promise.all([
+            currentBoundaries(prisma, [stored.id]),
+            cropsOf(prisma, [stored.id]),
+          ]);
+          return ok(presentFarm(stored, bounds, crops, auth));
+        }
+        throw conflict('farm_already_exists');
+      }
+      const [boundaryTaken] = await prisma.$queryRawUnsafe<{ id: string }[]>(
+        'SELECT id FROM public.farm_boundary WHERE id = $1::uuid',
+        body.boundary_id,
+      );
+      if (boundaryTaken) throw conflict('boundary_already_exists');
 
       const result = await audited(prisma, async (tx) => {
         await tx.$executeRawUnsafe(
-          `INSERT INTO public.farm (id, farmer_id, payam_id, county_id, state_id, season, created_by)
-           VALUES ($1::uuid, $2::uuid, $3, $4, $5, $6, $7::uuid)`,
+          `INSERT INTO public.farm (id, farmer_id, payam_id, county_id, state_id, season, created_by, captured_at)
+           VALUES ($1::uuid, $2::uuid, $3, $4, $5, $6, $7::uuid, $8::timestamptz)`,
           body.id,
           farmer.id,
           farmer.payam_id,
@@ -66,8 +99,10 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
           farmer.state_id,
           body.season,
           auth.principal.id,
+          body.captured_at ?? null,
         );
         const { row } = await insertBoundary(tx, {
+          id: body.boundary_id,
           farmId: body.id,
           season: body.season,
           polygon: body.boundary,

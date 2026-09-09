@@ -783,6 +783,30 @@ companion, from the fourth instance: **when the record says something was
 done or is pending, ask the system rather than the record.** A migration
 folder, a catalogue query, a live route — not a sentence in a document.
 
+**The eighth instance, a column read by a new feature and never written
+(2026-09-08).** `updated_at` on farmer, farm and visit had no trigger, and the
+verification transitions never set it; only a few routes did. C-9.9's
+download filter reads it. Had B9 shipped the filter on the column as it was,
+a supervisor's verification would have changed nothing the phone could see:
+the feature would have looked implemented and worked on nothing. Found by
+reading what the filter would read against what wrote it, before the test
+existed. Fixed by a trigger in migration 18; the test now proves any writer
+bumps it.
+
+**The seventh instance, found in a design document (2026-09-08).** The audit
+law says every entry carries the device. `audit_event.device_id` has existed
+since B4 and `writeAudit` accepts it. No route wrapper reads a device from a
+request, no request carries one, and no test asked whether the column was
+ever non-null — so every audit row written since B4 has a null device. Found
+by reading the sync contract in `docs/data-model.md` §3 against the routes,
+at the owner's request, before C-9 was written: the first of the class found
+in a document rather than by a test or by being bitten. **The rows are
+permanently null.** Nothing recorded the device anywhere else — not the
+session, not the request log, not Sentry, which scrubs identifiers — so there
+is nothing to backfill from, and a guessed device would be a false record.
+Fixed in B9: a header, read by the wrapper, passed to every audit write
+(C-9.8). Rows before that carry null and the record says so.
+
 **One found before it fired (2026-09-06).** The directories test asserted the
 `crop` and `language` enum labels equal a fixed list; it would have gone red
 on the first unit to add a value. Found by reading every catalogue-reading
@@ -964,6 +988,28 @@ decision, reversible in one line.
 `county_id` and `state_id` denormalised from its farmer, with the same two
 composite keys; the re-pointing migration gains three more columns, as farm
 did, and the reseed's dependant check names `visit`.
+
+## B9 — OFFLINE SYNCHRONISATION, THE SERVER SIDE (2026-09-08)
+
+**What exists.** Migration 18: the boundary's id is the client's (no server
+default), `captured_at` on farmer and farm, an `updated_at` trigger on the
+three synced parents, indexes for the download filter, the SELECT * views
+recreated. True idempotency on farmer, farm, boundary and visit creates (200
+with the record when the body matches; 409 "with different details"). The
+device header, read once by the wrapper and carried to every audit write
+through a request context. Retry-After on 500, 503 and the not-yet 409.
+`updated_since` on the farmer, farm and visit lists; `GET /api/farms`; `GET
+/api/sync/caseload`. `packages/shared/src/sync.ts` — the seven outcomes with
+sentences and actions, the header, the entities. CONVENTIONS §16;
+`docs/data-model.md` §3 rewritten to match. Decisions in DECISIONS, B9.
+
+**What B9 does not build.** The officer app. B9 is what the app is built
+against; the app's queue, its parent-first hold and its handling of the
+seven outcomes are the app's, and the contract now says exactly what they
+must do (CONVENTIONS §16; data-model §3's table).
+
+**The stated limit carried forward.** The upload grant's provider life is two
+hours against our fifteen minutes (DECISIONS, B8). Nothing in B9 changes it.
 
 ## B11 CHECKLIST — WHAT A FRESH PRODUCTION PROJECT MUST BE GIVEN BY HAND
 

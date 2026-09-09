@@ -1,4 +1,10 @@
-import { ERROR_CODES, ERROR_MESSAGES, type ApiErrorBody, apiError } from '@agri-erp/shared';
+import {
+  ERROR_CODES,
+  ERROR_MESSAGES,
+  SYNC_OUTCOME_SPECS,
+  type ApiErrorBody,
+  apiError,
+} from '@agri-erp/shared';
 import { NextResponse } from 'next/server';
 
 /**
@@ -13,12 +19,15 @@ export class ApiFailure extends Error {
   readonly code: string;
   readonly publicMessage: string;
   readonly fields?: Record<string, string>;
+  /** Extra response headers: Retry-After on a retryable outcome (C-9.15). */
+  readonly headers?: Record<string, string>;
 
   constructor(
     status: number,
     code: string,
     publicMessage: string,
     fields?: Record<string, string>,
+    headers?: Record<string, string>,
   ) {
     // The Error message is for our logs. It carries the code, never a name,
     // phone number or national id -- see the standing rule in PROJECT-STATE.md.
@@ -28,6 +37,7 @@ export class ApiFailure extends Error {
     this.code = code;
     this.publicMessage = publicMessage;
     if (fields) this.fields = fields;
+    if (headers) this.headers = headers;
   }
 
   body(): ApiErrorBody {
@@ -83,7 +93,8 @@ export const RULE_MESSAGES = {
   state_not_found: 'That state could not be found.',
   // B5 (C-5). Every sentence names no person: a farmer is never described here.
   consent_required: 'Consent must be recorded before a farmer can be registered.',
-  farmer_already_exists: 'A farmer with that identifier has already been registered.',
+  farmer_already_exists:
+    'A farmer with that identifier has already been registered with different details. Open it and compare before sending again.',
   registering_officer_required: 'Name the extension officer who registered this farmer.',
   registering_officer_not_found: 'The registering officer could not be found in that payam.',
   // B6 (C-6). Decisions about a record, never words about a person.
@@ -99,11 +110,15 @@ export const RULE_MESSAGES = {
     'The boundary crosses itself. Walk the edge of the plot in one direction without cutting across it.',
   boundary_too_few_points:
     'A boundary needs at least four corners. Keep walking to the next corner before you finish.',
-  farm_already_exists: 'A farm with that identifier has already been recorded.',
+  farm_already_exists:
+    'A farm with that identifier has already been recorded with different details. Open it and compare before sending again.',
+  boundary_already_exists:
+    'A boundary with that identifier has already been recorded with different details. Open it and compare before sending again.',
   boundary_recorded_concurrently:
     'Another boundary was recorded for this farm and season at the same moment. Load the farm again before re-mapping.',
   // B8 (C-8). For an officer in a field: the action, never the fault (§14).
-  visit_already_exists: 'A visit with that identifier has already been recorded.',
+  visit_already_exists:
+    'A visit with that identifier has already been recorded with different details. Open it and compare before sending again.',
   follow_up_not_found:
     "The earlier visit could not be found for this farmer. Choose it from this farmer's visits, or leave the link out.",
   follow_up_cycle:
@@ -127,9 +142,25 @@ export const RULE_MESSAGES = {
 
 export type RuleKey = keyof typeof RULE_MESSAGES;
 
-/** A conflict, named by rule rather than by sentence. */
+/** C-9.15: a retryable outcome says when. Seconds from the sync contract, never a guess per route. */
+const retryAfter = (seconds: number | undefined): Record<string, string> | undefined =>
+  seconds === undefined ? undefined : { 'retry-after': String(seconds) };
+
+/**
+ * A conflict, named by rule rather than by sentence. `attachment_not_arrived`
+ * is the one 409 that means "not yet" rather than "never": it carries
+ * Retry-After so the device knows when to confirm again (C-9.4, C-9.15).
+ */
 export const conflict = (rule: RuleKey) =>
-  new ApiFailure(409, ERROR_CODES.conflict, RULE_MESSAGES[rule]);
+  new ApiFailure(
+    409,
+    ERROR_CODES.conflict,
+    RULE_MESSAGES[rule],
+    undefined,
+    rule === 'attachment_not_arrived'
+      ? retryAfter(SYNC_OUTCOME_SPECS.not_yet.retryAfterSeconds)
+      : undefined,
+  );
 
 /** A business rule refused it. The rule names itself; no free text enters. */
 export const unprocessable = (rule: RuleKey) =>
@@ -146,12 +177,24 @@ export const invalidCursor = () =>
  * field to re-enter credentials that were never wrong.
  */
 export const authUnavailable = () =>
-  new ApiFailure(503, ERROR_CODES.authUnavailable, ERROR_MESSAGES.authUnavailable);
+  new ApiFailure(
+    503,
+    ERROR_CODES.authUnavailable,
+    ERROR_MESSAGES.authUnavailable,
+    undefined,
+    retryAfter(SYNC_OUTCOME_SPECS.retry_later.retryAfterSeconds),
+  );
 export const internalError = () =>
-  new ApiFailure(500, ERROR_CODES.internalError, ERROR_MESSAGES.internalError);
+  new ApiFailure(
+    500,
+    ERROR_CODES.internalError,
+    ERROR_MESSAGES.internalError,
+    undefined,
+    retryAfter(SYNC_OUTCOME_SPECS.retry_later.retryAfterSeconds),
+  );
 
 export const failureResponse = (failure: ApiFailure, correlationId: string): NextResponse =>
   NextResponse.json(failure.body(), {
     status: failure.status,
-    headers: { 'x-correlation-id': correlationId },
+    headers: { ...failure.headers, 'x-correlation-id': correlationId },
   });

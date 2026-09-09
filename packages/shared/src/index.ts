@@ -178,6 +178,7 @@ export {
   addBoundarySchema,
   createFarmSchema,
   declareCropsSchema,
+  farmFilterSchema,
   geoJsonPolygonSchema,
   geojsonFilterSchema,
   gradeAccuracy,
@@ -186,6 +187,7 @@ export {
   type AddBoundary,
   type CreateFarm,
   type DeclareCrops,
+  type FarmFilter,
   type GeoJsonPolygon,
   type GeojsonFilter,
 } from './farm';
@@ -218,3 +220,17 @@ export {
   type VisitFilter,
   type VisitTopic,
 } from './visit';
+export {
+  DEVICE_ID_HEADER,
+  DEVICE_ID_PATTERN,
+  SYNC_ENTITIES,
+  SYNC_MESSAGES,
+  SYNC_OUTCOMES,
+  SYNC_OUTCOME_SPECS,
+  deviceIdSchema,
+  syncOutcomeFor,
+  type SyncAction,
+  type SyncEntity,
+  type SyncOutcome,
+  type SyncOutcomeSpec,
+} from './sync';
