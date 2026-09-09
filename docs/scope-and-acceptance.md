@@ -794,6 +794,109 @@ document against the code, the first of the class found that way. Recorded in
 
 ---
 
+## C-10 — DASHBOARDS, REPORTING AND EXPORT
+
+Deliverables: (p) interactive user dashboard, (q) reporting and analytics
+dashboard. Unit B10.
+
+Source: written by the owner on 2026-09-08 from the assistant's reading of
+`docs/data-model-extension.md` §9 against the tables and views as they were
+after B9 (DECISIONS, "C-10 — the reporting section read against the schema").
+
+**On the deliverable wording, plainly.** The Inception Report is not in the
+repository. No session can read it. What we hold is the derivation table at
+the top of this file, and that table is the authority we actually have; the
+wording above is the table's. Where the table and the report disagree, the
+report wins — but nobody here can check that without the report in hand.
+
+C-10.1  Every figure reads through the farmer's own status. A removed or merged
+        farmer's farms, hectares and visits appear in no count, no total and no
+        export. A land figure never contradicts the farmer figure beside it.
+C-10.2  Reach is the count of distinct verified farmers, computed for the period
+        asked for. It is never summed from a per-month view, because a farmer
+        visited in two months is one farmer.
+C-10.3  Pending, rejected and merged farmers are counted and shown beside every
+        verified figure, never folded into it.
+C-10.4  Every figure is disaggregated by sex, age band, state, county and payam.
+C-10.5  Age band is computed at the data cut-off from a year of birth, and every
+        report says so and says it is approximate to within a year.
+C-10.6  Reach by crop counts a farmer once per crop they have at least one farm
+        declaring in the season. The crop breakdown does not sum to the total,
+        and the report says why.
+C-10.7  Extension coverage is verified farmers with at least one visit in the
+        period, computed from visits, using the server's moment.
+C-10.8  Every export records who ran it, the query, the filters, the data
+        cut-off date and the row count, so a number in a PDF traces to rows.
+C-10.9  A figure and its export made with the same filters and cut-off agree.
+C-10.10 An officer sees their own caseload. A supervisor and a read-only user
+        see their state. An administrator sees all. No figure crosses scope.
+C-10.11 No dashboard figure and no export carries a farmer's name, phone or
+        national ID. A farmer-list export carries farmer numbers only. A name on
+        screen disappears with the page; a name in a file outlives the scope
+        check that allowed it — copied, forwarded, left on a laptop. A farmer
+        number traces a figure to a row for anyone with access to the system
+        and means nothing to anyone without. The officer's field list is the
+        phone's job from its own caseload, not an export. If CORWADO asks for a
+        named list later, that is a decision with a reason attached, and the
+        export log records who ran it.
+C-10.12 The SMS delivery figure is not in this deliverable. It needs (n), which
+        is not built.
+C-10.13 The directory freshness figure is not in this deliverable while no
+        merged route writes the verification date it reads.
+C-10.14 Every figure proved in this deliverable is proved against invented data,
+        and every expected total is computed independently of the view it checks.
+
+### Notes for the builder
+
+**Why C-10.1 exists, and what it decided.** The farmer soft-delete and the
+merge touch the farmer row alone; farms and visits are left active underneath.
+Decided by the owner 2026-09-08: a merge repoints the source's farms and
+visits to the survivor at merge time, inside the merge transaction, with an
+audit entry per moved record; a one-off migration does the same for merges
+already made. The land exists and someone farms it; a visit to the merged
+record was a real visit to the surviving person; and an officer's caseload
+after a merge shows the survivor with everything under them, not a pointer to
+follow. Built in B10, because C-10.1 cannot be met honestly without it. `farm_mapped_v` and
+`area_totals_v` filter on the farm's own removal only, so a hectare total read
+from them counts a removed farmer's land, one join away from a law that says a
+soft-deleted row appears in no count or report. Found by reading §9 against
+the views, before any B10 figure existed.
+
+**Why C-10.2 exists.** `extension_coverage_v` (B8) counts by state, county,
+payam and month. Distinct farmers do not sum across months: a farmer visited
+in March and April is two in the monthly view and one in the quarter. Any
+period other than a calendar month cannot be read from it. It stays for the
+tile it is right for; reach is computed from visits at the period asked.
+
+**C-10.4's location consequence — read this before reading a report.** Land
+breakdowns read the farm's payam; people breakdowns read the farmer's. A farm
+carries its own payam, county and state, denormalised at creation from the
+farmer it belonged to then. After a merge across payams within a state — which
+B6 allows: the merge check refuses only a source and target in different
+states (`merge_across_states`), confirmed in the code on 2026-09-08 — the
+survivor's farms may carry a payam the survivor's own record does not. A
+report that shows three farmers in one payam and four farms' worth of hectares
+in another is not wrong. That is the truth of where the plots are. A reporting
+session that sees the two disagree should read this paragraph, not file a
+defect.
+
+**Two decisions the owner took rather than left (2026-09-08).** Fix the views,
+do not work around them: `farm_mapped_v` and `area_totals_v` gain the farmer
+join as an additive replacement, because a view that is right only when the
+caller remembers to join is a view that will be read wrong. And no view is
+named after `visit` unless it carries every visit column; a subset or a join
+gets a name that is not a table's, per the view rule.
+
+**Not built here, and why.** `report_export` does not exist yet and the
+model's shape lacks the query the law requires logged; B10 creates it with
+the query. The SMS tile needs (n). The directory freshness tile reads
+`last_verified_at`, written by the seed and by no merged route (the directory
+routes are Lane 2's #28, open), so it would be right today and empty itself
+180 days after the seed with no route able to refresh it — the shape of the
+eighth silent gate, found before the view existed.
+
+---
+
 ## C-13 — DIRECTORIES AND LEARNING LIBRARY
 
 **Deliverables (i), (j), (k) and (m). Unit P1.**
@@ -872,7 +975,6 @@ list. If yes, the officer role gets a write route and entries gain a
 Written one unit ahead of the build, not all at once, so that criteria reflect
 what the preceding unit actually produced.
 
-- C-10 — dashboards, reporting and export — (p), (q)
 - C-11 — backup and disaster recovery — (t)
 - C-12 — cooperatives — (l)
 - C-14 — market prices, produce listings, buyer matching — (f), (g), (h)

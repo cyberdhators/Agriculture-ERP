@@ -15,6 +15,8 @@ import * as farmCrops from '../apps/web/app/api/farms/[id]/crops/route';
 import * as farmItem from '../apps/web/app/api/farms/[id]/route';
 import * as farmsGeojson from '../apps/web/app/api/farms/geojson/route';
 import * as farmsList from '../apps/web/app/api/farms/route';
+import * as reportExports from '../apps/web/app/api/reports/exports/route';
+import * as reportSummary from '../apps/web/app/api/reports/summary/route';
 import * as syncCaseload from '../apps/web/app/api/sync/caseload/route';
 import * as farmerMerge from '../apps/web/app/api/farmers/[id]/merge/route';
 import * as farmerReassign from '../apps/web/app/api/farmers/[id]/reassign/route';
@@ -420,6 +422,26 @@ const ROUTES = [
     method: 'DELETE' as const,
     allow: ['admin'],
     params: () => ({ id: farmId }),
+  },
+  // B10 (C-10). The dashboard for everyone in scope; exports and their log for administrators and supervisors.
+  {
+    name: 'GET /api/reports/summary',
+    mod: reportSummary,
+    method: 'GET' as const,
+    allow: ['admin', 'supervisor', 'read_only', 'officer'],
+  },
+  {
+    name: 'GET /api/reports/exports',
+    mod: reportExports,
+    method: 'GET' as const,
+    allow: ['admin', 'supervisor'],
+  },
+  {
+    name: 'POST /api/reports/exports',
+    mod: reportExports,
+    method: 'POST' as const,
+    allow: ['admin', 'supervisor'],
+    body: () => ({ report_type: 'summary' }),
   },
   // B9 (C-9). The farms list for everyone in scope; the caseload for officers only.
   {

@@ -706,6 +706,67 @@ A run cancelled by the timeout while still completing files is re-run, not
 investigated. The first run under the new timeout, the one that gated #38's
 merge, took 42 minutes and passed; the old timeout would have cut it.
 
+**The sixty-minute ceiling crossed (2026-09-08).** #44's rebased run was cut
+at sixty minutes with nine files still to go, every file about sixty percent
+slower than the same files on the green run of that morning (visits 10.5
+minutes against 6.5; farmers likewise). The re-run was cut at the same file
+with a minute-for-minute identical timeline. **The mechanism, measured rather
+than guessed:** staging's tables are tiny (the audit log, the largest, has
+fifteen thousand rows), no session is idle in transaction, and a count over
+the repaired views returns in the same time as a bare `select 1`. Every query
+is fast; every round trip is slow. The suite is thousands of small sequential
+queries, so its duration is set by where GitHub places the runner relative to
+Frankfurt — a lottery we do not draw. The morning's runner was close enough
+for forty-one minutes; the evening's two were not close enough for sixty.
+Four runs have now been cut by a timeout, at two ceilings, all still
+completing files. **Decision pending with the owner:** ninety minutes (a
+fourth CI edit, covering the far placement for the suite at its size and a
+few more units), or a change of shape — files owning their fixtures so they
+run in parallel and divide the round trips, or a self-hosted runner near the
+database (infrastructure, and a paid service) — which is a unit, not a line.
+**Decided 2026-09-09:** ninety minutes (the fourth CI edit, DECISIONS). The
+alternative is sized below.
+
+## THE SHAPE OF THE ALTERNATIVE TO THE CEILING (2026-09-09, sized, not built)
+
+The suite is 775 tests in 34 files, run serially because every file sweeps
+the shared test prefix in its setup, against a database in Frankfurt from a
+runner GitHub places where it will. Two directions, priced.
+
+**Per-run isolation, so files run in parallel.** The prefix, the test family
+name and the test location code become run-scoped in the helper; each file's
+sweep removes only its run's rows; a scheduled cleanup (a fifth CI edit and a
+new script) removes anything a day old; about eighteen database test files
+change their constants and phone ranges; vitest runs two projects — a
+parallel one, and a serial one for the five files that do global things no
+prefix isolates (verification's check constraint on the audit table, farms'
+constraints, reporting's disabled trigger, the locations reseed, the farmers
+seed). **Three to four days:** half for helper and config, half across the
+files, two to three for the parallel run failing in ways the serial run never
+showed. **Risk medium to high, and specific:** four workers creating
+principals through Supabase Auth at once is the strain already seen,
+multiplied; forty client connections on fifteen server connections is the
+dead-pooled-connection incident's neighbourhood; the farmer-number counter
+lock becomes contended across files. **Gain:** the suite is round-trip bound,
+so four workers divide the wait — a forty-minute near run to perhaps fifteen,
+a sixty-plus far run to perhaps twenty-five.
+
+**Geography.** A staging project nearer the runners: half a day, low
+technical risk, and wrong — it moves staging away from where production will
+be, and South Sudan is nearer Frankfurt than Virginia, so staging would stop
+being production-like in exactly the latency the field will feel. Not to be
+done. A self-hosted runner near Frankfurt: a small machine, a day to set up,
+ongoing maintenance, a paid service under CORWADO's name (never ours). Low
+technical risk, real organisational cost, for twenty minutes a run.
+
+**The answer given, 2026-09-09: neither before the backend ends.** Ninety
+minutes covers the far placement for B11 and the two small follow-ups.
+Per-run isolation is the right change and is half-scoped, but its cost is in
+the risk column, and three days of debugging parallel Auth calls before the
+last backend unit is the wrong order. It is the first unit after B11. If the
+suite is cut again before B11 lands, that is the signal to pull it forward,
+not to raise the ceiling a fifth time.
+
 **If a run is killed** its rows
 are swept by the next run's setup, and its authentication accounts are
 removed when that sweep finds their rows. A run that finds the lock held
@@ -1011,6 +1072,25 @@ must do (CONVENTIONS §16; data-model §3's table).
 **The stated limit carried forward.** The upload grant's provider life is two
 hours against our fifteen minutes (DECISIONS, B8). Nothing in B9 changes it.
 
+## B10 — DASHBOARDS, REPORTING AND EXPORT (2026-09-08)
+
+**What exists.** Migration 20: `report_export`; the merge repoints farms and
+visits to the survivor (a one-off backfill for existing merges, system
+audited); the visit evidence trigger admits that one move; `farm_active`,
+`farm_mapped_v`, `area_totals_v` and `visit_active` read through the farmer.
+One reporting builder; `GET /api/reports/summary` for every role in scope;
+`POST|GET /api/reports/exports` for administrators and supervisors; farmer
+lists by number only. Three audit keys. CONVENTIONS §17;
+`docs/data-model-extension.md` §9 corrected. Decisions in DECISIONS, B10.
+
+**What B10 does not build.** The PDF and the screens: the web portal renders
+the summary and the export data (Lane 2). The SMS tile (needs (n)) and the
+directory freshness tile (needs a merged route writing `last_verified_at`).
+
+**The backend bar one.** With B10, every backend unit from B2 to B10 is built
+and merged or open. B11 is the production drill; its checklist is below and
+is the next thing to read.
+
 ## B11 CHECKLIST — WHAT A FRESH PRODUCTION PROJECT MUST BE GIVEN BY HAND
 
 Migrations carry the schema, RLS and views automatically. These do not travel:
@@ -1025,6 +1105,32 @@ Migrations carry the schema, RLS and views automatically. These do not travel:
 - The private attachment bucket (B8): `pnpm storage:buckets` once against the
   production project, with `.env.local` pointing at it. Idempotent; it refuses
   a bucket that exists and is public rather than accepting it.
+- The location seed (B2): `pnpm locations:reseed` against production, from the
+  bundle, before any farmer can be registered — a farmer needs a payam that
+  exists. Staging got it by the reseed; production has never been seeded.
+- The directories and library seed (P1): `pnpm directories:seed`, if CORWADO's
+  real directory is not loaded another way. Staging's is invented.
+- Staff accounts: at least one administrator, created by hand through the
+  first-admin path (B3), before anything else can be done; every other account
+  through the routes.
+- Vercel: every environment variable in `.env.example`, with production values
+  — `DATABASE_URL` (transaction pooler), `DIRECT_URL`, the Supabase URL and
+  keys, the Sentry DSN, `SENTRY_ENVIRONMENT=production`. GitHub Actions: the
+  five `STAGING_*` secrets stay staging's; production is never a CI target.
+- The CI concurrency group and the sixty-minute timeout are in the workflow
+  and travel; the advisory lock is in the tests and travels. Nothing to do.
+- Supabase Auth: self-signup disabled (B3); the officer auth domain as
+  configured for staging; password policy as staging's.
+- Row-level security is enabled by every migration; there are no policies by
+  design. Nothing to do, but the advisor will list it — that is the intended
+  deny-by-default state (memory: never add a permissive policy).
+- Storage: the bucket above is the only one. Public buckets: none, ever.
+- Backups: the Supabase plan's point-in-time recovery (open question), and
+  B11's own restore drill — restore staging from a production backup into a
+  scratch project and run the suite against it — before real farmer data
+  exists, not after.
+- Real farmer data exists in production only (CLAUDE.md §4). Staging keeps its
+  invented data; nothing real is ever loaded there "to try".
 
 ## DEFECT — AN AUTH SERVICE OUTAGE READS AS "SIGN IN TO CONTINUE" (found by B5, owned by B3)
 

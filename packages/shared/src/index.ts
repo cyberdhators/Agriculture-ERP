@@ -234,3 +234,19 @@ export {
   type SyncOutcome,
   type SyncOutcomeSpec,
 } from './sync';
+export {
+  AGE_BANDS,
+  AGE_BAND_NOTE,
+  CROP_NOTE,
+  REPORT_MESSAGES,
+  REPORT_TYPES,
+  VERIFIED_ONLY_NOTE,
+  ageBandAt,
+  exportListFilterSchema,
+  exportRequestSchema,
+  reportFilterSchema,
+  type AgeBandKey,
+  type ExportRequest,
+  type ReportFilter,
+  type ReportType,
+} from './report';

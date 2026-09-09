@@ -39,6 +39,7 @@ const AUDIT_ACTION = {
 interface TargetRow {
   id: string;
   state_id: string;
+  payam_id: string;
   verification_status: string;
   deleted_at: Date | null;
 }
@@ -61,7 +62,7 @@ async function checkMergeTarget(
     conditions.push(`state_id = $${params.length}`);
   }
   const [target] = await tx.$queryRawUnsafe<TargetRow[]>(
-    `SELECT id, state_id, verification_status::text AS verification_status, deleted_at
+    `SELECT id, state_id, payam_id, verification_status::text AS verification_status, deleted_at
      FROM public.farmer WHERE ${conditions.join(' AND ')}`,
     ...params,
   );
@@ -140,12 +141,66 @@ export async function transitionFarmer(
       days_waiting: waited,
       ...(decision.kind === 'reject' ? { reason_code: decision.reasonCode } : {}),
       ...(target ? { merged_into: target.id } : {}),
+      // Traceability for C-10.4's location consequence: both payams, when they differ.
+      ...(target && target.payam_id !== source.payam_id
+        ? { source_payam_id: source.payam_id, target_payam_id: target.payam_id }
+        : {}),
     },
   });
+
+  // C-10.1 (owner, 2026-09-08): the source's farms and visits move to the
+  // survivor now, inside this transaction, one audit entry per moved record.
+  // A farm keeps its own payam — that is where the plot is — so the entry
+  // records it beside the survivor's for anyone tracing a report later.
+  if (target) await repointToSurvivor(tx, source, target, auth);
 
   const [fresh] = await tx.$queryRawUnsafe<FarmerRow[]>(
     `SELECT ${FARMER_COLUMNS} ${FARMER_FROM} WHERE f.id = $1::uuid`,
     source.id,
   );
   return fresh as FarmerRow;
+}
+
+async function repointToSurvivor(
+  tx: AuditTx,
+  source: FarmerRow,
+  target: TargetRow,
+  auth: Authenticated,
+): Promise<void> {
+  const actor = { actorType: auth.role, actorId: auth.principal.id } as const;
+  const farms = await tx.$queryRawUnsafe<{ id: string; payam_id: string }[]>(
+    `UPDATE public.farm SET farmer_id = $2::uuid WHERE farmer_id = $1::uuid RETURNING id, payam_id`,
+    source.id,
+    target.id,
+  );
+  for (const farm of farms) {
+    await writeAudit(tx, {
+      entityType: 'farm',
+      entityId: farm.id,
+      ...actor,
+      action: 'farm.repointed',
+      before: { farmer_id: source.id, farm_payam_id: farm.payam_id },
+      after: {
+        farmer_id: target.id,
+        farm_payam_id: farm.payam_id,
+        survivor_payam_id: target.payam_id,
+      },
+    });
+  }
+  // The visit trigger admits exactly this move: source -> its merged_into, set above.
+  const visits = await tx.$queryRawUnsafe<{ id: string }[]>(
+    `UPDATE public.visit SET farmer_id = $2::uuid WHERE farmer_id = $1::uuid RETURNING id`,
+    source.id,
+    target.id,
+  );
+  for (const visit of visits) {
+    await writeAudit(tx, {
+      entityType: 'visit',
+      entityId: visit.id,
+      ...actor,
+      action: 'visit.repointed',
+      before: { farmer_id: source.id },
+      after: { farmer_id: target.id },
+    });
+  }
 }

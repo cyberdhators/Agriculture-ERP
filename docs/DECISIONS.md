@@ -1863,3 +1863,115 @@ re-run, not investigated; a run that stops completing files is investigated.
 a lottery, and the ceiling only decides how much of the lottery we tolerate.
 The alternatives are sized in PROJECT-STATE, "The shape of the alternative to
 the ceiling", so that the fifth edit is not the answer to the next cut.
+
+## C-10 — the reporting section read against the schema (2026-09-08)
+
+Before writing C-10 the owner asked where `docs/data-model-extension.md` §9
+was wrong against the tables and views after B9, and specifically whether any
+B10 figure would read a column nobody writes. The reading, kept here because
+§9 is corrected in B10:
+
+- `farmer_verified_v`: exists as described.
+- `farm_mapped_v`, `area_totals_v`: exist, but filter on the farm's removal
+  only; a removed or merged farmer's farms stay in them. Decision: the views
+  gain the farmer join (additive replacement). C-10.1.
+- `visit_activity_v`: buildable, but its name pairs it with `visit` under the
+  view rule and it would have to carry every visit column. Decision: a join or
+  subset gets a name that is not a table's.
+- `extension_coverage_v`: exists in a shape that cannot answer §9's question —
+  distinct farmers do not sum across months. Reach is computed per period.
+  C-10.2, C-10.7.
+- `directory_current_v`: would read `last_verified_at`, written by the seed and
+  no merged route. Deferred. C-10.13.
+- `sms_delivery_v`: no table exists; (n) is not built. Deferred. C-10.12.
+- `report_export`: "already exists" — it does not; and the model lacks the
+  query the law requires. Built in B10 with the query. C-10.8.
+- Disaggregation columns all written: sex, year of birth, the three location
+  ids on farmer, farm and visit, crop declarations, accuracy and area, visit
+  moments, officer ids. Age from a year of birth is approximate to a year
+  (C-10.5); crop is a farm-season attribute, not a farmer's (C-10.6).
+- Columns nobody writes: only `directory_entry.last_verified_at` and
+  `verified_by`, until #28 merges. `captured_at` is null before B9, so reports
+  use the server's moment as the law says.
+
+## B10 — cross-payam merges stay allowed, as a decision (2026-09-08)
+
+**The question.** B6 refuses a merge whose source and target are in different
+states and says nothing about payams. C-10.1's repointing of farms and visits
+to the survivor makes the consequence of a cross-payam merge visible: land in
+one payam attached to a person in another. Refuse those merges too, or allow
+them and explain the figure?
+
+**What the code says B6's refusal is for.** The merge target is loaded through
+the caller's scope; a supervisor's scope is one state, so a target in another
+state is not visible to them. The cross-state refusal exists so that a merge
+is never decided by someone who cannot see both records it joins. That is the
+principle, not "a farmer must not change state".
+
+**Decision: allowed, by the owner, 2026-09-08.** Within a state one supervisor
+sees both records, both payams and both officers' work, so the decision is
+made by someone who sees everything it touches. And the cross-payam pair is
+the realistic duplicate — a farmer registered by their own payam's officer and
+again by a neighbour's at a market — which the duplicate check exists to flag.
+Refusing the merge would leave two verified records of one person, and reach
+would count them twice for as long as the system runs: a false figure to a
+donor. The location oddity after a merge is a true figure that needs one
+sentence (C-10.4's note). Between a false number and a true number that needs
+explaining, the true one.
+
+**The principle, stated so the next case is decided the same way:** a merge is
+refused where the decider cannot see both records, and allowed where they can.
+
+**Made traceable, not only documented.** The merge audit entry records both
+payams when they differ, and each repointed farm's entry records the farm's
+payam beside the survivor's, so a report's disagreement between land and
+people can be traced to the merge that made it.
+
+## B10 — decisions in the reporting unit (2026-09-08)
+
+**One builder for the figure and the export.** `summaryReport` and
+`farmersExport` in `apps/web/lib/api/reporting.ts` are the only SQL that
+produces a reporting number. The dashboard route and the export route call
+them with the same filters, so C-10.9 is true by construction, and the test
+that compares the two is a guard against someone adding a second builder.
+
+**The export log holds the query as it ran, parameters inlined.** The law says
+log the query; a `$1` with a separate parameter list is not a query anyone can
+run against the rows later. `inlineQuery` substitutes literals, quoting
+strings and formatting dates as ISO, so the logged text is executable as it
+stands. The summary export logs every statement the builder ran, joined.
+
+**Exports are for administrators and supervisors; read_only reads the
+dashboard.** An export creates a record — the log row and its audit entry —
+and C-3.9 says read_only creates nothing; the matrix test enforces it on every
+non-GET route. Officers do not export: the phone shows their caseload's
+figures through the same summary route.
+
+**Reach is computed, not viewed.** Distinct verified farmers with at least
+one visit in the period, from `visit` joined to `farmer`. `extension_coverage_v`
+stays as a monthly tile and is never summed for a period; the test proves the
+monthly view over-counts the fixture where reach does not.
+
+**Land is located by the farm; people by the farmer.** The land query filters
+`fm.payam_id` and the people queries `fr.payam_id`, deliberately, so that after
+a cross-payam merge a payam's hectares and its farmers can differ. C-10.4's
+note in the scope document is the reader's warning.
+
+**The visit evidence trigger admits one move.** C-8.10's immutability of the
+farmer on a visit stands, with the merge as its one exception: the new farmer
+must be the `merged_into` of the old. Nothing else can move a visit; the test
+proves a direct move to any other farmer is refused.
+
+**The one-off backfill follows a chain of merges to its survivor** and writes
+system audit entries with `merge_backfill` as the reason, so a repointed farm
+on a production database can be told from one moved by a live merge.
+
+**Age bands** are five: under 18, 18–24, 25–34, 35–49, 50 and over, from a
+year of birth at the cut-off; every report carries the sentence that says
+they are approximate to within a year. Ours; to be replaced by CORWADO's
+bands if the donor names them.
+
+**The season for land figures** defaults to the latest season present in the
+caller's farms when none is asked for, so a dashboard with no filter shows the
+current season rather than nothing or everything summed across seasons, which
+would count a farm mapped in two seasons twice.
