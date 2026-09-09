@@ -1,0 +1,243 @@
+/* User administration. Built on the base design tokens, so it matches the
+   portal today and adopts whatever the tokens are remapped to later. */
+
+.page {
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding: var(--s-8);
+}
+
+.head {
+  margin-block-end: var(--s-6);
+}
+.eyebrow {
+  margin: 0 0 var(--s-2);
+  font-family: var(--font-mono);
+  font-size: var(--text-small);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--verified);
+}
+.h1 {
+  margin: 0 0 var(--s-3);
+  font-family: var(--font-display);
+  font-size: var(--text-h1);
+  line-height: 1.05;
+  color: var(--ink);
+}
+.lede {
+  margin: 0;
+  max-width: 68ch;
+  color: var(--ink-2);
+}
+
+.muted {
+  color: var(--muted);
+}
+.error {
+  margin: var(--s-4) 0;
+  padding: var(--s-3) var(--s-4);
+  background: var(--pending-tint);
+  border: 1px solid var(--pending);
+  border-radius: var(--radius-control);
+  color: var(--ink);
+}
+
+.section {
+  margin-block-start: var(--s-8);
+}
+.sectionHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-4);
+  border-block-end: 2px solid var(--ink);
+  padding-block-end: var(--s-2);
+}
+.sectionHead h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 20px;
+  color: var(--ink);
+}
+.count {
+  font-family: var(--font-mono);
+  font-size: var(--text-small);
+  color: var(--muted);
+}
+
+.tableWrap {
+  overflow-x: auto;
+}
+.table {
+  width: 100%;
+  min-width: 640px;
+  border-collapse: collapse;
+}
+.table th {
+  padding: var(--s-3) var(--s-3);
+  text-align: start;
+  font-family: var(--font-mono);
+  font-size: var(--text-small);
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  border-block-end: 1px solid var(--line-strong);
+}
+.table td {
+  padding: var(--s-3) var(--s-3);
+  border-block-end: 1px solid var(--line);
+  vertical-align: middle;
+  color: var(--ink-2);
+}
+.strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+.num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.empty {
+  padding: var(--s-6);
+  text-align: center;
+  color: var(--muted);
+}
+
+.stampActive,
+.stampInactive {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 2px;
+  border: 1px solid currentColor;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.stampActive {
+  color: var(--verified);
+  background: var(--verified-tint);
+}
+.stampInactive {
+  color: var(--muted);
+  background: var(--dust);
+}
+
+.actionCell {
+  text-align: end;
+}
+.action {
+  padding: var(--s-2) var(--s-4);
+  background: var(--card);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-control);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--text-small);
+  cursor: pointer;
+}
+.action:hover {
+  border-color: var(--ink);
+}
+.action:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.sectionActions {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+}
+.actionRow {
+  display: flex;
+  gap: var(--s-2);
+  justify-content: flex-end;
+}
+
+/* ── Hub landing ─────────────────────────────────────────────────────── */
+.hubGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--s-4);
+  margin-block-start: var(--s-4);
+}
+.hubCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  padding: var(--s-5);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  text-decoration: none;
+  color: var(--ink);
+  transition:
+    box-shadow 120ms ease,
+    border-color 120ms ease;
+}
+a.hubCard:hover {
+  border-color: var(--line-strong);
+  box-shadow: var(--shadow-card-hover, 0 2px 8px rgba(15, 17, 17, 0.12));
+}
+.hubCardMuted {
+  opacity: 0.7;
+}
+.hubGlyph {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-control);
+  background: var(--verified-tint);
+  color: var(--verified);
+}
+.hubTitle {
+  font-weight: 600;
+  font-size: 16px;
+}
+.hubWhen {
+  margin-inline-start: var(--s-2);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.hubBody {
+  color: var(--ink-2);
+  font-size: var(--text-small);
+}
+
+/* ── Audit filter bar + change cell ──────────────────────────────────── */
+.filterBar {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  margin-block: var(--s-5) var(--s-4);
+}
+.filterLabel {
+  font-family: var(--font-mono);
+  font-size: var(--text-small);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.filterSelect {
+  padding: var(--s-2) var(--s-3);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-control);
+  background: var(--card);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--text-small);
+}
+.change {
+  color: var(--ink-2);
+  font-size: var(--text-small);
+}
