@@ -8,7 +8,9 @@
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "sentry:verify": "node --import ./scripts/register-ts.mjs scripts/sentry-verify.mjs",
-    "storage:buckets": "node --import ./scripts/register-ts.mjs scripts/storage-buckets.mjs"
+    "storage:buckets": "node --import ./scripts/register-ts.mjs scripts/storage-buckets.mjs",
+    "backup:manifest": "node --import ./scripts/register-ts.mjs scripts/backup-manifest.mjs",
+    "restore:verify": "node --import ./scripts/register-ts.mjs scripts/restore-verify.mjs"
   },
   "dependencies": {
     "@agri-erp/shared": "workspace:*",

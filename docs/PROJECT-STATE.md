@@ -1091,6 +1091,29 @@ directory freshness tile (needs a merged route writing `last_verified_at`).
 and merged or open. B11 is the production drill; its checklist is below and
 is the next thing to read.
 
+## B11 — BACKUP AND RECOVERY (2026-09-09)
+
+**What exists.** Migration 21: the `system.restored` audit key and the
+`lost_on_restore` attachment failure code. `apps/web/lib/backup/manifest.ts`:
+the manifest, the comparison with its definition of verified, the restore
+entry, the correction of lost attachments. Two scripts: `pnpm backup:manifest`
+and `pnpm restore:verify` (with `--correct-attachments` and `--record`).
+`docs/RUNBOOK-restore.md`, for a CORWADO administrator with no session
+present. C-11 in the scope document with the recovery point as a number.
+Decisions in DECISIONS, "C-11" and "B11".
+
+**What B11 does not do.** It does not take backups: the platform does, by
+plan, and the free tier takes none. It does not copy the bucket: recommended,
+priced, and waiting on a CORWADO destination account. It has not run the
+drill: that needs a scratch project under CORWADO's name (C-11.7).
+
+**The drill: not yet run.** Record the date and result here when it has been.
+Production receives its first migration only after.
+
+**Open, for the owner:** the plan CORWADO's projects are on and whether
+point-in-time recovery is purchasable (C-11.1's number); the scratch project
+for the drill; the destination account for the bucket copy.
+
 ## B11 CHECKLIST — WHAT A FRESH PRODUCTION PROJECT MUST BE GIVEN BY HAND
 
 Migrations carry the schema, RLS and views automatically. These do not travel:
@@ -1131,6 +1154,8 @@ Migrations carry the schema, RLS and views automatically. These do not travel:
   exists, not after.
 - Real farmer data exists in production only (CLAUDE.md §4). Staging keeps its
   invented data; nothing real is ever loaded there "to try".
+- The manifest, on the backup's schedule: `pnpm backup:manifest` against
+  production, kept under CORWADO's control (RUNBOOK-restore, section 1).
 
 ## DEFECT — AN AUTH SERVICE OUTAGE READS AS "SIGN IN TO CONTINUE" (found by B5, owned by B3)
 

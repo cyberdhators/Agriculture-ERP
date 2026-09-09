@@ -368,6 +368,7 @@ change.
 | `farm.repointed`               |
 | `visit.repointed`              |
 | `report.exported`              |
+| `system.restored`              |
 
 `before` and `after` hold **changed fields only**, never whole rows, and never a
 password, token, authentication identifier, national id, phone, email, given
@@ -966,7 +967,10 @@ removes the object and fails the row. Declaring the same id again is "send
 it again": a waiting or failed attachment gets a fresh grant; an arrived one
 is returned unchanged with no grant. `POST …/fail` is the phone giving up.
 Every attachment carries `status` (`waiting`, `arrived`, `failed`) and a
-`message` — one fixed sentence per state, naming the action (C-8.7).
+`message` — one fixed sentence per state, naming the action (C-8.7). Failure
+codes: `size_mismatch`, `type_mismatch`, `grant_expired`, `device_gave_up`,
+and since B11 `lost_on_restore` — the file did not survive a restore of the
+database, set by the restore verification, never by a route (C-11.3).
 `GET …/link` returns a read link that expires in five minutes, for an
 arrived attachment only, and its issuing is audited —
 `visit.attachment_link_issued`: who asked, for which attachment, when; never

@@ -229,3 +229,30 @@ export async function ensurePrivateBucket(
   if (error) throw new Error(`Could not create bucket ${name}: ${error.message}`);
   return 'created';
 }
+
+/**
+ * B11: how many objects the bucket holds, for the manifest (C-11.5). Walks
+ * the bucket's folders; Storage lists one prefix at a time. Fine at the scale
+ * of one project's attachments; the manifest records the count, not the list.
+ */
+export async function countBucketObjects(bucket: string): Promise<number> {
+  const storage = adminClient().storage.from(bucket);
+  let total = 0;
+  const walk = async (prefix: string): Promise<void> => {
+    let offset = 0;
+    for (;;) {
+      const { data, error } = await storage.list(prefix, { limit: 1000, offset });
+      if (error) throw new Error(`Could not list ${bucket}/${prefix}: ${error.message}`);
+      if (!data || data.length === 0) return;
+      for (const entry of data) {
+        // A folder has no id in the listing; a file has one.
+        if (entry.id) total += 1;
+        else await walk(prefix ? `${prefix}/${entry.name}` : entry.name);
+      }
+      if (data.length < 1000) return;
+      offset += data.length;
+    }
+  };
+  await walk('');
+  return total;
+}

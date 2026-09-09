@@ -53,6 +53,8 @@ export const AUDIT_ACTIONS = [
   'visit.attachment_link_issued',
   'visit.repointed',
   'report.exported',
+  // C-11.4: the one event that removes audit entries leaves a note saying so.
+  'system.restored',
 ] as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];
