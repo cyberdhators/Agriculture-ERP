@@ -398,7 +398,7 @@ export function ResourceForm({ existing }: { existing: LearningResourceRow | nul
                 </div>
                 <div className={styles.span2}>
                   <Checkbox
-                    label="Published, visible to officers"
+                    label="Published — visible to officers"
                     checked={form.published}
                     onChange={(event) => update('published', event.target.checked)}
                   />
