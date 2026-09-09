@@ -1863,3 +1863,33 @@ re-run, not investigated; a run that stops completing files is investigated.
 a lottery, and the ceiling only decides how much of the lottery we tolerate.
 The alternatives are sized in PROJECT-STATE, "The shape of the alternative to
 the ceiling", so that the fifth edit is not the answer to the next cut.
+
+## C-10 — the reporting section read against the schema (2026-09-08)
+
+Before writing C-10 the owner asked where `docs/data-model-extension.md` §9
+was wrong against the tables and views after B9, and specifically whether any
+B10 figure would read a column nobody writes. The reading, kept here because
+§9 is corrected in B10:
+
+- `farmer_verified_v`: exists as described.
+- `farm_mapped_v`, `area_totals_v`: exist, but filter on the farm's removal
+  only; a removed or merged farmer's farms stay in them. Decision: the views
+  gain the farmer join (additive replacement). C-10.1.
+- `visit_activity_v`: buildable, but its name pairs it with `visit` under the
+  view rule and it would have to carry every visit column. Decision: a join or
+  subset gets a name that is not a table's.
+- `extension_coverage_v`: exists in a shape that cannot answer §9's question —
+  distinct farmers do not sum across months. Reach is computed per period.
+  C-10.2, C-10.7.
+- `directory_current_v`: would read `last_verified_at`, written by the seed and
+  no merged route. Deferred. C-10.13.
+- `sms_delivery_v`: no table exists; (n) is not built. Deferred. C-10.12.
+- `report_export`: "already exists" — it does not; and the model lacks the
+  query the law requires. Built in B10 with the query. C-10.8.
+- Disaggregation columns all written: sex, year of birth, the three location
+  ids on farmer, farm and visit, crop declarations, accuracy and area, visit
+  moments, officer ids. Age from a year of birth is approximate to a year
+  (C-10.5); crop is a farm-season attribute, not a farmer's (C-10.6).
+- Columns nobody writes: only `directory_entry.last_verified_at` and
+  `verified_by`, until #28 merges. `captured_at` is null before B9, so reports
+  use the server's moment as the law says.
