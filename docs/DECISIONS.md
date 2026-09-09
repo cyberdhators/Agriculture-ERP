@@ -1975,3 +1975,76 @@ bands if the donor names them.
 caller's farms when none is asked for, so a dashboard with no filter shows the
 current season rather than nothing or everything summed across seasons, which
 would count a farm mapped in two seasons twice.
+
+## C-11 — what backup has to cover, read against the platform (2026-09-09)
+
+No document described backup; the Inception Report is not in the repository.
+The reading was of what Supabase provides by plan against what the system now
+stores, at the owner's request, and C-11 was written from it.
+
+- **The database**, including the auth schema, is what the platform backs up
+  (Pro: daily, seven days; point-in-time recovery as a paid add-on; Free:
+  nothing, and projects pause after a week idle). A logical dump of the public
+  schema alone would restore farmers and lose every login: the drill restores
+  the platform's backup, never a dump of ours.
+- **Storage is not in any database backup.** A restored database with the
+  bucket gone would hold attachment rows saying "arrived" over nothing, and
+  C-8.7 would call a lost photo safe. Two things, both in C-11.3: correction
+  on restore (built) and copying the bucket (recommended before production,
+  needs a CORWADO destination account).
+- **The audit log is append-only, and a restore is the one event that removes
+  entries from it.** So the restore is itself recorded, as the first write
+  into the restored database, and the verification refuses to say "verified"
+  until it is (C-11.4).
+- **The sync consequence has a number.** A phone deletes a record on
+  acknowledgement; records acknowledged after the recovery point are gone from
+  both ends and nothing re-sends them. Daily backups: up to a day of field
+  work unrecoverable anywhere. Point-in-time: minutes. Written in C-11.6 where
+  CORWADO reads it, because it is the argument for the add-on.
+- **What the repository rebuilds**: the schema (21 migrations), the location
+  hierarchy (the bundle), the settings by the checklist. Farmer data, visits
+  and the audit log cannot be rebuilt from anywhere else.
+
+## B11 — decisions in the backup and recovery unit (2026-09-09)
+
+**The recovery point is a number in the document, not an assumption.** C-11.1
+says what it is today (unbounded, on the free tier) and what each plan makes
+it. The section holds whichever way the plan question goes.
+
+**A manifest is counts and identifiers, never rows.** Migrations applied,
+rows per table, the last audit entry's id and moment, arrived attachments,
+objects in the bucket. It can be kept anywhere CORWADO keeps files and still
+never enters the repository or a CI artifact, because it describes a
+production database (C-11.10).
+
+**"Verified" has a definition.** Every difference between the before and after
+manifests is explained by the recovery point: fewer rows, an earlier last
+audit entry. A missing or extra migration, more rows, or a bucket count that
+differs is never explained — the first two mean a different database, the
+last is the C-11.3 case. The comparison is pure and tested with made-up
+manifests; the manifest itself is tested against independent counts.
+
+**The restore entry is written directly, not through `writeAudit`.** There is
+no request, no principal and no route in a restore; the entry must be the
+first write into the restored database; and it is the system's. It carries
+the backup identity, the recovery point, the administrator's name as typed,
+the last audit entry before the gap and the first after it. The script prints
+"verified" only after the entry exists (C-11.4).
+
+**Correction of lost attachments is idempotent and audited as the system's.**
+Every arrived attachment is asked of Storage; the absent become failed with
+`lost_on_restore` and the sentence "This file was lost when the system was
+restored. Take it again if it still matters." Running it twice changes nothing
+the second time.
+
+**The bucket copy is recommended, priced, and not built.** Half a day of
+script, a scheduled workflow (a fifth CI edit) and a destination account under
+CORWADO's name. Before production goes live, because a field photograph cannot
+be taken again once the moment has passed. The decision and the account are
+CORWADO's.
+
+**The drill is a human act the scripts prove.** Restoring is done on the
+dashboard into a scratch project under CORWADO's name; the manifest
+comparison, the correction and the restore entry are the proof. Production
+receives its first migration only after the drill has passed (C-11.7), and
+that fact was already in UNITS before this unit.

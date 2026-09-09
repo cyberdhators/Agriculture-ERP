@@ -35,6 +35,8 @@ export const ATTACHMENT_FAILURE_CODES = [
   'type_mismatch',
   'grant_expired',
   'device_gave_up',
+  /** C-11.3: the file did not survive a restore of the database. */
+  'lost_on_restore',
 ] as const;
 export type AttachmentFailureCode = (typeof ATTACHMENT_FAILURE_CODES)[number];
 
@@ -117,6 +119,8 @@ export const ATTACHMENT_FAILURE_MESSAGES: Record<AttachmentFailureCode, string> 
   type_mismatch: 'The file that arrived is not the one declared. Open the visit and send it again.',
   grant_expired: 'The upload took too long. Open the visit and send it again.',
   device_gave_up: 'The phone could not send this. Open the visit and send it again.',
+  lost_on_restore:
+    'This file was lost when the system was restored. Take it again if it still matters.',
 };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;

@@ -178,6 +178,7 @@ copy of any of these is a bug.
 | B8.5 | 1    | **Merged** — #42; 32/32 files in CI, 750 tests                       | #42 | —                                       |
 | B9   | 1    | **In progress** — C-9 written; built on `feat/b9-offline-sync`       | —   | —                                       |
 | B10  | 1    | **In progress** — C-10 written; built on `feat/b10-reporting`        | —   | —                                       |
+| B11  | 1    | **In progress** — C-11 written; built on `feat/b11-backup-restore`   | —   | —                                       |
 | P1   | 2    | **Merged** — database, validation, seed, tests. Routes not started.  | #17 | B3 for routes, B4 for the audit rows    |
 | UI   | 2    | First portal skin — **closed unmerged** (#18), kept as reference     | #18 | — (superseded by UI-2)                  |
 | UI-2 | 2    | **PR open** — "The Register" re-skin + Farmers screens on fixtures   | #23 | Lane 1 review; C-5 farmer-number format |
@@ -747,6 +748,24 @@ know.
   are `POST /api/reports/exports`; the PDF and CSV rendering is yours from
   the returned `data`; never add a name to a farmer list. A farmer's record
   after a merge carries the survivor's farms and visits.
+
+— Monkon-Claude
+
+### 2026-09-09 — Lane 1 — B9 merged (#44); B10 open as #45; the ceiling is ninety minutes; C-11 written; B11 built on `feat/b11-backup-restore`
+
+- #44's runs were cut twice at sixty minutes with identical timelines; the
+  cause was measured to runner-to-Frankfurt latency, not staging or the code.
+  The timeout is ninety minutes (fourth CI edit). The alternative is sized in
+  PROJECT-STATE: neither before the backend ends; per-run isolation is the
+  first unit after B11.
+- C-11 states what we can deliver, with the recovery point as a number
+  (unbounded on the free tier today). B11: migration 21, the manifest and
+  comparison module, `pnpm backup:manifest`, `pnpm restore:verify`, the
+  runbook. The drill itself needs a scratch project under CORWADO's name.
+- **Lane 2:** nothing on the routes. An attachment may now carry the failure
+  code `lost_on_restore`; show its `message` as any other.
+- **Open for the owner:** the plan and point-in-time recovery; the scratch
+  project; the bucket-copy destination account.
 
 — Monkon-Claude
 
