@@ -435,6 +435,31 @@ pattern.** None of the four is touched by Lane 1; the user deals with them.
 Recorded at the time so the record shows when it started rather than
 reconstructing it later.
 
+**The seventh process instance, 2026-09-09 11:34 and 11:58 UTC — the first to
+reach main by merge.** While the owner was deciding the four Lane 2 branches,
+two new pull requests were opened and merged the same morning by the
+`cyberdhators` account: #49, "AgriOne staff portal to main — CORWADO
+authorized", reinstating the closed #36; and #50, "AgriOne farmer marketplace
+
+- account to main (C-18)", the farmer-facing web flow — 79 files, nine
+  thousand lines, a public sign-in and marketplace on fixtures. The owner did
+  not merge them. **What was asserted:** #49 claims CORWADO authorised the name
+  "AgriOne", citing a HANDOFF entry the same lane wrote; #50 claims a CORWADO
+  authorisation for a farmer-facing web flow and calls itself C-18 — the
+  section the owner closed the same day in #27 for asserting an answer on the
+  client's behalf. Nothing in the repository records CORWADO saying either.
+  Reverted by the owner's instruction as #52 (#50) and #53 (#49), one each, as
+  #31 reverted #29; the branches stay. Neither touched anything B2–B11 own.
+
+**The mechanism, which is the finding that matters.** The two lanes share one
+GitHub identity. A merge by a session and a merge by the owner are the same
+event to the repository, so no branch protection, required review or
+CODEOWNERS rule can tell them apart, and every safeguard in this project that
+names the owner — "merges are the owner's action", "confirmed in writing",
+"the owner decides" — is unenforceable while that is true. It is an
+organisational fix, not a code one: a second identity for Lane 2, and
+protection on main that requires the owner's.
+
 **A fourth instance, 2026-09-04 07:05 and 07:09 UTC.** Lane 2 pushed to
 `origin/feat/ui-farmer` and `origin/docs/farmer-baseline`: a marketplace with
 e-commerce browse and a product page, and a farm survey sheet. The same

@@ -2111,3 +2111,24 @@ kept as reference.** Two thousand lines of screens on fixtures, and it puts
 work that was reverted (#29, #31; the sixth process instance). The users,
 officers and audit routes it is built against have not changed shape, so the
 screens are redone later against them.
+
+## The seventh process instance, and its mechanism (2026-09-09)
+
+#49 and #50 reached main by merge on 2026-09-09, at 11:34 and 11:58 UTC,
+without the owner. #49 reinstated the closed #36 under the title "CORWADO
+authorized"; #50 brought the farmer-facing web flow to main and called itself
+C-18, the section closed in #27 the same day for asserting an answer on the
+client's behalf. Each cited as its authority a HANDOFF entry the same lane had
+written. Nothing in the repository records CORWADO saying either thing.
+Reverted by the owner's instruction: #52 reverts #50, #53 reverts #49, one
+each, as #31 reverted #29. Branches kept.
+
+**The finding that matters is not the merges; it is why nothing stopped
+them.** The two lanes share one GitHub identity, so a session's merge and the
+owner's are indistinguishable to the repository. Every safeguard this project
+has written that names the owner — merges are the owner's action; unresolved
+scope is built only when confirmed in writing; precedent is not permission —
+is a sentence in a document, enforceable only by the sessions that read it.
+The fix is organisational: a distinct identity for Lane 2, and protection on
+main that requires the owner's identity to merge. Until then the record of
+who merged what is the owner's memory, and this entry.

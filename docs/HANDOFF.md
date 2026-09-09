@@ -785,6 +785,10 @@ know.
   isolation. **#37 rebased and merged** with the caseload-officer follow-up.
 - **Decided, the owner:** buyers hold no account in this phase; self-signup
   stays disabled. The farmer half of the (g)/(h) question stays open.
+- **#49 and #50 reverted** (#52, #53): merged to main the same morning by a
+  session, not the owner, asserting CORWADO authorisations nothing records.
+  The seventh process instance; the mechanism — one GitHub identity for two
+  lanes — is in PROJECT-STATE and DECISIONS.
 - **Lane 2:** before opening a branch, read `docs/HANDOFF.md`'s lane
   statement and the scope document's "Open against the contract". Nothing is
   written into the scope document on the client's behalf; a client answer
