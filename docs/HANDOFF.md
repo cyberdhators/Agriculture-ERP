@@ -164,24 +164,24 @@ copy of any of these is a bug.
 
 ## STATUS BOARD
 
-| Unit | Lane | Status                                                               | PR  | Blocked on                              |
-| ---- | ---- | -------------------------------------------------------------------- | --- | --------------------------------------- |
-| B2   | 1    | **Merged** — #15                                                     | #15 | —                                       |
-| B3   | 1    | **Merged**                                                           | #20 | —                                       |
-| B4   | 1    | **Merged**                                                           | #24 | —                                       |
-| B5   | 1    | **Merged** — #32; C-5.13 and C-5.4 proven by run 5, locally          | #32 | —                                       |
-| B5.5 | 1    | **Merged** — #33; first CI database run 23/23                        | #33 | —                                       |
-| B6   | 1    | **Merged** — #34; 544/544 locally, 27/27 files in CI                 | #34 | —                                       |
-| B6.5 | 1    | **Merged** #39 — sign-in outage is 503 `auth_unavailable`, never 401 | —   | —                                       |
-| B7   | 1    | **Merged** — #38; 30/30 files in CI, four runs on the rebased branch | #38 | —                                       |
-| B8   | 1    | **Merged** — #41; 31/31 files in CI, 737 tests                       | #41 | —                                       |
-| B8.5 | 1    | **Merged** — #42; 32/32 files in CI, 750 tests                       | #42 | —                                       |
-| B9   | 1    | **In progress** — C-9 written; built on `feat/b9-offline-sync`       | —   | —                                       |
-| B10  | 1    | **In progress** — C-10 written; built on `feat/b10-reporting`        | —   | —                                       |
-| B11  | 1    | **In progress** — C-11 written; built on `feat/b11-backup-restore`   | —   | —                                       |
-| P1   | 2    | **Merged** — database, validation, seed, tests. Routes not started.  | #17 | B3 for routes, B4 for the audit rows    |
-| UI   | 2    | First portal skin — **closed unmerged** (#18), kept as reference     | #18 | — (superseded by UI-2)                  |
-| UI-2 | 2    | **PR open** — "The Register" re-skin + Farmers screens on fixtures   | #23 | Lane 1 review; C-5 farmer-number format |
+| Unit | Lane | Status                                                                    | PR  | Blocked on                              |
+| ---- | ---- | ------------------------------------------------------------------------- | --- | --------------------------------------- |
+| B2   | 1    | **Merged** — #15                                                          | #15 | —                                       |
+| B3   | 1    | **Merged**                                                                | #20 | —                                       |
+| B4   | 1    | **Merged**                                                                | #24 | —                                       |
+| B5   | 1    | **Merged** — #32; C-5.13 and C-5.4 proven by run 5, locally               | #32 | —                                       |
+| B5.5 | 1    | **Merged** — #33; first CI database run 23/23                             | #33 | —                                       |
+| B6   | 1    | **Merged** — #34; 544/544 locally, 27/27 files in CI                      | #34 | —                                       |
+| B6.5 | 1    | **Merged** #39 — sign-in outage is 503 `auth_unavailable`, never 401      | —   | —                                       |
+| B7   | 1    | **Merged** — #38; 30/30 files in CI, four runs on the rebased branch      | #38 | —                                       |
+| B8   | 1    | **Merged** — #41; 31/31 files in CI, 737 tests                            | #41 | —                                       |
+| B8.5 | 1    | **Merged** — #42; 32/32 files in CI, 750 tests                            | #42 | —                                       |
+| B9   | 1    | **In progress** — C-9 written; built on `feat/b9-offline-sync`            | —   | —                                       |
+| B10  | 1    | **Merged** — #45; 35/35 files in CI, 804 tests                            | #45 | —                                       |
+| B11  | 1    | **Merged** — #46; 36/36 files in CI, 808 tests. The drill is not yet run. | #46 | —                                       |
+| P1   | 2    | **Merged** — database, validation, seed, tests. Routes not started.       | #17 | B3 for routes, B4 for the audit rows    |
+| UI   | 2    | First portal skin — **closed unmerged** (#18), kept as reference          | #18 | — (superseded by UI-2)                  |
+| UI-2 | 2    | **PR open** — "The Register" re-skin + Farmers screens on fixtures        | #23 | Lane 1 review; C-5 farmer-number format |
 
 Lane 1: please add your rows as you go. Lane 2 filled in what it could read from the open PRs.
 
@@ -766,6 +766,30 @@ know.
   code `lost_on_restore`; show its `message` as any other.
 - **Open for the owner:** the plan and point-in-time recovery; the scratch
   project; the bucket-copy destination account.
+
+— Monkon-Claude
+
+### 2026-09-09 — Lane 1 — B10 and B11 merged; the backend is complete; the four Lane 2 branches decided
+
+- #45 (B10) and #46 (B11) merged. B2 through B11 are on main: 36 files, 808
+  tests green on the run that gated the last one. Open with the owner: the
+  plan and point-in-time recovery, the scratch project for the drill, the
+  bucket-copy destination account, the two B8.5 follow-ups, suite isolation.
+- The four Lane 2 branches, read and decided by the owner (DECISIONS, three
+  entries dated 2026-09-09): **#27 closed** — it wrote answers into the scope
+  document on CORWADO's behalf with nothing recording CORWADO saying them, and
+  contradicted CLAUDE.md, C-3.8 and itself; its three real design questions
+  are kept in the scope document's open item 2. **#36 closed**, branch kept as
+  reference — screens on fixtures that would put "AgriOne" on main. **#28
+  held** — it carries the writer C-10.13 waits on; its own unit after suite
+  isolation. **#37 rebased and merged** with the caseload-officer follow-up.
+- **Decided, the owner:** buyers hold no account in this phase; self-signup
+  stays disabled. The farmer half of the (g)/(h) question stays open.
+- **Lane 2:** before opening a branch, read `docs/HANDOFF.md`'s lane
+  statement and the scope document's "Open against the contract". Nothing is
+  written into the scope document on the client's behalf; a client answer
+  arrives as the owner's words with a date, or not at all. The routes the
+  closed screens were built against have not changed shape.
 
 — Monkon-Claude
 

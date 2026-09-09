@@ -896,8 +896,10 @@ GitHub rather than copied. Grouped by who closes it.
 4. Cross-state merges (C-6.4): refused for every role until they ask.
 5. Whether an officer may propose a directory entry from the field (C-13 note).
 6. The four scope items in `docs/scope-and-acceptance.md`, _Open against the
-   contract_: buyers who cannot log in (g, h), the farmer-facing application,
-   "Ask AI", Arabi Juba script and SMS cost.
+   contract_: buyers who cannot log in (g, h) — **the buyer half closed
+   2026-09-09: buyers hold no account; the farmer half stays open** — the
+   farmer-facing application (with the three questions a unit must answer
+   first, kept from the closed #27), "Ask AI", Arabi Juba script and SMS cost.
 7. Data model open questions 1–6 (`docs/data-model.md` §5), including
    retention and removal requests.
 8. WhatsApp (o): blocked on Meta business verification.
@@ -1106,6 +1108,8 @@ Decisions in DECISIONS, "C-11" and "B11".
 plan, and the free tier takes none. It does not copy the bucket: recommended,
 priced, and waiting on a CORWADO destination account. It has not run the
 drill: that needs a scratch project under CORWADO's name (C-11.7).
+
+**Merged as #46, 2026-09-09.** The backend is complete: B2 through B11 on main.
 
 **The drill: not yet run.** Record the date and result here when it has been.
 Production receives its first migration only after.
