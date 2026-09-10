@@ -2189,3 +2189,23 @@ It required the first audit entry after a restore's recovery point to be
 `consent.recorded` in one transaction with the same `occurred_at`, so the order
 ties on a random id. It passed on B11's run and failed on the next; it now
 accepts either.
+
+## The cost of a CI run, measured (2026-09-10)
+
+CI stopped with "recent account payments have failed or your spending limit
+needs to be increased" — two runs refused before starting, main's and the
+scrubber fix's. It is the second infrastructure cost this project has met
+without being budgeted, after the Supabase plan, so the number is recorded
+rather than the surprise.
+
+Measured across 254 recorded runs, 134 of which executed: **2,099 wall-clock
+minutes**. The longest was 108. The last twelve executed runs: 4, 12, 19, 21,
+45, 47, 47, 63, 65, 72, 98, 108. A unit costs two to four runs — its own, its
+re-runs, and main's after the merge — so **100 to 300 minutes a unit** at
+today's suite size, growing about five minutes a unit.
+
+The suite is round-trip bound, not compute bound (PROJECT-STATE, the ceiling),
+so the per-run cost is mostly waiting on Frankfurt. That is the same finding
+that prices the per-run isolation unit: four workers would divide the wait and
+the bill together, which is now a second reason to do it after B11 rather than
+a first reason to raise a ceiling.

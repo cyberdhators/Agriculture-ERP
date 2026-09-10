@@ -885,6 +885,56 @@ companion, from the fourth instance: **when the record says something was
 done or is pending, ask the system rather than the record.** A migration
 folder, a catalogue query, a live route — not a sentence in a document.
 
+## THE SEAMS — WHERE TWO RULES TOUCH AND NOTHING HAS TESTED THE JOIN (2026-09-10)
+
+The ninth silent-class instance was not a gate that checked nothing. It was two
+correct rules meeting, and the damage lived between them (below). That makes a
+list worth keeping in its own right, because the question it asks is different
+from the other eight's: not _does this gate check anything_, but **where do two
+of our rules touch, and has anything tested the seam?**
+
+Three named seams. **None of them is tested at the seam today.** Each entry
+says what the two rules are, what a defect there would look like, and what a
+test of the join would have to do.
+
+**1. The additive-migration law × a test that reads the schema.** _Rules:_
+migrations are additive, so older code keeps working against a newer schema
+(CLAUDE.md §4); and staging's schema runs ahead of main, which is acceptable
+because of that law (the standing condition). _What a defect looks like:_ a
+test that enumerates the schema and demands equality goes red on main for a
+reason that has nothing to do with main. **Has fired twice** — the view test
+on 2026-09-05, the directories enum test found by looking on 2026-09-06 — and
+a third time in a different direction on 2026-09-08, when dropping a column
+default was not additive and broke main's runs. _A test of the seam:_ a check
+that runs main's code against staging's schema and asserts nothing enumerates.
+Does not exist.
+
+**2. Soft delete × a view that reads through a parent.** _Rules:_ a
+soft-deleted row appears in no list, count, export or report (CLAUDE.md §4);
+and a view named after a table carries every column of it (the B6 rule).
+_What a defect looks like:_ a child view filters its own `deleted_at` and not
+its parent's, so a removed farmer's farms, hectares and visits keep appearing
+one join away. **Found by reading, 2026-09-08**, in B10's reporting reading,
+and fixed by giving four views the farmer join. _A test of the seam:_ for
+every active view, remove the parent and assert the child leaves too. Does not
+exist; B10's reporting test proves it for farms and visits only.
+
+**3. Idempotency × duplicate detection.** _Rules:_ a retried create whose body
+matches returns the record, never a second row (C-9.2); and duplicate
+detection warns on phone, and on name plus payam, and never blocks (C-5.6).
+_What a defect looks like:_ the second send of a record is either counted as
+its own duplicate, or clears a warning the first send raised, or the retry
+path skips the check so a real duplicate goes unflagged. _A test of the seam:_
+send the same farmer twice and assert the warnings are identical and the
+duplicate rows unchanged; send a genuinely duplicate farmer under a new id and
+assert it still warns. **Not tested.** The idempotent path returns
+`okWith(..., { duplicates: stored.duplicate_matches })`, which is believed
+right and unproven.
+
+_Added when found, not planned in advance: a seam is only visible once both
+rules exist. The pattern to watch for is a rule that constrains a value and
+another rule that transforms it._
+
 **THE NINTH INSTANCE IS A DIFFERENT SHAPE, AND IT DESERVES ITS OWN QUESTION
 (2026-09-09).** The eight before it were gates that checked nothing: a
 typecheck that skipped a directory, a scanner that was blind, a column nobody
@@ -1002,6 +1052,11 @@ GitHub rather than copied. Grouped by who closes it.
 **The user closes:**
 
 9. The Supabase plan and point-in-time recovery question (B11 checklist).
+   9a. **GitHub Actions minutes (2026-09-10).** The repository is private, so runs
+   are billed. 2,099 minutes across the backend; a unit costs 100–300. CI is
+   stopped for billing as of 2026-09-10 and nothing can be verified until it
+   is settled. The second unbudgeted infrastructure cost, after the Supabase
+   plan; both are CORWADO's accounts and CORWADO's decisions.
 10. ~~The `requireRole` defect~~ — resolved by B6.5.
 11. ~~Four orphan authentication accounts on staging~~ — removed on
     2026-09-05: all four were officer identifiers created on 2026-09-04 by
@@ -1255,6 +1310,17 @@ Migrations carry the schema, RLS and views automatically. These do not travel:
   invented data; nothing real is ever loaded there "to try".
 - The manifest, on the backup's schedule: `pnpm backup:manifest` against
   production, kept under CORWADO's control (RUNBOOK-restore, section 1).
+- **GitHub Actions minutes, budgeted.** The repository is private, so every CI
+  minute is billed or drawn from the account's included allowance. Measured
+  2026-09-10 across 254 recorded runs, 134 of which actually executed:
+  **2,099 wall-clock minutes**, longest 108, and the last twelve executed runs
+  ran 4, 12, 19, 21, 45, 47, 47, 63, 65, 72, 98 and 108 minutes. A unit costs
+  roughly two to four runs — its own, its re-runs, and main's after the merge —
+  so **a unit is 100 to 300 minutes** at today's suite size, and the suite grows
+  about five minutes a unit. CI stopped on 2026-09-10 with "recent account
+  payments have failed or your spending limit needs to be increased"; nothing
+  can be verified until it is settled. This is the second infrastructure cost
+  the project has met without being budgeted, after the Supabase plan.
 
 ## DEFECT — AN AUTH SERVICE OUTAGE READS AS "SIGN IN TO CONTINUE" (found by B5, owned by B3)
 
