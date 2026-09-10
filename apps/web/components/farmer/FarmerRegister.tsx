@@ -259,11 +259,23 @@ export function FarmerRegister() {
             )}
           </Field>
           <Field label={t('register.sex', language)} error={errors.sex}>
-            {() => (
+            {(ids) => (
               <div
                 className={styles.choiceRow}
                 role="radiogroup"
+                id={ids.id}
                 aria-label={t('register.sex', language)}
+                aria-describedby={ids['aria-describedby']}
+                aria-invalid={ids['aria-invalid']}
+                onKeyDown={(e) => {
+                  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    set('sex', 'm');
+                  } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    set('sex', 'f');
+                  }
+                }}
               >
                 {(['f', 'm'] as const).map((s) => (
                   <button
@@ -271,6 +283,7 @@ export function FarmerRegister() {
                     type="button"
                     role="radio"
                     aria-checked={values.sex === s}
+                    tabIndex={values.sex === s || (values.sex === '' && s === 'f') ? 0 : -1}
                     className={`${styles.choice} ${values.sex === s ? styles.choiceSelected : ''}`}
                     onClick={() => set('sex', s)}
                   >
@@ -416,8 +429,9 @@ export function FarmerRegister() {
             <p className={styles.consentVersion}>{CONSENT_VERSION[language]}</p>
           </div>
           <Field label={t('register.consentTitle', language)} error={errors.consent_granted}>
-            {() => (
+            {(ids) => (
               <Checkbox
+                {...ids}
                 checked={values.consent_granted}
                 onChange={(e) => set('consent_granted', e.target.checked)}
                 label={t('register.agree', language)}

@@ -115,7 +115,7 @@
 }
 
 .railField select {
-  min-height: 34px;
+  min-height: var(--touch);
 }
 
 .content {

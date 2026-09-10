@@ -831,6 +831,11 @@
   gap: var(--s-5);
 }
 
+/* The survey table has nowrap cells; on a phone it must scroll in its own
+   box, not be clipped by the page's overflow guard. */
+.surveyScroll {
+  overflow-x: auto;
+}
 .surveyTable {
   width: 100%;
   border-collapse: collapse;

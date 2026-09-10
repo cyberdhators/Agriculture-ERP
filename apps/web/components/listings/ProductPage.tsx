@@ -113,7 +113,7 @@ export function ProductPage({
             <div
               className={styles.thumbs}
               role="group"
-              aria-label={t('detail.description', lang)}
+              aria-label={t('detail.photos', lang)}
               onKeyDown={(e) => {
                 if (e.key === 'ArrowRight') {
                   e.preventDefault();
@@ -128,7 +128,7 @@ export function ProductPage({
                 variant="ghost"
                 size="small"
                 iconOnly
-                aria-label={t('detail.back', lang)}
+                aria-label={t('detail.prevPhoto', lang)}
                 disabled={index === 0}
                 onClick={() => step(-1)}
               >
@@ -154,7 +154,7 @@ export function ProductPage({
                 variant="ghost"
                 size="small"
                 iconOnly
-                aria-label={t('detail.of', lang)}
+                aria-label={t('detail.nextPhoto', lang)}
                 disabled={index === sources.length - 1}
                 onClick={() => step(1)}
               >

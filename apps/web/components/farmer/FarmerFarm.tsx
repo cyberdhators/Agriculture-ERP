@@ -63,43 +63,45 @@ export function FarmerFarm() {
         </figure>
 
         <div className={styles.surveySide}>
-          <table className={styles.surveyTable}>
-            <thead>
-              <tr>
-                <th scope="col">{t('account.plotName', language)}</th>
-                <th scope="col" className="num">
-                  {t('account.plotArea', language)}
-                </th>
-                <th scope="col">{t('account.plotCrop', language)}</th>
-                <th scope="col">{t('account.plotBoundary', language)}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {farms.map((farm, i) => {
-                const b = boundaryOf(farm);
-                const crops = cropsForFarm(farm.id).map((d) => CROP_LABELS[d.crop]);
-                return (
-                  <tr
-                    key={farm.id}
-                    className={farm.id === current.id ? styles.surveyRowOn : styles.surveyRow}
-                    aria-selected={farm.id === current.id}
-                    onClick={() => setSelected(farm.id)}
-                  >
-                    <td>
-                      <button type="button" className={styles.surveyRowBtn}>
-                        {t('account.plot', language)} {i + 1}
-                      </button>
-                    </td>
-                    <td className="num">{farm.area_ha.toFixed(2)}</td>
-                    <td>{crops.length > 0 ? crops.join(', ') : '—'}</td>
-                    <td>
-                      <Stamp kind={b.kind}>{t(b.label, language)}</Stamp>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+          <div className={styles.surveyScroll}>
+            <table className={styles.surveyTable}>
+              <thead>
+                <tr>
+                  <th scope="col">{t('account.plotName', language)}</th>
+                  <th scope="col" className="num">
+                    {t('account.plotArea', language)}
+                  </th>
+                  <th scope="col">{t('account.plotCrop', language)}</th>
+                  <th scope="col">{t('account.plotBoundary', language)}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {farms.map((farm, i) => {
+                  const b = boundaryOf(farm);
+                  const crops = cropsForFarm(farm.id).map((d) => CROP_LABELS[d.crop]);
+                  return (
+                    <tr
+                      key={farm.id}
+                      className={farm.id === current.id ? styles.surveyRowOn : styles.surveyRow}
+                      aria-selected={farm.id === current.id}
+                      onClick={() => setSelected(farm.id)}
+                    >
+                      <td>
+                        <button type="button" className={styles.surveyRowBtn}>
+                          {t('account.plot', language)} {i + 1}
+                        </button>
+                      </td>
+                      <td className="num">{farm.area_ha.toFixed(2)}</td>
+                      <td>{crops.length > 0 ? crops.join(', ') : '—'}</td>
+                      <td>
+                        <Stamp kind={b.kind}>{t(b.label, language)}</Stamp>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
 
           <p className={styles.surveyTotal}>
             <span>{t('account.totalHolding', language)}</span>
