@@ -1,5 +1,7 @@
+import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 
+import { auditSafe } from '../src/audit';
 import { REDACTED, scrub, scrubEvent, scrubString } from '../src/index';
 
 /**
@@ -242,5 +244,52 @@ describe('the culture context, established reachable on 2026-09-04', () => {
     expect(out.breadcrumbs[0]?.data.offset_minutes).toBe(120);
     expect(out.breadcrumbs[0]?.category).toBe('clock');
     expect(out.contexts.runtime.version).toBe('v24.18.0');
+  });
+});
+
+describe('identifiers survive the net; numbers beside them do not (2026-09-09)', () => {
+  /**
+   * The seam between two correct rules: "reference records by id" put UUIDs in
+   * every audit payload, and the scrubber's deliberate over-matching then
+   * damaged about one in fifty-four of them. Both directions are asserted here,
+   * because a fix that spared identifiers by narrowing the net would be worse
+   * than the defect.
+   */
+  const CORRUPTED = '46b73593-4aff-4419-a610-893605785c5b';
+
+  it('the uuid that was being damaged passes through unchanged', () => {
+    expect(scrubString(CORRUPTED)).toBe(CORRUPTED);
+    expect(auditSafe({ caseload_officer_id: CORRUPTED })).toEqual({
+      caseload_officer_id: CORRUPTED,
+    });
+  });
+
+  it('no random uuid is changed, in ten thousand tries', () => {
+    for (let i = 0; i < 10_000; i += 1) {
+      const id = randomUUID();
+      if (scrubString(id) !== id) {
+        throw new Error(`the scrubber changed a uuid: ${id} -> ${scrubString(id)}`);
+      }
+    }
+  });
+
+  it('a real number in the same string is still redacted, and the uuid beside it is not', () => {
+    const both = `farmer ${CORRUPTED} on +211911000084 today`;
+    const scrubbed = scrubString(both);
+    expect(scrubbed).toContain(CORRUPTED);
+    expect(scrubbed).not.toContain('+211911000084');
+    expect(scrubbed).toContain(REDACTED);
+    // Written locally, and with spaces, and inside prose with no uuid at all.
+    expect(scrubString('call 0911000084 back')).not.toContain('0911000084');
+    expect(scrubString('call +211 911 000 084 back')).not.toContain('911 000 084');
+    expect(scrubString(`${CORRUPTED} 0911000084`)).toBe(`${CORRUPTED} ${REDACTED}`);
+  });
+
+  it('the exemption is the canonical shape, not any hex-looking run', () => {
+    // One character short in the last group: not an identifier, so the digits
+    // inside it meet the net exactly as any other text would.
+    const nearly = '46b73593-4aff-4419-a610-893605785c5';
+    expect(nearly).not.toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
+    expect(scrubString(nearly)).toContain(REDACTED);
   });
 });

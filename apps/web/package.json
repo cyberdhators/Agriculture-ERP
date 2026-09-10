@@ -10,7 +10,8 @@
     "sentry:verify": "node --import ./scripts/register-ts.mjs scripts/sentry-verify.mjs",
     "storage:buckets": "node --import ./scripts/register-ts.mjs scripts/storage-buckets.mjs",
     "backup:manifest": "node --import ./scripts/register-ts.mjs scripts/backup-manifest.mjs",
-    "restore:verify": "node --import ./scripts/register-ts.mjs scripts/restore-verify.mjs"
+    "restore:verify": "node --import ./scripts/register-ts.mjs scripts/restore-verify.mjs",
+    "audit:damaged-ids": "node --import ./scripts/register-ts.mjs scripts/audit-damaged-ids.mjs"
   },
   "dependencies": {
     "@agri-erp/shared": "workspace:*",

@@ -2148,3 +2148,44 @@ before writing.
 **Seven instances, and every one would have been caught by a session that
 stopped and asked.** None needed a tool or a rule to prevent. Each needed only
 the discipline of not proceeding on an answer nobody gave.
+
+## The scrubber and the audit log — a seam, not a gap (2026-09-09)
+
+**What broke.** `scrubString` damaged about one UUID in fifty-four, and
+`auditSafe` stored the damage. 321 of staging's 22,314 audit rows hold a
+mangled identifier. Found by B8.5's reassignment test, the first test in the
+project to compare a stored audit payload against a known id.
+
+**Why it is worth naming apart from the eight silent gates.** Those were gates
+that checked nothing. This is two rules that are each correct: reference
+records by id, and over-match when redacting because a redacted timestamp is
+cheaper than a leaked number. The defect lives in the space between them, and
+no test of either rule alone would find it. The question this one asks of the
+project is _where do two of our rules touch, and has anything tested the seam?_
+
+**The fix, and why this shape of fix.** The canonical UUID form is stepped over
+before the candidate scan. It is a **shape**, not a second definition of a
+phone number: `parseSouthSudanMobile` stays the only thing in the codebase that
+says what a number is, which is the rule CONVENTIONS §8 exists to protect. The
+alternative — narrowing the net so it stops matching hex-ish runs — would have
+traded a rare damaged id for a rare leaked number, and that trade is the wrong
+way round. A UUID never carries personal data; that is why records are
+referenced by one.
+
+**Tested both directions**, because a fix that spared identifiers by weakening
+the net would be worse than the defect: the damaging UUID passes through
+unchanged, ten thousand random UUIDs pass through unchanged, a real number
+beside a UUID in one string is still redacted, and a near-UUID that is one
+character short is still treated as text.
+
+**The damaged rows are not repaired.** `audit_event` is append-only (C-4), and
+rewriting history to fix a redaction would be a worse breach than the
+redaction. `pnpm audit:damaged-ids` counts them by action and lists them with
+`--list`, so the rows can be recognised rather than misread.
+
+**Also fixed, in the same change:** a flaky assertion in `tests/backup.test.ts`.
+It required the first audit entry after a restore's recovery point to be
+`farmer.created`, but registering a farmer writes `farmer.created` and
+`consent.recorded` in one transaction with the same `occurred_at`, so the order
+ties on a random id. It passed on B11's run and failed on the next; it now
+accepts either.

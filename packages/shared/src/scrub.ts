@@ -115,6 +115,28 @@ export const isSensitiveKey = (key: string): boolean => SENSITIVE.has(normaliseK
  */
 const CANDIDATE = /\+?\d[\d\s-]{7,24}\d/g;
 
+/**
+ * Identifiers are exempt from the net above, and this is the point of the
+ * whole file's balance.
+ *
+ * The over-matching bias is right for free text and wrong for identifiers. A
+ * UUID is thirty-two hex digits in a fixed shape, and about one in fifty-four
+ * of them contains a ten-digit run that parses as a local South Sudan number
+ * by coincidence — measured, 1.85% of twenty thousand random v4 UUIDs. The
+ * scrubber then replaced part of the id, and the audit log stored the damage:
+ * a payload that references a record by id, per the standing rule, with the id
+ * no longer readable. Found 2026-09-09 by B8.5's reassignment test, the one
+ * test that compared a stored payload against the id it expected.
+ *
+ * The exemption is a SHAPE, recognised before the candidate scan, not a second
+ * definition of a phone number: `parseSouthSudanMobile` remains the only thing
+ * in this codebase that says what a number is. A real number inside a longer
+ * string is still redacted; only the canonical UUID form is stepped over, and
+ * a UUID never carries personal data — that is why records are referenced by
+ * one.
+ */
+const UUID = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi;
+
 /** Compacted lengths worth testing inside a longer run of digits. */
 const WINDOWS = [10, 12, 13];
 
@@ -139,7 +161,18 @@ function containsPhoneNumber(candidate: string): boolean {
  * partially redacted number is still most of a number.
  */
 export function scrubString(value: string): string {
-  return value.replace(CANDIDATE, (match) => (containsPhoneNumber(match) ? REDACTED : match));
+  // Split on UUIDs and scrub only what lies between them, so an identifier
+  // passes through untouched and everything else meets the same wide net.
+  const parts = value.split(UUID);
+  const ids = value.match(UUID) ?? [];
+  let out = '';
+  for (let i = 0; i < parts.length; i += 1) {
+    out += (parts[i] ?? '').replace(CANDIDATE, (match) =>
+      containsPhoneNumber(match) ? REDACTED : match,
+    );
+    if (i < ids.length) out += ids[i];
+  }
+  return out;
 }
 
 /** Strips the query string from a URL, keeping the path for diagnosis. */

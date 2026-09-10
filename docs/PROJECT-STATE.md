@@ -885,6 +885,60 @@ companion, from the fourth instance: **when the record says something was
 done or is pending, ask the system rather than the record.** A migration
 folder, a catalogue query, a live route — not a sentence in a document.
 
+**THE NINTH INSTANCE IS A DIFFERENT SHAPE, AND IT DESERVES ITS OWN QUESTION
+(2026-09-09).** The eight before it were gates that checked nothing: a
+typecheck that skipped a directory, a scanner that was blind, a column nobody
+wrote. This one is not that. **It is two correct rules meeting.**
+
+The standing rule says reference records by id, never by name — so every audit
+payload carries UUIDs. The scrubber is deliberately over-matching, because a
+redacted timestamp is cheaper than a leaked farmer's number — so it redacts any
+digit run that could be a phone number. Neither rule is wrong. About one v4
+UUID in fifty-four contains a ten-digit window that parses as a local South
+Sudan number by coincidence (measured: 1.85% of twenty thousand), and the
+scrubber replaced part of it before `auditSafe` stored it. **Measured on
+staging: 321 of 22,314 audit rows, 1.44%, hold a damaged identifier** — most in
+`consent.recorded` and `farmer.created`, which carry a farmer id in their
+payload.
+
+No test of either rule alone could find it. The scrubber's tests proved it
+redacts numbers; the audit tests proved keys are dropped and changed fields
+kept; nothing compared a stored id against the id it was meant to be. B8.5's
+reassignment test did, months later and by accident, because it was the first
+to assert a payload's `caseload_officer_id` equalled a known UUID.
+
+**So the question to ask of this one is not the other eight's.** For them it
+was: _does this gate actually check anything?_ For this one it is: **where do
+two of our rules touch, and has anything tested the seam?** Every pair of rules
+in this system that meet on the same value is a candidate: the scrubber against
+the audit log (this one), the additive-migration law against a test that reads
+the schema (found 2026-09-06, the same shape), soft delete against the views
+that read through a parent (found in B10's reading), idempotency against the
+duplicate check. A seam is not a gap in a rule. It is the place two rules were
+each right about their own half.
+
+**Fixed** by exempting the canonical UUID shape before the candidate scan — a
+shape, not a second definition of a phone number, so `parseSouthSudanMobile`
+remains the only thing that says what a number is. Tested both directions: a
+UUID survives, ten thousand random UUIDs survive, and a real number beside one
+in the same string is still redacted.
+
+**The damaged rows stay.** `audit_event` is append-only (C-4) and repairing
+them would be the one thing the table forbids. `pnpm audit:damaged-ids` lists
+them, so a reader who meets `60fa[redacted]d2-bf[redacted]` in a payload knows
+the id was damaged in transit and does not conclude the record's id was wrong.
+
+**Where else this reached.** Two paths take a value through the scrubber, and
+only one stores it. `auditSafe` → `audit_event.before/after`: the damage above.
+`scrubEvent` → Sentry envelopes: not stored by us, but the same coincidence
+damages a `correlation_id` tag, which is a UUID, at the same rate — so about
+one report in fifty-four could not be matched to the response the caller saw,
+which is exactly what the wrapper's correlation id exists for. Nothing else
+writes a scrubbed value: `report_export`'s query, filters and scope are stored
+unscrubbed by design (they carry no personal data), and no other INSERT in the
+codebase passes a value through the scrubber. Both paths are fixed by the one
+change.
+
 **The eighth instance, a column read by a new feature and never written
 (2026-09-08).** `updated_at` on farmer, farm and visit had no trigger, and the
 verification transitions never set it; only a few routes did. C-9.9's
