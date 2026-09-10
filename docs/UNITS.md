@@ -38,8 +38,8 @@ owns what, so it now agrees with HANDOFF row for row.
 | **B8**   | Visit notes and attachments         | Monkonmlah | Merged #41    |
 | **B8.5** | Caseload reassignment (admin only)  | Monkonmlah | Merged #42    |
 | **B9**   | Offline sync endpoint               | Monkonmlah | PR open — #44 |
-| **B10**  | Reporting views and export record   | Monkonmlah | PR open — #45 |
-| **B11**  | Backup and restore drill            | Monkonmlah | In progress   |
+| **B10**  | Reporting views and export record   | Monkonmlah | Merged #45    |
+| **B11**  | Backup and restore drill            | Monkonmlah | Merged #46    |
 
 ## Parallel units — Lane 2 (Alieu-Claude)
 

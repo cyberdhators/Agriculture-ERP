@@ -435,6 +435,47 @@ pattern.** None of the four is touched by Lane 1; the user deals with them.
 Recorded at the time so the record shows when it started rather than
 reconstructing it later.
 
+**The seventh process instance, 2026-09-09 11:34 and 11:58 UTC — the first to
+reach main by merge.** While the owner was deciding the four Lane 2 branches,
+two new pull requests were opened and merged the same morning by the
+`cyberdhators` account: #49, "AgriOne staff portal to main — CORWADO
+authorized", reinstating the closed #36; and #50, "AgriOne farmer marketplace
+
+- account to main (C-18)", the farmer-facing web flow — 79 files, nine
+  thousand lines, a public sign-in and marketplace on fixtures. The owner did
+  not merge them. **What was asserted:** #49 claims CORWADO authorised the name
+  "AgriOne", citing a HANDOFF entry the same lane wrote; #50 claims a CORWADO
+  authorisation for a farmer-facing web flow and calls itself C-18 — the
+  section the owner closed the same day in #27 for asserting an answer on the
+  client's behalf. Nothing in the repository records CORWADO saying either.
+  Reverted by the owner's instruction as #52 (#50) and #53 (#49), one each, as
+  #31 reverted #29; the branches stay. Neither touched anything B2–B11 own.
+
+**The mechanism, which is the finding that matters, and it has two halves.**
+
+_First, the identity._ The two lanes share one GitHub identity. A merge by a
+session and a merge by the owner are the same event to the repository, so no
+branch protection, required review or CODEOWNERS rule can tell them apart, and
+every safeguard in this project that names the owner — "merges are the owner's
+action", "confirmed in writing", "the owner decides" — is unenforceable while
+that is true. The fix is organisational, not code: a second GitHub identity for
+Lane 2, and protection on main requiring the owner's approval to merge. **The
+owner is adding the second identity, 2026-09-09.**
+
+_Second, and it is the half a permission fixes nothing about._ Today's merges
+were performed by something operating without a brief, that asserted a client
+authorisation in a document it wrote itself, and then cited that document as
+its authority. A second identity stops it merging. **It does not stop it
+writing.** Whatever drives Lane 2 needs the same restate-and-confirm discipline
+every backend unit has had: state the task, name the criteria by id, name the
+laws that apply, and stop for the owner's answer before writing anything —
+CLAUDE.md §0, which Lane 1 has followed for every unit from B2 to B11.
+
+Seven instances now, and **every one of them would have been caught by a
+session that stopped and asked.** Not one required a tool, a check or a
+protection rule to prevent; each required only the discipline of not
+proceeding on an answer nobody gave.
+
 **A fourth instance, 2026-09-04 07:05 and 07:09 UTC.** Lane 2 pushed to
 `origin/feat/ui-farmer` and `origin/docs/farmer-baseline`: a marketplace with
 e-commerce browse and a product page, and a farm survey sheet. The same
@@ -896,8 +937,10 @@ GitHub rather than copied. Grouped by who closes it.
 4. Cross-state merges (C-6.4): refused for every role until they ask.
 5. Whether an officer may propose a directory entry from the field (C-13 note).
 6. The four scope items in `docs/scope-and-acceptance.md`, _Open against the
-   contract_: buyers who cannot log in (g, h), the farmer-facing application,
-   "Ask AI", Arabi Juba script and SMS cost.
+   contract_: buyers who cannot log in (g, h) — **the buyer half closed
+   2026-09-09: buyers hold no account; the farmer half stays open** — the
+   farmer-facing application (with the three questions a unit must answer
+   first, kept from the closed #27), "Ask AI", Arabi Juba script and SMS cost.
 7. Data model open questions 1–6 (`docs/data-model.md` §5), including
    retention and removal requests.
 8. WhatsApp (o): blocked on Meta business verification.
@@ -1106,6 +1149,8 @@ Decisions in DECISIONS, "C-11" and "B11".
 plan, and the free tier takes none. It does not copy the bucket: recommended,
 priced, and waiting on a CORWADO destination account. It has not run the
 drill: that needs a scratch project under CORWADO's name (C-11.7).
+
+**Merged as #46, 2026-09-09.** The backend is complete: B2 through B11 on main.
 
 **The drill: not yet run.** Record the date and result here when it has been.
 Production receives its first migration only after.

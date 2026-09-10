@@ -1107,9 +1107,38 @@ CORWADO before the affected deliverable is built.
    second reading is consistent with "introduction and contact record only" and
    is far cheaper. It needs confirming before C-14 is written.
 
+   **The buyer half, decided by the owner 2026-09-09:** buyers hold no account
+   in this phase. No buyer login, no self-registration, no email verification,
+   no marketplace browsing. Deliverable (g) stays as the Inception Report's
+   boundary describes it: staff hold buyer records, enter requirements on the
+   buyer's behalf, and record an introduction. Self-signup therefore stays
+   disabled (C-3.1). **The farmer half stays open** — it is item 2 — and is
+   what #27 tried to answer without authority (DECISIONS, "#27 closed").
+
+   _What a wider reading would cost, priced so a future request is priced
+   rather than re-argued:_ a fifth principal; self-signup re-enabled for one
+   type only; email verification; a purchase flow; and — the largest part — a
+   decision about what an outside party may see about a farmer, which every
+   visibility rule in this system currently answers for four CORWADO staff
+   roles only.
+
 2. **The interface designs show a farmer-facing application.** Section 5.1
    excludes one from this phase. Either the designs are for a later phase or the
    baseline changed. Not to be built until answered.
+
+   _Still open, 2026-09-09. Kept from the closed #27, which tried to answer it
+   on CORWADO's behalf: if CORWADO confirms a farmer-facing flow in writing,
+   the unit that builds it must answer three things first._ **The caseload:**
+   a self-registered farmer has no registering officer, so no caseload
+   contains them — not resubmittable (C-6.5), not mappable (C-7), not
+   visitable (C-8), not reassignable (C-8R), a class of farmer the system
+   cannot act on. **A fifth principal against C-5.8 and C-8.13:** the national
+   ID and the visit's substance are confined to staff who need them; a farmer
+   reading their own record is a reader those rules never contemplated, and
+   the presenters, scrubber and scan are written for four roles. **C-9's one
+   device kind:** the device header, the caseload endpoint and the seven
+   outcome codes assume an officer's phone; a farmer's browser session is none
+   of those things.
 
 3. **"Ask AI" appears in the designs and in no deliverable.** Not to be built
    until answered.
