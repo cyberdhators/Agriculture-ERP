@@ -90,12 +90,15 @@ export function FarmersRegister() {
   // filters are inert on live data until those units land.
   const [livePool, setLivePool] = useState<Farmer[] | null>(null);
   const [loadError, setLoadError] = useState<string | undefined>();
+  const [truncated, setTruncated] = useState(false);
 
   useEffect(() => {
     if (!LIVE_FARMERS) return;
     let live = true;
     listFarmers({ limit: 200 })
-      .then((r) => live && (setLivePool(r.farmers), setLoadError(undefined)))
+      .then(
+        (r) => live && (setLivePool(r.farmers), setTruncated(r.hasMore), setLoadError(undefined)),
+      )
       .catch(
         (e) => live && setLoadError(e instanceof Error ? e.message : 'Could not load farmers.'),
       );
@@ -421,6 +424,14 @@ export function FarmersRegister() {
           {loadError ? (
             <Notice kind="error">
               <p className="small">{loadError}</p>
+            </Notice>
+          ) : null}
+
+          {truncated ? (
+            <Notice kind="info">
+              <p className="small">
+                Showing the first 200 farmers. Narrow with the filters or search to reach the rest.
+              </p>
             </Notice>
           ) : null}
 

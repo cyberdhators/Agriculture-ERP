@@ -12,6 +12,7 @@ import {
   mergeFarmer,
   rejectFarmer,
   verifyFarmer,
+  type QueueItem,
 } from '@/lib/farmers/verification';
 import {
   canReview,
@@ -20,6 +21,7 @@ import {
   isEscalated,
   scopeFarmers,
   ESCALATE_AFTER_DAYS,
+  type DuplicateMatch,
 } from '@/lib/farmers/presentation';
 import {
   cropsForFarmer,
@@ -66,6 +68,15 @@ const FARMERS_PENDING = FARMERS.filter(
   (f) => f.merged_into === null && f.verification_status === 'pending',
 );
 
+/** A queue row normalised across the fixture and live sources. */
+type QueueEntry = {
+  farmer: Farmer;
+  days: number;
+  escalated: boolean;
+  dups: DuplicateMatch[];
+  live: boolean;
+};
+
 export function ReviewQueue() {
   const { role, hydrated } = usePreview();
   const [decided, setDecided] = useState<Record<string, string>>({});
@@ -73,7 +84,7 @@ export function ReviewQueue() {
   const [reasonCode, setReasonCode] = useState<RejectionReason | ''>('');
   const [note, setNote] = useState('');
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [liveQueue, setLiveQueue] = useState<Farmer[] | null>(null);
+  const [liveQueue, setLiveQueue] = useState<QueueItem[] | null>(null);
   const [loadError, setLoadError] = useState<string | undefined>();
 
   useEffect(() => {
@@ -89,13 +100,29 @@ export function ReviewQueue() {
     };
   }, []);
 
-  const queue = useMemo(() => {
-    const pending = LIVE_VERIFICATION ? (liveQueue ?? []) : scopeFarmers(FARMERS_PENDING, role);
-    return [...pending].sort((a, b) => {
-      const ea = isEscalated(a) ? 1 : 0;
-      const eb = isEscalated(b) ? 1 : 0;
-      if (ea !== eb) return eb - ea;
-      return daysWaiting(b) - daysWaiting(a);
+  // One view model for both sources. Live rows carry the server's own
+  // days_waiting / escalated / duplicates (C-6); their farms, crops and officer
+  // name come from other backends not yet wired into the queue, so they are
+  // left empty rather than recomputed from fixtures against a live id.
+  const entries = useMemo(() => {
+    const list: QueueEntry[] = LIVE_VERIFICATION
+      ? (liveQueue ?? []).map((item) => ({
+          farmer: item,
+          days: item.days_waiting,
+          escalated: item.escalated,
+          dups: item.duplicates.map((d) => ({ farmer: d, reason: 'phone' as const })),
+          live: true,
+        }))
+      : scopeFarmers(FARMERS_PENDING, role).map((f) => ({
+          farmer: f,
+          days: daysWaiting(f),
+          escalated: isEscalated(f),
+          dups: duplicatesOf(f),
+          live: false,
+        }));
+    return list.sort((a, b) => {
+      if (a.escalated !== b.escalated) return a.escalated ? -1 : 1;
+      return b.days - a.days;
     });
   }, [role, liveQueue]);
 
@@ -115,7 +142,7 @@ export function ReviewQueue() {
     );
   }
 
-  const escalatedCount = queue.filter((f) => isEscalated(f)).length;
+  const escalatedCount = entries.filter((e) => e.escalated).length;
 
   function record(farmer: Farmer, text: string) {
     setDecided((prev) => ({ ...prev, [farmer.id]: text }));
@@ -206,13 +233,13 @@ export function ReviewQueue() {
         <KpiStrip
           label="Queue"
           items={[
-            { label: 'Pending in scope', value: queue.length },
+            { label: 'Pending in scope', value: entries.length },
             { label: 'Escalated', value: escalatedCount, accent: escalatedCount > 0 },
           ]}
         />
       </div>
 
-      {queue.length === 0 ? (
+      {entries.length === 0 ? (
         <EmptyState
           title="Nothing waiting"
           body="No farmer in your scope is pending review. New registrations arrive here as officers sync from the field."
@@ -221,24 +248,21 @@ export function ReviewQueue() {
       ) : (
         <>
           <p className="small muted" style={{ marginBottom: 'var(--s-4)' }} aria-live="polite">
-            {pluralise(queue.length, 'farmer')} waiting · {escalatedCount} escalated
+            {pluralise(entries.length, 'farmer')} waiting · {escalatedCount} escalated
           </p>
           <div className={styles.reviewList}>
-            {queue.map((farmer) => {
-              const farms = farmsForFarmer(farmer.id);
-              const duplicates = duplicatesOf(farmer);
-              const officer = officerById(farmer.registered_by);
-              const escalated = isEscalated(farmer);
+            {entries.map((entry) => {
+              const { farmer, days, escalated, dups: duplicates, live } = entry;
+              const farms = live ? [] : farmsForFarmer(farmer.id);
+              const officer = live ? null : officerById(farmer.registered_by);
               const decision = decided[farmer.id];
-              const crops = cropsForFarmer(farmer.id).map((c) => CROP_LABELS[c]);
+              const crops = live ? [] : cropsForFarmer(farmer.id).map((c) => CROP_LABELS[c]);
               return (
                 <Card key={farmer.id} padded>
                   <div className={styles.reviewCard}>
                     <div className={styles.reviewHead}>
                       <Stamp kind={escalated ? 'escalated' : 'pending'}>
-                        {escalated
-                          ? `${daysWaiting(farmer)}d, escalated`
-                          : `${daysWaiting(farmer)}d waiting`}
+                        {escalated ? `${days}d, escalated` : `${days}d waiting`}
                       </Stamp>
                       <div className={styles.reviewName}>
                         <Link
@@ -252,7 +276,11 @@ export function ReviewQueue() {
                           <span className="mono">{farmer.farmer_number}</span> ·{' '}
                           {farmerPayamName(farmer.payam_id)} · {farmer.sex === 'f' ? 'F' : 'M'}{' '}
                           <span className="mono">{TODAY_YEAR - farmer.year_of_birth}</span> ·{' '}
-                          {officer ? officer.name : 'Self-registered'}
+                          {officer
+                            ? officer.name
+                            : farmer.registration_source === 'self'
+                              ? 'Self-registered'
+                              : 'Registered by officer'}
                         </span>
                       </div>
                     </div>
