@@ -35,9 +35,15 @@ export function Shell({ children }: { children: ReactNode }) {
   const { role, setRole } = usePreview();
   const searchRef = useRef<HTMLInputElement>(null);
   const [previewTools, setPreviewTools] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     setPreviewTools(new URLSearchParams(window.location.search).has('preview'));
+  }, [pathname]);
+
+  // The mobile menu is a per-page affordance: close it on navigation.
+  useEffect(() => {
+    setMenuOpen(false);
   }, [pathname]);
 
   // "/" and ⌘K focus the register search, the way a working tool is driven
@@ -76,6 +82,33 @@ export function Shell({ children }: { children: ReactNode }) {
             <Wordmark size={22} tagline onBand href="/dashboard" />
           </div>
 
+          <button
+            type="button"
+            className={styles.menuToggle}
+            aria-expanded={menuOpen}
+            aria-controls="portal-nav"
+            aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+            onClick={() => setMenuOpen((open) => !open)}
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden>
+              {menuOpen ? (
+                <path
+                  d="M6 6l12 12M18 6L6 18"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
+              ) : (
+                <path
+                  d="M4 7h16M4 12h16M4 17h16"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
+              )}
+            </svg>
+          </button>
+
           <form
             className={styles.search}
             role="search"
@@ -100,7 +133,11 @@ export function Shell({ children }: { children: ReactNode }) {
             </button>
           </form>
 
-          <nav className={styles.nav} aria-label="Primary">
+          <nav
+            id="portal-nav"
+            className={`${styles.nav} ${menuOpen ? styles.navOpen : ''}`}
+            aria-label="Primary"
+          >
             {NAV.map((item) => {
               const active = pathname.startsWith(item.href);
               return (
@@ -123,7 +160,7 @@ export function Shell({ children }: { children: ReactNode }) {
             enforces the real role with requireRole (B3).
           */}
           {previewTools ? (
-            <div className={styles.roleSwitch}>
+            <div className={`${styles.roleSwitch} ${menuOpen ? styles.roleSwitchOpen : ''}`}>
               <label htmlFor="role-preview" className={styles.roleSwitchLabel}>
                 Role
               </label>

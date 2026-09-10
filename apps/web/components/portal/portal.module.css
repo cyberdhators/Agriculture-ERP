@@ -34,6 +34,23 @@
   white-space: nowrap;
 }
 
+/* Hamburger: hidden on desktop, shown on phones (see the 640px block). */
+.menuToggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  margin-inline-start: auto;
+  padding: 6px;
+  color: var(--band-ink);
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-control);
+  cursor: pointer;
+}
+.menuToggle:hover {
+  background: rgba(243, 238, 227, 0.1);
+}
+
 .nav {
   display: flex;
   align-items: stretch;
@@ -237,6 +254,68 @@
   .content,
   .footer {
     padding-inline: var(--s-4);
+  }
+}
+
+/* ---- Phones: the band collapses behind a hamburger ------------------ */
+
+@media (max-width: 640px) {
+  .menuToggle {
+    display: inline-flex;
+  }
+
+  .mastheadInner {
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--s-3);
+    padding: var(--s-3) var(--s-4);
+  }
+
+  /* Row 1: logo + hamburger. Row 2: full-width search. */
+  .wordmark {
+    order: 1;
+  }
+  .search {
+    order: 2;
+    flex: 1 1 100%;
+    width: 100%;
+    max-width: none;
+    margin-inline: 0;
+  }
+
+  /* The nav and the role picker drop out of the row and open as a panel. */
+  .nav {
+    order: 3;
+    display: none;
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    overflow: visible;
+    margin-left: 0;
+  }
+  .nav.navOpen {
+    display: flex;
+  }
+  .navTab {
+    padding: var(--s-3) 0;
+    border-bottom: 1px solid var(--band-line);
+  }
+  .navTab[aria-current='page'] {
+    border-bottom-color: var(--band-line);
+    color: var(--accent);
+  }
+
+  .roleSwitch {
+    order: 4;
+    display: none;
+    width: 100%;
+  }
+  .roleSwitch.roleSwitchOpen {
+    display: flex;
+  }
+  .roleSwitch select {
+    flex: 1;
   }
 }
 
