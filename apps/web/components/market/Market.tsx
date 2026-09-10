@@ -190,7 +190,9 @@ export function Market({
   if (!filters.verifiedOnly)
     applied.push({
       key: 'verified',
-      label: t('market.verifiedOnly', lang),
+      // The active deviation is that unverified sellers are shown; clearing it
+      // restores the verified-only default.
+      label: t('market.includingUnverified', lang),
       clear: () => set('verifiedOnly', true),
     });
 

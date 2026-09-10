@@ -106,8 +106,11 @@ export function FarmersRegister() {
 
   const pool = LIVE_FARMERS ? (livePool ?? []) : FARMERS;
 
-  // Everything a non-admin may not see is removed before any filter runs.
-  const scoped = useMemo(() => scopeFarmers(pool, role), [pool, role]);
+  // Fixtures are scoped client-side so a reviewer can preview each role; live
+  // data is already scoped by the server (an officer's caseload, a supervisor's
+  // state), so the client must NOT re-scope it by the preview role — that would
+  // drop rows the user is entitled to see.
+  const scoped = useMemo(() => (LIVE_FARMERS ? pool : scopeFarmers(pool, role)), [pool, role]);
 
   const q = get('q').trim().toLowerCase();
   const fState = get('state');

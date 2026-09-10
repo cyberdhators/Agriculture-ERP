@@ -74,13 +74,16 @@ export function ReviewQueue() {
   const [note, setNote] = useState('');
   const [busyId, setBusyId] = useState<string | null>(null);
   const [liveQueue, setLiveQueue] = useState<Farmer[] | null>(null);
+  const [loadError, setLoadError] = useState<string | undefined>();
 
   useEffect(() => {
     if (!LIVE_VERIFICATION) return;
     let live = true;
     listQueue()
-      .then((items) => live && setLiveQueue(items))
-      .catch(() => live && setLiveQueue([]));
+      .then((items) => live && (setLiveQueue(items), setLoadError(undefined)))
+      .catch(
+        (e) => live && setLoadError(e instanceof Error ? e.message : 'Could not load the queue.'),
+      );
     return () => {
       live = false;
     };
@@ -192,6 +195,12 @@ export function ReviewQueue() {
           </ButtonLink>
         }
       />
+
+      {loadError ? (
+        <Notice kind="error" title="Could not load the queue">
+          <p className="small">{loadError}</p>
+        </Notice>
+      ) : null}
 
       <div style={{ marginBottom: 'var(--s-6)' }}>
         <KpiStrip

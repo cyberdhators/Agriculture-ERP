@@ -335,6 +335,7 @@ export const en = {
   'market.availableNow': 'Available now',
   'market.availableSoon': 'Coming later',
   'market.verifiedOnly': 'Verified sellers only',
+  'market.includingUnverified': 'Including unverified',
   'market.clear': 'Clear filters',
   'market.status': 'Status',
   'market.sort': 'Sort',

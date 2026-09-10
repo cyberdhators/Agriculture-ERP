@@ -152,8 +152,9 @@ export interface AuditFilterParams {
   entity_type?: string;
   entity_id?: string;
   actor_id?: string;
-  occurred_from?: string;
-  occurred_to?: string;
+  // The audit route's schema (auditFilterSchema) names these `from`/`to`.
+  from?: string;
+  to?: string;
   limit?: number;
   cursor?: string;
 }
