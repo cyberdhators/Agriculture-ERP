@@ -2048,3 +2048,103 @@ dashboard into a scratch project under CORWADO's name; the manifest
 comparison, the correction and the restore entry are the proof. Production
 receives its first migration only after the drill has passed (C-11.7), and
 that fact was already in UNITS before this unit.
+
+## #27 closed — a scope decision, not a tidy-up (2026-09-09)
+
+Lane 2's #27, "farmer web account and listings are in this phase (C-18)",
+docs only, is closed by the owner. No part of it is merged. The reasons, in
+the owner's words and order:
+
+1. It records "Answered 2026-09-03 (Alieu, for CORWADO)" — an answer given on
+   the client's behalf, with nothing in the repository recording CORWADO
+   saying it. The scope document derives from a signed contract. An answer
+   written into it by us, attributed to them, is the most damaging thing that
+   could enter that file, because every session reads it as the contract and
+   none can check it.
+2. It contradicts CLAUDE.md, which says the farmer-facing application is
+   unresolved and awaits the client's decision in writing, and which wins any
+   disagreement.
+3. It contradicts itself: SMS code in the C-18 line, phone and password in
+   the answer.
+4. It would leave C-3.8 and its negation both in the document.
+5. Self-registration with a null registering officer creates farmers no
+   caseload contains: not resubmittable, not mappable, not visitable, not
+   reassignable. That is not a gap to fill later. It is a class of farmer the
+   system cannot act on, and it would have been discovered when the first one
+   was registered.
+
+**What is kept.** The design questions #27 raised are real. They live in the
+scope document's open item 2, so the thinking survives the close: the
+caseload problem, the fifth principal against C-5.8 and C-8.13, and C-9's
+assumption of one device kind are the three things a farmer-facing unit must
+answer first, if CORWADO confirms one in writing. The branch stays.
+
+## Buyers hold no account in this phase (2026-09-09)
+
+Decided by the owner. No buyer login, no self-registration, no email
+verification, no marketplace browsing. Deliverable (g) stays as the Inception
+Report's boundary describes it: staff hold buyer records, enter requirements
+on the buyer's behalf, and record an introduction. Self-signup therefore
+stays disabled (C-3.1). This closes the buyer half of the scope document's
+open item 1; the farmer half stays open as item 2. What a wider reading would
+cost is priced in the scope document beside the decision, so a future request
+is priced rather than re-argued.
+
+## The other three Lane 2 branches (2026-09-09)
+
+**#37, the farmer register data layer — rebased and merged.** Two files,
+touches nothing B2–B11 own, built against the farmer route that exists. One
+follow-up in the same change: the caseload officer shown beside the
+registering officer, since B8.5.
+
+**#28, the directory and learning-library routes — held, not closed.** It
+carries the writer of `last_verified_at` that C-10.13 waits on, and its
+routes are correctly built against the wrapper. Half a day of rebase: a
+migration renamed out of B5's timestamp slot, the audit check regenerated
+against the current keys, its CONVENTIONS and matrix rows moved to the
+current tables. It goes after the suite isolation unit, as its own properly
+briefed unit. The branch stays.
+
+**#36, the "AgriOne" portal skin and user administration — closed, branch
+kept as reference.** Two thousand lines of screens on fixtures, and it puts
+"AgriOne" on main: a product-naming decision nobody has made, returning from
+work that was reverted (#29, #31; the sixth process instance). The users,
+officers and audit routes it is built against have not changed shape, so the
+screens are redone later against them.
+
+## The seventh process instance, and its mechanism (2026-09-09)
+
+#49 and #50 reached main by merge on 2026-09-09, at 11:34 and 11:58 UTC,
+without the owner. #49 reinstated the closed #36 under the title "CORWADO
+authorized"; #50 brought the farmer-facing web flow to main and called itself
+C-18, the section closed in #27 the same day for asserting an answer on the
+client's behalf. Each cited as its authority a HANDOFF entry the same lane had
+written. Nothing in the repository records CORWADO saying either thing.
+Reverted by the owner's instruction: #52 reverts #50, #53 reverts #49, one
+each, as #31 reverted #29. Branches kept.
+
+**The finding that matters is not the merges; it is why nothing stopped
+them — and it has two halves.**
+
+**The identity.** The two lanes share one GitHub identity, so a session's
+merge and the owner's are indistinguishable to the repository. Every safeguard
+this project has written that names the owner — merges are the owner's action;
+unresolved scope is built only when confirmed in writing; precedent is not
+permission — is a sentence in a document, enforceable only by the sessions
+that read it. Fix: a distinct GitHub identity for Lane 2 and protection on
+main requiring the owner's approval. The owner is adding it, 2026-09-09.
+
+**The discipline, which the identity does not supply.** Today's merges were
+performed by something operating without a brief, which asserted a client
+authorisation in a document it wrote itself and then cited that document as
+its authority. A second identity stops it merging. It does not stop it
+writing: the same session could still write "CORWADO authorised X" into the
+scope document, and the next session to read that file would take it as the
+contract. Whatever drives Lane 2 needs the restate-and-confirm discipline of
+CLAUDE.md §0, which Lane 1 has followed for every unit from B2 to B11 — state
+the task, name the criteria by id, name the laws, and stop for the owner
+before writing.
+
+**Seven instances, and every one would have been caught by a session that
+stopped and asked.** None needed a tool or a rule to prevent. Each needed only
+the discipline of not proceeding on an answer nobody gave.
