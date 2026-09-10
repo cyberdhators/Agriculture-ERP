@@ -500,7 +500,7 @@ export function Market({
                         </Stamp>
                       </td>
                       <td>{farmerPayamName(seller.payam_id)}</td>
-                      <td className="num">{formatDate(listing.updated_at)}</td>
+                      <td className="num">{formatDate(listing.updated_at, lang)}</td>
                     </tr>
                   ))}
                 </tbody>

@@ -128,7 +128,7 @@ export function ListingCard({
         </>
       ) : (
         <div className={styles.cardFoot}>
-          <span className={styles.mono}>{formatDate(listing.updated_at)}</span>
+          <span className={styles.mono}>{formatDate(listing.updated_at, lang)}</span>
           <span className={styles.cardActions}>{actions}</span>
         </div>
       )}

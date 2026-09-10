@@ -132,7 +132,7 @@ function PlotDetail({ farm, lang }: { farm: Farm; lang: Language }) {
       </div>
       <div className={styles.recordRow}>
         <dt>{t('account.mapped', lang)}</dt>
-        <dd className={styles.recordValueMono}>{formatDate(farm.mapped_at)}</dd>
+        <dd className={styles.recordValueMono}>{formatDate(farm.mapped_at, lang)}</dd>
       </div>
       <div className={styles.recordRow}>
         <dt>{t('account.accuracy', lang)}</dt>

@@ -263,7 +263,9 @@ export function FarmerOverview() {
               </div>
               <div className={styles.recordRow}>
                 <dt>{t('account.registered', language)}</dt>
-                <dd className={styles.recordValueMono}>{formatDate(farmer.created_at)}</dd>
+                <dd className={styles.recordValueMono}>
+                  {formatDate(farmer.created_at, language)}
+                </dd>
               </div>
               <div className={styles.recordRow}>
                 <dt>{t('account.language', language)}</dt>
@@ -291,7 +293,8 @@ export function FarmerOverview() {
                         {t('account.plot', language)} {i + 1}
                       </div>
                       <div className={styles.farmMeta}>
-                        {farm.season} · {t('account.mapped', language)} {formatDate(farm.mapped_at)}
+                        {farm.season} · {t('account.mapped', language)}{' '}
+                        {formatDate(farm.mapped_at, language)}
                       </div>
                     </div>
                   </div>
