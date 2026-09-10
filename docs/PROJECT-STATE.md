@@ -919,17 +919,29 @@ and fixed by giving four views the farmer join. _A test of the seam:_ for
 every active view, remove the parent and assert the child leaves too. Does not
 exist; B10's reporting test proves it for farms and visits only.
 
-**3. Idempotency × duplicate detection.** _Rules:_ a retried create whose body
-matches returns the record, never a second row (C-9.2); and duplicate
-detection warns on phone, and on name plus payam, and never blocks (C-5.6).
-_What a defect looks like:_ the second send of a record is either counted as
-its own duplicate, or clears a warning the first send raised, or the retry
-path skips the check so a real duplicate goes unflagged. _A test of the seam:_
-send the same farmer twice and assert the warnings are identical and the
-duplicate rows unchanged; send a genuinely duplicate farmer under a new id and
-assert it still warns. **Not tested.** The idempotent path returns
-`okWith(..., { duplicates: stored.duplicate_matches })`, which is believed
-right and unproven.
+**3. Idempotency × duplicate detection — TESTED AT THE SEAM, 2026-09-10, and
+the belief held.** _Rules:_ a retried create whose body matches returns the
+record, never a second row (C-9.2); and duplicate detection warns on phone,
+and on name plus payam, and never blocks (C-5.6). _What a defect would look
+like:_ the second send counted as its own duplicate, or a warning the first
+send raised cleared by the retry, or the retry path skipping the check so a
+real duplicate goes unflagged. _The test_ (`tests/sync.test.ts`, "the seam"):
+three cases, all passing. A clean farmer sent twice warns identically both
+times and is never flagged as a duplicate of itself. A real duplicate — same
+phone, new id — warns on its first send, repeats that warning on its retry,
+records the same matches, and does not retroactively flag the record it
+matched. And the order that makes the seam visible: A lands clean, B arrives
+sharing A's phone, A is retried — A's retry reports what was stored for A,
+which is nothing, while B holds the warning, so the stored truth lives on the
+record the check ran for and no warning is invented for A.
+
+**What the test found on the way, which is worth more than the result.** Two
+of its three failing runs were the test's own fault, not the code's: every
+fixture in that file shared a given name and payam, so the name-plus-payam rule
+made them duplicates of each other, and the replacement name used digits, which
+the name rule refuses. A seam test is harder to write than a rule test, because
+it must hold both rules in mind at once — the fixtures have to be clean under
+one rule to say anything about the other.
 
 _Added when found, not planned in advance: a seam is only visible once both
 rules exist. The pattern to watch for is a rule that constrains a value and

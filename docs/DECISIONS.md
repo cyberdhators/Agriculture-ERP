@@ -2209,3 +2209,27 @@ so the per-run cost is mostly waiting on Frankfurt. That is the same finding
 that prices the per-run isolation unit: four workers would divide the wait and
 the bill together, which is now a second reason to do it after B11 rather than
 a first reason to raise a ceiling.
+
+## Seam 3 tested: idempotency against duplicate detection holds (2026-09-10)
+
+The seams list said the retry path returns the stored `duplicate_matches`,
+believed right and unproven. Now proven, three cases in `tests/sync.test.ts`:
+a clean record sent twice warns identically and is never its own duplicate; a
+real duplicate warns on the first send and repeats that warning on the retry,
+with the recorded matches unchanged and the matched record not retroactively
+flagged; and where a duplicate appears only between the first send and the
+retry, the retry reports what was stored for its own record — nothing — while
+the warning lives on the record the check actually ran for.
+
+**The design this confirms.** `recordDuplicates` writes matches onto the record
+being written, not onto the ones it matched, so a warning belongs to the record
+whose arrival raised it. That is why the retry can answer from storage without
+re-running the check, and why a later duplicate does not silently rewrite an
+earlier record's history.
+
+**The cost of writing it.** Two runs failed on the test's own fixtures — every
+farmer in the file shared a name and payam, so the name-plus-payam rule made
+them duplicates of one another, and the first fix used digits in a name, which
+C-5's name rule refuses. **A seam test is harder to write than a rule test:**
+its fixtures must be clean under one rule before they can say anything about
+the other. Worth knowing before the other two seams are tested.

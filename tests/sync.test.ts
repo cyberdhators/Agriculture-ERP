@@ -49,10 +49,17 @@ let officerA: TestPrincipal & { password: string };
 let officerA2: TestPrincipal & { password: string };
 
 let phoneSeq = 5_500_000;
+const LETTERS = 'abcdefghijklmnopqrstuvwxyz';
+let nameSeq = 0;
+/** A distinct family-safe given name per fixture, so the name+payam duplicate rule (C-5.6) is not tripped by the file's own records. */
+const freshName = () => {
+  nameSeq += 1;
+  return `Zzsync${LETTERS[nameSeq % 26]}${LETTERS[Math.floor(nameSeq / 26) % 26]}`;
+};
 const MONDAY = '2026-08-31T09:15:00+02:00';
 const farmerBody = (overrides: Record<string, unknown> = {}) => ({
   id: randomUUID(),
-  given_name: 'Zzsync',
+  given_name: freshName(),
   family_name: FARMER_TEST_FAMILY,
   sex: 'f',
   year_of_birth: 1988,
@@ -396,5 +403,97 @@ run('download (C-9.9) and captured-at (C-9.10)', () => {
       f.id,
     );
     expect(bumped?.moved, 'the trigger keeps updated_at current for any writer').toBe(true);
+  });
+});
+
+run('the seam: idempotency against duplicate detection (C-9.2 × C-5.6)', () => {
+  /**
+   * PROJECT-STATE, "The seams", entry 3. Two rules, each correct: a retried
+   * create returns the stored record, and duplicate detection warns without
+   * blocking. The retry path answers with the STORED
+   * `duplicate_matches` rather than running the check again — believed right,
+   * unproven until here. What must hold: the retry warns exactly as the first
+   * send did, it neither invents a duplicate of itself nor clears a real one,
+   * and a genuinely duplicate farmer under a new id still warns.
+   */
+  it('a retry warns exactly as the first send did, and never counts the record as its own duplicate', async () => {
+    const first = farmerBody();
+    const created = await post(farmers, officerA, first);
+    expect(created.status).toBe(201);
+    // No duplicate: nothing shares this phone, and the name is fresh.
+    const warningsOf = (r: { body: Record<string, unknown> }): string[] =>
+      ((r.body.warnings as { duplicates?: string[] } | undefined)?.duplicates ?? []) as string[];
+    expect(warningsOf(created)).toEqual([]);
+
+    const retry = await post(farmers, officerA, first);
+    expect(retry.status).toBe(200);
+    // The retry must not invent a duplicate of the record it is returning.
+    expect(warningsOf(retry)).toEqual(warningsOf(created));
+    const [row] = await prisma.$queryRawUnsafe<{ flag: boolean; matches: string[] }[]>(
+      `SELECT duplicate_flag AS flag, duplicate_matches AS matches FROM public.farmer WHERE id = $1::uuid`,
+      first.id,
+    );
+    // Never a duplicate of itself.
+    expect(row?.flag).toBe(false);
+    expect(row?.matches).toEqual([]);
+  });
+
+  it('a real duplicate warns on the first send, and its retry repeats that warning without adding to it', async () => {
+    const original = farmerBody();
+    expect((await post(farmers, officerA, original)).status).toBe(201);
+
+    // Same phone, a different record: the duplicate the check exists for (C-5.6).
+    const twin = farmerBody({ phone: original.phone, given_name: 'Zztwin' });
+    const twinCreated = await post(farmers, officerA, twin);
+    expect(twinCreated.status).toBe(201);
+    const warned = (twinCreated.body.warnings as { duplicates: string[] }).duplicates;
+    // C-5.6: a shared phone warns.
+    expect(warned).toContain(original.id);
+
+    // The retry of the duplicate: same warning, and no second match recorded.
+    const twinRetry = await post(farmers, officerA, twin);
+    expect(twinRetry.status).toBe(200);
+    expect((twinRetry.body.warnings as { duplicates: string[] }).duplicates).toEqual(warned);
+    const [row] = await prisma.$queryRawUnsafe<{ flag: boolean; matches: string[] }[]>(
+      `SELECT duplicate_flag AS flag, duplicate_matches AS matches FROM public.farmer WHERE id = $1::uuid`,
+      twin.id,
+    );
+    expect(row?.flag).toBe(true);
+    // The retry left the recorded matches as the first send wrote them.
+    expect(row?.matches).toEqual(warned);
+    // And the original was not retroactively flagged by the twin's retry.
+    const [orig] = await prisma.$queryRawUnsafe<{ flag: boolean }[]>(
+      `SELECT duplicate_flag AS flag FROM public.farmer WHERE id = $1::uuid`,
+      original.id,
+    );
+    // The first record is not flagged by the second one's arrival: the check
+    // records matches on the record being written, not on the ones it matched.
+    expect(orig?.flag).toBe(false);
+  });
+
+  it('a duplicate that appears only after the first send is not lost: the retry reports what is stored, and the check runs for the new record', async () => {
+    // The order that makes the seam visible: A lands with no duplicate; B then
+    // arrives sharing A's phone; A is retried. A's retry answers with what was
+    // stored for A — which is empty — while B carries the warning. The stored
+    // truth lives on B, where the check ran, and no warning is invented for A.
+    const a = farmerBody();
+    const aCreated = await post(farmers, officerA, a);
+    expect(aCreated.status).toBe(201);
+    const b = farmerBody({ phone: a.phone, given_name: 'Zzlater' });
+    expect((await post(farmers, officerA, b)).status).toBe(201);
+
+    const aRetry = await post(farmers, officerA, a);
+    expect(aRetry.status).toBe(200);
+    // A's retry reports what was stored for A, which is nothing: the check ran
+    // for B, where the duplicate was found.
+    expect(
+      (aRetry.body.warnings as { duplicates: string[] } | undefined)?.duplicates ?? [],
+    ).toEqual([]);
+    // B holds the warning, and a reviewer reading either record can find the pair.
+    const [bRow] = await prisma.$queryRawUnsafe<{ matches: string[] }[]>(
+      `SELECT duplicate_matches AS matches FROM public.farmer WHERE id = $1::uuid`,
+      b.id,
+    );
+    expect(bRow?.matches).toContain(a.id);
   });
 });
