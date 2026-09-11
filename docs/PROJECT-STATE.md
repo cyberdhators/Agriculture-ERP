@@ -885,6 +885,69 @@ companion, from the fourth instance: **when the record says something was
 done or is pending, ask the system rather than the record.** A migration
 folder, a catalogue query, a live route — not a sentence in a document.
 
+## A GUARD THAT CAUGHT ITS AUTHOR AND THEN CAUGHT ITSELF (2026-09-11)
+
+`tests/pure-suite-complete.test.ts`, written for the fifth CI edit, is the
+first gate in this project that found a defect in the change it was written to
+protect, and then found one in itself. That is the shape the eight
+silent-gates findings were missing, and it is worth stating what makes it work.
+
+**What it asserts, and this is enforced rather than remembered:** every test
+file in the repository that touches no database is one the pure suite runs. It
+walks the tree, reads each test file, decides whether it reaches the database
+(by the helpers `makeTestPrisma` and `requireTestEnv`, or `new PrismaClient`),
+and fails if a pure file is not matched by the pure config's include patterns.
+It asserts the reverse too — that nothing the pure config claims reaches the
+database, which would fail on a machine with no staging — and it asserts the
+walk itself found files at all, because a walk that silently finds nothing
+makes every other assertion in the file vacuously true.
+
+**So: anyone adding a test that needs no database does not have to remember to
+add it to the pure suite. The suite goes red until they do, and names the
+file.** Nobody has to notice.
+
+**What it caught on its first run.** Three pure test files under
+`apps/web/lib` — the admin data layer's and two farmer ones — which its author
+had left out of the pure config while believing the five files under
+`apps/web/tests` were the whole set. The config was widened to all of
+`apps/web`.
+
+**And then it caught itself.** Its impurity check was one regular expression
+containing `new PrismaClient` as a literal, and that literal appears in its own
+source, so the guard read itself as a database test and failed its own second
+assertion. The pattern is now assembled from fragments with a comment saying
+why. **A guard written as a literal scan of source files must not be written in
+a way that matches itself** — trivial once seen, invisible until the guard runs.
+
+**Why this one worked when eight others did not.** It asserts a RELATIONSHIP
+between two things that can drift apart — the files on disk and the config's
+patterns — rather than a fact about one of them. The eight silent gates were
+each a single statement believed true: the typecheck covers `tests/`, the
+scanner reads the branch, the column is written. A gate that compares two
+sources cannot be quietly wrong about both at once.
+
+## PUSHING WHILE A RUN IS QUEUED CANCELS IT — A RULE, NOT AN OBSERVATION (2026-09-11)
+
+The workflow's concurrency group is `staging-tests` with `cancel-in-progress`
+false, which queues runs rather than cancelling the running one. **But only one
+run may be PENDING in a group: a newer pending run evicts the older one.** So a
+push while one run is executing and another is waiting discards the waiting
+one, with no annotation and nothing in the pull request to say why the check
+vanished.
+
+**Three evictions in one session on 2026-09-11** — #52's queued run, then the
+runs for #57, #58 and #59 — all caused by this assistant pushing while a run
+was queued. **The rule, at the owner's instruction: do not push while a run is
+queued.** Check `gh run list` first; if something must be pushed, say so and
+wait for the owner rather than have a run cancelled. The cost of an eviction is
+a whole run of the suite, 45 to 90 minutes, and the first symptom is a check
+that is simply absent.
+
+_The alternative is removing the concurrency group, which the advisory lock
+makes survivable: a second run would fail fast naming the holder, which is
+noisy but never silent. Not taken — the group's queueing is worth more than the
+noise it prevents, now that the eviction is known and the rule is written._
+
 ## THE SEAMS — WHERE TWO RULES TOUCH AND NOTHING HAS TESTED THE JOIN (2026-09-10)
 
 The ninth silent-class instance was not a gate that checked nothing. It was two

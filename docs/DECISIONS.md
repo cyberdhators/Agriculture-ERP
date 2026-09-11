@@ -2233,3 +2233,52 @@ them duplicates of one another, and the first fix used digits in a name, which
 C-5's name rule refuses. **A seam test is harder to write than a rule test:**
 its fixtures must be clean under one rule before they can say anything about
 the other. Worth knowing before the other two seams are tested.
+
+## The fifth CI edit: a short path for documents-only pull requests (2026-09-11)
+
+**The finding.** 98% of a CI run is the database suite. On #54's green run the
+test step was 44m46s; every other step together was 47s. Four of the six pull
+requests open that day changed nothing but documents, and each cost a full run
+to merge — about 360 minutes across the queue once main's post-merge runs are
+counted, more than a unit's entire budget.
+
+**The decision, the owner's, approved with three conditions, all met.**
+
+1. **Condition the step, never the job or the workflow.** There is no `if:` on
+   the Test step and there must never be one: it always runs, always reports,
+   and decides inside itself which suite to run. A required check that silently
+   does not run is the shape of the eight skipped test files and the null
+   device column, and is the worst possible place to reintroduce it.
+2. **Absence is not success** (B5.5's rule). The short path's config sets
+   `passWithNoTests: false`, and its guard asserts the suite runs every test
+   that needs no database. If the short path cannot run what it claims, it is
+   red, not skipped.
+3. **Proven in both directions before merging** — and the proof method itself
+   turned out to be wrong, recorded below.
+
+**What takes which path.** Anything changed outside `docs/` and
+`.prettierignore` takes the full suite. So does an undeterminable diff, and so
+do CLAUDE.md, a migration and the workflow itself. Documents and the ignore
+file alone take the short path: 23 files, 300 tests, no database, no lock.
+
+**The risk, and why it is covered.** Two tests read
+`docs/api/CONVENTIONS.md` — the shared package's drift test and the root
+suite's rule-sentence test. **Running the shared package alone would NOT have
+covered it:** the rule-sentence test sat under the root config, whose global
+setup demands the staging environment and takes the lock, though the test
+itself touches no database. It is now in the pure suite, where it belongs on
+its own merits — a test that reads a file and an object should not need a
+database or hold a lock. Proven by breaking one pinned sentence: the short path
+goes red with "wording drifted for cannot_remove_own_account", and green when
+it is restored.
+
+**The proof method was wrong, and the reason is in the thing being tested.**
+The workflow triggers on pull requests targeting main. A proof pull request
+stacked on the CI branch gets no run at all; one targeting main contains the
+workflow change in its own diff and is therefore a code change that takes the
+full path by design. **The short path cannot be demonstrated on CI until it is
+on main.** The commitment made in its place, at the owner's instruction and
+recorded in the pull request body: the first documents-only pull request after
+this lands is the live proof; if it does not take the short path, or the check
+does not report, the edit is reverted immediately, before anything else merges.
+Then one pull request goes through alone, watched, before any others.
