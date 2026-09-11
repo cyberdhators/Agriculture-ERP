@@ -277,7 +277,7 @@ character.
 | `account_already_exists`         | An account already exists for that address.                                                                                   |
 | `last_admin_cannot_be_removed`   | This is the only administrator account. Create another administrator before removing this one.                                |
 | `last_admin_cannot_be_demoted`   | This is the only administrator account. Create another administrator before changing this one.                                |
-| `cannot_remove_own_account`      | You cannot remove your own account.                                                                                           |
+| `cannot_remove_own_account`      | You may not remove your own account. |
 | `cannot_change_own_role`         | You cannot change your own role.                                                                                              |
 | `payam_not_found`                | That payam could not be found.                                                                                                |
 | `state_not_found`                | That state could not be found.                                                                                                |
