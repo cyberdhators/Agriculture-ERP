@@ -6,13 +6,55 @@ coverage/
 pnpm-lock.yaml
 apps/web/next-env.d.ts
 
-# Governing project documents -- never reformatted by tooling.
+# Documents this formatter must not touch.
 #
-# CLAUDE.md is the law. The three below are supplied documents: the scope file
-# derives from the signed Inception Report, and the data models are the
-# programme manager's. Reformatting a contractual document by tool is how a
-# wording change gets made by accident and nobody notices in the diff. They are
-# stored exactly as supplied.
+# TWO CRITERIA. A document is protected if EITHER holds:
+#
+#   1. It is contractual or supplied. Reformatting a contractual document by
+#      tool is how a wording change gets made by accident and nobody notices
+#      in the diff. These are stored exactly as supplied.
+#
+#   2. Something PARSES it and would break silently on a reflow. A reflow that
+#      is cosmetic in prose is a change in a table row or a numbered list that
+#      a reader counts. Added 2026-09-11 after the formatter had twice changed
+#      a document something depended on: it re-padded the CONVENTIONS tables
+#      until the drift test stopped matching, and it folded two newly added
+#      open items into the item above them, so they rendered inside another
+#      entry's prose and were not items at all. Neither went red.
+#      docs/PROJECT-STATE.md, "The formatter has silently changed a document
+#      twice".
+#
+# Criterion 2 is why this list exists as a rule rather than as whoever
+# noticed. The next addition is decided against the two criteria above.
+#
+# WHERE EACH PROTECTED DOCUMENT SITS, AND WHY:
+#
+#   CLAUDE.md                      criterion 1 — the law; read by every session
+#   docs/scope-and-acceptance.md   criterion 1 — derives from the signed
+#                                  Inception Report, section 5
+#   docs/data-model.md             criterion 1 — the programme manager's
+#   docs/data-model-extension.md   criterion 1 — the programme manager's
+#
+# DELIBERATELY NOT PROTECTED, and the reasoning, so it is not re-argued:
+#
+#   docs/api/CONVENTIONS.md        Two tests parse it, so criterion 2 applies
+#                                  on its face. Left formatted by the owner's
+#                                  decision, 2026-09-11: the drift test now
+#                                  parses table CELLS rather than lines, which
+#                                  absorbs the exposure, and this is the most
+#                                  hand-edited document in the project, where
+#                                  consistent formatting is worth most. The
+#                                  fix was the criterion, not the file. If a
+#                                  future test reads it by line again, that
+#                                  test is wrong, not this decision.
+#   docs/PROJECT-STATE.md          Read structurally by sessions — numbered
+#   docs/DECISIONS.md              lists, board rows, sections — but by a
+#   docs/HANDOFF.md                reader that can absorb a reflow, unlike a
+#   docs/UNITS.md                  test. The second formatter instance shows
+#                                  that absorption has a limit; if it bites
+#                                  again, criterion 2 applies and they come in.
+#   docs/RUNBOOK-restore.md        Read by a CORWADO administrator by numbered
+#                                  step. Same reasoning as the four above.
 CLAUDE.md
 docs/scope-and-acceptance.md
 docs/data-model.md
