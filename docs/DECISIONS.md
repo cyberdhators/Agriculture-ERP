@@ -2282,3 +2282,131 @@ recorded in the pull request body: the first documents-only pull request after
 this lands is the live proof; if it does not take the short path, or the check
 does not report, the edit is reverted immediately, before anything else merges.
 Then one pull request goes through alone, watched, before any others.
+
+## The marketplace amendment — the owner's reading, recorded as one (2026-09-11)
+
+The owner amended the scope document: a farmer-facing web flow and a produce
+marketplace are in this phase. The full text is in
+`docs/scope-and-acceptance.md`, "The marketplace amendment". Recorded here
+because it is a scope decision and because of how it is framed.
+
+**The basis.** The client's original application document described a produce
+marketplace with farmer listings. The Inception Report's section 5 narrowed (g)
+to introductions recorded by staff, and 5.1 excluded a farmer-facing
+application. The owner judges that narrowing a drafting gap rather than
+CORWADO's intent, and proceeds on that reading.
+
+**Why this is not #27.** #27 wrote "Answered (Alieu, for CORWADO)" into the
+scope document and cited a handoff entry the same lane had written. This
+amendment says, in the file itself: this is the owner's reading, not CORWADO's
+instruction; nothing records CORWADO asking for it or confirming it; it goes to
+them for written confirmation; if they decline, the work is removed. **The
+difference is not the conclusion — both arrive at a farmer marketplace. It is
+that one names its author and its status, and the other borrowed the client's.**
+A reading a client can still refuse is a reading. An answer attributed to a
+client who never gave it is a forgery of the contract, however well intended.
+
+**Two of #27's three blocking questions are answered by the amendment's own
+scope.** The caseload: a self-registration is assigned to an officer by payam
+and approved before it counts, so no farmer is left outside every caseload.
+The buyer: buyers hold no account, as decided 2026-09-09. **The third is not
+answered:** C-9's sync contract assumes an officer's phone, and a farmer's
+browser is not one.
+
+**The blocking question is narrower than it first looked** (corrected by the
+owner 2026-09-11; see "What a listing carries" below). A listing carries a
+farm or trading name the farmer chooses, the produce, the quantity and the
+availability — not a legal name, a national ID or an address. Publication
+consent is per listing, given when the farmer creates it and revocable, which
+the existing consent table already supports. **What remains open is one field:
+the phone number a buyer needs to make contact.** No listing is readable
+outside CORWADO until CORWADO answers that.
+
+**THE REVERT STANDS, AND THIS IS THE POINT: WORK IS NOT LEGITIMISED
+RETROSPECTIVELY BY THE SCOPE LATER MOVING TO MEET IT.** Decided by the owner
+2026-09-11, after the amendment that puts a farmer marketplace in this phase.
+
+#52 reverts #49 and #50, and #50 was a farmer marketplace. The subject matter
+is now in scope. **That changes nothing about whether those merges were
+right.** They were merged without the owner; they asserted a CORWADO
+authorisation nothing in the repository records; they carried a product name
+nobody had decided; and they were built against no criteria. The screens are
+fixtures against a backend that does not exist, and they would be rewritten
+against the real routes regardless. The branches are kept. **Nothing is lost
+but the false authorisation on main.**
+
+The general rule, stated so the next case is decided the same way: **a merge is
+judged by whether it was authorised and briefed when it happened, not by
+whether the scope later grew to include it.** If it were otherwise, the way to
+get work accepted would be to merge it and wait for the scope to catch up, and
+every safeguard in this project that depends on asking first would be worth
+nothing. The reverse also holds: work that was properly briefed and later falls
+out of scope is removed on its merits, not punished.
+
+**What replaces it.** The marketplace is built against criteria that are
+written first, after CORWADO answers the consent question, by a lane that has
+restated and been confirmed. That is not a penalty; it is the same path every
+backend unit from B2 to B11 took.
+
+## What a listing carries, and the one field left open (2026-09-11, corrected)
+
+The owner's first framing of this — that publishing a listing is wider than the
+consent farmers signed, and the remedy is re-consent in the field across payams
+— **was wrong, and the assistant's version followed it and sharpened the error
+rather than catching it.** Recorded that way round because the correction came
+from the owner, and because a sharpened wrong answer is more convincing than a
+vague one and therefore worse.
+
+**What a listing actually carries:** a farm or trading name the farmer chooses,
+the produce, the quantity, the availability. Not a legal name, not a national
+ID, not an address. **Nobody is published who did not ask to be**, so the field
+re-consent operation is not needed and has been removed from the scope
+document.
+
+**Publication consent is per listing**, given at creation and revocable;
+withdrawing it unpublishes the listing. A second consent record beside the
+registration one, with its own text version and language. **No schema change:**
+consent is already versioned by text and language, a farmer holds one current
+and any number of historic, and `consent.withdrawn_at` exists with a CHECK that
+a withdrawn consent cannot read as granted (migration 10). The table was built
+in B5 to prove what was agreed; this is that mechanism used a second time.
+
+**The farm name is a trading identity, and the screen can undo that.** Free
+text means a farmer may type their own name, which publishes it with extra
+steps. Not a technical control — the field cannot be validated into safety — so
+it is a flow and wording obligation on whoever builds the screen, written down
+here rather than discovered later.
+
+**The one open question: the phone number.** A buyer needs a route to the
+farmer, and a published number is the hardest thing about a farmer to change
+once out; in South Sudan it is often also the identity behind a mobile-money
+wallet. Three shapes: on the listing; a contact request CORWADO passes on; or
+shown once a buyer identifies themselves.
+
+**Recommended: the contact request.** It is the only shape consistent with
+buyers holding no account, which removes the third outright — an unverified
+name typed by a stranger identifies nobody. **It is already deliverable (g) as
+the Inception Report describes it**, an introduction recorded by staff, so the
+staff time is the deliverable rather than overhead and the marketplace needs no
+scope stretch to accommodate it. And it keeps the number inside the consent
+farmers have already given, so the one field that cannot be withdrawn is never
+published. Its cost is latency on perishable produce; the mitigation is to
+route the request to the officer whose caseload holds that farmer (C-8R), who
+already visits them. The farmer-chooses-per-listing option is recorded as the
+thing to reconsider only if CORWADO reports latency losing trades, because an
+informed choice requires understanding that a published number cannot be
+recalled and a checkbox does not convey that.
+
+## Sync means nothing for a farmer's browser (2026-09-11)
+
+Answered by the owner, and to be stated explicitly in the unit rather than left
+for a reader to infer. A browser is online or it is not. There is no queue, no
+client id to be idempotent on, no device header, no caseload endpoint, no
+parent-first release, no acknowledgement protocol, and none of C-9's seven
+outcome codes. A farmer who loses signal mid-post gets an error and retries.
+
+**Why it is worth saying rather than omitting.** C-9 is a large, carefully
+written contract with a shared module, a header and a mapping function. A
+future session building a farmer route would reasonably reach for
+`x-device-id` or `syncOutcomeFor` and would be reading the wrong contract.
+Silence would look like an oversight; the sentence makes it a decision.

@@ -59,8 +59,12 @@ repository, not a course or examination system.
 From Inception Report section 5.1. Do not build these, and stop and ask if a
 requirement appears to need them.
 
-- A farmer-facing mobile application. The Android app is the extension
+- A farmer-facing mobile **application**. The Android app is the extension
   officers' tool; farmers are reached by SMS (F-05).
+  _Amended 2026-09-11 by the owner, on the owner's own reading — see "The
+  marketplace amendment" below:_ a farmer-facing **web** flow and a produce
+  marketplace are in this phase. The Android app stays the officers' tool, and
+  a farmer-installed app remains excluded.
 - Mobile money transaction integration.
 - Automated market price feeds. Prices are entered manually by CORWADO's
   System Administrator (F-01).
@@ -155,6 +159,14 @@ C-3.7  Extension officers authenticate by phone number and password and remain
        authenticated across periods without network coverage.
 
 C-3.8  Farmers do not authenticate. No farmer account exists in this phase.
+       _Amended 2026-09-11 by the owner:_ **this criterion no longer holds.** A
+       farmer account exists and a farmer authenticates, under "The marketplace
+       amendment" below and the criteria written for it. A farmer is a
+       principal of its own kind, not a fifth staff role: C-3.1 to C-3.7 and
+       C-3.9 are unchanged and still describe staff and officers only. The
+       sentence above is kept, struck, rather than deleted, so that a reader of
+       any unit built before this date knows what its author was building
+       against.
 
 C-3.9  A read_only user cannot write anything. It is a reporting role: it reads
        within its assigned state, and every route that writes rejects it.
@@ -1088,9 +1100,140 @@ what the preceding unit actually produced.
 
 - C-12 — cooperatives — (l)
 - C-14 — market prices, produce listings, buyer matching — (f), (g), (h)
+- The farmer account and the marketplace — (c), and the farmer side of (f),
+  (g), (h). Added 2026-09-11 under "The marketplace amendment"; **not to be
+  built until its criteria are written and the consent question is answered.**
+  Unnumbered on purpose: C-18 is the number #27 used for work asserted on
+  CORWADO's behalf, and reusing it would make the closed pull request look
+  like the origin of this one.
 - C-15 — SMS notifications — (n)
 - C-16 — weather advisories — (e)
 - C-17 — WhatsApp — (o), conditional on Meta verification
+
+---
+
+## THE MARKETPLACE AMENDMENT (2026-09-11)
+
+**Amended 2026-09-11. A farmer-facing web flow and a produce marketplace are
+in this phase.**
+
+**Basis.** The client's original application document described a produce
+marketplace with farmer listings. The Inception Report's section 5 narrowed
+deliverable (g) to introductions recorded by staff, and section 5.1 excluded a
+farmer-facing application. We judge that narrowing to have been a drafting gap
+rather than CORWADO's intent, and we are proceeding on that reading.
+
+**WHOSE READING THIS IS.** This is the owner's reading, not CORWADO's
+instruction. **Nothing in the repository records CORWADO asking for it or
+confirming it.** It is to be put to them for written confirmation, and this
+note stands until they answer. **If they decline, the work is removed.**
+
+That sentence is the whole difference between this amendment and the one
+closed in #27 (`docs/DECISIONS.md`, "#27 closed"). #27 wrote an answer into
+this file and attributed it to CORWADO. This one records a reading, names the
+reader, and says what happens if the client disagrees. A session reading this
+file must not cite this section as a client decision.
+
+**Scope.**
+
+- Farmers hold accounts.
+- A farmer registers themselves, or is registered by an officer.
+- **A self-registration is assigned to an officer by payam, and approved before
+  it counts.** This is the answer to the caseload problem that closed #27: a
+  self-registered farmer is not left with no officer, and does not enter any
+  reach figure until approval.
+- Farmers post produce listings.
+- Buyers browse and contact the farmer directly.
+- **Buyers hold no account** — unchanged from the decision of 2026-09-09
+  (open item 1 below). No buyer login, no self-registration, no email
+  verification.
+
+**WHAT A LISTING CARRIES, AND THE ONE QUESTION LEFT (corrected 2026-09-11 by
+the owner; the earlier framing in this section was wrong and is replaced).**
+
+**A listing does not publish a farmer's personal data.** It carries a farm or
+trading name the farmer chooses, plus the produce, the quantity and the
+availability. Not their legal name, not their national ID, not their address.
+So the re-consent-in-the-field operation this section previously described is
+**not needed and has been removed**: nobody is published who did not ask to be.
+
+**Publication consent is per listing.** Given at the moment the farmer creates
+the listing, and revocable. It is a second consent record beside the
+registration one, with its own `text_version` and `language`; withdrawing it
+unpublishes the listing. The schema already supports this and needs no change:
+consent is versioned by text and language, a farmer holds one current consent
+and any number of historic ones, and `consent.withdrawn_at` exists with the
+CHECK that a withdrawn consent cannot read as granted (migration 10).
+
+**The farm name is a trading identity, not a person — and the screen must not
+let that slip.** If the field is free text, a farmer may type their own name
+into it, which publishes their name with extra steps. That is a flow and
+wording concern for whoever builds the screen, not a technical control: the
+field cannot be validated into safety. It is written down here rather than
+left to be discovered, and the unit's screen notes must say how the farmer is
+asked — a prompt for a market or farm name, an example, and not a bare "name"
+label beside their own record.
+
+**THE OPEN QUESTION, AND IT IS THE ONLY GENUINELY IDENTIFYING FIELD A BUYER
+NEEDS: the phone number.** A buyer contacting a farmer needs a route to them,
+and a phone number on a public page is the hardest thing about a farmer to
+change once it is out — in South Sudan it is also frequently the identity
+behind a mobile-money wallet, so exposure is not only nuisance. Three shapes:
+
+1. **Shown on the listing.** Simplest, works with no CORWADO involvement, and
+   irreversible.
+2. **A contact request CORWADO passes on.** The number never leaves CORWADO.
+3. **Shown once a buyer identifies themselves.** Requires something of the
+   buyer.
+
+**Which to build: 2, the contact request.** Three reasons, in order of weight.
+It is the only one of the three consistent with a decision already taken —
+buyers hold no account (open item 1), which removes 3 outright, since an
+unverified name typed by a stranger identifies nobody and is theatre. **It is
+already what deliverable (g) describes:** the Inception Report's (g) is an
+introduction recorded by staff, so a contact request that CORWADO passes on and
+records is not a compromise on the marketplace, it _is_ the contracted
+deliverable, and the staff time is the deliverable rather than overhead. And it
+leaves the phone number inside the consent farmers have already given, so the
+publication question stays closed rather than being reopened by the one field
+that cannot be withdrawn.
+
+_Its cost is latency, which matters for perishable produce._ The mitigation,
+noted for the unit: route the contact request to the officer whose caseload
+holds that farmer (C-8R's `caseload_officer_id`) rather than to a central
+queue. That officer already visits them and already has their number.
+
+_The option to reconsider only if CORWADO reports that enquiry latency is
+losing trades:_ let the farmer choose, per listing, whether the number shows.
+It is consistent with publication consent being the farmer's decision. The
+reason not to start there is that an informed choice requires understanding
+that a published number cannot be recalled, and a checkbox does not convey
+that.
+
+**Until CORWADO answers the contact question in writing:** no listing is
+readable outside the four CORWADO staff roles, and no marketplace is reachable
+without a staff session. Every visibility rule in this system answers for those
+four roles only (C-5.8, C-7.8, C-8.4, C-8.13, C-10.11); a buyer is the first
+reader it has ever contemplated outside that set.
+
+**The three questions carried from #27's close are now all answered.** The
+caseload, by assignment and approval. The buyer, by holding no account. And the
+third, sync, answered by the owner 2026-09-11:
+
+**Sync means nothing for a farmer's browser, and the unit says so explicitly
+rather than leaving C-9 looking like it might apply.** A browser is online or
+it is not. There is no queue, no client-generated id to be idempotent on, no
+device header, no caseload endpoint, no parent-first release, no acknowledgement
+protocol and none of the seven outcome codes. A farmer who loses signal
+mid-post gets an error and retries; that is the whole of it. C-9 is the
+officer app's contract and applies to the officer app. Any future reader who
+finds a farmer route and reaches for `x-device-id` or `syncOutcomeFor` is
+reading the wrong contract.
+
+**Not yet written.** The criteria for this work. They are written one unit
+ahead of the build, as every other section here was, and they are written by
+the owner or by a session that has restated and been confirmed. Nothing is
+built from this section alone: it records a scope decision, not a contract.
 
 ---
 
