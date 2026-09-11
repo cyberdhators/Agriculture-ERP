@@ -2282,3 +2282,53 @@ recorded in the pull request body: the first documents-only pull request after
 this lands is the live proof; if it does not take the short path, or the check
 does not report, the edit is reverted immediately, before anything else merges.
 Then one pull request goes through alone, watched, before any others.
+
+## The marketplace amendment — the owner's reading, recorded as one (2026-09-11)
+
+The owner amended the scope document: a farmer-facing web flow and a produce
+marketplace are in this phase. The full text is in
+`docs/scope-and-acceptance.md`, "The marketplace amendment". Recorded here
+because it is a scope decision and because of how it is framed.
+
+**The basis.** The client's original application document described a produce
+marketplace with farmer listings. The Inception Report's section 5 narrowed (g)
+to introductions recorded by staff, and 5.1 excluded a farmer-facing
+application. The owner judges that narrowing a drafting gap rather than
+CORWADO's intent, and proceeds on that reading.
+
+**Why this is not #27.** #27 wrote "Answered (Alieu, for CORWADO)" into the
+scope document and cited a handoff entry the same lane had written. This
+amendment says, in the file itself: this is the owner's reading, not CORWADO's
+instruction; nothing records CORWADO asking for it or confirming it; it goes to
+them for written confirmation; if they decline, the work is removed. **The
+difference is not the conclusion — both arrive at a farmer marketplace. It is
+that one names its author and its status, and the other borrowed the client's.**
+A reading a client can still refuse is a reading. An answer attributed to a
+client who never gave it is a forgery of the contract, however well intended.
+
+**Two of #27's three blocking questions are answered by the amendment's own
+scope.** The caseload: a self-registration is assigned to an officer by payam
+and approved before it counts, so no farmer is left outside every caseload.
+The buyer: buyers hold no account, as decided 2026-09-09. **The third is not
+answered:** C-9's sync contract assumes an officer's phone, and a farmer's
+browser is not one.
+
+**The blocking question is consent, and it is new.** Farmers consented to
+CORWADO holding their details for the LAST Project and for donor reports. A
+public listing carrying a name, a phone number and a location is a wider
+disclosure than that consent describes. This is the first time this system has
+contemplated a reader outside the four CORWADO staff roles, and every
+visibility rule in it — C-5.8, C-7.8, C-8.4, C-8.13, C-10.11 — answers only for
+those four. The likely resolution is a new consent text and re-consent from
+every farmer whose listing is published, which is a field operation and not a
+schema change. **No listing is readable outside CORWADO until CORWADO answers.**
+
+**What this means for #52, which is in flight.** #52 reverts #49 and #50, and
+#50 was a farmer marketplace. The amendment makes that subject matter
+in-scope, so the revert now removes work that is no longer out of scope. The
+revert's other grounds stand unchanged: it was merged without the owner, it
+asserted a CORWADO authorisation nothing records, it carries an undecided
+product name, and it has no criteria. The recommendation put to the owner is to
+merge the revert anyway and rebuild against written criteria once the consent
+question is answered — the branch is kept, so nothing is lost — but the
+decision is the owner's and is recorded as open.

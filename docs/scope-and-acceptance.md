@@ -59,8 +59,12 @@ repository, not a course or examination system.
 From Inception Report section 5.1. Do not build these, and stop and ask if a
 requirement appears to need them.
 
-- A farmer-facing mobile application. The Android app is the extension
+- A farmer-facing mobile **application**. The Android app is the extension
   officers' tool; farmers are reached by SMS (F-05).
+  _Amended 2026-09-11 by the owner, on the owner's own reading — see "The
+  marketplace amendment" below:_ a farmer-facing **web** flow and a produce
+  marketplace are in this phase. The Android app stays the officers' tool, and
+  a farmer-installed app remains excluded.
 - Mobile money transaction integration.
 - Automated market price feeds. Prices are entered manually by CORWADO's
   System Administrator (F-01).
@@ -155,6 +159,14 @@ C-3.7  Extension officers authenticate by phone number and password and remain
        authenticated across periods without network coverage.
 
 C-3.8  Farmers do not authenticate. No farmer account exists in this phase.
+       _Amended 2026-09-11 by the owner:_ **this criterion no longer holds.** A
+       farmer account exists and a farmer authenticates, under "The marketplace
+       amendment" below and the criteria written for it. A farmer is a
+       principal of its own kind, not a fifth staff role: C-3.1 to C-3.7 and
+       C-3.9 are unchanged and still describe staff and officers only. The
+       sentence above is kept, struck, rather than deleted, so that a reader of
+       any unit built before this date knows what its author was building
+       against.
 
 C-3.9  A read_only user cannot write anything. It is a reporting role: it reads
        within its assigned state, and every route that writes rejects it.
@@ -1088,9 +1100,82 @@ what the preceding unit actually produced.
 
 - C-12 — cooperatives — (l)
 - C-14 — market prices, produce listings, buyer matching — (f), (g), (h)
+- The farmer account and the marketplace — (c), and the farmer side of (f),
+  (g), (h). Added 2026-09-11 under "The marketplace amendment"; **not to be
+  built until its criteria are written and the consent question is answered.**
+  Unnumbered on purpose: C-18 is the number #27 used for work asserted on
+  CORWADO's behalf, and reusing it would make the closed pull request look
+  like the origin of this one.
 - C-15 — SMS notifications — (n)
 - C-16 — weather advisories — (e)
 - C-17 — WhatsApp — (o), conditional on Meta verification
+
+---
+
+## THE MARKETPLACE AMENDMENT (2026-09-11)
+
+**Amended 2026-09-11. A farmer-facing web flow and a produce marketplace are
+in this phase.**
+
+**Basis.** The client's original application document described a produce
+marketplace with farmer listings. The Inception Report's section 5 narrowed
+deliverable (g) to introductions recorded by staff, and section 5.1 excluded a
+farmer-facing application. We judge that narrowing to have been a drafting gap
+rather than CORWADO's intent, and we are proceeding on that reading.
+
+**WHOSE READING THIS IS.** This is the owner's reading, not CORWADO's
+instruction. **Nothing in the repository records CORWADO asking for it or
+confirming it.** It is to be put to them for written confirmation, and this
+note stands until they answer. **If they decline, the work is removed.**
+
+That sentence is the whole difference between this amendment and the one
+closed in #27 (`docs/DECISIONS.md`, "#27 closed"). #27 wrote an answer into
+this file and attributed it to CORWADO. This one records a reading, names the
+reader, and says what happens if the client disagrees. A session reading this
+file must not cite this section as a client decision.
+
+**Scope.**
+
+- Farmers hold accounts.
+- A farmer registers themselves, or is registered by an officer.
+- **A self-registration is assigned to an officer by payam, and approved before
+  it counts.** This is the answer to the caseload problem that closed #27: a
+  self-registered farmer is not left with no officer, and does not enter any
+  reach figure until approval.
+- Farmers post produce listings.
+- Buyers browse and contact the farmer directly.
+- **Buyers hold no account** — unchanged from the decision of 2026-09-09
+  (open item 1 below). No buyer login, no self-registration, no email
+  verification.
+
+**OPEN AND UNANSWERED, AND IT BLOCKS PUBLICATION: what may a buyer see about a
+farmer?** The consent farmers signed covers CORWADO holding their details for
+the LAST Project and for donor reports (C-5.2, the consent record's
+`text_version`). **A listing carrying a farmer's name, phone and location is a
+wider disclosure than that consent describes.** CORWADO must answer this before
+any listing is published outside CORWADO. Until they do:
+
+- No listing may be readable by anyone outside the four CORWADO staff roles.
+- The question is not "which fields does the listing show" but "what did the
+  farmer agree to". A new consent text, and re-consent from every farmer whose
+  listing is published, is the likely answer and is a field operation, not a
+  schema change.
+- Every visibility rule in this system today answers for four CORWADO staff
+  roles (C-5.8, C-7.8, C-8.4, C-8.13, C-10.11). A buyer is the first reader
+  outside that set, and none of those rules has an answer for one.
+
+**What still has no answer, carried from #27's close.** Two of the three
+questions that unit had to answer first are answered above — the caseload, by
+assignment and approval; and the buyer, by holding no account. **The third is
+not:** C-9's sync contract assumes one device kind, an officer's phone, with
+the device header, the caseload endpoint and the seven outcome codes. A
+farmer's browser session is none of those things, and the unit that builds this
+must say what sync means for it, or that it means nothing.
+
+**Not yet written.** The criteria for this work. They are written one unit
+ahead of the build, as every other section here was, and they are written by
+the owner or by a session that has restated and been confirmed. Nothing is
+built from this section alone: it records a scope decision, not a contract.
 
 ---
 

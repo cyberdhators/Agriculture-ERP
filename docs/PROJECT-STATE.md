@@ -1115,6 +1115,13 @@ GitHub rather than copied. Grouped by who closes it.
 3. National ID visibility (C-5.8): narrow reading chosen; widen on request.
 4. Cross-state merges (C-6.4): refused for every role until they ask.
 5. Whether an officer may propose a directory entry from the field (C-13 note).
+   6a. **The consent question, 2026-09-11, and it blocks publication.** The
+   marketplace amendment puts farmer listings in this phase. Farmers consented
+   to CORWADO holding their details for the LAST Project and donor reports; a
+   listing carrying a name, phone and location is a wider disclosure than that.
+   CORWADO must answer before any listing is readable outside CORWADO. The
+   first reader this system has ever had outside the four staff roles, and no
+   visibility rule in it answers for one.
 6. The four scope items in `docs/scope-and-acceptance.md`, _Open against the
    contract_: buyers who cannot log in (g, h) — **the buyer half closed
    2026-09-09: buyers hold no account; the farmer half stays open** — the
