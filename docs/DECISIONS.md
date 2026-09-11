@@ -2457,3 +2457,39 @@ the CI edit merged: test step **52 minutes**. Short path, #56, documents only:
 test step **4 seconds**, whole job 54 seconds, `verify: pass` reported like any
 other check, 20 files and 285 tests including both readers of CONVENTIONS and
 the guard itself.
+
+## Two records from the marketplace amendment's editing (2026-09-11)
+
+**The formatter has silently changed a document twice.** Prettier re-padded the
+CONVENTIONS tables and the drift test stopped matching; then it folded two new
+open items into the item above them, so they rendered inside another entry's
+prose and were not items at all. The shape, stated in PROJECT-STATE: the
+formatter is not wrong, but a document read by a machine, or read structurally
+by a session, is data, and a reflow that is cosmetic in prose is a change in a
+numbered list something counts.
+
+**The audit of what is exposed.** `.prettierignore` protects CLAUDE.md, the
+scope document and the two data models, for a stated and sound reason — they
+are contractual or supplied, and reformatting a contractual document by tool is
+how a wording change happens unnoticed. **But "read by a machine" was never the
+criterion:** `docs/api/CONVENTIONS.md`, the one document two tests parse, is
+not protected, and neither are the four state documents a session reads for
+board rows and numbered lists, nor the restore runbook a CORWADO administrator
+reads by numbered step. Whether to protect CONVENTIONS.md is a decision with a
+cost either way and is put to the owner rather than taken: ignoring it protects
+the tests' input and gives up formatting on the most hand-edited document;
+leaving it keeps the formatting and the exposure, which the drift test now
+absorbs because it parses cells rather than lines.
+
+**The elaboration failure, recorded beside the seams list because it is the
+same class.** The owner's framing of the consent problem was wrong. The session
+did not catch it; it elaborated it — supplied a mechanism, priced it in officer
+days, called it the largest cost in the amendment, and wrote it into three
+documents. **A wrong answer with a mechanism and three cross-references reads
+as settled, and confidence is the part that does the damage.** CLAUDE.md §0's
+restate step catches a session that has misunderstood, because restating a
+misunderstanding exposes it; it does nothing when the session understands and
+agrees. The precedent for the right behaviour is the drift-test false alarm of
+2026-09-05: that premise also came from the owner, was checked, and was false,
+and the record says so with attribution. The difference here was only that the
+wrong premise arrived with authority about scope rather than about code.
