@@ -23,7 +23,8 @@
     "farmers:seed": "node scripts/with-env.mjs node scripts/farmers-seed.mjs",
     "storage:buckets": "pnpm --filter @agri-erp/web storage:buckets",
     "backup:manifest": "pnpm --filter @agri-erp/web backup:manifest",
-    "restore:verify": "pnpm --filter @agri-erp/web restore:verify"
+    "restore:verify": "pnpm --filter @agri-erp/web restore:verify",
+    "audit:damaged-ids": "pnpm --filter @agri-erp/web audit:damaged-ids"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

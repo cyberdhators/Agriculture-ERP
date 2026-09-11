@@ -885,6 +885,122 @@ companion, from the fourth instance: **when the record says something was
 done or is pending, ask the system rather than the record.** A migration
 folder, a catalogue query, a live route — not a sentence in a document.
 
+## THE SEAMS — WHERE TWO RULES TOUCH AND NOTHING HAS TESTED THE JOIN (2026-09-10)
+
+The ninth silent-class instance was not a gate that checked nothing. It was two
+correct rules meeting, and the damage lived between them (below). That makes a
+list worth keeping in its own right, because the question it asks is different
+from the other eight's: not _does this gate check anything_, but **where do two
+of our rules touch, and has anything tested the seam?**
+
+Three named seams. **None of them is tested at the seam today.** Each entry
+says what the two rules are, what a defect there would look like, and what a
+test of the join would have to do.
+
+**1. The additive-migration law × a test that reads the schema.** _Rules:_
+migrations are additive, so older code keeps working against a newer schema
+(CLAUDE.md §4); and staging's schema runs ahead of main, which is acceptable
+because of that law (the standing condition). _What a defect looks like:_ a
+test that enumerates the schema and demands equality goes red on main for a
+reason that has nothing to do with main. **Has fired twice** — the view test
+on 2026-09-05, the directories enum test found by looking on 2026-09-06 — and
+a third time in a different direction on 2026-09-08, when dropping a column
+default was not additive and broke main's runs. _A test of the seam:_ a check
+that runs main's code against staging's schema and asserts nothing enumerates.
+Does not exist.
+
+**2. Soft delete × a view that reads through a parent.** _Rules:_ a
+soft-deleted row appears in no list, count, export or report (CLAUDE.md §4);
+and a view named after a table carries every column of it (the B6 rule).
+_What a defect looks like:_ a child view filters its own `deleted_at` and not
+its parent's, so a removed farmer's farms, hectares and visits keep appearing
+one join away. **Found by reading, 2026-09-08**, in B10's reporting reading,
+and fixed by giving four views the farmer join. _A test of the seam:_ for
+every active view, remove the parent and assert the child leaves too. Does not
+exist; B10's reporting test proves it for farms and visits only.
+
+**3. Idempotency × duplicate detection — TESTED AT THE SEAM, 2026-09-10, and
+the belief held.** _Rules:_ a retried create whose body matches returns the
+record, never a second row (C-9.2); and duplicate detection warns on phone,
+and on name plus payam, and never blocks (C-5.6). _What a defect would look
+like:_ the second send counted as its own duplicate, or a warning the first
+send raised cleared by the retry, or the retry path skipping the check so a
+real duplicate goes unflagged. _The test_ (`tests/sync.test.ts`, "the seam"):
+three cases, all passing. A clean farmer sent twice warns identically both
+times and is never flagged as a duplicate of itself. A real duplicate — same
+phone, new id — warns on its first send, repeats that warning on its retry,
+records the same matches, and does not retroactively flag the record it
+matched. And the order that makes the seam visible: A lands clean, B arrives
+sharing A's phone, A is retried — A's retry reports what was stored for A,
+which is nothing, while B holds the warning, so the stored truth lives on the
+record the check ran for and no warning is invented for A.
+
+**What the test found on the way, which is worth more than the result.** Two
+of its three failing runs were the test's own fault, not the code's: every
+fixture in that file shared a given name and payam, so the name-plus-payam rule
+made them duplicates of each other, and the replacement name used digits, which
+the name rule refuses. A seam test is harder to write than a rule test, because
+it must hold both rules in mind at once — the fixtures have to be clean under
+one rule to say anything about the other.
+
+_Added when found, not planned in advance: a seam is only visible once both
+rules exist. The pattern to watch for is a rule that constrains a value and
+another rule that transforms it._
+
+**THE NINTH INSTANCE IS A DIFFERENT SHAPE, AND IT DESERVES ITS OWN QUESTION
+(2026-09-09).** The eight before it were gates that checked nothing: a
+typecheck that skipped a directory, a scanner that was blind, a column nobody
+wrote. This one is not that. **It is two correct rules meeting.**
+
+The standing rule says reference records by id, never by name — so every audit
+payload carries UUIDs. The scrubber is deliberately over-matching, because a
+redacted timestamp is cheaper than a leaked farmer's number — so it redacts any
+digit run that could be a phone number. Neither rule is wrong. About one v4
+UUID in fifty-four contains a ten-digit window that parses as a local South
+Sudan number by coincidence (measured: 1.85% of twenty thousand), and the
+scrubber replaced part of it before `auditSafe` stored it. **Measured on
+staging: 321 of 22,314 audit rows, 1.44%, hold a damaged identifier** — most in
+`consent.recorded` and `farmer.created`, which carry a farmer id in their
+payload.
+
+No test of either rule alone could find it. The scrubber's tests proved it
+redacts numbers; the audit tests proved keys are dropped and changed fields
+kept; nothing compared a stored id against the id it was meant to be. B8.5's
+reassignment test did, months later and by accident, because it was the first
+to assert a payload's `caseload_officer_id` equalled a known UUID.
+
+**So the question to ask of this one is not the other eight's.** For them it
+was: _does this gate actually check anything?_ For this one it is: **where do
+two of our rules touch, and has anything tested the seam?** Every pair of rules
+in this system that meet on the same value is a candidate: the scrubber against
+the audit log (this one), the additive-migration law against a test that reads
+the schema (found 2026-09-06, the same shape), soft delete against the views
+that read through a parent (found in B10's reading), idempotency against the
+duplicate check. A seam is not a gap in a rule. It is the place two rules were
+each right about their own half.
+
+**Fixed** by exempting the canonical UUID shape before the candidate scan — a
+shape, not a second definition of a phone number, so `parseSouthSudanMobile`
+remains the only thing that says what a number is. Tested both directions: a
+UUID survives, ten thousand random UUIDs survive, and a real number beside one
+in the same string is still redacted.
+
+**The damaged rows stay.** `audit_event` is append-only (C-4) and repairing
+them would be the one thing the table forbids. `pnpm audit:damaged-ids` lists
+them, so a reader who meets `60fa[redacted]d2-bf[redacted]` in a payload knows
+the id was damaged in transit and does not conclude the record's id was wrong.
+
+**Where else this reached.** Two paths take a value through the scrubber, and
+only one stores it. `auditSafe` → `audit_event.before/after`: the damage above.
+`scrubEvent` → Sentry envelopes: not stored by us, but the same coincidence
+damages a `correlation_id` tag, which is a UUID, at the same rate — so about
+one report in fifty-four could not be matched to the response the caller saw,
+which is exactly what the wrapper's correlation id exists for. Nothing else
+writes a scrubbed value: `report_export`'s query, filters and scope are stored
+unscrubbed by design (they carry no personal data), and no other INSERT in the
+codebase passes a value through the scrubber. Both paths are fixed by the one
+change.
+
 **The eighth instance, a column read by a new feature and never written
 (2026-09-08).** `updated_at` on farmer, farm and visit had no trigger, and the
 verification transitions never set it; only a few routes did. C-9.9's
@@ -948,6 +1064,11 @@ GitHub rather than copied. Grouped by who closes it.
 **The user closes:**
 
 9. The Supabase plan and point-in-time recovery question (B11 checklist).
+   9a. **GitHub Actions minutes (2026-09-10).** The repository is private, so runs
+   are billed. 2,099 minutes across the backend; a unit costs 100–300. CI is
+   stopped for billing as of 2026-09-10 and nothing can be verified until it
+   is settled. The second unbudgeted infrastructure cost, after the Supabase
+   plan; both are CORWADO's accounts and CORWADO's decisions.
 10. ~~The `requireRole` defect~~ — resolved by B6.5.
 11. ~~Four orphan authentication accounts on staging~~ — removed on
     2026-09-05: all four were officer identifiers created on 2026-09-04 by
@@ -1201,6 +1322,17 @@ Migrations carry the schema, RLS and views automatically. These do not travel:
   invented data; nothing real is ever loaded there "to try".
 - The manifest, on the backup's schedule: `pnpm backup:manifest` against
   production, kept under CORWADO's control (RUNBOOK-restore, section 1).
+- **GitHub Actions minutes, budgeted.** The repository is private, so every CI
+  minute is billed or drawn from the account's included allowance. Measured
+  2026-09-10 across 254 recorded runs, 134 of which actually executed:
+  **2,099 wall-clock minutes**, longest 108, and the last twelve executed runs
+  ran 4, 12, 19, 21, 45, 47, 47, 63, 65, 72, 98 and 108 minutes. A unit costs
+  roughly two to four runs — its own, its re-runs, and main's after the merge —
+  so **a unit is 100 to 300 minutes** at today's suite size, and the suite grows
+  about five minutes a unit. CI stopped on 2026-09-10 with "recent account
+  payments have failed or your spending limit needs to be increased"; nothing
+  can be verified until it is settled. This is the second infrastructure cost
+  the project has met without being budgeted, after the Supabase plan.
 
 ## DEFECT — AN AUTH SERVICE OUTAGE READS AS "SIGN IN TO CONTINUE" (found by B5, owned by B3)
 

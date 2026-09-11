@@ -1143,6 +1143,16 @@ CORWADO before the affected deliverable is built.
 3. **"Ask AI" appears in the designs and in no deliverable.** Not to be built
    until answered.
 
+3a. **Two infrastructure costs, neither budgeted (2026-09-10).** The Supabase
+   plan decides the recovery point in C-11.1 — the free tier takes no backups,
+   so today it is unbounded — and point-in-time recovery is a paid add-on.
+   GitHub Actions is the second: the repository is private, so every CI minute
+   is billed, and the backend has spent 2,099 measured minutes at 100–300 per
+   unit. Actions stopped on 2026-09-10 for a failed payment or a spending
+   limit, and nothing can be verified until it is settled. Both accounts are
+   CORWADO's and both decisions are CORWADO's; recorded here so the
+   conversation is about numbers rather than a surprise.
+
 4. **Arabi Juba script.** Section 4 records that this must be settled before
    translation begins: Arabic script requires right-to-left mirroring, and
    non-Latin scripts occupy fewer characters per SMS, so one message may be

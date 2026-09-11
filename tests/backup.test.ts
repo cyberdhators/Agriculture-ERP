@@ -189,7 +189,13 @@ run('the restore leaves a note (C-11.4) and corrects lost attachments (C-11.3)',
       recovery_point: recoveryPoint,
       performed_by: 'Zztest Administrator',
     });
-    expect((row!.after.first_audit_after_gap as { action: string }).action).toBe('farmer.created');
+    // Registering a farmer writes farmer.created and consent.recorded in one
+    // transaction, so both carry the same occurred_at and the order ties on a
+    // random id. Either is the first entry after the gap; asserting one was a
+    // coin flip that landed the other way on 2026-09-09.
+    expect(['farmer.created', 'consent.recorded']).toContain(
+      (row!.after.first_audit_after_gap as { action: string }).action,
+    );
     expect(row!.before).toHaveProperty('last_audit_before_gap');
     expect(JSON.stringify(row)).not.toContain('Zzrestore');
     // The audit table's own rule: the entry cannot be changed or removed afterwards.

@@ -2148,3 +2148,88 @@ before writing.
 **Seven instances, and every one would have been caught by a session that
 stopped and asked.** None needed a tool or a rule to prevent. Each needed only
 the discipline of not proceeding on an answer nobody gave.
+
+## The scrubber and the audit log — a seam, not a gap (2026-09-09)
+
+**What broke.** `scrubString` damaged about one UUID in fifty-four, and
+`auditSafe` stored the damage. 321 of staging's 22,314 audit rows hold a
+mangled identifier. Found by B8.5's reassignment test, the first test in the
+project to compare a stored audit payload against a known id.
+
+**Why it is worth naming apart from the eight silent gates.** Those were gates
+that checked nothing. This is two rules that are each correct: reference
+records by id, and over-match when redacting because a redacted timestamp is
+cheaper than a leaked number. The defect lives in the space between them, and
+no test of either rule alone would find it. The question this one asks of the
+project is _where do two of our rules touch, and has anything tested the seam?_
+
+**The fix, and why this shape of fix.** The canonical UUID form is stepped over
+before the candidate scan. It is a **shape**, not a second definition of a
+phone number: `parseSouthSudanMobile` stays the only thing in the codebase that
+says what a number is, which is the rule CONVENTIONS §8 exists to protect. The
+alternative — narrowing the net so it stops matching hex-ish runs — would have
+traded a rare damaged id for a rare leaked number, and that trade is the wrong
+way round. A UUID never carries personal data; that is why records are
+referenced by one.
+
+**Tested both directions**, because a fix that spared identifiers by weakening
+the net would be worse than the defect: the damaging UUID passes through
+unchanged, ten thousand random UUIDs pass through unchanged, a real number
+beside a UUID in one string is still redacted, and a near-UUID that is one
+character short is still treated as text.
+
+**The damaged rows are not repaired.** `audit_event` is append-only (C-4), and
+rewriting history to fix a redaction would be a worse breach than the
+redaction. `pnpm audit:damaged-ids` counts them by action and lists them with
+`--list`, so the rows can be recognised rather than misread.
+
+**Also fixed, in the same change:** a flaky assertion in `tests/backup.test.ts`.
+It required the first audit entry after a restore's recovery point to be
+`farmer.created`, but registering a farmer writes `farmer.created` and
+`consent.recorded` in one transaction with the same `occurred_at`, so the order
+ties on a random id. It passed on B11's run and failed on the next; it now
+accepts either.
+
+## The cost of a CI run, measured (2026-09-10)
+
+CI stopped with "recent account payments have failed or your spending limit
+needs to be increased" — two runs refused before starting, main's and the
+scrubber fix's. It is the second infrastructure cost this project has met
+without being budgeted, after the Supabase plan, so the number is recorded
+rather than the surprise.
+
+Measured across 254 recorded runs, 134 of which executed: **2,099 wall-clock
+minutes**. The longest was 108. The last twelve executed runs: 4, 12, 19, 21,
+45, 47, 47, 63, 65, 72, 98, 108. A unit costs two to four runs — its own, its
+re-runs, and main's after the merge — so **100 to 300 minutes a unit** at
+today's suite size, growing about five minutes a unit.
+
+The suite is round-trip bound, not compute bound (PROJECT-STATE, the ceiling),
+so the per-run cost is mostly waiting on Frankfurt. That is the same finding
+that prices the per-run isolation unit: four workers would divide the wait and
+the bill together, which is now a second reason to do it after B11 rather than
+a first reason to raise a ceiling.
+
+## Seam 3 tested: idempotency against duplicate detection holds (2026-09-10)
+
+The seams list said the retry path returns the stored `duplicate_matches`,
+believed right and unproven. Now proven, three cases in `tests/sync.test.ts`:
+a clean record sent twice warns identically and is never its own duplicate; a
+real duplicate warns on the first send and repeats that warning on the retry,
+with the recorded matches unchanged and the matched record not retroactively
+flagged; and where a duplicate appears only between the first send and the
+retry, the retry reports what was stored for its own record — nothing — while
+the warning lives on the record the check actually ran for.
+
+**The design this confirms.** `recordDuplicates` writes matches onto the record
+being written, not onto the ones it matched, so a warning belongs to the record
+whose arrival raised it. That is why the retry can answer from storage without
+re-running the check, and why a later duplicate does not silently rewrite an
+earlier record's history.
+
+**The cost of writing it.** Two runs failed on the test's own fixtures — every
+farmer in the file shared a name and payam, so the name-plus-payam rule made
+them duplicates of one another, and the first fix used digits in a name, which
+C-5's name rule refuses. **A seam test is harder to write than a rule test:**
+its fixtures must be clean under one rule before they can say anything about
+the other. Worth knowing before the other two seams are tested.
