@@ -1115,43 +1115,48 @@ GitHub rather than copied. Grouped by who closes it.
 3. National ID visibility (C-5.8): narrow reading chosen; widen on request.
 4. Cross-state merges (C-6.4): refused for every role until they ask.
 5. Whether an officer may propose a directory entry from the field (C-13 note).
-   6a. **The consent question, 2026-09-11, and it blocks publication.** The
-   marketplace amendment puts farmer listings in this phase. Farmers consented
-   to CORWADO holding their details for the LAST Project and donor reports; a
-   listing carrying a name, phone and location is a wider disclosure than that.
-   CORWADO must answer before any listing is readable outside CORWADO. The
-   first reader this system has ever had outside the four staff roles, and no
-   visibility rule in it answers for one.
-6. The four scope items in `docs/scope-and-acceptance.md`, _Open against the
+6. **How a buyer contacts a farmer (2026-09-11), and it blocks publication.**
+   The marketplace amendment puts farmer listings in this phase. A listing
+   carries a trading name, produce, quantity and availability — no legal name,
+   national ID or address — and publication consent is per listing and
+   revocable, which the existing consent table supports without change. **What
+   is open is one field: the phone number a buyer needs.** Recommended shape,
+   for CORWADO to confirm: a contact request CORWADO passes on, routed to the
+   farmer's caseload officer, which is deliverable (g)'s own "introduction
+   recorded by staff". Until answered, no listing is readable outside the four
+   staff roles — the first reader this system has contemplated outside that
+   set, and no visibility rule in it answers for one.
+7. The four scope items in `docs/scope-and-acceptance.md`, _Open against the
    contract_: buyers who cannot log in (g, h) — **the buyer half closed
    2026-09-09: buyers hold no account; the farmer half stays open** — the
    farmer-facing application (with the three questions a unit must answer
    first, kept from the closed #27), "Ask AI", Arabi Juba script and SMS cost.
-7. Data model open questions 1–6 (`docs/data-model.md` §5), including
+8. Data model open questions 1–6 (`docs/data-model.md` §5), including
    retention and removal requests.
-8. WhatsApp (o): blocked on Meta business verification.
+9. WhatsApp (o): blocked on Meta business verification.
 
 **The user closes:**
 
-9. The Supabase plan and point-in-time recovery question (B11 checklist).
-   9a. **GitHub Actions minutes (2026-09-10).** The repository is private, so runs
-   are billed. 2,099 minutes across the backend; a unit costs 100–300. CI is
-   stopped for billing as of 2026-09-10 and nothing can be verified until it
-   is settled. The second unbudgeted infrastructure cost, after the Supabase
-   plan; both are CORWADO's accounts and CORWADO's decisions.
-10. ~~The `requireRole` defect~~ — resolved by B6.5.
-11. ~~Four orphan authentication accounts on staging~~ — removed on
+10. The Supabase plan and point-in-time recovery question (B11 checklist).
+11. **GitHub Actions minutes (2026-09-10).** The repository is private, so
+    runs are billed. 2,099 minutes across the backend; a unit costs 100–300.
+    CI stopped for billing on 2026-09-10 and started again on 2026-09-11 once
+    payment details and a $20 budget were set. The second unbudgeted
+    infrastructure cost, after the Supabase plan; both are CORWADO's accounts
+    and CORWADO's decisions.
+12. ~~The `requireRole` defect~~ — resolved by B6.5.
+13. ~~Four orphan authentication accounts on staging~~ — removed on
     2026-09-05: all four were officer identifiers created on 2026-09-04 by
     test runs, no user or officer row, no audit row naming them. B3's
     compensating-transaction mechanism was confirmed twice in the act: the
     admin list's first page reported `orphan_auth_accounts: 4` before the
     deletion and `0` after.
-12. Lane 2's unmerged branches `feat/ui-farmer` and `docs/farmer-baseline`
+14. Lane 2's unmerged branches `feat/ui-farmer` and `docs/farmer-baseline`
     carrying the fourth out-of-scope instance.
-13. Confirming the Sentry IP-storage setting is on, by the next event.
-14. `SENTRY_ENVIRONMENT` in Vercel for preview and production.
+15. Confirming the Sentry IP-storage setting is on, by the next event.
+16. `SENTRY_ENVIRONMENT` in Vercel for preview and production.
 
-15. **Caseload reassignment — a growing hole, not a footnote.** Today a
+17. **Caseload reassignment — a growing hole, not a footnote.** Today a
     farmer whose registering officer leaves is **frozen**: they cannot be
     resubmitted if rejected (C-6.5 needs the registering officer), cannot
     have a farm mapped (C-7 admits only an officer with the farmer in their

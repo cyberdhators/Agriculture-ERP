@@ -2313,15 +2313,14 @@ The buyer: buyers hold no account, as decided 2026-09-09. **The third is not
 answered:** C-9's sync contract assumes an officer's phone, and a farmer's
 browser is not one.
 
-**The blocking question is consent, and it is new.** Farmers consented to
-CORWADO holding their details for the LAST Project and for donor reports. A
-public listing carrying a name, a phone number and a location is a wider
-disclosure than that consent describes. This is the first time this system has
-contemplated a reader outside the four CORWADO staff roles, and every
-visibility rule in it — C-5.8, C-7.8, C-8.4, C-8.13, C-10.11 — answers only for
-those four. The likely resolution is a new consent text and re-consent from
-every farmer whose listing is published, which is a field operation and not a
-schema change. **No listing is readable outside CORWADO until CORWADO answers.**
+**The blocking question is narrower than it first looked** (corrected by the
+owner 2026-09-11; see "What a listing carries" below). A listing carries a
+farm or trading name the farmer chooses, the produce, the quantity and the
+availability — not a legal name, a national ID or an address. Publication
+consent is per listing, given when the farmer creates it and revocable, which
+the existing consent table already supports. **What remains open is one field:
+the phone number a buyer needs to make contact.** No listing is readable
+outside CORWADO until CORWADO answers that.
 
 **THE REVERT STANDS, AND THIS IS THE POINT: WORK IS NOT LEGITIMISED
 RETROSPECTIVELY BY THE SCOPE LATER MOVING TO MEET IT.** Decided by the owner
@@ -2349,29 +2348,54 @@ written first, after CORWADO answers the consent question, by a lane that has
 restated and been confirmed. That is not a penalty; it is the same path every
 backend unit from B2 to B11 took.
 
-## What goes to CORWADO about consent, in the terms to use (2026-09-11)
+## What a listing carries, and the one field left open (2026-09-11, corrected)
 
-The owner's framing, sharpened and recorded because it is the largest cost in
-the marketplace amendment and the one CORWADO is least likely to have
-considered.
+The owner's first framing of this — that publishing a listing is wider than the
+consent farmers signed, and the remedy is re-consent in the field across payams
+— **was wrong, and the assistant's version followed it and sharpened the error
+rather than catching it.** Recorded that way round because the correction came
+from the owner, and because a sharpened wrong answer is more convincing than a
+vague one and therefore worse.
 
-**Not:** which fields may a listing show. **But:** publishing a farmer's
-details outside CORWADO is wider than the consent they signed. Every farmer in
-this system consented to CORWADO holding their details for the LAST Project and
-for donor reports. None consented to a buyer reading their name, phone number
-and location.
+**What a listing actually carries:** a farm or trading name the farmer chooses,
+the produce, the quantity, the availability. Not a legal name, not a national
+ID, not an address. **Nobody is published who did not ask to be**, so the field
+re-consent operation is not needed and has been removed from the scope
+document.
 
-**The likely remedy is new consent text and re-consent in the field from every
-farmer whose listing is published.** Officers visiting farmers already
-registered, reading a new consent text, recording a new consent. **A field
-operation across payams, not a migration.** The schema is ready — consent is
-versioned by text and language precisely so that what was agreed can be proven,
-and a farmer holds one current consent and any number of historic ones. The
-cost is the visiting, and it is a cost in officer days and travel, not in
-engineering.
+**Publication consent is per listing**, given at creation and revocable;
+withdrawing it unpublishes the listing. A second consent record beside the
+registration one, with its own text version and language. **No schema change:**
+consent is already versioned by text and language, a farmer holds one current
+and any number of historic, and `consent.withdrawn_at` exists with a CHECK that
+a withdrawn consent cannot read as granted (migration 10). The table was built
+in B5 to prove what was agreed; this is that mechanism used a second time.
 
-Until CORWADO answers in writing, no listing is readable outside the four staff
-roles and no marketplace is reachable without a staff session.
+**The farm name is a trading identity, and the screen can undo that.** Free
+text means a farmer may type their own name, which publishes it with extra
+steps. Not a technical control — the field cannot be validated into safety — so
+it is a flow and wording obligation on whoever builds the screen, written down
+here rather than discovered later.
+
+**The one open question: the phone number.** A buyer needs a route to the
+farmer, and a published number is the hardest thing about a farmer to change
+once out; in South Sudan it is often also the identity behind a mobile-money
+wallet. Three shapes: on the listing; a contact request CORWADO passes on; or
+shown once a buyer identifies themselves.
+
+**Recommended: the contact request.** It is the only shape consistent with
+buyers holding no account, which removes the third outright — an unverified
+name typed by a stranger identifies nobody. **It is already deliverable (g) as
+the Inception Report describes it**, an introduction recorded by staff, so the
+staff time is the deliverable rather than overhead and the marketplace needs no
+scope stretch to accommodate it. And it keeps the number inside the consent
+farmers have already given, so the one field that cannot be withdrawn is never
+published. Its cost is latency on perishable produce; the mitigation is to
+route the request to the officer whose caseload holds that farmer (C-8R), who
+already visits them. The farmer-chooses-per-listing option is recorded as the
+thing to reconsider only if CORWADO reports latency losing trades, because an
+informed choice requires understanding that a published number cannot be
+recalled and a checkbox does not convey that.
 
 ## Sync means nothing for a farmer's browser (2026-09-11)
 

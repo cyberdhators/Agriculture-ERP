@@ -1148,35 +1148,73 @@ file must not cite this section as a client decision.
   (open item 1 below). No buyer login, no self-registration, no email
   verification.
 
-**OPEN AND UNANSWERED, AND IT BLOCKS PUBLICATION. THIS IS THE LARGEST COST IN
-THE AMENDMENT AND THE ONE CORWADO IS LEAST LIKELY TO HAVE CONSIDERED.**
+**WHAT A LISTING CARRIES, AND THE ONE QUESTION LEFT (corrected 2026-09-11 by
+the owner; the earlier framing in this section was wrong and is replaced).**
 
-**The question is not which fields a listing shows.** It is that publishing a
-farmer's details outside CORWADO is wider than the consent they signed. Every
-farmer in this system consented to CORWADO holding their details for the LAST
-Project and for donor reports (C-5.2; the consent record's `text_version`,
-`language` and `granted_at`). None consented to their name, phone number and
-location being readable by a buyer.
+**A listing does not publish a farmer's personal data.** It carries a farm or
+trading name the farmer chooses, plus the produce, the quantity and the
+availability. Not their legal name, not their national ID, not their address.
+So the re-consent-in-the-field operation this section previously described is
+**not needed and has been removed**: nobody is published who did not ask to be.
 
-**The likely remedy, and it is to be put to CORWADO in these terms: new consent
-text, and re-consent in the field from every farmer whose listing is published.**
-That is a field operation across payams — officers visiting farmers already
-registered, reading them a new consent text, and recording a new consent — not
-a migration and not a schema change. It is the largest cost in this scope
-change. Nothing in the schema prevents it: consent is already versioned by text
-and language precisely so that what was agreed can be proven (`docs/data-model.md`
-§2, `farmer 1 ── 1 consent` current, `1 ── n` historic). The cost is the
-visiting.
+**Publication consent is per listing.** Given at the moment the farmer creates
+the listing, and revocable. It is a second consent record beside the
+registration one, with its own `text_version` and `language`; withdrawing it
+unpublishes the listing. The schema already supports this and needs no change:
+consent is versioned by text and language, a farmer holds one current consent
+and any number of historic ones, and `consent.withdrawn_at` exists with the
+CHECK that a withdrawn consent cannot read as granted (migration 10).
 
-**Until CORWADO answers in writing:**
+**The farm name is a trading identity, not a person — and the screen must not
+let that slip.** If the field is free text, a farmer may type their own name
+into it, which publishes their name with extra steps. That is a flow and
+wording concern for whoever builds the screen, not a technical control: the
+field cannot be validated into safety. It is written down here rather than
+left to be discovered, and the unit's screen notes must say how the farmer is
+asked — a prompt for a market or farm name, an example, and not a bare "name"
+label beside their own record.
 
-- No listing is readable by anyone outside the four CORWADO staff roles.
-- No listing is published, and no marketplace is reachable without a staff
-  session.
-- Every visibility rule in this system answers for those four roles only
-  (C-5.8, C-7.8, C-8.4, C-8.13, C-10.11). A buyer is the first reader this
-  system has ever contemplated outside that set, and none of those rules has an
-  answer for one.
+**THE OPEN QUESTION, AND IT IS THE ONLY GENUINELY IDENTIFYING FIELD A BUYER
+NEEDS: the phone number.** A buyer contacting a farmer needs a route to them,
+and a phone number on a public page is the hardest thing about a farmer to
+change once it is out — in South Sudan it is also frequently the identity
+behind a mobile-money wallet, so exposure is not only nuisance. Three shapes:
+
+1. **Shown on the listing.** Simplest, works with no CORWADO involvement, and
+   irreversible.
+2. **A contact request CORWADO passes on.** The number never leaves CORWADO.
+3. **Shown once a buyer identifies themselves.** Requires something of the
+   buyer.
+
+**Which to build: 2, the contact request.** Three reasons, in order of weight.
+It is the only one of the three consistent with a decision already taken —
+buyers hold no account (open item 1), which removes 3 outright, since an
+unverified name typed by a stranger identifies nobody and is theatre. **It is
+already what deliverable (g) describes:** the Inception Report's (g) is an
+introduction recorded by staff, so a contact request that CORWADO passes on and
+records is not a compromise on the marketplace, it _is_ the contracted
+deliverable, and the staff time is the deliverable rather than overhead. And it
+leaves the phone number inside the consent farmers have already given, so the
+publication question stays closed rather than being reopened by the one field
+that cannot be withdrawn.
+
+_Its cost is latency, which matters for perishable produce._ The mitigation,
+noted for the unit: route the contact request to the officer whose caseload
+holds that farmer (C-8R's `caseload_officer_id`) rather than to a central
+queue. That officer already visits them and already has their number.
+
+_The option to reconsider only if CORWADO reports that enquiry latency is
+losing trades:_ let the farmer choose, per listing, whether the number shows.
+It is consistent with publication consent being the farmer's decision. The
+reason not to start there is that an informed choice requires understanding
+that a published number cannot be recalled, and a checkbox does not convey
+that.
+
+**Until CORWADO answers the contact question in writing:** no listing is
+readable outside the four CORWADO staff roles, and no marketplace is reachable
+without a staff session. Every visibility rule in this system answers for those
+four roles only (C-5.8, C-7.8, C-8.4, C-8.13, C-10.11); a buyer is the first
+reader it has ever contemplated outside that set.
 
 **The three questions carried from #27's close are now all answered.** The
 caseload, by assignment and approval. The buyer, by holding no account. And the
