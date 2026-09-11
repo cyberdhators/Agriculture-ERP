@@ -948,6 +948,75 @@ makes survivable: a second run would fail fast naming the holder, which is
 noisy but never silent. Not taken — the group's queueing is worth more than the
 noise it prevents, now that the eviction is known and the rule is written._
 
+## HOW TO TELL A GATE THAT CAN FAIL FROM ONE THAT CANNOT — THE COMPANION QUESTION (2026-09-11)
+
+The seams list below asks where two rules touch. This asks the same kind of
+question one level down, about gates, and it is a design principle rather than
+a fact about any one of them:
+
+> **A gate that compares two sources which can drift apart cannot be quietly
+> wrong about both at once. A gate that asserts a single fact can be quietly
+> wrong the moment the fact stops being true.**
+
+**Every silent finding in this project was single-source.** Set out plainly,
+because the pattern is only visible in the list:
+
+| The gate                | The single fact it asserted | How it was false                      |
+| ----------------------- | --------------------------- | ------------------------------------- |
+| `pnpm typecheck`        | it covers `tests/`          | the directory was outside the project |
+| CI's test step          | it runs the database files  | all eight skipped themselves silently |
+| local gitleaks          | it scanned the branch       | the x86 build could not run git       |
+| four foreign keys       | the record said pending     | nobody asked the catalogue            |
+| the drift test          | it matches CONVENTIONS      | the formatter re-padded the table     |
+| the view test           | views equal their tables    | an aggregate view is not a table      |
+| `audit_event.device_id` | the law says it is recorded | no request ever sent one              |
+| `updated_at`            | it is current               | no trigger and no route wrote it      |
+
+Eight gates, eight statements believed true, all quietly false. The ninth
+finding broke the pattern in one direction — two correct rules meeting, which
+is the seams list — and `tests/pure-suite-complete.test.ts` broke it in the
+other: **the first gate in this project that compares.** It holds the files on
+disk against a config's patterns, two sources that move independently, and it
+found a defect in the change it was written for and then one in itself.
+
+**THE QUESTION TO ASK OF ANY GATE BEING WRITTEN:**
+
+1. **Does it compare two things that can move independently, or does it assert
+   one thing?**
+2. **If it asserts one thing: what makes it fail when that thing stops being
+   true?** If the answer is "someone would notice", it is not a gate.
+
+A gate that compares needs no vigilance: the two sources drift and it goes red
+by itself. A single-fact gate needs a person to remember, and the record of
+this project is eight demonstrations that nobody does.
+
+_Worked examples of turning one into the other, from this repository:_ the view
+test compares the view catalogue against the table catalogue rather than
+asserting a list of views; the audit-action CHECK is generated from
+`AUDIT_ACTIONS` so the database and the code cannot disagree; the accuracy
+CHECK is generated from the shared thresholds for the same reason; the
+conventions drift test parses cells against exported constants. Each of those
+is a comparison. The ones that bit were not.
+
+**THE PRINCIPLE DEMONSTRATED RATHER THAN ARGUED (2026-09-11).** The pure suite
+ran 23 files on a developer's machine and **20 files on CI the same day**. The
+difference is the three test files under `apps/web/lib` that arrived with #49
+and #50 and left with their reverts. **Nobody edited the pure config, and
+nothing went red.** The guard globs the disk and compares what it finds against
+the config's patterns, so a set of files that changed underneath it was simply
+described correctly on both machines.
+
+A single-fact gate — "the pure suite runs these 23 files" — would have been
+false the moment the reverts landed, and false in the silent direction: still
+green, now running less than it claimed. That is the whole of the difference,
+in one observation, and it is why the question is worth asking of every gate
+before it is written.
+
+_The measured saving on the same day, for scale:_ main's full-path run after
+the CI edit merged took **52 minutes** in its test step; #56, documents only,
+took **4 seconds** on the short path and reported `verify: pass` like any other
+check.
+
 ## THE SEAMS — WHERE TWO RULES TOUCH AND NOTHING HAS TESTED THE JOIN (2026-09-10)
 
 The ninth silent-class instance was not a gate that checked nothing. It was two
