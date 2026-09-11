@@ -1121,6 +1121,55 @@ looks more finished the more wrong it is. Of the two failure modes, the second
 costs more, and this project has now seen one of each: the drift-test alarm,
 where the question was right, and this, where it was not asked.
 
+## A THIRD PATTERN: A CHECK POINTED AT THE WRONG THING (2026-09-11)
+
+Two patterns are already recorded: a gate asserting a single fact, which can be
+quietly false (the eight silent findings, and the companion question above);
+and two correct rules meeting, where the defect lives in the join (the seams
+list below). **This is a third, and it is distinct from both.**
+
+> **A check that runs, passes, and tells you nothing about what changed.**
+
+Not broken. Not silent. It executes, it reports honestly, and its subject is
+not the thing under review.
+
+**The instance.** The fifth CI edit gave documents-only pull requests a short
+path and deliberately excluded `CLAUDE.md` from it. The reasoning was that the
+law file deserves more scrutiny than an ordinary document. **That reasoning
+fails on inspection: a database suite is not scrutiny of a document.** Nothing
+in the full suite reads `CLAUDE.md`. #59 amended five lines of it and cost
+**1h 5m 49s** across 37 test files and 830 tests, every one of them exercising
+code that had not changed. The only real review of a law amendment is the owner
+reading the wording, which had already happened before it was pushed. **The
+exclusion bought a longer wait and no information.** Corrected in the sixth CI
+edit, which is one line.
+
+**THE QUESTION THIS PATTERN SUGGESTS:**
+
+> **Does this check examine the thing that changed, or something adjacent to
+> it?**
+
+Adjacent is the dangerous word, because adjacency is what makes it feel
+rigorous. A full suite on a documentation change feels careful. A green check
+on 830 unrelated tests reads as "verified" to anyone glancing at the pull
+request, and what it verifies is that the rest of the repository still works —
+which was not in question.
+
+**Where else to look for it in this project**, listed rather than assumed: the
+Vercel preview build runs on documents-only pull requests too, and tells us
+nothing about them; the gitleaks scan on a documents change is genuinely
+relevant, because a document can carry a credential, so that one examines what
+changed; and the typecheck, lint and format steps on a documents-only branch
+are cheap and do examine the changed files. The full test suite was the only
+one pointed elsewhere, and it was the expensive one.
+
+**The three patterns together, as questions to ask of any check:**
+
+1. Does it compare two things that can move independently, or assert one fact?
+   _(and if it asserts: what makes it fail when the fact stops being true)_
+2. Where do two rules touch, and has anything tested the seam?
+3. Does it examine the thing that changed, or something adjacent to it?
+
 ## THE SEAMS — WHERE TWO RULES TOUCH AND NOTHING HAS TESTED THE JOIN (2026-09-10)
 
 The ninth silent-class instance was not a gate that checked nothing. It was two
