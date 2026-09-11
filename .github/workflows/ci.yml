@@ -70,8 +70,53 @@ jobs:
       # five secrets are set by the project owner; the test helpers refuse to
       # run — loudly, not by skipping — if any is missing, and refuse to run
       # against any project but staging whatever the values say.
+      #
+      # THE SHORT PATH (2026-09-11, the fifth CI edit). 98% of a run is this
+      # step: on #54's green run it was 44m46s and every other step together
+      # was 47s. A pull request that changes nothing but documents needs none
+      # of the staging suite, and four of six pull requests open that day were
+      # documents only.
+      #
+      # THE STEP IS NEVER CONDITIONAL. It always runs, always reports, and
+      # decides INSIDE which suite to run. A required check that silently does
+      # not run is the shape of the eight skipped test files and the null
+      # device column (docs/PROJECT-STATE.md) and must not be reintroduced
+      # here. There is no `if:` on this step and there must never be one.
+      #
+      # ABSENCE IS NOT SUCCESS. The short path runs `pnpm test:pure`, whose
+      # config sets `passWithNoTests: false` and whose own guard
+      # (tests/pure-suite-complete.test.ts) asserts that every test file in the
+      # repository needing no database is one it runs. If the short path cannot
+      # run what it claims, it is red, not skipped.
+      #
+      # The two tests that read docs/api/CONVENTIONS.md are both in the pure
+      # suite, so a CONVENTIONS change still meets the drift test and the
+      # rule-sentence test on the short path.
       - name: Test
-        run: pnpm test
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            base="origin/${{ github.base_ref }}"
+            git fetch --no-tags --depth=0 origin "${{ github.base_ref }}" >/dev/null 2>&1 || true
+            changed="$(git diff --name-only "$base"...HEAD)"
+          else
+            changed="$(git diff --name-only HEAD~1 HEAD || echo FULL)"
+          fi
+          echo "changed files:"; echo "$changed" | sed 's/^/  /'
+          # Anything outside docs/ and .prettierignore means the full suite.
+          outside="$(echo "$changed" | grep -vE '^docs/|^\.prettierignore$' || true)"
+          if [ -z "$changed" ]; then
+            echo "no changed files could be determined — running the full suite"
+            outside="undetermined"
+          fi
+          if [ -n "$outside" ]; then
+            echo "FULL SUITE: these changed files are outside docs/:"
+            echo "$outside" | sed 's/^/  /'
+            pnpm test
+          else
+            echo "SHORT PATH: documents only. Running the pure suite (no database)."
+            pnpm test:pure
+          fi
         env:
           DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
           DIRECT_URL: ${{ secrets.STAGING_DIRECT_URL }}
