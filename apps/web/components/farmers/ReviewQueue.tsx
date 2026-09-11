@@ -1,18 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
-
-import { REJECTION_REASONS, type RejectionReason } from '@agri-erp/shared';
+import { useMemo, useState } from 'react';
 
 import { CROP_LABELS, formatPhone, pluralise } from '@/lib/format';
-import {
-  LIVE_VERIFICATION,
-  listQueue,
-  mergeFarmer,
-  rejectFarmer,
-  verifyFarmer,
-} from '@/lib/farmers/verification';
 import {
   canReview,
   daysWaiting,
@@ -42,7 +33,6 @@ import {
   KpiStrip,
   Notice,
   PageHeader,
-  Select,
   Stamp,
   Textarea,
 } from '../ui';
@@ -51,15 +41,6 @@ import { Boundary } from './Boundary';
 import { DuplicateWarning } from './DuplicateWarning';
 
 const TODAY_YEAR = 2026;
-
-const REASON_LABEL: Record<RejectionReason, string> = {
-  duplicate: 'Duplicate of an existing farmer',
-  wrong_location: 'Wrong location',
-  incomplete: 'Incomplete record',
-  not_a_farmer: 'Not a farmer',
-  consent_missing: 'Consent missing',
-  other: 'Other (explain in the note)',
-};
 
 // Pending pool, computed once from the fixture set.
 const FARMERS_PENDING = FARMERS.filter(
@@ -70,31 +51,17 @@ export function ReviewQueue() {
   const { role, hydrated } = usePreview();
   const [decided, setDecided] = useState<Record<string, string>>({});
   const [reject, setReject] = useState<Farmer | null>(null);
-  const [reasonCode, setReasonCode] = useState<RejectionReason | ''>('');
-  const [note, setNote] = useState('');
-  const [busyId, setBusyId] = useState<string | null>(null);
-  const [liveQueue, setLiveQueue] = useState<Farmer[] | null>(null);
-
-  useEffect(() => {
-    if (!LIVE_VERIFICATION) return;
-    let live = true;
-    listQueue()
-      .then((items) => live && setLiveQueue(items))
-      .catch(() => live && setLiveQueue([]));
-    return () => {
-      live = false;
-    };
-  }, []);
+  const [reason, setReason] = useState('');
 
   const queue = useMemo(() => {
-    const pending = LIVE_VERIFICATION ? (liveQueue ?? []) : scopeFarmers(FARMERS_PENDING, role);
-    return [...pending].sort((a, b) => {
+    const pending = scopeFarmers(FARMERS_PENDING, role);
+    return pending.sort((a, b) => {
       const ea = isEscalated(a) ? 1 : 0;
       const eb = isEscalated(b) ? 1 : 0;
       if (ea !== eb) return eb - ea;
       return daysWaiting(b) - daysWaiting(a);
     });
-  }, [role, liveQueue]);
+  }, [role]);
 
   if (!hydrated) return null;
 
@@ -116,68 +83,6 @@ export function ReviewQueue() {
 
   function record(farmer: Farmer, text: string) {
     setDecided((prev) => ({ ...prev, [farmer.id]: text }));
-  }
-
-  async function onVerify(farmer: Farmer) {
-    if (!LIVE_VERIFICATION) {
-      record(
-        farmer,
-        `Recorded (preview, no server): ${farmer.given_name} ${farmer.family_name} verified.`,
-      );
-      return;
-    }
-    setBusyId(farmer.id);
-    try {
-      await verifyFarmer(farmer.id);
-      record(farmer, `${farmer.given_name} ${farmer.family_name} verified.`);
-    } catch (e) {
-      record(farmer, e instanceof Error ? e.message : 'Could not verify.');
-    } finally {
-      setBusyId(null);
-    }
-  }
-
-  async function onMerge(farmer: Farmer, targetId: string, targetNumber: string) {
-    if (!LIVE_VERIFICATION) {
-      record(farmer, `Recorded (preview, no server): merged into ${targetNumber}.`);
-      return;
-    }
-    setBusyId(farmer.id);
-    try {
-      await mergeFarmer(farmer.id, { target_id: targetId });
-      record(farmer, `Merged into ${targetNumber}.`);
-    } catch (e) {
-      record(farmer, e instanceof Error ? e.message : 'Could not merge.');
-    } finally {
-      setBusyId(null);
-    }
-  }
-
-  async function onReject() {
-    const target = reject;
-    if (!target) return;
-    const detail = `${reasonCode ? REASON_LABEL[reasonCode] : 'Other'}${note.trim() ? '. ' + note.trim() : ''}`;
-    if (!LIVE_VERIFICATION) {
-      record(
-        target,
-        `Recorded (preview, no server): ${target.given_name} ${target.family_name} rejected. Reason: ${detail}`,
-      );
-      setReject(null);
-      return;
-    }
-    setBusyId(target.id);
-    try {
-      await rejectFarmer(target.id, {
-        reason_code: reasonCode || undefined,
-        note: note.trim() || undefined,
-      });
-      record(target, `${target.given_name} ${target.family_name} rejected. Reason: ${detail}`);
-    } catch (e) {
-      record(target, e instanceof Error ? e.message : 'Could not reject.');
-    } finally {
-      setBusyId(null);
-      setReject(null);
-    }
   }
 
   return (
@@ -228,7 +133,7 @@ export function ReviewQueue() {
                     <div className={styles.reviewHead}>
                       <Stamp kind={escalated ? 'escalated' : 'pending'}>
                         {escalated
-                          ? `${daysWaiting(farmer)}d, escalated`
+                          ? `${daysWaiting(farmer)}d — escalated`
                           : `${daysWaiting(farmer)}d waiting`}
                       </Stamp>
                       <div className={styles.reviewName}>
@@ -276,8 +181,12 @@ export function ReviewQueue() {
                         <Button
                           variant="primary"
                           size="small"
-                          disabled={busyId === farmer.id}
-                          onClick={() => onVerify(farmer)}
+                          onClick={() =>
+                            record(
+                              farmer,
+                              `Recorded (preview — no server): ${farmer.given_name} ${farmer.family_name} verified.`,
+                            )
+                          }
                         >
                           Verify
                         </Button>
@@ -285,12 +194,10 @@ export function ReviewQueue() {
                           <Button
                             variant="secondary"
                             size="small"
-                            disabled={busyId === farmer.id}
                             onClick={() =>
-                              onMerge(
+                              record(
                                 farmer,
-                                duplicates[0]!.farmer.id,
-                                duplicates[0]!.farmer.farmer_number,
+                                `Recorded (preview — no server): merged into ${duplicates[0]!.farmer.farmer_number}.`,
                               )
                             }
                           >
@@ -300,11 +207,9 @@ export function ReviewQueue() {
                         <Button
                           variant="danger"
                           size="small"
-                          disabled={busyId === farmer.id}
                           onClick={() => {
                             setReject(farmer);
-                            setReasonCode('');
-                            setNote('');
+                            setReason('');
                           }}
                         >
                           Reject
@@ -333,8 +238,15 @@ export function ReviewQueue() {
             </Button>
             <Button
               variant="danger"
-              disabled={reasonCode === '' || busyId !== null}
-              onClick={onReject}
+              disabled={reason.trim() === ''}
+              onClick={() => {
+                if (reject)
+                  record(
+                    reject,
+                    `Recorded (preview — no server): ${reject.given_name} ${reject.family_name} rejected. Reason: ${reason.trim()}`,
+                  );
+                setReject(null);
+              }}
             >
               Reject
             </Button>
@@ -342,29 +254,12 @@ export function ReviewQueue() {
         }
       >
         <p>A rejection must say why, so the officer can put it right and re-register.</p>
-        <Field label="Reason">
-          {(ids) => (
-            <Select
-              {...ids}
-              value={reasonCode}
-              onChange={(e) => setReasonCode(e.target.value as RejectionReason | '')}
-            >
-              <option value="">Choose a reason…</option>
-              {REJECTION_REASONS.map((r) => (
-                <option key={r} value={r}>
-                  {REASON_LABEL[r]}
-                </option>
-              ))}
-            </Select>
-          )}
-        </Field>
-        <Field label="Note" optional hint="At most 280 characters. Shown to the officer.">
+        <Field label="Reason" error={undefined}>
           {(ids) => (
             <Textarea
               {...ids}
-              value={note}
-              maxLength={280}
-              onChange={(e) => setNote(e.target.value)}
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
               placeholder="Explain what is missing or wrong…"
             />
           )}

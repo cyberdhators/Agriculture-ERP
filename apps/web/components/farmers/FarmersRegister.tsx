@@ -1,9 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 
-import { LIVE_FARMERS, listFarmers } from '@/lib/farmers/api';
 import { CROP_LABELS, formatPhone, pluralise } from '@/lib/format';
 import {
   canRegister,
@@ -42,7 +41,6 @@ import {
   Dialog,
   EmptyState,
   KpiStrip,
-  Notice,
   PageHeader,
   SearchInput,
   Select,
@@ -84,30 +82,8 @@ export function FarmersRegister() {
 
   const showChecks = hydrated && canReview(role);
 
-  // The pool is the fixtures until NEXT_PUBLIC_USE_LIVE_FARMERS is set, then the
-  // live B5 list. Crops, farms and cooperative membership still come from the
-  // fixtures below (their backend is B7 / cooperatives), so those columns and
-  // filters are inert on live data until those units land.
-  const [livePool, setLivePool] = useState<Farmer[] | null>(null);
-  const [loadError, setLoadError] = useState<string | undefined>();
-
-  useEffect(() => {
-    if (!LIVE_FARMERS) return;
-    let live = true;
-    listFarmers({ limit: 200 })
-      .then((r) => live && (setLivePool(r.farmers), setLoadError(undefined)))
-      .catch(
-        (e) => live && setLoadError(e instanceof Error ? e.message : 'Could not load farmers.'),
-      );
-    return () => {
-      live = false;
-    };
-  }, []);
-
-  const pool = LIVE_FARMERS ? (livePool ?? []) : FARMERS;
-
   // Everything a non-admin may not see is removed before any filter runs.
-  const scoped = useMemo(() => scopeFarmers(pool, role), [pool, role]);
+  const scoped = useMemo(() => scopeFarmers(FARMERS, role), [role]);
 
   const q = get('q').trim().toLowerCase();
   const fState = get('state');
@@ -122,7 +98,9 @@ export function FarmersRegister() {
   const fCoop = get('coop');
 
   const rows = useMemo(() => {
-    const dupIds = new Set(scoped.filter((f) => duplicatesOf(f, pool).length > 0).map((f) => f.id));
+    const dupIds = new Set(
+      scoped.filter((f) => duplicatesOf(f, FARMERS).length > 0).map((f) => f.id),
+    );
     return scoped.filter((f) => {
       if (q) {
         const hay = `${f.given_name} ${f.family_name} ${f.phone} ${f.farmer_number}`.toLowerCase();
@@ -144,7 +122,7 @@ export function FarmersRegister() {
         return false;
       return true;
     });
-  }, [pool, scoped, q, fState, fPayam, fStatus, fSex, fAge, fSource, fOfficer, fCrop, fDup, fCoop]);
+  }, [scoped, q, fState, fPayam, fStatus, fSex, fAge, fSource, fOfficer, fCrop, fDup, fCoop]);
 
   const sorted = useMemo(() => {
     const dir = sort.dir === 'asc' ? 1 : -1;
@@ -415,12 +393,6 @@ export function FarmersRegister() {
             </div>
           ) : null}
 
-          {loadError ? (
-            <Notice kind="error">
-              <p className="small">{loadError}</p>
-            </Notice>
-          ) : null}
-
           <p className={screens.resultLine} aria-live="polite">
             Showing {pluralise(sorted.length, 'farmer')} of {scoped.length} in scope
             {activeFilters ? ' · filtered' : ''}
@@ -579,7 +551,8 @@ export function FarmersRegister() {
           so the file can be reproduced.
         </p>
         <p className="small muted">
-          The filters and the cut-off date in force are captured with the file and logged.
+          This preview has no server, so nothing is written and no file is produced. The dialog is
+          here to show the shape of the act: filters and cut-off captured, then logged.
         </p>
       </Dialog>
     </>
