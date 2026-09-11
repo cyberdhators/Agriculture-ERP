@@ -2323,12 +2323,66 @@ those four. The likely resolution is a new consent text and re-consent from
 every farmer whose listing is published, which is a field operation and not a
 schema change. **No listing is readable outside CORWADO until CORWADO answers.**
 
-**What this means for #52, which is in flight.** #52 reverts #49 and #50, and
-#50 was a farmer marketplace. The amendment makes that subject matter
-in-scope, so the revert now removes work that is no longer out of scope. The
-revert's other grounds stand unchanged: it was merged without the owner, it
-asserted a CORWADO authorisation nothing records, it carries an undecided
-product name, and it has no criteria. The recommendation put to the owner is to
-merge the revert anyway and rebuild against written criteria once the consent
-question is answered — the branch is kept, so nothing is lost — but the
-decision is the owner's and is recorded as open.
+**THE REVERT STANDS, AND THIS IS THE POINT: WORK IS NOT LEGITIMISED
+RETROSPECTIVELY BY THE SCOPE LATER MOVING TO MEET IT.** Decided by the owner
+2026-09-11, after the amendment that puts a farmer marketplace in this phase.
+
+#52 reverts #49 and #50, and #50 was a farmer marketplace. The subject matter
+is now in scope. **That changes nothing about whether those merges were
+right.** They were merged without the owner; they asserted a CORWADO
+authorisation nothing in the repository records; they carried a product name
+nobody had decided; and they were built against no criteria. The screens are
+fixtures against a backend that does not exist, and they would be rewritten
+against the real routes regardless. The branches are kept. **Nothing is lost
+but the false authorisation on main.**
+
+The general rule, stated so the next case is decided the same way: **a merge is
+judged by whether it was authorised and briefed when it happened, not by
+whether the scope later grew to include it.** If it were otherwise, the way to
+get work accepted would be to merge it and wait for the scope to catch up, and
+every safeguard in this project that depends on asking first would be worth
+nothing. The reverse also holds: work that was properly briefed and later falls
+out of scope is removed on its merits, not punished.
+
+**What replaces it.** The marketplace is built against criteria that are
+written first, after CORWADO answers the consent question, by a lane that has
+restated and been confirmed. That is not a penalty; it is the same path every
+backend unit from B2 to B11 took.
+
+## What goes to CORWADO about consent, in the terms to use (2026-09-11)
+
+The owner's framing, sharpened and recorded because it is the largest cost in
+the marketplace amendment and the one CORWADO is least likely to have
+considered.
+
+**Not:** which fields may a listing show. **But:** publishing a farmer's
+details outside CORWADO is wider than the consent they signed. Every farmer in
+this system consented to CORWADO holding their details for the LAST Project and
+for donor reports. None consented to a buyer reading their name, phone number
+and location.
+
+**The likely remedy is new consent text and re-consent in the field from every
+farmer whose listing is published.** Officers visiting farmers already
+registered, reading a new consent text, recording a new consent. **A field
+operation across payams, not a migration.** The schema is ready — consent is
+versioned by text and language precisely so that what was agreed can be proven,
+and a farmer holds one current consent and any number of historic ones. The
+cost is the visiting, and it is a cost in officer days and travel, not in
+engineering.
+
+Until CORWADO answers in writing, no listing is readable outside the four staff
+roles and no marketplace is reachable without a staff session.
+
+## Sync means nothing for a farmer's browser (2026-09-11)
+
+Answered by the owner, and to be stated explicitly in the unit rather than left
+for a reader to infer. A browser is online or it is not. There is no queue, no
+client id to be idempotent on, no device header, no caseload endpoint, no
+parent-first release, no acknowledgement protocol, and none of C-9's seven
+outcome codes. A farmer who loses signal mid-post gets an error and retries.
+
+**Why it is worth saying rather than omitting.** C-9 is a large, carefully
+written contract with a shared module, a header and a mapping function. A
+future session building a farmer route would reasonably reach for
+`x-device-id` or `syncOutcomeFor` and would be reading the wrong contract.
+Silence would look like an oversight; the sentence makes it a decision.

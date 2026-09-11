@@ -1148,29 +1148,49 @@ file must not cite this section as a client decision.
   (open item 1 below). No buyer login, no self-registration, no email
   verification.
 
-**OPEN AND UNANSWERED, AND IT BLOCKS PUBLICATION: what may a buyer see about a
-farmer?** The consent farmers signed covers CORWADO holding their details for
-the LAST Project and for donor reports (C-5.2, the consent record's
-`text_version`). **A listing carrying a farmer's name, phone and location is a
-wider disclosure than that consent describes.** CORWADO must answer this before
-any listing is published outside CORWADO. Until they do:
+**OPEN AND UNANSWERED, AND IT BLOCKS PUBLICATION. THIS IS THE LARGEST COST IN
+THE AMENDMENT AND THE ONE CORWADO IS LEAST LIKELY TO HAVE CONSIDERED.**
 
-- No listing may be readable by anyone outside the four CORWADO staff roles.
-- The question is not "which fields does the listing show" but "what did the
-  farmer agree to". A new consent text, and re-consent from every farmer whose
-  listing is published, is the likely answer and is a field operation, not a
-  schema change.
-- Every visibility rule in this system today answers for four CORWADO staff
-  roles (C-5.8, C-7.8, C-8.4, C-8.13, C-10.11). A buyer is the first reader
-  outside that set, and none of those rules has an answer for one.
+**The question is not which fields a listing shows.** It is that publishing a
+farmer's details outside CORWADO is wider than the consent they signed. Every
+farmer in this system consented to CORWADO holding their details for the LAST
+Project and for donor reports (C-5.2; the consent record's `text_version`,
+`language` and `granted_at`). None consented to their name, phone number and
+location being readable by a buyer.
 
-**What still has no answer, carried from #27's close.** Two of the three
-questions that unit had to answer first are answered above — the caseload, by
-assignment and approval; and the buyer, by holding no account. **The third is
-not:** C-9's sync contract assumes one device kind, an officer's phone, with
-the device header, the caseload endpoint and the seven outcome codes. A
-farmer's browser session is none of those things, and the unit that builds this
-must say what sync means for it, or that it means nothing.
+**The likely remedy, and it is to be put to CORWADO in these terms: new consent
+text, and re-consent in the field from every farmer whose listing is published.**
+That is a field operation across payams — officers visiting farmers already
+registered, reading them a new consent text, and recording a new consent — not
+a migration and not a schema change. It is the largest cost in this scope
+change. Nothing in the schema prevents it: consent is already versioned by text
+and language precisely so that what was agreed can be proven (`docs/data-model.md`
+§2, `farmer 1 ── 1 consent` current, `1 ── n` historic). The cost is the
+visiting.
+
+**Until CORWADO answers in writing:**
+
+- No listing is readable by anyone outside the four CORWADO staff roles.
+- No listing is published, and no marketplace is reachable without a staff
+  session.
+- Every visibility rule in this system answers for those four roles only
+  (C-5.8, C-7.8, C-8.4, C-8.13, C-10.11). A buyer is the first reader this
+  system has ever contemplated outside that set, and none of those rules has an
+  answer for one.
+
+**The three questions carried from #27's close are now all answered.** The
+caseload, by assignment and approval. The buyer, by holding no account. And the
+third, sync, answered by the owner 2026-09-11:
+
+**Sync means nothing for a farmer's browser, and the unit says so explicitly
+rather than leaving C-9 looking like it might apply.** A browser is online or
+it is not. There is no queue, no client-generated id to be idempotent on, no
+device header, no caseload endpoint, no parent-first release, no acknowledgement
+protocol and none of the seven outcome codes. A farmer who loses signal
+mid-post gets an error and retries; that is the whole of it. C-9 is the
+officer app's contract and applies to the officer app. Any future reader who
+finds a farmer route and reaches for `x-device-id` or `syncOutcomeFor` is
+reading the wrong contract.
 
 **Not yet written.** The criteria for this work. They are written one unit
 ahead of the build, as every other section here was, and they are written by
