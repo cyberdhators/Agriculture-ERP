@@ -480,8 +480,9 @@ export function RegisterFarmer() {
                 <div className={screens.span2}>
                   <Row name="consent_granted">
                     <Field label={FIELD_LABELS.consent_granted} error={shown('consent_granted')}>
-                      {() => (
+                      {(ids) => (
                         <Checkbox
+                          {...ids}
                           checked={values.consent_granted}
                           onChange={(e) => {
                             set('consent_granted', e.target.checked);

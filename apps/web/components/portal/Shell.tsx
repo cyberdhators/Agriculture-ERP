@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 
 import { ROLES, ROLE_LABELS, usePreview, type Role } from '@/lib/preview';
 
@@ -29,6 +29,11 @@ export function Shell({ children }: { children: ReactNode }) {
   const router = useRouter();
   const { role, setRole } = usePreview();
   const searchRef = useRef<HTMLInputElement>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [pathname]);
 
   // "/" and ⌘K focus the register search, the way a working tool is driven
   // from the keyboard. Ignored while typing in another field.
@@ -68,7 +73,38 @@ export function Shell({ children }: { children: ReactNode }) {
             <span className={styles.wordmarkName}>Agricultural Register</span>
           </Link>
 
-          <nav className={styles.nav} aria-label="Primary">
+          <button
+            type="button"
+            className={styles.menuToggle}
+            aria-expanded={menuOpen}
+            aria-controls="portal-nav"
+            aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+            onClick={() => setMenuOpen((open) => !open)}
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden>
+              {menuOpen ? (
+                <path
+                  d="M6 6l12 12M18 6L6 18"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
+              ) : (
+                <path
+                  d="M4 7h16M4 12h16M4 17h16"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
+              )}
+            </svg>
+          </button>
+
+          <nav
+            id="portal-nav"
+            className={`${styles.nav} ${menuOpen ? styles.navOpen : ''}`}
+            aria-label="Primary"
+          >
             {NAV.map((item) => {
               const active = pathname.startsWith(item.href);
               return (
@@ -113,7 +149,7 @@ export function Shell({ children }: { children: ReactNode }) {
             there is, every route enforces the real role with requireRole (B3).
             Remove this control when Supabase Auth is wired in.
           */}
-          <div className={styles.roleSwitch}>
+          <div className={`${styles.roleSwitch} ${menuOpen ? styles.roleSwitchOpen : ''}`}>
             <label htmlFor="role-preview" className={styles.roleSwitchLabel}>
               Preview as
             </label>

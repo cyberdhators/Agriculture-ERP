@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Fraunces, Instrument_Sans, JetBrains_Mono } from 'next/font/google';
 import type { ReactNode } from 'react';
 
@@ -27,6 +27,11 @@ const jetbrains = JetBrains_Mono({
   display: 'swap',
   variable: '--font-jetbrains',
 });
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+};
 
 export const metadata: Metadata = {
   title: {

@@ -424,10 +424,13 @@ textarea.control {
 
 select.control {
   appearance: none;
-  padding-right: 40px;
+  padding-inline-end: 40px;
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%233e4f44' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
   background-repeat: no-repeat;
   background-position: right 12px center;
+}
+[dir='rtl'] select.control {
+  background-position: left 12px center;
 }
 
 .controlWithPrefix {
@@ -476,7 +479,7 @@ select.control {
 
 .search svg {
   position: absolute;
-  left: 12px;
+  inset-inline-start: 12px;
   top: 50%;
   transform: translateY(-50%);
   color: var(--muted);
@@ -484,7 +487,7 @@ select.control {
 }
 
 .search .control {
-  padding-left: 38px;
+  padding-inline-start: 38px;
 }
 
 /* ---- Tabs (underlined text, like the masthead) ----------------------- */
@@ -499,7 +502,7 @@ select.control {
   display: inline-flex;
   align-items: center;
   gap: var(--s-2);
-  min-height: 36px;
+  min-height: var(--touch);
   padding: 0 2px 6px;
   border: 0;
   border-bottom: 2px solid transparent;
