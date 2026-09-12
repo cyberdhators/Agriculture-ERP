@@ -6,6 +6,7 @@ import {
   useEffect,
   useId,
   useRef,
+  useState,
   type ButtonHTMLAttributes,
   type InputHTMLAttributes,
   type ReactNode,
@@ -355,6 +356,32 @@ export function PrefixedInput({
         {prefix}
       </span>
       <Input {...rest} />
+    </div>
+  );
+}
+
+/**
+ * A password control with a visible "Show" / "Hide" word (never an icon alone).
+ * The caller passes the two words so the farmer flow can render them in the
+ * chosen language; the staff portal passes the English defaults.
+ */
+export function PasswordInput({
+  showLabel = 'Show',
+  hideLabel = 'Hide',
+  ...rest
+}: { showLabel?: string; hideLabel?: string } & InputHTMLAttributes<HTMLInputElement>) {
+  const [visible, setVisible] = useState(false);
+  return (
+    <div className={styles.controlWithToggle}>
+      <Input type={visible ? 'text' : 'password'} {...rest} />
+      <button
+        type="button"
+        className={styles.controlToggle}
+        aria-pressed={visible}
+        onClick={() => setVisible((v) => !v)}
+      >
+        {visible ? hideLabel : showLabel}
+      </button>
     </div>
   );
 }

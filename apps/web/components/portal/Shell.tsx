@@ -2,26 +2,31 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 
 import { ROLES, ROLE_LABELS, usePreview, type Role } from '@/lib/preview';
 
+import { Wordmark } from '../brand/Wordmark';
 import { IconSearch } from '../ui/icons';
 import styles from './portal.module.css';
 
 /**
- * The masthead. A dark band carries the wordmark, the primary navigation as
- * plain text tabs, a global search field, and the role-preview select. There
- * is no sidebar: this is a register, read across, not an admin console.
+ * The staff masthead. A forest band carries the AgriOne wordmark, the primary
+ * navigation as plain text tabs and a global search field. There is no
+ * sidebar: this is a register, read across, not an admin console. The
+ * role-preview select is design tooling — it renders only when the page is
+ * opened with `?preview`, never in the product chrome.
  */
 
+// Only the screens that exist today. Cooperatives (C-12), Marketplace (phase 5)
+// and Reports (phase 7) rejoin the nav when their screens are built; a nav item
+// with no route behind it is a 404, so it does not ship early.
 const NAV: ReadonlyArray<{ href: string; label: string }> = [
   { href: '/farmers', label: 'Farmers' },
-  { href: '/cooperatives', label: 'Cooperatives' },
+  { href: '/desk', label: 'Field desk' },
   { href: '/directories', label: 'Directories' },
-  { href: '/market', label: 'Market' },
   { href: '/library', label: 'Library' },
-  { href: '/reports', label: 'Reports' },
+  { href: '/admin', label: 'Administration' },
 ];
 
 export function Shell({ children }: { children: ReactNode }) {
@@ -29,6 +34,11 @@ export function Shell({ children }: { children: ReactNode }) {
   const router = useRouter();
   const { role, setRole } = usePreview();
   const searchRef = useRef<HTMLInputElement>(null);
+  const [previewTools, setPreviewTools] = useState(false);
+
+  useEffect(() => {
+    setPreviewTools(new URLSearchParams(window.location.search).has('preview'));
+  }, [pathname]);
 
   // "/" and ⌘K focus the register search, the way a working tool is driven
   // from the keyboard. Ignored while typing in another field.
@@ -62,11 +72,33 @@ export function Shell({ children }: { children: ReactNode }) {
 
       <header className={`${styles.masthead} no-print`}>
         <div className={styles.mastheadInner}>
-          <Link href="/dashboard" className={styles.wordmark}>
-            <span className={styles.wordmarkOrg}>CORWADO</span>
-            <span className={styles.wordmarkRule} aria-hidden />
-            <span className={styles.wordmarkName}>Agricultural Register</span>
-          </Link>
+          <div className={styles.wordmark}>
+            <Wordmark size={22} tagline onBand href="/dashboard" />
+          </div>
+
+          <form
+            className={styles.search}
+            role="search"
+            onSubmit={(event) => {
+              event.preventDefault();
+              const q = searchRef.current?.value.trim() ?? '';
+              router.push(q ? `/farmers?q=${encodeURIComponent(q)}` : '/farmers');
+            }}
+          >
+            <span className={styles.searchIcon} aria-hidden>
+              <IconSearch size={18} />
+            </span>
+            <input
+              ref={searchRef}
+              type="search"
+              className={styles.searchInput}
+              placeholder="Search the register: farmers, cooperatives, directories"
+              aria-label="Search the register by name, phone or number"
+            />
+            <button type="submit" className={styles.searchBtn} aria-label="Search the register">
+              <IconSearch size={18} />
+            </button>
+          </form>
 
           <nav className={styles.nav} aria-label="Primary">
             {NAV.map((item) => {
@@ -84,51 +116,30 @@ export function Shell({ children }: { children: ReactNode }) {
             })}
           </nav>
 
-          <form
-            className={styles.search}
-            role="search"
-            onSubmit={(event) => {
-              event.preventDefault();
-              const q = searchRef.current?.value.trim() ?? '';
-              router.push(q ? `/farmers?q=${encodeURIComponent(q)}` : '/farmers');
-            }}
-          >
-            <IconSearch size={16} />
-            <input
-              ref={searchRef}
-              type="search"
-              className={styles.searchInput}
-              placeholder="Search the register"
-              aria-label="Search the register by name, phone or number"
-            />
-            <kbd className={styles.searchKbd} aria-hidden>
-              /
-            </kbd>
-          </form>
-
           {/*
-            PREVIEW ONLY. Switches which role the screens render for, so a
-            reviewer can see what each role sees without four accounts. It
-            grants nothing: there is no API behind these screens yet, and when
-            there is, every route enforces the real role with requireRole (B3).
-            Remove this control when Supabase Auth is wired in.
+            Design tooling only, shown with `?preview` in the address. Switches
+            which role the screens render for, so a reviewer can see what each
+            role sees without four accounts. It grants nothing: every route
+            enforces the real role with requireRole (B3).
           */}
-          <div className={styles.roleSwitch}>
-            <label htmlFor="role-preview" className={styles.roleSwitchLabel}>
-              Preview as
-            </label>
-            <select
-              id="role-preview"
-              value={role}
-              onChange={(event) => setRole(event.target.value as Role)}
-            >
-              {ROLES.map((r) => (
-                <option key={r} value={r}>
-                  {ROLE_LABELS[r]}
-                </option>
-              ))}
-            </select>
-          </div>
+          {previewTools ? (
+            <div className={styles.roleSwitch}>
+              <label htmlFor="role-preview" className={styles.roleSwitchLabel}>
+                Role
+              </label>
+              <select
+                id="role-preview"
+                value={role}
+                onChange={(event) => setRole(event.target.value as Role)}
+              >
+                {ROLES.map((r) => (
+                  <option key={r} value={r}>
+                    {ROLE_LABELS[r]}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : null}
         </div>
       </header>
 
@@ -137,10 +148,8 @@ export function Shell({ children }: { children: ReactNode }) {
       </main>
 
       <footer className={`${styles.footer} no-print`}>
-        <span className={styles.footerFlag}>
-          <span aria-hidden>●</span> Preview build — fixture data, nothing is saved
-        </span>
-        <span>LAST Project · CORWADO · Central Equatoria</span>
+        <Wordmark size={18} tagline />
+        <span>© {new Date().getFullYear()} AgriOne</span>
       </footer>
     </div>
   );

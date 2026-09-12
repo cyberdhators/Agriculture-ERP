@@ -28,7 +28,7 @@ export function RequireEditor({
     <EmptyState
       error
       title="Only a programme administrator can do this"
-      body={`You are previewing as ${ROLE_LABELS[role]}. Creating, editing and removing entries is an administrator action; the live portal returns 403 for anyone else.`}
+      body={`You are signed in as ${ROLE_LABELS[role]}. Creating, editing and removing entries is an administrator action.`}
       actions={<ButtonLink href={backHref}>{backLabel}</ButtonLink>}
     />
   );

@@ -234,7 +234,7 @@ export function DesignPage() {
         <div className={styles.sectionHead}>
           <h2 id="h-shape">Shape and spacing</h2>
           <p>
-            Near-square: cards 4px radius, controls 2px. No pills — the register is ruled, not
+            Near-square: cards 4px radius, controls 2px. No pills; the register is ruled, not
             rounded. Every interactive element is at least 40×40. Spacing steps: 4, 8, 12, 16, 20,
             24, 32, 40.
           </p>
@@ -377,7 +377,7 @@ export function DesignPage() {
         <div className={styles.sectionHead}>
           <h2 id="h-boundary">Farm boundary</h2>
           <p>
-            The walked plot, drawn as an inline SVG polygon straight from the fixture GeoJSON — no
+            The walked plot, drawn as an inline SVG polygon straight from the fixture GeoJSON: no
             map library, no tiles, no network. Two sizes: 96px in the register table, 360px in the
             dossier. A plot with no usable trace says so in the same box rather than drawing a shape
             that would lie about the land.
@@ -467,7 +467,7 @@ export function DesignPage() {
               <Field label="Disabled">
                 {(ids) => <Input {...ids} defaultValue="Cannot be changed here" disabled />}
               </Field>
-              <Checkbox label="Published — visible to officers" defaultChecked />
+              <Checkbox label="Published, visible to officers" defaultChecked />
             </div>
           </div>
         </Card>
