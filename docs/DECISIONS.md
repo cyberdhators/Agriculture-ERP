@@ -2410,3 +2410,50 @@ written contract with a shared module, a header and a mapping function. A
 future session building a farmer route would reasonably reach for
 `x-device-id` or `syncOutcomeFor` and would be reading the wrong contract.
 Silence would look like an oversight; the sentence makes it a decision.
+
+## A gate that compares, or a gate that asserts (2026-09-11)
+
+Lifted out of the note on `tests/pure-suite-complete.test.ts` at the owner's
+instruction, because it is a design principle and not a fact about that guard.
+Placed beside the seams list in `docs/PROJECT-STATE.md` as the companion
+question, one level down: the seams list asks where two rules touch; this asks
+whether a gate can fail.
+
+**The principle.** A gate that compares two sources which can drift apart
+cannot be quietly wrong about both at once. A gate that asserts a single fact
+can be quietly wrong the moment the fact stops being true.
+
+**The evidence is the whole silent-findings list.** Eight gates, each asserting
+one thing believed true — the typecheck covers `tests/`, CI runs the database
+files, gitleaks scanned the branch, the four keys are pending, the drift test
+matches, views equal their tables, the device is recorded, `updated_at` is
+current — and all eight quietly false. The ninth broke the pattern by being two
+correct rules meeting rather than a gate at all. The pure-suite guard broke it
+the other way: the first gate here that compares, holding files on disk against
+a config's patterns.
+
+**The two questions to ask of any gate being written.** Does it compare two
+things that can move independently, or does it assert one thing? And if it
+asserts one thing, what makes it fail when that thing stops being true — where
+"someone would notice" is not an answer, because eight instances say nobody
+does.
+
+**Recorded with worked examples from this repository**, so the principle is
+usable rather than admired: the view test compares two catalogues; the
+audit-action CHECK is generated from the shared constant; the accuracy CHECK
+from the shared thresholds; the drift test parses cells against exported
+values. Each is a comparison, and none of them has bitten.
+
+**And demonstrated rather than argued, the same day.** The pure suite ran 23
+files locally and 20 on CI: the three files under `apps/web/lib` that came with
+#49 and #50 left with their reverts. Nobody edited the pure config and nothing
+went red, because the guard globs the disk and compares. A gate that had
+asserted "the pure suite runs these 23 files" would have been false the moment
+the reverts landed — and false in the silent direction, still green while
+running less than it claimed.
+
+**The numbers from the live proof (2026-09-11).** Full path, main's run after
+the CI edit merged: test step **52 minutes**. Short path, #56, documents only:
+test step **4 seconds**, whole job 54 seconds, `verify: pass` reported like any
+other check, 20 files and 285 tests including both readers of CONVENTIONS and
+the guard itself.
