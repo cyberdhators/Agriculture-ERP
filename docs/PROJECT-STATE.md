@@ -1017,6 +1017,110 @@ the CI edit merged took **52 minutes** in its test step; #56, documents only,
 took **4 seconds** on the short path and reported `verify: pass` like any other
 check.
 
+## THE FORMATTER HAS SILENTLY CHANGED A DOCUMENT TWICE (2026-09-11)
+
+Two instances, recorded as a pair because one alone reads as an accident.
+
+**First, the CONVENTIONS tables.** Prettier re-padded the Markdown table
+columns in `docs/api/CONVENTIONS.md`, and the drift test that matches those
+rows against the code stopped matching. Fixed by making the test parse the
+cells rather than the line.
+
+**Second, two open items absorbed into the item above them (2026-09-11).** Two
+entries added to the open-items list in this file — the contact question and
+the Actions minutes — were written with a leading indent, and the formatter
+folded them into the preceding numbered item. They rendered as part of item 5
+and item 9 and were not items at all. Nobody was counting them, so nothing
+went red; they were simply not there as entries, and a session reading the list
+for "what is open" would have read past them inside another item's prose.
+
+**The shape.** The formatter is not wrong. It is doing what a prose formatter
+does. **But a document read by a machine, or read structurally by a session, is
+data, and a reflow that is cosmetic in prose is a change in a numbered list
+something counts.** The failure is never in the formatter and never in the
+document; it is that one of them was treated as prose and the other as
+structure.
+
+**What in `docs/` is read structurally, and what protects it.**
+
+| Document                                   | Read by                                   | Protected?                        |
+| ------------------------------------------ | ----------------------------------------- | --------------------------------- |
+| `CLAUDE.md`                                | every session, as law                     | **yes** — in `.prettierignore`    |
+| `scope-and-acceptance.md`                  | sessions; derives from the signed report  | **yes** — in `.prettierignore`    |
+| `data-model.md`, `data-model-extension.md` | sessions; supplied documents              | **yes** — in `.prettierignore`    |
+| `api/CONVENTIONS.md`                       | **two tests**, by table row               | **no** — formatted on every write |
+| `PROJECT-STATE.md`                         | sessions, by numbered list and by section | **no**                            |
+| `DECISIONS.md`, `HANDOFF.md`, `UNITS.md`   | sessions, by board row and section        | **no**                            |
+| `RUNBOOK-restore.md`                       | a CORWADO administrator, by numbered step | **no**                            |
+
+So the one document a **test** reads is the one document not protected, and the
+four a session reads for state are not protected either. The reason
+`.prettierignore` covers what it covers is sound and stated in the file itself
+— those four are contractual or supplied, and reformatting a contractual
+document by tool is how a wording change happens unnoticed. The gap is that
+"read by a machine" was never the criterion.
+
+**Not changed here, because it is a decision with a cost either way.** Adding
+`CONVENTIONS.md` to the ignore list protects the tests' input and gives up
+consistent formatting on the document most often edited by hand. Leaving it out
+keeps the formatting and keeps the exposure, which the drift test now absorbs
+because it parses cells. The four state documents are a different question: a
+session reading them is more robust than a test, but the second instance shows
+it is not robust to an item vanishing into another. **Put to the owner rather
+than decided.**
+
+_Checked 2026-09-11: prettier makes no change to `CONVENTIONS.md` as it stands
+today, so nothing is pending; and `docs/data/locations.csv`, named by the
+reseed script, does not exist — the locations arrive as a bundle instead — so
+no CSV is exposed._
+
+## THE ELABORATION FAILURE — THE SEAM BETWEEN THE OWNER'S JUDGEMENT AND A SESSION'S (2026-09-11)
+
+Recorded beside the seams list because it is the same class of defect: the
+failure is in a join, and neither half tests it.
+
+**What happened.** The owner framed the marketplace's consent problem as
+publishing a farmer's personal data, with re-consent in the field across payams
+as the remedy. The framing was wrong — a listing carries a trading name, not a
+legal name. **The session did not catch it. It elaborated it:** added the
+consent table's versioning as supporting evidence, priced the field operation
+in officer days and travel, called it the largest cost in the amendment, and
+wrote it into three documents. The owner caught it a day later.
+
+**Why the elaboration is worse than the error.** A vague wrong answer invites a
+question. A wrong answer with a mechanism, a cost and three cross-references
+reads as settled, and the next reader — including the next session — has no
+reason to look again. **Confidence is the part that does the damage, and the
+session supplied it.**
+
+**Why the existing safeguard does not catch this.** CLAUDE.md §0's restate step
+catches a session that has misunderstood, because restating a misunderstanding
+exposes it. It does nothing when the session understands perfectly and agrees:
+there is no disagreement to surface, and the restate reads back a faithful
+version of a false premise. The same is true of every rule in §4 and §5 — they
+constrain what a session may do, not what it may accept.
+
+**What would catch it.** Nothing structural that exists today. The honest
+statement of the gap:
+
+- The restate step could be widened from "what I understand the task to be" to
+  include **"what this assumes that I have not verified"** — here, that a
+  listing carries a farmer's name, which the session never checked against what
+  a listing was specified to hold, because the owner had said so.
+- A session should treat a factual premise in an instruction the way it treats
+  a premise in a document: **checkable, and checked when the cost of being
+  wrong is high.** The drift-test false alarm of 2026-09-05 is the precedent —
+  that premise came from the owner, was checked, and was false, and the record
+  says so with attribution. That was the right behaviour. This was not, and the
+  difference was only that the wrong premise arrived with authority about scope
+  rather than about code.
+
+**The asymmetry worth naming.** A session that questions too much is tiresome;
+a session that elaborates a false premise is dangerous, and produces work that
+looks more finished the more wrong it is. Of the two failure modes, the second
+costs more, and this project has now seen one of each: the drift-test alarm,
+where the question was right, and this, where it was not asked.
+
 ## THE SEAMS — WHERE TWO RULES TOUCH AND NOTHING HAS TESTED THE JOIN (2026-09-10)
 
 The ninth silent-class instance was not a gate that checked nothing. It was two
