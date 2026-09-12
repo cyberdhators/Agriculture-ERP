@@ -8,10 +8,17 @@ Production client project. This file loads in every session. Read it before anyt
 
 Before writing any code, restate in your own words:
 1. What you understand the task to be.
-2. Which acceptance criteria (by ID) it covers.
-3. Which laws in section 4 below apply to it.
+2. What this brief assumes that you have not verified.
+3. Which acceptance criteria (by ID) it covers.
+4. Which laws in section 4 below apply to it.
 
 Then STOP and wait for my confirmation. Do not begin work until I reply.
+
+Item 2 exists because item 1 cannot catch a brief that is wrong. Restating a
+misunderstanding exposes it; restating a faithful reading of a false premise
+reads as agreement. Name what the brief takes as given — what a record holds,
+what a rule says, what the client asked for — and check it where being wrong
+would be expensive to discover later.
 
 Also read `docs/HANDOFF.md` first. Two lanes work in this repository in
 parallel; that file says what each lane owns, what is done, and where to
