@@ -17,7 +17,7 @@ export function EditResource({ id }: { id: string }) {
         <EmptyState
           error
           title="This resource does not exist"
-          body="The link may be old, or the resource was created in another session of this preview. Go back to the library and open it from there."
+          body="The link may be old. Go back to the library and open the resource from there."
           actions={<ButtonLink href="/library">Back to library</ButtonLink>}
         />
       )}

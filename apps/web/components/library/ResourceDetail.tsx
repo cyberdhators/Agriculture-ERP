@@ -50,15 +50,15 @@ export function ResourceDetail({ resource }: { resource: LearningResourceRow }) 
     setConfirming(false);
     setReason('');
     setReasonError(undefined);
-    setMessage('Removed (preview). The file stays in storage and the row keeps its history.');
+    setMessage('Removed. The file stays in storage and the row keeps its history.');
   }
 
   function togglePublished() {
     saveResource({ ...resource, published: !resource.published });
     setMessage(
       resource.published
-        ? 'Unpublished (preview). Officers no longer see this resource.'
-        : 'Published (preview). Officers see this resource from their next sync.',
+        ? 'Unpublished. Officers no longer see this resource.'
+        : 'Published. Officers see this resource from their next sync.',
     );
   }
 
@@ -111,7 +111,7 @@ export function ResourceDetail({ resource }: { resource: LearningResourceRow }) 
         <Button
           onClick={() =>
             setMessage(
-              `Download (preview): in the live portal this opens a signed link to ${resource.storage_path}.`,
+              'Preparing the download. The file opens from a signed link that expires after an hour.',
             )
           }
         >

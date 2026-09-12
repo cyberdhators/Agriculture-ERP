@@ -1,0 +1,77 @@
+.kpi {
+  margin-block: var(--s-6) var(--s-6);
+}
+.find {
+  max-width: 420px;
+  margin-block-end: var(--s-5);
+}
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--s-3);
+}
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+}
+.rowMain {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+.rowName {
+  font-weight: 600;
+  color: var(--ink);
+}
+.rowMeta {
+  font-size: var(--text-small);
+  color: var(--muted);
+}
+
+/* Registration slip */
+.slip {
+  padding: var(--s-5);
+  background: var(--card);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-card);
+}
+.slipHead {
+  margin: 0 0 var(--s-4);
+  font-family: var(--font-mono);
+  font-size: var(--text-small);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.slipRows {
+  margin: 0;
+  display: grid;
+  gap: var(--s-3);
+}
+.slipRows > div {
+  display: grid;
+  grid-template-columns: 130px 1fr;
+  gap: var(--s-3);
+  align-items: baseline;
+  border-block-end: 1px solid var(--line);
+  padding-block-end: var(--s-2);
+}
+.slipRows dt {
+  font-size: var(--text-small);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.slipRows dd {
+  margin: 0;
+  color: var(--ink);
+}
+.slipNote {
+  margin: var(--s-4) 0 0;
+  font-size: var(--text-small);
+  color: var(--ink-2);
+}
