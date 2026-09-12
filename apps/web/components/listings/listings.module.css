@@ -634,7 +634,7 @@
   align-items: center;
   gap: var(--s-2);
   width: 100%;
-  min-height: 34px;
+  min-height: var(--touch);
   padding: 0 var(--s-2);
   margin-inline: calc(-1 * var(--s-2));
   font: inherit;
@@ -735,7 +735,7 @@
 }
 
 .viewToggle button {
-  min-height: 34px;
+  min-height: var(--touch);
   padding: 0 var(--s-3);
   font: inherit;
   font-size: var(--text-small);
@@ -782,6 +782,14 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--s-6);
+}
+
+/* One product card per row on small phones — two is too cramped at 360px. */
+@media (max-width: 480px) {
+  .grid,
+  .featured {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (min-width: 1100px) {

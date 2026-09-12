@@ -9,6 +9,7 @@ import {
   Dialog,
   EmptyState,
   KpiStrip,
+  Notice,
   PageHeader,
   SearchInput,
   Stamp,
@@ -44,6 +45,7 @@ const STATUS_LABEL: Record<string, string> = {
 export function OfficerDesk() {
   const officer = officerById(PREVIEW_OFFICER_ID);
   const [live, setLive] = useState<Farmer[] | null>(null);
+  const [loadError, setLoadError] = useState<string | undefined>();
   const [q, setQ] = useState('');
   const [slip, setSlip] = useState<Farmer | null>(null);
 
@@ -51,8 +53,10 @@ export function OfficerDesk() {
     if (!LIVE_FARMERS) return;
     let on = true;
     listFarmers({ limit: 200 })
-      .then((r) => on && setLive(r.farmers))
-      .catch(() => on && setLive([]));
+      .then((r) => on && (setLive(r.farmers), setLoadError(undefined)))
+      .catch(
+        (e) => on && setLoadError(e instanceof Error ? e.message : 'Could not load your caseload.'),
+      );
     return () => {
       on = false;
     };
@@ -102,6 +106,12 @@ export function OfficerDesk() {
             </ButtonLink>
           }
         />
+
+        {loadError ? (
+          <Notice kind="error" title="Could not load your caseload">
+            <p className="small">{loadError}</p>
+          </Notice>
+        ) : null}
 
         <div className={styles.kpi}>
           <KpiStrip

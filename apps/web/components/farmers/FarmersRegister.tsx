@@ -90,12 +90,15 @@ export function FarmersRegister() {
   // filters are inert on live data until those units land.
   const [livePool, setLivePool] = useState<Farmer[] | null>(null);
   const [loadError, setLoadError] = useState<string | undefined>();
+  const [truncated, setTruncated] = useState(false);
 
   useEffect(() => {
     if (!LIVE_FARMERS) return;
     let live = true;
     listFarmers({ limit: 200 })
-      .then((r) => live && (setLivePool(r.farmers), setLoadError(undefined)))
+      .then(
+        (r) => live && (setLivePool(r.farmers), setTruncated(r.hasMore), setLoadError(undefined)),
+      )
       .catch(
         (e) => live && setLoadError(e instanceof Error ? e.message : 'Could not load farmers.'),
       );
@@ -106,8 +109,11 @@ export function FarmersRegister() {
 
   const pool = LIVE_FARMERS ? (livePool ?? []) : FARMERS;
 
-  // Everything a non-admin may not see is removed before any filter runs.
-  const scoped = useMemo(() => scopeFarmers(pool, role), [pool, role]);
+  // Fixtures are scoped client-side so a reviewer can preview each role; live
+  // data is already scoped by the server (an officer's caseload, a supervisor's
+  // state), so the client must NOT re-scope it by the preview role — that would
+  // drop rows the user is entitled to see.
+  const scoped = useMemo(() => (LIVE_FARMERS ? pool : scopeFarmers(pool, role)), [pool, role]);
 
   const q = get('q').trim().toLowerCase();
   const fState = get('state');
@@ -418,6 +424,14 @@ export function FarmersRegister() {
           {loadError ? (
             <Notice kind="error">
               <p className="small">{loadError}</p>
+            </Notice>
+          ) : null}
+
+          {truncated ? (
+            <Notice kind="info">
+              <p className="small">
+                Showing the first 200 farmers. Narrow with the filters or search to reach the rest.
+              </p>
             </Notice>
           ) : null}
 

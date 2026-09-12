@@ -13,9 +13,9 @@
   width: auto;
 }
 
-/* On the dark forest band, sit the logo in a white rounded chip. */
+/* On the dark forest band, sit the logo in a light rounded chip. */
 .onBand .logo {
-  background: #ffffff;
+  background: var(--card);
   border-radius: 8px;
   padding: 4px 10px;
 }

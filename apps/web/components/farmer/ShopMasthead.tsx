@@ -7,7 +7,7 @@ import { useState, type ReactNode } from 'react';
 import { Wordmark } from '@/components/brand/Wordmark';
 import { IconSearch } from '@/components/ui/icons';
 import { useFarmerSession } from '@/lib/farmer-session';
-import { CATEGORY_LABELS } from '@/lib/farmers/listings';
+import { CATEGORY_KEY } from '@/lib/farmers/listings';
 import { LISTING_CATEGORIES, listingsForFarmer } from '@/lib/fixtures/farmers';
 import { t } from '@/lib/i18n';
 
@@ -100,11 +100,12 @@ export function ShopMasthead({ subnav }: { subnav?: ReactNode }) {
 
 /** The horizontal category links on the second strip — they open the marketplace. */
 export function ShopCategoryLinks() {
+  const { language } = useFarmerSession();
   return (
-    <nav className={styles.shopStripNav} aria-label="Categories">
+    <nav className={styles.shopStripNav} aria-label={t('market.allCategories', language)}>
       {LISTING_CATEGORIES.filter((category) => category !== 'other').map((category) => (
         <Link key={category} href="/market" className={styles.shopStripLink}>
-          {CATEGORY_LABELS[category]}
+          {t(CATEGORY_KEY[category], language)}
         </Link>
       ))}
     </nav>

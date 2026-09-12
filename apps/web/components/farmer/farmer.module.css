@@ -831,6 +831,11 @@
   gap: var(--s-5);
 }
 
+/* The survey table has nowrap cells; on a phone it must scroll in its own
+   box, not be clipped by the page's overflow guard. */
+.surveyScroll {
+  overflow-x: auto;
+}
 .surveyTable {
   width: 100%;
   border-collapse: collapse;
@@ -1569,4 +1574,38 @@
   justify-content: center;
   color: var(--muted);
   font-size: 13px;
+}
+
+/* ---- Phones: the shop masthead stacks, search takes its own row ------ */
+
+@media (max-width: 640px) {
+  .shopBar {
+    flex-wrap: wrap;
+    gap: var(--s-2) var(--s-3);
+    padding: var(--s-3) var(--s-4);
+  }
+
+  /* Row 1: logo + tools. Row 2: full-width search. */
+  .shopSearch {
+    order: 3;
+    flex: 1 1 100%;
+    max-width: none;
+    height: 40px;
+  }
+
+  .shopTools {
+    margin-inline-start: auto;
+    gap: var(--s-2);
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  /* Drop the long "Hi, name" line; keep the "My account" label. */
+  .shopAcctLine1 {
+    display: none;
+  }
+
+  .shopStrip {
+    padding-inline: var(--s-4);
+  }
 }

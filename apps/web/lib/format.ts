@@ -64,18 +64,27 @@ export const FORMAT_LABELS: Record<ResourceFormat, string> = {
   video: 'Video',
 };
 
-const DATE_FORMAT = new Intl.DateTimeFormat('en-GB', {
+const DATE_OPTS: Intl.DateTimeFormatOptions = {
   day: 'numeric',
   month: 'short',
   year: 'numeric',
   timeZone: 'UTC',
-});
+};
+const DATE_FORMATTERS = new Map<Language, Intl.DateTimeFormat>();
+function dateFormatter(language: Language): Intl.DateTimeFormat {
+  let f = DATE_FORMATTERS.get(language);
+  if (!f) {
+    f = new Intl.DateTimeFormat(language === 'ar-juba' ? 'ar' : 'en-GB', DATE_OPTS);
+    DATE_FORMATTERS.set(language, f);
+  }
+  return f;
+}
 
 /** "2026-07-27" or an ISO timestamp -> "27 Jul 2026". */
-export function formatDate(iso: string): string {
+export function formatDate(iso: string, language: Language = 'en'): string {
   const date = new Date(iso.length === 10 ? `${iso}T00:00:00Z` : iso);
   if (Number.isNaN(date.getTime())) return iso;
-  return DATE_FORMAT.format(date);
+  return dateFormatter(language).format(date);
 }
 
 /** Whole days from a YYYY-MM-DD date to now, never negative. */

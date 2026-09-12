@@ -87,9 +87,11 @@ export function ProductPage({
 
   const availability = (
     <span className={styles.mono}>
-      {formatDate(listing.available_from)}
+      {formatDate(listing.available_from, lang)}
       {' – '}
-      {listing.available_until ? formatDate(listing.available_until) : t('listings.ongoing', lang)}
+      {listing.available_until
+        ? formatDate(listing.available_until, lang)
+        : t('listings.ongoing', lang)}
     </span>
   );
 
@@ -113,7 +115,7 @@ export function ProductPage({
             <div
               className={styles.thumbs}
               role="group"
-              aria-label={t('detail.description', lang)}
+              aria-label={t('detail.photos', lang)}
               onKeyDown={(e) => {
                 if (e.key === 'ArrowRight') {
                   e.preventDefault();
@@ -128,7 +130,7 @@ export function ProductPage({
                 variant="ghost"
                 size="small"
                 iconOnly
-                aria-label={t('detail.back', lang)}
+                aria-label={t('detail.prevPhoto', lang)}
                 disabled={index === 0}
                 onClick={() => step(-1)}
               >
@@ -154,7 +156,7 @@ export function ProductPage({
                 variant="ghost"
                 size="small"
                 iconOnly
-                aria-label={t('detail.of', lang)}
+                aria-label={t('detail.nextPhoto', lang)}
                 disabled={index === sources.length - 1}
                 onClick={() => step(1)}
               >
@@ -238,7 +240,7 @@ export function ProductPage({
               </div>
               <div className={styles.sellerRow}>
                 <dt>{t('market.memberSince', lang)}</dt>
-                <dd className={styles.mono}>{formatDate(seller.created_at)}</dd>
+                <dd className={styles.mono}>{formatDate(seller.created_at, lang)}</dd>
               </div>
               <div className={styles.sellerRow}>
                 <dt>{t('detail.listings', lang)}</dt>
@@ -280,7 +282,7 @@ export function ProductPage({
             </DetailRow>
             <DetailRow term={t('detail.pickup', lang)}>{listing.pickup_notes || '—'}</DetailRow>
             <DetailRow term={t('detail.listedOn', lang)}>
-              {formatDate(listing.created_at)}
+              {formatDate(listing.created_at, lang)}
             </DetailRow>
             <DetailRow term={t('market.listingNo', lang)}>
               {listing.id.slice(-8).toUpperCase()}

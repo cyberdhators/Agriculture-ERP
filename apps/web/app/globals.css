@@ -236,6 +236,9 @@ html {
 
 body {
   margin: 0;
+  /* No page ever scrolls sideways on a phone; `clip` guards it without
+     establishing a scroll container, so the sticky masthead still works. */
+  overflow-x: clip;
   background: var(--paper);
   color: var(--ink);
   font-family: var(--font-body);
