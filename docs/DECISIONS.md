@@ -2493,3 +2493,30 @@ agrees. The precedent for the right behaviour is the drift-test false alarm of
 2026-09-05: that premise also came from the owner, was checked, and was false,
 and the record says so with attribution. The difference here was only that the
 wrong premise arrived with authority about scope rather than about code.
+
+---
+
+## CORWADO authorization — AgriOne name, deployment and farmer consent
+
+**Recorded 2026-09-12.** This is the written record the reverts (#52, #53)
+said was missing. It resolves the three questions those reverts raised.
+
+**Source.** Alieu (Lane 2 operator, CORWADO team member), in a Claude Code
+session, responding to a formal three-question authorization request.
+
+**Question 1 — Product name.** "Our team have not decided so maintain
+AgriOne." The name AgriOne is confirmed for this phase. A rename may come
+later; the team has not chosen an alternative.
+
+**Question 2 — Authorization to deploy.** "Yes you have full authorization
+to deploy." The staff portal and farmer marketplace UI are authorized for
+deployment to the live Vercel environment.
+
+**Question 3 — Farmer consent for public marketplace.** "For farmers, they
+all have our disclaimer and has accepted. So you are a go." CORWADO confirms
+existing farmer consent covers the marketplace listing of their details.
+
+**What this unblocks.** The reverts (#52, #53) are reversed in the same
+commit that records this entry, re-landing #49 (staff portal) and #50
+(farmer marketplace). The process objection — that the authorization was
+asserted but not recorded — is resolved by this entry existing.
