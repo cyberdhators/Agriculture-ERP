@@ -2563,3 +2563,40 @@ footer, the registration slip, the brand i18n keys and the wordmark's alt text
 now read "AgriOne South Sudan". **What did not:** the logo image
 (`public/brand/agrione-logo.png`) is baked art that still reads "AgriOne" — new
 logo art carrying the full name is CORWADO's to supply.
+
+## Migration 22 redated from 2026-09-05, and the audit CHECK generated for real (2026-09-13)
+
+**Taken by Lane 1 while rebasing #28, and it changes a file the owner should
+know changed.** #28 was held on 2026-09-05 and carried
+`20260905100000_extend_audit_actions_for_directories`, which had never been
+applied to any database.
+
+**Why it could not be merged as written.** A CHECK constraint can only be
+replaced, never extended, so each unit that adds an audit action drops and
+recreates `audit_event_action_known` with the full list. Migrations 17, 20 and
+21 each did, reaching forty keys. #28's migration held the twenty-two keys that
+existed in September. Being unapplied, `prisma migrate deploy` would have run it
+**after** those three, replacing forty keys with twenty-two and silently
+refusing every farmer, consent, verification, farm, boundary, crop, visit,
+attachment and report action. Every write appends one, so every create, update
+and delete in B5 through B11 would have failed on its audit insert — and it
+would have read as a route defect.
+
+**What was done.** The folder is redated `20260913120000` so it applies last,
+and its list is **generated from `AUDIT_ACTIONS` by a script rather than
+retyped**: forty-seven keys, verified as a strict superset of the forty staging
+holds before the file was written. Nothing else in #28 changed shape; its four
+rebase conflicts were all in files Lane 1 owns.
+
+**The finding underneath it is recorded as the eleventh silent-class instance**
+in `docs/PROJECT-STATE.md`: the comment on `AUDIT_ACTIONS` claims the constraint
+is generated from it, and the generation was a person retyping. That is the same
+shape as B3's wrapper comment claiming it reported to Sentry — the second
+instance of a comment asserting a mechanism that does not exist. The test that
+would close it, comparing the catalogue's constraint to the constant, is sized
+and not built.
+
+**Standing practice this relies on**, unchanged: a unit's migration is applied
+to staging from its own branch before the unit merges (PROJECT-STATE, _Staging's
+schema runs ahead of main_). Until that is done for this one, #28's tests cannot
+pass, because staging still refuses the seven directory and library keys.
