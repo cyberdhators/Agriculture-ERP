@@ -16,22 +16,25 @@ import {
   type DirectoryEntryRow,
   type LearningResourceRow,
 } from './fixtures/p1';
+import { supabaseBrowser } from './supabase/browser';
 
 /**
- * PREVIEW SCAFFOLDING. Two things the real portal gets from the server are
- * stubbed here so the screens can be walked through end to end:
+ * The signed-in principal, plus the fixture store the directories and library
+ * screens still run on.
  *
- *  1. The signed-in user's role. In production it comes from Supabase Auth and
- *     the `officer.role` row, and every route re-checks it with requireRole
- *     (B3). Here it is a switcher in the header. The switcher exists so a
- *     reviewer can see what each role sees; it grants nothing, because there
- *     is nothing behind it to grant.
+ *  1. The role is real. It is read once from GET /api/me, which requireRole
+ *     has already resolved from the session cookie the login page set. Until
+ *     that answer arrives — or if it fails — the role is `read_only`, the
+ *     narrowest one, so a screen never renders more than the server would
+ *     serve. The role only decides what a screen shows; every route enforces
+ *     its own.
  *
  *  2. The data. Fixture rows from lib/fixtures/p1.ts, held in React state so
  *     that "save" and "remove" are visible for the rest of the session. Nothing
- *     is written anywhere. When the P1 routes land (after B3 and B4, see
- *     docs/HANDOFF.md) this store is replaced by fetches and the screens do not
- *     change.
+ *     is written anywhere. When the P1 routes land (#28) this store is replaced
+ *     by fetches and the screens do not change.
+ *
+ * The hook keeps its old name so seventeen screens do not change for a rename.
  */
 
 export const ROLES = ['admin', 'supervisor', 'officer', 'read_only'] as const;
@@ -54,9 +57,20 @@ export function canSeeHidden(role: Role): boolean {
   return role === 'admin' || role === 'supervisor';
 }
 
+/** What GET /api/me returns about the caller. */
+export interface Me {
+  id: string;
+  kind: 'user' | 'officer';
+  name: string;
+  role: Role;
+}
+
 interface PreviewState {
   role: Role;
-  setRole: (role: Role) => void;
+  /** Null until /api/me has answered, and stays null if it could not. */
+  me: Me | null;
+  authError?: string;
+  signOut: () => Promise<void>;
   entries: DirectoryEntryRow[];
   resources: LearningResourceRow[];
   saveEntry: (row: DirectoryEntryRow) => void;
@@ -69,35 +83,50 @@ interface PreviewState {
 
 const PreviewContext = createContext<PreviewState | null>(null);
 
-const ROLE_KEY = 'agri-preview-role';
-
-function readStoredRole(): Role {
-  try {
-    const stored = window.localStorage.getItem(ROLE_KEY);
-    return (ROLES as readonly string[]).includes(stored ?? '') ? (stored as Role) : 'admin';
-  } catch {
-    return 'admin';
-  }
+function asRole(value: unknown): Role {
+  return (ROLES as readonly string[]).includes(String(value)) ? (value as Role) : 'read_only';
 }
 
 export function PreviewProvider({ children }: { children: ReactNode }) {
-  const [role, setRoleState] = useState<Role>('admin');
+  const [role, setRoleState] = useState<Role>('read_only');
+  const [me, setMe] = useState<Me | null>(null);
+  const [authError, setAuthError] = useState<string | undefined>();
   const [hydrated, setHydrated] = useState(false);
   const [entries, setEntries] = useState<DirectoryEntryRow[]>(() => [...DIRECTORY_ENTRIES]);
   const [resources, setResources] = useState<LearningResourceRow[]>(() => [...LEARNING_RESOURCES]);
 
   useEffect(() => {
-    setRoleState(readStoredRole());
-    setHydrated(true);
+    let on = true;
+    fetch('/api/me')
+      .then(async (res) => {
+        const body = (await res.json().catch(() => ({}))) as {
+          data?: Me;
+          error?: { message?: string };
+        };
+        if (!on) return;
+        if (res.ok && body.data) {
+          const principal = { ...body.data, role: asRole(body.data.role) };
+          setMe(principal);
+          setRoleState(principal.role);
+          setAuthError(undefined);
+        } else {
+          setAuthError(body.error?.message ?? `Could not load your account (${res.status}).`);
+        }
+      })
+      .catch(() => {
+        if (on) setAuthError('Could not reach the server.');
+      })
+      .finally(() => {
+        if (on) setHydrated(true);
+      });
+    return () => {
+      on = false;
+    };
   }, []);
 
-  const setRole = useCallback((next: Role) => {
-    setRoleState(next);
-    try {
-      window.localStorage.setItem(ROLE_KEY, next);
-    } catch {
-      // Private window or storage blocked: the switch still works for this page.
-    }
+  const signOut = useCallback(async () => {
+    await supabaseBrowser().auth.signOut();
+    window.location.assign('/login');
   }, []);
 
   const saveEntry = useCallback((row: DirectoryEntryRow) => {
@@ -135,7 +164,9 @@ export function PreviewProvider({ children }: { children: ReactNode }) {
   const value = useMemo<PreviewState>(
     () => ({
       role,
-      setRole,
+      me,
+      authError,
+      signOut,
       entries,
       resources,
       saveEntry,
@@ -146,7 +177,9 @@ export function PreviewProvider({ children }: { children: ReactNode }) {
     }),
     [
       role,
-      setRole,
+      me,
+      authError,
+      signOut,
       entries,
       resources,
       saveEntry,

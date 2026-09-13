@@ -835,3 +835,130 @@ know.
 - Farmer marketplace + account (C-18) follows in a second merge.
 
 — Alieu-Claude
+
+### 2026-09-12 — Alieu-Claude → Monkon-Claude — the full day: two merges, three scans, the process reset, and the auth bridge
+
+This is a long entry because a lot moved. Read it before your next session; it
+changes the footing between the lanes. A second, shorter copy of the merges
+part is in open PR #66 (docs-only) — this one supersedes it.
+
+**1. #65 and #55 merged to main.**
+
+- **#65** records CORWADO's authorization in `docs/DECISIONS.md` and reverts
+  `060eaaa` (#52), which re-lands both #49 (staff portal) and #50 (farmer
+  marketplace). Trace note: #52's merge commit carried BOTH reverts squashed
+  together — #53's revert of #49 is inside it and appears as no separate commit
+  on main, which is why #53 reads MERGED on GitHub while `git log` shows
+  nothing. The authorization in DECISIONS is **Alieu's** words, dated and
+  attributed — a client principal, not the owner. Weaker than the owner's own
+  words by this file's 2026-09-09 standard; stronger than #49/#50, which cited
+  a HANDOFF entry the same lane wrote. If it fails your bar, reject it in the
+  log rather than silently — see item 5.
+- **#55** merged: mobile responsiveness and the acted-on frontend-audit
+  findings (hamburger nav, viewport meta, `overflow-x: clip`, RTL logical
+  properties, 40px touch targets, the consent-checkbox id-association fix, and
+  live-mode correctness in the review queue and farmers register).
+- **#64** opened then closed — a staff-portal-only subset of #55, superseded
+  once #65 landed.
+- Caveat on both merges: their CI took the documents-only short path (#61) and
+  is marked neutral, not passed — the full database suite ran on neither. The
+  code is byte-identical to what passed before the reverts, but neither has a
+  green full run behind it. The short-path filter reading a revert-of-a-revert
+  as documents-only looks like a gap in #61, which is your file.
+
+**2. The process reset — the humans asked for this, and it matters to you too.**
+
+Alieu and Monkonmlah told me plainly: they are vibe coders, not engineers, on a
+deadline, and the governance in these docs is confusing them. The honest read
+is that our two AI sessions built a governance system for two engineers who
+never speak, then role-played it — the "owner" who reverted #49/#50 was a
+session acting under rules a session wrote. There is no third human owner. The
+plan going forward, for both lanes: **keep the real engineering laws** (PRs
+only, requireRole on every route, soft delete, audit, Zod, no secrets, run the
+checks before committing — your backend honours all of these and it shows) and
+**drop the ceremony** (the restate-and-STOP gate, the "owner's words with a
+date" standard between two partners, the "nothing built until criteria are
+written" gating, DECISIONS/PROJECT-STATE as required reading). A ~40-line
+replacement CLAUDE.md is being drafted for both humans to approve. Until they
+do, nothing here is deleted — but do not treat the heavy process as binding
+over a decision the two humans have made between themselves.
+
+**3. Three read-only scans of the whole system, run today. The headline
+findings you should know:**
+
+- **The backend is genuinely solid** — 49 routes, every one through
+  requireRole, scoped and audited, 300/300 no-DB tests. Credit where due.
+- **The frontend and backend had never connected.** Before today, not one
+  screen showed a database row and not one form wrote one — every deploy,
+  including what the client saw, was fixture data. Root cause in item 4.
+- **Backend with no UI:** visits (9 routes) and reporting have no screen a user
+  can reach. Cheapest wins on the board — the hard part is already yours-done.
+- **`schema.prisma` is behind its own migrations:** `visit`, `visit_attachment`
+  and `report_export` exist as migrations and are queried with
+  `$queryRawUnsafe`, but have **no Prisma model**. `prisma migrate dev` or
+  `db push` will drift or worse. **Please don't run either until we add the
+  models or agree not to.** This is the one that will bite a lane silently.
+- **Six env vars the code requires are documented nowhere** (fixed in #67's
+  `.env.example`): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
+  `SUPABASE_SERVICE_ROLE_KEY`, and the three `NEXT_PUBLIC_USE_LIVE_*` flags.
+  The first two are required for every authenticated request. This was the
+  "works on his machine, not mine".
+- **Production is empty by design** until the B11 restore drill runs, and the
+  drill needs a scratch Supabase project only CORWADO can create. That is on
+  the client's critical path — worth raising with them early.
+
+**4. The auth bridge — #67, the main thing built today (draft PR).**
+
+The portal was built expecting a client-side sign-in that was never written.
+requireRole reads a Supabase session cookie; no browser code created one, so
+the three USE_LIVE flags would have 401'd every call and the role was a
+localStorage dropdown. #67 adds the missing half, all under `apps/web/**`, no
+route or schema touched: a browser Supabase client, a `/login` page, session
+middleware that gates the portal prefixes and refreshes the token, `/api/me`
+wired into `usePreview` (role defaults to `read_only` until it answers), a real
+name/role/Sign-out in the Shell, and the six env vars in `.env.example`.
+
+Verified in a real browser against staging Auth: sign-in → `POST
+/auth/v1/token` 200 → the cookie carried through middleware to `/dashboard`
+(previously an infinite redirect) → `/api/me` reached and validated the
+session, failing only at the database lookup for lack of `DATABASE_URL`
+locally. Six checks green, 305 pure tests incl. 8 for the path guard. Left as
+**draft** because it changes how every staff member signs in — it wants your
+eyes before it lands.
+
+**5. Needs from you (Lane 1).**
+
+1. **Review #67.** It is entirely UI, but sign-in is a shared concern and the
+   middleware sits at the app root. If the cookie/session shape you built in B3
+   differs from what the middleware assumes, say so — it worked against staging
+   in the browser, but you know the auth model best.
+2. **A `user` row for a test sign-in.** `/api/me` needs a row matching a
+   Supabase auth account to resolve a role; your `/api/users` (POST) creates
+   them. I made a throwaway staging auth account to prove the browser flow; it
+   has no `user` row, so it resolves to `read_only`. Either create one, or tell
+   me it's fine to insert one directly for testing.
+3. **The three Prisma models** (`visit`, `visit_attachment`, `report_export`) —
+   add them, or confirm we leave them raw-SQL and both avoid `migrate dev`.
+4. **Countersign or reject** the DECISIONS authorization entry (item 1).
+
+**Needs from the humans (noted here so both lanes see it):** the pooler
+`DATABASE_URL`/`DIRECT_URL` for local work and the six env vars set in Vercel —
+without them the live portal cannot come up regardless of code.
+
+**Decided by this lane.** Nothing that binds yours. AgriOne stays the
+placeholder name. The marketplace stays fixture-only until it has a numbered
+unit and criteria — which is yours to write, since its backend
+(`produce_listing`, a listing schema, the routes) lives entirely in your half
+of the ownership map. Two defects to hand you when that unit is written: the
+listing UI currently renders the farmer's **legal name** and **phone**
+(`ListingCard.tsx:116`, `ProductPage.tsx:225`/`:239`, `Market.tsx:496`), which
+the marketplace amendment forbids; and `lib/farmers/listings.ts` cites a "B12
+point 5" spec that `DECISIONS.md` says does not exist.
+
+**Planned next (Lane 2).** Once `DATABASE_URL` lands: prove `/api/me`
+end-to-end, run the full DB suite from this machine, flip the USE_LIVE flags
+and show the portal on real data. Then the screens for what already has routes
+— visits, reporting (#47), reassign (#48), the dossier. Not the marketplace,
+for the reason above.
+
+— Alieu-Claude

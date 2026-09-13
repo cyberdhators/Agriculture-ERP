@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 
-import { ROLES, ROLE_LABELS, usePreview, type Role } from '@/lib/preview';
+import { ROLE_LABELS, usePreview } from '@/lib/preview';
 
 import { Wordmark } from '../brand/Wordmark';
 import { IconSearch } from '../ui/icons';
@@ -32,14 +32,9 @@ const NAV: ReadonlyArray<{ href: string; label: string }> = [
 export function Shell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { role, setRole } = usePreview();
+  const { role, me, authError, signOut } = usePreview();
   const searchRef = useRef<HTMLInputElement>(null);
-  const [previewTools, setPreviewTools] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-
-  useEffect(() => {
-    setPreviewTools(new URLSearchParams(window.location.search).has('preview'));
-  }, [pathname]);
 
   // The mobile menu is a per-page affordance: close it on navigation.
   useEffect(() => {
@@ -153,30 +148,15 @@ export function Shell({ children }: { children: ReactNode }) {
             })}
           </nav>
 
-          {/*
-            Design tooling only, shown with `?preview` in the address. Switches
-            which role the screens render for, so a reviewer can see what each
-            role sees without four accounts. It grants nothing: every route
-            enforces the real role with requireRole (B3).
-          */}
-          {previewTools ? (
-            <div className={`${styles.roleSwitch} ${menuOpen ? styles.roleSwitchOpen : ''}`}>
-              <label htmlFor="role-preview" className={styles.roleSwitchLabel}>
-                Role
-              </label>
-              <select
-                id="role-preview"
-                value={role}
-                onChange={(event) => setRole(event.target.value as Role)}
-              >
-                {ROLES.map((r) => (
-                  <option key={r} value={r}>
-                    {ROLE_LABELS[r]}
-                  </option>
-                ))}
-              </select>
-            </div>
-          ) : null}
+          <div className={`${styles.roleSwitch} ${menuOpen ? styles.roleSwitchOpen : ''}`}>
+            <span className={styles.who} dir="auto" title={authError}>
+              {me?.name ?? (authError ? 'Account not loaded' : '…')}
+            </span>
+            <span className={styles.roleSwitchLabel}>{ROLE_LABELS[role]}</span>
+            <button type="button" className={styles.signOut} onClick={() => void signOut()}>
+              Sign out
+            </button>
+          </div>
         </div>
       </header>
 

@@ -172,6 +172,30 @@
   color: rgba(243, 238, 227, 0.5);
 }
 
+.who {
+  font-size: var(--text-small);
+  font-weight: 600;
+  color: var(--band-ink);
+  white-space: nowrap;
+}
+
+.signOut {
+  min-height: 32px;
+  padding: 0 var(--s-3);
+  background: transparent;
+  border: 1px solid var(--band-line);
+  border-radius: var(--radius-control);
+  color: var(--band-ink);
+  font-size: var(--text-small);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.signOut:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 .roleSwitch select {
   height: 32px;
   padding: 0 30px 0 10px;
