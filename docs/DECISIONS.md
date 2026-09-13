@@ -2520,3 +2520,46 @@ existing farmer consent covers the marketplace listing of their details.
 commit that records this entry, re-landing #49 (staff portal) and #50
 (farmer marketplace). The process objection — that the authorization was
 asserted but not recorded — is resolved by this entry existing.
+
+## The sixth CI edit: the law file joins the short path (2026-09-11)
+
+**The reasoning that failed, recorded because it is the point.** The fifth CI
+edit excluded `CLAUDE.md` from the documents-only short path, because the law
+file felt like it deserved more scrutiny. **A database suite is not scrutiny of
+a document.** Nothing in the full suite reads `CLAUDE.md`. #59 amended five
+lines of it and cost 1h 5m 49s, running 830 tests against code that had not
+changed, while the only real review — the owner reading the wording — had
+already happened. The exclusion bought a longer wait and no information.
+
+**The edit.** One line: the short path's filter is now `docs/`,
+`.prettierignore` and `CLAUDE.md`. Anchored, so a look-alike filename such as
+`CLAUDE.md.bak` still takes the full path. The filter remains per-file, so a
+pull request touching `CLAUDE.md` and any code takes the full path, which is
+the case the exclusion was really worried about and which was already covered.
+
+**The third pattern it revealed**, recorded beside the gate principle in
+PROJECT-STATE: a check that runs, passes, and tells you nothing about what
+changed. Not a gate asserting one fact, and not two rules meeting — a check
+pointed at the wrong thing. **The question: does this check examine the thing
+that changed, or something adjacent to it?** Adjacency is the dangerous word,
+because it is what makes such a check feel rigorous; a green check on 830
+unrelated tests reads as "verified" while verifying only that the rest of the
+repository still works, which was not in question.
+
+---
+
+## The product name is decided: "AgriOne South Sudan"
+
+**Recorded 2026-09-13.** Source: Alieu, relaying CORWADO. CORWADO has agreed on
+**AgriOne South Sudan** as the product name for this phase. The domain
+`agrionesouthsudan.com` was registered to match.
+
+This closes the naming thread that ran through #27, #36 and the #49/#50 reverts,
+where the objection was that "AgriOne" was a product name nobody had decided.
+It is decided now, and the decision is from the client.
+
+**What changed in code:** the textual product name in the page titles, the
+footer, the registration slip, the brand i18n keys and the wordmark's alt text
+now read "AgriOne South Sudan". **What did not:** the logo image
+(`public/brand/agrione-logo.png`) is baked art that still reads "AgriOne" — new
+logo art carrying the full name is CORWADO's to supply.

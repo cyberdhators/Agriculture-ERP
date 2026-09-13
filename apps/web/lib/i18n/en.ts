@@ -6,9 +6,9 @@
  */
 export const en = {
   // Wordmark / shell
-  'brand.name': 'AgriOne',
+  'brand.name': 'AgriOne South Sudan',
   'brand.tagline': 'Digital Agriculture & Agribusiness Ecosystem',
-  'brand.copyright': '© 2026 AgriOne',
+  'brand.copyright': '© 2026 AgriOne South Sudan',
   'shell.staffSignIn': 'Staff sign in',
   'shell.greeting': 'Hello,',
   'shell.marketplace': 'Marketplace',

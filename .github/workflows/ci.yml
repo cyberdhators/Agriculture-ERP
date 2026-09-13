@@ -103,8 +103,17 @@ jobs:
             changed="$(git diff --name-only HEAD~1 HEAD || echo FULL)"
           fi
           echo "changed files:"; echo "$changed" | sed 's/^/  /'
-          # Anything outside docs/ and .prettierignore means the full suite.
-          outside="$(echo "$changed" | grep -vE '^docs/|^\.prettierignore$' || true)"
+          # Anything outside the documents means the full suite. The set is
+          # docs/, .prettierignore and CLAUDE.md — no test reads any of them.
+          #
+          # CLAUDE.md was excluded from the short path in the fifth CI edit and
+          # added in the sixth (2026-09-11). The reasoning that failed: the law
+          # file felt like it deserved more scrutiny, and a database suite is
+          # not scrutiny of a document. Nothing in the full suite reads
+          # CLAUDE.md; #59, five lines of it, cost 1h5m49s and told us nothing
+          # about what changed. The filter is per-file, so a pull request
+          # touching CLAUDE.md AND any code still takes the full path.
+          outside="$(echo "$changed" | grep -vE '^docs/|^\.prettierignore$|^CLAUDE\.md$' || true)"
           if [ -z "$changed" ]; then
             echo "no changed files could be determined — running the full suite"
             outside="undetermined"

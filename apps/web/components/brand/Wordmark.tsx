@@ -24,13 +24,13 @@ export function Wordmark({
   const body = (
     <img
       src="/brand/agrione-logo.png"
-      alt="AgriOne — Digital Agriculture Marketplace"
+      alt="AgriOne South Sudan — Digital Agriculture Marketplace"
       className={styles.logo}
       style={{ height: `${Math.round(size * 1.7)}px` }}
     />
   );
   return href ? (
-    <Link href={href} className={className} aria-label="AgriOne">
+    <Link href={href} className={className} aria-label="AgriOne South Sudan">
       {body}
     </Link>
   ) : (
