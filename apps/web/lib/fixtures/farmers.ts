@@ -1422,7 +1422,8 @@ export function totalAreaHa(farmerId: string): number {
   );
 }
 export function caseloadCount(officerId: string): number {
-  return FARMERS.filter((f) => f.caseload_officer_id === officerId && f.merged_into === null).length;
+  return FARMERS.filter((f) => f.caseload_officer_id === officerId && f.merged_into === null)
+    .length;
 }
 
 /* ---- Produce listings (C-18 / B12 point 5) --------------------------- */
