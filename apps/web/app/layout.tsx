@@ -43,11 +43,11 @@ const openSans = Open_Sans({
 
 export const metadata: Metadata = {
   title: {
-    default: 'AgriOne',
-    template: '%s · AgriOne',
+    default: 'AgriOne South Sudan',
+    template: '%s · AgriOne South Sudan',
   },
   description:
-    'AgriOne: Digital Agriculture & Agribusiness Ecosystem. Farmers, farms, produce and the marketplace that joins them.',
+    'AgriOne South Sudan: Digital Agriculture & Agribusiness Ecosystem. Farmers, farms, produce and the marketplace that joins them.',
 };
 
 export const viewport: Viewport = {

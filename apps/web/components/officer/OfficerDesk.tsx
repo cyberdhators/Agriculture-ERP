@@ -189,7 +189,7 @@ export function OfficerDesk() {
           }
         >
           <div className={`${styles.slip} print-flat`}>
-            <p className={styles.slipHead}>AgriOne · Registration slip</p>
+            <p className={styles.slipHead}>AgriOne South Sudan · Registration slip</p>
             <dl className={styles.slipRows}>
               <div>
                 <dt>Farmer number</dt>

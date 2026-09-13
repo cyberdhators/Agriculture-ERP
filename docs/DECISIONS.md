@@ -2545,3 +2545,21 @@ that changed, or something adjacent to it?** Adjacency is the dangerous word,
 because it is what makes such a check feel rigorous; a green check on 830
 unrelated tests reads as "verified" while verifying only that the rest of the
 repository still works, which was not in question.
+
+---
+
+## The product name is decided: "AgriOne South Sudan"
+
+**Recorded 2026-09-13.** Source: Alieu, relaying CORWADO. CORWADO has agreed on
+**AgriOne South Sudan** as the product name for this phase. The domain
+`agrionesouthsudan.com` was registered to match.
+
+This closes the naming thread that ran through #27, #36 and the #49/#50 reverts,
+where the objection was that "AgriOne" was a product name nobody had decided.
+It is decided now, and the decision is from the client.
+
+**What changed in code:** the textual product name in the page titles, the
+footer, the registration slip, the brand i18n keys and the wordmark's alt text
+now read "AgriOne South Sudan". **What did not:** the logo image
+(`public/brand/agrione-logo.png`) is baked art that still reads "AgriOne" — new
+logo art carrying the full name is CORWADO's to supply.
