@@ -186,7 +186,7 @@ export function Shell({ children }: { children: ReactNode }) {
 
       <footer className={`${styles.footer} no-print`}>
         <Wordmark size={18} tagline />
-        <span>© {new Date().getFullYear()} AgriOne</span>
+        <span>© {new Date().getFullYear()} AgriOne South Sudan</span>
       </footer>
     </div>
   );

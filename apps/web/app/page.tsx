@@ -7,7 +7,7 @@ import { FarmerShell } from '@/components/farmer/FarmerShell';
 import { FarmerSessionProvider } from '@/lib/farmer-session';
 import { DEFAULT_LANGUAGE, LANG_COOKIE, isLanguage } from '@/lib/i18n';
 
-export const metadata: Metadata = { title: { absolute: 'AgriOne' } };
+export const metadata: Metadata = { title: { absolute: 'AgriOne South Sudan' } };
 
 /**
  * The public entry: the AgriOne spread with sign-in, registration, the staff
