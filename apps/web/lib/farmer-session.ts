@@ -120,6 +120,9 @@ function makeSelfFarmer(input: FarmerRegistration, id: string): Farmer {
     payam_id: input.payam_id,
     state_id: input.state_id,
     registered_by: null,
+    // Nobody works this farmer yet: a self-registration is assigned when an
+    // officer picks it up (C-8R), which is why registered_by is null too.
+    caseload_officer_id: null,
     registration_source: 'self',
     verification_status: 'pending',
     merged_into: null,

@@ -36,6 +36,7 @@ interface FarmerRowDto {
   payam_id: string;
   state_id: string;
   registered_by: string | null;
+  caseload_officer_id: string | null;
   registration_source: Farmer['registration_source'];
   verification_status: Farmer['verification_status'];
   merged_into: string | null;
@@ -62,6 +63,7 @@ function toFarmer(row: FarmerRowDto): Farmer {
     payam_id: row.payam_id,
     state_id: row.state_id,
     registered_by: row.registered_by,
+    caseload_officer_id: row.caseload_officer_id,
     registration_source: row.registration_source,
     verification_status: row.verification_status,
     merged_into: row.merged_into,

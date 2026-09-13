@@ -150,7 +150,9 @@ export function scopeFarmers(
     case 'read_only':
       return farmers.filter((f) => f.state_id === SCOPE_STATE);
     case 'officer':
-      return farmers.filter((f) => f.state_id === SCOPE_STATE && f.registered_by === officerId);
+      return farmers.filter(
+        (f) => f.state_id === SCOPE_STATE && f.caseload_officer_id === officerId,
+      );
     default:
       return [];
   }
