@@ -144,6 +144,137 @@ phone provider. See `docs/DECISIONS.md`.
 
 ---
 
+## I-03 WEATHER — WHAT CORWADO MUST BE TOLD BEFORE (e) IS PROMISED (2026-09-14)
+
+**Findings before any code, at the owner's instruction. Two of them belong to
+CORWADO rather than to us, and they are put first because they change what the
+client should be promised.**
+
+### 1. SOUTH SUDAN HAS ALMOST NO WEATHER OBSERVATION, SO A PAYAM FORECAST IS MODEL OUTPUT
+
+**This is the finding to give CORWADO, not to bury in a design note.**
+
+|                                       |                                            |
+| ------------------------------------- | ------------------------------------------ |
+| Automatic weather stations installed  | **13**                                     |
+| Being added (FAO-supported, Feb 2026) | **27**, for 40 total                       |
+| Manual synoptic stations              | about **3**                                |
+| Country area                          | roughly **644,000 km²**, larger than Kenya |
+
+South Sudan Meteorological Services sits inside the Civil Aviation Authority and
+provides mainly aeronautical forecasts and a radio bulletin.
+
+**What that means for a number on a screen or in an SMS.** OpenWeather serves
+"any coordinates around the globe" and markets **100 m resolution with 10-minute
+updates** from its own model. Over South Sudan there is almost nothing to observe
+with, so **a payam centroid receives interpolated global-model output — GFS and
+ECMWF — not a nearby measurement.** A 100-metre grid over an unobserved region is
+resolution, not accuracy: the figure describes the output, not the input.
+OpenWeather nowhere discloses where real station data exists.
+
+**Three consequences, stated plainly:**
+
+- **Neighbouring payams inside one county will read alike**, because they are
+  often the same model cell. Payam-level distinctness is largely illusory today.
+- **So county-level locations are the right default to start**, which gives
+  nearly the same information for roughly a sixth of the calls (about 80
+  counties against about 500 payams). Payam-level becomes a deliberate choice
+  when the network densifies, not the starting assumption.
+- **Nobody should promise a farmer precision the data cannot support.** An
+  advisory saying it will rain in your payam on Thursday is a model's view of a
+  region with three manual stations in it. That is still useful — a flood watch
+  is worth sending — but it is not a local observation and should never be
+  described as one.
+
+**The trajectory is genuinely upward.** Those 27 stations exist specifically to
+feed WMO's WIS2 and the Global Basic Observing Network, whose purpose is to
+improve global forecasting over exactly this territory. The data behind this
+deliverable gets better on a timescale that matters to the project. `raw` on
+`weather_forecast` is kept partly for that reason: when the inputs improve, it is
+how anyone reconstructs what we told a farmer and why.
+
+### 2. THE LICENCE PERMITS THE CACHE — AND THE ATTRIBUTION RULE COLLIDES WITH SMS
+
+**Read from OpenWeather's own pricing page, because the whole design depends on
+storing forecasts and the answer was unconfirmed.**
+
+> _"All automated self-service plans are provided under the ODbL (Open Database
+> License)."_
+
+**Storing forecasts is permitted, and the design does not change.** Commercial
+use is allowed; there is no obligation to open-source the application or share
+product code. Share-alike attaches only if OpenWeather data is restructured or
+enriched into **our own dataset or API made available outside the
+organisation** — then that must be offered under ODbL too. An internal cache
+behind `requireRole`, feeding a staff dashboard, is not that. **The rule to
+carry forward: do not expose the forecast cache as a public dataset or API
+without accepting ODbL on it.**
+
+**But attribution is a live constraint, and it lands on deliverable (e) rather
+than on the tile.** OpenWeather requires attribution **visible where the data is
+displayed** — _"attribution placed only in hidden documentation or deep legal
+pages is not sufficient"_ — and gives the line as `Weather data © OpenWeather`.
+
+> **A one-segment SMS is 160 GSM-7 characters, or 70 in Arabic script.
+> `Weather data © OpenWeather` is 26 of them.** That is 16% of a Latin segment
+> and over a third of an Arabic one, on a message that already costs 0.20 EUR
+> per recipient per segment.
+
+So one of three things must be true for an SMS advisory, and CORWADO should
+choose knowingly: the attribution is carried and the advisory is that much
+shorter; or an SMS is held not to be a "display" of the data and attribution
+lives on the dashboard and in the farmer-facing terms instead; or the advisory
+avoids OpenWeather-derived content altogether. **This is unresolved and is
+recorded as unresolved.** It does not affect the tile, which has room for the
+line and must carry it.
+
+**Note the inconsistency, since someone will implement whichever they read
+first.** The pricing page gives `Weather data © OpenWeather`; the FAQ requires
+_"Weather data provided by OpenWeather"_, a hyperlink to openweathermap.org
+**and** the OpenWeather logo, obligatory on all plans between Free and
+Professional. The stricter reading is the FAQ's, and the tile should satisfy it.
+
+### 3. I-03's STATE: THE FREE TIER IS ENOUGH TO BUILD AND PROVE
+
+**No CORWADO account is needed to build this.** The Free plan is **60 calls per
+minute and 1,000,000 calls per month**, registered with an email address, and
+covers Current Weather, Geocoding, Air Pollution and historical data. Exceeding
+the per-minute rate returns `429`; nothing bills.
+
+**What the free tier does not clearly include is One Call** — the product that
+returns current, hourly and daily in a single call. OpenWeather's pricing page
+lists the newer timeline-based product under **Startup and above**. Secondary
+sources report One Call 3.0 as 1,000 calls/day free and about 0.0012 GBP per
+call beyond that, and **no first-party page publishes that per-call rate**. So
+the free tier is enough to build and prove the tile using Current Weather plus
+the free forecast endpoint; whether the eventual shape is One Call is a question
+the account will answer, and it is not on the critical path.
+
+**Fetch budget, computed rather than guessed**, against 1,000,000 calls/month:
+
+| Scale                                 | Fetches/day | Fetches/month | Share of free allowance |
+| ------------------------------------- | ----------- | ------------- | ----------------------- |
+| 12 payams (staging placeholder today) | 12          | ~360          | 0.04%                   |
+| ~80 counties (real, county-level)     | 80          | ~2,400        | 0.24%                   |
+| ~500 payams (real, payam-level)       | 500         | ~15,000       | 1.5%                    |
+
+**The binding constraint is 60 calls per minute, not the monthly total.** A
+naive loop over 500 locations returns `429` partway and leaves a half-filled
+cache, so the scheduled fetch must be paced regardless of how generous the
+monthly figure looks.
+
+### 4. A DEPENDENCY NOBODY HAD STATED: WEATHER LOCATIONS INHERIT I-07
+
+`weather_location.payam_id` ties this deliverable to the location hierarchy, and
+**that hierarchy is placeholder data**. Staging holds 10 states, 6 counties and
+12 payams; `scripts/locations-lib.mjs` says the codes _"are invented for this
+project and will not match the boundary lists when they arrive"_.
+
+**So any weather location seeded now must be re-pointed when CORWADO's list
+lands.** B10 did exactly that exercise once already — migration 20 was the
+reporting repoint. It is cheap if expected and expensive if discovered, which is
+why it is written here before the first row exists.
+
 ## KNOWN CONDITION — CORRECTED: THE POOLER WAS NEVER FLAKY; PRISMA'S CONNECT TIMEOUT WAS TOO SHORT
 
 `DIRECT_URL` reaches staging through the **session pooler**

@@ -1107,8 +1107,161 @@ what the preceding unit actually produced.
   CORWADO's behalf, and reusing it would make the closed pull request look
   like the origin of this one.
 - C-15 — SMS notifications — (n)
-- C-16 — weather advisories — (e)
+- C-16 — weather advisories — (e) — **the tile is now written below; the
+  advisory half is deferred, see C-16's scope note**
 - C-17 — WhatsApp — (o), conditional on Meta verification
+
+---
+
+---
+
+## C-16 — THE WEATHER TILE (deliverable (e), first half)
+
+**Scope, stated first because this is deliberately half a deliverable.** C-16 is
+**current conditions and a short forecast for locations a staff caller may
+see**, cached and read through an API route. It is **not** advisories, severity,
+approval or SMS — that is the rest of (e) and it is deferred, because it is
+roughly a week of work of which most is decisions that are not ours: what a
+rule-generated advisory says, who approves it, in which language, at what cost
+per send, and whether an SMS can carry OpenWeather's attribution at all.
+
+**Findings this rests on:** `docs/PROJECT-STATE.md`, _I-03 weather — what CORWADO
+must be told before (e) is promised_. **Route contract, agreed with Lane 2
+before either half exists:** `docs/api/weather-contract.md`.
+
+**Three corrections to `docs/data-model-extension.md` §8 are part of this unit**,
+because §8 predates B5–B11 and contradicts rules those units established. They
+are C-16.2, C-16.3 and C-16.4.
+
+### C-16.1 — Two tables, and forecasts are stored as numbers
+
+`weather_location` and `weather_forecast` exist. `weather_forecast` stores the
+provider's numbers and its response in `raw`, and **never a rendered sentence**:
+no row contains "Rain likely Thursday". An advisory layer is written over these
+numbers later, and storing prose now would have to be undone first.
+
+### C-16.2 — A scope is explicit, never a null that means everything
+
+**This corrects §8.** `weather_advisory` in §8 gives
+`weather_location_id nullable — null means all areas`. That shape is refused
+elsewhere in this system: `requireRole` states _"a null scope never means
+'everything'"_ and the `user` table enforces the pair so that _"a null scope can
+never mean 'everything'"_.
+
+C-16 creates no advisory table, so the rule is recorded here for whoever builds
+the second half: **any national scope is an explicit value** — a `scope` enum of
+`national | state | location`, or a nullable `state_id` with a CHECK that pairs
+it — **never an absent foreign key**. A null meaning "everyone" is one bad query
+away from messaging every farmer in the country, which is precisely why the
+pattern is refused.
+
+### C-16.3 — Every scoped row carries its state, denormalised
+
+**This corrects §8.** `weather_location` carries `payam_id`, `county_id` **and**
+`state_id`, with the composite foreign key to `payam(id, state_id)` that every
+scoped table has carried since migration 6 — so a supervisor's scope check is
+not a join, and the hierarchy cannot silently disagree with itself.
+
+### C-16.4 — `deleted_at` as well as `active`
+
+**This corrects §8.** §8 gives `weather_location` an `active` boolean and no
+`deleted_at`, so the row cannot be soft-deleted and the deletion law cannot be
+met. It carries both, as `directory_entry` does: `active` is "not in use",
+`deleted_at` is "removed", and a removed location appears in no list, count or
+export.
+
+### C-16.5 — No `sms_campaign_id`
+
+**This corrects §8.** §8 gives `weather_advisory` a foreign key to
+`sms_campaign`, **a table that does not exist** — C-15 is unwritten. The column
+is omitted entirely and added by C-15. A foreign key to a nothing cannot be
+written, and an unconstrained id is still unconstrained in production.
+
+### C-16.6 — One fetch per location per day, and no route ever fetches
+
+A scheduled job fills the cache. **No API route triggers a fetch**, so no
+dashboard render, refresh or tab-switch costs money or adds latency. The fetch
+is **paced**: the free plan allows 60 calls per minute and a naive loop over
+hundreds of locations returns `429` partway and leaves the cache half-filled.
+
+A refetch for the same location and day is **idempotent** — a unique constraint
+on `(weather_location_id, forecast_for)` with an upsert, so a retried job
+produces no duplicate rows.
+
+### C-16.7 — Stale but served, with the real time shown
+
+If today's fetch failed, the route returns **yesterday's row with its real
+`fetched_at` and `stale: true`** — never an error and never a hidden tile. A
+weather card that disappears when the provider is down is worse than one that
+says when it last knew something, and `fetched_at` is displayed for that reason:
+the design's "saved this morning" is the honest statement.
+
+**A floor on refetch**: a manual refresh cannot cause more than one upstream
+fetch per location per hour, so a held-down button cannot generate a bill.
+
+### C-16.8 — The route, exactly as the contract states
+
+`GET /api/weather`, through `requireRole`, with the response shape, field
+guarantees and failure behaviour in `docs/api/weather-contract.md`. **Admin sees
+every location; supervisor and read_only see their own state; an officer sees
+their own payam** — weather is about where an officer works, not about their
+caseload, which is the one scope rule here that differs from the farmer routes.
+
+### C-16.9 — Empty is a success
+
+**A caller with no locations receives `200` and an empty array.** Never `404`,
+never an error. On the day this ships that is the true answer for nine of the ten
+states, and both halves must treat it as normal.
+
+### C-16.10 — Attribution is served by the route
+
+The response carries the attribution text and URL, so the server owns the
+wording and the UI cannot quietly drop it. **It is a licence condition, not a
+courtesy:** OpenWeather requires attribution visible where the data is displayed,
+and their FAQ requires the text, a link and their logo on every plan from Free to
+Professional.
+
+### C-16.11 — Audit, as everywhere else
+
+Creating, updating or removing a `weather_location` appends an `audit_event`.
+**Fetching a forecast does not** — it is a scheduled read of a third-party
+service, not a user action on a record, and an audit row per location per day
+would bury the log it belongs to. The new action keys go into `AUDIT_ACTIONS`,
+`docs/api/CONVENTIONS.md` §5.2.2 and the migration in one change; the two gates
+merged in #70 fail the build if they drift.
+
+### C-16.12 — The backup manifest knows the new tables
+
+`MANIFEST_TABLES` gains both tables. **This is in the criteria because the gate
+is one-directional:** `tests/backup.test.ts` checks that every table it lists
+exists, and nothing checks that every table which exists is listed. So a new
+table is silently absent from backup verification, and C-11's manifest would
+report a clean comparison while counting nothing. Adding a
+catalogue-to-list check is the durable fix and is offered as a separate item.
+
+### C-16.13 — Locations are seeded at county level to start
+
+The first locations are **county centroids, not payam centroids**, for the reason
+in I-03: South Sudan has roughly 13 working weather stations, so adjacent payams
+inside one county are usually the same model cell. County level gives nearly the
+same information for roughly a sixth of the calls. The schema supports payam
+level and the change is data, not code, so this is reversible when the observing
+network densifies.
+
+### C-16.14 — Placeholder locations are re-pointable
+
+Weather locations reference the location hierarchy, which is **placeholder data
+(I-07)** whose codes _"will not match the boundary lists when they arrive"_. The
+unit must leave the re-pointing possible: no weather row derives a location's
+identity from anything except its foreign key, so CORWADO's real list can be
+loaded and the rows re-pointed, as B10's migration 20 did for reporting.
+
+### What C-16 does not do
+
+No advisory table, no severity, no approval, no SMS, no rule engine, and **no
+crop calendar** — the twelve-month farming-year strip and the "growing now" card
+are out of scope, recorded as a rejected option, and must not be built against
+this unit.
 
 ---
 
