@@ -19,9 +19,27 @@ import { makeTestPrisma, requireTestEnv } from './helpers/db';
  * This is the gate that compares (docs/PROJECT-STATE.md, "How to tell a gate
  * that can fail from one that cannot"). Two sources that move independently:
  * the constant in this repository, and the constraint in the live database.
- * It fails when either moves alone, in BOTH directions, which is the point --
- * a key in the code and not the database refuses a write at runtime, and a key
- * in the database and not the code is a permission nothing can use.
+ *
+ * IT IS DELIBERATELY NOT SYMMETRIC, AND THE FIRST VERSION OF IT WAS.
+ *
+ * The direction that must be strict: a key in AUDIT_ACTIONS that the database
+ * refuses. Every write recording it fails on its audit insert and the whole
+ * transaction rolls back, so this is a defect in every case.
+ *
+ * The direction that must only REPORT: a key the database allows that the
+ * constant does not have. Staging's schema runs ahead of main by design --
+ * migrations are applied from a unit's branch before it merges (PROJECT-STATE,
+ * "Staging's schema runs ahead of main"), so during that window the live CHECK
+ * legitimately holds keys main's code has never heard of. The standing rule is
+ * explicit: A TEST THAT READS THE SCHEMA TOLERATES OBJECTS IT DOES NOT KNOW.
+ *
+ * The first version of this test asserted set equality and would have gone red
+ * on main for the whole of that window -- seam 1 of the seams list, fired by
+ * the gate written to close the eleventh instance. Caught by working out what
+ * its own pull request's run would do, before that run finished. The constant
+ * and the migrations are compared exactly, with no window, by
+ * packages/shared/tests/audit-check-matches-migrations.test.ts, which reads
+ * files and needs no database.
  */
 vi.setConfig({ testTimeout: 120_000, hookTimeout: 120_000 });
 requireTestEnv();
@@ -72,24 +90,26 @@ describe('the audit action CHECK and AUDIT_ACTIONS are the same set', () => {
     ).toEqual([]);
   });
 
-  it('every key the database allows is one the code can write', async () => {
+  it('reports keys the database allows and this branch does not know, without failing', async () => {
     const allowed = keysIn((await constraintDefinition())!);
     const known = new Set<string>(AUDIT_ACTIONS);
-    const orphaned = allowed.filter((a) => !known.has(a));
-    expect(
-      orphaned,
-      'These keys are allowed by the database CHECK and are NOT in ' +
-        'AUDIT_ACTIONS. Either a key was removed from the constant without a ' +
-        'migration, or a migration invented one. A permission nothing can use ' +
-        'is not harmless: it is the direction in which the two lists drift ' +
-        'apart unnoticed.',
-    ).toEqual([]);
+    const ahead = allowed.filter((a) => !known.has(a));
+    if (ahead.length > 0) {
+      // Expected while a unit's migration is applied and its branch is not yet
+      // merged. Printed so it is visible in the run, never asserted on.
+      console.log(
+        `audit CHECK is ahead of this branch by ${ahead.length} key(s): ${ahead.sort().join(', ')}` +
+          ' -- expected if a unit has applied its migration and not yet merged.',
+      );
+    }
+    // The assertion is about the shape of the answer, not about the window:
+    // the database must hold a well-formed superset, never a partial list.
+    expect(allowed.length).toBeGreaterThanOrEqual(AUDIT_ACTIONS.length);
   });
 
-  it('the two lists are the same size, so neither holds a duplicate', async () => {
+  it('neither list holds a duplicate', async () => {
     const allowed = keysIn((await constraintDefinition())!);
-    expect(new Set(allowed).size).toBe(allowed.length);
-    expect(new Set(AUDIT_ACTIONS).size).toBe(AUDIT_ACTIONS.length);
-    expect(new Set(allowed).size).toBe(new Set(AUDIT_ACTIONS).size);
+    expect(new Set(allowed).size, 'the database CHECK repeats a key').toBe(allowed.length);
+    expect(new Set(AUDIT_ACTIONS).size, 'AUDIT_ACTIONS repeats a key').toBe(AUDIT_ACTIONS.length);
   });
 });
