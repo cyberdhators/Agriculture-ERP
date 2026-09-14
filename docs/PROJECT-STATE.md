@@ -144,6 +144,118 @@ phone provider. See `docs/DECISIONS.md`.
 
 ---
 
+## TWO CAUGHT EARLIER THAN THE LAST ONE — WHAT IMPROVEMENT LOOKS LIKE (2026-09-14)
+
+**Recorded at the owner's instruction, and the reason is the measurement:
+_the pattern getting caught sooner is the thing worth measuring._** A list of
+faults only ever gets longer. What tells you whether anything is improving is
+how far a fault travels before something stops it.
+
+Both of these are the same shape as errors already in this document. Neither
+reached a record, a client paragraph, or a commit.
+
+### 1. A legal document that could not be read, and was not guessed at
+
+The licence question gated the whole C-16 cache design — if storing forecasts
+were restricted, the design changed rather than the wording. OpenWeather's terms
+are a PDF whose text is glyph-encoded through a subset font, so two extraction
+attempts returned 31,000 characters of plausible-looking nonsense with zero
+keyword hits.
+
+**The third attempt was not made.** A partial decode of a licence clause is
+worse than no decode: it produces a confident, sourced, quotable sentence about
+what is permitted, and nobody downstream can tell it was reconstructed from a
+substitution cipher. The route taken instead was a first-party HTML page that
+states the licence in plain text.
+
+**Distance travelled: zero.** No record was written from the bad decode.
+
+### 2. A search summary about to become a first-party fact
+
+The ODbL answer first appeared in a **search-engine summary** of pages that had
+not been fetched. It was very nearly written into the record as _"ODbL, so
+storing is fine"_ — correct, as it happens, and **sourced to nothing.** The
+first-party FAQ was then checked and **does not name ODbL at all**, which is
+what stopped it; the licence was only confirmed by fetching the pricing page and
+reading the sentence there.
+
+**This is the message-history error exactly** — the fourth instance of the
+third pattern, where I characterised an SMS account from the three messages I had
+sent myself and never listed the other five. **Same shape: a conclusion from a
+sample I had not verified, presented with the confidence of a fact.**
+
+**Distance travelled: zero.** The earlier instance reached a paragraph written
+for the client and had to be retracted.
+
+### WHAT THE COMPARISON IS ACTUALLY WORTH
+
+| Instance                                   | Where it was caught                         | Distance travelled                 |
+| ------------------------------------------ | ------------------------------------------- | ---------------------------------- |
+| Audit CHECK "generated from AUDIT_ACTIONS" | by a rebase, days later                     | 3 documents, 1 worked-example list |
+| `.env.example` "all are listed"            | by a finding written about something else   | 1 state document, 9 days           |
+| The SMS account "has never delivered"      | by reading the history, after writing it up | a paragraph prepared for CORWADO   |
+| The glyph-encoded PDF                      | before the second extraction was trusted    | **nothing**                        |
+| The search-summary licence                 | before it was written down                  | **nothing**                        |
+
+**Two caught at the point of formation rather than after publication.** That is
+one data point, not a trend, and the honest reading is narrow: **the two that
+were caught early were both cases where the source of the claim was visible and
+suspect** — a garbled decode, a search summary — rather than cases where the
+reasoning was sound and the input was quietly stale. The harder class is still
+the one that gets through, and nothing here shows it is improving.
+
+**The practice that did the work in both cases is the one already recorded:**
+ask what this claim is sourced to, and whether the source is a thing I actually
+read. Not "is this correct" — both claims were correct — but **"do I know this,
+or did something tell me it"**, which is the same question as reading a document
+as its recipient, pointed at an input rather than an output.
+
+## THE BACKUP MANIFEST GATE IS ONE-DIRECTIONAL (2026-09-14)
+
+**Found while writing C-16, and it is worse than the criterion it produced.**
+`MANIFEST_TABLES` in `apps/web/lib/backup/manifest.ts` is the list of tables a
+backup must carry. `tests/backup.test.ts` checks it in one direction only:
+
+```ts
+// Every table a backup must carry is a real table: a renamed table would be a
+// finding here, not a silent zero.
+for (const table of MANIFEST_TABLES) {
+  /* ... assert it exists in information_schema ... */
+}
+```
+
+**That catches a table removed or renamed. It cannot catch a table added.**
+Nothing compares the catalogue back to the list, so **a new table is silently
+absent from the manifest**, and the manifest is what a restore is verified
+against.
+
+**Why this is the worst place in the project for it to happen.** The manifest is
+C-11's instrument for proving a recovery worked. `compareManifests` would report
+every difference explained and `isVerified` would return true, **while counting
+nothing for the missing table** — a clean bill of health on a restore that lost
+a table entirely. **The first pattern, in the unit whose entire purpose is
+proving recovery works.** It is exactly the shape recorded eleven times above: a
+gate asserting one fact, true when written, quietly false the moment something
+new appears.
+
+**It has not bitten yet**, and the reason is luck rather than design: every
+table since B8 was added by a session that also wrote the manifest entry. C-16
+would have been the first to add tables without that habit, which is why C-16.12
+names it — but a criterion in one unit is not a fix.
+
+**THE FIX, SIZED AND NOT BUILT: about half an hour.** One test that reads
+`information_schema.tables` for the public schema, subtracts an explicit
+allowlist (`_prisma_migrations`, and any table deliberately excluded with its
+reason), and asserts the remainder equals `MANIFEST_TABLES`. **That turns a
+single-fact gate into a gate that compares** — two sources moving independently,
+red by itself when either moves alone — which is the principle recorded above
+and the same shape as the two audit-CHECK gates merged in #70.
+
+**Recorded as an open item rather than left in C-16**, at the owner's
+instruction: _"It should not wait for someone to notice a missing table during a
+restore."_ The half hour is cheaper than the alternative by any measure, and the
+alternative is discovering it in an emergency.
+
 ## I-03 WEATHER — WHAT CORWADO MUST BE TOLD BEFORE (e) IS PROMISED (2026-09-14)
 
 **Findings before any code, at the owner's instruction. Two of them belong to
@@ -220,13 +332,32 @@ pages is not sufficient"_ — and gives the line as `Weather data © OpenWeather
 > and over a third of an Arabic one, on a message that already costs 0.20 EUR
 > per recipient per segment.
 
-So one of three things must be true for an SMS advisory, and CORWADO should
-choose knowingly: the attribution is carried and the advisory is that much
-shorter; or an SMS is held not to be a "display" of the data and attribution
-lives on the dashboard and in the farmer-facing terms instead; or the advisory
-avoids OpenWeather-derived content altogether. **This is unresolved and is
-recorded as unresolved.** It does not affect the tile, which has room for the
-line and must carry it.
+**THIS IS CORWADO'S TO RESOLVE, NOT OURS, AND IT HAS A NUMBER ATTACHED.**
+Twenty-six characters of a hundred and sixty, **on every recipient of every
+advisory**, or over a third of an Arabic-script segment. At 0.20 EUR per
+segment, carrying the attribution on a 148-character advisory pushes it to a
+second segment and **doubles the cost of the send** — 400 EUR per thousand
+farmers instead of 200.
+
+Three options, and CORWADO should choose knowingly:
+
+1. **Carry it and write shorter.** Advisories are held to ~134 Latin characters
+   so the attribution fits in one segment. Cheapest in money, tightest in
+   language, and hardest in Arabic script where 26 characters of 70 leaves
+   almost nothing.
+2. **Decide an SMS is not a "display" of the data**, with attribution on the
+   dashboard and in the farmer-facing terms instead. Plausible — the licence
+   language is about where data is displayed, and it was written for screens —
+   but it is a legal reading and not ours to make.
+3. **Avoid OpenWeather-derived content in advisories altogether**, and this is
+   worth naming because **it may be the cheapest.** An advisory that says "heavy
+   rain is forecast this week, cover stored grain" carries agronomic guidance
+   triggered by a forecast rather than the forecast itself. The numbers stay on
+   the dashboard where attribution is easy; the SMS carries the instruction. It
+   removes the licence question, shortens nothing, and costs nobody a segment.
+
+**Unresolved, and recorded as unresolved.** It does not affect the tile, which
+has room for the line and must carry it.
 
 **Note the inconsistency, since someone will implement whichever they read
 first.** The pricing page gives `Weather data © OpenWeather`; the FAQ requires
