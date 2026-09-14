@@ -2648,3 +2648,104 @@ Applied the same day to everything built in that session: the narrowing
 migration planted (red, naming all 33 keys it would drop), a column hidden twice
 (`schema-check` green the first time — which is how its defect was found — red
 the second), and the `db:push` refusal run to see it refuse.
+---
+
+## The SMS provider is Bird, not Africa's Talking (2026-09-14)
+
+**Approved by the owner on 2026-09-14 after a findings-first write-up.**
+`CLAUDE.md` §3 now names Bird. One row changed; nothing else in the stack table
+moved.
+
+**The ground, and it is not a preference.** **Africa's Talking does not serve
+South Sudan.** Its own help centre lists eleven countries — Kenya, Uganda,
+Tanzania, Rwanda, Malawi, Zambia, Nigeria, Côte d'Ivoire, Ethiopia, Ghana,
+South Africa — and South Sudan is not one of them. The provider recorded in the
+stack table since the beginning could not have delivered deliverable (n) to a
+farmer in this country. This is a correction of a stack decision that was wrong
+for the country the project is for, not an upgrade.
+
+**The provider was never contracted.** "F-03" appears once in this document, as
+the authority for Africa's Talking being "our contracted provider", and is
+defined nowhere in `docs/` or `CLAUDE.md`. The scope document names no SMS
+provider at all. So the choice is a stack decision in the owner's gift, which is
+how it was made.
+
+**What Bird gives us that Africa's Talking would not:** South Sudan at all; a
+published rate; no sender registration, so no lead time; and WhatsApp on the
+same account and API, which touches deliverable (o) — though whether that moves
+the Meta business-verification blocker is **unverified and not assumed**.
+
+**What we lose, recorded because it constrains design:**
+
+- **Two-way SMS in South Sudan, entirely.** Bird lists two-way as unavailable
+  for +211 and the only sender type is alphanumeric, which recipients cannot
+  reply to. Nothing can receive a STOP, so **opt-out is an officer withdrawing
+  consent in the system**, not a keyword. Any farmer-reply feature is impossible
+  over SMS here, including the unresolved "Ask AI" advisory.
+- **A callable identity.** Messages arrive from a name; a farmer cannot ring it
+  back.
+- **Africa's Talking's regional products** — USSD, airtime, payments. All three
+  are out of scope, so the real loss is a local commercial relationship.
+
+**Cost, so it is on the record before the first campaign.** $0.21 per segment,
+alphanumeric, South Sudan. Billing is per segment: 160 GSM-7 characters, or 70
+in Arabic script, dropping to 153 and 67 once a message concatenates, capped at
+twelve segments. One 160-character Latin advisory to a thousand farmers is
+**$210**; the same words in Arabic script are three segments and **$630**.
+**Encoding follows the script, not the language** — Juba Arabic in Latin letters
+is GSM-7 and costs a third as much, which makes the writing of an advisory a
+decision with a price attached. Bird's `smart_encoding` cannot rescue Arabic
+script, which has no GSM-7 form.
+
+**Open, and none of it blocks the substitution:** no operator is named in Bird's
+documentation, so per-network delivery to MTN, Zain and Digitel is unproven and
+needs one verification send each; carrier fees for South Sudan are unpublished,
+so $0.21 is a floor; the NCA registration question is CORWADO's; and a number
+bought from GB inventory cannot carry +211 traffic, while the sender that does
+work costs nothing.
+
+**What exists in the repository:** the three variable names in `.env.example`
+and `scripts/bird-sms-verify.mjs`, a throwaway proof wired as `pnpm sms:verify`.
+Deliverable (n) is phase 6, C-15 does not exist, and no application code imports
+anything Bird.
+
+---
+
+## The premise under B3's derived identifier expired on 2026-09-14
+
+**Recorded, not acted on.** The B3 entry above — _officers authenticate by
+phone, through a derived identifier_ — rests on this: enabling Supabase's Phone
+provider requires an SMS provider from a fixed list of Twilio, Twilio Verify,
+MessageBird, Vonage and Textlocal, and **Africa's Talking is not on it**. Its
+closing instruction was: _"If Africa's Talking ever joins Supabase's supported
+list, revisit it then — deliberately, with the migration of existing accounts
+planned, not as a tidy-up."_
+
+**That condition has occurred, by two independent routes.**
+
+1. **Our provider is now on the list.** Supabase supports **MessageBird**, and
+   Bird is MessageBird renamed. Option A's objection was paying for a second SMS
+   provider to satisfy a toggle; with Bird there is no second provider.
+2. **The list is no longer the constraint.** Supabase has since added a **Send
+   SMS auth hook**, which calls any HTTP endpoint for the message — so any
+   provider at all, including the one we just replaced.
+
+**Two things remain unverified and would have to be before anyone acts:** that
+Bird's current platform credentials work with Supabase's MessageBird
+integration, which was built against MessageBird's older API; and that the OTP
+path is wanted at all, since we send no one-time codes.
+
+**THE DESIGN IS UNCHANGED AND SHOULD STAY UNCHANGED TODAY.** Officer accounts
+already exist keyed by the derived identifier; moving them is a migration with
+real risk and no acceptance criterion asking for it. C-3.7 is satisfied as
+built: the officer types a phone number and a password.
+
+**Why this is written down at all.** The reasoning was stated as fact in three
+places — this document, `docs/api/CONVENTIONS.md` §2, and a comment on
+`officerAuthIdentifier` in `packages/shared` — and a session reading any of them
+tomorrow would have believed a premise that stopped being true. The two
+downstream statements have been corrected to say the decision stands and the
+premise expired. **That is the third time this week a document outlived its
+premise** — after the audit CHECK "generated from `AUDIT_ACTIONS`" and
+`.env.example` "all are listed" — and it is the same fault each time: a
+statement that was true when written, trusted long after.

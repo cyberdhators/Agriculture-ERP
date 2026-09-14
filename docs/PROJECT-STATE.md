@@ -77,6 +77,9 @@ false.** Seven required names were absent from that file until this was found on
 | `NEXT_PUBLIC_SENTRY_DSN` | `apps/web/sentry.shared.ts`                    | Where errors go. **Public by design** — see `docs/DECISIONS.md`. Empty switches reporting off. **Lives in Vercel's environment variables, not on any laptop** — see _The DSN and local machines_ below.                                                                                      |
 | `SENTRY_ENVIRONMENT`     | same                                           | **Set explicitly in Vercel: `staging` for preview deployments, `production` for production.** Decided 2026-09-04. The code falls back to `VERCEL_ENV`, then `development`, but the fallback must never be what produces the value — `VERCEL_ENV` says `preview`, which is not a name we use. |
 | `SENTRY_RELEASE`         | same                                           | Which build. Falls back to `VERCEL_GIT_COMMIT_SHA`, then `unknown`.                                                                                                                                                                                                                          |
+| `BIRD_API_KEY`           | `scripts/bird-sms-verify.mjs`                  | **Secret.** Bearer token for the Bird SMS API; it can send messages CORWADO pays for. Never `NEXT_PUBLIC_`.                                                                                                                                                                                  |
+| `BIRD_API_BASE_URL`      | same                                           | The workspace's regional host, e.g. `https://us1.platform.bird.com`. Region is part of the URL and differs per workspace.                                                                                                                                                                    |
+| `BIRD_SMS_SENDER_ID`     | same                                           | The alphanumeric sender, 3-11 chars, at least one letter. The ONLY sender type Bird offers for +211.                                                                                                                                                                                         |
 
 ### Seven variables the code requires and nothing declares (found 2026-09-13)
 
@@ -127,20 +130,62 @@ what made them the same problem instead of two.
 
 ---
 
-## PAID EXTERNAL SERVICES ARE DEFERRED
+## PAID EXTERNAL SERVICES — SMS NOW EXISTS, THE OTHER TWO ARE DEFERRED
 
-**Africa's Talking (I-02), OpenWeather (I-03) and Mapbox** are deferred until
-CORWADO provides accounts. All third-party accounts are held in CORWADO's name —
-`CLAUDE.md` §3 — so none can be created by this team.
+**OpenWeather (I-03) and Mapbox** are deferred until CORWADO provides accounts.
+All third-party accounts are held in CORWADO's name — `CLAUDE.md` §3 — so none
+can be created by this team.
 
-**No unit before B9 depends on any of them.** Weather advisories, deliverable
-(e), and SMS notifications, deliverable (n), do — and both come after the backend
-units. Nothing is blocked today.
+**SMS (I-02) is no longer deferred: an account exists, with Bird.** The provider
+changed on 2026-09-14, approved by the owner, and `CLAUDE.md` §3 now names Bird.
+The grounds are in `docs/DECISIONS.md`, and the short version is that **Africa's
+Talking does not serve South Sudan at all** — its own help centre lists eleven
+countries and South Sudan is not among them — so the original stack choice could
+not have delivered deliverable (n) to a South Sudanese farmer.
 
-One consequence worth knowing now: Supabase's Phone auth provider requires an SMS
-provider from a fixed list that **does not include Africa's Talking**. That is
-why officers authenticate through a derived identifier rather than Supabase's
-phone provider. See `docs/DECISIONS.md`.
+**What is known, from Bird's own pages (2026-09-14):** South Sudan is a listed
+destination at **$0.21 per segment** for an alphanumeric sender; that is the
+only sender type offered for +211 — no local number, no shortcode — and it needs
+no registration. Segments are 160 GSM-7 characters, or **70 in Arabic script**,
+so the same advisory in Arabic script costs about three times as much. Neighbours
+price similarly (Sudan $0.32, Kenya $0.25, Uganda $0.2535), so this is the region
+and not the vendor.
+
+**What is NOT known, and blocks calling I-02 satisfied:**
+
+- **Which South Sudanese networks actually deliver.** Bird names no operator
+  anywhere — not MTN, not Zain, not Digitel. Country coverage is documented;
+  per-network delivery is not. `pnpm sms:verify` closes this, **once per
+  network**: one message to one number proves one operator.
+- **Whether a purchased number is any use.** The account was bought while the
+  dashboard was on GB inventory. A GB number cannot be the sender for +211, and
+  the sender that works costs nothing to acquire.
+- **Carrier fees for South Sudan.** Bird says they apply on top and vary by
+  destination; South Sudan appears in no fee table. Treat $0.21 as a floor.
+- **Whether South Sudan's NCA requires sender-ID registration and content
+  approval.** A third-party vendor says so; Bird says registration is not
+  required, which is a statement about Bird's process, not the regulator's.
+  CORWADO's to confirm.
+
+**Two-way SMS is not available for South Sudan**, which is a design consequence
+and not a footnote: nothing can receive a STOP, so opt-out has to be an officer
+withdrawing consent in the system. Any farmer-reply feature is impossible over
+SMS here, including the unresolved "Ask AI" advisory.
+
+### THE PREMISE THAT EXPIRED WITH THIS CHANGE
+
+Officers authenticate through a derived identifier because Supabase's Phone
+provider needed an SMS provider from a list that **excluded Africa's Talking**.
+Supabase supports **MessageBird**, and Bird is MessageBird renamed — so the
+condition that entry named for revisiting has now occurred, by two routes:
+Supabase also added a Send SMS hook that can call any provider at all.
+
+**Nothing was changed.** The B3 entry says to revisit deliberately, with
+migration of existing accounts planned, and not as a tidy-up; officer accounts
+already exist keyed by the derived identifier. Recorded so the reasoning is not
+believed after it stopped being true — the same fault as the audit CHECK comment
+and the `.env.example` completeness claim, and the third instance this week of a
+document outliving its premise.
 
 ---
 

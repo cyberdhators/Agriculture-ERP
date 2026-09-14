@@ -20,10 +20,15 @@ export const OFFICER_AUTH_DOMAIN = 'officers.invalid';
  * THE ONE PLACE an officer's phone number becomes an authentication identifier.
  *
  * Officers type a phone number and a password, exactly as C-3.7 requires.
- * Supabase's Phone provider is disabled on this project and enabling it needs an
- * SMS provider from a fixed list that does not include Africa's Talking, our
- * contracted provider. So the phone addresses the auth system through this
- * function instead. Full reasoning in docs/DECISIONS.md.
+ * Supabase's Phone provider is disabled on this project and was verified
+ * refusing phone sign-in, so the phone addresses the auth system through this
+ * function instead.
+ *
+ * The original reason was that Supabase's SMS provider list excluded Africa's
+ * Talking. That premise expired on 2026-09-14, when Bird replaced it: Supabase
+ * supports Bird as MessageBird. THE DESIGN IS UNCHANGED -- officer accounts
+ * already exist keyed by this identifier, and moving them is a migration, not a
+ * tidy-up. Full reasoning and the expired premise in docs/DECISIONS.md.
  *
  * WHY EXACTLY ONE FUNCTION. GoTrue stores a phone with the leading plus
  * stripped; `phoneSchema` produces it. Two representations of one number, in two
