@@ -107,7 +107,33 @@ const LATIN = 'CORWADO test message. Ignore this. Reply not possible.';
 const ARABIC = 'رسالة اختبار من كورwado. تجاهل هذه الرسالة. لا يمكن الرد عليها.';
 const text = arabic ? ARABIC : LATIN;
 
-const endpoint = `${process.env.BIRD_API_BASE_URL.replace(/\/+$/, '')}/v1/sms/messages`;
+const baseUrl = process.env.BIRD_API_BASE_URL.replace(/\/+$/, '');
+
+// A GATE THAT COMPARES, rather than a round trip to find out. A Bird key is
+// `bk_{region}_{payload}` and is bound to that region's host, so the key states
+// which host it belongs to and the config states which host we will call. Two
+// sources that can drift apart, checked against each other before anything is
+// sent. The first run of this script spent a request discovering that an
+// eu1 key had been pointed at us1 -- and Bird answered 401 "InvalidAPIKey",
+// not the 421 Misdirected Request its own documentation promises for a wrong
+// region, so the round trip was actively misleading.
+const keyRegion = (process.env.BIRD_API_KEY.match(/^bk_([a-z0-9]+)_/) ?? [])[1];
+const hostRegion = (baseUrl.match(/^https:\/\/([a-z0-9]+)\./) ?? [])[1];
+if (keyRegion && hostRegion && keyRegion !== hostRegion) {
+  console.error('');
+  console.error('The API key and the base URL disagree about the region.');
+  console.error('');
+  console.error(`  BIRD_API_KEY       is a ${keyRegion} key (from its bk_${keyRegion}_ prefix)`);
+  console.error(`  BIRD_API_BASE_URL  points at ${hostRegion}: ${baseUrl}`);
+  console.error('');
+  console.error(`  A Bird key only works against its own region. Set BIRD_API_BASE_URL to`);
+  console.error(`  https://${keyRegion}.platform.bird.com, or use a ${hostRegion} key.`);
+  console.error('');
+  console.error('Nothing was sent.');
+  process.exit(1);
+}
+
+const endpoint = `${baseUrl}/v1/sms/messages`;
 const body = {
   to,
   from: process.env.BIRD_SMS_SENDER_ID,
@@ -170,10 +196,43 @@ console.log(raw.length > 0 ? raw : '(empty body)');
 console.log('');
 
 if (!response.ok) {
-  console.error('REFUSED. Nothing was delivered. Read the body above: a 422 on this');
-  console.error('destination usually means the sender type is not permitted for +211,');
-  console.error('and Bird lists ONLY an alphanumeric sender for South Sudan -- a bought');
-  console.error('number, GB or otherwise, cannot be the sender here.');
+  // The advice must match the status. The first version of this block printed
+  // guidance about a 422 and about +211 whatever had happened -- so a 401 on a
+  // Liberian number came with a paragraph about South Sudan sender types. A
+  // check pointed at the wrong thing, in the error path of the script written
+  // to prove things (docs/PROJECT-STATE.md, the third pattern).
+  console.error('REFUSED. Nothing was delivered and nothing was billed.');
+  console.error('');
+  if (response.status === 401) {
+    console.error('  IDENTITY. Bird does not accept the credential at all, so this run');
+    console.error('  says nothing about coverage, the sender, or segments.');
+    console.error('');
+    console.error('    1. BIRD_API_KEY copied whole, including its bk_{region}_ prefix.');
+    console.error(`    2. The host matches the key's region. This run used ${baseUrl}.`);
+    console.error('    3. The key still exists and has not been rotated or deleted.');
+  } else if (response.status === 403) {
+    console.error('  PERMISSION, not identity. The credential is real and Bird knows it;');
+    console.error('  it has not been granted what this request needs. Read `param` in the');
+    console.error('  body above -- for sending, the scope is `sms:write`.');
+    console.error('');
+    console.error('  Grant the scope to this key in the Bird dashboard, or create a key');
+    console.error('  that has it. Nothing about coverage or the sender is known yet: the');
+    console.error('  request was refused before either was considered.');
+  } else if (response.status === 422) {
+    console.error('  Bird accepted the credential and refused the REQUEST.');
+    console.error('  The usual cause is the sender: an alphanumeric sender must be 3-11');
+    console.error('  characters with at least one letter, and the destination country');
+    console.error('  must permit that sender type. For +211 Bird lists an alphanumeric');
+    console.error('  sender only -- no long code, no shortcode -- so a purchased number');
+    console.error('  cannot be the sender there. For +231 both are listed.');
+    console.error(`  This run sent from: ${body.from}`);
+  } else if (response.status === 429) {
+    console.error('  Rate limited. Nothing is known about coverage. Wait and repeat.');
+  } else {
+    console.error('  Read the body above. The status was not one this script has advice');
+    console.error('  for, which is itself worth reporting rather than guessing about.');
+  }
+  console.error('');
   process.exit(1);
 }
 
