@@ -1,0 +1,259 @@
+/* Extension visits (deliverable (d), C-8). Built on the base design tokens, so
+   it matches the register today and adopts whatever the tokens become later. */
+
+.page {
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding: var(--s-8);
+}
+
+.head {
+  margin-block-end: var(--s-6);
+}
+.eyebrow {
+  margin: 0 0 var(--s-2);
+  font-family: var(--font-mono);
+  font-size: var(--text-small);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--verified);
+}
+.h1 {
+  margin: 0 0 var(--s-3);
+  font-family: var(--font-display);
+  font-size: var(--text-h1);
+  line-height: 1.05;
+  color: var(--ink);
+}
+.lede {
+  margin: 0;
+  max-width: 68ch;
+  color: var(--ink-2);
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--s-4);
+  margin-block: var(--s-6) var(--s-4);
+  border-block-end: 2px solid var(--ink);
+  padding-block-end: var(--s-3);
+}
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--s-4);
+}
+.filter {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+}
+.filterLabel {
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.filterSelect {
+  padding: var(--s-2) var(--s-3);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-control);
+  background: var(--card);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--text-small);
+  min-width: 12rem;
+}
+
+.count {
+  font-family: var(--font-mono);
+  font-size: var(--text-small);
+  color: var(--muted);
+}
+
+.tableWrap {
+  overflow-x: auto;
+}
+.table {
+  width: 100%;
+  min-width: 820px;
+  border-collapse: collapse;
+}
+.table th {
+  padding: var(--s-3);
+  text-align: start;
+  font-family: var(--font-mono);
+  font-size: var(--text-small);
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  border-block-end: 1px solid var(--line-strong);
+}
+.table td {
+  padding: var(--s-3);
+  border-block-end: 1px solid var(--line);
+  vertical-align: top;
+  color: var(--ink-2);
+}
+.row {
+  cursor: pointer;
+}
+.row:hover td {
+  background: var(--dust);
+}
+.strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+.num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.when {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.whenSub {
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  color: var(--muted);
+}
+.summary {
+  color: var(--ink-2);
+  max-width: 44ch;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.empty {
+  padding: var(--s-6);
+  text-align: center;
+  color: var(--muted);
+}
+.clip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-mono);
+  font-size: var(--text-small);
+  color: var(--muted);
+}
+
+.more {
+  margin-block-start: var(--s-4);
+  display: flex;
+  justify-content: center;
+}
+
+/* ── Detail ────────────────────────────────────────────────────────────── */
+.detailFarmer {
+  margin: 0 0 var(--s-1);
+  font-family: var(--font-display);
+  font-size: var(--text-subhead);
+  font-weight: 600;
+  color: var(--ink);
+}
+.topicRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+  margin-block: var(--s-3) 0;
+}
+.detailSection {
+  margin-block-start: var(--s-5);
+}
+.detailSection h3 {
+  margin: 0 0 var(--s-2);
+  font-family: var(--font-display);
+  font-size: var(--text-subhead);
+  color: var(--ink);
+}
+.prose {
+  margin: 0;
+  color: var(--ink-2);
+  white-space: pre-wrap;
+}
+.attachList {
+  list-style: none;
+  margin: var(--s-2) 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+}
+.attachItem {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--s-4);
+  padding: var(--s-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--card);
+}
+.attachMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.attachKind {
+  font-weight: 600;
+  color: var(--ink);
+}
+.attachSize {
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  color: var(--muted);
+}
+.attachMsg {
+  margin: 4px 0 0;
+  font-size: var(--text-small);
+  color: var(--ink-2);
+  max-width: 40ch;
+}
+.attachRight {
+  flex-shrink: 0;
+  text-align: end;
+}
+
+/* ── Record-a-visit form ───────────────────────────────────────────────── */
+.grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--s-4);
+}
+.topics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--s-2) var(--s-4);
+}
+.receiptList {
+  margin: var(--s-2) 0 0;
+  padding-inline-start: var(--s-5);
+  color: var(--ink-2);
+}
+.receiptList li {
+  margin-block-end: 4px;
+}
+
+@media (max-width: 640px) {
+  .grid2 {
+    grid-template-columns: 1fr;
+  }
+  .topics {
+    grid-template-columns: 1fr 1fr;
+  }
+}
