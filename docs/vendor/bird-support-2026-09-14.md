@@ -40,19 +40,18 @@ results, we can rule out the route, the content and the country.
 **What did not.** Every one of these is sender `Agrione_SS` on 61801, refused
 with `carrier_error_code: 104`, `code: content_rejected`, and billed 0.18 EUR:
 
-| Message id                        | To              | Category       | Chars |
-| --------------------------------- | --------------- | -------------- | ----- |
-| `sms_01m2e6efjwf2as0hvadwawmcbh`  | `+231886257473` | service        | 128   |
-| `sms_01m2e6q416ezbs10qy3jk4ehek`  | `+231886257473` | transactional  | 5     |
-| `sms_01m2f313kre7avf034q2r01paa`  | `+231888022031` | authentication | 54    |
-| `sms_01m2f3chc4e8mvwd9scaykr934`  | `+231888022031` | marketing      | 125   |
-| `sms_01m2f3ya32f62rh5ewrs0saqcz`  | `+231888022031` | service        | 148   |
-| `sms_01m2f4aaype6786jgqnkh1cph5`  | `+231888022031` | service        | 148   |
-| _(retry at 2026-09-14T05:41:33Z)_ | `+231888022031` | service        | 148   |
+| Message id                       | To              | Category       | Chars |
+| -------------------------------- | --------------- | -------------- | ----- |
+| `sms_01m2e6efjwf2as0hvadwawmcbh` | `+231886257473` | service        | 128   |
+| `sms_01m2e6q416ezbs10qy3jk4ehek` | `+231886257473` | transactional  | 5     |
+| `sms_01m2f313kre7avf034q2r01paa` | `+231888022031` | authentication | 54    |
+| `sms_01m2f3chc4e8mvwd9scaykr934` | `+231888022031` | marketing      | 125   |
+| `sms_01m2f3ya32f62rh5ewrs0saqcz` | `+231888022031` | service        | 148   |
+| `sms_01m2f4aaype6786jgqnkh1cph5` | `+231888022031` | service        | 148   |
+| `sms_01m2f6yqakf1qbqabcx1ndxyr4` | `+231888022031` | service        | 148   |
 
 Four categories and lengths from 5 to 148 characters all fail identically, so
-this is not content. **`Authifly` delivers on the same carrier, so it is not the
-route.** It is `Agrione_SS` specifically, on 61801.
+this is not about the message.
 
 **THE CONTROLLED COMPARISON, which is why we are confident this is about the
 sender.** Both messages below went from **this workspace** to **the same carrier**
