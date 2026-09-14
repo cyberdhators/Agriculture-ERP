@@ -1,7 +1,8 @@
 // Sends ONE SMS through Bird so a human can read what the gateway returns.
 //
-//   pnpm sms:verify +2119XXXXXXXX
-//   pnpm sms:verify +2119XXXXXXXX --arabic
+//   pnpm sms:verify +211XXXXXXXXX
+//   pnpm sms:verify +211XXXXXXXXX --arabic
+//   pnpm sms:verify +231XXXXXXXXX
 //
 // THROWAWAY. This is not deliverable (n) and not a unit: (n) is phase 6 and
 // C-15 does not exist. Nothing in the application imports this file, and
@@ -19,6 +20,13 @@
 // RUN IT ONCE PER NETWORK. One message to one number proves one operator. To
 // say I-02 is satisfied for South Sudan you need three runs: an MTN number, a
 // Zain number and a Digitel number.
+//
+// TWO DESTINATIONS ARE ACCEPTED, and the difference between them is worth
+// knowing before reading a result. Bird offers South Sudan an alphanumeric
+// sender ONLY, one-way, and no two-way messaging at all. Liberia it offers both
+// an alphanumeric sender and a long code, and two-way IS supported there. So a
+// refusal on +231 and a refusal on +211 do not mean the same thing, and a
+// success on +231 says nothing about +211.
 //
 // WHAT IT PROVES: that Bird accepts the request, what sender it accepted, how
 // many segments it billed, which encoding it chose, and what it says the cost
@@ -49,6 +57,17 @@ if (missing.length > 0) {
   process.exit(1);
 }
 
+// The only destinations this script will message. A wrong digit here messages a
+// stranger, and the cost of that is not the $0.21. Widening this list is a
+// deliberate edit, which is the point of it being a list.
+const ACCEPTED_PREFIXES = [
+  { prefix: '+211', country: 'South Sudan' },
+  { prefix: '+231', country: 'Liberia' },
+];
+
+/** The published alphanumeric rate per segment, by prefix (2026-09-14). */
+const PUBLISHED_RATE_USD = { '+211': 0.21, '+231': 0.21 };
+
 const args = process.argv.slice(2);
 const to = args.find((a) => !a.startsWith('--'));
 const arabic = args.includes('--arabic');
@@ -63,10 +82,18 @@ if (!/^\+\d{7,15}$/.test(to)) {
   console.error(`\n"${to}" is not E.164 (a leading + and 7 to 15 digits). Nothing was sent.\n`);
   process.exit(1);
 }
-if (!to.startsWith('+211') && !force) {
+const destination = ACCEPTED_PREFIXES.find((p) => to.startsWith(p.prefix));
+if (!destination && !force) {
   console.error('');
-  console.error(`${to} is not a South Sudan number (+211), which is what this script is for.`);
-  console.error('A wrong digit here messages a stranger. Pass --force if you meant it.');
+  console.error(`${to} is not a destination this script will message.`);
+  console.error('');
+  console.error('  It accepts only:');
+  for (const p of ACCEPTED_PREFIXES) {
+    console.error(`    ${p.prefix.padEnd(6)} ${p.country}`);
+  }
+  console.error('');
+  console.error('A wrong digit here messages a stranger, which is why the list is short.');
+  console.error('Pass --force if you genuinely mean a different country.');
   console.error('');
   console.error('Nothing was sent.');
   process.exit(1);
@@ -99,7 +126,7 @@ console.log('');
 console.log('Bird SMS verification -- ONE message, sent now');
 console.log('');
 label('endpoint', endpoint);
-label('to', to);
+label('to', `${to}  (${destination ? destination.country : 'FORCED, unlisted country'})`);
 label('from', body.from);
 label('script', arabic ? 'Arabic (expect UCS-2)' : 'Latin (expect GSM-7)');
 label('characters', String([...text].length));
@@ -161,13 +188,13 @@ label('encoding', segments.encoding ?? '(not reported)');
 label('cost', parsed?.cost ? JSON.stringify(parsed.cost) : '(not reported)');
 console.log('');
 
-if (typeof segments.count === 'number') {
-  // The published alphanumeric rate for South Sudan on 2026-09-14. Printed for
-  // arithmetic only -- the authority is the `cost` field above and the invoice.
-  const PUBLISHED_RATE_USD = 0.21;
-  const total = (segments.count * PUBLISHED_RATE_USD).toFixed(4);
+const rate = destination ? PUBLISHED_RATE_USD[destination.prefix] : undefined;
+if (typeof segments.count === 'number' && rate !== undefined) {
+  // Arithmetic only. The authority is the `cost` field above and the invoice.
+  const total = segments.count * rate;
   console.log(
-    `  at the published $${PUBLISHED_RATE_USD.toFixed(2)}/segment that is $${total} for this one message`,
+    `  at the published $${rate.toFixed(2)}/segment for ${destination.country} that is ` +
+      `$${total.toFixed(4)} for this one message`,
   );
   console.log(`  so 1,000 messages of this shape would be $${(total * 1000).toFixed(2)}`);
   console.log('');
