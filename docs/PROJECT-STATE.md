@@ -247,8 +247,62 @@ unmodified, a 148-character Latin advisory is one GSM-7 segment, and Bird's
   `delivered_at`, the carrier code and the cost, and says plainly that anything
   short of `delivered` reached no handset.
 
+### THE SENDER IS ALREADY REGISTERED AND APPROVED, AND THE CARRIER STILL REFUSED IT
+
+**Read from Bird's own API on 2026-09-14**, after the rejections, at
+`GET /v1/sms/senders/{id}/requirements`. For the sender `Agrione_SS`
+(`snd_01m2e5wtjcf8eveab6z0zjcnc8`), both destinations report:
+
+| Field                 | Liberia                          | South Sudan                      |
+| --------------------- | -------------------------------- | -------------------------------- |
+| `destination_enabled` | `true`                           | `true`                           |
+| `required`            | `false`                          | `false`                          |
+| `status`              | **`approved`**                   | **`approved`**                   |
+| `registration_id`     | `scr_01m2e6bb3je43s7xkdayfmzdng` | `scr_01m2e6b51fexwt25h86t5x727g` |
+| `rejection_reason`    | `null`                           | `null`                           |
+| `next`                | `[]` — nothing to do             | `[]` — nothing to do             |
+
+**So there was nothing to register.** The action "register the sender ID" had
+already been taken, carries a registration id, and Bird reports it approved for
+both countries — while Lonestar Cell MTN refused the same sender three times as
+`EC_SENDER_UNREGISTERED`.
+
+**THE MISMATCH THAT EXPLAINS IT, AND IT IS STRUCTURAL.** Bird's own
+documentation says _"registration is decided per destination, so there is one
+row per country"_. **Registration is modelled per country. Rejection happens
+per carrier.** There is no per-carrier granularity anywhere in the sender
+surface — no field, no status, no row — so an `approved` for `LR` cannot mean
+"every network in Liberia will accept this sender", and it did not. One
+operating company inside an approved country refused it, and Bird's model has
+nowhere to represent that.
+
+**This is stronger than the "not required" finding and replaces it as the
+headline.** It is not that Bird's assessment of whether registration is _needed_
+can be wrong. It is that Bird's assertion that registration is _done and
+approved_ does not bind the carrier either. **Both of Bird's positive signals —
+`not_required` and `approved` — are statements about Bird's paperwork, and
+neither is evidence that a message will be accepted.**
+
+**What this does to the substitution.** The case for Bird over Africa's Talking
+rested on one documented fact: South Sudan reachable with an alphanumeric
+sender, no registration needed. That fact is now known to be the weaker of two
+claims, and **the stronger claim has failed under test in the adjacent country,
+on a network belonging to the same group that carries most of South Sudan's
+traffic.** Africa's Talking still cannot serve South Sudan at all, so the
+substitution is not thereby wrong — but its evidential basis is no better than
+it was before the account was bought, and the one test performed points the
+wrong way.
+
+**The next step is not ours.** With registration approved and the carrier
+refusing, this is a question for Bird's support, and it should be asked with the
+three message ids, the carrier code, and the contradiction stated plainly:
+their API says approved, their carrier says unregistered. Until that is answered
+there is no configuration change on our side that is known to help — and a
+fourth send would cost 0.18 EUR to learn nothing.
+
 **I-02 is not satisfied.** An SMS gateway account exists, is correctly
-configured, and has delivered nothing.
+configured, holds an approved sender registration for both target countries,
+and has delivered nothing.
 
 ### THE PREMISE THAT EXPIRED WITH THIS CHANGE
 

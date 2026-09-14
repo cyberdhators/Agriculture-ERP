@@ -2784,3 +2784,64 @@ script, 6,480 EUR in Arabic script.
 **Evidence:** `docs/PROJECT-STATE.md`, _I-02 — the account has never delivered
 a message_. Nothing above is a projection from the rate card; the unit price is
 from three billed messages.
+
+---
+
+## Standing rule — a gateway's word about a carrier is not the carrier's word (2026-09-14)
+
+**Two separate lessons from I-02, both the same shape, both now rules rather
+than incidents.** See `docs/PROJECT-STATE.md`, _I-02 — the account has never
+delivered a message_, for the evidence.
+
+### 1. Bird's positive signals are statements about Bird's paperwork
+
+Bird gives two signals that read as permission, and **neither binds the
+carrier**:
+
+- **`not_required`** — Bird's own documentation concedes it: it _"reflects
+  Bird's assessment, not a guarantee of carrier compliance"_.
+- **`approved`**, with a registration id and `next: []` — which is what
+  `Agrione_SS` held for Liberia and South Sudan while Lonestar Cell MTN refused
+  it three times as `EC_SENDER_UNREGISTERED`.
+
+**The structural reason, which is the part worth keeping.** Bird models
+registration **per country** — its words: "one row per country". Carriers reject
+**per carrier**. There is no per-carrier field, status or row anywhere in the
+sender surface, so `approved` for a country cannot mean every network in it will
+accept the sender, and there is nowhere for Bird to tell you which one will not.
+
+**The rule.** A provider's status field describes the provider's records. **The
+only evidence that a message is deliverable is a delivered message.** For
+deliverable (n) that means a send to a handset on each network we intend to
+reach, not a green row in a dashboard — and for South Sudan that is MTN, Zain
+and Digitel separately.
+
+**This is the silent-class pattern with a third party supplying the gate.** A
+single fact asserted — "the sender is approved" — believed because a system we
+do not control reported it, and quietly false at the only point that matters.
+The same question applies: what did it actually read? Bird read its own
+registration table.
+
+### 2. The failure label is not the failure reason — read the carrier code
+
+The rejection arrived as `description: carrier_rejected`, `code:
+content_rejected`, `carrier_error_code: 104`.
+
+**`content_rejected` points at the message. Code 104 is
+`EC_SENDER_UNREGISTERED` and points at the sender.** They disagree, and the
+carrier code is the one that was right. Believing the label cost a full cycle: a
+message was rewritten from a test string into a real agricultural advisory and
+its category changed from `authentication` to `service`, on the theory that
+content class was the cause. It was refused identically, and billed again.
+
+**The rule, for whatever sends advisories in deliverable (n):** read
+`last_error.carrier_error_code` and branch on that. Bird's `code` and
+`description` are a summary written by the gateway, they are not the network's
+reason, and on the only failure this project has seen they named the wrong
+cause. Log both, act on the carrier code, and never present the gateway's label
+to an officer as an explanation.
+
+**Related, and already recorded above:** a carrier rejection is billed in full,
+so a retry loop driven by the wrong diagnosis costs 0.18 EUR per attempt per
+recipient. Diagnosing from the label is therefore not merely wrong, it is
+expensive.
