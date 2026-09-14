@@ -64,7 +64,11 @@ it here.
 ## ENVIRONMENT VARIABLES
 
 Names only. Values live in `.env.local` locally and in Vercel and GitHub secrets
-for deployments. All are listed in `.env.example`.
+for deployments.
+
+**The sentence that stood here said "All are listed in `.env.example`." It was
+false.** Seven required names were absent from that file until this was found on
+2026-09-13 — see _Seven variables the code requires and nothing declares_ below.
 
 | Name                     | Used by                                        | For                                                                                                                                                                                                                                                                                          |
 | ------------------------ | ---------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -73,6 +77,53 @@ for deployments. All are listed in `.env.example`.
 | `NEXT_PUBLIC_SENTRY_DSN` | `apps/web/sentry.shared.ts`                    | Where errors go. **Public by design** — see `docs/DECISIONS.md`. Empty switches reporting off. **Lives in Vercel's environment variables, not on any laptop** — see _The DSN and local machines_ below.                                                                                      |
 | `SENTRY_ENVIRONMENT`     | same                                           | **Set explicitly in Vercel: `staging` for preview deployments, `production` for production.** Decided 2026-09-04. The code falls back to `VERCEL_ENV`, then `development`, but the fallback must never be what produces the value — `VERCEL_ENV` says `preview`, which is not a name we use. |
 | `SENTRY_RELEASE`         | same                                           | Which build. Falls back to `VERCEL_GIT_COMMIT_SHA`, then `unknown`.                                                                                                                                                                                                                          |
+
+### Seven variables the code requires and nothing declares (found 2026-09-13)
+
+`.env.example` listed five names. The code reads twelve. The seven it never
+mentioned, and what each costs when it is absent:
+
+| Name                                | Read by                                            | When it is unset                                       |
+| ----------------------------------- | -------------------------------------------------- | ------------------------------------------------------ |
+| `NEXT_PUBLIC_SUPABASE_URL`          | `lib/api/require-role.ts`, `lib/supabase/admin.ts` | **every route throws** before it reads anything        |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY`     | `lib/api/require-role.ts`                          | **every route throws**                                 |
+| `SUPABASE_SERVICE_ROLE_KEY`         | `lib/supabase/admin.ts`                            | account and Storage operations throw                   |
+| `NEXT_PUBLIC_USE_LIVE_ADMIN`        | `lib/admin/api.ts`                                 | the administration screens read fixtures               |
+| `NEXT_PUBLIC_USE_LIVE_FARMERS`      | `lib/farmers/api.ts`                               | the farmer screens read fixtures                       |
+| `NEXT_PUBLIC_USE_LIVE_VERIFICATION` | `lib/farmers/verification.ts`                      | the verification screens read fixtures                 |
+| `LOCATIONS_CSV`                     | `scripts/locations-lib.mjs`                        | falls back to a committed path (the only harmless one) |
+
+**The sharpest part, and why this is a silent-class instance rather than an
+oversight.** `tests/helpers/db.ts` refuses to run the database tests unless five
+variables are set, and its refusal message tells the reader what to do:
+_"Locally: copy .env.example to .env.local and fill in the staging values."_
+**Three of the five it demands were not in that file.** An instruction pointing
+at a file that cannot satisfy it is worse than no instruction: the reader
+follows it, fills in everything the file offers, and the tests still refuse —
+with a message naming the file as the answer.
+
+**Why neither side hit it.** CI holds all five as `STAGING_*` repository
+secrets, so CI passes. Lane 1's machine has the three Supabase names because B3
+needed them before the example file existed. Lane 2's machine never had them and
+nothing in the repository said they existed. Invisible from both sides at once,
+which is the same shape as the tenth instance below.
+
+**The three flags are `NEXT_PUBLIC_`, so Next inlines them at build time.**
+Turning one on is a rebuild and a redeploy, not a settings change. Anyone
+expecting to flip live data on in a dashboard will conclude it does not work.
+
+**CLOSED, AND QUICKLY — six of the seven by the other lane within hours.**
+#67, the auth bridge, added the two `NEXT_PUBLIC_SUPABASE_*` names, the service
+key and the three `USE_LIVE` flags, having hit the same wall from the other
+side. #70 added the seventh, `LOCATIONS_CSV`. **Every variable the code reads is
+now declared: twelve of twelve**, checked by comparing the names in
+`.env.example` against every `process.env.*` read in `apps/web`, `packages`,
+`scripts`, `tests` and `prisma`.
+
+**Worth keeping for what it says about the finding rather than the fix.** Two
+lanes hit one undeclared-variable wall within a day of each other, from
+opposite sides, and neither could see the other's version of it. The record is
+what made them the same problem instead of two.
 
 ---
 
@@ -961,16 +1012,22 @@ a fact about any one of them:
 **Every silent finding in this project was single-source.** Set out plainly,
 because the pattern is only visible in the list:
 
-| The gate                | The single fact it asserted | How it was false                      |
-| ----------------------- | --------------------------- | ------------------------------------- |
-| `pnpm typecheck`        | it covers `tests/`          | the directory was outside the project |
-| CI's test step          | it runs the database files  | all eight skipped themselves silently |
-| local gitleaks          | it scanned the branch       | the x86 build could not run git       |
-| four foreign keys       | the record said pending     | nobody asked the catalogue            |
-| the drift test          | it matches CONVENTIONS      | the formatter re-padded the table     |
-| the view test           | views equal their tables    | an aggregate view is not a table      |
-| `audit_event.device_id` | the law says it is recorded | no request ever sent one              |
-| `updated_at`            | it is current               | no trigger and no route wrote it      |
+| The gate                | The single fact it asserted          | How it was false                      |
+| ----------------------- | ------------------------------------ | ------------------------------------- |
+| `pnpm typecheck`        | it covers `tests/`                   | the directory was outside the project |
+| CI's test step          | it runs the database files           | all eight skipped themselves silently |
+| local gitleaks          | it scanned the branch                | the x86 build could not run git       |
+| four foreign keys       | the record said pending              | nobody asked the catalogue            |
+| the drift test          | it matches CONVENTIONS               | the formatter re-padded the table     |
+| the view test           | views equal their tables             | an aggregate view is not a table      |
+| `audit_event.device_id` | the law says it is recorded          | no request ever sent one              |
+| `updated_at`            | it is current                        | no trigger and no route wrote it      |
+| the cookie session path | sign-in writes the cookie            | no sign-in was ever built             |
+| the audit action CHECK  | it is generated from `AUDIT_ACTIONS` | a person retypes it by hand           |
+
+Ten gates now. The last two rows were added on 2026-09-13 and have their own
+sections below: the cookie path is the **tenth** instance and the largest in the
+project, and the audit CHECK is the **eleventh**.
 
 Eight gates, eight statements believed true, all quietly false. The ninth
 finding broke the pattern in one direction — two correct rules meeting, which
@@ -992,9 +1049,12 @@ this project is eight demonstrations that nobody does.
 
 _Worked examples of turning one into the other, from this repository:_ the view
 test compares the view catalogue against the table catalogue rather than
-asserting a list of views; the audit-action CHECK is generated from
-`AUDIT_ACTIONS` so the database and the code cannot disagree; the accuracy
-CHECK is generated from the shared thresholds for the same reason; the
+asserting a list of views; ~~the audit-action CHECK is generated from
+`AUDIT_ACTIONS` so the database and the code cannot disagree~~ — **struck
+2026-09-13: this was never true, and it stood here as one of four exemplars of a
+gate that compares while being the one that was not.** Nothing compares them.
+The generation is a person retyping, which is the eleventh instance below. The
+accuracy CHECK is generated from the shared thresholds and that one is real; the
 conventions drift test parses cells against exported constants. Each of those
 is a comparison. The ones that bit were not.
 
@@ -1163,12 +1223,395 @@ changed; and the typecheck, lint and format steps on a documents-only branch
 are cheap and do examine the changed files. The full test suite was the only
 one pointed elsewhere, and it was the expensive one.
 
+**A SECOND INSTANCE, AND IT WAS THIS SESSION'S OWN (2026-09-13).** Recorded
+because the source matters more than the defect.
+
+Waiting for the CI queue to drain before pushing (the rule above), the session
+wrote a watcher: poll `gh run list`, exit when nothing is in flight. Its
+condition sent errors to `/dev/null`, so **a failed query produced empty output,
+which is indistinguishable from "no runs in flight".** It announced a drained
+queue during a network failure while a run was still going. The announcement was
+caught only because the command after it printed the connection error, which
+prompted a proper re-check that found the run still in progress.
+
+**It was written roughly an hour after this section was written**, by the
+session that wrote this section, and it is the third pattern exactly: a check
+that ran, reported honestly on what it looked at, and looked at the wrong thing
+— the absence of output rather than the state of the queue. Silencing errors is
+the specific move that does it, because it converts every failure into the
+success value.
+
+**THE RULE, AND IT IS A RULE AND NOT AN OBSERVATION: ABSENCE OF A REPORT IS NOT
+A REPORT.**
+
+> **A watcher going quiet is not evidence.** A check that cannot distinguish _it
+> failed_ from _there is nothing_ reports calm regardless of the weather.
+
+**It happened twice in one session, by two different mechanisms**, which is what
+makes it a rule rather than a bug:
+
+1. **By network failure.** The watcher's condition sent errors to `/dev/null`,
+   so a failed `gh` call produced empty output, which is the same value as an
+   empty queue. It announced a drained queue while a run was still going.
+2. **By the process being killed.** The replacement was stopped by the host for
+   memory pressure. It simply never reported again. Nothing distinguished that
+   from "still waiting", and the notification that arrived said the task had
+   ended, not what the queue was doing.
+
+**Why it belongs beside the third pattern, and what it shares with the first.**
+The first pattern is a gate reporting success because it checks nothing: the
+absence of a failure taken as success. This is the same mistake at the other
+end — **the absence of a report taken as a report.** In both, nothing arrived
+and nothing was the answer. The three patterns ask what a check examined; this
+asks whether it examined anything at all, or is simply gone.
+
+**What to do instead, concretely.** A waiter must report on every terminal
+state, including its own failure, and the reader must verify rather than infer:
+after any watcher goes quiet — finished, killed, or timed out — **query the
+thing directly before acting on its silence.** That is what caught both
+instances here. The rewritten `wait-runs.sh` separates query-failed, still
+in-flight and drained, and says which.
+
+**A third instance the same day happened in a gate rather than a watcher**, and
+it has its own entry below — _A gate built to prevent the third pattern
+exhibited the third pattern_ — because it pairs with the audit CHECK's
+appearance in the list of worked examples and the pair says more than either.
+
+**THE DECISION, WHICH MATTERS MORE THAN THE DEATHS.** Three watchers were killed
+in one session: one by silencing its own errors, two by the host reclaiming
+memory. After the third, **no fourth was armed.**
+
+> **A mechanism that cannot survive the wait is not a mechanism.** Polling it
+> again is the same mistake with more steps.
+
+**Direct verification is now the rule for this project**, not a fallback: after
+any watcher finishes, is killed, or times out, query the thing itself before
+acting — `gh run list`, the catalogue, the migration table. Every one of the
+three instances was caught that way and none was caught by a watcher. The
+corrected `wait-runs.sh` is kept because separating query-failed from
+still-in-flight from drained is right regardless, but **nothing is concluded
+from its silence**, and a turn that ends with work held is preferred to a turn
+that ends with work pushed on an inference.
+
+**And the honest conclusion, unchanged: knowing a pattern does not stop you
+writing it.** Three instances in one session, by the session that had just
+recorded the pattern. That is the argument for gates that compare rather than
+resolutions to be careful.
+
 **The three patterns together, as questions to ask of any check:**
 
 1. Does it compare two things that can move independently, or assert one fact?
    _(and if it asserts: what makes it fail when the fact stops being true)_
 2. Where do two rules touch, and has anything tested the seam?
 3. Does it examine the thing that changed, or something adjacent to it?
+
+## THE TENTH INSTANCE — THE FRONT END AND THE BACK END HAVE NEVER SPOKEN (2026-09-13)
+
+**Found by Lane 2, verified from the code by Lane 1.** Alieu's landing plan
+states it; every load-bearing claim in it was checked against the repository and
+holds.
+
+**What is true.** Forty-nine route handlers across thirty-two files, all passing
+their tests. Twenty-nine pages, all building clean. **No browser has ever held a
+session that `requireRole` would accept, so not one screen has shown a database
+row and not one form has written one.** Everything anyone has seen, the client
+included, is fixture data.
+
+**The mechanism, stated exactly.** `requireRole` accepts two things: a bearer
+token, for the officer application, or a Supabase session cookie, for the
+portal. Nothing in the web application creates that cookie. There is no browser
+Supabase client, no call that signs anyone in, and no middleware file, so no
+session refresh either. The only Supabase imports outside tests are
+`lib/api/require-role.ts` and `lib/supabase/admin.ts`, and both are server-only.
+The role selector is a `localStorage` key defaulting to `admin`. The farmer
+sign-in compares a fixture password in browser code and sets a cookie its own
+comment calls "a preview cookie, not a security token". Three
+`NEXT_PUBLIC_USE_LIVE_*` flags default to off, so every screen reads fixtures;
+turn them on today and every call returns 401, because there is no session to
+read.
+
+**WHY THIS IS THE LARGEST OF THE TEN, AND IT IS NOT THE SIZE.** The size is
+striking — forty-nine routes and twenty-nine pages, two complete halves of one
+system, each green in isolation. But the reason it belongs at the top of this
+list is different:
+
+> **The seam was documented at the exact point it opened, and nobody read it as
+> a gap.**
+
+`lib/api/require-role.ts`, in the cookie branch, supplies a no-op where a
+session writer would go, with this comment beside it:
+
+> _"A route never writes a session cookie; sign-in does that on the client."_
+
+That sentence is correct about the route and correct about where the work
+belongs. **It names the missing half.** It was written in B3, when the other
+half did not exist, and it has been read many times since by sessions on both
+sides of the lane boundary — each of which took it as a description of a
+division of labour rather than as a note saying _someone still has to build
+this_. A comment that names an absent counterpart reads as architecture, not as
+a debt, and nothing anywhere converts it into one: no criterion, no test, no
+open item, no handoff line.
+
+**The distinction from the nine before it.** Instances one to eight were gates
+asserting a single fact that had quietly stopped being true. The ninth was two
+correct rules meeting. This one is two correct halves with nothing in between,
+where **the absence itself was written down** and the writing-down is what made
+it invisible. The nearest relative in this project is B3's wrapper comment,
+which claimed the wrapper reported to Sentry when it did not — but that comment
+asserted a mechanism that was missing, while this one correctly describes a
+mechanism that was never started. Both were believed because they were written
+confidently in the place the reader would look.
+
+**What would have caught it, and what will.** Nothing in either lane's tests
+can: each half is correct on its own, and both suites prove exactly that. The
+only test that fails while this is true is one that signs in through a browser
+and reads a row — an end-to-end check across the lane boundary, which no unit
+ever owned. **The rule this produces:** when a comment names work that belongs
+to someone else, it is a debt until something tests the join, and it belongs in
+the handoff file, not only in the code.
+
+**Status:** #67, Lane 2's auth bridge, is open with checks green and is the fix.
+Lane 1 verified the finding and wrote this entry; the merge is the owner's.
+
+## THE ELEVENTH INSTANCE — A COMMENT CLAIMING A MECHANISM THAT DOES NOT EXIST (2026-09-13)
+
+**Found while rebasing #28**, which had been held since 2026-09-05 and carried a
+migration nobody had applied.
+
+**The gate.** `packages/shared/src/audit.ts` holds `AUDIT_ACTIONS`, the list of
+every audit action key, under this comment:
+
+> _"This list is the single source: the CHECK constraint in migration 9 is
+> generated from it, so the database refuses any key not here, and adding one
+> means adding it in both places in the same change — which a reviewer sees."_
+
+**Nothing generates it.** There is no script, no test and no build step that
+reads `AUDIT_ACTIONS` and produces or compares the constraint. The generation is
+**a person retyping the list carefully into a migration**, and the review it
+relies on is a person noticing. Both have worked so far, which is why the claim
+survived: migrations 9, 17, 20 and 21 each retyped it correctly.
+
+**What it cost.** #28's migration was written on 2026-09-05 with the twenty-two
+keys that existed then, and was never applied. Migrations 17, 20 and 21 each
+dropped and recreated the same constraint with a longer list, reaching forty
+keys. Because a CHECK can only be replaced, not extended, **applying #28's
+migration after those three would have replaced a forty-key constraint with
+twenty-two** — silently dropping every farmer, consent, verification, farm,
+boundary, crop, visit, attachment and report action. Every create, update and
+delete appends one of those rows, so **every write in B5 through B11 would have
+failed on its audit insert**, and the failure would have looked like a route
+defect rather than a migration.
+
+**Fixed by generating it for real.** The migration is redated to 2026-09-13 so
+it lands last, and its list is produced from `AUDIT_ACTIONS` by a script rather
+than typed: forty-seven keys, checked as a strict superset of the forty staging
+holds before it was written. The claim in the comment is now true of that one
+migration.
+
+**THE SHARPEST THING IN THIS RECORD, ON ITS OWN LINE BECAUSE IT WAS BURIED IN
+A CORRECTION.**
+
+> **The eleventh instance was being held up, in this document, as an exemplar
+> of how to avoid the eleventh instance.**
+
+_How to tell a gate that can fail from one that cannot_ lists four worked
+examples of a gate that compares — the view test, the accuracy CHECK, the
+conventions drift test, and the audit-action CHECK "generated from
+`AUDIT_ACTIONS` so the database and the code cannot disagree". Three of the
+four are real comparisons. **The fourth was the defect, described as the
+remedy.** It was written into the list of exemplars by a session that had read
+the comment on `AUDIT_ACTIONS` and believed it, in the same document that
+argues gates must compare rather than assert.
+
+That is worse than the defect itself, and for a reason that generalises: **a
+false claim promoted to an example stops being a claim and becomes a standard.**
+Anyone reading that list to learn the principle would have copied the one
+pattern in it that does not work, and cited this document while doing so. The
+other three were checked on 2026-09-13 and are genuine. The lesson is not "be
+careful with examples" — it is that **an exemplar needs the same proof as a
+gate**, and the proof is the same one: change one side alone and watch it go
+red. That is now done for the audit CHECK, in both directions, by
+`tests/audit-actions-constraint.test.ts` and
+`packages/shared/tests/audit-check-matches-migrations.test.ts`.
+
+**THE SPECIFIC SHAPE, AND ITS SECOND INSTANCE.** This is not a gate that checks
+nothing. It is **a comment asserting a mechanism that does not exist**, and this
+project has now seen it twice:
+
+1. **B3's route wrapper** said _"the detail goes to the server log and Sentry"_
+   while writing only to the log. Error reporting was off for every route from
+   the moment the wrapper landed.
+2. **`AUDIT_ACTIONS`** says the constraint is generated from it. It is typed
+   from it.
+
+The note recorded for the first applies unchanged to the second: **a comment
+asserting behaviour the code does not have is worse than a gap, because it reads
+as deliberate.** A gap invites the question _who is doing this?_ An assertion
+closes it. This one also cost more than the first, because it had stood long
+enough that the state document quoted it as a worked example of a gate that
+compares — the strike in _How to tell a gate that can fail_ above.
+
+**The remaining work, not done here:** a test that reads
+`audit_event_action_known` from the catalogue and compares it to
+`AUDIT_ACTIONS`. That turns the comment into a fact and is the only thing that
+stops the twelfth instance of this being the same constraint again. Sized at
+under an hour; not built, because the owner asked for the record.
+
+## A HELD BRANCH IS A BRANCH WHOSE TESTS HAVE NOT RUN (2026-09-14)
+
+**Not asked for; recorded because it cost 1h 14m of CI and would have cost it
+again.** #28 was written on 2026-09-05 and held for nine days awaiting a
+properly briefed unit. Rebased and run, it went red: 913 tests passed, 41 files
+passed, and `tests/directories-routes.test.ts` took itself down in a hook rather
+than an assertion.
+
+    P2010 / 42501: audit_event is append-only: DELETE is not permitted
+
+**Three faults in one file, none of them new, all of them invisible.**
+
+1. Its cleanup deleted every audit row for its two entity types. The audit table
+   is append-only (CLAUDE.md section 4) and B4's trigger refuses DELETE.
+2. It skipped itself when the variables were absent
+   (`HAS_ENV ? describe : describe.skip`) — **the second silent-class instance**
+   of this document, closed by B5.5 with `requireTestEnv`.
+3. It built its own client preferring `DIRECT_URL`, the session pooler B5.5
+   moved away from because fifteen slots starved under the concurrency tests.
+
+**Every one of those was already decided and fixed elsewhere before this file
+was written or while it waited.** Its own header claimed "same skip-in-CI
+conditions as the forbidden matrix" — and the forbidden matrix was fixed while
+this file sat, so the sentence became false without anyone editing it.
+
+**The shape.** A merged file is corrected by whoever next breaks it. **A held
+file is corrected by nobody, and its last green run recedes into a world that no
+longer exists.** The longer a branch is held, the less its history means, and
+the cost is not "it needs a rebase" — the rebase was clean. The cost is that
+every standard raised in the interval has to be reapplied by hand, and nothing
+tells you which ones.
+
+**What follows, and it is small.** When a branch is held deliberately — #28 was,
+for a good reason — the hold is worth a line saying what it will need on the way
+back in. Nothing here proposes not holding branches. #48 and #47 are open and
+have been for days; they are Lane 2's to read, and this entry is the reason to
+read them rather than assume their green checks still describe them.
+
+## WHAT WENT RIGHT — ONE FINDING REACHED BOTH LANES WITHOUT EITHER BEING TOLD (2026-09-14)
+
+Almost everything in this document is a fault. This is not, and it is recorded
+for the same reason the faults are: so the mechanism is known rather than
+assumed.
+
+**What happened.** On 2026-09-13 Lane 1 recorded that seven environment
+variables were required by the code and declared nowhere, with the sharpest
+piece of evidence being that `tests/helpers/db.ts` refuses to run without five
+of them while its own message sends the reader to `.env.example` for three that
+are not in it. **Within hours, and with no message passing between the two
+humans or the two sessions, #67 added six of the seven** — the two
+`NEXT_PUBLIC_SUPABASE_*` names, the service key and the three `USE_LIVE` flags.
+Lane 2 had hit the same wall from the other side while building the auth bridge:
+the portal could not sign in against a project whose URL and key nothing
+declared. #70 added the seventh.
+
+**Why it is worth an entry.** Two lanes that cannot see each other's sessions,
+and whose humans were not in the same conversation, converged on one fix inside
+a day. Nobody coordinated it and nobody needed to.
+
+**The mechanism, which is the part to keep.** Not goodwill and not luck:
+
+- **The finding was written down in a place both lanes read**, in the repository
+  rather than in a chat. `CLAUDE.md` section 1 says chat history is not truth
+  and `docs/HANDOFF.md` says the file is the only channel; this is that design
+  working without anyone invoking it.
+- **It was written as a symptom, not only as a cause.** The record said what a
+  reader would experience — the tests refuse, the message points at a file that
+  cannot satisfy it, every route throws without the URL — so Lane 2 recognised
+  its own problem in someone else's finding rather than having to translate a
+  diagnosis.
+- **The fix was small enough to take in passing.** Six names in an example
+  file, inside a pull request about something else. A finding that costs a day
+  to act on waits for a decision; a finding that costs a minute gets done by
+  whoever reads it first.
+
+**What it argues for.** Record findings where the other lane reads, in the
+language of what goes wrong rather than of what is wrong, and size the remedy in
+the record. The two lanes have collided badly this month — #27, #36, the #49 and
+#50 reverts, one shared GitHub identity that no branch protection can
+distinguish. This is the same channel producing the opposite result, and it
+suggests the channel is sound and the collisions were about authority, not about
+information.
+
+## A GATE BUILT TO PREVENT THE THIRD PATTERN EXHIBITED THE THIRD PATTERN (2026-09-14)
+
+`scripts/schema-check.mjs` exists to catch the Prisma drift: two sources that
+move independently — the live database and the model file — compared, so that an
+unmodelled table, column or enum turns it red by itself. It is the gate this
+document argues for, written by the session that wrote the argument.
+
+**Its first version had the fault it was built to prevent.** It counted Prisma's
+`-- Label` comment lines. Prisma labels a column change `AlterTable` and puts
+the `DROP COLUMN` inside it, so a list containing `AddColumn` and `DropColumn`
+matched nothing. Pointed at a deliberately unmodelled column, the script printed:
+
+> `tables, columns, enums, relations : match`
+
+while a column was genuinely unmodelled. **A check pointed at a label instead of
+at the thing the label describes** — the third pattern exactly, in the gate
+written against that family of fault.
+
+**It was caught only by being made to fail on purpose.** The proof run removed a
+column from the model and expected red. It did go red, but for an unrelated
+reason: the foreign key on that column also vanished, and the foreign-key check
+caught it. Had the hidden column carried no foreign key — as `captured_at` does
+not — **the script would have reported "match" and been believed.** The second
+proof run, on `captured_at` alone, is what showed the column check did nothing.
+It now matches the SQL statements and not the labels.
+
+### THE PAIR, AND WHAT IT SAYS
+
+This is the **second** time in two days that a thing written to prevent the
+silent-class fault was itself an instance of it:
+
+|                                                                           | What it claimed                                                               | What was true                             |
+| ------------------------------------------------------------------------- | ----------------------------------------------------------------------------- | ----------------------------------------- |
+| The audit CHECK, in the list of worked examples of _a gate that compares_ | "generated from `AUDIT_ACTIONS` so the database and the code cannot disagree" | nothing generated it; a person retyped it |
+| `schema-check`, written to catch drift                                    | "tables, columns, enums, relations : match"                                   | it could not see a column at all          |
+
+**What both have in common, and it is the whole lesson: each was believed
+correct because it was written to be correct, and neither was made to fail
+before it was trusted.** The intention was the evidence. One was promoted to an
+exemplar in this document and the other printed a reassuring line, and in both
+cases the thing that would have exposed it in thirty seconds — change one side
+alone and check for red — was not done, precisely because the author knew what
+the code was for.
+
+### THE RULE ALREADY EXISTS, AND IT KEEPS NOT BEING APPLIED TO GUARDS ABOUT GUARDS
+
+`docs/DECISIONS.md`, **B1.3 — a guard that refuses everything passes every
+refusal test**, states it in the first line:
+
+> **No unit is done until every guard it introduces has been tested both
+> refusing and accepting. Refusal alone is not evidence.**
+
+That rule is nine days old. It has caught defects in B1.4 and B1.5, and it is
+applied without fail to guards over _data_ — `requireRole`, the reset guard, the
+scrubber, the sync outcomes all have tests in both directions. **It is not being
+applied to guards over guards.** A gate, a drift test, a watcher, an exemplar in
+a state document: each is a guard whose subject is other code, and each of the
+three instances in the last two days went untested in the failing direction.
+
+**The extension, stated so it cannot be read as only about data:** a gate, a
+watcher, a lint rule, a CI condition and a worked example in a document are all
+guards, and B1.3 applies to every one of them. **A meta-guard is harder to test
+in the failing direction, not easier**, because making it fail means
+constructing the defect it is meant to notice — planting a narrowing migration,
+hiding a column, cutting the network. That construction is the test, it takes
+minutes, and skipping it is how all three of these happened.
+
+**Applied, on the same day, to everything this session built:** the narrowing
+migration was planted and the audit test went red naming all 33 keys; a column
+was hidden twice and `schema-check` went red the second time and was fixed; the
+`db:push` refusal was run and refused. Nothing here is trusted on the strength
+of having been written carefully.
 
 ## THE SEAMS — WHERE TWO RULES TOUCH AND NOTHING HAS TESTED THE JOIN (2026-09-10)
 
@@ -1178,9 +1621,9 @@ list worth keeping in its own right, because the question it asks is different
 from the other eight's: not _does this gate check anything_, but **where do two
 of our rules touch, and has anything tested the seam?**
 
-Three named seams. **None of them is tested at the seam today.** Each entry
-says what the two rules are, what a defect there would look like, and what a
-test of the join would have to do.
+Four named seams. **None of them is tested at the seam today** except the
+third. Each entry says what the two rules are, what a defect there would look
+like, and what a test of the join would have to do.
 
 **1. The additive-migration law × a test that reads the schema.** _Rules:_
 migrations are additive, so older code keeps working against a newer schema
@@ -1228,9 +1671,20 @@ the name rule refuses. A seam test is harder to write than a rule test, because
 it must hold both rules in mind at once — the fixtures have to be clean under
 one rule to say anything about the other.
 
+**4. Authorization on the server × sign-in on the client (2026-09-13).**
+_Rules:_ every route verifies session and role on the server before touching
+data (CLAUDE.md §4), and a route never writes a session cookie because
+sign-in does that on the client (`require-role.ts`). _What a defect looks like:_
+both halves pass every test they have, and no browser can reach any data,
+because the client half was never built. **Fired once, and it is the tenth
+instance above — forty-nine routes and twenty-nine pages that have never
+spoken.** _A test of the seam:_ sign in through a browser and read one row.
+Does not exist; neither lane's suite can fail while this is true.
+
 _Added when found, not planned in advance: a seam is only visible once both
 rules exist. The pattern to watch for is a rule that constrains a value and
-another rule that transforms it._
+another rule that transforms it — or, from the fourth, a rule that says where
+work does **not** belong without anything saying who does it._
 
 **THE NINTH INSTANCE IS A DIFFERENT SHAPE, AND IT DESERVES ITS OWN QUESTION
 (2026-09-09).** The eight before it were gates that checked nothing: a
@@ -1411,6 +1865,72 @@ GitHub rather than copied. Grouped by who closes it.
 **Known and accepted, not open:** staging growth per run; the ten-in-flight
 contention being the test process's; `registration_source = self` as a value
 no route produces; the 24 system audit rows from the accidental seed.
+
+## THE PRISMA SCHEMA DESCRIBES A DATABASE WE DO NOT HAVE (2026-09-13)
+
+**Raised by Lane 2's landing plan; confirmed by a read-only `prisma migrate
+diff` against staging rather than by reading.** Alieu's warning — do not run
+`prisma migrate dev` or `db push` until the models exist or we agree not to add
+them — was right, and understated.
+
+**The drift.** Three tables exist in migrations and in no Prisma model: `visit`,
+`visit_attachment`, `report_export`. So do three enums —
+`attachment_kind`, `attachment_status`, `visit_topic` — and three columns:
+`farmer.caseload_officer_id`, `farmer.captured_at`, `farm.captured_at`. B8, B10
+and B11 built each of them in hand-written SQL and never added the model, which
+nothing noticed because every one of those tables is read with raw SQL.
+
+**What `db push` would execute**, from the diff, not from reasoning:
+
+| Operation          | Count |
+| ------------------ | ----- |
+| Drop foreign key   | 58    |
+| Re-add foreign key | 34    |
+| Drop table         | 3     |
+| Drop enum          | 3     |
+| Drop index         | 3     |
+| Drop column        | 3     |
+
+**Twenty-four of the fifty-eight foreign keys are never put back.** Among them
+every payam-to-county-to-state consistency constraint on `farmer`, `farm` and
+`visit`, and `farmer_caseload_officer_id_fkey`. The three dropped indexes are
+the PostGIS GiST indexes on the boundary, the centroid and the directory
+location, which Prisma cannot model because the columns are `Unsupported`. So
+the spatial queries would survive and become table scans.
+
+**And it would not finish.** `visit_active` selects from `visit`, so Postgres
+refuses `DROP TABLE "visit"` without a cascade. **That refusal lands after the
+fifty-eight foreign keys are already dropped**, so the failure leaves the
+database in a state that is neither the old one nor the new one — worse than
+either, and requiring the keys to be rebuilt by hand.
+
+**`migrate dev` cannot run here at all**, which is the one piece of good news:
+it needs a shadow database and the Supabase `postgres` role cannot create one.
+`schema.prisma` says so at the top. Neither command appears in any script in
+this repository; the only migration script is `prisma migrate deploy`.
+
+**DECIDED BY THE OWNER, 2026-09-13: write the models.** Stated as _"a schema
+file that does not describe the schema is a document that lies, and the next
+person reaching for a Prisma command will not know that"_, and the commands
+guarded separately since that was cheap. Built in #70.
+
+**What the diff says now**, which is the proof rather than the claim:
+
+|                           | before | after |
+| ------------------------- | ------ | ----- |
+| tables dropped            | 3      | **0** |
+| enums dropped             | 3      | **0** |
+| columns dropped           | 3      | **0** |
+| foreign keys not restored | 24     | 13    |
+| indexes dropped           | 3      | 4     |
+
+The remaining thirteen foreign keys and four indexes are objects Prisma cannot
+express at all: GiST indexes on `Unsupported` columns, `*_deleted_by_fkey` where
+the model carries the column without a relation field, and the second composite
+consistency key beside the first. **They are listed by name in
+`scripts/schema-check.mjs`, not matched by pattern, so a new one fails the gate
+instead of widening an exception.** `pnpm schema:check` reports the residue on
+every run; `pnpm db:push` and `pnpm db:migrate-dev` now refuse and say why.
 
 ## STANDING CONDITION — STAGING'S SCHEMA RUNS AHEAD OF MAIN (2026-09-06)
 

@@ -2563,3 +2563,88 @@ footer, the registration slip, the brand i18n keys and the wordmark's alt text
 now read "AgriOne South Sudan". **What did not:** the logo image
 (`public/brand/agrione-logo.png`) is baked art that still reads "AgriOne" — new
 logo art carrying the full name is CORWADO's to supply.
+
+## Migration 22 redated from 2026-09-05, and the audit CHECK generated for real (2026-09-13)
+
+**Taken by Lane 1 while rebasing #28, and it changes a file the owner should
+know changed.** #28 was held on 2026-09-05 and carried
+`20260905100000_extend_audit_actions_for_directories`, which had never been
+applied to any database.
+
+**Why it could not be merged as written.** A CHECK constraint can only be
+replaced, never extended, so each unit that adds an audit action drops and
+recreates `audit_event_action_known` with the full list. Migrations 17, 20 and
+21 each did, reaching forty keys. #28's migration held the twenty-two keys that
+existed in September. Being unapplied, `prisma migrate deploy` would have run it
+**after** those three, replacing forty keys with twenty-two and silently
+refusing every farmer, consent, verification, farm, boundary, crop, visit,
+attachment and report action. Every write appends one, so every create, update
+and delete in B5 through B11 would have failed on its audit insert — and it
+would have read as a route defect.
+
+**What was done.** The folder is redated `20260913120000` so it applies last,
+and its list is **generated from `AUDIT_ACTIONS` by a script rather than
+retyped**: forty-seven keys, verified as a strict superset of the forty staging
+holds before the file was written. Nothing else in #28 changed shape; its four
+rebase conflicts were all in files Lane 1 owns.
+
+**The finding underneath it is recorded as the eleventh silent-class instance**
+in `docs/PROJECT-STATE.md`: the comment on `AUDIT_ACTIONS` claims the constraint
+is generated from it, and the generation was a person retyping. That is the same
+shape as B3's wrapper comment claiming it reported to Sentry — the second
+instance of a comment asserting a mechanism that does not exist. The test that
+would close it, comparing the catalogue's constraint to the constant, is sized
+and not built.
+
+**Standing practice this relies on**, unchanged: a unit's migration is applied
+to staging from its own branch before the unit merges (PROJECT-STATE, _Staging's
+schema runs ahead of main_). Until that is done for this one, #28's tests cannot
+pass, because staging still refuses the seven directory and library keys.
+
+---
+
+## B1.3 applies to guards about guards, and that is where it keeps not being applied (2026-09-14)
+
+**B1.3's rule, unchanged and nine days old:** _no unit is done until every guard
+it introduces has been tested both refusing and accepting; refusal alone is not
+evidence._
+
+It is honoured for guards over **data**. `requireRole` is tested allowing and
+refusing every role on every route; the reset guard was pointed at a real
+project reference behind an unroutable host; the scrubber is tested on what it
+must redact and on what it must leave alone; the sync outcomes are tested in
+both directions.
+
+**It is not being honoured for guards over other code.** Three instances in two
+days, recorded in `docs/PROJECT-STATE.md`:
+
+1. **The audit CHECK** was named in this project's own list of worked examples
+   of "a gate that compares" while nothing compared it.
+2. **`scripts/schema-check.mjs`**, written to catch schema drift, counted
+   Prisma's comment labels rather than the SQL, and printed
+   `tables, columns, enums, relations : match` with a column unmodelled.
+3. **A queue watcher** silenced its errors, so a failed query and an empty
+   queue were the same value, and it announced a drained queue during a network
+   failure.
+
+**What the three share:** each was believed because it was written to be
+correct. The author's intention stood in for evidence. In every case the test
+that would have exposed it took minutes.
+
+**The extension, so the rule cannot be read as being only about data.** A gate,
+a watcher, a lint rule, a CI condition and a worked example in a state document
+are all guards; their subject is other code rather than a farmer's record, and
+B1.3 covers every one of them.
+
+**And the reason it is skipped more often here, which is worth naming:** a
+meta-guard is _harder_ to test in the failing direction, because making it fail
+means building the defect it exists to notice — planting a narrowing migration,
+hiding a column that carries no foreign key, cutting the network. That
+construction feels like extra work and is in fact the test. **A gate is not
+finished when it goes green. It is finished when it has been made to go red on
+purpose.**
+
+Applied the same day to everything built in that session: the narrowing
+migration planted (red, naming all 33 keys it would drop), a column hidden twice
+(`schema-check` green the first time — which is how its defect was found — red
+the second), and the `db:push` refusal run to see it refuse.
