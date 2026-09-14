@@ -68,6 +68,7 @@ export const config = {
     '/dashboard/:path*',
     '/farmers/:path*',
     '/desk/:path*',
+    '/visits/:path*',
     '/admin/:path*',
     '/directories/:path*',
     '/library/:path*',

@@ -10,6 +10,7 @@ describe('isPortalPath', () => {
       '/farmers/abc',
       '/admin/users',
       '/desk',
+      '/visits',
       '/design',
     ]) {
       expect(isPortalPath(p)).toBe(true);
