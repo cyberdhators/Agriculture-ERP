@@ -37,6 +37,7 @@
 // It never prints the API key.
 
 import console from 'node:console';
+import { createHash } from 'node:crypto';
 import process from 'node:process';
 
 import { loadEnvLocal } from './load-env.mjs';
@@ -157,7 +158,14 @@ label('from', body.from);
 label('script', arabic ? 'Arabic (expect UCS-2)' : 'Latin (expect GSM-7)');
 label('characters', String([...text].length));
 label('smart_encoding', String(smart));
-label('api key', 'set, not printed');
+// A non-secret fingerprint of the key, so two runs can be compared. Bird
+// scopes are chosen at creation, so fixing a scope means a NEW key -- and the
+// question "did the key actually change?" came up twice before this line
+// existed, each time costing a round trip to answer.
+label(
+  'api key',
+  `set, not printed (sha256: ${createHash('sha256').update(process.env.BIRD_API_KEY).digest('hex').slice(0, 12)})`,
+);
 console.log('');
 console.log(`  text: ${text}`);
 console.log('');
