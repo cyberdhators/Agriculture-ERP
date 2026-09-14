@@ -112,10 +112,18 @@ which is the same shape as the tenth instance below.
 Turning one on is a rebuild and a redeploy, not a settings change. Anyone
 expecting to flip live data on in a dashboard will conclude it does not work.
 
-**The remedy is one edit and is deliberately not taken in this entry:** the
-seven names go into `.env.example` in the style of the five already there. The
-owner asked for the record; the fix is a separate change so that it is reviewed
-as one.
+**CLOSED, AND QUICKLY — six of the seven by the other lane within hours.**
+#67, the auth bridge, added the two `NEXT_PUBLIC_SUPABASE_*` names, the service
+key and the three `USE_LIVE` flags, having hit the same wall from the other
+side. #70 added the seventh, `LOCATIONS_CSV`. **Every variable the code reads is
+now declared: twelve of twelve**, checked by comparing the names in
+`.env.example` against every `process.env.*` read in `apps/web`, `packages`,
+`scripts`, `tests` and `prisma`.
+
+**Worth keeping for what it says about the finding rather than the fix.** Two
+lanes hit one undeclared-variable wall within a day of each other, from
+opposite sides, and neither could see the other's version of it. The record is
+what made them the same problem instead of two.
 
 ---
 
@@ -1735,15 +1743,28 @@ it needs a shadow database and the Supabase `postgres` role cannot create one.
 `schema.prisma` says so at the top. Neither command appears in any script in
 this repository; the only migration script is `prisma migrate deploy`.
 
-**The choice, which is the owner's.** Either add the three models, three enums
-and three columns — about half a day, mechanical, and worth nothing at runtime
-because nothing reads these tables through the Prisma client — or decide
-deliberately not to and guard the two commands. **The recommendation is to add
-them**, for one reason that has nothing to do with Prisma: `schema.prisma` is
-the only file where a reader sees the whole shape of the database in one place,
-and it is currently wrong about three tables, three enums and three columns. A
-reader who trusts it is misled, and that is the same failure as a comment
-asserting a mechanism that does not exist.
+**DECIDED BY THE OWNER, 2026-09-13: write the models.** Stated as _"a schema
+file that does not describe the schema is a document that lies, and the next
+person reaching for a Prisma command will not know that"_, and the commands
+guarded separately since that was cheap. Built in #70.
+
+**What the diff says now**, which is the proof rather than the claim:
+
+|                           | before | after |
+| ------------------------- | ------ | ----- |
+| tables dropped            | 3      | **0** |
+| enums dropped             | 3      | **0** |
+| columns dropped           | 3      | **0** |
+| foreign keys not restored | 24     | 13    |
+| indexes dropped           | 3      | 4     |
+
+The remaining thirteen foreign keys and four indexes are objects Prisma cannot
+express at all: GiST indexes on `Unsupported` columns, `*_deleted_by_fkey` where
+the model carries the column without a relation field, and the second composite
+consistency key beside the first. **They are listed by name in
+`scripts/schema-check.mjs`, not matched by pattern, so a new one fails the gate
+instead of widening an exception.** `pnpm schema:check` reports the residue on
+every run; `pnpm db:push` and `pnpm db:migrate-dev` now refuse and say why.
 
 ## STANDING CONDITION — STAGING'S SCHEMA RUNS AHEAD OF MAIN (2026-09-06)
 
