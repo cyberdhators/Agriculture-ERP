@@ -2749,3 +2749,38 @@ premise expired. **That is the third time this week a document outlived its
 premise** — after the audit CHECK "generated from `AUDIT_ACTIONS`" and
 `.env.example` "all are listed" — and it is the same fault each time: a
 statement that was true when written, trusted long after.
+
+---
+
+## Two SMS cost facts, measured rather than published (2026-09-14)
+
+Recorded separately from the substitution entry because a campaign budget is
+built from these two numbers and both differ from the rate card.
+
+**1. The real unit price is 0.18 EUR per segment, not $0.21.** The published
+table gives $0.21 for an alphanumeric sender to Liberia and the same for South
+Sudan. Three live sends were each billed **0.18 EUR**. The rate card is a guide
+in dollars; the invoice is in euros. Any figure quoted to CORWADO should come
+from `cost.amount` on a real message, which the API returns only after the send
+and not at acceptance — `cost` is `null` in the 202.
+
+**2. A carrier rejection is billed in full.** All three sends were refused by
+the network with carrier code 104 and all three cost 0.18 EUR. Nothing arrived.
+**So the figure to multiply for a campaign is messages ATTEMPTED, not messages
+RECEIVED**, and a sender or content problem does not fail cheaply — it fails at
+full price, once per recipient, per attempt.
+
+The consequence for deliverable (n) is a design one as much as a financial one:
+a retry loop over a systematically rejected sender bills every attempt. Whatever
+sends advisories must treat a carrier failure as terminal for that sender until
+something changes, not as something to retry.
+
+**Working figures, for the alphanumeric sender, once delivery actually works:**
+one 148-character Latin advisory is one segment at 0.18 EUR, so 1,000 farmers
+is **180 EUR**. In Arabic script the same advisory is three segments and
+**540 EUR**. Monthly for a year, to a thousand farmers: 2,160 EUR in Latin
+script, 6,480 EUR in Arabic script.
+
+**Evidence:** `docs/PROJECT-STATE.md`, _I-02 — the account has never delivered
+a message_. Nothing above is a projection from the rate card; the unit price is
+from three billed messages.

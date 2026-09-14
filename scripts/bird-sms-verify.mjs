@@ -38,6 +38,7 @@
 
 import console from 'node:console';
 import { createHash } from 'node:crypto';
+import { setTimeout as sleep } from 'node:timers/promises';
 import process from 'node:process';
 
 import { loadEnvLocal } from './load-env.mjs';
@@ -69,11 +70,30 @@ const ACCEPTED_PREFIXES = [
 /** The published alphanumeric rate per segment, by prefix (2026-09-14). */
 const PUBLISHED_RATE_USD = { '+211': 0.21, '+231': 0.21 };
 
+// Bird's four categories: transactional, marketing, authentication, service.
+// `service` is the one an agricultural advisory is -- informational, not a
+// promotion, not a transaction, not a code.
+//
+// THIS WAS SET TO `authentication` AND THAT WAS A MISTAKE OF MINE, not Bird
+// inferring anything from the content. It was copied from the single example in
+// Bird's API reference. Two consequences, both observed: carriers filter the
+// authentication class hardest, and Bird returns `**REDACTED**` for the body of
+// an authentication message -- which was briefly reported as a privacy feature
+// of the platform when it was only a property of the wrong category.
+const CATEGORIES = ['transactional', 'marketing', 'authentication', 'service'];
+const DEFAULT_CATEGORY = 'service';
+
 const args = process.argv.slice(2);
 const to = args.find((a) => !a.startsWith('--'));
 const arabic = args.includes('--arabic');
 const force = args.includes('--force');
 const smart = args.includes('--smart-encoding');
+const categoryArg = args.find((a) => a.startsWith('--category='));
+const category = categoryArg ? categoryArg.split('=')[1] : DEFAULT_CATEGORY;
+if (!CATEGORIES.includes(category)) {
+  console.error(`\n"${category}" is not a Bird category. One of: ${CATEGORIES.join(', ')}\n`);
+  process.exit(1);
+}
 
 if (!to) {
   console.error('\nUsage: pnpm sms:verify +211XXXXXXXXX [--arabic] [--smart-encoding]\n');
@@ -104,8 +124,17 @@ if (!destination && !force) {
 // The Latin one is GSM-7: 160 characters in one segment. The Arabic one is
 // Arabic script, which has no GSM-7 representation, so it is UCS-2: 70
 // characters in one segment, 67 per segment once it concatenates.
-const LATIN = 'CORWADO test message. Ignore this. Reply not possible.';
-const ARABIC = 'رسالة اختبار من كورwado. تجاهل هذه الرسالة. لا يمكن الرد عليها.';
+//
+// THEY READ LIKE ADVISORIES ON PURPOSE. The first version sent "CORWADO test
+// message. Ignore this." under category `authentication`, and Lonestar Cell
+// MTN rejected it: carrier_rejected / content_rejected, code 104, and it was
+// billed anyway. A message that looks like a one-time code, declared as
+// authentication traffic, is the class carriers filter hardest. These read as
+// what deliverable (n) will actually send. The "(test)" stays because the
+// recipient is a real handset and being honest with them costs nine characters.
+const LATIN =
+  'CORWADO advisory (test): plant maize within 10 days of the first heavy rain. Space rows 75cm apart. Ask your extension officer about certified seed.';
+const ARABIC = 'ارشاد كورwado (تجربة): ازرع الذرة خلال عشرة ايام من اول مطر غزير.';
 const text = arabic ? ARABIC : LATIN;
 
 const baseUrl = process.env.BIRD_API_BASE_URL.replace(/\/+$/, '');
@@ -139,7 +168,7 @@ const body = {
   to,
   from: process.env.BIRD_SMS_SENDER_ID,
   text,
-  category: 'authentication',
+  category,
   // Off by default ON PURPOSE: smart encoding rewrites characters that have a
   // GSM-7 near-equivalent (curly quotes, dashes) to keep a message in one
   // segment. It cannot do that for Arabic script, which has no GSM-7 form. We
@@ -156,6 +185,7 @@ label('endpoint', endpoint);
 label('to', `${to}  (${destination ? destination.country : 'FORCED, unlisted country'})`);
 label('from', body.from);
 label('script', arabic ? 'Arabic (expect UCS-2)' : 'Latin (expect GSM-7)');
+label('category', category);
 label('characters', String([...text].length));
 label('smart_encoding', String(smart));
 // A non-secret fingerprint of the key, so two runs can be compared. Bird
@@ -267,7 +297,69 @@ if (typeof segments.count === 'number' && rate !== undefined) {
   console.log('');
 }
 
-console.log('NOT PROVED BY THIS OUTPUT: that the handset rang. The response above is');
-console.log('Bird accepting the message, not a delivery receipt. Look at the phone, and');
-console.log("look at the message's final status in Bird's dashboard.");
+// ACCEPTANCE IS NOT DELIVERY, and this script used to end by telling the
+// reader to go and look in a dashboard. It said that twice while two messages
+// were accepted, billed and rejected by the carrier -- the second time after a
+// change made because the first rejection was misread as a content problem. So
+// it fetches the outcome itself now. A proof script that stops at 202 proves
+// the wrong thing.
+const messageId = parsed?.id;
+if (messageId) {
+  const waitSeconds = 8;
+  console.log(`Waiting ${waitSeconds}s, then asking Bird what happened to it...`);
+  await sleep(waitSeconds * 1000);
+
+  let final = null;
+  try {
+    const check = await globalThis.fetch(`${endpoint}/${messageId}`, {
+      headers: { authorization: `Bearer ${process.env.BIRD_API_KEY}` },
+    });
+    const checkBody = await check.text();
+    if (check.ok) {
+      final = JSON.parse(checkBody);
+    } else {
+      console.log(`  Could not read it back: HTTP ${check.status}. ${checkBody.slice(0, 200)}`);
+      console.log('  (a read may need the sms:read scope; the send itself still happened)');
+    }
+  } catch (error) {
+    console.log(`  Could not read it back: ${error.message}`);
+  }
+
+  if (final) {
+    console.log('');
+    console.log('WHAT ACTUALLY HAPPENED TO IT');
+    console.log('');
+    label('status', final.status ?? '(none)');
+    label('sent at', final.sent_at ?? 'never');
+    label('delivered at', final.delivered_at ?? 'never');
+    label('network (mcc/mnc)', final.mcc_mnc ?? '(not reported)');
+    label(
+      'cost',
+      final.cost ? `${final.cost.amount} ${final.cost.currency_code}` : '(not reported yet)',
+    );
+    if (final.last_error) {
+      label('carrier code', final.last_error.carrier_error_code ?? '(none)');
+      label('failure', `${final.last_error.description} / ${final.last_error.code}`);
+    }
+    console.log('');
+    if (final.status === 'delivered') {
+      console.log('  DELIVERED. The handset has it.');
+    } else if (final.status === 'failed') {
+      console.log('  FAILED AT THE CARRIER. Accepted by Bird, sent, refused by the network,');
+      console.log('  and BILLED ANYWAY -- read the cost above. Carrier code 104 is');
+      console.log('  EC_SENDER_UNREGISTERED: the sender string is not registered with the');
+      console.log('  downstream carrier. Bird reports that as `content_rejected`, which');
+      console.log('  points at the message and not at the sender. Do not believe the label');
+      console.log('  over the carrier code.');
+    } else {
+      console.log(`  Still "${final.status}" after ${waitSeconds}s. Ask again in a minute.`);
+    }
+    console.log('');
+  }
+} else {
+  console.log('No message id came back, so there is nothing to follow up.');
+}
+
+console.log('This script proves what Bird and the carrier say. If the status above is');
+console.log('not "delivered", nothing reached a handset, whatever the 202 said.');
 console.log('');

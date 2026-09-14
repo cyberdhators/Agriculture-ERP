@@ -172,6 +172,84 @@ and not a footnote: nothing can receive a STOP, so opt-out has to be an officer
 withdrawing consent in the system. Any farmer-reply feature is impossible over
 SMS here, including the unresolved "Ask AI" advisory.
 
+### I-02 — THE ACCOUNT HAS NEVER DELIVERED A MESSAGE (2026-09-14)
+
+**Three sends to one Liberian handset. All three accepted by Bird, all three
+refused by the carrier, all three billed.** Nothing has reached a phone.
+
+|               | Message 1                | Message 2           | Message 3           |
+| ------------- | ------------------------ | ------------------- | ------------------- |
+| Category      | `authentication`         | `service`           | `service`           |
+| Body          | 54 chars, "test message" | 148 chars, advisory | 148 chars, advisory |
+| Bird's answer | 202 accepted             | 202 accepted        | 202 accepted        |
+| Final status  | **failed**               | **failed**          | **failed**          |
+| Carrier code  | **104**                  | **104**             | **104**             |
+| Billed        | **0.18 EUR**             | **0.18 EUR**        | **0.18 EUR**        |
+
+**Carrier code 104 is `EC_SENDER_UNREGISTERED`.** The sender string
+`Agrione_SS` is not registered with the downstream carrier, so the network
+refuses it. **Bird reports this as `content_rejected`**, which points at the
+message rather than the sender, and that mislabel cost a whole cycle: a message
+was rewritten from a test string into a real advisory and its category changed
+from `authentication` to `service` on the theory that content class was the
+cause. It was rejected identically. **Do not believe Bird's failure label over
+the carrier code.**
+
+**THE FINDING THAT MATTERS MOST, AND IT UNDERMINES THE CLAIM THE SUBSTITUTION
+RESTS ON.** Bird's destination pages say sender registration is **"not
+required"** for Liberia, and say exactly the same for South Sudan. Liberia's
+carrier rejected an unregistered sender anyway. Bird's own sender documentation
+concedes the gap: `not_required` _"reflects Bird's assessment, not a guarantee
+of carrier compliance"_ — it is a statement about Bird's paperwork, not about
+what the network will accept.
+
+> **So the one documented fact behind choosing Bird for South Sudan — an
+> alphanumeric sender, no registration needed — is the same sentence that has
+> just been proved insufficient one country over.**
+
+The next step is therefore not another send. It is **registering `Agrione_SS`
+through Bird's sender-ID registration**, for each destination, and retesting.
+Until that is done the account cannot deliver to Liberia, and there is no reason
+to expect better in South Sudan.
+
+**Cost, measured rather than published.** **0.18 EUR per segment**, not the
+$0.21 the rate card shows, and **a carrier rejection is billed in full**. Three
+rejections cost 0.54 EUR and delivered nothing. For a campaign budget that is
+two separate corrections: the real unit price is in euros, and the figure to
+multiply is messages _attempted_, not messages _received_.
+
+**The network, and why it is the first evidence that touches the target.**
+`mcc_mnc 61801` is **Lonestar Cell MTN, Liberia — 60% owned by MTN Group**. MTN
+also runs **MTN South Sudan**, the largest operator in the target country. A
+sender-registration rejection by one MTN operating company is **weak** evidence
+about another, because sender registration and filtering are administered per
+country and per regulator, not group-wide. But it is weak evidence about the
+right group rather than no evidence at all, and it points the same way as the
+NCA registration question already recorded above.
+
+**What the three sends did prove:** the credentials work, the region binding
+works, an alphanumeric sender is accepted by Bird's API and echoed back
+unmodified, a 148-character Latin advisory is one GSM-7 segment, and Bird's
+`delivered_at` and `last_error` fields report the real outcome when asked.
+
+**Corrections to earlier entries, made here rather than quietly:**
+
+- The `**REDACTED**` body in the first response was reported as a privacy
+  property of the platform. It is not. It is what the `authentication` category
+  does, and it disappeared the moment the category was right.
+- The category was not Bird inferring anything from content. **It was set to
+  `authentication` in our own script**, copied from the single example in
+  Bird's API reference, and never questioned.
+- `pnpm sms:verify` twice reported a 202 and told the reader to go and look in
+  a dashboard. **A proof script that stops at acceptance proves the wrong
+  thing** — the first pattern again, a check reporting success because it read
+  the wrong signal. It now fetches the message back and reports `status`,
+  `delivered_at`, the carrier code and the cost, and says plainly that anything
+  short of `delivered` reached no handset.
+
+**I-02 is not satisfied.** An SMS gateway account exists, is correctly
+configured, and has delivered nothing.
+
 ### THE PREMISE THAT EXPIRED WITH THIS CHANGE
 
 Officers authenticate through a derived identifier because Supabase's Phone
