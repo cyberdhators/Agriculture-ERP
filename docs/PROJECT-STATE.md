@@ -195,6 +195,23 @@ country. 64 characters, one segment, `service` category, **0.2 EUR**,
 delivery proves one operator, which is the rule this project already wrote
 down. Two of three networks are still untested.
 
+**The whole account history was read on 2026-09-14 to see whether either was
+already covered. Neither is.** Nine messages, three destination numbers, and
+**only two networks have ever been touched**: `61801` (Lonestar Cell MTN,
+Liberia) and `65902` (MTN South Sudan). Exactly **one** `+211` number has ever
+been messaged, once, successfully. Nothing in the history touches Zain or
+Digitel, so the coverage question needs a handset on each and cannot be answered
+from what has already been sent.
+
+**One thing in the history is not ours.** The 13 September delivery to Liberia
+at 06:39 used sender **`Authifly`**, which does not appear in the workspace's
+sender list — only `Agrione_SS` does — and predates our sender's creation by
+thirteen hours. So the account carried traffic under a sender we do not hold and
+cannot see. **Bird's API exposes no actor on a message** — no user, creator,
+tags or metadata, and no audit or activity endpoint — so who sent it, and what
+`Authifly` is, can only be answered from the dashboard. Worth asking, because it
+is the one sender known to deliver on the carrier that refuses ours.
+
 **THE LIBERIAN FAILURES ARE REAL, AND THEY ARE SENDER-SPECIFIC TO ONE CARRIER.**
 Eight messages exist on the account, not the three this section first described.
 Six failed, two delivered, and the discriminator is the sender:
@@ -204,7 +221,7 @@ Six failed, two delivered, and the discriminator is the sender:
 | `+211922200858` | `Agrione_SS`   | **65902 MTN South Sudan** | **delivered**   |
 | `+231886257473` | **`Authifly`** | 61801 Lonestar Cell MTN   | **delivered**   |
 | `+231886257473` | `Agrione_SS`   | 61801 Lonestar Cell MTN   | failed 104      |
-| `+231888022031` | `Agrione_SS`   | 61801 Lonestar Cell MTN   | failed 104 (x4) |
+| `+231888022031` | `Agrione_SS`   | 61801 Lonestar Cell MTN   | failed 104 (x5) |
 
 **Same carrier, same country, two senders: `Authifly` delivers and
 `Agrione_SS` is refused as unregistered.** So carrier code 104
@@ -212,14 +229,23 @@ Six failed, two delivered, and the discriminator is the sender:
 not registered with Lonestar Cell MTN, whatever Bird's country-level row says.
 It is not a route problem, not a content problem, and not a South Sudan problem.
 
-**A timing detail that may be the whole explanation.** The sender was created at
-20:03:48. The Liberian failures begin at 20:13, ten minutes later. The South
-Sudan delivery is at 20:23, twenty minutes later. So one registration bound
-within twenty minutes and the other had not bound after ten — which is
-consistent with propagation rather than with a broken approval, and would also
-explain why Bird reports both as `approved`. **Untested:** whether Liberia
-delivers now, a day later. That test costs 0.18 EUR and the owner has paused
-spending until Bird answers.
+**PROPAGATION WAS THE OBVIOUS EXPLANATION AND IT IS RULED OUT.** The sender was
+created at `2026-09-13T20:03:48Z`. Liberia failed from 20:13, ten minutes later;
+South Sudan delivered at 20:23, twenty minutes later. That asymmetry looked like
+one registration binding faster than the other, so the owner authorised **one**
+retry to settle it.
+
+**Retried 2026-09-14T05:41:33Z — 9 hours 38 minutes after the sender was
+created. Failed identically: carrier code 104, billed 0.18 EUR.**
+
+So the sender has had more than nine hours to bind at Lonestar Cell MTN and has
+not. `approved` with `next: []` is not describing a registration that is still
+settling; it is describing one this carrier does not honour. **The propagation
+theory is dead and the question is Bird's**, which is why the support request
+goes as drafted rather than waiting on another test.
+
+**Running total: nine messages, seven failed, two delivered. 1.64 EUR spent,
+1.26 EUR of it on refusals.**
 
 |               | Message 1                | Message 2           | Message 3           |
 | ------------- | ------------------------ | ------------------- | ------------------- |
@@ -260,7 +286,7 @@ it that way was the error corrected at the top of this section.
 
 **Cost, measured rather than published.** **0.18 EUR per segment to Liberia
 and 0.20 EUR to South Sudan**, against a rate card showing $0.21 for both, and
-**a carrier rejection is billed in full**. Six rejections cost 1.08 EUR and
+**a carrier rejection is billed in full**. Seven rejections cost 1.26 EUR and
 delivered nothing. For a campaign budget that is
 two separate corrections: the real unit price is in euros, and the figure to
 multiply is messages _attempted_, not messages _received_.
@@ -338,10 +364,10 @@ rather than documented.**
 
 **The open question is narrow and is Bird's.** Their API reports `approved` for
 Liberia with a registration id, and Lonestar Cell MTN refuses that sender while
-delivering a different one. Propagation is the most likely explanation given the
-twenty-minute window, but it is untested. This is worth asking because the
-answer tells us what `approved` is worth in general — which is what we will rely
-on for Zain and Digitel.
+delivering a different one — **still, after nine and a half hours**. Propagation
+was the plausible answer and has been tested and ruled out. This matters beyond
+Liberia because `approved` is the only signal we would otherwise have for Zain
+and Digitel, and it has now been shown to mean nothing at one carrier.
 
 **I-02 is partly satisfied, and precisely this much:** an SMS gateway account
 exists, is correctly configured, holds approved sender registrations for both

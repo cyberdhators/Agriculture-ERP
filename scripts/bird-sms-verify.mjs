@@ -5,16 +5,23 @@
 //   pnpm sms:verify +231XXXXXXXXX
 //
 // ---------------------------------------------------------------------------
-// DO NOT RUN THIS UNTIL BIRD HAS ANSWERED. Owner's instruction, 2026-09-14.
+// DO NOT RUN THIS TO LIBERIA. Owner's instruction, 2026-09-14, after a test.
 //
-// Three sends have been made to one Liberian handset. All three were accepted
-// by Bird, refused by the carrier as EC_SENDER_UNREGISTERED, and billed 0.18
-// EUR each. Bird's own API reports the sender APPROVED for both Liberia and
-// South Sudan, with a registration id. That contradiction is with Bird's
-// support and is not ours to fix by retrying.
+// Seven sends to +231 have been refused by Lonestar Cell MTN as
+// EC_SENDER_UNREGISTERED (carrier code 104) and billed 0.18 EUR each, across
+// four categories and lengths from 5 to 148 characters. Bird's API reports the
+// sender APPROVED for Liberia with a registration id.
 //
-// A fourth send costs 0.18 EUR and would teach the same thing. See
-// docs/PROJECT-STATE.md, "I-02 -- the account has never delivered a message".
+// Propagation was the plausible explanation and was TESTED AND RULED OUT: a
+// retry 9h38m after the sender was created failed identically. So retrying
+// teaches nothing and costs 0.18 EUR each time. The question is with Bird's
+// support -- docs/vendor/bird-support-2026-09-14.md.
+//
+// SOUTH SUDAN IS DIFFERENT AND WORKS: the same sender delivered to MTN South
+// Sudan (65902) at 0.20 EUR. Zain (659-91) and Digitel are untested, and a
+// send to a handset on each is the one thing worth spending on next.
+//
+// See docs/PROJECT-STATE.md, I-02.
 // ---------------------------------------------------------------------------
 //
 // THROWAWAY. This is not deliverable (n) and not a unit: (n) is phase 6 and
