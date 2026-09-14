@@ -213,11 +213,6 @@
   font-size: var(--text-small);
 }
 
-.staffLink {
-  color: var(--muted);
-  white-space: nowrap;
-}
-
 .compactBand {
   display: none;
 }

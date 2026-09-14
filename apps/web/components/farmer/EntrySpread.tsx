@@ -13,8 +13,9 @@ import styles from './farmer.module.css';
 /**
  * The public entry, composed as a shop sign-in: the AgriOne wordmark and
  * tagline centred at the top, the sign-in (or register) form in a single
- * white card on the shop's grey ground, and a quiet footer carrying the
- * marketplace and staff links. The card is capped narrow and stays centred at
+ * white card on the shop's grey ground, and a quiet footer. The staff portal
+ * is deliberately not linked from here: buyers and farmers never see that
+ * door; staff use its own address. The card is capped narrow and stays centred at
  * every width, so there is no empty panel on a wide screen. The language
  * switch sits above the card; order and mirroring follow `dir` on their own.
  */
@@ -23,7 +24,7 @@ export function EntrySpread({ children }: { children: ReactNode }) {
   return (
     <div className={styles.entryPage}>
       <header className={styles.entryHead}>
-        <Wordmark href="/farmer" size={44} />
+        <Wordmark href="/market" size={44} />
         <div className={styles.entryLang}>
           <LanguageSwitch />
         </div>
@@ -40,9 +41,6 @@ export function EntrySpread({ children }: { children: ReactNode }) {
 
       <footer className={styles.entryFoot}>
         <span>{t('brand.copyright', language)}</span>
-        <Link href="/dashboard" className={styles.staffLink}>
-          {t('shell.staffSignIn', language)}
-        </Link>
       </footer>
     </div>
   );

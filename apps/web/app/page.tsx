@@ -1,33 +1,11 @@
-import type { Metadata } from 'next';
-import { cookies } from 'next/headers';
-
-import { EntrySpread } from '@/components/farmer/EntrySpread';
-import { FarmerLogin } from '@/components/farmer/FarmerLogin';
-import { FarmerShell } from '@/components/farmer/FarmerShell';
-import { FarmerSessionProvider } from '@/lib/farmer-session';
-import { DEFAULT_LANGUAGE, LANG_COOKIE, isLanguage } from '@/lib/i18n';
-
-export const metadata: Metadata = { title: { absolute: 'AgriOne South Sudan' } };
+import { redirect } from 'next/navigation';
 
 /**
- * The public entry: the AgriOne spread with sign-in, registration, the staff
- * link and the language switch. Composed the same way as the farmer route
- * group so the first paint is already in the chosen language.
+ * The public front door is the marketplace. A buyer arriving at the domain
+ * sees produce first; a farmer signs in from the marketplace's masthead
+ * ("Sign in" → /farmer/login); staff reach their portal by its own address
+ * (/login), which is linked from nowhere public on purpose.
  */
-export default async function Home() {
-  const store = await cookies();
-  const cookieLang = store.get(LANG_COOKIE)?.value;
-  const initialLanguage = isLanguage(cookieLang) ? cookieLang : DEFAULT_LANGUAGE;
-
-  return (
-    <FarmerSessionProvider initialLanguage={initialLanguage}>
-      <div className="shop">
-        <FarmerShell>
-          <EntrySpread>
-            <FarmerLogin />
-          </EntrySpread>
-        </FarmerShell>
-      </div>
-    </FarmerSessionProvider>
-  );
+export default function Home() {
+  redirect('/market');
 }
