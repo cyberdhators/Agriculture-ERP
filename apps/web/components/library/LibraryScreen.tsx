@@ -57,7 +57,7 @@ function pick<T extends string>(list: readonly T[], value: string): T | '' {
  * "Show unpublished". Administrators add, edit and remove.
  */
 export function LibraryScreen() {
-  const { role, resources, hydrated } = usePreview();
+  const { role, resources, hydrated, catalog } = usePreview();
   const { get, set } = useQueryState();
 
   const format: FormatFilter = pick(RESOURCE_FORMATS, get('format')) || 'all';
@@ -199,7 +199,11 @@ export function LibraryScreen() {
         {showUnpublished ? ' · including unpublished' : ''}
       </p>
 
-      {visible.length === 0 ? (
+      {catalog.loading ? (
+        <p className="muted">Reading the library.</p>
+      ) : catalog.error ? (
+        <EmptyState error title="The library could not be read" body={catalog.error} />
+      ) : visible.length === 0 ? (
         <EmptyState
           title={filtered ? 'No resources match these filters' : 'The library is empty'}
           body={

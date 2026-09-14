@@ -54,12 +54,17 @@ export function EntryDetail({ entry }: { entry: DirectoryEntryRow }) {
   const editor = hydrated && canEdit(role);
   const headingId = `entry-${entry.id}`;
 
-  function confirmRemove() {
+  async function confirmRemove() {
     if (reason.trim().length < 5) {
       setReasonError('Say why this entry is being removed, in a few words.');
       return;
     }
-    removeEntry(entry.id, reason.trim());
+    try {
+      await removeEntry(entry.id, reason.trim());
+    } catch (e) {
+      setReasonError(e instanceof Error ? e.message : 'The entry could not be removed.');
+      return;
+    }
     setConfirming(false);
     setRemoved(true);
     setReason('');

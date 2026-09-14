@@ -36,25 +36,38 @@ export function ResourceDetail({ resource }: { resource: LearningResourceRow }) 
   const [reason, setReason] = useState('');
   const [reasonError, setReasonError] = useState<string>();
   const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const editor = hydrated && canEdit(role);
   const headingId = `resource-${resource.id}`;
   const heavy = resource.byte_size >= METERED_WARNING_BYTES;
 
-  function confirmRemove() {
+  async function confirmRemove() {
     if (reason.trim().length < 5) {
       setReasonError('Say why this resource is being removed, in a few words.');
       return;
     }
-    removeResource(resource.id, reason.trim());
+    try {
+      await removeResource(resource.id, reason.trim());
+    } catch (e) {
+      setReasonError(e instanceof Error ? e.message : 'The resource could not be removed.');
+      return;
+    }
     setConfirming(false);
     setReason('');
     setReasonError(undefined);
+    setError(null);
     setMessage('Removed. The file stays in storage and the row keeps its history.');
   }
 
-  function togglePublished() {
-    saveResource({ ...resource, published: !resource.published });
+  async function togglePublished() {
+    setError(null);
+    try {
+      await saveResource({ ...resource, published: !resource.published });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'The change could not be recorded.');
+      return;
+    }
     setMessage(
       resource.published
         ? 'Unpublished. Officers no longer see this resource.'
@@ -92,6 +105,12 @@ export function ResourceDetail({ resource }: { resource: LearningResourceRow }) 
           </p>
         </div>
       </div>
+
+      {error ? (
+        <div className={styles.detailSection}>
+          <Notice kind="error">{error}</Notice>
+        </div>
+      ) : null}
 
       {message ? (
         <div className={styles.detailSection}>

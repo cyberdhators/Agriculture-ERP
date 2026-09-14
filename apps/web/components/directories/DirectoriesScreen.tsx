@@ -40,7 +40,7 @@ type TypeFilter = DirectoryEntryType | 'all';
  * (marked) to administrators and supervisors when "Show inactive" is on.
  */
 export function DirectoriesScreen() {
-  const { role, entries, hydrated } = usePreview();
+  const { role, entries, hydrated, catalog } = usePreview();
   const { get, set } = useQueryState();
 
   const type = (DIRECTORY_ENTRY_TYPES as readonly string[]).includes(get('type'))
@@ -153,7 +153,11 @@ export function DirectoriesScreen() {
         Showing {pluralise(visible.length, 'entry', 'entries')} · {filterSummary} · sorted by name
       </p>
 
-      {visible.length === 0 ? (
+      {catalog.loading ? (
+        <p className="muted">Reading the directories.</p>
+      ) : catalog.error ? (
+        <EmptyState error title="The directories could not be read" body={catalog.error} />
+      ) : visible.length === 0 ? (
         <EmptyState
           title={query ? `No entries match “${query}”` : 'No entries here yet'}
           body={
