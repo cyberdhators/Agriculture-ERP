@@ -1,10 +1,10 @@
-import { PrismaClient } from '@prisma/client';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import * as directoryItem from '../apps/web/app/api/directory-entries/[id]/route';
 import * as directory from '../apps/web/app/api/directory-entries/route';
 import * as learningItem from '../apps/web/app/api/learning-resources/[id]/route';
 import * as learning from '../apps/web/app/api/learning-resources/route';
+import { makeTestPrisma, requireTestEnv } from './helpers/db';
 import { type TestPrincipal, createPrincipal, sweep } from './helpers/principals';
 import { call } from './helpers/request';
 
@@ -16,18 +16,35 @@ import { call } from './helpers/request';
  * the routes honour the caller: a supervisor sees only their own state, a
  * non-administrator sees only active/published rows, a soft delete leaves every
  * list AND writes exactly one soft_deleted audit row, and a publish is its own
- * row. Same skip-in-CI conditions as the forbidden matrix.
+ * row.
+ *
+ * THREE THINGS WERE CORRECTED HERE ON 2026-09-14, when this file ran in CI for
+ * the first time. It was written on 2026-09-05 and the branch was held, so
+ * nothing had ever executed it: B5.5 landed the loud-env guard, B4's trigger
+ * was already refusing what its cleanup did, and neither could tell anyone
+ * while the file sat on an unmerged branch.
+ *
+ *   1. `cleanupRows` deleted from `audit_event`. The audit table is
+ *      append-only (CLAUDE.md section 4) and a trigger refuses DELETE, so the
+ *      hook threw and took the whole file down. Nothing needed the deletion:
+ *      every assertion here reads audit rows for one freshly generated id.
+ *   2. The file skipped itself when the variables were absent
+ *      (`HAS_ENV ? describe : describe.skip`). That is the SECOND silent-class
+ *      instance in docs/PROJECT-STATE.md -- eight files reporting green for
+ *      tests that never ran -- closed by B5.5 with `requireTestEnv`, which
+ *      fails loudly instead. This file predates the fix.
+ *   3. It built its own client preferring DIRECT_URL. B5.5 moved test clients
+ *      to the transaction pooler because the session pooler has fifteen slots
+ *      and stopped granting connections for minutes. `makeTestPrisma` is that
+ *      decision in one place.
  */
 
 vi.setConfig({ testTimeout: 300_000, hookTimeout: 300_000 });
 
-const HAS_ENV =
-  (process.env.DATABASE_URL ?? '') !== '' && (process.env.SUPABASE_SERVICE_ROLE_KEY ?? '') !== '';
-const run = HAS_ENV ? describe : describe.skip;
+requireTestEnv();
+const run = describe;
 
-const prisma = new PrismaClient({
-  datasources: { db: { url: process.env.DIRECT_URL ?? process.env.DATABASE_URL } },
-});
+const prisma = makeTestPrisma();
 
 // Real seeded staging locations, as the other route tests use. EE has no
 // seeded payam, so a directory entry can only be created in CE; a supervisor in
@@ -43,9 +60,10 @@ let readOnlyA: TestPrincipal & { password: string };
 let officerA: TestPrincipal & { password: string };
 
 const cleanupRows = async () => {
-  await prisma.$executeRawUnsafe(
-    `DELETE FROM public.audit_event WHERE entity_type IN ('directory_entry','learning_resource')`,
-  );
+  // The audit rows this test produces are NOT removed: the audit table is
+  // append-only and the trigger refuses DELETE. They are harmless -- every
+  // assertion below reads by a fresh entity id, so rows from earlier runs are
+  // invisible to it, and staging growth per run is already known and accepted.
   await prisma.$executeRawUnsafe(`DELETE FROM public.directory_entry WHERE name LIKE 'zztest%'`);
   await prisma.$executeRawUnsafe(
     `DELETE FROM public.learning_resource WHERE title LIKE 'zztest%' OR storage_path LIKE 'zztest/%'`,
@@ -53,7 +71,6 @@ const cleanupRows = async () => {
 };
 
 beforeAll(async () => {
-  if (!HAS_ENV) return;
   await cleanupRows();
   await sweep(prisma);
   admin = await createPrincipal(prisma, 'admin');
@@ -64,12 +81,10 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  if (HAS_ENV) {
-    // Rows first: verified_by / uploaded_by reference the test users the sweep
-    // then removes, so they must be gone before the accounts are.
-    await cleanupRows();
-    await sweep(prisma);
-  }
+  // Rows first: verified_by / uploaded_by reference the test users the sweep
+  // then removes, so they must be gone before the accounts are.
+  await cleanupRows();
+  await sweep(prisma);
   await prisma.$disconnect();
 });
 
