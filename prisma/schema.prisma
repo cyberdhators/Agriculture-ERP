@@ -104,6 +104,7 @@ model State {
   officers Officer[]
   farmers  Farmer[]
   farms    Farm[]
+  visits   Visit[]
 
   @@map("state")
 }
@@ -120,6 +121,7 @@ model County {
   payams Payam[]
   farmers Farmer[]
   farms   Farm[]
+  visits  Visit[]
   farmerNumberCounter FarmerNumberCounter?
 
   /// Target of the composite key on payam that enforces C-2.3.
@@ -146,6 +148,7 @@ model Payam {
   officers Officer[]
   farmers  Farmer[]
   farms    Farm[]
+  visits   Visit[]
 
   /// Target of the composite key on officer.
   @@unique([id, stateId], map: "payam_id_state_id_key")
@@ -329,6 +332,8 @@ model User {
   directoryEntriesDeleted  DirectoryEntry[] @relation("DirectoryEntryDeletedBy")
   learningResourcesUploaded LearningResource[] @relation("LearningResourceUploadedBy")
   learningResourcesDeleted  LearningResource[] @relation("LearningResourceDeletedBy")
+  visitsDeleted             Visit[]            @relation("VisitDeletedBy")
+  reportExports             ReportExport[]
 
   @@index([role], map: "user_role_idx")
   @@index([scopeStateId], map: "user_scope_state_id_idx")
@@ -366,11 +371,17 @@ model Officer {
   /// with the state of their payam.
   payam Payam @relation(fields: [payamId, stateId], references: [id, stateId], map: "officer_payam_state_consistent_fkey")
   state State @relation(fields: [stateId], references: [id], map: "officer_state_id_fkey")
-  farmersRegistered Farmer[]
+  /// Named because Farmer now points at Officer twice: who registered them,
+  /// and who works them today (C-8R). Relation names are Prisma's only; the
+  /// database has had both foreign keys since migration 17.
+  farmersRegistered Farmer[]         @relation("FarmerRegisteredBy")
+  caseload          Farmer[]         @relation("FarmerCaseload")
   resubmissions     VerificationEvent[]
   farmsCreated      Farm[]           @relation("FarmCreatedBy")
   boundariesMapped  FarmBoundary[]
   cropsDeclared     CropDeclaration[]
+  visits            Visit[]
+  attachmentsDeclared VisitAttachment[]
 
   @@index([payamId], map: "officer_payam_id_idx")
   @@index([stateId], map: "officer_state_id_idx")
@@ -472,6 +483,10 @@ model Farmer {
   countyId           String             @map("county_id")
   stateId            String             @map("state_id")
   registeredBy       String?            @map("registered_by") @db.Uuid
+  /// Who works this farmer today (C-8R, migration 17). Equals registeredBy
+  /// until an administrator reassigns the caseload; it is the column every
+  /// officer-scoped query filters on, NOT registeredBy.
+  caseloadOfficerId  String?            @map("caseload_officer_id") @db.Uuid
   registrationSource RegistrationSource @default(officer) @map("registration_source")
   verificationStatus VerificationStatus @default(pending) @map("verification_status")
   mergedInto         String?            @map("merged_into") @db.Uuid
@@ -480,6 +495,9 @@ model Farmer {
   duplicateMatches   String[]           @default([]) @map("duplicate_matches") @db.Uuid
   /// The escalation clock (C-6.7): set at registration, reset on resubmission, otherwise immutable (trigger).
   pendingSince       DateTime           @default(now()) @map("pending_since") @db.Timestamptz(6)
+  /// The device's moment of capture (B9, migration 18). Null for anything the
+  /// portal created: only a phone has a capture moment.
+  capturedAt         DateTime?          @map("captured_at") @db.Timestamptz(6)
   createdAt          DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt          DateTime           @default(now()) @map("updated_at") @db.Timestamptz(6)
   deletedAt          DateTime?          @map("deleted_at") @db.Timestamptz(6)
@@ -488,7 +506,8 @@ model Farmer {
   payam        Payam    @relation(fields: [payamId, stateId], references: [id, stateId], map: "farmer_payam_state_consistent_fkey")
   county       County   @relation(fields: [countyId], references: [id], map: "farmer_county_id_fkey")
   state        State    @relation(fields: [stateId], references: [id], map: "farmer_state_id_fkey")
-  registrar    Officer? @relation(fields: [registeredBy], references: [id], map: "farmer_registered_by_fkey")
+  registrar    Officer? @relation("FarmerRegisteredBy", fields: [registeredBy], references: [id], map: "farmer_registered_by_fkey")
+  caseloadOfficer Officer? @relation("FarmerCaseload", fields: [caseloadOfficerId], references: [id], map: "farmer_caseload_officer_id_fkey")
   mergedTarget Farmer?  @relation("FarmerMerge", fields: [mergedInto], references: [id], map: "farmer_merged_into_fkey")
   mergedFrom   Farmer[] @relation("FarmerMerge")
   /// The current consent. Deferred foreign key: both rows commit together (C-5.3).
@@ -496,6 +515,7 @@ model Farmer {
   consents     Consent[] @relation("FarmerConsents")
   verificationEvents VerificationEvent[] @relation("FarmerVerificationEvents")
   farms              Farm[]
+  visits             Visit[]
   mergeTargetOf      VerificationEvent[] @relation("MergeTargetEvents")
 
   @@index([payamId, verificationStatus, deletedAt], map: "farmer_payam_status_idx")
@@ -583,6 +603,9 @@ model Farm {
   season    String
   /// The officer who walked it first. Never a user (C-7.6).
   createdBy String    @map("created_by") @db.Uuid
+  /// The device's moment of capture (B9, migration 18). Null when the portal
+  /// created the row.
+  capturedAt DateTime? @map("captured_at") @db.Timestamptz(6)
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime  @default(now()) @map("updated_at") @db.Timestamptz(6)
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
@@ -637,4 +660,163 @@ model CropDeclaration {
 
   @@unique([farmId, season, crop], map: "crop_declaration_one_per_crop_per_season")
   @@map("crop_declaration")
+}
+
+// -----------------------------------------------------------------------------
+// B8, B10, B11 -- visits, attachments and the export log
+// (migrations 15, 16, 20, 21)
+// -----------------------------------------------------------------------------
+//
+// WHY THESE MODELS EXIST, GIVEN THAT NOTHING READS THEM THROUGH PRISMA.
+//
+// Every one of these tables is read and written with raw SQL, so the generated
+// client is not the point. The point is that this file is the only place a
+// reader sees the whole shape of the database, and for eight days it was
+// silently wrong about three tables, three enums and three columns: B8, B10 and
+// B11 each wrote their SQL migration and never added the model. A schema file
+// that does not describe the schema is a document that lies, and the next
+// person reaching for a Prisma command has no way to know.
+//
+// WHAT A DIFF AGAINST THE LIVE DATABASE STILL SHOWS, AND WHY IT IS NOT DRIFT.
+// Prisma cannot express: partial indexes (`WHERE deleted_at IS NULL`), GiST
+// indexes on `Unsupported` columns, CHECK constraints, triggers, views, or more
+// than one foreign key over the same field set -- so the second composite
+// consistency key on `payam` is absent here exactly as it is absent on `farm`.
+// Those objects live in the migrations and are proved by the database tests.
+// `pnpm schema:check` states the residue explicitly rather than leaving a
+// reader to wonder whether a diff line is drift or a known limit.
+
+/// The nine topics (C-8.13), the same nine as VISIT_TOPICS in
+/// packages/shared/src/visit.ts.
+enum VisitTopic {
+  land_preparation
+  planting
+  weeding
+  pest
+  disease
+  harvest
+  storage
+  market
+  other
+
+  @@map("visit_topic")
+}
+
+enum AttachmentKind {
+  photo
+  audio
+
+  @@map("attachment_kind")
+}
+
+/// waiting: the row is here, the bytes are not. arrived: confirmed against the
+/// declared size and type. failed: gave up, with a code (C-8.7).
+enum AttachmentStatus {
+  waiting
+  arrived
+  failed
+
+  @@map("attachment_status")
+}
+
+/// One farmer, one officer, one standing point, two moments (C-8.1 to C-8.5).
+/// The five evidence columns -- farmer, officer, position, visitedAt,
+/// receivedAt -- are immutable, enforced by a trigger, not by this file.
+model Visit {
+  /// Client-generated (C-8.6 / B9): a retried upload is the same visit.
+  id              String     @id @db.Uuid
+  farmerId        String     @map("farmer_id") @db.Uuid
+  /// References officer, never user: an administrator cannot record a visit.
+  officerId       String     @map("officer_id") @db.Uuid
+  payamId         String     @map("payam_id")
+  countyId        String     @map("county_id")
+  stateId         String     @map("state_id")
+  /// Where the officer stood. Stored and shown, never graded (C-8.4).
+  position        Unsupported("extensions.geography(Point, 4326)")
+  gpsAccuracyM    Decimal    @map("gps_accuracy_m") @db.Decimal(7, 1)
+  /// Observation may be empty; advice may not (C-8.1).
+  observation     String?
+  advice          String
+  topics          VisitTopic[]
+  durationMinutes Int?       @map("duration_minutes")
+  attendeeCount   Int?       @map("attendee_count")
+  followUpOf      String?    @map("follow_up_of") @db.Uuid
+  /// The device's moment, as given.
+  visitedAt       DateTime   @map("visited_at") @db.Timestamptz(6)
+  /// The server's moment, never the device's, for every coverage figure (C-8.5).
+  receivedAt      DateTime   @default(now()) @map("received_at") @db.Timestamptz(6)
+  createdAt       DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime   @default(now()) @map("updated_at") @db.Timestamptz(6)
+  deletedAt       DateTime?  @map("deleted_at") @db.Timestamptz(6)
+  deletedBy       String?    @map("deleted_by") @db.Uuid
+
+  farmer      Farmer            @relation(fields: [farmerId], references: [id], map: "visit_farmer_id_fkey")
+  officer     Officer           @relation(fields: [officerId], references: [id], map: "visit_officer_id_fkey")
+  payam       Payam             @relation(fields: [payamId, stateId], references: [id, stateId], map: "visit_payam_state_consistent_fkey")
+  county      County            @relation(fields: [countyId], references: [id], map: "visit_county_id_fkey")
+  state       State             @relation(fields: [stateId], references: [id], map: "visit_state_id_fkey")
+  /// The earlier visit this one follows. Same farmer, not removed, no cycle --
+  /// all three enforced by the trigger in migration 15, not here.
+  followedVisit Visit?          @relation("VisitFollowUp", fields: [followUpOf], references: [id], map: "visit_follow_up_of_fkey")
+  followUps     Visit[]         @relation("VisitFollowUp")
+  deleter     User?             @relation("VisitDeletedBy", fields: [deletedBy], references: [id], map: "visit_deleted_by_fkey")
+  attachments VisitAttachment[]
+
+  @@index([farmerId, receivedAt(sort: Desc), id(sort: Desc)], map: "visit_farmer_received_idx")
+  @@index([officerId, receivedAt(sort: Desc), id(sort: Desc)], map: "visit_officer_received_idx")
+  @@map("visit")
+}
+
+/// A separate record that travels separately (C-8.6): the row arrives with the
+/// visit, the bytes arrive when the phone can.
+model VisitAttachment {
+  id             String           @id @db.Uuid
+  visitId        String           @map("visit_id") @db.Uuid
+  kind           AttachmentKind
+  status         AttachmentStatus @default(waiting)
+  /// Chosen by the server from the two ids, never by the client (C-8.8).
+  storagePath    String           @unique(map: "visit_attachment_storage_path_key") @map("storage_path")
+  contentType    String           @map("content_type")
+  byteSize       Int              @map("byte_size")
+  /// The device's moment of capture; the row's arrival is createdAt.
+  capturedAt     DateTime         @map("captured_at") @db.Timestamptz(6)
+  /// Our expiry, enforced at confirm. The provider's token lives two hours and
+  /// cannot be shortened -- see docs/DECISIONS.md, B8.
+  grantExpiresAt DateTime         @map("grant_expires_at") @db.Timestamptz(6)
+  arrivedAt      DateTime?        @map("arrived_at") @db.Timestamptz(6)
+  failedAt       DateTime?        @map("failed_at") @db.Timestamptz(6)
+  /// One of ATTACHMENT_FAILURE_CODES in packages/shared/src/visit.ts, including
+  /// `lost_on_restore` (C-11.3, migration 21).
+  failureCode    String?          @map("failure_code")
+  createdBy      String           @map("created_by") @db.Uuid
+  createdAt      DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime         @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  visit   Visit   @relation(fields: [visitId], references: [id], map: "visit_attachment_visit_id_fkey")
+  creator Officer @relation(fields: [createdBy], references: [id], map: "visit_attachment_created_by_fkey")
+
+  @@index([visitId, capturedAt, id], map: "visit_attachment_visit_idx")
+  @@map("visit_attachment")
+}
+
+/// Every export logs the query, the filters and the data cut-off (C-10.8 and
+/// the reporting law). Append-only in practice: nothing updates or deletes a row.
+model ReportExport {
+  id          String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  exportedBy  String         @map("exported_by") @db.Uuid
+  actorType   AuditActorType @map("actor_type")
+  reportType  String         @map("report_type")
+  /// The SQL that produced the rows, parameters inlined as literals, so a
+  /// number in a PDF traces to rows without the code that made it (C-10.8).
+  query       String
+  filters     Json
+  scope       Json
+  dataCutoff  DateTime       @map("data_cutoff") @db.Date
+  rowCount    Int            @map("row_count")
+  exportedAt  DateTime       @default(now()) @map("exported_at") @db.Timestamptz(6)
+
+  exporter User @relation(fields: [exportedBy], references: [id], map: "report_export_exported_by_fkey")
+
+  @@index([exportedAt(sort: Desc), id(sort: Desc)], map: "report_export_exported_idx")
+  @@map("report_export")
 }
