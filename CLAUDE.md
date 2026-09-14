@@ -157,8 +157,11 @@ tests, the linter, the formatter check and the type check before committing —
 do not leave it to CI to find what you could have found locally.
 
 **Personal data.** Real farmer data exists in production only. Staging and local
-machines use generated fake data. If the client sends a real list "to try", it
-goes to production or nowhere.
+machines use generated fake data. Staging rows are the test suite's or the
+seed's, never hand-made: every row the suite creates is prefixed `zztest` so a
+crashed run's residue is swept rather than tripped over, and a row made by hand
+outside that convention breaks the sweep for everyone. If the client sends a
+real list "to try", it goes to production or nowhere.
 
 ---
 

@@ -57,9 +57,13 @@ describe('safeNext', () => {
     expect(safeNext('/farmers/review?q=a')).toBe('/farmers/review?q=a');
   });
 
-  it('refuses absolute, protocol-relative and empty targets', () => {
+  it('refuses absolute, protocol-relative, backslash and empty targets', () => {
     expect(safeNext('https://evil.example')).toBe(HOME_PATH);
     expect(safeNext('//evil.example')).toBe(HOME_PATH);
+    // Some browsers normalise a backslash to a slash, so these can become
+    // protocol-relative after passing a `//` check.
+    expect(safeNext('/\\evil.example')).toBe(HOME_PATH);
+    expect(safeNext('/\\/evil.example')).toBe(HOME_PATH);
     expect(safeNext('')).toBe(HOME_PATH);
     expect(safeNext(null)).toBe(HOME_PATH);
     expect(safeNext(undefined)).toBe(HOME_PATH);

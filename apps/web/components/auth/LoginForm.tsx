@@ -34,8 +34,15 @@ export function LoginForm({ next }: { next: string }) {
         password,
       });
       if (signInError) {
+        // The same taxonomy as isSessionRefusal in lib/api/require-role.ts:
+        // 400, 401, 403 and 404 are "this is not a valid sign-in"; anything
+        // else -- 429, 5xx, a network failure -- is the service failing to
+        // answer. They disagreed before, so a 401 told the user the service was
+        // down when their password was simply wrong.
+        const refused =
+          signInError.status !== undefined && [400, 401, 403, 404].includes(signInError.status);
         setError(
-          signInError.status === 400
+          refused
             ? 'That email or phone number and password do not match.'
             : 'The sign-in service could not be reached. Try again in a moment.',
         );

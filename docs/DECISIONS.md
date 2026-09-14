@@ -534,6 +534,17 @@ option verified working end to end.**
 - **Derived in exactly one function**, deterministically, from the E.164 phone.
 - **Never typed by a human, never displayed, never in an error message.** It is
   an authentication detail, not an address.
+  _Amended 2026-09-14 by Lane 1, after reading #67:_ **the first clause no
+  longer holds and is kept, struck, rather than deleted.** The staff login form
+  (`components/auth/LoginForm.tsx`) takes an email address and a password, so an
+  officer who knows their derived identifier **can type it** and sign in to the
+  portal. That is deliberate — the form says "Staff and extension officers" and
+  `/desk` is an officer screen — and **the decision itself is unchanged**,
+  because it was always about not surfacing the identifier as an address: it is
+  still never displayed, never in an error message, never stored on the officer
+  row, and still derived in exactly one function. What changed is that a human
+  who already knows it has a place to put it. The sentence is amended in place
+  so that a session reading it does not conclude a rule is being broken.
 - **A non-routable domain**, so nothing can ever receive mail there.
 - **Officer records store the real E.164 phone.** The derived identifier is not
   a field of the officer and is not stored on the officer row.
