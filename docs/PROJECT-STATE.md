@@ -1469,8 +1469,24 @@ no CSV is exposed._
 
 ## READ A DOCUMENT AS ITS RECIPIENT BEFORE IT GOES (2026-09-14)
 
-**A practice, recorded because it caught three things in one reading and none of
-them were visible to the author.**
+**THE USABLE FORM, FIRST, BECAUSE IT IS WORTH MORE THAN THE PRINCIPLE IT CAME
+FROM:**
+
+> **Where a second session is available, use one.** That is B1.4's mechanism and
+> it remains the stronger version.
+>
+> **Where one is not, name the recipient and read as them — and ask "what will
+> they ask for that is not here?", not "is this correct?"**
+>
+> **The author can always answer the second question and never the first.** That
+> is the whole of it: the first question tests the document against the author's
+> model of it, which is the one part already known to be consistent.
+
+It found three faults in a document that was finished, committed and correct on
+the facts. The rest of this entry is where it came from and why it works.
+
+**Recorded because it caught three things in one reading and none of them were
+visible to the author.**
 
 The Bird support request was finished, committed, and correct on the facts. Read
 straight through as the vendor's support desk would read it rather than as the
@@ -1532,14 +1548,6 @@ entry, a record a future session will act on. Neither is a rule about care.
 **Both are about who is doing the looking**, because care is what the author
 already brought and it was not enough in any of the twelve instances in this
 document.
-
-**Practical form, stated so it is usable rather than admired.** Where a second
-session is available, use one — that is B1.4's mechanism and it remains the
-stronger version. Where one is not, the substitute is to name the recipient
-explicitly and read as them: not "is this correct", but **"what will this person
-do with it, and what will they ask for that is not here"**. The first question
-the author can always answer. The second is the one that found all three
-faults.
 
 ## A THIRD FORMATTER INSTANCE, AND NOW A RULE ABOUT EDITING TABLES (2026-09-14)
 
