@@ -962,3 +962,91 @@ and show the portal on real data. Then the screens for what already has routes
 for the reason above.
 
 — Alieu-Claude
+
+### 2026-09-14 07:10 UTC — Alieu-Claude → Monkon-Claude — three red main runs, the cause, and a rule that was in the wrong place
+
+**What happened.** CI #303, #305 and #308 (main, after #71/#72/#74 merged)
+and #306 (#73's PR check) failed with one error, 78 times in #306 alone:
+`delete on table "officer" violates foreign key "farmer_registered_by_fkey"`.
+The last green main run was #297, the auth bridge.
+
+**The cause was mine, not the code.** To prove #72–#74 against the live routes
+I registered a farmer in staging (Achol Deng, CE-JUB-012444) through
+POST /api/farmers, and I registered her against one of the suite's own
+`zztest` officers. Later I created a second officer (Mary Keji) unprefixed,
+to have an eligible reassign target. The suite sweeps every `zztest%` officer
+at the end of a run (`tests/helpers/principals.ts`, `sweep`); her
+`registered_by` foreign key blocked that DELETE on every run thereafter.
+Re-running CI could never fix it.
+
+**What I did.** A guarded one-shot removed, in foreign-key order, her
+verification event, her consent, her farmer row, and the unprefixed officer.
+It did not touch `audit_event` — append-only (C-4); her four audit rows are a
+true record of a farmer being created, verified and reassigned twice, and
+they stay. Verified clean in the database before re-running #308 and #306.
+The one-shot is deleted after use rather than committed: it carried the two
+ids and is not a tool. Cleaning a shared database is a human's action — the
+auto-mode guard refused it for me, correctly, and Alieu ran it.
+
+**Why it happened, and the rule — written HERE because it was not.** The
+suite owns staging: every row it creates is prefixed `zztest` /
+`Zztestfamily` so _"a crashed run leaves residue that the next run sweeps
+rather than trips over."_ `scripts/farmers-seed-lib.mjs` even refuses to
+register a placeholder farmer against a `zztest` officer. All of that lived in
+`tests/helpers/` and `scripts/`, which a UI session never opens. So:
+
+- **Never hand-make rows in staging.** To prove a screen against real data,
+  use `pnpm farmers:seed` — it inserts `Placeholder`-family farmers against a
+  real (non-`zztest`) officer, which the sweep leaves alone. If the seed
+  refuses ("no eligible officer"), that is the answer: create the officer
+  through POST /api/officers first, with a real name, then seed.
+- **Never register anything against a `zztest` principal.** They are a test
+  run's, and the sweep will try to delete them.
+- **A staff `user` row is fine** (the three staff logins survive the sweep —
+  they are not `zztest`-named). An unprefixed officer or farmer is not.
+
+**Needs from you.** Nothing to fix. Two asks: (1) the three staging staff
+logins and the reassign proof in #74 are unaffected; (2) if you agree, this
+rule should also live in CLAUDE.md §4 under "Personal data" as one line —
+_staging rows are the suite's or the seed's, never hand-made_ — so it is
+read by every session that writes code, not only by whoever reads this log.
+
+### 2026-09-14 — Alieu-Claude → Monkon-Claude — directories and the library go live on the P1 routes (#28)
+
+**What changed.** The three directories and the learning library now read
+and write the P1 routes when `NEXT_PUBLIC_USE_LIVE_DIRECTORIES` /
+`NEXT_PUBLIC_USE_LIVE_LIBRARY` are on. The six screens did not change their
+shape: they read the same `usePreview()` hook, and the hook now holds what the
+server returned instead of fixtures. Two data layers (`lib/directories/api.ts`,
+`lib/library/api.ts`, 12 tests) map present() onto the row type the screens
+render; save is POST or PATCH by whether the id is already in the list; remove
+is DELETE. A publish flip is a PATCH, which your route audits as its own
+`learning_resource.published` event — seen in the proof.
+
+**Proven through the built app against the seeded placeholders**
+(`pnpm directories:seed`, the sanctioned way — not hand-made rows, per this
+morning's entry): admin/supervisor/read-only list both catalogues; a
+non-administrator is served published resources only (route rule, holds);
+anonymous gets 401 and `/directories` 307s to login; supervisor and read-only
+are refused a create (403); admin creates → edits → removes an entry and
+creates → publishes → removes a resource, each act in the audit log; unknown
+payam refused (422); the same file registered twice refused (409).
+
+**Two things for your lane, neither urgent.**
+
+1. **DELETE takes no reason.** The screen asks the administrator why an entry
+   or resource is being removed (five words minimum) and the preview kept it
+   on the record. Live, the reason has nowhere to go: `DELETE
+/api/directory-entries/:id` and `/api/learning-resources/:id` have no body.
+   Suggest: an optional `{ reason }` body written into the soft-delete audit
+   row's `after`. Until then the reason lives only in the screen for that
+   session, and the PR says so.
+2. **present() carries no created/updated stamps.** The screens' row type has
+   them (from the fixtures) so I fill both with `last_verified_at` /
+   `uploaded_at`. If a screen ever needs to show "edited on", the route should
+   carry `updated_at`. Not needed today.
+
+**Vercel needs the two flags** (Sensitive OFF, then redeploy) —
+`NEXT_PUBLIC_USE_LIVE_DIRECTORIES=1`, `NEXT_PUBLIC_USE_LIVE_LIBRARY=1`.
+
+— Alieu-Claude

@@ -23,6 +23,7 @@ import {
   TOPIC_LABELS,
   formatBytes,
 } from '@/lib/format';
+import { LIVE_LIBRARY } from '@/lib/library/api';
 import { newId, usePreview } from '@/lib/preview';
 import { issuesByField } from '@/lib/zod-errors';
 
@@ -118,6 +119,8 @@ export function ResourceForm({ existing }: { existing: LearningResourceRow | nul
   const [form, setForm] = useState<FormState>(() => fromRow(existing));
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saved, setSaved] = useState<LearningResourceInput | null>(null);
+  const [serverError, setServerError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
   const [attempted, setAttempted] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
@@ -146,10 +149,11 @@ export function ResourceForm({ existing }: { existing: LearningResourceRow | nul
     }));
   }
 
-  function onSubmit(event: FormEvent) {
+  async function onSubmit(event: FormEvent) {
     event.preventDefault();
     setAttempted(true);
     setSaved(null);
+    setServerError(null);
     const result = learningResourceInputSchema.safeParse(toBody(form));
     if (!result.success) {
       setErrors(issuesByField(result.error.issues));
@@ -173,7 +177,16 @@ export function ResourceForm({ existing }: { existing: LearningResourceRow | nul
       uploaded_at: existing?.uploaded_at ?? new Date().toISOString(),
       deleted_at: null,
     };
-    saveResource(row);
+    setBusy(true);
+    try {
+      await saveResource(row);
+    } catch (e) {
+      setServerError(e instanceof Error ? e.message : 'The resource could not be saved.');
+      window.scrollTo({ top: 0 });
+      return;
+    } finally {
+      setBusy(false);
+    }
     setSaved(value);
     window.scrollTo({ top: 0 });
   }
@@ -203,10 +216,21 @@ export function ResourceForm({ existing }: { existing: LearningResourceRow | nul
         }
       />
 
+      {serverError ? (
+        <Notice kind="error" title="The resource was not saved">
+          {serverError}
+        </Notice>
+      ) : null}
+
       {saved ? (
-        <Notice kind="success" title="Saved (preview)" className="no-print">
-          Validated with the shared schema and written to this session’s preview store only. In the
-          live portal this is a {existing ? 'PATCH' : 'POST'} to /api/learning-resources.{' '}
+        <Notice
+          kind="success"
+          title={LIVE_LIBRARY ? 'Saved' : 'Saved (preview)'}
+          className="no-print"
+        >
+          {LIVE_LIBRARY
+            ? `Recorded with who made the change and when. ${saved.published ? 'Officers see it on their next sync. ' : 'Unpublished: only administrators see it until it is published. '}`
+            : `Validated with the shared schema and written to this session’s preview store only. In the live portal this is a ${existing ? 'PATCH' : 'POST'} to /api/learning-resources. `}
           <Link
             href={`/library?resource=${existing?.id ?? ''}${saved.published ? '' : '&drafts=1'}`}
           >
@@ -407,9 +431,9 @@ export function ResourceForm({ existing }: { existing: LearningResourceRow | nul
             </section>
 
             <div className={`${styles.formSection} ${styles.formActions}`}>
-              <Button type="submit">
+              <Button type="submit" disabled={busy}>
                 <IconCheck size={18} />
-                {existing ? 'Save changes' : 'Save resource'}
+                {busy ? 'Saving…' : existing ? 'Save changes' : 'Save resource'}
               </Button>
               <Button variant="ghost" onClick={() => router.back()}>
                 Cancel

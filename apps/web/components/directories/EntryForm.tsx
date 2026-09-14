@@ -15,6 +15,7 @@ import {
 
 import { PAYAMS, type DirectoryEntryRow } from '@/lib/fixtures/p1';
 import { ENTRY_TYPE_LABELS, PROVIDER_CLASS_LABELS } from '@/lib/format';
+import { LIVE_DIRECTORIES } from '@/lib/directories/api';
 import { newId, usePreview } from '@/lib/preview';
 import { issuesByField } from '@/lib/zod-errors';
 
@@ -123,6 +124,8 @@ export function EntryForm({ existing }: { existing: DirectoryEntryRow | null }) 
   const [form, setForm] = useState<FormState>(() => fromRow(existing));
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saved, setSaved] = useState<DirectoryEntryInput | null>(null);
+  const [serverError, setServerError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
   const [attempted, setAttempted] = useState(false);
 
   const schema = useMemo(() => directoryEntryInputSchema(), []);
@@ -138,10 +141,11 @@ export function EntryForm({ existing }: { existing: DirectoryEntryRow | null }) 
     }
   }
 
-  function onSubmit(event: FormEvent) {
+  async function onSubmit(event: FormEvent) {
     event.preventDefault();
     setAttempted(true);
     setSaved(null);
+    setServerError(null);
 
     const body = toBody(form);
     const result = schema.safeParse(body);
@@ -185,7 +189,16 @@ export function EntryForm({ existing }: { existing: DirectoryEntryRow | null }) 
       updated_at: now,
       deleted_at: null,
     };
-    saveEntry(row);
+    setBusy(true);
+    try {
+      await saveEntry(row);
+    } catch (e) {
+      setServerError(e instanceof Error ? e.message : 'The entry could not be saved.');
+      window.scrollTo({ top: 0 });
+      return;
+    } finally {
+      setBusy(false);
+    }
     setSaved(value);
     window.scrollTo({ top: 0 });
   }
@@ -213,10 +226,21 @@ export function EntryForm({ existing }: { existing: DirectoryEntryRow | null }) 
       />
 
       {saved ? (
-        <Notice kind="success" title="Saved (preview)" className="no-print">
-          Validated with the shared schema and written to this session’s preview store only. In the
-          live portal this is a {existing ? 'PATCH' : 'POST'} to /api/directory-entries.{' '}
+        <Notice
+          kind="success"
+          title={LIVE_DIRECTORIES ? 'Saved' : 'Saved (preview)'}
+          className="no-print"
+        >
+          {LIVE_DIRECTORIES
+            ? `Recorded with who made the change and when. Officers ${existing ? 'get the change' : 'see it'} on their next sync. `
+            : `Validated with the shared schema and written to this session’s preview store only. In the live portal this is a ${existing ? 'PATCH' : 'POST'} to /api/directory-entries. `}
           <Link href={`/directories?entry=${existing?.id ?? ''}`}>View the entry</Link>.
+        </Notice>
+      ) : null}
+
+      {serverError ? (
+        <Notice kind="error" title="The entry was not saved">
+          {serverError}
         </Notice>
       ) : null}
 
@@ -477,9 +501,9 @@ export function EntryForm({ existing }: { existing: DirectoryEntryRow | null }) 
             </section>
 
             <div className={`${styles.formSection} ${styles.formActions}`}>
-              <Button type="submit">
+              <Button type="submit" disabled={busy}>
                 <IconCheck size={18} />
-                {existing ? 'Save changes' : 'Save entry'}
+                {busy ? 'Saving…' : existing ? 'Save changes' : 'Save entry'}
               </Button>
               <Button variant="ghost" onClick={() => router.back()}>
                 Cancel
