@@ -25,6 +25,10 @@ import * as farmerResubmit from '../apps/web/app/api/farmers/[id]/resubmit/route
 import * as farmerVerify from '../apps/web/app/api/farmers/[id]/verify/route';
 import * as farmers from '../apps/web/app/api/farmers/route';
 import * as verificationQueue from '../apps/web/app/api/verification/queue/route';
+import * as directoryItem from '../apps/web/app/api/directory-entries/[id]/route';
+import * as directory from '../apps/web/app/api/directory-entries/route';
+import * as learningItem from '../apps/web/app/api/learning-resources/[id]/route';
+import * as learning from '../apps/web/app/api/learning-resources/route';
 import * as locations from '../apps/web/app/api/locations/route';
 import * as me from '../apps/web/app/api/me/route';
 import * as officerItem from '../apps/web/app/api/officers/[id]/route';
@@ -74,6 +78,9 @@ let officer: TestPrincipal & { password: string };
 
 const STATE_A = 'CE';
 const PAYAM_A = 'CE-JUB-MUN';
+
+/** A well-formed id that matches no row: a refusal must not depend on the row existing (P1). */
+const DUMMY_ID = '00000000-0000-4000-8000-000000000000';
 
 beforeAll(async () => {
   await sweep(prisma);
@@ -559,6 +566,91 @@ const ROUTES = [
     method: 'GET' as const,
     allow: ['admin', 'supervisor', 'read_only', 'officer'],
     params: () => ({ id: visitId, aid: attachmentId }),
+  },
+  // P1 (C-13). The directories and the learning library: everyone in scope reads, only an administrator writes.
+  {
+    name: 'GET /api/directory-entries',
+    mod: directory,
+    method: 'GET' as const,
+    allow: ['admin', 'supervisor', 'read_only', 'officer'],
+  },
+  {
+    name: 'POST /api/directory-entries',
+    mod: directory,
+    method: 'POST' as const,
+    allow: ['admin'],
+    body: () => ({
+      entry_type: 'agro_dealer',
+      name: 'zztest-dealer',
+      phone: `+2119${Math.floor(10_000_000 + Math.random() * 89_999_999)}`,
+      payam_id: PAYAM_A,
+      state_id: STATE_A,
+      last_verified_at: '2026-09-01',
+    }),
+  },
+  {
+    name: 'PATCH /api/directory-entries/:id',
+    mod: directoryItem,
+    method: 'PATCH' as const,
+    allow: ['admin'],
+    params: () => ({ id: DUMMY_ID }),
+    body: () => ({
+      entry_type: 'agro_dealer',
+      name: 'zztest-dealer-renamed',
+      phone: `+2119${Math.floor(10_000_000 + Math.random() * 89_999_999)}`,
+      payam_id: PAYAM_A,
+      state_id: STATE_A,
+      last_verified_at: '2026-09-01',
+    }),
+  },
+  {
+    name: 'DELETE /api/directory-entries/:id',
+    mod: directoryItem,
+    method: 'DELETE' as const,
+    allow: ['admin'],
+    params: () => ({ id: DUMMY_ID }),
+  },
+  {
+    name: 'GET /api/learning-resources',
+    mod: learning,
+    method: 'GET' as const,
+    allow: ['admin', 'supervisor', 'read_only', 'officer'],
+  },
+  {
+    name: 'POST /api/learning-resources',
+    mod: learning,
+    method: 'POST' as const,
+    allow: ['admin'],
+    body: () => ({
+      title: 'zztest-resource',
+      topic: 'crop_production',
+      language: 'en',
+      format: 'pdf',
+      storage_path: `zztest/${Math.random().toString(36).slice(2, 8)}.pdf`,
+      byte_size: 1024,
+    }),
+  },
+  {
+    name: 'PATCH /api/learning-resources/:id',
+    mod: learningItem,
+    method: 'PATCH' as const,
+    allow: ['admin'],
+    params: () => ({ id: DUMMY_ID }),
+    body: () => ({
+      title: 'zztest-resource-renamed',
+      topic: 'crop_production',
+      language: 'en',
+      format: 'pdf',
+      storage_path: `zztest/${Math.random().toString(36).slice(2, 8)}.pdf`,
+      byte_size: 1024,
+    }),
+  },
+  {
+    name: 'DELETE /api/learning-resources/:id',
+    mod: learningItem,
+    method: 'DELETE' as const,
+    allow: ['admin'],
+    params: () => ({ id: DUMMY_ID }),
   },
 ];
 

@@ -138,6 +138,7 @@ export const RULE_MESSAGES = {
   reassign_officer_not_found:
     "No active officer with that identifier works in this farmer's payam. Choose one who does.",
   reassign_same_officer: 'This farmer is already with that officer. Nothing to change.',
+  resource_file_already_registered: 'A learning resource is already registered for that file.',
 } as const;
 
 export type RuleKey = keyof typeof RULE_MESSAGES;

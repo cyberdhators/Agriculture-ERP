@@ -55,6 +55,13 @@ export const AUDIT_ACTIONS = [
   'report.exported',
   // C-11.4: the one event that removes audit entries leaves a note saying so.
   'system.restored',
+  'directory_entry.created',
+  'directory_entry.updated',
+  'directory_entry.soft_deleted',
+  'learning_resource.created',
+  'learning_resource.updated',
+  'learning_resource.published',
+  'learning_resource.soft_deleted',
 ] as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];
