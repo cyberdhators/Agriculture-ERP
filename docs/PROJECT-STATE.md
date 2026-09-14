@@ -172,10 +172,54 @@ and not a footnote: nothing can receive a STOP, so opt-out has to be an officer
 withdrawing consent in the system. Any farmer-reply feature is impossible over
 SMS here, including the unresolved "Ask AI" advisory.
 
-### I-02 — THE ACCOUNT HAS NEVER DELIVERED A MESSAGE (2026-09-14)
+### I-02 — MTN SOUTH SUDAN DELIVERS; LIBERIA'S CARRIER REFUSES THE SENDER (2026-09-14)
 
-**Three sends to one Liberian handset. All three accepted by Bird, all three
-refused by the carrier, all three billed.** Nothing has reached a phone.
+> **CORRECTED 2026-09-14, LATER THE SAME DAY. This section first said "the
+> account has never delivered a message" and that South Sudan delivery "remains
+> only a documentation claim". Both were false when written.** The account had
+> already delivered to MTN South Sudan the previous evening. The error and its
+> mechanism are recorded at the end of this section, because the mechanism is
+> worse than the mistake.
+
+**WHAT IS PROVED, AND IT IS THE THING THAT MATTERED.** On 2026-09-13 at 20:23
+UTC, a message from sender `Agrione_SS` was **delivered** to `+211922200858` on
+`mcc_mnc 65902` — **MTN South Sudan**, the largest operator in the target
+country. 64 characters, one segment, `service` category, **0.2 EUR**,
+`delivered_at` populated.
+
+> **South Sudan delivery through Bird, on the sender we hold, to the operator
+> carrying most of the country's traffic, is an observed fact and not a
+> documentation claim.**
+
+**What remains unproved for South Sudan:** Zain (`659-91`) and Digitel. One
+delivery proves one operator, which is the rule this project already wrote
+down. Two of three networks are still untested.
+
+**THE LIBERIAN FAILURES ARE REAL, AND THEY ARE SENDER-SPECIFIC TO ONE CARRIER.**
+Eight messages exist on the account, not the three this section first described.
+Six failed, two delivered, and the discriminator is the sender:
+
+| To              | Sender         | Network                   | Status          |
+| --------------- | -------------- | ------------------------- | --------------- |
+| `+211922200858` | `Agrione_SS`   | **65902 MTN South Sudan** | **delivered**   |
+| `+231886257473` | **`Authifly`** | 61801 Lonestar Cell MTN   | **delivered**   |
+| `+231886257473` | `Agrione_SS`   | 61801 Lonestar Cell MTN   | failed 104      |
+| `+231888022031` | `Agrione_SS`   | 61801 Lonestar Cell MTN   | failed 104 (x4) |
+
+**Same carrier, same country, two senders: `Authifly` delivers and
+`Agrione_SS` is refused as unregistered.** So carrier code 104
+(`EC_SENDER_UNREGISTERED`) is accurate and specific — `Agrione_SS` is genuinely
+not registered with Lonestar Cell MTN, whatever Bird's country-level row says.
+It is not a route problem, not a content problem, and not a South Sudan problem.
+
+**A timing detail that may be the whole explanation.** The sender was created at
+20:03:48. The Liberian failures begin at 20:13, ten minutes later. The South
+Sudan delivery is at 20:23, twenty minutes later. So one registration bound
+within twenty minutes and the other had not bound after ten — which is
+consistent with propagation rather than with a broken approval, and would also
+explain why Bird reports both as `approved`. **Untested:** whether Liberia
+delivers now, a day later. That test costs 0.18 EUR and the owner has paused
+spending until Bird answers.
 
 |               | Message 1                | Message 2           | Message 3           |
 | ------------- | ------------------------ | ------------------- | ------------------- |
@@ -195,37 +239,39 @@ from `authentication` to `service` on the theory that content class was the
 cause. It was rejected identically. **Do not believe Bird's failure label over
 the carrier code.**
 
-**THE FINDING THAT MATTERS MOST, AND IT UNDERMINES THE CLAIM THE SUBSTITUTION
-RESTS ON.** Bird's destination pages say sender registration is **"not
-required"** for Liberia, and say exactly the same for South Sudan. Liberia's
-carrier rejected an unregistered sender anyway. Bird's own sender documentation
-concedes the gap: `not_required` _"reflects Bird's assessment, not a guarantee
-of carrier compliance"_ — it is a statement about Bird's paperwork, not about
-what the network will accept.
+**THE FINDING THAT SURVIVES, NARROWED TO WHAT THE EVIDENCE SUPPORTS.** Bird's
+destination pages say sender registration is **"not required"** for Liberia and
+for South Sudan, and Bird's own sender documentation concedes that
+`not_required` _"reflects Bird's assessment, not a guarantee of carrier
+compliance"_. Liberia's carrier refused an unregistered sender anyway, and Bird
+reports that sender `approved` for Liberia with a registration id.
 
-> **So the one documented fact behind choosing Bird for South Sudan — an
-> alphanumeric sender, no registration needed — is the same sentence that has
-> just been proved insufficient one country over.**
+> **So a positive signal from Bird — `not_required` or `approved` — is a
+> statement about Bird's records and is not evidence that a given network will
+> accept the sender.** That holds regardless of the South Sudan result, and it
+> is the rule worth keeping.
 
-The next step is therefore not another send. It is **registering `Agrione_SS`
-through Bird's sender-ID registration**, for each destination, and retesting.
-Until that is done the account cannot deliver to Liberia, and there is no reason
-to expect better in South Sudan.
+**What it does NOT support, and what this section wrongly claimed:** that South
+Sudan is therefore doubtful. The same sender, with the same country-level
+approval, delivered to MTN South Sudan twenty minutes after it was created. The
+Liberian refusal is evidence about Lonestar Cell MTN's treatment of one
+unregistered-at-that-carrier sender. It is not evidence about `+211`, and using
+it that way was the error corrected at the top of this section.
 
-**Cost, measured rather than published.** **0.18 EUR per segment**, not the
-$0.21 the rate card shows, and **a carrier rejection is billed in full**. Three
-rejections cost 0.54 EUR and delivered nothing. For a campaign budget that is
+**Cost, measured rather than published.** **0.18 EUR per segment to Liberia
+and 0.20 EUR to South Sudan**, against a rate card showing $0.21 for both, and
+**a carrier rejection is billed in full**. Six rejections cost 1.08 EUR and
+delivered nothing. For a campaign budget that is
 two separate corrections: the real unit price is in euros, and the figure to
 multiply is messages _attempted_, not messages _received_.
 
-**The network, and why it is the first evidence that touches the target.**
-`mcc_mnc 61801` is **Lonestar Cell MTN, Liberia — 60% owned by MTN Group**. MTN
-also runs **MTN South Sudan**, the largest operator in the target country. A
-sender-registration rejection by one MTN operating company is **weak** evidence
-about another, because sender registration and filtering are administered per
-country and per regulator, not group-wide. But it is weak evidence about the
-right group rather than no evidence at all, and it points the same way as the
-NCA registration question already recorded above.
+**The two networks, named.** `mcc_mnc 61801` is **Lonestar Cell MTN, Liberia**,
+60% owned by MTN Group. `mcc_mnc 65902` is **MTN South Sudan**, the same group
+and the largest operator in the target country. **The group delivered in one
+country and refused the sender in the other**, which is the clearest possible
+demonstration that sender registration is administered per country and per
+carrier rather than group-wide — and that a rejection by one operating company
+says nothing about another.
 
 **What the three sends did prove:** the credentials work, the region binding
 works, an alphanumeric sender is accepted by Bird's API and echoed back
@@ -285,24 +331,62 @@ neither is evidence that a message will be accepted.**
 
 **What this does to the substitution.** The case for Bird over Africa's Talking
 rested on one documented fact: South Sudan reachable with an alphanumeric
-sender, no registration needed. That fact is now known to be the weaker of two
-claims, and **the stronger claim has failed under test in the adjacent country,
-on a network belonging to the same group that carries most of South Sudan's
-traffic.** Africa's Talking still cannot serve South Sudan at all, so the
-substitution is not thereby wrong — but its evidential basis is no better than
-it was before the account was bought, and the one test performed points the
-wrong way.
+sender. **That fact is now an observed one** — delivered to MTN South Sudan,
+`delivered_at` populated, 0.2 EUR. Africa's Talking cannot serve the country at
+all. **The substitution is sound and its central premise is now evidenced
+rather than documented.**
 
-**The next step is not ours.** With registration approved and the carrier
-refusing, this is a question for Bird's support, and it should be asked with the
-three message ids, the carrier code, and the contradiction stated plainly:
-their API says approved, their carrier says unregistered. Until that is answered
-there is no configuration change on our side that is known to help — and a
-fourth send would cost 0.18 EUR to learn nothing.
+**The open question is narrow and is Bird's.** Their API reports `approved` for
+Liberia with a registration id, and Lonestar Cell MTN refuses that sender while
+delivering a different one. Propagation is the most likely explanation given the
+twenty-minute window, but it is untested. This is worth asking because the
+answer tells us what `approved` is worth in general — which is what we will rely
+on for Zain and Digitel.
 
-**I-02 is not satisfied.** An SMS gateway account exists, is correctly
-configured, holds an approved sender registration for both target countries,
-and has delivered nothing.
+**I-02 is partly satisfied, and precisely this much:** an SMS gateway account
+exists, is correctly configured, holds approved sender registrations for both
+target countries, and **has delivered to MTN South Sudan**. Zain and Digitel are
+untested, and Liberia — the control, not the target — currently refuses the
+sender.
+
+### THE ERROR IN THIS SECTION, AND ITS MECHANISM (2026-09-14)
+
+**Recorded because the mechanism is worse than the mistake, and the mistake was
+mine.**
+
+This section asserted that the account had never delivered a message, that South
+Sudan delivery "remains only a documentation claim", and that the evidential
+basis for the substitution was "no better than before the account was bought".
+All three were false, and the evidence disproving them was one unauthenticated
+read away — `GET /v1/sms/messages` — throughout.
+
+**What I actually did.** I sent three messages, watched three failures, and drew
+conclusions about the account from a sample of three that I had generated myself.
+**I never listed the account's history.** Five messages predated mine, including
+the South Sudan delivery, and a sixth was sent in parallel by the owner while I
+was working. Every sentence I wrote about "the account" described only my own
+three sends.
+
+**Why this is the same pattern, for the fourth time this week.** It is a check
+pointed at the wrong scope: "the messages I sent" standing in for "the messages
+this account has sent", with the substitution never noticed because the smaller
+set was the one I had in front of me. The first pattern — a conclusion drawn
+from a signal that was not the thing being asked about.
+
+**What makes it worse than the earlier three.** The others cost a rewrite, a
+round trip, a wasted CI hour. **This one was written into a paragraph explicitly
+prepared to be read by the client**, telling CORWADO their gateway had no better
+evidence than before they bought it, when the gateway had already delivered to
+the operator carrying most of their farmers. Confident, sourced, cross-
+referenced, and wrong — which is the elaboration failure, with me as the author
+rather than the elaborator.
+
+**The rule this earns.** Before characterising a system's behaviour, **ask the
+system for its whole history, not for the part you caused.** One list call would
+have prevented every false sentence above. The record already says it in the
+fourth silent-class instance: _when the record says something was done or is
+pending, ask the system rather than the record_ — and "the record" includes my
+own three results.
 
 ### THE PREMISE THAT EXPIRED WITH THIS CHANGE
 
@@ -1357,6 +1441,57 @@ a session that elaborates a false premise is dangerous, and produces work that
 looks more finished the more wrong it is. Of the two failure modes, the second
 costs more, and this project has now seen one of each: the drift-test alarm,
 where the question was right, and this, where it was not asked.
+
+### THE SECOND INSTANCE, 2026-09-14 — AND THE AMENDMENT CAUGHT IT
+
+**Recorded at the owner's instruction, in the owner's framing: "the pattern is
+me, not the sessions."**
+
+**What happened.** The instruction was to rename the SMS sender from
+`Agrione_SS` to `CORWADO` before registering it, on two stated grounds: that
+`Agrione_SS` "commits to a product name CORWADO never proposed", and that the
+name "has failed twice on domain availability". Both are contradicted by this
+repository's own record: `docs/DECISIONS.md`, 2026-09-13, sources to Alieu
+relaying CORWADO that **CORWADO agreed on "AgriOne South Sudan" for this phase
+and registered `agrionesouthsudan.com` to match**. The owner was working from
+the earlier picture — two names had failed on availability and no third had been
+chosen — and asserted it as current fact.
+
+**WHAT IS DIFFERENT FROM THE FIRST INSTANCE, AND IT IS THE POINT OF RECORDING
+IT.** The first time, the session did not catch a false premise; it elaborated
+it, supplied a mechanism and a cost, and wrote it into three documents. This
+time the session checked the premise against the record before acting, found the
+contradiction, said so, and held the action. **The §0 amendment — restate "what
+this brief assumes that you have not verified" — was written after the first
+instance, and it is what caught the second.** One instance is not a trend, but
+it is the first evidence that the amendment does work, and it worked on a
+premise arriving with the owner's authority, which is the case §0 was widened
+for.
+
+**The rule that already covers it, and was written about the wrong party.**
+`CLAUDE.md` §1 says: _"Chat history is not truth. Your memory of an earlier
+session is not truth."_ That is addressed to a session. **It describes a human
+holding a project in their head exactly as well.** The record moves faster than
+anyone's memory of it — six documents changed in the two days before this
+instruction — and the person most likely to be working from a superseded
+picture is the one who has seen every version of it.
+
+**So this is the same shape as the B1.3 finding recorded this week:** a rule
+that exists, is sound, is applied diligently in one direction, and is not
+applied where it equally belongs. There it was guards about guards. Here it is
+the owner's own memory against the owner's own record.
+
+**What follows, and it is small.** Nothing changes in §0 or §1; both already
+say the right thing. What changes is where a session points them: **a factual
+premise in an instruction is checkable against the record, and checking it is
+not a challenge to authority.** The cost of asking is a sentence. The cost of
+not asking, measured once already, was a mechanism, a price in officer days and
+three documents that had to be corrected.
+
+**Standing beside this:** the owner caught the first instance a day later, and
+caught this one within the same exchange by accepting the correction and
+recording it. The failure mode is not the error; it is an error that survives
+because nobody checks. Neither of these did.
 
 ## A THIRD PATTERN: A CHECK POINTED AT THE WRONG THING (2026-09-11)
 

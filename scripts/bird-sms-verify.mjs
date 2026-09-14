@@ -4,6 +4,19 @@
 //   pnpm sms:verify +211XXXXXXXXX --arabic
 //   pnpm sms:verify +231XXXXXXXXX
 //
+// ---------------------------------------------------------------------------
+// DO NOT RUN THIS UNTIL BIRD HAS ANSWERED. Owner's instruction, 2026-09-14.
+//
+// Three sends have been made to one Liberian handset. All three were accepted
+// by Bird, refused by the carrier as EC_SENDER_UNREGISTERED, and billed 0.18
+// EUR each. Bird's own API reports the sender APPROVED for both Liberia and
+// South Sudan, with a registration id. That contradiction is with Bird's
+// support and is not ours to fix by retrying.
+//
+// A fourth send costs 0.18 EUR and would teach the same thing. See
+// docs/PROJECT-STATE.md, "I-02 -- the account has never delivered a message".
+// ---------------------------------------------------------------------------
+//
 // THROWAWAY. This is not deliverable (n) and not a unit: (n) is phase 6 and
 // C-15 does not exist. Nothing in the application imports this file, and
 // deleting it plus its package.json line removes every trace of Bird from the

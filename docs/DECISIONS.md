@@ -2781,9 +2781,9 @@ is **180 EUR**. In Arabic script the same advisory is three segments and
 **540 EUR**. Monthly for a year, to a thousand farmers: 2,160 EUR in Latin
 script, 6,480 EUR in Arabic script.
 
-**Evidence:** `docs/PROJECT-STATE.md`, _I-02 — the account has never delivered
-a message_. Nothing above is a projection from the rate card; the unit price is
-from three billed messages.
+**Evidence:** `docs/PROJECT-STATE.md`, I-02. Nothing above is a projection from
+the rate card; the unit prices are from billed messages — 0.18 EUR to Liberia,
+0.20 EUR to South Sudan.
 
 ---
 
@@ -2845,3 +2845,68 @@ to an officer as an explanation.
 so a retry loop driven by the wrong diagnosis costs 0.18 EUR per attempt per
 recipient. Diagnosing from the label is therefore not merely wrong, it is
 expensive.
+
+---
+
+## The SMS sender stays `Agrione_SS`, permanently (2026-09-14)
+
+**Decided by the owner after the facts changed, and closed rather than
+deferred.** The instruction had been to rename the sender to `CORWADO` before
+registration — seven characters, the client's actual name, and what a farmer who
+has met an extension officer would recognise. That reasoning is sound on its
+merits and is not what was overturned.
+
+**What overturned it:** registration had already happened. Bird reports
+`Agrione_SS` as **`approved`** for both Liberia and South Sudan, each with a
+registration id. Renaming means discarding two approved registrations and
+re-filing from scratch, days to weeks per country, for a better string.
+
+**The owner's decision, in their words: "Two approved registrations are worth
+more than a better sender string."** Held permanently, not pending — so a future
+session finding `Agrione_SS` in `.env.local` and thinking it untidy has this
+entry to read first.
+
+**What this does NOT settle.** The sender is approved and the carrier refused it
+anyway (`docs/PROJECT-STATE.md`, I-02). If Bird's answer turns out to be that
+the registration must be re-filed to bind the carrier, the calculus changes and
+so should this decision — because then there is no approval being protected.
+
+---
+
+## The honest state of the Bird substitution, for CORWADO (2026-09-14)
+
+**Recorded at the owner's instruction, in plain terms, because it is what the
+client eventually needs to be told.** The detail is in
+`docs/PROJECT-STATE.md`, I-02; this is the paragraph that travels.
+
+> **REWRITTEN 2026-09-14. The first version of this paragraph said the
+> evidential basis was "no better than before the account was bought". That was
+> false: the account had already delivered to MTN South Sudan the previous
+> evening, and I had not looked at its message history before writing it. The
+> error and its mechanism are recorded in `docs/PROJECT-STATE.md`, I-02.**
+
+> **Africa's Talking cannot serve South Sudan at all, so replacing it was
+> right.** And the central premise of the replacement is no longer a
+> documentation claim: **a message has been delivered to MTN South Sudan** —
+> the operator carrying most of the country's traffic — from our own sender, at
+> 0.20 EUR for one segment. What was a listing on a vendor's website is now an
+> observed delivery.
+
+**Four things that follow, so this is read as neither alarm nor reassurance.**
+
+- **Nothing is blocked today.** Deliverable (n) is phase 6 and C-15 does not
+  exist. No code depends on Bird; one throwaway script reads its variables.
+- **One operator is proved, two are not.** MTN South Sudan delivered. **Zain
+  (`659-91`) and Digitel are untested**, and one delivery proves one operator.
+  Completing I-02 means a handset on each.
+- **Liberia, the control, currently refuses our sender** while delivering a
+  different one on the same carrier. That is a sender-registration question for
+  Bird, most likely propagation, and it is not evidence about South Sudan.
+- **A positive signal from Bird is not evidence of delivery.** `not_required`
+  and `approved` describe Bird's records; the only proof a network accepts a
+  sender is a delivered message on that network. This is the durable lesson and
+  it survives the correction above.
+
+**Spending is paused** until Bird answers the Liberia question, at the owner's
+instruction. Each rejection bills in full, and six have now taught the same
+thing.
