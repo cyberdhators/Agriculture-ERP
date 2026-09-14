@@ -3,7 +3,10 @@
 import Link from 'next/link';
 import { useMemo, useState, type ReactNode } from 'react';
 
+import { REJECTION_REASONS, type RejectionReason } from '@agri-erp/shared';
+
 import { CROP_LABELS, LANGUAGE_LABELS, formatDate, formatPhone } from '@/lib/format';
+import { useDossier } from '@/lib/farmers/dossier';
 import {
   canReview,
   daysWaiting,
@@ -17,22 +20,23 @@ import {
   STATUS_LABEL,
 } from '@/lib/farmers/presentation';
 import {
-  auditForEntity,
-  consentForFarmer,
+  LIVE_VERIFICATION,
+  mergeFarmer,
+  rejectFarmer,
+  verifyFarmer,
+} from '@/lib/farmers/verification';
+import { totalArea } from '@/lib/farms/api';
+import {
   coopById,
-  cropsForFarm,
-  eventsForFarmer,
   farmerById,
   farmerPayamName,
-  farmsForFarmer,
-  membershipsForFarmer,
   officerById,
   STATE_NAMES,
   syncForEntity,
-  totalAreaHa,
   userById,
 } from '@/lib/fixtures/farmers';
 import { usePreview } from '@/lib/preview';
+import { VISIT_TOPIC_LABELS } from '@/lib/visits/fixtures';
 
 import {
   Button,
@@ -42,6 +46,7 @@ import {
   Dialog,
   EmptyState,
   Field,
+  Input,
   Notice,
   PageHeader,
   Select,
@@ -63,6 +68,15 @@ const DECISION_LABEL: Record<string, string> = {
   merged: 'Merged',
 };
 
+const REASON_LABEL: Record<RejectionReason, string> = {
+  duplicate: 'Duplicate of another farmer',
+  wrong_location: 'Wrong location',
+  incomplete: 'Incomplete record',
+  not_a_farmer: 'Not a farmer',
+  consent_missing: 'Consent missing',
+  other: 'Other',
+};
+
 function maskNid(nid: string): string {
   if (nid.length <= 4) return nid;
   return `${'•'.repeat(Math.max(0, nid.length - 4))}${nid.slice(-4)}`;
@@ -72,13 +86,27 @@ type ActionKind = 'verify' | 'merge' | 'reject' | null;
 
 export function FarmerDossier({ id }: { id: string }) {
   const { role, hydrated } = usePreview();
-  const farmer = farmerById(id);
+  const data = useDossier(id, role);
+  const { farmer, farms, live } = data;
   const [action, setAction] = useState<ActionKind>(null);
   const [reason, setReason] = useState('');
+  const [reasonCode, setReasonCode] = useState<RejectionReason | ''>('');
   const [mergeTarget, setMergeTarget] = useState('');
   const [recorded, setRecorded] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
-  const duplicates = useMemo(() => (farmer ? duplicatesOf(farmer) : []), [farmer]);
+  // Duplicate detection reads the fixture register; there is no live route for
+  // it yet, so in live mode the merge dialog takes a farmer number instead.
+  const duplicates = useMemo(() => (farmer && !live ? duplicatesOf(farmer) : []), [farmer, live]);
+
+  if (farmer === undefined) {
+    return (
+      <>
+        <PageHeader eyebrow="Farmers" title="Loading…" />
+        <p className="muted">Reading the farmer record.</p>
+      </>
+    );
+  }
 
   if (!farmer) {
     return (
@@ -94,8 +122,9 @@ export function FarmerDossier({ id }: { id: string }) {
     );
   }
 
-  // Scope check: a non-admin may only open a farmer inside their scope.
-  const inScope = scopeFarmers([farmer], role).length > 0;
+  // Scope check. Live, the route already answered 404 for out-of-scope (C-5.8),
+  // so a farmer we hold is one we may see; the preview re-scopes fixtures.
+  const inScope = live || scopeFarmers([farmer], role).length > 0;
   if (hydrated && !inScope) {
     return (
       <>
@@ -112,31 +141,44 @@ export function FarmerDossier({ id }: { id: string }) {
 
   const status = effectiveStatus(farmer);
   const escalated = isEscalated(farmer);
-  const consent = consentForFarmer(farmer.id);
-  const farms = farmsForFarmer(farmer.id);
-  const memberships = membershipsForFarmer(farmer.id);
-  const events = eventsForFarmer(farmer.id);
-  const audit = auditForEntity(farmer.id);
+  const { consent, memberships, events, audit, visits } = data;
   const officer = officerById(farmer.registered_by);
+  const officerName = officer ? officer.name : live && farmer.registered_by ? 'Officer' : null;
   const survivor = farmer.merged_into ? farmerById(farmer.merged_into) : null;
   const age = TODAY_YEAR - farmer.year_of_birth;
   const showActions = hydrated && canReview(role) && status === 'pending';
+  const actionsLive = live && LIVE_VERIFICATION;
 
-  function submit(kind: Exclude<ActionKind, null>) {
+  async function submit(kind: Exclude<ActionKind, null>) {
     const who = `${farmer!.given_name} ${farmer!.family_name}`;
-    if (kind === 'verify')
-      setRecorded(`Recorded (preview, no server): ${who} verified as a new farmer.`);
-    if (kind === 'reject')
-      setRecorded(`Recorded (preview, no server): ${who} rejected. Reason: ${reason.trim()}`);
-    if (kind === 'merge') {
-      const target = farmerById(mergeTarget);
-      setRecorded(
-        `Recorded (preview, no server): ${who} merged into ${target ? target.farmer_number : mergeTarget}.`,
-      );
+    const preview = actionsLive ? '' : 'Recorded (preview, no server): ';
+    const targetLabel = farmerById(mergeTarget)?.farmer_number ?? mergeTarget;
+    const detail = reasonCode
+      ? `${REASON_LABEL[reasonCode]}${reason.trim() ? '. ' + reason.trim() : ''}`
+      : reason.trim();
+    setBusy(true);
+    try {
+      if (actionsLive) {
+        if (kind === 'verify') await verifyFarmer(farmer!.id);
+        if (kind === 'merge') await mergeFarmer(farmer!.id, { target_id: mergeTarget });
+        if (kind === 'reject')
+          await rejectFarmer(farmer!.id, {
+            reason_code: reasonCode || undefined,
+            note: reason.trim() || undefined,
+          });
+      }
+      if (kind === 'verify') setRecorded(`${preview}${who} verified as a new farmer.`);
+      if (kind === 'reject') setRecorded(`${preview}${who} rejected. Reason: ${detail}`);
+      if (kind === 'merge') setRecorded(`${preview}${who} merged into ${targetLabel}.`);
+      setAction(null);
+      setReason('');
+      setReasonCode('');
+      setMergeTarget('');
+    } catch (e) {
+      setRecorded(e instanceof Error ? e.message : 'The decision could not be recorded.');
+    } finally {
+      setBusy(false);
     }
-    setAction(null);
-    setReason('');
-    setMergeTarget('');
   }
 
   return (
@@ -187,11 +229,15 @@ export function FarmerDossier({ id }: { id: string }) {
                       '—'
                     ),
                 },
-                { term: 'Registered by', value: officer ? officer.name : 'Self-registration' },
-                {
-                  term: 'Sync',
-                  value: <SyncChip status={syncStatusOf(syncForEntity(farmer.id))} />,
-                },
+                { term: 'Registered by', value: officerName ?? 'Self-registration' },
+                ...(live
+                  ? []
+                  : [
+                      {
+                        term: 'Sync',
+                        value: <SyncChip status={syncStatusOf(syncForEntity(farmer.id))} />,
+                      },
+                    ]),
               ]}
             />
           </Card>
@@ -280,7 +326,7 @@ export function FarmerDossier({ id }: { id: string }) {
                       ? 'Registered by an officer'
                       : 'Self-registered',
                 },
-                { term: 'Registered by', value: officer ? officer.name : 'Self-registration' },
+                { term: 'Registered by', value: officerName ?? 'Self-registration' },
                 {
                   term: 'Created',
                   value: <span className="mono">{formatDate(farmer.created_at)}</span>,
@@ -290,7 +336,13 @@ export function FarmerDossier({ id }: { id: string }) {
           </Section>
 
           <Section no="02" title="Consent">
-            {consent ? (
+            {consent === undefined ? (
+              <p className="muted">
+                Consent is on file (id <span className="mono">{farmer.consent_id}</span>); the
+                version, language and dates are not served by a route yet and will appear here when
+                they are.
+              </p>
+            ) : consent ? (
               <DefinitionList
                 items={[
                   { term: 'Version', value: <span className="mono">{consent.text_version}</span> },
@@ -315,16 +367,20 @@ export function FarmerDossier({ id }: { id: string }) {
           <Section
             no="03"
             title="Farms"
-            count={`${farms.length} · ${totalAreaHa(farmer.id).toFixed(2)} ha`}
+            count={`${farms.length} · ${totalArea(farms).toFixed(2)} ha`}
           >
-            {farms.length === 0 ? (
+            {data.errors.farms ? (
+              <Notice kind="error" title="Could not load farms">
+                <p className="small">{data.errors.farms}</p>
+              </Notice>
+            ) : farms.length === 0 ? (
               <EmptyState
                 title="No farms mapped"
                 body="No plot has been walked for this farmer yet. A farm is added from the officer app in the field."
               />
             ) : (
               <div>
-                {farms.map((farm) => (
+                {farms.map(({ farm, crops }) => (
                   <div key={farm.id} className={styles.farmCard}>
                     <Boundary farm={farm} size={360} showArea={false} />
                     <div className={styles.farmFacts}>
@@ -358,11 +414,7 @@ export function FarmerDossier({ id }: { id: string }) {
                         <p className="label" style={{ marginBottom: 'var(--s-2)' }}>
                           Crops declared
                         </p>
-                        <p>
-                          {cropsForFarm(farm.id)
-                            .map((d) => CROP_LABELS[d.crop])
-                            .join(', ') || '—'}
-                        </p>
+                        <p>{crops.map((c) => CROP_LABELS[c]).join(', ') || '—'}</p>
                       </div>
                     </div>
                   </div>
@@ -374,9 +426,14 @@ export function FarmerDossier({ id }: { id: string }) {
           <Section
             no="04"
             title="Cooperatives"
-            count={memberships.length ? String(memberships.length) : undefined}
+            count={memberships?.length ? String(memberships.length) : undefined}
           >
-            {memberships.length === 0 ? (
+            {memberships === null ? (
+              <p className="muted">
+                Cooperative membership is not served by a route yet (C-12). It will appear here when
+                it is.
+              </p>
+            ) : memberships.length === 0 ? (
               <p className="muted">Not a member of any cooperative.</p>
             ) : (
               <DefinitionList
@@ -399,9 +456,14 @@ export function FarmerDossier({ id }: { id: string }) {
           <Section
             no="05"
             title="Verification"
-            count={events.length ? String(events.length) : undefined}
+            count={events?.length ? String(events.length) : undefined}
           >
-            {events.length === 0 ? (
+            {events === null ? (
+              <p className="muted">
+                The decision history is not served by a route yet. The current status above is live;
+                the timeline of who decided what will appear here when the route exists.
+              </p>
+            ) : events.length === 0 ? (
               <p className="muted">Awaiting first review.</p>
             ) : (
               <div className={styles.timeline}>
@@ -452,70 +514,143 @@ export function FarmerDossier({ id }: { id: string }) {
             )}
           </Section>
 
-          <Section no="06" title="Sync & audit">
-            <p className="label" style={{ marginBottom: 'var(--s-2)' }}>
-              Sync per device
-            </p>
-            <div className={screens.tableWrap}>
-              <table className={styles.plainTable}>
-                <thead>
-                  <tr>
-                    <th scope="col">Entity</th>
-                    <th scope="col">Device</th>
-                    <th scope="col">State</th>
-                    <th scope="col">Reason</th>
-                    <th scope="col">Tries</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {syncForEntity(farmer.id)
-                    .concat(farms.flatMap((f) => syncForEntity(f.id)))
-                    .map((s) => (
-                      <tr key={s.id}>
-                        <td>{s.entity_type}</td>
-                        <td className="mono small">{s.device_id}</td>
-                        <td>
-                          <SyncChip status={s.sync_status} />
-                        </td>
-                        <td className="small muted">
-                          {s.reason_code
-                            ? (SYNC_REASON_LABEL[s.reason_code] ?? s.reason_code)
-                            : '—'}
-                        </td>
-                        <td className="mono">{s.attempt_count}</td>
+          <Section no="06" title="Visits" count={visits ? String(visits.length) : undefined}>
+            {data.errors.visits ? (
+              <Notice kind="error" title="Could not load visits">
+                <p className="small">{data.errors.visits}</p>
+              </Notice>
+            ) : visits === null ? (
+              <p className="muted">
+                {live
+                  ? 'Visits are not switched on for this deployment (NEXT_PUBLIC_USE_LIVE_VISITS).'
+                  : 'Extension visits appear here once an officer records one. See the Visits log.'}
+              </p>
+            ) : visits.length === 0 ? (
+              <p className="muted">No extension visit has been recorded for this farmer yet.</p>
+            ) : (
+              <div className={styles.timeline}>
+                {visits.map((v) => (
+                  <div key={v.id} className={styles.timelineRow}>
+                    <span className={styles.timelineWhen}>
+                      {formatDate(v.visited_at)}
+                      <br />
+                      <span className="muted">rec. {formatDate(v.received_at)}</span>
+                    </span>
+                    <div className={styles.timelineBody}>
+                      <span className={styles.timelineMeta}>
+                        {v.topics.map((t) => VISIT_TOPIC_LABELS[t]).join(', ')}
+                        {v.duration_minutes ? ` · ${v.duration_minutes} min` : ''}
+                        {v.attendee_count ? ` · ${v.attendee_count} attended` : ''}
+                        {v.attachments.length
+                          ? ` · ${v.attachments.length} attachment${v.attachments.length === 1 ? '' : 's'}`
+                          : ''}
+                      </span>
+                      <p className={styles.timelineReason} dir="auto">
+                        {v.advice}
+                      </p>
+                      {v.observation ? (
+                        <p className="small muted" dir="auto">
+                          {v.observation}
+                        </p>
+                      ) : null}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Section>
+
+          <Section no="07" title="Sync & audit">
+            {live ? (
+              <p className="muted" style={{ marginBottom: 'var(--s-4)' }}>
+                Per-device sync state is not served by a route yet; the officer app reports it on
+                upload (C-9).
+              </p>
+            ) : (
+              <>
+                <p className="label" style={{ marginBottom: 'var(--s-2)' }}>
+                  Sync per device
+                </p>
+                <div className={screens.tableWrap}>
+                  <table className={styles.plainTable}>
+                    <thead>
+                      <tr>
+                        <th scope="col">Entity</th>
+                        <th scope="col">Device</th>
+                        <th scope="col">State</th>
+                        <th scope="col">Reason</th>
+                        <th scope="col">Tries</th>
                       </tr>
-                    ))}
-                </tbody>
-              </table>
-            </div>
+                    </thead>
+                    <tbody>
+                      {syncForEntity(farmer.id)
+                        .concat(farms.flatMap(({ farm }) => syncForEntity(farm.id)))
+                        .map((s) => (
+                          <tr key={s.id}>
+                            <td>{s.entity_type}</td>
+                            <td className="mono small">{s.device_id}</td>
+                            <td>
+                              <SyncChip status={s.sync_status} />
+                            </td>
+                            <td className="small muted">
+                              {s.reason_code
+                                ? (SYNC_REASON_LABEL[s.reason_code] ?? s.reason_code)
+                                : '—'}
+                            </td>
+                            <td className="mono">{s.attempt_count}</td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
 
             <p className="label" style={{ margin: 'var(--s-5) 0 var(--s-2)' }}>
               Audit trail
             </p>
-            <div className={screens.tableWrap}>
-              <table className={styles.plainTable}>
-                <thead>
-                  <tr>
-                    <th scope="col">When</th>
-                    <th scope="col">Action</th>
-                    <th scope="col">Actor</th>
-                    <th scope="col">Device</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {audit.map((a) => (
-                    <tr key={a.id}>
-                      <td className="mono small">{formatDate(a.occurred_at)}</td>
-                      <td>{titleCase(a.action.replace(/_/g, ' '))}</td>
-                      <td className="small">
-                        {officerById(a.actor_id)?.name ?? userById(a.actor_id)?.name ?? 'System'}
-                      </td>
-                      <td className="mono small">{a.device_id ?? '—'}</td>
+            {audit === null ? (
+              <p className="muted">
+                {live && role !== 'admin'
+                  ? 'The audit trail is read by an administrator.'
+                  : 'The audit trail is not switched on for this deployment (NEXT_PUBLIC_USE_LIVE_ADMIN).'}
+              </p>
+            ) : data.errors.audit ? (
+              <Notice kind="error" title="Could not load the audit trail">
+                <p className="small">{data.errors.audit}</p>
+              </Notice>
+            ) : audit.length === 0 ? (
+              <p className="muted">No audit entries for this record.</p>
+            ) : (
+              <div className={screens.tableWrap}>
+                <table className={styles.plainTable}>
+                  <thead>
+                    <tr>
+                      <th scope="col">When</th>
+                      <th scope="col">Action</th>
+                      <th scope="col">Actor</th>
+                      <th scope="col">Device</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {audit.map((a) => (
+                      <tr key={a.id}>
+                        <td className="mono small">{formatDate(a.occurred_at)}</td>
+                        <td>{titleCase(a.action.replace(/_/g, ' '))}</td>
+                        <td className="small">
+                          {a.actor_id
+                            ? (officerById(a.actor_id)?.name ??
+                              userById(a.actor_id)?.name ??
+                              a.actor_id.slice(0, 8))
+                            : 'System'}
+                        </td>
+                        <td className="mono small">{a.device_id ?? '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </Section>
         </div>
       </div>
@@ -530,8 +665,8 @@ export function FarmerDossier({ id }: { id: string }) {
             <Button variant="ghost" onClick={() => setAction(null)}>
               Cancel
             </Button>
-            <Button variant="primary" onClick={() => submit('verify')}>
-              Verify
+            <Button variant="primary" onClick={() => submit('verify')} disabled={busy}>
+              {busy ? 'Verifying…' : 'Verify'}
             </Button>
           </>
         }
@@ -540,7 +675,9 @@ export function FarmerDossier({ id }: { id: string }) {
           Confirm {farmer.given_name} {farmer.family_name} is a distinct farmer and the record is
           sound. This adds a verification event and counts the farmer toward reach.
         </p>
-        <p className="small muted">Preview only; nothing is written to a server.</p>
+        {actionsLive ? null : (
+          <p className="small muted">Preview only; nothing is written to a server.</p>
+        )}
       </Dialog>
 
       <Dialog
@@ -552,26 +689,48 @@ export function FarmerDossier({ id }: { id: string }) {
             <Button variant="ghost" onClick={() => setAction(null)}>
               Cancel
             </Button>
-            <Button variant="primary" onClick={() => submit('merge')} disabled={mergeTarget === ''}>
-              Merge
+            <Button
+              variant="primary"
+              onClick={() => submit('merge')}
+              disabled={busy || mergeTarget === ''}
+            >
+              {busy ? 'Merging…' : 'Merge'}
             </Button>
           </>
         }
       >
         <p>Choose the surviving record. This record is kept but points to the survivor.</p>
-        <Field label="Survivor" error={undefined}>
-          {(ids) => (
-            <Select {...ids} value={mergeTarget} onChange={(e) => setMergeTarget(e.target.value)}>
-              <option value="">Select the surviving farmer…</option>
-              {duplicates.map((d) => (
-                <option key={d.farmer.id} value={d.farmer.id}>
-                  {d.farmer.farmer_number}, {d.farmer.given_name} {d.farmer.family_name}
-                </option>
-              ))}
-            </Select>
-          )}
-        </Field>
-        {duplicates.length === 0 ? (
+        {live ? (
+          <Field
+            label="Survivor"
+            hint="Paste the surviving farmer's record id (from their dossier address). Duplicate suggestions are not served by a route yet."
+            error={undefined}
+          >
+            {(ids) => (
+              <Input
+                {...ids}
+                className="mono"
+                value={mergeTarget}
+                placeholder="00000000-0000-0000-0000-000000000000"
+                onChange={(e) => setMergeTarget(e.target.value.trim())}
+              />
+            )}
+          </Field>
+        ) : (
+          <Field label="Survivor" error={undefined}>
+            {(ids) => (
+              <Select {...ids} value={mergeTarget} onChange={(e) => setMergeTarget(e.target.value)}>
+                <option value="">Select the surviving farmer…</option>
+                {duplicates.map((d) => (
+                  <option key={d.farmer.id} value={d.farmer.id}>
+                    {d.farmer.farmer_number}, {d.farmer.given_name} {d.farmer.family_name}
+                  </option>
+                ))}
+              </Select>
+            )}
+          </Field>
+        )}
+        {!live && duplicates.length === 0 ? (
           <p className="small muted">
             No possible duplicate was flagged for this farmer, so there is no obvious survivor to
             offer here.
@@ -591,15 +750,31 @@ export function FarmerDossier({ id }: { id: string }) {
             <Button
               variant="danger"
               onClick={() => submit('reject')}
-              disabled={reason.trim() === ''}
+              disabled={busy || (reasonCode === '' && reason.trim() === '')}
             >
-              Reject
+              {busy ? 'Rejecting…' : 'Reject'}
             </Button>
           </>
         }
       >
         <p>A rejection must say why, so the officer can put it right and re-register.</p>
-        <Field label="Reason" error={undefined}>
+        <Field label="Reason code" error={undefined}>
+          {(ids) => (
+            <Select
+              {...ids}
+              value={reasonCode}
+              onChange={(e) => setReasonCode(e.target.value as RejectionReason | '')}
+            >
+              <option value="">Choose a reason…</option>
+              {REJECTION_REASONS.map((r) => (
+                <option key={r} value={r}>
+                  {REASON_LABEL[r]}
+                </option>
+              ))}
+            </Select>
+          )}
+        </Field>
+        <Field label="Note" optional error={undefined}>
           {(ids) => (
             <Textarea
               {...ids}
