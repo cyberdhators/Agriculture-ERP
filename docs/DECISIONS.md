@@ -88,6 +88,16 @@ are pinned in the document, and a test reads those tables out of the Markdown
 and compares them to the exported constants. Changing either side alone turns it
 red.
 
+**Discovered again from the other end, 2026-09-14.** The same principle turned
+up independently in `docs/PROJECT-STATE.md`, _read a document as its recipient
+before it goes_ — three faults in a finished vendor request became visible only
+when it was read as the support desk rather than as its author. B1.4 reasoned
+from a constraint (nobody here can review code) to the method; that entry
+reasoned from an accident to the same method. **A check performed by someone who
+shares the author's knowledge confirms the author's model, which is the one part
+already known to be consistent.** Two instances of one idea, reached from code
+and from prose.
+
 **Tested in both directions**, per B1.3: deliberately broken four ways — a
 message changed in the code alone, the same message changed in the document
 alone, a code added to the document the code does not define, and a pinned

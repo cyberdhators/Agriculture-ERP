@@ -1503,6 +1503,44 @@ Every gate in that list failed because it was read by the person who knew what
 it was supposed to do. **The check that works is the one performed by, or on
 behalf of, someone who does not.**
 
+### AND IT IS B1.4's RULE, ARRIVED AT FROM THE OTHER END
+
+**This is not a new idea. It is one this project already holds, discovered
+independently a second time — which is worth more than either instance alone.**
+
+`docs/DECISIONS.md`, **B1.4 — the document must not be able to drift from the
+code**, states it about code:
+
+> _"Two people who cannot read code run this project. The substitute for a
+> second pair of eyes is that a separate session, which has never seen the
+> implementation, writes tests from `docs/api/CONVENTIONS.md` alone."_
+
+**Same principle, opposite starting point.** B1.4 reasoned from a constraint —
+nobody here can review the code — to a method: have it verified by someone who
+does not share the author's knowledge. This section reasoned from an accident —
+three faults in a finished document became visible the moment it was read as its
+recipient — to the same method.
+
+> **A check performed by someone who shares the author's knowledge is not a
+> check. It confirms the author's model of the thing, which is the one part
+> already known to be consistent.**
+
+**The two together cover the project's whole output.** B1.4 applies it to code
+and to the documents tests are written from; reading as the recipient applies it
+to everything else that leaves — a vendor request, a client paragraph, a handoff
+entry, a record a future session will act on. Neither is a rule about care.
+**Both are about who is doing the looking**, because care is what the author
+already brought and it was not enough in any of the twelve instances in this
+document.
+
+**Practical form, stated so it is usable rather than admired.** Where a second
+session is available, use one — that is B1.4's mechanism and it remains the
+stronger version. Where one is not, the substitute is to name the recipient
+explicitly and read as them: not "is this correct", but **"what will this person
+do with it, and what will they ask for that is not here"**. The first question
+the author can always answer. The second is the one that found all three
+faults.
+
 ## A THIRD FORMATTER INSTANCE, AND NOW A RULE ABOUT EDITING TABLES (2026-09-14)
 
 **Two was a pair. Three is a rule.** The formatter has now silently defeated
