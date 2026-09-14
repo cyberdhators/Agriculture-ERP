@@ -1302,6 +1302,33 @@ makes survivable: a second run would fail fast naming the holder, which is
 noisy but never silent. Not taken — the group's queueing is worth more than the
 noise it prevents, now that the eviction is known and the rule is written._
 
+**A FOURTH EVICTION, 2026-09-14, WITH THE RULE ALREADY WRITTEN ABOVE.** A
+session pushed `chore/bird-sms-verify` and cancelled main's pending run. Main was
+already churning — two of its three runs were evicting each other from rapid
+merges — but the last one was the push's.
+
+**The mechanism is worth more than the incident, and it is not "forgot to
+check".** The check ran. The queue was queried and the answer printed. **The
+query and the push were in the same command block, so the push was not
+conditional on the answer** — the information was gathered, displayed, and then
+not used. The output even read `pending main` immediately above the push.
+
+> **A check whose result cannot change what happens next is not a check. It is
+> commentary.**
+
+That is the same shape as the third pattern — a check pointed at the wrong thing
+— with the wrongness moved one step later: the check looked at exactly the right
+thing and then nothing consumed it. **It happened while writing the entry two
+sections down about reading a document as its recipient**, which is the same
+failure in a different medium: the author who knows what the check is for cannot
+see that it is not wired to anything.
+
+**The practical form.** Gate the action on the query in the same expression, or
+query in one step and push in a separate one having read the answer. Never print
+a precondition next to the action it is supposed to prevent — that arrangement
+looks careful and is not. The remedy taken: the evicted run was re-run, an hour
+of runner time, which is what the rule exists to avoid.
+
 ## HOW TO TELL A GATE THAT CAN FAIL FROM ONE THAT CANNOT — THE COMPANION QUESTION (2026-09-11)
 
 The seams list below asks where two rules touch. This asks the same kind of
