@@ -1233,12 +1233,52 @@ that ran, reported honestly on what it looked at, and looked at the wrong thing
 the specific move that does it, because it converts every failure into the
 success value.
 
-**The rule, from a watcher rather than a gate:** a check that cannot distinguish
-_it failed_ from _there is nothing_ reports calm regardless of the weather. The
-rewritten watcher separates three outcomes explicitly — query failed, still in
-flight, drained — and says which. **And the honest conclusion: knowing a pattern
-does not stop you writing it.** That is the argument for gates that compare
-rather than resolutions to be careful, made at this session's own expense.
+**THE RULE, AND IT IS A RULE AND NOT AN OBSERVATION: ABSENCE OF A REPORT IS NOT
+A REPORT.**
+
+> **A watcher going quiet is not evidence.** A check that cannot distinguish _it
+> failed_ from _there is nothing_ reports calm regardless of the weather.
+
+**It happened twice in one session, by two different mechanisms**, which is what
+makes it a rule rather than a bug:
+
+1. **By network failure.** The watcher's condition sent errors to `/dev/null`,
+   so a failed `gh` call produced empty output, which is the same value as an
+   empty queue. It announced a drained queue while a run was still going.
+2. **By the process being killed.** The replacement was stopped by the host for
+   memory pressure. It simply never reported again. Nothing distinguished that
+   from "still waiting", and the notification that arrived said the task had
+   ended, not what the queue was doing.
+
+**Why it belongs beside the third pattern, and what it shares with the first.**
+The first pattern is a gate reporting success because it checks nothing: the
+absence of a failure taken as success. This is the same mistake at the other
+end — **the absence of a report taken as a report.** In both, nothing arrived
+and nothing was the answer. The three patterns ask what a check examined; this
+asks whether it examined anything at all, or is simply gone.
+
+**What to do instead, concretely.** A waiter must report on every terminal
+state, including its own failure, and the reader must verify rather than infer:
+after any watcher goes quiet — finished, killed, or timed out — **query the
+thing directly before acting on its silence.** That is what caught both
+instances here. The rewritten `wait-runs.sh` separates query-failed, still
+in-flight and drained, and says which.
+
+**A third instance the same day, in a gate rather than a watcher.** The first
+version of `scripts/schema-check.mjs` — written to catch exactly the family of
+fault in this document — matched Prisma's `-- Label` comments rather than the
+SQL beneath them. Prisma labels a column change `AlterTable`, so the script
+printed "tables, columns, enums, relations: match" while a column was genuinely
+unmodelled. It failed for an unrelated reason (a foreign key), which is the only
+reason it was noticed. **A check pointed at a label instead of at the thing the
+label describes.** Found by proving the gate fails, not by watching it pass, and
+that is the whole method: a gate is not finished when it goes green, it is
+finished when you have made it go red on purpose.
+
+**And the honest conclusion, unchanged: knowing a pattern does not stop you
+writing it.** Three instances in one session, by the session that had just
+recorded the pattern. That is the argument for gates that compare rather than
+resolutions to be careful.
 
 **The three patterns together, as questions to ask of any check:**
 
@@ -1349,6 +1389,32 @@ it lands last, and its list is produced from `AUDIT_ACTIONS` by a script rather
 than typed: forty-seven keys, checked as a strict superset of the forty staging
 holds before it was written. The claim in the comment is now true of that one
 migration.
+
+**THE SHARPEST THING IN THIS RECORD, ON ITS OWN LINE BECAUSE IT WAS BURIED IN
+A CORRECTION.**
+
+> **The eleventh instance was being held up, in this document, as an exemplar
+> of how to avoid the eleventh instance.**
+
+_How to tell a gate that can fail from one that cannot_ lists four worked
+examples of a gate that compares — the view test, the accuracy CHECK, the
+conventions drift test, and the audit-action CHECK "generated from
+`AUDIT_ACTIONS` so the database and the code cannot disagree". Three of the
+four are real comparisons. **The fourth was the defect, described as the
+remedy.** It was written into the list of exemplars by a session that had read
+the comment on `AUDIT_ACTIONS` and believed it, in the same document that
+argues gates must compare rather than assert.
+
+That is worse than the defect itself, and for a reason that generalises: **a
+false claim promoted to an example stops being a claim and becomes a standard.**
+Anyone reading that list to learn the principle would have copied the one
+pattern in it that does not work, and cited this document while doing so. The
+other three were checked on 2026-09-13 and are genuine. The lesson is not "be
+careful with examples" — it is that **an exemplar needs the same proof as a
+gate**, and the proof is the same one: change one side alone and watch it go
+red. That is now done for the audit CHECK, in both directions, by
+`tests/audit-actions-constraint.test.ts` and
+`packages/shared/tests/audit-check-matches-migrations.test.ts`.
 
 **THE SPECIFIC SHAPE, AND ITS SECOND INSTANCE.** This is not a gate that checks
 nothing. It is **a comment asserting a mechanism that does not exist**, and this
