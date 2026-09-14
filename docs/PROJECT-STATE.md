@@ -203,14 +203,30 @@ been messaged, once, successfully. Nothing in the history touches Zain or
 Digitel, so the coverage question needs a handset on each and cannot be answered
 from what has already been sent.
 
-**One thing in the history is not ours.** The 13 September delivery to Liberia
-at 06:39 used sender **`Authifly`**, which does not appear in the workspace's
-sender list — only `Agrione_SS` does — and predates our sender's creation by
-thirteen hours. So the account carried traffic under a sender we do not hold and
-cannot see. **Bird's API exposes no actor on a message** — no user, creator,
-tags or metadata, and no audit or activity endpoint — so who sent it, and what
-`Authifly` is, can only be answered from the dashboard. Worth asking, because it
-is the one sender known to deliver on the carrier that refuses ours.
+**`Authifly` IS OURS — ALIEU CREATED IT, TESTING (owner, 2026-09-14).** Written
+down so the next reader does not find an unexplained sender on the account and
+start this investigation over. It does not appear in the workspace's sender list
+— that holds only `Agrione_SS` — and it predates our sender by thirteen hours,
+which is why it looked foreign. It was not.
+
+**Its value is as evidence, and it is the strongest single piece in the whole
+exercise.** Two alphanumeric senders, **the same workspace**, **the same carrier**
+(`61801` Lonestar Cell MTN), thirteen hours apart:
+
+- `Authifly` → **delivered**
+- `Agrione_SS` → **refused, `EC_SENDER_UNREGISTERED`, seven times**
+
+Same account, same route, same destination network, four categories and lengths
+from 5 to 148 characters on the failing side. **That eliminates the route, the
+aggregator path, the country and the content**, and leaves the sender string and
+whatever registration state sits behind it. It is what makes Bird's `approved`
+hard to defend rather than merely puzzling, and it is why the support request
+leads with the comparison instead of asking a question we can answer ourselves.
+
+**Also established while looking:** Bird's API exposes no actor on a message —
+no user, creator, tags or metadata, and no audit or activity endpoint. Attribution
+of a send is a dashboard question, not an API one. Worth knowing before anyone
+plans an audit trail that spans the gateway.
 
 **THE LIBERIAN FAILURES ARE REAL, AND THEY ARE SENDER-SPECIFIC TO ONE CARRIER.**
 Eight messages exist on the account, not the three this section first described.
@@ -1420,6 +1436,44 @@ _Checked 2026-09-11: prettier makes no change to `CONVENTIONS.md` as it stands
 today, so nothing is pending; and `docs/data/locations.csv`, named by the
 reseed script, does not exist — the locations arrive as a bundle instead — so
 no CSV is exposed._
+
+## A THIRD FORMATTER INSTANCE, AND NOW A RULE ABOUT EDITING TABLES (2026-09-14)
+
+**Two was a pair. Three is a rule.** The formatter has now silently defeated
+work three times, and twice in the same specific way.
+
+1. **2026-09-11:** Prettier re-padded the CONVENTIONS tables and the drift test
+   stopped matching.
+2. **2026-09-11:** Prettier folded two new open items into the item above them,
+   so they rendered inside another entry's prose.
+3. **2026-09-14:** Prettier padded a Markdown table's columns, and a scripted
+   edit that anchored on **a table row** found zero matches and did nothing. The
+   commit that depended on it was written as though the edit had landed, so its
+   message described a change that was not in the tree until it was amended a
+   minute later.
+
+**What the second and third have in common is the shape worth naming:** a table
+row is the **least stable string in a formatted document**. Its content is
+stable; its whitespace is not, and the whitespace changes whenever any other row
+in the same table changes width. An anchor that includes column padding is an
+anchor on a value that something else is entitled to rewrite.
+
+> **THE RULE. Never anchor a scripted edit on a Markdown table row.** Anchor on
+> prose, on a heading, or on the line before the table. If a row itself must
+> change, match it with a regular expression over its cell contents and let the
+> whitespace be flexible — `\s*` between cells, never literal padding.
+
+**And the practice that caught it, which matters more than the rule.** The edit
+script asserted `count == 1` for every anchor and wrote the file only after all
+of them matched. So the failure was loud and atomic: nothing was half-applied,
+and the assertion named which anchor had failed. **A scripted edit that does not
+assert its anchors is a silent formatter instance waiting to happen** — it would
+have reported success having changed nothing, which is the first pattern again.
+
+**The remaining exposure is unchanged and is recorded above:** `.prettierignore`
+protects the contractual documents, and the state documents are still formatted,
+which is correct — they are prose and should be. The rule here is about how a
+session edits them, not about excluding them.
 
 ## THE ELABORATION FAILURE — THE SEAM BETWEEN THE OWNER'S JUDGEMENT AND A SESSION'S (2026-09-11)
 

@@ -9,9 +9,12 @@ Nothing here is secret: message ids, a carrier code, registration ids, sender
 strings and two destination numbers already present in the message records. No
 API key.
 
-**Scope note.** An earlier draft of this asked whether South Sudan delivery
-works at all. It does — see the first table below — so the question has
-narrowed to Liberia and to what `approved` guarantees.
+**Scope note.** An earlier draft asked whether South Sudan delivery works at
+all. It does — see the first table below — so the question has narrowed to
+Liberia and to what `approved` guarantees. `Authifly` appears here as evidence,
+not as a question: it is our own test sender, created by a colleague on this
+workspace, and its value to the request is that it delivers where ours does
+not.
 
 ---
 
@@ -23,8 +26,9 @@ narrowed to Liberia and to what `approved` guarantees.
 
 We are evaluating Bird for an agricultural extension programme in South Sudan.
 Before building anything we tested delivery. South Sudan works. Liberia, which
-we used as a control, does not, and the pattern points at the sender rather than
-the route.
+we used as a control, does not — and because two different alphanumeric senders
+on this same workspace hit the same Liberian carrier hours apart with opposite
+results, we can rule out the route, the content and the country.
 
 **What delivered.**
 
@@ -49,6 +53,19 @@ with `carrier_error_code: 104`, `code: content_rejected`, and billed 0.18 EUR:
 Four categories and lengths from 5 to 148 characters all fail identically, so
 this is not content. **`Authifly` delivers on the same carrier, so it is not the
 route.** It is `Agrione_SS` specifically, on 61801.
+
+**THE CONTROLLED COMPARISON, which is why we are confident this is about the
+sender.** Both messages below went from **this workspace** to **the same carrier**
+(`61801`, Lonestar Cell MTN), thirteen hours apart:
+
+- **`Authifly` → delivered.**
+- **`Agrione_SS` → refused, `EC_SENDER_UNREGISTERED`, seven times.**
+
+Same account, same route, same destination network. One alphanumeric sender
+delivers and the other does not. That eliminates the route, the aggregator path,
+the destination country and the message content as explanations — and the
+remaining variable is the sender string and whatever registration state sits
+behind it. Which brings us to what your API reports about ours.
 
 **What your API says about that sender.**
 `GET /v1/sms/senders/snd_01m2e5wtjcf8eveab6z0zjcnc8/requirements`:
@@ -93,7 +110,7 @@ still settling.
    the sender. We spent two billed sends rewriting content that was never the
    problem.
 
-5. **Is a rejected message billed by design?** Six refusals cost 1.08 EUR and
+5. **Is a rejected message billed by design?** Seven refusals cost 1.26 EUR and
    delivered nothing. We need this confirmed before budgeting, because it means
    the figure to multiply is messages attempted, not received.
 
@@ -103,12 +120,6 @@ still settling.
    expect the Liberian pattern there? **This is the question that matters most
    to us**, because `approved` is the only signal we have for those two
    networks, and Liberia has just shown us what it can be worth.
-
-7. **What is the sender `Authifly`?** It delivered on 61801 from this account on
-   2026-09-13 at 06:39, it is absent from our workspace's sender list — which
-   holds only `Agrione_SS` — and it predates our sender by thirteen hours. It is
-   the one sender known to deliver on the carrier that refuses ours, so we would
-   like to know what it is and why it works there.
 
 We are not asking for a credit. We need to know what `approved` is worth, since
 that is the signal we would otherwise rely on for the two South Sudanese
