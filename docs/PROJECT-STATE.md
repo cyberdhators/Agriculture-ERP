@@ -1272,16 +1272,26 @@ thing directly before acting on its silence.** That is what caught both
 instances here. The rewritten `wait-runs.sh` separates query-failed, still
 in-flight and drained, and says which.
 
-**A third instance the same day, in a gate rather than a watcher.** The first
-version of `scripts/schema-check.mjs` — written to catch exactly the family of
-fault in this document — matched Prisma's `-- Label` comments rather than the
-SQL beneath them. Prisma labels a column change `AlterTable`, so the script
-printed "tables, columns, enums, relations: match" while a column was genuinely
-unmodelled. It failed for an unrelated reason (a foreign key), which is the only
-reason it was noticed. **A check pointed at a label instead of at the thing the
-label describes.** Found by proving the gate fails, not by watching it pass, and
-that is the whole method: a gate is not finished when it goes green, it is
-finished when you have made it go red on purpose.
+**A third instance the same day happened in a gate rather than a watcher**, and
+it has its own entry below — _A gate built to prevent the third pattern
+exhibited the third pattern_ — because it pairs with the audit CHECK's
+appearance in the list of worked examples and the pair says more than either.
+
+**THE DECISION, WHICH MATTERS MORE THAN THE DEATHS.** Three watchers were killed
+in one session: one by silencing its own errors, two by the host reclaiming
+memory. After the third, **no fourth was armed.**
+
+> **A mechanism that cannot survive the wait is not a mechanism.** Polling it
+> again is the same mistake with more steps.
+
+**Direct verification is now the rule for this project**, not a fallback: after
+any watcher finishes, is killed, or times out, query the thing itself before
+acting — `gh run list`, the catalogue, the migration table. Every one of the
+three instances was caught that way and none was caught by a watcher. The
+corrected `wait-runs.sh` is kept because separating query-failed from
+still-in-flight from drained is right regardless, but **nothing is concluded
+from its silence**, and a turn that ends with work held is preferred to a turn
+that ends with work pushed on an inference.
 
 **And the honest conclusion, unchanged: knowing a pattern does not stop you
 writing it.** Three instances in one session, by the session that had just
@@ -1446,6 +1456,162 @@ compares — the strike in _How to tell a gate that can fail_ above.
 `AUDIT_ACTIONS`. That turns the comment into a fact and is the only thing that
 stops the twelfth instance of this being the same constraint again. Sized at
 under an hour; not built, because the owner asked for the record.
+
+## A HELD BRANCH IS A BRANCH WHOSE TESTS HAVE NOT RUN (2026-09-14)
+
+**Not asked for; recorded because it cost 1h 14m of CI and would have cost it
+again.** #28 was written on 2026-09-05 and held for nine days awaiting a
+properly briefed unit. Rebased and run, it went red: 913 tests passed, 41 files
+passed, and `tests/directories-routes.test.ts` took itself down in a hook rather
+than an assertion.
+
+    P2010 / 42501: audit_event is append-only: DELETE is not permitted
+
+**Three faults in one file, none of them new, all of them invisible.**
+
+1. Its cleanup deleted every audit row for its two entity types. The audit table
+   is append-only (CLAUDE.md section 4) and B4's trigger refuses DELETE.
+2. It skipped itself when the variables were absent
+   (`HAS_ENV ? describe : describe.skip`) — **the second silent-class instance**
+   of this document, closed by B5.5 with `requireTestEnv`.
+3. It built its own client preferring `DIRECT_URL`, the session pooler B5.5
+   moved away from because fifteen slots starved under the concurrency tests.
+
+**Every one of those was already decided and fixed elsewhere before this file
+was written or while it waited.** Its own header claimed "same skip-in-CI
+conditions as the forbidden matrix" — and the forbidden matrix was fixed while
+this file sat, so the sentence became false without anyone editing it.
+
+**The shape.** A merged file is corrected by whoever next breaks it. **A held
+file is corrected by nobody, and its last green run recedes into a world that no
+longer exists.** The longer a branch is held, the less its history means, and
+the cost is not "it needs a rebase" — the rebase was clean. The cost is that
+every standard raised in the interval has to be reapplied by hand, and nothing
+tells you which ones.
+
+**What follows, and it is small.** When a branch is held deliberately — #28 was,
+for a good reason — the hold is worth a line saying what it will need on the way
+back in. Nothing here proposes not holding branches. #48 and #47 are open and
+have been for days; they are Lane 2's to read, and this entry is the reason to
+read them rather than assume their green checks still describe them.
+
+## WHAT WENT RIGHT — ONE FINDING REACHED BOTH LANES WITHOUT EITHER BEING TOLD (2026-09-14)
+
+Almost everything in this document is a fault. This is not, and it is recorded
+for the same reason the faults are: so the mechanism is known rather than
+assumed.
+
+**What happened.** On 2026-09-13 Lane 1 recorded that seven environment
+variables were required by the code and declared nowhere, with the sharpest
+piece of evidence being that `tests/helpers/db.ts` refuses to run without five
+of them while its own message sends the reader to `.env.example` for three that
+are not in it. **Within hours, and with no message passing between the two
+humans or the two sessions, #67 added six of the seven** — the two
+`NEXT_PUBLIC_SUPABASE_*` names, the service key and the three `USE_LIVE` flags.
+Lane 2 had hit the same wall from the other side while building the auth bridge:
+the portal could not sign in against a project whose URL and key nothing
+declared. #70 added the seventh.
+
+**Why it is worth an entry.** Two lanes that cannot see each other's sessions,
+and whose humans were not in the same conversation, converged on one fix inside
+a day. Nobody coordinated it and nobody needed to.
+
+**The mechanism, which is the part to keep.** Not goodwill and not luck:
+
+- **The finding was written down in a place both lanes read**, in the repository
+  rather than in a chat. `CLAUDE.md` section 1 says chat history is not truth
+  and `docs/HANDOFF.md` says the file is the only channel; this is that design
+  working without anyone invoking it.
+- **It was written as a symptom, not only as a cause.** The record said what a
+  reader would experience — the tests refuse, the message points at a file that
+  cannot satisfy it, every route throws without the URL — so Lane 2 recognised
+  its own problem in someone else's finding rather than having to translate a
+  diagnosis.
+- **The fix was small enough to take in passing.** Six names in an example
+  file, inside a pull request about something else. A finding that costs a day
+  to act on waits for a decision; a finding that costs a minute gets done by
+  whoever reads it first.
+
+**What it argues for.** Record findings where the other lane reads, in the
+language of what goes wrong rather than of what is wrong, and size the remedy in
+the record. The two lanes have collided badly this month — #27, #36, the #49 and
+#50 reverts, one shared GitHub identity that no branch protection can
+distinguish. This is the same channel producing the opposite result, and it
+suggests the channel is sound and the collisions were about authority, not about
+information.
+
+## A GATE BUILT TO PREVENT THE THIRD PATTERN EXHIBITED THE THIRD PATTERN (2026-09-14)
+
+`scripts/schema-check.mjs` exists to catch the Prisma drift: two sources that
+move independently — the live database and the model file — compared, so that an
+unmodelled table, column or enum turns it red by itself. It is the gate this
+document argues for, written by the session that wrote the argument.
+
+**Its first version had the fault it was built to prevent.** It counted Prisma's
+`-- Label` comment lines. Prisma labels a column change `AlterTable` and puts
+the `DROP COLUMN` inside it, so a list containing `AddColumn` and `DropColumn`
+matched nothing. Pointed at a deliberately unmodelled column, the script printed:
+
+> `tables, columns, enums, relations : match`
+
+while a column was genuinely unmodelled. **A check pointed at a label instead of
+at the thing the label describes** — the third pattern exactly, in the gate
+written against that family of fault.
+
+**It was caught only by being made to fail on purpose.** The proof run removed a
+column from the model and expected red. It did go red, but for an unrelated
+reason: the foreign key on that column also vanished, and the foreign-key check
+caught it. Had the hidden column carried no foreign key — as `captured_at` does
+not — **the script would have reported "match" and been believed.** The second
+proof run, on `captured_at` alone, is what showed the column check did nothing.
+It now matches the SQL statements and not the labels.
+
+### THE PAIR, AND WHAT IT SAYS
+
+This is the **second** time in two days that a thing written to prevent the
+silent-class fault was itself an instance of it:
+
+|                                                                           | What it claimed                                                               | What was true                             |
+| ------------------------------------------------------------------------- | ----------------------------------------------------------------------------- | ----------------------------------------- |
+| The audit CHECK, in the list of worked examples of _a gate that compares_ | "generated from `AUDIT_ACTIONS` so the database and the code cannot disagree" | nothing generated it; a person retyped it |
+| `schema-check`, written to catch drift                                    | "tables, columns, enums, relations : match"                                   | it could not see a column at all          |
+
+**What both have in common, and it is the whole lesson: each was believed
+correct because it was written to be correct, and neither was made to fail
+before it was trusted.** The intention was the evidence. One was promoted to an
+exemplar in this document and the other printed a reassuring line, and in both
+cases the thing that would have exposed it in thirty seconds — change one side
+alone and check for red — was not done, precisely because the author knew what
+the code was for.
+
+### THE RULE ALREADY EXISTS, AND IT KEEPS NOT BEING APPLIED TO GUARDS ABOUT GUARDS
+
+`docs/DECISIONS.md`, **B1.3 — a guard that refuses everything passes every
+refusal test**, states it in the first line:
+
+> **No unit is done until every guard it introduces has been tested both
+> refusing and accepting. Refusal alone is not evidence.**
+
+That rule is nine days old. It has caught defects in B1.4 and B1.5, and it is
+applied without fail to guards over _data_ — `requireRole`, the reset guard, the
+scrubber, the sync outcomes all have tests in both directions. **It is not being
+applied to guards over guards.** A gate, a drift test, a watcher, an exemplar in
+a state document: each is a guard whose subject is other code, and each of the
+three instances in the last two days went untested in the failing direction.
+
+**The extension, stated so it cannot be read as only about data:** a gate, a
+watcher, a lint rule, a CI condition and a worked example in a document are all
+guards, and B1.3 applies to every one of them. **A meta-guard is harder to test
+in the failing direction, not easier**, because making it fail means
+constructing the defect it is meant to notice — planting a narrowing migration,
+hiding a column, cutting the network. That construction is the test, it takes
+minutes, and skipping it is how all three of these happened.
+
+**Applied, on the same day, to everything this session built:** the narrowing
+migration was planted and the audit test went red naming all 33 keys; a column
+was hidden twice and `schema-check` went red the second time and was fixed; the
+`db:push` refusal was run and refused. Nothing here is trusted on the strength
+of having been written carefully.
 
 ## THE SEAMS — WHERE TWO RULES TOUCH AND NOTHING HAS TESTED THE JOIN (2026-09-10)
 

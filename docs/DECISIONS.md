@@ -2600,3 +2600,51 @@ and not built.
 to staging from its own branch before the unit merges (PROJECT-STATE, _Staging's
 schema runs ahead of main_). Until that is done for this one, #28's tests cannot
 pass, because staging still refuses the seven directory and library keys.
+
+---
+
+## B1.3 applies to guards about guards, and that is where it keeps not being applied (2026-09-14)
+
+**B1.3's rule, unchanged and nine days old:** _no unit is done until every guard
+it introduces has been tested both refusing and accepting; refusal alone is not
+evidence._
+
+It is honoured for guards over **data**. `requireRole` is tested allowing and
+refusing every role on every route; the reset guard was pointed at a real
+project reference behind an unroutable host; the scrubber is tested on what it
+must redact and on what it must leave alone; the sync outcomes are tested in
+both directions.
+
+**It is not being honoured for guards over other code.** Three instances in two
+days, recorded in `docs/PROJECT-STATE.md`:
+
+1. **The audit CHECK** was named in this project's own list of worked examples
+   of "a gate that compares" while nothing compared it.
+2. **`scripts/schema-check.mjs`**, written to catch schema drift, counted
+   Prisma's comment labels rather than the SQL, and printed
+   `tables, columns, enums, relations : match` with a column unmodelled.
+3. **A queue watcher** silenced its errors, so a failed query and an empty
+   queue were the same value, and it announced a drained queue during a network
+   failure.
+
+**What the three share:** each was believed because it was written to be
+correct. The author's intention stood in for evidence. In every case the test
+that would have exposed it took minutes.
+
+**The extension, so the rule cannot be read as being only about data.** A gate,
+a watcher, a lint rule, a CI condition and a worked example in a state document
+are all guards; their subject is other code rather than a farmer's record, and
+B1.3 covers every one of them.
+
+**And the reason it is skipped more often here, which is worth naming:** a
+meta-guard is _harder_ to test in the failing direction, because making it fail
+means building the defect it exists to notice — planting a narrowing migration,
+hiding a column that carries no foreign key, cutting the network. That
+construction feels like extra work and is in fact the test. **A gate is not
+finished when it goes green. It is finished when it has been made to go red on
+purpose.**
+
+Applied the same day to everything built in that session: the narrowing
+migration planted (red, naming all 33 keys it would drop), a column hidden twice
+(`schema-check` green the first time — which is how its defect was found — red
+the second), and the `db:push` refusal run to see it refuse.
