@@ -7,6 +7,7 @@ export const PORTAL_PREFIXES = [
   '/dashboard',
   '/farmers',
   '/desk',
+  '/visits',
   '/admin',
   '/directories',
   '/library',
