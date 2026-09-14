@@ -20,7 +20,7 @@ not.
 
 ## Subject
 
-`approved` sender refused as `EC_SENDER_UNREGISTERED` (104) on 61801, while a different sender delivers on the same carrier
+What does an approved sender registration guarantee? Evidence: approved sender refused as unregistered on one carrier, delivering on another
 
 ## Body
 

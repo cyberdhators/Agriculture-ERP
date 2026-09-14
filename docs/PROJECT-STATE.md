@@ -1350,6 +1350,36 @@ A gate that compares needs no vigilance: the two sources drift and it goes red
 by itself. A single-fact gate needs a person to remember, and the record of
 this project is eight demonstrations that nobody does.
 
+**A WORKED EXAMPLE FROM A PLACE NOBODY WOULD THINK TO PUT A GATE (2026-09-14).**
+The edit scripts this project uses to change documents are written as:
+
+```python
+def sub(old, new, label):
+    assert s.count(old) == 1, f"{label}: {s.count(old)}"
+    s = s.replace(old, new)
+# ... every anchor substituted ...
+p.write_text(s)      # the file is written ONLY after all of them matched
+```
+
+**That is a gate that compares.** Two sources that move independently — the
+anchor text a session believes is in the file, and the text actually in the
+file — checked against each other, with the count as the comparison. It has now
+fired twice in one day, both times on a Markdown table row whose padding the
+formatter had changed, and both times it named the anchor and wrote nothing.
+
+**Why it belongs beside the principle rather than in the formatter note.** The
+alternative is what every naive edit script does: `s.replace(old, new)` and
+write. That is a single-fact gate of the worst kind — it asserts "this text is
+present", is silently false the moment the formatter reflows, and **reports
+success having changed nothing.** The first pattern, in a tool, with no output
+to reveal it. The `assert count == 1` version cannot be quietly wrong, because
+zero and two are both loud.
+
+**Two properties worth copying into any scripted edit.** It is a **comparison**,
+not an assertion. And it is **atomic**: the write happens after every anchor has
+matched, so a partial application is impossible and the file is never left in a
+state no one intended.
+
 _Worked examples of turning one into the other, from this repository:_ the view
 test compares the view catalogue against the table catalogue rather than
 asserting a list of views; ~~the audit-action CHECK is generated from
@@ -1436,6 +1466,42 @@ _Checked 2026-09-11: prettier makes no change to `CONVENTIONS.md` as it stands
 today, so nothing is pending; and `docs/data/locations.csv`, named by the
 reseed script, does not exist — the locations arrive as a bundle instead — so
 no CSV is exposed._
+
+## READ A DOCUMENT AS ITS RECIPIENT BEFORE IT GOES (2026-09-14)
+
+**A practice, recorded because it caught three things in one reading and none of
+them were visible to the author.**
+
+The Bird support request was finished, committed, and correct on the facts. Read
+straight through as the vendor's support desk would read it rather than as the
+person who assembled it, three faults appeared:
+
+1. **A gap in an evidence table.** The retry's row said _"(retry at
+   05:41:33Z)"_ with no message id. **A gap in an evidence table invites the
+   reply that asks for it** — one round trip bought nothing, on a request whose
+   whole purpose is to get a substantive answer rather than an acknowledgement.
+2. **A point made twice, three lines apart.** The sender comparison appeared
+   once in passing and once as the deliberate argument. **The passing mention
+   weakened the deliberate one** by making it look like repetition rather than
+   the case.
+3. **A subject line that would be routed wrongly** (owner's catch). It read as
+   a Liberia delivery complaint, so it would have been triaged as one. It now
+   leads with the question we actually need answered — what an approved sender
+   registration guarantees — because **the subject decides which desk reads it,
+   and that decides what kind of answer comes back.**
+
+**The generalisation.** A document written to persuade or to extract an answer
+has a reader whose interests are not the author's. The author knows what every
+sentence is for, which is exactly what stops them seeing a gap, a repetition or
+a mis-framing. **So the last pass on anything that leaves this project is a read
+as its recipient**: a vendor's support desk, a client, the next session, an
+auditor. Ask what this reader will do with it, and what they will ask for that
+is missing.
+
+**It is the same move as the whole silent-findings class, applied to prose.**
+Every gate in that list failed because it was read by the person who knew what
+it was supposed to do. **The check that works is the one performed by, or on
+behalf of, someone who does not.**
 
 ## A THIRD FORMATTER INSTANCE, AND NOW A RULE ABOUT EDITING TABLES (2026-09-14)
 
