@@ -69,6 +69,7 @@ export const config = {
     '/farmers/:path*',
     '/desk/:path*',
     '/visits/:path*',
+    '/reports/:path*',
     '/admin/:path*',
     '/directories/:path*',
     '/library/:path*',

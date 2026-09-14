@@ -1,0 +1,145 @@
+/* Reports: figures first, breakdowns beneath, the export log last. */
+
+.page {
+  display: grid;
+  gap: var(--s-6);
+}
+
+.filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--s-4);
+  align-items: end;
+}
+
+.filters .apply {
+  display: flex;
+  gap: var(--s-3);
+}
+
+.asOf {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2) var(--s-5);
+  font-size: var(--text-small);
+  color: var(--muted);
+}
+
+.asOf b {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.beside {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-4);
+  margin-top: var(--s-3);
+  font-size: var(--text-small);
+  color: var(--ink-2);
+}
+
+.beside span b {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--s-5);
+  align-items: start;
+}
+
+.breakdown th,
+.breakdown td {
+  padding: var(--s-2) var(--s-3);
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+}
+
+.breakdown th {
+  font-family: var(--font-body);
+  font-size: var(--text-label);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  border-bottom: 1.5px solid var(--line-strong);
+}
+
+.breakdown td.num,
+.breakdown th.num {
+  text-align: right;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.breakdown tr:last-child td {
+  border-bottom: 0;
+}
+
+.bar {
+  position: relative;
+  height: 6px;
+  background: var(--dust);
+  border-radius: var(--radius-control);
+  overflow: hidden;
+  min-width: 80px;
+}
+
+.barFill {
+  height: 100%;
+  background: var(--accent);
+}
+
+.notes {
+  display: grid;
+  gap: var(--s-2);
+  font-size: var(--text-small);
+  color: var(--ink-2);
+}
+
+.notes li {
+  padding-left: var(--s-4);
+  position: relative;
+}
+
+.notes li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.55em;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.exportHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  margin-bottom: var(--s-4);
+}
+
+.exportActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-3);
+}
+
+.filtersInline {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--muted);
+  word-break: break-all;
+}
+
+@media (max-width: 640px) {
+  .filters {
+    grid-template-columns: 1fr 1fr;
+  }
+}

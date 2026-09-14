@@ -8,6 +8,7 @@ export const PORTAL_PREFIXES = [
   '/farmers',
   '/desk',
   '/visits',
+  '/reports',
   '/admin',
   '/directories',
   '/library',
