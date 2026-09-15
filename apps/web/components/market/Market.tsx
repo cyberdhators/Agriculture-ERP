@@ -511,9 +511,7 @@ export function Market({
                       <td className="num">{formatQuantity(listing, unitLabel)}</td>
                       <td className="num">{formatPrice(listing, unitLabel)}</td>
                       <td>
-                        <span dir="auto">
-                          {seller.given_name} {seller.family_name}
-                        </span>{' '}
+                        <span dir="auto">{listing.trading_name}</span>{' '}
                         <Stamp kind={verificationStamp(seller.verification_status)}>
                           {t(VERIFICATION_KEY[seller.verification_status], lang)}
                         </Stamp>

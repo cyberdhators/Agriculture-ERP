@@ -53,7 +53,8 @@ const TODAY = new Date().toISOString().slice(0, 10);
  * object URLs; the upload itself lands with the storage route.
  */
 export function ListingForm({ listingId }: { listingId?: string }) {
-  const { farmer, language, listingById, saveListing, newListingId } = useFarmerSession();
+  const { farmer, language, listingById, listingsFor, saveListing, newListingId } =
+    useFarmerSession();
   const router = useRouter();
 
   const existing = listingId ? listingById(listingId) : undefined;
@@ -63,7 +64,11 @@ export function ListingForm({ listingId }: { listingId?: string }) {
   const [values, setValues] = useState<ListingFormValues>(() =>
     own
       ? listingToValues(own)
-      : emptyListingValues(farmer?.phone.replace(/^\+211/, '') ?? '', TODAY),
+      : {
+          ...emptyListingValues(farmer?.phone.replace(/^\+211/, '') ?? '', TODAY),
+          // Keep one trading identity across listings: the last one used.
+          trading_name: farmer ? (listingsFor(farmer.id)[0]?.trading_name ?? '') : '',
+        },
   );
   const [errors, setErrors] = useState<ListingErrors>({});
   const [photos, setPhotos] = useState<string[]>(() => own?.photo_storage_paths ?? []);
@@ -111,7 +116,10 @@ export function ListingForm({ listingId }: { listingId?: string }) {
   }
 
   function blur(key: ListingField) {
-    const result = validateListing(values);
+    const result = validateListing(
+      values,
+      farmer ? { given_name: farmer.given_name, family_name: farmer.family_name } : null,
+    );
     if (!result.ok && result.errors[key])
       setErrors((prev) => ({ ...prev, [key]: result.errors[key] }));
   }
@@ -150,7 +158,10 @@ export function ListingForm({ listingId }: { listingId?: string }) {
   }
 
   function persist(status: ListingStatus) {
-    const result = validateListing(values);
+    const result = validateListing(
+      values,
+      farmer ? { given_name: farmer.given_name, family_name: farmer.family_name } : null,
+    );
     if (!result.ok) {
       setErrors(result.errors);
       const first = Object.keys(result.errors)[0];
@@ -303,6 +314,26 @@ export function ListingForm({ listingId }: { listingId?: string }) {
           <section className={styles.fieldSection}>
             <h2>{t('listingForm.sectionProduct', language)}</h2>
             <div className={styles.fieldGrid}>
+              <div className={styles.span2}>
+                <Field
+                  label={t('listingForm.tradingName', language)}
+                  hint={t('listingForm.tradingNameHint', language)}
+                  error={err('trading_name')}
+                >
+                  {(ids) => (
+                    <Input
+                      {...ids}
+                      id="listing-trading_name"
+                      value={values.trading_name}
+                      maxLength={60}
+                      dir="auto"
+                      placeholder={t('listingForm.tradingNamePlaceholder', language)}
+                      onChange={(e) => set('trading_name', e.target.value)}
+                      onBlur={() => blur('trading_name')}
+                    />
+                  )}
+                </Field>
+              </div>
               <div className={styles.span2}>
                 <Field
                   label={t('listingForm.title', language)}

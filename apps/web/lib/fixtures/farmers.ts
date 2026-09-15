@@ -1475,6 +1475,13 @@ export const LISTING_DESCRIPTION_MAX = 1000;
 export interface ProduceListing {
   id: string;
   farmer_id: string;
+  /**
+   * The name buyers see: a farm or stall name the farmer chose, never their
+   * legal name (scope, "The marketplace amendment": a listing publishes no
+   * personal data). Free text, so the form asks for it as a farm or market
+   * name and refuses the farmer's own name.
+   */
+  trading_name: string;
   title: string;
   category: ListingCategory;
   product_name: string;
@@ -1496,6 +1503,18 @@ export interface ProduceListing {
   updated_at: string;
 }
 
+/** Placeholder trading names for the fixture farmers, by seed index. None is a person's name. */
+const TRADING_NAMES = [
+  'Rejaf Sorghum Store',
+  'Riverside Okra Garden',
+  'Kator Dairy Corner',
+  'Munuki Fresh Fish',
+  'Gudele Poultry Yard',
+  'Nile Bank Vegetables',
+  'Lobonok Groundnut Stall',
+  'Juba Road Farm Gate',
+] as const;
+
 const lid = (n: number) => `f0000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
 
 /**
@@ -1505,6 +1524,8 @@ const lid = (n: number) => `f0000000-0000-4000-8000-${String(n).padStart(12, '0'
  */
 interface ListingSeed {
   who: number; // index into FARMERS
+  /** Placeholder trading names, never a person's name. */
+  trading?: string;
   title: string;
   category: ListingCategory;
   product: string;
@@ -1808,6 +1829,7 @@ export const LISTINGS: readonly ProduceListing[] = LISTING_SEEDS.map((seed, i) =
   return {
     id,
     farmer_id: farmer.id,
+    trading_name: seed.trading ?? TRADING_NAMES[seed.who % TRADING_NAMES.length]!,
     title: seed.title,
     category: seed.category,
     product_name: seed.product,
