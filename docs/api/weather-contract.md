@@ -192,3 +192,38 @@ strip and the "growing now" card should not be built against this.
 
 If the tile needs something here that is missing, **ask in `docs/HANDOFF.md`
 rather than assuming it.** That sentence is the whole point of the document.
+---
+
+## 9. Where the build diverged from the text above (2026-09-15)
+
+**The sections above are left exactly as agreed, because Lane 2 may be building
+against them.** This section says where the implementation differs and why.
+Each item is also in `docs/api/CONVENTIONS.md` §18.
+
+1. **`payam_id` and `payam_name` can be `null`.** Locations are county-level to
+   start (C-16.13), so a county row has no payam. Two fields are added to say
+   which kind a row is: `level` (`"county"` or `"payam"`) and `county_name`.
+   `name` is added too (e.g. `"Juba County"`). Section 1 said `payam_id` was
+   always present; it is present when `level` is `"payam"`.
+2. **An officer sees their own county, not their own payam.** With county-level
+   locations, a payam scope would show most officers nothing. Section 2's row
+   for `officer` should read "locations in their own county".
+3. **A location never fetched is omitted**, rather than served with a null
+   `fetched_at`. Section 1 promised `fetched_at` always present and always real,
+   and section 1 also allowed `current` to be null — those two could not both
+   hold for an unfetched row. The promise about `fetched_at` wins: a row appears
+   the moment its first fetch lands, and until then it is not in `data`. So in
+   this version **`current` is never null.**
+4. **`current` gains `observed_at`** — the provider's moment, beside our
+   `fetched_at`.
+5. **The forecast is up to five days**, not seven: the free product gives five
+   whole days after today. Section 1 said "assume up to seven"; render what
+   arrives, which is at most five.
+6. **On staging today:** six county-level locations, all in Central Equatoria,
+   fetched. A supervisor for any other state receives `200` and `[]`, which is
+   the case section 3 describes and it is now the live one.
+
+Everything else stands as written: no parameters, no fetching from a route,
+`200` with `[]` for an empty scope, `stale` computed from a real `fetched_at`,
+`attribution` at the top level beside `data`, forecasts ascending from tomorrow,
+numbers as numbers.
