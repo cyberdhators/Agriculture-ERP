@@ -2531,6 +2531,18 @@ commit that records this entry, re-landing #49 (staff portal) and #50
 (farmer marketplace). The process objection — that the authorization was
 asserted but not recorded — is resolved by this entry existing.
 
+**The marketplace stays visible (2026-09-15, Alieu for CORWADO).** The audit
+(#82) read the scope's "no marketplace without a staff session until CORWADO
+answers the contact question" and #83 put the marketplace behind the staff
+session. The owner's instruction on seeing it: "I didn't ask you to hide the
+marketplace behind anything, let it be visible; changes will be applied."
+So: the marketplace and the farmer flow are public; the audit's fixes — a
+trading name instead of the legal name, a contact request instead of a
+published phone, per-listing consent — are applied on top of a visible
+marketplace, not behind a gate. `NEXT_PUBLIC_MARKET_OPEN` now closes rather
+than opens (0 = gated), and is unset on production. The scope clause is
+overridden by the owner, recorded here rather than silently.
+
 ## The sixth CI edit: the law file joins the short path (2026-09-11)
 
 **The reasoning that failed, recorded because it is the point.** The fifth CI

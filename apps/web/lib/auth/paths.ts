@@ -2,12 +2,11 @@
  * Which paths need a staff session. Route groups do not appear in URLs, so the
  * (portal) group is named here by its public prefixes.
  *
- * The marketplace and the farmer side are gated too, unless the deployment
- * opens them: the scope document says no listing is readable outside the
- * four staff roles, and no marketplace is reachable without a staff session,
- * until CORWADO answers the contact question in writing ("The marketplace
- * amendment"). NEXT_PUBLIC_MARKET_OPEN=1 is that answer, recorded in
- * DECISIONS.md first and set on the deployment second. Unset means gated.
+ * The marketplace and the farmer side are public. The owner decided so on
+ * 2026-09-15 (DECISIONS.md, "The marketplace stays visible"): the audit's
+ * fixes are applied on top of a visible marketplace, not behind a gate.
+ * NEXT_PUBLIC_MARKET_OPEN=0 closes both behind the staff session if that is
+ * ever wanted; unset or anything else means open.
  */
 export const PORTAL_PREFIXES = [
   '/dashboard',
@@ -21,11 +20,11 @@ export const PORTAL_PREFIXES = [
   '/design',
 ] as const;
 
-/** Public only when the deployment says so; otherwise behind the staff session. */
+/** Public unless the deployment closes them (NEXT_PUBLIC_MARKET_OPEN=0). */
 export const MARKET_PREFIXES = ['/market', '/farmer'] as const;
 
 /** Read at build time, like every NEXT_PUBLIC_ variable: change it, then redeploy. */
-export const MARKET_OPEN = process.env.NEXT_PUBLIC_MARKET_OPEN === '1';
+export const MARKET_OPEN = process.env.NEXT_PUBLIC_MARKET_OPEN !== '0';
 
 export const LOGIN_PATH = '/login';
 export const HOME_PATH = '/dashboard';
