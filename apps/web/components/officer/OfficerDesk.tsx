@@ -21,6 +21,7 @@ import {
   PREVIEW_OFFICER_ID,
 } from '@/lib/farmers/presentation';
 import { LIVE_FARMERS, listFarmers } from '@/lib/farmers/api';
+import { BuyerRequests } from './BuyerRequests';
 import { FARMERS, farmerPayamName, officerById, type Farmer } from '@/lib/fixtures/farmers';
 import { formatDate, formatPhone } from '@/lib/format';
 
@@ -123,6 +124,8 @@ export function OfficerDesk() {
             ]}
           />
         </div>
+
+        <BuyerRequests caseload={caseload} officerId={officer?.id ?? null} />
 
         <div className={styles.find}>
           <SearchInput

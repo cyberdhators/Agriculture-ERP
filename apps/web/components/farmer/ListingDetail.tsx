@@ -36,6 +36,7 @@ export function ListingDetail({ listingId }: { listingId: string }) {
     <>
       <BackLink href="/farmer/account/listings">{t('detail.back', language)}</BackLink>
       <ProductPage
+        contact={false}
         listing={listing}
         seller={farmer}
         sellerListingCount={live}
