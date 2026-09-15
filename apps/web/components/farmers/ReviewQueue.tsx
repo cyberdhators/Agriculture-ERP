@@ -378,7 +378,9 @@ export function ReviewQueue() {
           </>
         }
       >
-        <p>A rejection must say why, so the officer can put it right and re-register.</p>
+        <p>
+          A rejection must say why, so the caseload officer can correct the record and resubmit it.
+        </p>
         <Field label="Reason">
           {(ids) => (
             <Select

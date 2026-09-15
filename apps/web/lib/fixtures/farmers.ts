@@ -85,6 +85,8 @@ export interface Farmer {
   merged_into: string | null;
   consent_id: string;
   created_at: string;
+  /** The latest rejection, as the API serves it (C-6.3). Absent on fixtures; null when never rejected. */
+  rejection?: { reason_code: string | null; note: string | null; decided_at: string | null } | null;
   /**
    * The language the farmer chose for their own account (B12 point 3). Optional
    * here because the column lands with C-5/B5, not before; the fixtures carry it

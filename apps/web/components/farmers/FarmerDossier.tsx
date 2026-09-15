@@ -3,9 +3,16 @@
 import Link from 'next/link';
 import { useMemo, useState, type ReactNode } from 'react';
 
-import { REJECTION_REASONS, type RejectionReason } from '@agri-erp/shared';
+import { patchFarmerSchema, REJECTION_REASONS, type RejectionReason } from '@agri-erp/shared';
 
 import { CROP_LABELS, LANGUAGE_LABELS, formatDate, formatPhone } from '@/lib/format';
+import { patchFarmer } from '@/lib/farmers/api';
+import {
+  correctionFrom,
+  patchDiff,
+  rejectionOf,
+  type CorrectionValues,
+} from '@/lib/farmers/correct';
 import { useDossier } from '@/lib/farmers/dossier';
 import {
   canReview,
@@ -23,6 +30,7 @@ import {
   LIVE_VERIFICATION,
   mergeFarmer,
   rejectFarmer,
+  resubmitFarmer,
   verifyFarmer,
 } from '@/lib/farmers/verification';
 import { eligibleOfficers, useOfficers } from '@/lib/farmers/caseload';
@@ -36,6 +44,7 @@ import {
   STATE_NAMES,
   syncForEntity,
   userById,
+  type Farmer,
 } from '@/lib/fixtures/farmers';
 import { usePreview } from '@/lib/preview';
 import { VISIT_TOPIC_LABELS } from '@/lib/visits/fixtures';
@@ -84,12 +93,19 @@ function maskNid(nid: string): string {
   return `${'•'.repeat(Math.max(0, nid.length - 4))}${nid.slice(-4)}`;
 }
 
-type ActionKind = 'verify' | 'merge' | 'reject' | 'reassign' | null;
+type ActionKind = 'verify' | 'merge' | 'reject' | 'reassign' | 'correct' | 'resubmit' | null;
 
 export function FarmerDossier({ id }: { id: string }) {
-  const { role, hydrated } = usePreview();
+  const { role, hydrated, me } = usePreview();
   const data = useDossier(id, role);
-  const { farmer, farms, live } = data;
+  const { farms, live } = data;
+  // A correction or resubmission returns the whole row; hold it here rather
+  // than refetching the dossier (useDossier exposes no refresh).
+  const [override, setOverride] = useState<Farmer | null>(null);
+  const farmer = override ?? data.farmer;
+  const [correction, setCorrection] = useState<CorrectionValues | null>(null);
+  const [correctErrors, setCorrectErrors] = useState<string[]>([]);
+  const [resubmitAfter, setResubmitAfter] = useState(true);
   const [action, setAction] = useState<ActionKind>(null);
   const [reason, setReason] = useState('');
   const [reasonCode, setReasonCode] = useState<RejectionReason | ''>('');
@@ -150,6 +166,15 @@ export function FarmerDossier({ id }: { id: string }) {
   const status = effectiveStatus(farmer);
   const escalated = isEscalated(farmer);
   const { consent, memberships, events, audit, visits } = data;
+  // C-6.1 / C-5.9 as amended: a rejected record is corrected by the officer
+  // who holds it and resubmitted, never re-registered. PATCH admits the admin
+  // and the caseload officer; resubmit is the caseload officer's alone.
+  const rejection = status === 'rejected' ? rejectionOf(farmer, events) : null;
+  const isCaseloadOfficer =
+    hydrated && me?.kind === 'officer' && me.id === (farmer.caseload_officer_id ?? '');
+  const canResubmit =
+    status === 'rejected' && (live ? isCaseloadOfficer : hydrated && role === 'officer');
+  const canCorrect = status === 'rejected' && (canResubmit || (hydrated && role === 'admin'));
   const officer = officerById(farmer.registered_by);
   const officerName = officer ? officer.name : live && farmer.registered_by ? 'Officer' : null;
   // Who works the farmer today (C-8R.6): the caseload pointer, which a
@@ -175,6 +200,36 @@ export function FarmerDossier({ id }: { id: string }) {
       : reason.trim();
     setBusy(true);
     try {
+      if (kind === 'correct' || kind === 'resubmit') {
+        const diff = kind === 'correct' && correction ? patchDiff(farmer!, correction) : {};
+        const parsed = patchFarmerSchema.safeParse(diff);
+        if (!parsed.success) {
+          setCorrectErrors(parsed.error.issues.map((i) => i.message));
+          return;
+        }
+        const resubmit = kind === 'resubmit' || (resubmitAfter && canResubmit);
+        let next: Farmer = farmer!;
+        if (live) {
+          if (Object.keys(parsed.data).length > 0)
+            next = (await patchFarmer(farmer!.id, parsed.data)).farmer;
+          if (resubmit && LIVE_VERIFICATION) next = await resubmitFarmer(farmer!.id);
+        } else {
+          next = {
+            ...farmer!,
+            ...parsed.data,
+            verification_status: resubmit ? 'pending' : farmer!.verification_status,
+          } as Farmer;
+        }
+        setOverride(next);
+        setCorrectErrors([]);
+        setRecorded(
+          `${live ? '' : 'Recorded (preview, no server): '}${who} ${
+            Object.keys(parsed.data).length > 0 ? 'corrected' : 'unchanged'
+          }${resubmit ? ' and resubmitted for review' : ''}.`,
+        );
+        setAction(null);
+        return;
+      }
       if (kind === 'reassign') {
         const target = eligible.find((o) => o.id === reassignTarget);
         const name = target?.name ?? reassignTarget;
@@ -286,6 +341,46 @@ export function FarmerDossier({ id }: { id: string }) {
               ]}
             />
           </Card>
+
+          {status === 'rejected' ? (
+            <Notice kind="warn" title="Rejected">
+              <p className="small">
+                {rejection
+                  ? `${
+                      rejection.reason_code
+                        ? (REASON_LABEL[rejection.reason_code as RejectionReason] ??
+                          rejection.reason_code)
+                        : 'Reason'
+                    }${rejection.note ? `: ${rejection.note}` : ''}${
+                      rejection.decided_at ? ` · ${formatDate(rejection.decided_at)}` : ''
+                    }`
+                  : 'The reason is not on this record.'}
+              </p>
+              {canCorrect ? (
+                <div className={styles.stampRow} style={{ marginTop: 'var(--s-3)' }}>
+                  <Button
+                    variant="secondary"
+                    onClick={() => {
+                      setCorrection(correctionFrom(farmer));
+                      setCorrectErrors([]);
+                      setAction('correct');
+                    }}
+                  >
+                    Correct the record…
+                  </Button>
+                  {canResubmit ? (
+                    <Button variant="primary" disabled={busy} onClick={() => submit('resubmit')}>
+                      {busy ? 'Working…' : 'Resubmit for review'}
+                    </Button>
+                  ) : null}
+                </div>
+              ) : (
+                <p className="small muted" style={{ marginTop: 'var(--s-2)' }}>
+                  The officer who holds this caseload corrects the record and resubmits it.
+                </p>
+              )}
+            </Notice>
+          ) : null}
 
           {survivor ? (
             <Notice kind="info" title="This record was merged">
@@ -822,7 +917,9 @@ export function FarmerDossier({ id }: { id: string }) {
           </>
         }
       >
-        <p>A rejection must say why, so the officer can put it right and re-register.</p>
+        <p>
+          A rejection must say why, so the caseload officer can correct the record and resubmit it.
+        </p>
         <Field label="Reason code" error={undefined}>
           {(ids) => (
             <Select
@@ -849,6 +946,118 @@ export function FarmerDossier({ id }: { id: string }) {
             />
           )}
         </Field>
+      </Dialog>
+
+      <Dialog
+        open={action === 'correct'}
+        onClose={() => setAction(null)}
+        title="Correct the record"
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setAction(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              onClick={() => submit('correct')}
+              disabled={busy || !correction}
+            >
+              {busy ? 'Saving…' : resubmitAfter && canResubmit ? 'Save and resubmit' : 'Save'}
+            </Button>
+          </>
+        }
+      >
+        <p>
+          Put right what the reviewer flagged. Only the fields you change are sent, and each change
+          is recorded with who made it. The farmer number and the registering officer never change.
+        </p>
+        {correctErrors.length > 0 ? (
+          <Notice kind="error" title="Not saved">
+            {correctErrors.map((m) => (
+              <p key={m} className="small">
+                {m}
+              </p>
+            ))}
+          </Notice>
+        ) : null}
+        {correction ? (
+          <>
+            <Field label="Given name" error={undefined}>
+              {(ids) => (
+                <Input
+                  {...ids}
+                  value={correction.given_name}
+                  onChange={(e) => setCorrection({ ...correction, given_name: e.target.value })}
+                />
+              )}
+            </Field>
+            <Field label="Family name" error={undefined}>
+              {(ids) => (
+                <Input
+                  {...ids}
+                  value={correction.family_name}
+                  onChange={(e) => setCorrection({ ...correction, family_name: e.target.value })}
+                />
+              )}
+            </Field>
+            <Field label="Sex" error={undefined}>
+              {(ids) => (
+                <Select
+                  {...ids}
+                  value={correction.sex}
+                  onChange={(e) =>
+                    setCorrection({ ...correction, sex: e.target.value as Farmer['sex'] })
+                  }
+                >
+                  <option value="f">Female</option>
+                  <option value="m">Male</option>
+                </Select>
+              )}
+            </Field>
+            <Field label="Year of birth" error={undefined}>
+              {(ids) => (
+                <Input
+                  {...ids}
+                  inputMode="numeric"
+                  value={correction.year_of_birth}
+                  onChange={(e) => setCorrection({ ...correction, year_of_birth: e.target.value })}
+                />
+              )}
+            </Field>
+            <Field label="Phone" error={undefined}>
+              {(ids) => (
+                <Input
+                  {...ids}
+                  inputMode="tel"
+                  value={correction.phone}
+                  onChange={(e) => setCorrection({ ...correction, phone: e.target.value })}
+                />
+              )}
+            </Field>
+            <Field label="National ID" hint="Leave empty if the farmer has none." error={undefined}>
+              {(ids) => (
+                <Input
+                  {...ids}
+                  value={correction.national_id}
+                  onChange={(e) => setCorrection({ ...correction, national_id: e.target.value })}
+                />
+              )}
+            </Field>
+            {canResubmit ? (
+              <label
+                className="small"
+                style={{ display: 'flex', gap: 'var(--s-2)', alignItems: 'center' }}
+              >
+                <input
+                  type="checkbox"
+                  checked={resubmitAfter}
+                  onChange={(e) => setResubmitAfter(e.target.checked)}
+                />
+                Resubmit for review after saving
+              </label>
+            ) : null}
+          </>
+        ) : null}
       </Dialog>
 
       <Dialog
