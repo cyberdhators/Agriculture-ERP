@@ -1919,29 +1919,39 @@ hand, and at **08:07** registered a farmer against it. Neither row is prefixed
 state CE by hand from its fixture, found one pending farmer too many, and main
 went red twice. **Same mechanism as #75, one day later, same lane.**
 
-**The precision that matters.** The rule was broken within hours of being
-written — **but no file on main contained it.** The §4 line sits on an unpushed
-branch. #75, Lane 2's own handoff entry stating the same rule, was **closed
-unmerged**. So the session that made the row had not read the rule because there
-was no rule to read anywhere it looks. It is not fair to say a written rule was
-ignored; it is exact to say **a rule that has not landed governs nobody**, and a
-rule that has landed governs only the sessions that open the file it is in.
+**The precision that matters — corrected the same day, because the first
+version of this paragraph was wrong.** It said no file on main contained the
+rule. **It did.** #75, Lane 2's pull request carrying the rule, was closed
+unmerged — but the same HANDOFF entry reached main inside #79 at
+**2026-09-14 21:23 UTC**, ten and a half hours before the officer row was made.
+`docs/HANDOFF.md` is the one file every session is instructed to read before
+any work. So the rule was on main, in the file sessions are told to open first,
+written by the same lane that then broke it. **The owner's sentence stands, and
+it is sharper than the first version made it:** a law in a file governs only the
+sessions that open the file — and here the file was the one they are required
+to open. What is not yet on main is the `CLAUDE.md` §4 line, which sits on a
+held branch.
+
+_The first version was written from #75's state without checking whether its
+content had landed another way. Same fault as characterising the SMS account
+from three of eight messages: the record was consulted instead of the system._
 
 **What follows, in two parts.**
 
-- **Landing matters more than writing.** A rule approved and committed on a held
-  branch has the same force as a rule nobody thought of. The §4 line should go
-  to main on its own, ahead of the code it shares a branch with.
-- **A file is not enough for a rule about a shared resource.** `CLAUDE.md`
-  governs code-writing sessions that open `CLAUDE.md`. A staging database is
-  touched by sessions proving UI, by scripts, and by people, and none of those
-  is obliged to open the law file first. The durable form is the one already
-  used for `zztest`: **the resource itself refuses.** `farmers-seed-lib.mjs`
-  refuses to register a placeholder farmer against a `zztest` officer; the
-  equivalent for hand-made rows is a check the suite runs first — every officer
-  and farmer in staging is either `zztest`-prefixed or came from the seed — that
-  goes red naming the row, before the counting tests fail on it obliquely. Sized
-  at about half an hour, not built.
+- **Landing matters more than writing.** The §4 line should go to main on its
+  own, ahead of the code it shares a branch with. But this incident shows that
+  landing is necessary and not sufficient: the rule was landed, in the required
+  file, and was not followed.
+- **A file is not enough for a rule about a shared resource.** `CLAUDE.md` and
+  `HANDOFF.md` govern sessions that open them and act on what they read. A
+  staging database is touched by sessions proving UI, by scripts, and by people
+  in a hurry. The durable form is the one already used for `zztest`: **the
+  resource itself refuses.** `farmers-seed-lib.mjs` refuses to register a
+  placeholder farmer against a `zztest` officer; the equivalent for hand-made
+  rows is a check the suite runs first — every officer and farmer in staging is
+  either `zztest`-prefixed or came from the seed — that goes red naming the row,
+  before the counting tests fail on it obliquely. Sized at about half an hour,
+  not built. **After this incident it is the fix, not an option.**
 
 **The row is Lane 2's to remove**, at the owner's request, since the auto-mode
 guard refuses this session a `DELETE` on the shared database and Alieu ran the
