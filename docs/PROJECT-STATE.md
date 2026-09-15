@@ -335,6 +335,66 @@ unmodified, a 148-character Latin advisory is one GSM-7 segment, and Bird's
   `delivered_at`, the carrier code and the cost, and says plainly that anything
   short of `delivered` reached no handset.
 
+### MTN SOUTH SUDAN DELIVERS WITH THE SHIPPING CONFIGURATION (2026-09-15)
+
+**The 13 September delivery proved MTN with a variable in it: category
+`authentication`, later found to be our own mistake.** This send removes it.
+
+|                        |                                                        |
+| ---------------------- | ------------------------------------------------------ |
+| To                     | `+211920608008` (prefix 92)                            |
+| Sender in `.env.local` | `AgrioneSSD`                                           |
+| **Sender Bird echoed** | **`AGRIONESSD`**                                       |
+| Category               | `service`                                              |
+| Body                   | 148-character agricultural advisory, one GSM-7 segment |
+| Network                | **65902 MTN South Sudan**                              |
+| Status, fetched by id  | **delivered**, 3 seconds after send                    |
+| Cost                   | **0.20 EUR**                                           |
+| Message id             | `sms_01m2jdnz7memktbn2hhxm790ya`                       |
+
+**Three things this establishes, and one it does not.**
+
+1. **MTN South Sudan delivers with the configuration deliverable (n) would ship** —
+   `service` category, advisory text, the current sender. Not a test string
+   under the wrong category.
+2. **The new sender delivered with no registration filed.** `AGRIONESSD` was
+   created on 2026-09-15 and Bird reports `not_required`, `registration_id:
+null` for both SS and LR — the weaker of Bird's two positive signals, and
+   `Agrione_SS` held the stronger one and was still refused in Liberia. MTN
+   South Sudan accepted it anyway. **So on this carrier, today, an unregistered
+   alphanumeric sender delivers.** That is one carrier and one day; it is not a
+   rule.
+3. **Bird uppercases alphanumeric senders.** `.env.local` says `AgrioneSSD`;
+   Bird's sender list, the message record and — presumably — the handset say
+   `AGRIONESSD`. **What is in the configuration is not what the farmer sees.**
+   Whoever chooses the final sender string should choose it in capitals, because
+   that is how it arrives.
+
+**What it does not establish:** anything about Zain or Digitel. **Coverage stays
+at one operator of three.**
+
+**THE FOUR NUMBERS OFFERED FOR THIS TEST WERE ALL MTN, AND ONLY ONE WAS SENT.**
+`+211 920…`, `922…`, `923…`, `925…` — all prefix 92. South Sudan's mobile blocks
+are allocated by operator and there is no number portability, so the prefix is
+the operator: **91 Zain, 92 MTN, 95 Vivacel, 97 Gemtel, 98 Digitel.** Sending
+all four would have re-proved MTN four times for 0.80 EUR. One was sent, for the
+configuration proof above, at 0.20 EUR.
+
+**To close the coverage question: one 91x handset and one 98x handset. Two
+sends, 0.40 EUR.** The owner is finding them.
+
+**CONFIDENCE, SEPARATED BY SOURCE — recorded as a habit, at the owner's
+instruction.** That **92 is MTN is evidence**: two messages to 92x numbers, both
+`mcc_mnc 65902`, from this account's own history. That **91 is Zain and 98 is
+Digitel is a working assumption**: it rests on a secondary source, corroborated
+only circumstantially by Zain's MNC being 659-**91**. The authority is the ITU's
+numbering plan for +211, which is a PDF with the same glyph encoding that
+defeated OpenWeather's terms — **and it was not read rather than guessed at,
+which is the second time this week that judgement came up, and it was right both
+times.** A first-party document that cannot be read is not a licence to
+reconstruct it; it is a reason to find the same fact stated somewhere readable,
+or to label the claim as what it is.
+
 ### THE SENDER IS ALREADY REGISTERED AND APPROVED, AND THE CARRIER STILL REFUSED IT
 
 **Read from Bird's own API on 2026-09-14**, after the rejections, at
