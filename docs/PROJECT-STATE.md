@@ -70,16 +70,17 @@ for deployments.
 false.** Seven required names were absent from that file until this was found on
 2026-09-13 — see _Seven variables the code requires and nothing declares_ below.
 
-| Name                     | Used by                                        | For                                                                                                                                                                                                                                                                                          |
-| ------------------------ | ---------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `DATABASE_URL`           | Prisma at runtime                              | Pooled connection, port 6543, `pgbouncer=true`, `connection_limit=1`.                                                                                                                                                                                                                        |
-| `DIRECT_URL`             | `prisma/schema.prisma`, `scripts/db-reset.mjs` | **Session pooler**, port 5432 — NOT the direct host, which is IPv6-only. Migrations, introspection, operational scripts and database tests.                                                                                                                                                  |
-| `NEXT_PUBLIC_SENTRY_DSN` | `apps/web/sentry.shared.ts`                    | Where errors go. **Public by design** — see `docs/DECISIONS.md`. Empty switches reporting off. **Lives in Vercel's environment variables, not on any laptop** — see _The DSN and local machines_ below.                                                                                      |
-| `SENTRY_ENVIRONMENT`     | same                                           | **Set explicitly in Vercel: `staging` for preview deployments, `production` for production.** Decided 2026-09-04. The code falls back to `VERCEL_ENV`, then `development`, but the fallback must never be what produces the value — `VERCEL_ENV` says `preview`, which is not a name we use. |
-| `SENTRY_RELEASE`         | same                                           | Which build. Falls back to `VERCEL_GIT_COMMIT_SHA`, then `unknown`.                                                                                                                                                                                                                          |
-| `BIRD_API_KEY`           | `scripts/bird-sms-verify.mjs`                  | **Secret.** Bearer token for the Bird SMS API; it can send messages CORWADO pays for. Never `NEXT_PUBLIC_`.                                                                                                                                                                                  |
-| `BIRD_API_BASE_URL`      | same                                           | The workspace's regional host, e.g. `https://us1.platform.bird.com`. Region is part of the URL and differs per workspace.                                                                                                                                                                    |
-| `BIRD_SMS_SENDER_ID`     | same                                           | The alphanumeric sender, 3-11 chars, at least one letter. The ONLY sender type Bird offers for +211.                                                                                                                                                                                         |
+| Name                     | Used by                                                       | For                                                                                                                                                                                                                                                                                          |
+| ------------------------ | ------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`           | Prisma at runtime                                             | Pooled connection, port 6543, `pgbouncer=true`, `connection_limit=1`.                                                                                                                                                                                                                        |
+| `DIRECT_URL`             | `prisma/schema.prisma`, `scripts/db-reset.mjs`                | **Session pooler**, port 5432 — NOT the direct host, which is IPv6-only. Migrations, introspection, operational scripts and database tests.                                                                                                                                                  |
+| `NEXT_PUBLIC_SENTRY_DSN` | `apps/web/sentry.shared.ts`                                   | Where errors go. **Public by design** — see `docs/DECISIONS.md`. Empty switches reporting off. **Lives in Vercel's environment variables, not on any laptop** — see _The DSN and local machines_ below.                                                                                      |
+| `SENTRY_ENVIRONMENT`     | same                                                          | **Set explicitly in Vercel: `staging` for preview deployments, `production` for production.** Decided 2026-09-04. The code falls back to `VERCEL_ENV`, then `development`, but the fallback must never be what produces the value — `VERCEL_ENV` says `preview`, which is not a name we use. |
+| `SENTRY_RELEASE`         | same                                                          | Which build. Falls back to `VERCEL_GIT_COMMIT_SHA`, then `unknown`.                                                                                                                                                                                                                          |
+| `BIRD_API_KEY`           | `scripts/bird-sms-verify.mjs`                                 | **Secret.** Bearer token for the Bird SMS API; it can send messages CORWADO pays for. Never `NEXT_PUBLIC_`.                                                                                                                                                                                  |
+| `BIRD_API_BASE_URL`      | same                                                          | The workspace's regional host, e.g. `https://us1.platform.bird.com`. Region is part of the URL and differs per workspace.                                                                                                                                                                    |
+| `BIRD_SMS_SENDER_ID`     | same                                                          | The alphanumeric sender, 3-11 chars, at least one letter. The ONLY sender type Bird offers for +211.                                                                                                                                                                                         |
+| `OPENWEATHER_API_KEY`    | `scripts/weather-fetch.mjs`, `scripts/openweather-verify.mjs` | **Secret, server-only.** Read by the fetch job and the verify script only; no route fetches weather (C-16.6), so it never nears a browser. A fresh key returns 401 for up to two hours.                                                                                                      |
 
 ### Seven variables the code requires and nothing declares (found 2026-09-13)
 
@@ -2600,6 +2601,64 @@ Production receives its first migration only after.
 **Open, for the owner:** the plan CORWADO's projects are on and whether
 point-in-time recovery is purchasable (C-11.1's number); the scratch project
 for the drill; the destination account for the bucket copy.
+
+## B12 — THE WEATHER TILE, C-16 (2026-09-15)
+
+**What exists.** Migration 23: `weather_location`, `weather_observation`,
+`weather_forecast`, the `weather_location_active` view, three audit keys, RLS on
+all three. Prisma models for all three (`pnpm schema:check` passes). `GET
+/api/weather` through `requireRole`. `packages/shared/src/weather.ts`: the
+daily aggregation, the schemas, the constants. `pnpm weather:locations` (one
+county-level row per county, audited as `system`), `pnpm weather:fetch` (paced,
+idempotent, floored, not audited), `pnpm weather:verify` (throwaway).
+CONVENTIONS §18. The contract's §9 records every divergence, dated, with the
+agreed text left untouched. The I-03 findings behind the design are on #78.
+
+**Proved live on staging, 2026-09-15.** The OpenWeather key activated within
+the hour and the free plan answers both inputs; **One Call is a separate
+subscription** — first-party, from its own 401: _"requires a separate
+subscription to the One Call by Call plan."_ Six counties seeded and fetched —
+36.7 °C in Juba, five days each, 1.2 s pacing, none failed. A second run inside
+the hour skipped all six (the floor). The route's query returns the six rows for
+an admin and Juba County alone for an officer in CE-JUB-MUN. Six
+`weather_location.created` audit rows as `system`; **zero** audit rows from
+fetching.
+
+**What was not proved, and why.** `tests/weather.test.ts` is written — scoping
+for all four roles, empty as success, stale served with its real time,
+idempotent upsert, the level/payam CHECK, soft-delete hiding a row, the seed's
+audit and the fetch's silence — and **has not run**, because the staging-rows
+refusal in the global setup fires on the hand-made `Placeholder-Deng` farmer,
+as designed. It runs the moment that row is gone.
+
+| Criterion                                                                  | State                                                                   |
+| -------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| C-16.1 forecasts as numbers                                                | DONE — **three tables, not two**; the reason is in CONVENTIONS §18      |
+| C-16.2 explicit scope, never a null meaning something                      | DONE — `level` + `payam_id` paired by CHECK                             |
+| C-16.3 denormalised `state_id`, composite keys                             | DONE — to payam and to county                                           |
+| C-16.4 `deleted_at` beside `active`                                        | DONE                                                                    |
+| C-16.5 no `sms_campaign_id`                                                | DONE                                                                    |
+| C-16.6 one fetch per location per day, no route fetches, paced, idempotent | DONE — proved live                                                      |
+| C-16.7 stale served with real time; refetch floor                          | DONE — floor proved live; stale in the unrun test                       |
+| C-16.8 the route, scoped                                                   | DONE — **officer scope is county, not payam**                           |
+| C-16.9 empty is a success                                                  | DONE — the live case for nine states                                    |
+| C-16.10 attribution served                                                 | DONE — `ok()` gained an `extra` bag to carry it beside `data`           |
+| C-16.11 audit locations, never fetches                                     | DONE — proved live                                                      |
+| C-16.12 manifest knows the tables; catalogue→list gate                     | DONE — `MANIFEST_EXCLUDED_TABLES` names the two exceptions with reasons |
+| C-16.13 county level to start                                              | DONE — six counties                                                     |
+| C-16.14 re-pointable under I-07                                            | DONE — centroids looked up by name, rows reference ids only             |
+
+**Decisions taken in the build, for the owner.** Three tables where the
+criterion said two, so a fetch never looks like an edit to a location. Officer
+scope is the county. A never-fetched location is omitted so `fetched_at` keeps
+its promise. `ok()` in the route wrapper accepts top-level siblings of `data`,
+refusing the envelope's own names.
+
+**Two gates fired during the build and were right both times.** `schema:check`
+named `weather_location_county_id_fkey` — Prisma cannot restate a second key
+over the same field set — and it was added to the residue deliberately with the
+reason. The seed refused on `Yei River`, the placeholder county's real name,
+and inserted nothing until the centroid existed.
 
 ## B11 CHECKLIST — WHAT A FRESH PRODUCTION PROJECT MUST BE GIVEN BY HAND
 

@@ -42,8 +42,23 @@ export const MANIFEST_TABLES = [
   'directory_entry',
   'learning_resource',
   'report_export',
+  'weather_location',
+  'weather_observation',
+  'weather_forecast',
   'audit_event',
 ] as const;
+
+/**
+ * Tables that exist in the public schema and are DELIBERATELY not in the
+ * manifest, each with its reason. tests/backup.test.ts compares the catalogue
+ * against MANIFEST_TABLES plus this list, so a new table that is in neither
+ * fails the run by name (C-16.12) instead of silently falling out of backup
+ * verification.
+ */
+export const MANIFEST_EXCLUDED_TABLES: Readonly<Record<string, string>> = {
+  _prisma_migrations: "Prisma's own ledger; the manifest lists applied migrations separately.",
+  spatial_ref_sys: 'PostGIS reference data, recreated by the extension, never ours.',
+};
 
 export async function takeManifest(
   prisma: PrismaClient,
