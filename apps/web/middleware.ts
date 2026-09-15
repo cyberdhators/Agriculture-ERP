@@ -13,6 +13,8 @@ import { HOME_PATH, isPortalPath, LOGIN_PATH } from '@/lib/auth/paths';
  * 2. Gate the portal. No session on a portal path redirects to /login with the
  *    intended page carried in ?next=; a session on /login goes to the home
  *    page. The API routes are not matched: they enforce their own roles.
+ *    The marketplace and the farmer side are matched and count as portal
+ *    paths until NEXT_PUBLIC_MARKET_OPEN=1 (lib/auth/paths.ts).
  *
  * Fails closed: if the Supabase variables are missing, portal paths return
  * 503 rather than rendering screens nobody can be signed in to.
@@ -74,6 +76,10 @@ export const config = {
     '/directories/:path*',
     '/library/:path*',
     '/design/:path*',
+    '/market/:path*',
+    '/market',
+    '/farmer/:path*',
+    '/farmer',
     '/login',
   ],
 };
