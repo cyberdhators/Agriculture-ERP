@@ -96,7 +96,7 @@ Decided. Do not substitute, add or upgrade any of these without asking.
 | Secret scanning | gitleaks |
 | Errors | Sentry |
 | Maps | Mapbox |
-| SMS | Africa's Talking |
+| SMS | Bird |
 | Email | SendGrid |
 | Weather | OpenWeather |
 

@@ -24,6 +24,7 @@
     "locations:bundle": "node scripts/with-env.mjs node scripts/locations-bundle.mjs",
     "directories:seed": "node scripts/with-env.mjs node scripts/directories-seed.mjs",
     "sentry:verify": "pnpm --filter @agri-erp/web sentry:verify",
+    "sms:verify": "node scripts/bird-sms-verify.mjs",
     "farmers:seed": "node scripts/with-env.mjs node scripts/farmers-seed.mjs",
     "storage:buckets": "pnpm --filter @agri-erp/web storage:buckets",
     "backup:manifest": "pnpm --filter @agri-erp/web backup:manifest",

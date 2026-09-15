@@ -88,6 +88,16 @@ are pinned in the document, and a test reads those tables out of the Markdown
 and compares them to the exported constants. Changing either side alone turns it
 red.
 
+**Discovered again from the other end, 2026-09-14.** The same principle turned
+up independently in `docs/PROJECT-STATE.md`, _read a document as its recipient
+before it goes_ — three faults in a finished vendor request became visible only
+when it was read as the support desk rather than as its author. B1.4 reasoned
+from a constraint (nobody here can review code) to the method; that entry
+reasoned from an accident to the same method. **A check performed by someone who
+shares the author's knowledge confirms the author's model, which is the one part
+already known to be consistent.** Two instances of one idea, reached from code
+and from prose.
+
 **Tested in both directions**, per B1.3: deliberately broken four ways — a
 message changed in the code alone, the same message changed in the document
 alone, a code added to the document the code does not define, and a pinned
@@ -2648,3 +2658,265 @@ Applied the same day to everything built in that session: the narrowing
 migration planted (red, naming all 33 keys it would drop), a column hidden twice
 (`schema-check` green the first time — which is how its defect was found — red
 the second), and the `db:push` refusal run to see it refuse.
+---
+
+## The SMS provider is Bird, not Africa's Talking (2026-09-14)
+
+**Approved by the owner on 2026-09-14 after a findings-first write-up.**
+`CLAUDE.md` §3 now names Bird. One row changed; nothing else in the stack table
+moved.
+
+**The ground, and it is not a preference.** **Africa's Talking does not serve
+South Sudan.** Its own help centre lists eleven countries — Kenya, Uganda,
+Tanzania, Rwanda, Malawi, Zambia, Nigeria, Côte d'Ivoire, Ethiopia, Ghana,
+South Africa — and South Sudan is not one of them. The provider recorded in the
+stack table since the beginning could not have delivered deliverable (n) to a
+farmer in this country. This is a correction of a stack decision that was wrong
+for the country the project is for, not an upgrade.
+
+**The provider was never contracted.** "F-03" appears once in this document, as
+the authority for Africa's Talking being "our contracted provider", and is
+defined nowhere in `docs/` or `CLAUDE.md`. The scope document names no SMS
+provider at all. So the choice is a stack decision in the owner's gift, which is
+how it was made.
+
+**What Bird gives us that Africa's Talking would not:** South Sudan at all; a
+published rate; no sender registration, so no lead time; and WhatsApp on the
+same account and API, which touches deliverable (o) — though whether that moves
+the Meta business-verification blocker is **unverified and not assumed**.
+
+**What we lose, recorded because it constrains design:**
+
+- **Two-way SMS in South Sudan, entirely.** Bird lists two-way as unavailable
+  for +211 and the only sender type is alphanumeric, which recipients cannot
+  reply to. Nothing can receive a STOP, so **opt-out is an officer withdrawing
+  consent in the system**, not a keyword. Any farmer-reply feature is impossible
+  over SMS here, including the unresolved "Ask AI" advisory.
+- **A callable identity.** Messages arrive from a name; a farmer cannot ring it
+  back.
+- **Africa's Talking's regional products** — USSD, airtime, payments. All three
+  are out of scope, so the real loss is a local commercial relationship.
+
+**Cost, so it is on the record before the first campaign.** $0.21 per segment,
+alphanumeric, South Sudan. Billing is per segment: 160 GSM-7 characters, or 70
+in Arabic script, dropping to 153 and 67 once a message concatenates, capped at
+twelve segments. One 160-character Latin advisory to a thousand farmers is
+**$210**; the same words in Arabic script are three segments and **$630**.
+**Encoding follows the script, not the language** — Juba Arabic in Latin letters
+is GSM-7 and costs a third as much, which makes the writing of an advisory a
+decision with a price attached. Bird's `smart_encoding` cannot rescue Arabic
+script, which has no GSM-7 form.
+
+**Open, and none of it blocks the substitution:** no operator is named in Bird's
+documentation, so per-network delivery to MTN, Zain and Digitel is unproven and
+needs one verification send each; carrier fees for South Sudan are unpublished,
+so $0.21 is a floor; the NCA registration question is CORWADO's; and a number
+bought from GB inventory cannot carry +211 traffic, while the sender that does
+work costs nothing.
+
+**What exists in the repository:** the three variable names in `.env.example`
+and `scripts/bird-sms-verify.mjs`, a throwaway proof wired as `pnpm sms:verify`.
+Deliverable (n) is phase 6, C-15 does not exist, and no application code imports
+anything Bird.
+
+---
+
+## The premise under B3's derived identifier expired on 2026-09-14
+
+**Recorded, not acted on.** The B3 entry above — _officers authenticate by
+phone, through a derived identifier_ — rests on this: enabling Supabase's Phone
+provider requires an SMS provider from a fixed list of Twilio, Twilio Verify,
+MessageBird, Vonage and Textlocal, and **Africa's Talking is not on it**. Its
+closing instruction was: _"If Africa's Talking ever joins Supabase's supported
+list, revisit it then — deliberately, with the migration of existing accounts
+planned, not as a tidy-up."_
+
+**That condition has occurred, by two independent routes.**
+
+1. **Our provider is now on the list.** Supabase supports **MessageBird**, and
+   Bird is MessageBird renamed. Option A's objection was paying for a second SMS
+   provider to satisfy a toggle; with Bird there is no second provider.
+2. **The list is no longer the constraint.** Supabase has since added a **Send
+   SMS auth hook**, which calls any HTTP endpoint for the message — so any
+   provider at all, including the one we just replaced.
+
+**Two things remain unverified and would have to be before anyone acts:** that
+Bird's current platform credentials work with Supabase's MessageBird
+integration, which was built against MessageBird's older API; and that the OTP
+path is wanted at all, since we send no one-time codes.
+
+**THE DESIGN IS UNCHANGED AND SHOULD STAY UNCHANGED TODAY.** Officer accounts
+already exist keyed by the derived identifier; moving them is a migration with
+real risk and no acceptance criterion asking for it. C-3.7 is satisfied as
+built: the officer types a phone number and a password.
+
+**Why this is written down at all.** The reasoning was stated as fact in three
+places — this document, `docs/api/CONVENTIONS.md` §2, and a comment on
+`officerAuthIdentifier` in `packages/shared` — and a session reading any of them
+tomorrow would have believed a premise that stopped being true. The two
+downstream statements have been corrected to say the decision stands and the
+premise expired. **That is the third time this week a document outlived its
+premise** — after the audit CHECK "generated from `AUDIT_ACTIONS`" and
+`.env.example` "all are listed" — and it is the same fault each time: a
+statement that was true when written, trusted long after.
+
+---
+
+## Two SMS cost facts, measured rather than published (2026-09-14)
+
+Recorded separately from the substitution entry because a campaign budget is
+built from these two numbers and both differ from the rate card.
+
+**1. The real unit price is 0.18 EUR per segment, not $0.21.** The published
+table gives $0.21 for an alphanumeric sender to Liberia and the same for South
+Sudan. Three live sends were each billed **0.18 EUR**. The rate card is a guide
+in dollars; the invoice is in euros. Any figure quoted to CORWADO should come
+from `cost.amount` on a real message, which the API returns only after the send
+and not at acceptance — `cost` is `null` in the 202.
+
+**2. A carrier rejection is billed in full.** All three sends were refused by
+the network with carrier code 104 and all three cost 0.18 EUR. Nothing arrived.
+**So the figure to multiply for a campaign is messages ATTEMPTED, not messages
+RECEIVED**, and a sender or content problem does not fail cheaply — it fails at
+full price, once per recipient, per attempt.
+
+The consequence for deliverable (n) is a design one as much as a financial one:
+a retry loop over a systematically rejected sender bills every attempt. Whatever
+sends advisories must treat a carrier failure as terminal for that sender until
+something changes, not as something to retry.
+
+**Working figures, for the alphanumeric sender, once delivery actually works:**
+one 148-character Latin advisory is one segment at 0.18 EUR, so 1,000 farmers
+is **180 EUR**. In Arabic script the same advisory is three segments and
+**540 EUR**. Monthly for a year, to a thousand farmers: 2,160 EUR in Latin
+script, 6,480 EUR in Arabic script.
+
+**Evidence:** `docs/PROJECT-STATE.md`, I-02. Nothing above is a projection from
+the rate card; the unit prices are from billed messages — 0.18 EUR to Liberia,
+0.20 EUR to South Sudan.
+
+---
+
+## Standing rule — a gateway's word about a carrier is not the carrier's word (2026-09-14)
+
+**Two separate lessons from I-02, both the same shape, both now rules rather
+than incidents.** See `docs/PROJECT-STATE.md`, _I-02 — the account has never
+delivered a message_, for the evidence.
+
+### 1. Bird's positive signals are statements about Bird's paperwork
+
+Bird gives two signals that read as permission, and **neither binds the
+carrier**:
+
+- **`not_required`** — Bird's own documentation concedes it: it _"reflects
+  Bird's assessment, not a guarantee of carrier compliance"_.
+- **`approved`**, with a registration id and `next: []` — which is what
+  `Agrione_SS` held for Liberia and South Sudan while Lonestar Cell MTN refused
+  it three times as `EC_SENDER_UNREGISTERED`.
+
+**The structural reason, which is the part worth keeping.** Bird models
+registration **per country** — its words: "one row per country". Carriers reject
+**per carrier**. There is no per-carrier field, status or row anywhere in the
+sender surface, so `approved` for a country cannot mean every network in it will
+accept the sender, and there is nowhere for Bird to tell you which one will not.
+
+**The rule.** A provider's status field describes the provider's records. **The
+only evidence that a message is deliverable is a delivered message.** For
+deliverable (n) that means a send to a handset on each network we intend to
+reach, not a green row in a dashboard — and for South Sudan that is MTN, Zain
+and Digitel separately.
+
+**This is the silent-class pattern with a third party supplying the gate.** A
+single fact asserted — "the sender is approved" — believed because a system we
+do not control reported it, and quietly false at the only point that matters.
+The same question applies: what did it actually read? Bird read its own
+registration table.
+
+### 2. The failure label is not the failure reason — read the carrier code
+
+The rejection arrived as `description: carrier_rejected`, `code:
+content_rejected`, `carrier_error_code: 104`.
+
+**`content_rejected` points at the message. Code 104 is
+`EC_SENDER_UNREGISTERED` and points at the sender.** They disagree, and the
+carrier code is the one that was right. Believing the label cost a full cycle: a
+message was rewritten from a test string into a real agricultural advisory and
+its category changed from `authentication` to `service`, on the theory that
+content class was the cause. It was refused identically, and billed again.
+
+**The rule, for whatever sends advisories in deliverable (n):** read
+`last_error.carrier_error_code` and branch on that. Bird's `code` and
+`description` are a summary written by the gateway, they are not the network's
+reason, and on the only failure this project has seen they named the wrong
+cause. Log both, act on the carrier code, and never present the gateway's label
+to an officer as an explanation.
+
+**Related, and already recorded above:** a carrier rejection is billed in full,
+so a retry loop driven by the wrong diagnosis costs 0.18 EUR per attempt per
+recipient. Diagnosing from the label is therefore not merely wrong, it is
+expensive.
+
+---
+
+## The SMS sender stays `Agrione_SS`, permanently (2026-09-14)
+
+**Decided by the owner after the facts changed, and closed rather than
+deferred.** The instruction had been to rename the sender to `CORWADO` before
+registration — seven characters, the client's actual name, and what a farmer who
+has met an extension officer would recognise. That reasoning is sound on its
+merits and is not what was overturned.
+
+**What overturned it:** registration had already happened. Bird reports
+`Agrione_SS` as **`approved`** for both Liberia and South Sudan, each with a
+registration id. Renaming means discarding two approved registrations and
+re-filing from scratch, days to weeks per country, for a better string.
+
+**The owner's decision, in their words: "Two approved registrations are worth
+more than a better sender string."** Held permanently, not pending — so a future
+session finding `Agrione_SS` in `.env.local` and thinking it untidy has this
+entry to read first.
+
+**What this does NOT settle.** The sender is approved and the carrier refused it
+anyway (`docs/PROJECT-STATE.md`, I-02). If Bird's answer turns out to be that
+the registration must be re-filed to bind the carrier, the calculus changes and
+so should this decision — because then there is no approval being protected.
+
+---
+
+## The honest state of the Bird substitution, for CORWADO (2026-09-14)
+
+**Recorded at the owner's instruction, in plain terms, because it is what the
+client eventually needs to be told.** The detail is in
+`docs/PROJECT-STATE.md`, I-02; this is the paragraph that travels.
+
+> **REWRITTEN 2026-09-14. The first version of this paragraph said the
+> evidential basis was "no better than before the account was bought". That was
+> false: the account had already delivered to MTN South Sudan the previous
+> evening, and I had not looked at its message history before writing it. The
+> error and its mechanism are recorded in `docs/PROJECT-STATE.md`, I-02.**
+
+> **Africa's Talking cannot serve South Sudan at all, so replacing it was
+> right.** And the central premise of the replacement is no longer a
+> documentation claim: **a message has been delivered to MTN South Sudan** —
+> the operator carrying most of the country's traffic — from our own sender, at
+> 0.20 EUR for one segment. What was a listing on a vendor's website is now an
+> observed delivery.
+
+**Four things that follow, so this is read as neither alarm nor reassurance.**
+
+- **Nothing is blocked today.** Deliverable (n) is phase 6 and C-15 does not
+  exist. No code depends on Bird; one throwaway script reads its variables.
+- **One operator is proved, two are not.** MTN South Sudan delivered. **Zain
+  (`659-91`) and Digitel are untested**, and one delivery proves one operator.
+  Completing I-02 means a handset on each.
+- **Liberia, the control, currently refuses our sender** while delivering a
+  different one on the same carrier. That is a sender-registration question for
+  Bird, most likely propagation, and it is not evidence about South Sudan.
+- **A positive signal from Bird is not evidence of delivery.** `not_required`
+  and `approved` describe Bird's records; the only proof a network accepts a
+  sender is a delivered message on that network. This is the durable lesson and
+  it survives the correction above.
+
+**Spending is paused** until Bird answers the Liberia question, at the owner's
+instruction. Each rejection bills in full, and six have now taught the same
+thing.

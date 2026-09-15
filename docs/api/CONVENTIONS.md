@@ -53,10 +53,12 @@ never see or type anything else.
 
 Underneath, the phone is turned into an authentication identifier by a single
 function, `officerAuthIdentifier` in `packages/shared`. **Do not "fix" this by
-enabling Supabase's Phone provider**: it requires an SMS provider from a fixed
-list that does not include Africa's Talking, our contracted provider, and it was
-verified refusing phone sign-in on this project. Full reasoning, and the rules
-the identifier comes with, are in `docs/DECISIONS.md`.
+enabling Supabase's Phone provider.** It was verified refusing phone sign-in on
+this project, and the decision stands. Its original reason no longer holds:
+Supabase's list excluded Africa's Talking, and as of 2026-09-14 our SMS provider
+is Bird, which Supabase supports as MessageBird. **The decision is unchanged and
+revisiting it is a deliberate act with account migration planned, not a
+tidy-up** -- see `docs/DECISIONS.md`, where the changed premise is recorded.
 
 The identifier is never displayed, never typed, and never appears in an error
 message. The officer row stores the real E.164 phone.
