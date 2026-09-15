@@ -210,6 +210,63 @@ read. Not "is this correct" — both claims were correct — but **"do I know th
 or did something tell me it"**, which is the same question as reading a document
 as its recipient, pointed at an input rather than an output.
 
+## A MISSING OPTIONAL FIELD IS THE FAILURE NO TEST ASSERTS (2026-09-15)
+
+**Found by reading a signature, not by testing an output, and recorded at the
+owner's instruction because the finding method is the transferable part.**
+
+**What happened.** C-16.10 requires OpenWeather's attribution in the route's
+payload — **a licence condition, not a courtesy**. The route was written as:
+
+```ts
+return ok(rows.map(...), undefined, { attribution: attribution() });
+```
+
+which reads correctly, compiles, lints, and would have shipped a payload with no
+`attribution` in it. `ok()`'s signature was `(data, headers?)`. **A third
+argument to a two-argument function is silently discarded by JavaScript.** No
+type error: the extra argument is simply not checked. No test failure: the
+route's tests assert what `data` contains, and nothing asserted that a field
+_was there_.
+
+**How it was found.** Before writing the route's assertions, the wrapper's
+`ok()` was read to check what it did with a third argument. The answer was
+nothing. `ok()` then gained an `extra` bag of top-level siblings, which refuses
+the envelope's own names (`data`, `warnings`, `page`, `error`) so a future
+caller cannot quietly overwrite the envelope.
+
+**THE SHAPE, AND IT IS A NEW ONE FOR THIS LIST.** Every silent instance recorded
+above is a check that ran and examined the wrong thing. This is not that. **It
+is the absence of a check entirely, in a place where absence is invisible:**
+
+> **A test asserts what is present. Almost nothing asserts what is missing.**
+
+A wrong value fails an equality. A missing optional field fails nothing —
+`body.attribution` is `undefined`, the reader renders nothing where the notice
+should be, and every existing assertion still passes. It is the same family as
+`audit_event.device_id` (the eighth instance: a column the law required and no
+request ever sent) and `updated_at` (the seventh: a column nobody wrote), but
+those were found by looking at the database. **This one had no column to look
+at** — it is a field in a JSON body that simply was not there.
+
+**The rule this earns, and it is cheap.** For anything the payload must carry
+because a contract or a licence says so — not merely because a screen wants it —
+**assert its presence explicitly**, not only the correctness of its value:
+
+```ts
+expect(body.attribution).toEqual(WEATHER_ATTRIBUTION); // presence AND value
+```
+
+`tests/weather.test.ts` asserts exactly that, twice, including on the **empty**
+response — because an empty `data` array is the case where a payload sibling is
+easiest to drop and hardest to notice.
+
+**And the wider form, which is the owner's point.** The finding came from
+reading the callee's signature rather than the caller's output. For a shared
+helper, **what it accepts is a fact about the helper, and it is cheaper to read
+than to infer from behaviour** — particularly in a language that discards extra
+arguments without complaint.
+
 ## THE BACKUP MANIFEST GATE IS ONE-DIRECTIONAL (2026-09-14)
 
 **Found while writing C-16, and it is worse than the criterion it produced.**

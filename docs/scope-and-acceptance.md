@@ -1133,12 +1133,38 @@ before either half exists:** `docs/api/weather-contract.md`.
 because §8 predates B5–B11 and contradicts rules those units established. They
 are C-16.2, C-16.3 and C-16.4.
 
-### C-16.1 — Two tables, and forecasts are stored as numbers
+### C-16.1 — Three tables, and forecasts are stored as numbers
 
-`weather_location` and `weather_forecast` exist. `weather_forecast` stores the
-provider's numbers and its response in `raw`, and **never a rendered sentence**:
-no row contains "Rain likely Thursday". An advisory layer is written over these
-numbers later, and storing prose now would have to be undone first.
+_Amended 2026-09-15 by the owner, during the build. This criterion said **two**
+tables — `weather_location` and `weather_forecast`, the shape
+`docs/data-model-extension.md` §8 drew. The build found the count wrong and the
+substance right, so the criterion is corrected here rather than left as
+something the implementation knowingly departs from._
+
+`weather_location`, `weather_observation` and `weather_forecast` exist.
+`weather_forecast` stores the provider's numbers and its response in `raw`, and
+**never a rendered sentence**: no row contains "Rain likely Thursday". An
+advisory layer is written over these numbers later, and storing prose now would
+have to be undone first.
+
+**Why the observation is its own table, and not columns on the location or a
+forecast row for today.** Two reasons, and the second is another criterion:
+
+- **Shape.** Current conditions are one temperature at one moment. A daily
+  forecast row is a maximum, a minimum, a summed rainfall and a probability
+  across a whole day. Putting either in the other's columns leaves half of them
+  null in every row, and a reader cannot tell which half is meaningful.
+- **C-16.11 audits a location and never a fetch.** A location is a managed
+  record: creating, editing or removing one appends an `audit_event`. A fetch is
+  a scheduled read of a third party and appends nothing. If today's conditions
+  were columns on the location row, **every fetch would be an `UPDATE` to an
+  audited record** — so either the fetch begins writing audit rows, one per
+  location per day, burying the log it belongs to; or the location's own
+  `updated_at` moves for something that is not a person's action, and the column
+  stops meaning what it means on every other table.
+
+Three tables keep the fetch entirely clear of the audited record: a
+`weather_location` row changes only when a person changes it.
 
 ### C-16.2 — A scope is explicit, never a null that means everything
 
@@ -1232,8 +1258,8 @@ merged in #70 fail the build if they drift.
 
 ### C-16.12 — The backup manifest knows the new tables
 
-`MANIFEST_TABLES` gains both tables. **This is in the criteria because the gate
-is one-directional:** `tests/backup.test.ts` checks that every table it lists
+`MANIFEST_TABLES` gains all three tables. **This is in the criteria because the
+gate is one-directional:** `tests/backup.test.ts` checks that every table it lists
 exists, and nothing checks that every table which exists is listed. So a new
 table is silently absent from backup verification, and C-11's manifest would
 report a clean comparison while counting nothing. Adding a
