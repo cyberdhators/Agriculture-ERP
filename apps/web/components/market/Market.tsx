@@ -90,6 +90,8 @@ export function Market({
   const [filters, setFilters] = useState<MarketFilters>({ ...DEFAULT_FILTERS, q: qParam });
   const [sort, setSort] = useState<MarketSort>('newest');
   const [view, setView] = useState<'cards' | 'list'>('cards');
+  // Phones: the filter rail is closed until asked for, so produce comes first.
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [page, setPage] = useState(1);
   const [moderating, setModerating] = useState<ProduceListing | null>(null);
   const [reason, setReason] = useState('');
@@ -205,7 +207,24 @@ export function Market({
       {/* Search and the category strip live in the masthead; the left rail
           holds the full filter set. No in-page search band here. */}
       <div className={styles.body}>
-        <aside className={styles.rail} aria-label={t('market.filters', lang)}>
+        <button
+          type="button"
+          className={styles.railToggle}
+          aria-expanded={filtersOpen}
+          aria-controls="market-filters"
+          onClick={() => setFiltersOpen((o) => !o)}
+        >
+          <span>{t('market.filters', lang)}</span>
+          {applied.length > 0 ? (
+            <span className={styles.railToggleCount}>{applied.length}</span>
+          ) : null}
+          <span aria-hidden="true">{filtersOpen ? '▴' : '▾'}</span>
+        </button>
+        <aside
+          id="market-filters"
+          className={`${styles.rail} ${filtersOpen ? styles.railOpen : ''}`}
+          aria-label={t('market.filters', lang)}
+        >
           <div className={styles.railHead}>
             <span className={styles.railTitle}>{t('market.filters', lang)}</span>
           </div>
