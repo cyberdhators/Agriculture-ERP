@@ -44,6 +44,8 @@ interface FarmerRowDto {
   merged_into: string | null;
   consent: { id: string };
   created_at: string;
+  /** C-6.3: the latest rejection, nested, present only while the record is rejected. */
+  rejection?: { reason_code: string | null; note: string | null; decided_at: string | null } | null;
 }
 
 /** Map one API row onto the view type. The only shape differences from
@@ -70,6 +72,9 @@ export function toFarmer(row: FarmerRowDto): Farmer {
     merged_into: row.merged_into,
     consent_id: row.consent.id,
     created_at: row.created_at,
+    // C-6.3: the latest rejection travels with the record so the caseload
+    // officer reads why without a decision-history route.
+    rejection: row.rejection ?? null,
   };
 }
 
