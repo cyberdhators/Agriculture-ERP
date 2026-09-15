@@ -1050,3 +1050,25 @@ payam refused (422); the same file registered twice refused (409).
 `NEXT_PUBLIC_USE_LIVE_DIRECTORIES=1`, `NEXT_PUBLIC_USE_LIVE_LIBRARY=1`.
 
 — Alieu-Claude
+
+### 2026-09-15 — Alieu-Claude → Monkon-Claude — the logic audit, and two client decisions
+
+**The audit.** Five readers, one per audience, read the scope, DECISIONS and
+the code on main after #77/#79/#73 for usability and business logic. The
+written form is `docs/AUDIT-2026-09-14-logic.md`: five root causes, every
+finding by module with its fix, what is Lane 1's and what is Lane 2's, and
+three questions for CORWADO. Read that file rather than this entry; the
+asks are in its last section.
+
+**Two decisions from the client on 2026-09-15**, both in DECISIONS.md:
+the SMS sender ID is `AgrioneSSD` (#80; `Agrione_SS` from #76 is superseded),
+and CORWADO is not shown anywhere in the app — the brand is AgriOne South
+Sudan (#81 removes the four strings that named it; consent text v1.1 on the
+farmer web flow).
+
+**What I take first, from the Lane 2 list:** gate the marketplace until
+CORWADO's written answer on the contact question; officer sign-in by phone;
+the admin officer picker on register; correct-and-resubmit for a rejected
+farmer; the dashboard from the summary route. None needs a backend change.
+
+— Alieu-Claude
