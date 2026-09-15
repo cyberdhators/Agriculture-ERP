@@ -5,13 +5,14 @@ import Link from 'next/link';
 import { Boundary } from '@/components/farmers/Boundary';
 import { ListingCard } from '@/components/listings/ListingCard';
 import { ButtonLink, EmptyState, KpiStrip, Notice, Stamp } from '@/components/ui';
-import { farmerPayamName, farmsForFarmer } from '@/lib/fixtures/farmers';
+import { farmerPayamName, farmsForFarmer, officerById } from '@/lib/fixtures/farmers';
 import { useFarmerSession } from '@/lib/farmer-session';
 import { VERIFICATION_KEY, verificationStamp } from '@/lib/farmers/verification';
 import { LANGUAGE_LABELS, formatDate, formatPhone } from '@/lib/format';
 import { t, type TKey } from '@/lib/i18n';
 
 import { PageHead } from './AccountShell';
+import { WeatherTile } from './WeatherTile';
 import listingStyles from '@/components/listings/listings.module.css';
 import styles from './farmer.module.css';
 
@@ -22,6 +23,41 @@ const ACCOUNT_TILES: ReadonlyArray<{
   sub: TKey;
   glyph: React.ReactNode;
 }> = [
+  {
+    href: '/farmer/account/listings/new',
+    title: 'account.tilePost',
+    sub: 'account.tilePostSub',
+    glyph: (
+      <svg
+        viewBox="0 0 24 24"
+        width="26"
+        height="26"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+      >
+        <circle cx="12" cy="12" r="9" />
+        <path d="M12 8v8M8 12h8" />
+      </svg>
+    ),
+  },
+  {
+    href: '/market',
+    title: 'shell.marketplace',
+    sub: 'account.tileMarketSub',
+    glyph: (
+      <svg
+        viewBox="0 0 24 24"
+        width="26"
+        height="26"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+      >
+        <path d="M3 9l1.5-5h15L21 9M3 9v11h18V9M3 9h18M9 20v-6h6v6" />
+      </svg>
+    ),
+  },
   {
     href: '/farmer/account/listings',
     title: 'account.tileListings',
@@ -55,6 +91,24 @@ const ACCOUNT_TILES: ReadonlyArray<{
       >
         <path d="M4 20V9l8-5 8 5v11" />
         <path d="M4 20h16M9 20v-6h6v6" />
+      </svg>
+    ),
+  },
+  {
+    href: '/farmer/account/learn',
+    title: 'account.tileLearn',
+    sub: 'account.tileLearnSub',
+    glyph: (
+      <svg
+        viewBox="0 0 24 24"
+        width="26"
+        height="26"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+      >
+        <path d="M4 5h6a3 3 0 0 1 3 3v11a2 2 0 0 0-2-2H4z" />
+        <path d="M20 5h-6a3 3 0 0 0-3 3v11a2 2 0 0 1 2-2h7z" />
       </svg>
     ),
   },
@@ -131,6 +185,7 @@ export function FarmerOverview() {
   const farms = farmsForFarmer(farmer.id);
   const recent = listings.slice(0, 3);
   const numberPending = farmer.farmer_number.endsWith('-pending');
+  const officer = officerById(farmer.caseload_officer_id ?? farmer.registered_by);
 
   return (
     <>
@@ -138,9 +193,13 @@ export function FarmerOverview() {
         title={t('account.tabOverview', language)}
         lead={farmerPayamName(farmer.payam_id)}
         actions={
-          <ButtonLink href="/farmer/account/listings/new">{t('listings.new', language)}</ButtonLink>
+          <ButtonLink href="/farmer/account/listings/new">
+            {t('account.tilePost', language)}
+          </ButtonLink>
         }
       />
+
+      <WeatherTile payamId={farmer.payam_id} language={language} />
 
       <nav className={styles.acctTiles} aria-label={t('account.tilesTitle', language)}>
         {ACCOUNT_TILES.map((tile) => (
@@ -228,6 +287,28 @@ export function FarmerOverview() {
         </div>
 
         <aside className={styles.side}>
+          <div className={styles.block}>
+            <div className={styles.blockHead}>
+              <h2>{t('account.officer', language)}</h2>
+            </div>
+            {officer ? (
+              <div className={styles.officerCard}>
+                <div>
+                  <div dir="auto">{officer.name}</div>
+                  <div className="small muted">{farmerPayamName(officer.payam_id)}</div>
+                </div>
+                <ButtonLink href={`tel:${officer.phone}`} variant="secondary">
+                  {t('account.call', language)}
+                </ButtonLink>
+              </div>
+            ) : (
+              <p className="small muted">{t('account.officerNone', language)}</p>
+            )}
+            <p className="small muted" style={{ marginTop: 'var(--s-2)' }}>
+              {t('account.officerLead', language)}
+            </p>
+          </div>
+
           <div className={styles.block}>
             <div className={styles.blockHead}>
               <h2>{t('account.record', language)}</h2>

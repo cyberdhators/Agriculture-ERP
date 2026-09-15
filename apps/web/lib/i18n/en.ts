@@ -88,11 +88,15 @@ export const en = {
 
   // Account workspace
   'account.title': 'My account',
-  'account.tabOverview': 'Overview',
+  'account.tabOverview': 'Home',
+  'account.tabPost': 'Post',
   'account.tabListings': 'My listings',
   'account.tabFarm': 'My farm',
   'account.tabAccount': 'Account',
   'account.tilesTitle': 'Your account',
+  'account.tilePost': 'Post produce',
+  'account.tileMarketSub': 'See what others are selling',
+  'account.tilePostSub': 'Offer crops, livestock or inputs to buyers',
   'account.tileListings': 'Your listings',
   'account.tileListingsSub': 'Create and manage your produce',
   'account.tileFarm': 'Your farm',
@@ -165,6 +169,42 @@ export const en = {
   'account.numberPending': 'Assigned when your registration is verified.',
   'account.back': 'My account',
   'account.signOut': 'Sign out',
+  'account.tabLearn': 'Learn',
+  'account.tileLearn': 'Learning materials',
+  'account.tileLearnSub': 'Guides, audio and video from the programme',
+  'account.officer': 'Your extension officer',
+  'account.officerLead':
+    'The person who registered you and visits your farm. Call them about your record, your listings or a buyer.',
+  'account.officerNone': 'An officer is assigned when your registration is checked.',
+  'account.call': 'Call',
+
+  // Learning materials (farmer)
+  'learn.title': 'Learning materials',
+  'learn.lead': 'Guides, audio and video published by the programme, in your language first.',
+  'learn.howTitle': 'How to get a file',
+  'learn.howBody':
+    'Files open here once the library can serve them. Until then, your extension officer brings them on a visit and can share them to your phone.',
+  'learn.inYourLanguage': 'In your language',
+  'learn.otherLanguages': 'In other languages',
+  'learn.noneInLanguage': 'Nothing has been published in your language yet.',
+  'learn.empty': 'Nothing has been published yet.',
+
+  // Weather (farmer home)
+  'weather.title': 'Weather',
+  'weather.loading': 'Reading the weather.',
+  'weather.unavailable': 'The weather could not be read just now.',
+  'weather.none': 'No weather location for your area yet.',
+  'weather.noReading': 'No reading yet for this location.',
+  'weather.rain': 'Rain',
+  'weather.humidity': 'Humidity',
+  'weather.wind': 'Wind',
+  'weather.next': 'Next days',
+  'weather.rainChance': 'Rain',
+  'weather.asOf': 'As of',
+  'weather.stale': 'Older than usual',
+  'weather.placeholder': 'placeholder figures',
+  'weather.seeForecast': 'See full forecast',
+  'weather.hideForecast': 'Hide forecast',
 
   // Listings
   'listings.title': 'My listings',
