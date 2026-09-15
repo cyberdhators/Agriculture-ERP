@@ -40,9 +40,9 @@ export const en = {
   'login.submit': 'Sign in',
   'login.failed': 'That phone number and password do not match. Check both and try again.',
   'login.locked':
-    'Five sign-ins have failed, so this number is locked for now. An extension officer or CORWADO can reset your password.',
+    'Five sign-ins have failed, so this number is locked for now. Your extension officer can reset your password.',
   'login.forgotTitle': 'Forgot your password?',
-  'login.forgotBody': 'An extension officer or CORWADO can reset it for you.',
+  'login.forgotBody': 'Your extension officer can reset it for you.',
   'login.newHere': 'New here?',
   'login.register': 'Register',
 
@@ -82,9 +82,9 @@ export const en = {
   'register.donePending': 'Assigned when your registration is verified.',
   'register.goToAccount': 'Go to my account',
 
-  // Consent statement (the v1.0-en text)
+  // Consent statement (the v1.1-en text: the brand is AgriOne South Sudan, decided 2026-09-15)
   'consent.body':
-    'CORWADO records your name, phone number, place and the crops you grow, so that an agricultural officer can verify you, map your farm and connect you to markets, inputs and advice. Your details are kept by CORWADO and shared only with the officers and partners running this programme. You may ask to see or remove your record at any time. Registering means you agree to this.',
+    'AgriOne South Sudan records your name, phone number, place and the crops you grow, so that an agricultural officer can verify you, map your farm and connect you to markets, inputs and advice. Your details are kept by AgriOne South Sudan and shared only with the officers and partners running this programme. You may ask to see or remove your record at any time. Registering means you agree to this.',
 
   // Account workspace
   'account.title': 'My account',
@@ -110,7 +110,7 @@ export const en = {
   'account.whatPendingBody':
     'An officer has not yet checked your account. You can add listings as drafts now; each draft goes live once you are verified. This usually takes a few days.',
   'account.whatRejectedBody':
-    'An officer could not verify your account. Contact your local CORWADO officer, or change your details and ask to be checked again.',
+    'An officer could not verify your account. Contact your local AgriOne extension officer, or change your details and ask to be checked again.',
   'account.kpiLive': 'Live listings',
   'account.kpiDrafts': 'Drafts',
   'account.kpiSold': 'Sold',
