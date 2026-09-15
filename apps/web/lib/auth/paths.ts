@@ -1,7 +1,13 @@
 /**
  * Which paths need a staff session. Route groups do not appear in URLs, so the
- * (portal) group is named here by its public prefixes. The farmer side and the
- * marketplace are not listed: they have no server principal yet and stay open.
+ * (portal) group is named here by its public prefixes.
+ *
+ * The marketplace and the farmer side are gated too, unless the deployment
+ * opens them: the scope document says no listing is readable outside the
+ * four staff roles, and no marketplace is reachable without a staff session,
+ * until CORWADO answers the contact question in writing ("The marketplace
+ * amendment"). NEXT_PUBLIC_MARKET_OPEN=1 is that answer, recorded in
+ * DECISIONS.md first and set on the deployment second. Unset means gated.
  */
 export const PORTAL_PREFIXES = [
   '/dashboard',
@@ -15,11 +21,26 @@ export const PORTAL_PREFIXES = [
   '/design',
 ] as const;
 
+/** Public only when the deployment says so; otherwise behind the staff session. */
+export const MARKET_PREFIXES = ['/market', '/farmer'] as const;
+
+/** Read at build time, like every NEXT_PUBLIC_ variable: change it, then redeploy. */
+export const MARKET_OPEN = process.env.NEXT_PUBLIC_MARKET_OPEN === '1';
+
 export const LOGIN_PATH = '/login';
 export const HOME_PATH = '/dashboard';
 
-export function isPortalPath(pathname: string): boolean {
-  return PORTAL_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+const under = (pathname: string, prefixes: readonly string[]): boolean =>
+  prefixes.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+
+export function isPortalPath(pathname: string, marketOpen: boolean = MARKET_OPEN): boolean {
+  if (under(pathname, PORTAL_PREFIXES)) return true;
+  return !marketOpen && under(pathname, MARKET_PREFIXES);
+}
+
+/** Where the site root sends a visitor: the marketplace when open, sign-in otherwise. */
+export function frontDoor(marketOpen: boolean = MARKET_OPEN): string {
+  return marketOpen ? '/market' : LOGIN_PATH;
 }
 
 /** A post-login target is honoured only if it is a same-origin path. */

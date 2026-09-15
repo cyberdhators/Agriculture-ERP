@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { HOME_PATH, isPortalPath, safeNext } from './paths';
+import { frontDoor, HOME_PATH, isPortalPath, safeNext } from './paths';
 
 describe('isPortalPath', () => {
-  it('guards every portal prefix and its children', () => {
+  it('guards every portal prefix and its children, whatever the market flag says', () => {
     for (const p of [
       '/dashboard',
       '/farmers',
@@ -14,27 +14,41 @@ describe('isPortalPath', () => {
       '/reports',
       '/design',
     ]) {
-      expect(isPortalPath(p)).toBe(true);
+      expect(isPortalPath(p, false)).toBe(true);
+      expect(isPortalPath(p, true)).toBe(true);
     }
   });
 
-  it('leaves the farmer side, the market, the API and the login page open', () => {
-    for (const p of [
-      '/',
-      '/farmer',
-      '/farmer/login',
-      '/market',
-      '/market/1',
-      '/api/me',
-      '/login',
-    ]) {
-      expect(isPortalPath(p)).toBe(false);
+  it('gates the marketplace and the farmer side until the deployment opens them', () => {
+    for (const p of ['/market', '/market/1', '/farmer', '/farmer/login', '/farmer/account']) {
+      expect(isPortalPath(p, false)).toBe(true);
+    }
+  });
+
+  it('opens the marketplace and the farmer side when the deployment says so', () => {
+    for (const p of ['/market', '/market/1', '/farmer', '/farmer/login']) {
+      expect(isPortalPath(p, true)).toBe(false);
+    }
+  });
+
+  it('leaves the root, the API and the login page open in both states', () => {
+    for (const p of ['/', '/api/me', '/login']) {
+      expect(isPortalPath(p, false)).toBe(false);
+      expect(isPortalPath(p, true)).toBe(false);
     }
   });
 
   it('matches whole segments, not prefixes of longer ones', () => {
-    expect(isPortalPath('/farmersXYZ')).toBe(false);
-    expect(isPortalPath('/desktop')).toBe(false);
+    expect(isPortalPath('/farmersXYZ', false)).toBe(false);
+    expect(isPortalPath('/desktop', false)).toBe(false);
+    expect(isPortalPath('/marketing', false)).toBe(false);
+  });
+});
+
+describe('frontDoor', () => {
+  it('is the marketplace when open and sign-in when gated', () => {
+    expect(frontDoor(true)).toBe('/market');
+    expect(frontDoor(false)).toBe('/login');
   });
 });
 
