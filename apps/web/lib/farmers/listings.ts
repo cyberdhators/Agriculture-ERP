@@ -189,6 +189,7 @@ export function listingCover(
 
 /** What the listing form holds: every B12 point 5 field, as strings. */
 export interface ListingFormValues {
+  trading_name: string;
   title: string;
   category: ListingCategory | '';
   product_name: string;
@@ -210,6 +211,7 @@ export type ListingField = keyof ListingFormValues;
 
 export function emptyListingValues(contactPhone: string, today: string): ListingFormValues {
   return {
+    trading_name: '',
     title: '',
     category: '',
     product_name: '',
@@ -230,6 +232,7 @@ export function emptyListingValues(contactPhone: string, today: string): Listing
 
 export function listingToValues(listing: ProduceListing): ListingFormValues {
   return {
+    trading_name: listing.trading_name,
     title: listing.title,
     category: listing.category,
     product_name: listing.product_name,
@@ -260,9 +263,19 @@ export type ListingParseResult =
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 
+export { TRADING_NAME_MAX, tradingNameError } from './trading-name';
+import { tradingNameError } from './trading-name';
+
 /** Validates every field; errors are i18n keys so the form reads in the farmer's language. */
-export function validateListing(input: ListingFormValues): ListingParseResult {
+export function validateListing(
+  input: ListingFormValues,
+  legalName: { given_name: string; family_name: string } | null = null,
+): ListingParseResult {
   const errors: ListingErrors = {};
+
+  const tradingError = tradingNameError(input.trading_name, legalName);
+  if (tradingError) errors.trading_name = tradingError;
+  const tradingName = input.trading_name.trim();
 
   const title = input.title.trim();
   if (title === '') errors.title = 'error.title';
@@ -297,6 +310,7 @@ export function validateListing(input: ListingFormValues): ListingParseResult {
   return {
     ok: true,
     values: {
+      trading_name: tradingName,
       title,
       category: input.category as ListingCategory,
       product_name: product,

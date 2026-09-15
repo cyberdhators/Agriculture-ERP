@@ -302,6 +302,10 @@ export const en = {
   'listingForm.sectionProduct': 'The product',
   'listingForm.sectionPrice': 'Quantity and price',
   'listingForm.sectionAvailability': 'Availability and collection',
+  'listingForm.tradingName': 'Your farm or stall name',
+  'listingForm.tradingNameHint':
+    'What buyers see instead of your own name. A farm, a garden, a market stall: Rejaf Sorghum Store, Riverside Okra Garden. Not your name.',
+  'listingForm.tradingNamePlaceholder': 'e.g. Riverside Okra Garden',
   'listingForm.title': 'Listing title',
   'listingForm.titleHint':
     'A short line buyers will see first, for example "Red sorghum, cleaned and bagged".',
@@ -377,6 +381,10 @@ export const en = {
   // Field errors (farmer-sized)
   'error.optional': 'optional',
   'error.title': 'Give the listing a title.',
+  'error.tradingName': 'Give your farm or stall a name; buyers see it instead of yours.',
+  'error.tradingNameLong': 'Keep the farm or stall name under 60 characters.',
+  'error.tradingNameIsYourName':
+    'That is your own name. Buyers must not see it; choose a farm, garden or stall name instead.',
   'error.category': 'Choose a category.',
   'error.productName': 'Say what the product is.',
   'error.description': 'Describe the product.',

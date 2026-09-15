@@ -21,8 +21,9 @@ import { Photo } from './Photo';
 import styles from './listings.module.css';
 
 /** Two initials for the seller disc — never an icon alone. */
-function initials(seller: Farmer): string {
-  return `${seller.given_name[0] ?? ''}${seller.family_name[0] ?? ''}`.toUpperCase();
+function initials(seller: Pick<ProduceListing, 'trading_name'>): string {
+  const words = seller.trading_name.trim().split(/\s+/);
+  return `${words[0]?.[0] ?? ''}${words[1]?.[0] ?? ''}`.toUpperCase();
 }
 
 /**
@@ -110,10 +111,10 @@ export function ListingCard({
         <>
           <div className={styles.cardSellerRow}>
             <span className={styles.disc} aria-hidden>
-              {initials(seller)}
+              {initials(listing)}
             </span>
             <span className={styles.cardSellerName} dir="auto">
-              {seller.given_name} {seller.family_name}
+              {listing.trading_name}
             </span>
             <Stamp kind={verificationStamp(seller.verification_status)}>
               {t(VERIFICATION_KEY[seller.verification_status], lang)}
