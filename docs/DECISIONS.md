@@ -2648,3 +2648,30 @@ Applied the same day to everything built in that session: the narrowing
 migration planted (red, naming all 33 keys it would drop), a column hidden twice
 (`schema-check` green the first time — which is how its defect was found — red
 the second), and the `db:push` refusal run to see it refuse.
+
+## The SMS sender ID is "AgrioneSSD" (2026-09-15)
+
+**Decided by Alieu, for CORWADO, in a Claude Code session on 2026-09-15:**
+"the name on the sms sender id will be AgrioneSSD."
+
+**What it is.** The alphanumeric sender recipients see on every message. Ten
+characters, letters only, inside the 3–11 limit Bird states for South Sudan,
+where an alphanumeric sender is the only kind available and recipients cannot
+reply to it. It reads as the product name plus the country: AgriOne, SSD.
+
+**What it changes.** #76 registered `Agrione_SS` and recorded it as permanent
+("two approved registrations are worth more than a better sender string").
+That reasoning was about not re-registering for a marginally better string; a
+name the client has now chosen is a different case. `Agrione_SS` is
+superseded. The registration for `AgrioneSSD` is made on the account CORWADO
+holds (CLAUDE.md §3), and `BIRD_SMS_SENDER_ID` carries the new value.
+
+**One line of copy follows from it.** Every farmer-facing string says CORWADO;
+the phone will say AgrioneSSD. The consent text and the registration receipt
+should say, once, that messages from CORWADO arrive from "AgrioneSSD", so a
+farmer who reads the sender knows who it is. That line is written with C-15,
+not before.
+
+**Not decided here:** who at CORWADO approves a campaign, whether prices go out
+automatically, and whether the regulator requires sender registration. Those
+three remain open against C-15.
