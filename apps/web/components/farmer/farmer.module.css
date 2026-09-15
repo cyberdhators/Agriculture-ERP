@@ -1604,3 +1604,319 @@
     padding-inline: var(--s-4);
   }
 }
+
+/* ---- Farmer home: weather tile, officer card, learning list ------------ */
+.weatherNow {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  margin-block: var(--s-2) var(--s-4);
+}
+
+.weatherTemp {
+  font-size: 44px;
+  font-weight: 600;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.weatherNowText {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.weatherCond {
+  text-transform: capitalize;
+}
+
+.weatherDays {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
+  gap: var(--s-3);
+}
+
+.weatherDay {
+  display: grid;
+  gap: 2px;
+  padding: var(--s-2) var(--s-3);
+  background: var(--dust);
+  border-radius: var(--radius-control);
+  font-variant-numeric: tabular-nums;
+}
+
+.weatherDayName {
+  font-size: var(--text-small);
+  font-weight: 600;
+}
+
+.weatherDayTemp {
+  font-weight: 600;
+}
+
+.weatherMeta {
+  margin-top: var(--s-3);
+}
+
+.weatherStale {
+  color: var(--warn, #9a6a12);
+  font-weight: 600;
+}
+
+.weatherAttribution {
+  margin-top: var(--s-1);
+}
+
+.officerCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+}
+
+.learnList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--s-3);
+}
+
+.learnItem {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  gap: var(--s-3);
+  padding: var(--s-3) 0;
+  border-top: 1px solid var(--line);
+}
+
+.learnIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-control);
+  background: var(--dust);
+}
+
+.learnText {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.learnTitle {
+  font-weight: 600;
+}
+
+/* ---- Farmer home: the weather hero ------------------------------------- */
+.weatherHero {
+  position: relative;
+  display: grid;
+  gap: var(--s-3);
+  padding: var(--s-5) var(--s-6);
+  margin-block-end: var(--s-5);
+  background:
+    radial-gradient(120% 90% at 100% 0%, rgba(255, 255, 255, 0.1), transparent 60%), var(--band);
+  color: var(--band-ink);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+}
+
+.weatherHeroNote {
+  margin: 0;
+  color: var(--band-ink);
+  opacity: 0.85;
+}
+
+.weatherHeroTop {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--s-4);
+}
+
+.weatherHeroGlyph {
+  color: var(--band-ink);
+  opacity: 0.95;
+}
+
+.weatherHeroText {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.weatherHeroPlace {
+  font-size: var(--text-small);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+
+.weatherHeroCond {
+  font-size: var(--text-subhead, 20px);
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.weatherHeroFacts {
+  font-size: var(--text-small);
+  opacity: 0.85;
+}
+
+.weatherHeroTemp {
+  font-size: 56px;
+  font-weight: 600;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.weatherHeroBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--s-2) var(--s-4);
+  padding-top: var(--s-3);
+  border-top: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.weatherHeroMeta {
+  font-size: var(--text-small);
+  opacity: 0.8;
+}
+
+.weatherHeroBtn {
+  appearance: none;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--band-ink);
+  border-radius: 999px;
+  padding: 8px 16px;
+  font: inherit;
+  font-size: var(--text-small);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.weatherHeroBtn:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.weatherHero .weatherDays {
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+}
+
+.weatherHero .weatherDay {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--band-ink);
+}
+
+.weatherDayRain,
+.weatherDayCond {
+  font-size: var(--text-small);
+  opacity: 0.85;
+}
+
+.weatherDayCond {
+  text-transform: capitalize;
+}
+
+.weatherHeroCredit {
+  font-size: 12px;
+  color: var(--band-ink);
+  opacity: 0.75;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  justify-self: end;
+}
+
+/* ---- Phones: big square tiles and a bottom bar ------------------------- */
+.bottomBar {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .weatherHero {
+    padding: var(--s-4);
+  }
+
+  .weatherHeroTemp {
+    font-size: 44px;
+  }
+
+  .acctTiles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--s-3);
+  }
+
+  .acctTile {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: var(--s-3);
+    padding: var(--s-4) var(--s-3);
+  }
+
+  .acctTileGlyph {
+    width: 64px;
+    height: 64px;
+  }
+
+  .acctTileSub {
+    display: none;
+  }
+
+  .main {
+    padding-bottom: calc(var(--s-10) + 64px);
+  }
+
+  .bottomBar {
+    position: fixed;
+    inset-inline: 0;
+    bottom: 0;
+    z-index: 30;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    background: var(--card);
+    border-top: 1px solid var(--line-strong);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .bottomBarItem {
+    display: grid;
+    justify-items: center;
+    gap: 2px;
+    padding: 8px 4px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+    text-decoration: none;
+  }
+
+  .bottomBarItem[aria-current='page'] {
+    color: var(--green-deep, var(--ink));
+  }
+
+  .bottomBarGlyph {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 26px;
+    border-radius: 999px;
+  }
+
+  .bottomBarItem[aria-current='page'] .bottomBarGlyph {
+    background: var(--green-tint, var(--dust));
+  }
+
+  /* The footer would sit under the bar; give it room. */
+  .footer {
+    padding-bottom: 72px;
+  }
+}
