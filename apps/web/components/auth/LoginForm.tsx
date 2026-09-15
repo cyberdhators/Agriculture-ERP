@@ -5,18 +5,21 @@ import { useState, type FormEvent } from 'react';
 
 import { Wordmark } from '@/components/brand/Wordmark';
 import { Button, Card, Field, Input, Notice } from '@/components/ui';
+import { loginIdentifier } from '@/lib/auth/identifier';
 import { supabaseBrowser } from '@/lib/supabase/browser';
 
 import styles from './auth.module.css';
 
 /**
- * Staff sign-in. Email and password go to Supabase Auth; on success the
- * session cookie is set in the browser and the routes' requireRole reads it
- * from then on. The error never says which of the two was wrong.
+ * Staff sign-in. Email — or, for an extension officer, a phone number, from
+ * which the account identifier is derived (lib/auth/identifier.ts) — and
+ * password go to Supabase Auth; on success the session cookie is set in the
+ * browser and the routes' requireRole reads it from then on. The error never
+ * says which of the two was wrong.
  */
 export function LoginForm({ next }: { next: string }) {
   const router = useRouter();
-  const [email, setEmail] = useState('');
+  const [login, setLogin] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | undefined>();
   const [busy, setBusy] = useState(false);
@@ -27,13 +30,13 @@ export function LoginForm({ next }: { next: string }) {
     setError(undefined);
     try {
       const { error: signInError } = await supabaseBrowser().auth.signInWithPassword({
-        email: email.trim(),
+        email: loginIdentifier(login),
         password,
       });
       if (signInError) {
         setError(
           signInError.status === 400
-            ? 'That email and password do not match.'
+            ? 'That email or phone number and password do not match.'
             : 'The sign-in service could not be reached. Try again in a moment.',
         );
         return;
@@ -56,7 +59,8 @@ export function LoginForm({ next }: { next: string }) {
         <div>
           <h1 className={styles.title}>Sign in</h1>
           <p className={styles.hint}>
-            Staff and extension officers. Accounts are issued by an administrator.
+            Staff sign in with the email on their account. Extension officers sign in with their
+            phone number. Accounts are issued by an administrator.
           </p>
         </div>
 
@@ -67,15 +71,14 @@ export function LoginForm({ next }: { next: string }) {
         ) : null}
 
         <form className={styles.form} onSubmit={onSubmit} noValidate>
-          <Field label="Email">
+          <Field label="Email or phone number">
             {(ids) => (
               <Input
                 {...ids}
-                type="email"
+                type="text"
                 autoComplete="username"
-                inputMode="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={login}
+                onChange={(e) => setLogin(e.target.value)}
                 disabled={busy}
                 required
               />
@@ -94,7 +97,7 @@ export function LoginForm({ next }: { next: string }) {
               />
             )}
           </Field>
-          <Button type="submit" variant="primary" disabled={busy || !email || !password}>
+          <Button type="submit" variant="primary" disabled={busy || !login || !password}>
             {busy ? 'Signing in…' : 'Sign in'}
           </Button>
         </form>
