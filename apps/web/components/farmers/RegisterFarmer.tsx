@@ -3,6 +3,7 @@
 import { useMemo, useRef, useState, type ReactNode } from 'react';
 
 import { LIVE_FARMERS, createFarmer } from '@/lib/farmers/api';
+import { eligibleOfficers, useOfficers } from '@/lib/farmers/caseload';
 import { CROP_LABELS, LANGUAGE_LABELS } from '@/lib/format';
 import { canRegister } from '@/lib/farmers/presentation';
 import {
@@ -98,6 +99,15 @@ export function RegisterFarmer() {
   const [submitError, setSubmitError] = useState<string | undefined>();
   const [serverDupes, setServerDupes] = useState(0);
   const summaryRef = useRef<HTMLDivElement | null>(null);
+  // C-5.1: an officer registers as themselves; an administrator names the
+  // registering officer, and the route refuses an admin who does not.
+  const isAdmin = hydrated && role === 'admin';
+  const [officerId, setOfficerId] = useState('');
+  const officerList = useOfficers(isAdmin);
+  const officers = useMemo(
+    () => eligibleOfficers(officerList.officers, values.payam_id, null),
+    [officerList.officers, values.payam_id],
+  );
 
   const counties = useMemo(
     () => COUNTIES.filter((c) => c.stateId === values.state_id),
@@ -134,6 +144,7 @@ export function RegisterFarmer() {
         next.payam_id = '';
       }
       if (key === 'county_id') next.payam_id = '';
+      if (key === 'county_id' || key === 'payam_id') setOfficerId('');
       return next;
     });
     if (errors[key]) setErrors((prev) => ({ ...prev, [key]: undefined }));
@@ -167,6 +178,16 @@ export function RegisterFarmer() {
     setSubmitError(undefined);
     const v = result.values;
 
+    if (isAdmin && officerId === '') {
+      setSubmitError(
+        officers.length === 0
+          ? 'No active officer works this payam yet. Add one under Administration, then register the farmer.'
+          : 'Choose the officer who registered this farmer.',
+      );
+      requestAnimationFrame(() => summaryRef.current?.focus());
+      return;
+    }
+
     if (!LIVE_FARMERS) {
       setSaved({ name: `${v.given_name} ${v.family_name}` });
       return;
@@ -183,6 +204,7 @@ export function RegisterFarmer() {
         phone: v.phone,
         national_id: v.national_id,
         payam_id: v.payam_id,
+        ...(isAdmin ? { registered_by: officerId } : {}),
         consent: {
           text_version: CONSENT_VERSION[v.consent_language],
           language: v.consent_language,
@@ -206,6 +228,7 @@ export function RegisterFarmer() {
     setSaved(null);
     setSubmitError(undefined);
     setServerDupes(0);
+    setOfficerId('');
   }
 
   function focusField(key: keyof FarmerFormValues) {
@@ -470,6 +493,39 @@ export function RegisterFarmer() {
                     )}
                   </Field>
                 </Row>
+                {isAdmin ? (
+                  <div id="fld-registered_by">
+                    <Field
+                      label="Registered by"
+                      hint={
+                        values.payam_id === ''
+                          ? 'Choose the payam first; only officers who work it can register here.'
+                          : officerList.loading
+                            ? 'Loading officers…'
+                            : officers.length === 0
+                              ? 'No active officer works this payam yet. Add one under Administration first.'
+                              : 'The field officer who registered this farmer. They hold the caseload.'
+                      }
+                      error={officerList.error}
+                    >
+                      {(ids) => (
+                        <Select
+                          {...ids}
+                          value={officerId}
+                          disabled={values.payam_id === '' || officers.length === 0}
+                          onChange={(e) => setOfficerId(e.target.value)}
+                        >
+                          <option value="">Select…</option>
+                          {officers.map((o) => (
+                            <option key={o.id} value={o.id}>
+                              {o.name}
+                            </option>
+                          ))}
+                        </Select>
+                      )}
+                    </Field>
+                  </div>
+                ) : null}
               </div>
             </Card>
 
