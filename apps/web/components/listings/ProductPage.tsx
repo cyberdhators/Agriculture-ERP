@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRef, useState, type ReactNode } from 'react';
 
-import { Button, ButtonLink, Stamp } from '@/components/ui';
+import { Button, Stamp } from '@/components/ui';
 import { IconChevronLeft, IconChevronRight } from '@/components/ui/icons';
 import {
   farmerPayamName,
@@ -21,9 +21,10 @@ import {
   listingStamp,
 } from '@/lib/farmers/listings';
 import { VERIFICATION_KEY, verificationStamp } from '@/lib/farmers/verification';
-import { formatDate, formatPhone } from '@/lib/format';
+import { formatDate } from '@/lib/format';
 import { t, type Language } from '@/lib/i18n';
 
+import { ContactRequestForm } from './ContactRequestForm';
 import { Photo } from './Photo';
 import styles from './listings.module.css';
 
@@ -39,7 +40,8 @@ function initials(seller: Farmer): string {
  * lines, call and SMS, and the seller card. Below, the full-width description,
  * a details table with mono values, and any "more from this seller" or
  * "similar" rows. A sticky price-and-call bar appears on narrow screens.
- * "Contact seller" is a call or an SMS — there is no chat.
+ * "Contact seller" is a contact request the farmer's officer passes on — the
+ * farmer's number is never on the page (scope, "The marketplace amendment").
  */
 export function ProductPage({
   listing,
@@ -53,6 +55,7 @@ export function ProductPage({
   moderate,
   related,
   sellerListingsHref,
+  contact = true,
 }: {
   listing: ProduceListing;
   seller: Farmer;
@@ -68,6 +71,8 @@ export function ProductPage({
   moderate?: ReactNode;
   related?: ReactNode;
   sellerListingsHref?: string;
+  /** False on the farmer's own preview: a farmer does not contact themselves. */
+  contact?: boolean;
 }) {
   const sources: Array<string | null> =
     photos && photos.length > 0 ? photos : [listingCover(listing)];
@@ -75,7 +80,7 @@ export function ProductPage({
   const thumbRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const current = sources[Math.min(index, sources.length - 1)] ?? null;
   const unit = (u: ProduceListing['unit']) => t(UNIT_KEY[u], lang);
-  const phone = listing.contact_phone;
+  const [contactOpen, setContactOpen] = useState(false);
 
   function step(delta: number, focus = false) {
     setIndex((i) => {
@@ -206,14 +211,14 @@ export function ProductPage({
             </span>
           </div>
 
-          <div className={styles.contact}>
-            <ButtonLink href={`tel:${phone}`} variant="primary">
-              {t('detail.call', lang)}
-            </ButtonLink>
-            <ButtonLink href={`sms:${phone}`} variant="secondary">
-              {t('detail.sms', lang)}
-            </ButtonLink>
-          </div>
+          {contact ? (
+            <div className={styles.contact}>
+              <Button variant="primary" onClick={() => setContactOpen(true)}>
+                {t('contact.button', lang)}
+              </Button>
+              <p className="small muted">{t('contact.how', lang)}</p>
+            </div>
+          ) : null}
 
           <div className={styles.seller}>
             <div className={styles.sellerHead}>
@@ -233,10 +238,6 @@ export function ProductPage({
               <div className={styles.sellerRow}>
                 <dt>{t('account.payam', lang)}</dt>
                 <dd>{farmerPayamName(seller.payam_id)}</dd>
-              </div>
-              <div className={styles.sellerRow}>
-                <dt>{t('account.phone', lang)}</dt>
-                <dd className={styles.mono}>{formatPhone(phone)}</dd>
               </div>
               <div className={styles.sellerRow}>
                 <dt>{t('market.memberSince', lang)}</dt>
@@ -293,14 +294,26 @@ export function ProductPage({
 
       {related}
 
-      <div className={styles.stickyBar}>
-        <span className={styles.mono}>
-          {formatSsp(listing.price_ssp)} <span className="small">/ {unit(listing.price_per)}</span>
-        </span>
-        <ButtonLink href={`tel:${phone}`} variant="primary">
-          {t('detail.call', lang)}
-        </ButtonLink>
-      </div>
+      {contact ? (
+        <div className={styles.stickyBar}>
+          <span className={styles.mono}>
+            {formatSsp(listing.price_ssp)}{' '}
+            <span className="small">/ {unit(listing.price_per)}</span>
+          </span>
+          <Button variant="primary" onClick={() => setContactOpen(true)}>
+            {t('contact.button', lang)}
+          </Button>
+        </div>
+      ) : null}
+
+      {contact ? (
+        <ContactRequestForm
+          listing={listing}
+          lang={lang}
+          open={contactOpen}
+          onClose={() => setContactOpen(false)}
+        />
+      ) : null}
     </>
   );
 }

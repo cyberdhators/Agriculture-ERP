@@ -116,6 +116,15 @@ export const en = {
   'account.whatRejectedBody':
     'An officer could not verify your account. Contact your local AgriOne extension officer, or change your details and ask to be checked again.',
   'account.kpiLive': 'Live listings',
+  'account.kpiRequests': 'Buyer requests',
+  'account.requests': 'Buyer requests',
+  'account.requestsEmpty':
+    'When a buyer asks about one of your listings, your extension officer calls you and it shows here.',
+  'account.requestNoDetail': 'No details given',
+  'account.request_new': 'Waiting for your officer',
+  'account.request_introduced': 'Introduced',
+  'account.request_declined': 'Declined',
+  'account.request_no_answer': 'No answer',
   'account.kpiDrafts': 'Drafts',
   'account.kpiSold': 'Sold',
   'account.kpiPlots': 'Plots mapped',
@@ -204,6 +213,30 @@ export const en = {
   'weather.stale': 'Older than usual',
   'weather.placeholder': 'placeholder figures',
   'weather.seeForecast': 'See full forecast',
+
+  // Buyer contact request (deliverable (g))
+  'contact.button': 'Contact seller',
+  'contact.how':
+    'Leave your details. The farmer’s extension officer calls you both to introduce you.',
+  'contact.title': 'Contact the seller',
+  'contact.lead': 'You are asking about',
+  'contact.name': 'Your name',
+  'contact.phone': 'Your phone number',
+  'contact.phoneHint': 'A South Sudan mobile. The officer calls this number.',
+  'contact.quantity': 'How much you want',
+  'contact.quantityHint': 'For example: 3 bags, or 20 litres a week.',
+  'contact.message': 'Anything else',
+  'contact.privacy':
+    'Your name and number go to the programme’s extension officer for this farmer, and to nobody else.',
+  'contact.cancel': 'Cancel',
+  'contact.send': 'Send request',
+  'contact.sending': 'Sending…',
+  'contact.close': 'Done',
+  'contact.sentTitle': 'Request sent',
+  'contact.sentBody':
+    'The farmer’s extension officer has your request and will call you. If the farmer agrees, the officer introduces you both.',
+  'contact.failedTitle': 'Not sent',
+  'contact.failed': 'The request could not be sent. Try again in a moment.',
   'weather.hideForecast': 'Hide forecast',
 
   // Listings

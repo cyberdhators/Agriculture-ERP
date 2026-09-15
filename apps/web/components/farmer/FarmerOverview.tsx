@@ -6,6 +6,7 @@ import { Boundary } from '@/components/farmers/Boundary';
 import { ListingCard } from '@/components/listings/ListingCard';
 import { ButtonLink, EmptyState, KpiStrip, Notice, Stamp } from '@/components/ui';
 import { farmerPayamName, farmsForFarmer, officerById } from '@/lib/fixtures/farmers';
+import { usePreviewContactRequests } from '@/lib/contact/store';
 import { useFarmerSession } from '@/lib/farmer-session';
 import { VERIFICATION_KEY, verificationStamp } from '@/lib/farmers/verification';
 import { LANGUAGE_LABELS, formatDate, formatPhone } from '@/lib/format';
@@ -176,6 +177,7 @@ const ACCOUNT_TILES: ReadonlyArray<{
  */
 export function FarmerOverview() {
   const { farmer, language, listingsFor } = useFarmerSession();
+  const contactRequests = usePreviewContactRequests();
   if (!farmer) return null;
 
   const listings = listingsFor(farmer.id);
@@ -186,6 +188,10 @@ export function FarmerOverview() {
   const recent = listings.slice(0, 3);
   const numberPending = farmer.farmer_number.endsWith('-pending');
   const officer = officerById(farmer.caseload_officer_id ?? farmer.registered_by);
+  // Buyer requests for this farmer (deliverable (g)). Off live: the browser's
+  // preview store; live, a farmer-side route once the farmer principal exists.
+  const requests = contactRequests.requests.filter((r) => r.farmer_id === farmer.id);
+  const newRequests = requests.filter((r) => r.status === 'new').length;
 
   return (
     <>
@@ -223,6 +229,11 @@ export function FarmerOverview() {
         label={t('account.tabOverview', language)}
         items={[
           { label: t('account.kpiLive', language), value: live, accent: live > 0 },
+          {
+            label: t('account.kpiRequests', language),
+            value: newRequests,
+            accent: newRequests > 0,
+          },
           { label: t('account.kpiDrafts', language), value: drafts },
           { label: t('account.kpiSold', language), value: sold },
           { label: t('account.kpiPlots', language), value: farms.length },
@@ -249,6 +260,44 @@ export function FarmerOverview() {
               <p className="small">{t('account.whatRejectedBody', language)}</p>
             </Notice>
           ) : null}
+
+          <div className={styles.blockHead}>
+            <h2>{t('account.requests', language)}</h2>
+            <span className="small muted">{requests.length}</span>
+          </div>
+          {requests.length === 0 ? (
+            <p className="small muted" style={{ marginBottom: 'var(--s-5)' }}>
+              {t('account.requestsEmpty', language)}
+            </p>
+          ) : (
+            <ul className={styles.learnList} style={{ marginBottom: 'var(--s-5)' }}>
+              {requests.slice(0, 5).map((r) => {
+                const l = listings.find((x) => x.id === r.listing_id);
+                return (
+                  <li
+                    key={r.id}
+                    className={styles.learnItem}
+                    style={{ gridTemplateColumns: '1fr' }}
+                  >
+                    <div className={styles.learnText}>
+                      <div className={styles.learnTitle} dir="auto">
+                        {r.buyer_name}
+                        {l ? ` · ${l.title}` : ''}
+                      </div>
+                      <div className="small muted" dir="auto">
+                        {[r.quantity, r.message].filter(Boolean).join(' · ') ||
+                          t('account.requestNoDetail', language)}
+                        {' · '}
+                        {formatDate(r.created_at, language)}
+                        {' · '}
+                        {t(`account.request_${r.status}` as 'account.request_new', language)}
+                      </div>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
 
           <div className={styles.blockHead}>
             <h2>{t('account.recent', language)}</h2>
