@@ -790,6 +790,11 @@
   .featured {
     grid-template-columns: 1fr;
   }
+
+  /* A shorter photo, so more than one listing fits a phone screen. */
+  .card .frame {
+    aspect-ratio: 16 / 10;
+  }
 }
 
 @media (min-width: 1100px) {
@@ -1319,15 +1324,67 @@
 
 /* ---- Responsive ------------------------------------------------------ */
 
+/* The phone toggle for the filter rail. Desktop never shows it. */
+.railToggle {
+  display: none;
+}
+
 @media (max-width: 1024px) {
   .body {
     grid-template-columns: 1fr;
+    gap: var(--s-4);
+  }
+
+  /* Produce first: the rail is closed until the shopper opens it. */
+  .railToggle {
+    display: flex;
+    align-items: center;
+    gap: var(--s-2);
+    width: 100%;
+    min-height: 44px;
+    padding: var(--s-2) var(--s-4);
+    background: var(--card);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-card);
+    color: var(--ink);
+    font: inherit;
+    font-weight: 600;
+    text-align: start;
+    cursor: pointer;
+  }
+
+  .railToggle > span:first-child {
+    flex: 1;
+  }
+
+  .railToggleCount {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 22px;
+    padding-inline: 6px;
+    border-radius: 999px;
+    background: var(--band, #0b3d22);
+    color: #fff;
+    font-size: var(--text-small);
+    font-weight: 600;
   }
 
   .rail {
+    display: none;
     position: static;
     max-height: none;
     overflow: visible;
+  }
+
+  .rail.railOpen {
+    display: grid;
+  }
+
+  /* The toggle already says "Filters"; the rail's own heading would say it twice. */
+  .railHead {
+    display: none;
   }
 
   .productFacts {
