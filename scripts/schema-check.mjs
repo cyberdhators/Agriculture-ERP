@@ -54,6 +54,11 @@ const EXPECTED_UNRESTORED_FKS = [
   'user_deleted_by_fkey',
   'visit_payam_county_consistent_fkey',
   'visit_payam_id_fkey',
+  // C-16: the model reaches county through the composite (county_id, state_id)
+  // key, which is the one that keeps the hierarchy honest; the simple county_id
+  // key beside it is the same shape as farm_payam_id_fkey above. The gate
+  // named it on the first run after migration 23, which is what it is for.
+  'weather_location_county_id_fkey',
 ];
 
 /**

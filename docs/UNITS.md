@@ -18,28 +18,29 @@ otherwise for B3, B9 and B11 until 2026-09-08; they were the plan of
 against the lane statement. A fresh session reads this table to learn who
 owns what, so it now agrees with HANDOFF row for row.
 
-| Unit     | What it covers                      | Owner      | Status        |
-| -------- | ----------------------------------- | ---------- | ------------- |
-| **B0**   | Accounts                            | Alieu      | Done          |
-| **B1.1** | Repository skeleton                 | Alieu      | Done          |
-| **B1.2** | CI pipeline                         | Alieu      | Done          |
-| **B1.3** | Prisma to staging Supabase          | Alieu      | Done          |
-| **B1.4** | API conventions, Zod, error shape   | Alieu      | Done          |
-| **B1.5** | Sentry and the scrubber             | Alieu      | Done          |
-| **B1.6** | README and project state            | Alieu      | Done — #12    |
-| **B2**   | Locations: state, county, payam     | Monkonmlah | Merged — #15  |
-| **B3**   | Identity, roles, `requireRole`, RLS | Monkonmlah | Merged — #20  |
-| **B4**   | Audit log, append-only              | Monkonmlah | Merged — #24  |
-| **B5**   | Farmer core, consent, soft delete   | Monkonmlah | Merged — #32  |
-| **B5.5** | CI runs the database tests          | Monkonmlah | Merged — #33  |
-| **B6**   | Verification and escalation         | Monkonmlah | Merged — #34  |
-| **B6.5** | Auth outage is 503, not 401         | Monkonmlah | Merged #39    |
-| **B7**   | Farm boundaries and PostGIS         | Monkonmlah | Merged #38    |
-| **B8**   | Visit notes and attachments         | Monkonmlah | Merged #41    |
-| **B8.5** | Caseload reassignment (admin only)  | Monkonmlah | Merged #42    |
-| **B9**   | Offline sync endpoint               | Monkonmlah | PR open — #44 |
-| **B10**  | Reporting views and export record   | Monkonmlah | Merged #45    |
-| **B11**  | Backup and restore drill            | Monkonmlah | Merged #46    |
+| Unit     | What it covers                                              | Owner      | Status                                                                    |
+| -------- | ----------------------------------------------------------- | ---------- | ------------------------------------------------------------------------- |
+| **B0**   | Accounts                                                    | Alieu      | Done                                                                      |
+| **B1.1** | Repository skeleton                                         | Alieu      | Done                                                                      |
+| **B1.2** | CI pipeline                                                 | Alieu      | Done                                                                      |
+| **B1.3** | Prisma to staging Supabase                                  | Alieu      | Done                                                                      |
+| **B1.4** | API conventions, Zod, error shape                           | Alieu      | Done                                                                      |
+| **B1.5** | Sentry and the scrubber                                     | Alieu      | Done                                                                      |
+| **B1.6** | README and project state                                    | Alieu      | Done — #12                                                                |
+| **B2**   | Locations: state, county, payam                             | Monkonmlah | Merged — #15                                                              |
+| **B3**   | Identity, roles, `requireRole`, RLS                         | Monkonmlah | Merged — #20                                                              |
+| **B4**   | Audit log, append-only                                      | Monkonmlah | Merged — #24                                                              |
+| **B5**   | Farmer core, consent, soft delete                           | Monkonmlah | Merged — #32                                                              |
+| **B5.5** | CI runs the database tests                                  | Monkonmlah | Merged — #33                                                              |
+| **B6**   | Verification and escalation                                 | Monkonmlah | Merged — #34                                                              |
+| **B6.5** | Auth outage is 503, not 401                                 | Monkonmlah | Merged #39                                                                |
+| **B7**   | Farm boundaries and PostGIS                                 | Monkonmlah | Merged #38                                                                |
+| **B8**   | Visit notes and attachments                                 | Monkonmlah | Merged #41                                                                |
+| **B8.5** | Caseload reassignment (admin only)                          | Monkonmlah | Merged #42                                                                |
+| **B9**   | Offline sync endpoint                                       | Monkonmlah | PR open — #44                                                             |
+| **B10**  | Reporting views and export record                           | Monkonmlah | Merged #45                                                                |
+| **B11**  | Backup and restore drill                                    | Monkonmlah | Merged #46                                                                |
+| **B12**  | Weather tile (C-16): three tables, one route, the fetch job | Monkonmlah | Built — `feat/b12-weather-tile`; DB tests await the staging row's removal |
 
 ## Parallel units — Lane 2 (Alieu-Claude)
 

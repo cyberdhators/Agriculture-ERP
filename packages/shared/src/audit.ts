@@ -62,6 +62,11 @@ export const AUDIT_ACTIONS = [
   'learning_resource.updated',
   'learning_resource.published',
   'learning_resource.soft_deleted',
+  // C-16: a weather location is a managed record. A forecast fetch is NOT audited
+  // (C-16.11) -- it is a scheduled read of a third party, not an action on a record.
+  'weather_location.created',
+  'weather_location.updated',
+  'weather_location.soft_deleted',
 ] as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];

@@ -379,6 +379,9 @@ change.
 | `learning_resource.updated`      |
 | `learning_resource.published`    |
 | `learning_resource.soft_deleted` |
+| `weather_location.created`       |
+| `weather_location.updated`       |
+| `weather_location.soft_deleted`  |
 
 `before` and `after` hold **changed fields only**, never whole rows, and never a
 password, token, authentication identifier, national id, phone, email, given
@@ -1082,3 +1085,54 @@ source's farms and visits to the survivor inside the merge transaction, one
 audit entry per moved record (`farm.repointed`, `visit.repointed`), and the
 merge's own entry names both payams when they differ. A farm keeps its own
 payam: that is where the plot is.
+
+## 18. WEATHER (C-16)
+
+The tile only: current conditions and a short daily forecast for the locations a
+caller may see. The agreed shape is `docs/api/weather-contract.md`; this section
+records what a session building against the routes must know that the contract
+does not say.
+
+**One route, no parameters.** `GET /api/weather`. What a caller sees is decided
+by role and scope alone: admin every location; supervisor and read_only their
+state; **an officer their own county** — weather is about where an officer
+works, and locations are county-level to start (C-16.13), so payam scoping
+would show most officers nothing.
+
+**Empty is a success.** A caller with no locations receives `200` and
+`"data": []`. Never `404`, never an error. On the day this ships that is true
+for nine of ten states.
+
+**No route ever fetches (C-16.6).** Reads read the cache. `pnpm weather:fetch`
+fills it, paced under the free plan's 60 calls per minute, one fetch per active
+location per day, skipping any location fetched within the last hour
+(C-16.7's floor). A retried fetch upserts on `(location, forecast_for)` and
+`(location, fetched_on)`, so it produces no duplicate rows.
+
+**Stale is served, with the real time (C-16.7).** `fetched_at` is always the
+fetch's own moment, never `now()`. A row older than 26 hours is served with
+`stale: true` rather than withheld: a tile that vanishes when the provider is
+down is worse than one that says when it last knew something.
+
+**Forecasts are numbers (C-16.1).** Daily rows are aggregated in the location's
+own timezone from the provider's three-hour slots, starting tomorrow, by
+`aggregateDaily` in `packages/shared/src/weather.ts`: max and min temperature,
+rain summed, probability as the day's maximum, humidity averaged, wind as the
+day's maximum in km/h, conditions as the most frequent description, the icon
+from the slot nearest local midday. The slots themselves are kept in `raw`.
+
+**Attribution is in the payload (C-16.10).** `attribution` is always present
+with the same shape, so the server owns the wording of a licence condition and a
+screen cannot quietly drop it.
+
+**Audit (C-16.11).** Creating, updating or soft-deleting a `weather_location`
+appends `weather_location.created`, `.updated` or `.soft_deleted`. **A fetch
+does not audit.** It is a scheduled read of a third party, not a person's action
+on a record, and one row per location per day would bury the log it belongs to.
+
+**Three tables, not two.** C-16.1 said two, from §8's shape. Current conditions
+have a different shape from a daily forecast and a fetch must not look like an
+edit to a location, so they live in `weather_observation` — one row per
+location per day, upserted — rather than as columns on the location row or as a
+forecast row for today. Recorded as a divergence from the criterion's count, not
+its substance.

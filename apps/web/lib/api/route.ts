@@ -66,6 +66,12 @@ export type RouteResult =
        * when there is something to say.
        */
       readonly warnings?: Warnings;
+      /**
+       * Top-level siblings of `data` that a contract pins beside it, such as the
+       * weather route's `attribution` (C-16.10). Never `data`, `warnings`, `page`
+       * or `error`: those names are the envelope's. Present only when non-empty.
+       */
+      readonly extra?: Readonly<Record<string, unknown>>;
     }
   | {
       readonly kind: 'page';
@@ -79,9 +85,29 @@ export type RouteResult =
     }
   | { readonly kind: 'empty'; readonly status: number; readonly headers?: Record<string, string> };
 
-/** A single object. `{ data: ... }` */
-export const ok = (data: unknown, headers?: Record<string, string>): RouteResult =>
-  headers ? { kind: 'data', data, headers } : { kind: 'data', data };
+/**
+ * A single object. `{ data: ... }`, plus any `extra` top-level siblings a
+ * contract pins beside it. `extra` may not use the envelope's own names.
+ */
+export const ok = (
+  data: unknown,
+  headers?: Record<string, string>,
+  extra?: Readonly<Record<string, unknown>>,
+): RouteResult => {
+  if (extra) {
+    for (const k of Object.keys(extra)) {
+      if (k === 'data' || k === 'warnings' || k === 'page' || k === 'error') {
+        throw new Error(`ok(): "${k}" is an envelope field and cannot be an extra`);
+      }
+    }
+  }
+  return {
+    kind: 'data',
+    data,
+    ...(headers ? { headers } : {}),
+    ...(extra && Object.keys(extra).length > 0 ? { extra } : {}),
+  };
+};
 
 /** 201 with the created object. CONVENTIONS section 3. */
 export const created = (data: unknown): RouteResult => ({ kind: 'data', data, status: 201 });
@@ -160,8 +186,8 @@ function respond(result: RouteResult, correlationId: string): NextResponse {
   }
   const body =
     result.warnings !== undefined
-      ? { data: result.data, warnings: result.warnings }
-      : { data: result.data };
+      ? { data: result.data, warnings: result.warnings, ...(result.extra ?? {}) }
+      : { data: result.data, ...(result.extra ?? {}) };
   return NextResponse.json(body, { status: result.status ?? 200, headers });
 }
 
