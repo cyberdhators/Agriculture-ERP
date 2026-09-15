@@ -26,8 +26,8 @@ const REFERENCE = new Date('2026-09-02T00:00:00Z');
 const MAX_YEAR = maxBirthYear(REFERENCE);
 
 const CONSENT_VERSION: Record<'en' | 'ar-juba', string> = {
-  en: 'v1.0-en',
-  'ar-juba': 'v1.0-ar-juba',
+  en: 'v1.1-en',
+  'ar-juba': 'v1.1-ar-juba',
 };
 
 function digits(value: string): string {

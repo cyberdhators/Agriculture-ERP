@@ -2564,6 +2564,17 @@ now read "AgriOne South Sudan". **What did not:** the logo image
 (`public/brand/agrione-logo.png`) is baked art that still reads "AgriOne" — new
 logo art carrying the full name is CORWADO's to supply.
 
+**Extended 2026-09-15, decided by Alieu for CORWADO:** "remove CORWADO from
+the app. They own agrionesouthsudan, but AgriOne South Sudan is the brand."
+CORWADO is the client and the owner, and stays in the contract, the scope
+document, this file and the handoff log. It is not shown to a farmer, a buyer
+or a staff member anywhere in the product. The four user-facing strings that
+named it (the farmer consent statement, two password-reset sentences and the
+rejected-account notice) now say AgriOne South Sudan or "your extension
+officer". Because the consent statement's wording changed, the farmer-side
+consent text version moves from v1.0 to v1.1; the officer intake's v1.0 is
+the paper text and is unchanged.
+
 ## Migration 22 redated from 2026-09-05, and the audit CHECK generated for real (2026-09-13)
 
 **Taken by Lane 1 while rebasing #28, and it changes a file the owner should
