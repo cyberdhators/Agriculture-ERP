@@ -513,6 +513,39 @@ read. Not "is this correct" — both claims were correct — but **"do I know th
 or did something tell me it"**, which is the same question as reading a document
 as its recipient, pointed at an input rather than an output.
 
+## THE QUEUE IS SELF-TESTING (2026-09-16)
+
+**Worth recording as a property, at the owner's instruction, because it was not
+designed and it is the most useful thing the staging-rows refusal produced.**
+
+The refusal added in the global test setup runs **before any test, as CI's first
+real action**, and fails naming the offending row. So:
+
+> **A pull request's own CI answers whether staging is clean. If a run gets past
+> setup, the row is gone. If it does not, the first line of the log names what
+> is in the way.**
+
+**Why that is more than a convenience.** The condition gating five held branches
+lives in a shared database that no document can describe accurately for long —
+`docs/HANDOFF.md` said the rule and the row was made anyway; a session asking
+the owner gets an answer that was true when they last looked. **Pushing the
+branch asks the system.** It is the fourth silent-class instance's companion
+rule — _ask the system rather than the record_ — arrived at by accident: the
+cheapest way to check the precondition is to attempt the work and read why it
+refused.
+
+**The property in general form.** A precondition enforced at the start of the
+work, failing loudly and naming its cause, turns every attempt into a
+diagnostic. The alternative — a precondition checked by a person, or documented
+and trusted — produced the three red main runs this refusal exists to prevent.
+
+**Its limit, so it is not over-claimed.** This works because the check is
+**first, cheap and specific**: it runs before the fifty-minute suite, costs one
+query, and its message names the row rather than reporting a count mismatch
+fifty minutes later in a test about something else. A precondition that fails
+late, or vaguely, is not a diagnostic — it is the count being off by one in
+`tests/reporting.test.ts`, which is exactly what this replaced.
+
 ## A TEST THAT PINS A SHAPE, AND A TEST THAT COMPARES TWO SOURCES (2026-09-16)
 
 **The clearest demonstration yet of the gate principle, because the same test
