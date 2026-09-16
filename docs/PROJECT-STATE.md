@@ -513,6 +513,68 @@ read. Not "is this correct" — both claims were correct — but **"do I know th
 or did something tell me it"**, which is the same question as reading a document
 as its recipient, pointed at an input rather than an output.
 
+## A TEST THAT PINS A SHAPE, AND A TEST THAT COMPARES TWO SOURCES (2026-09-16)
+
+**The clearest demonstration yet of the gate principle, because the same test
+was written both ways within a day and the second way found something the first
+could not.**
+
+**What happened.** `apps/web/lib/auth/portal-gate.test.ts` was written to close
+the three-hand-maintained-lists problem in the auth gate. Its third assertion
+compared the middleware's `config.matcher` to `PORTAL_PREFIXES` **by equality**:
+the matcher must be exactly each portal prefix plus the login page. It passed,
+and it was proved failing in both directions.
+
+**Then it was rebased onto a main that had moved seventeen commits, and it went
+red.** The design had changed underneath it: the middleware now also matches
+`/market` and `/farmer`, because `NEXT_PUBLIC_MARKET_OPEN=0` gates the
+marketplace behind the staff session (the owner's decision, 2026-09-15).
+
+> **The assertion was wrong. The design was right.** An equality test on a list
+> that another decision is entitled to extend does not protect the gate; it
+> reports every legitimate extension as a fault.
+
+**What correcting it surfaced, which neither version covered.** Rewritten to
+compare **two sources in both directions** — every gated prefix has a matcher
+entry, and every matcher entry is a prefix something gates — it now catches a
+case that was invisible to the equality version and to the design review that
+produced it:
+
+> **A market prefix missing from the matcher makes `NEXT_PUBLIC_MARKET_OPEN=0`
+> silently do nothing.** `isPortalPath` would return `true` for `/market`, so
+> the code reads as though the gate closes — and the middleware would never be
+> asked, because it does not run there. **A gate that appears to close and does
+> not.**
+
+That is the first-pattern failure in the switch built to close the marketplace,
+and nothing in the repository would have reported it. Proved by planting it: the
+test names `/market` and says what it means.
+
+### WHY THIS IS THE SHARPEST VERSION OF THE PRINCIPLE SO FAR
+
+The gate principle has been recorded, argued, given worked examples and applied
+to guards about guards. **This is the same test, by the same author, one day
+apart, in both forms:**
+
+|                                         | The equality version             | The comparison version         |
+| --------------------------------------- | -------------------------------- | ------------------------------ |
+| What it asserts                         | the matcher **equals** this list | two lists **cover** each other |
+| When the design legitimately grows      | **red, wrongly**                 | green                          |
+| A gated prefix missing from the matcher | red                              | red                            |
+| A matcher entry nothing gates           | red                              | red, and named                 |
+| `MARKET_OPEN=0` silently doing nothing  | **invisible**                    | **red**                        |
+
+**The difference is not strictness.** The equality version is _stricter_ and
+catches _less_. It fails on changes that are correct and stays silent on the one
+that is dangerous, because it was pinning a shape rather than checking a
+relationship. **A test that pins a shape encodes today's design; a test that
+compares two sources encodes the rule the design must satisfy.**
+
+**The practical tell, for the next test written here:** if a legitimate future
+change would turn the assertion red, it is pinning a shape. Ask what the two
+things are that must agree, and assert _that_ — then the design may grow and the
+rule still holds.
+
 ## A MISSING OPTIONAL FIELD IS THE FAILURE NO TEST ASSERTS (2026-09-15)
 
 **Found by reading a signature, not by testing an output, and recorded at the
