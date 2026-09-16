@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
 
-import { LOGIN_PATH, PORTAL_PREFIXES } from './paths';
+import { LOGIN_PATH, MARKET_PREFIXES, PORTAL_PREFIXES } from './paths';
 
 /**
  * THE PORTAL GATE IS THREE LISTS, AND THIS IS THE ONE THING THAT COMPARES THEM.
@@ -83,20 +83,36 @@ describe('the portal gate compares its three sources', () => {
     ).toEqual([]);
   });
 
-  it('PORTAL_PREFIXES and the middleware matcher agree', () => {
+  it('the matcher covers every gated prefix, and nothing it does not need', () => {
     const matcher = matcherPaths();
     expect(matcher.length, 'no matcher entries parsed from middleware.ts').toBeGreaterThan(0);
 
-    // The matcher covers each prefix and its children, plus the login page.
-    const expected = [...PORTAL_PREFIXES]
-      .map((p) => `${p}/:path*`)
-      .concat(LOGIN_PATH)
-      .sort();
+    // WHY BOTH PREFIX LISTS. The middleware runs on the portal always, and on
+    // the market and farmer prefixes because NEXT_PUBLIC_MARKET_OPEN=0 gates
+    // them behind the staff session (owner's decision, 2026-09-15). A market
+    // prefix missing from the matcher means that switch silently does nothing:
+    // isPortalPath would return true and the middleware would never be asked.
+    const gated = [...PORTAL_PREFIXES, ...MARKET_PREFIXES];
+
+    const missing = gated.filter((p) => !matcher.includes(`${p}/:path*`));
     expect(
-      [...matcher].sort(),
-      'The middleware matcher and PORTAL_PREFIXES disagree. A prefix in PORTAL_PREFIXES but ' +
-        'not the matcher is NOT gated -- the middleware never runs on it, whatever isPortalPath ' +
-        'says. A prefix in the matcher but not PORTAL_PREFIXES costs a wasted invocation.',
-    ).toEqual(expected);
+      missing,
+      'These prefixes are gated by isPortalPath but the middleware matcher does not run on them, ' +
+        'so nothing enforces the gate. Add `<prefix>/:path*` to config.matcher in middleware.ts.',
+    ).toEqual([]);
+
+    // The other direction: every matcher entry is a prefix we gate, or the login
+    // page. The bare form (`/market` beside `/market/:path*`) is accepted --
+    // belt and braces on a path that must not slip through -- so an entry is
+    // compared with its `/:path*` suffix removed.
+    const stray = matcher
+      .map((m) => m.replace(/\/:path\*$/, ''))
+      .filter((m) => m !== LOGIN_PATH && !gated.includes(m as (typeof gated)[number]));
+    expect(
+      stray,
+      'The middleware runs on these paths and nothing in paths.ts gates them. Either add them to ' +
+        'PORTAL_PREFIXES or MARKET_PREFIXES, or remove them from the matcher: a middleware ' +
+        'invocation that decides nothing is cost without protection.',
+    ).toEqual([]);
   });
 });

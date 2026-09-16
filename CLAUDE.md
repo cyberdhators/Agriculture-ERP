@@ -97,11 +97,20 @@ Decided. Do not substitute, add or upgrade any of these without asking.
 | Errors | Sentry |
 | Maps | Mapbox |
 | SMS | Bird |
-| Email | SendGrid |
+| Email | Resend |
 | Weather | OpenWeather |
 
 All third-party service accounts are held in CORWADO's name. Never create an
 account under our own.
+
+**Two rows have been substituted, and the two are not the same kind of change.**
+SMS was Africa's Talking, and that was **a correction**: they do not serve South
+Sudan at all, so the original choice could not have delivered deliverable (n) to
+a farmer here. Email was SendGrid, and that is **a preference, not a fix** —
+SendGrid works and is on Supabase's own list of recommended SMTP providers. The
+case for Resend is a better free tier at this stage and less setup to do, which
+is convenience rather than capability. Anyone reading this table later should be
+able to tell the two apart; both are in `docs/DECISIONS.md` with their grounds.
 
 ---
 
