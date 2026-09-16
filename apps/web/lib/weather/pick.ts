@@ -7,7 +7,8 @@
  * (C-2), so the county is the first two segments.
  */
 export interface WeatherRowKey {
-  payam_id: string;
+  /** Null for a county-level location (contract §9.1), which is most of them. */
+  payam_id: string | null;
   county_id: string;
 }
 
@@ -19,7 +20,7 @@ export function pickLocation<T extends WeatherRowKey>(
   rows: readonly T[],
   payamId: string,
 ): T | null {
-  const own = rows.find((r) => r.payam_id === payamId);
+  const own = rows.find((r) => r.payam_id !== null && r.payam_id === payamId);
   if (own) return own;
   const county = countyOf(payamId);
   return rows.find((r) => r.county_id === county) ?? null;
