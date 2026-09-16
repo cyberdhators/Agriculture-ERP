@@ -466,6 +466,23 @@ Staff-maintained reference data, seeded once per crop per state. Cheap, and it
 makes the home screen work. But it is scope that appears in no signed document
 — raise it before building it.
 
+**RAISED AND REJECTED, 2026-09-14.** The owner's decision: **out of scope, and
+not built with C-16.** The reasons, recorded so the designs stop implying it is
+coming:
+
+- **It is not weather data.** It is agronomic content somebody has to author and
+  maintain per crop per state, and nobody has been named to do that.
+- **It sits behind an unresolved question.** Its home is a farmer-facing home
+  screen, and CLAUDE.md §2 lists the farmer-installed application as awaiting a
+  client decision — the Inception Report reaches farmers by SMS in this phase.
+- **Deliverable (e) in `docs/scope-and-acceptance.md` is "Climate information
+  and weather advisory."** There is nothing in it about a farming-year strip.
+
+The table above stays in this document as the shape it would take **if** it is
+ever approved. It is not a plan. **C-16 must not be built against it**, and the
+twelve-month strip and "growing now" card should be treated as designs for
+unapproved scope.
+
 ---
 
 ## 9. DELIVERABLES (p) AND (q) — DASHBOARDS AND REPORTING
