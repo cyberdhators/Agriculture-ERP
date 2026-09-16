@@ -3,7 +3,6 @@
 import { useState } from 'react';
 
 import { useWeather } from '@/lib/weather/api';
-import { COUNTIES } from '@/lib/fixtures/p1';
 import { t } from '@/lib/i18n';
 
 import styles from './farmer.module.css';
@@ -22,10 +21,13 @@ export function WeatherTile({ payamId, language }: { payamId: string; language: 
   const w = useWeather(payamId);
   const [open, setOpen] = useState(false);
   const loc = w.location;
-  const county = loc ? (COUNTIES.find((c) => c.id === loc.county_id)?.name ?? loc.county_id) : null;
-  const place = loc
-    ? `${loc.payam_name}${county && county !== loc.payam_name ? `, ${county}` : ''}`
-    : '';
+  // The route names the place (§9.1): a county row is "Juba County", a payam row
+  // its payam with the county beside it. One place, never two side by side.
+  const place = !loc
+    ? ''
+    : loc.level === 'payam' && loc.payam_name
+      ? `${loc.payam_name}, ${loc.county_name}`
+      : loc.name;
 
   return (
     <section className={styles.weatherHero} aria-label={t('weather.title', language)}>
