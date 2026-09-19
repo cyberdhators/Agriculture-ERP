@@ -250,6 +250,7 @@ export {
   type ReportFilter,
   type ReportType,
 } from './report';
+export * from './weather';
 
 // Administrator communications and marketplace product reports. Both are
 // contracts proposed on 2026-09-17 and approved as scope additions; neither has

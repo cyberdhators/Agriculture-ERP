@@ -105,6 +105,7 @@ model State {
   farmers  Farmer[]
   farms    Farm[]
   visits   Visit[]
+  weatherLocations WeatherLocation[]
 
   @@map("state")
 }
@@ -122,6 +123,7 @@ model County {
   farmers Farmer[]
   farms   Farm[]
   visits  Visit[]
+  weatherLocations WeatherLocation[]
   farmerNumberCounter FarmerNumberCounter?
 
   /// Target of the composite key on payam that enforces C-2.3.
@@ -149,6 +151,7 @@ model Payam {
   farmers  Farmer[]
   farms    Farm[]
   visits   Visit[]
+  weatherLocations WeatherLocation[]
   produceListings ProduceListing[]
 
   /// Target of the composite key on officer.
@@ -335,6 +338,7 @@ model User {
   learningResourcesDeleted  LearningResource[] @relation("LearningResourceDeletedBy")
   visitsDeleted             Visit[]            @relation("VisitDeletedBy")
   reportExports             ReportExport[]
+  weatherLocationsDeleted   WeatherLocation[]  @relation("WeatherLocationDeletedBy")
   produceListingsDeleted    ProduceListing[]   @relation("ProduceListingDeletedBy")
   productReportsResolved    ProductReport[]    @relation("ProductReportResolvedBy")
   productReportsDeleted     ProductReport[]    @relation("ProductReportDeletedBy")
@@ -824,6 +828,95 @@ model ReportExport {
 
   @@index([exportedAt(sort: Desc), id(sort: Desc)], map: "report_export_exported_idx")
   @@map("report_export")
+}
+
+// -----------------------------------------------------------------------------
+// C-16 -- the weather tile (migration 23)
+// -----------------------------------------------------------------------------
+//
+// Three tables where C-16.1 said two; CONVENTIONS section 18 records why.
+// Everything is read with raw SQL; these models exist so this file describes
+// the database (pnpm schema:check).
+
+/// A place weather is fetched for. County level to start (C-16.13): a county
+/// row has no payam; a payam row names its payam. Explicit, never a null that
+/// means something (C-16.2).
+model WeatherLocation {
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name      String
+  /// county | payam -- a CHECK in the database.
+  level     String
+  stateId   String    @map("state_id")
+  countyId  String    @map("county_id")
+  payamId   String?   @map("payam_id")
+  latitude  Decimal   @db.Decimal(8, 5)
+  longitude Decimal   @db.Decimal(8, 5)
+  active    Boolean   @default(true)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime  @default(now()) @map("updated_at") @db.Timestamptz(6)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+  deletedBy String?   @map("deleted_by") @db.Uuid
+
+  state   State  @relation(fields: [stateId], references: [id], map: "weather_location_state_id_fkey")
+  county  County @relation(fields: [countyId, stateId], references: [id, stateId], map: "weather_location_county_state_consistent_fkey")
+  payam   Payam? @relation(fields: [payamId, stateId], references: [id, stateId], map: "weather_location_payam_state_consistent_fkey")
+  deleter User?  @relation("WeatherLocationDeletedBy", fields: [deletedBy], references: [id], map: "weather_location_deleted_by_fkey")
+  observations WeatherObservation[]
+  forecasts    WeatherForecast[]
+
+  @@index([stateId], map: "weather_location_state_idx")
+  @@index([countyId], map: "weather_location_county_idx")
+  @@map("weather_location")
+}
+
+/// Current conditions, one row per location per fetch day, upserted. The
+/// provider's moment is observedAt; ours is fetchedAt, which is what the tile
+/// shows (C-16.7).
+model WeatherObservation {
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  weatherLocationId String   @map("weather_location_id") @db.Uuid
+  observedAt        DateTime @map("observed_at") @db.Timestamptz(6)
+  fetchedAt         DateTime @map("fetched_at") @db.Timestamptz(6)
+  fetchedOn         DateTime @map("fetched_on") @db.Date
+  tempC             Decimal  @map("temp_c") @db.Decimal(5, 1)
+  humidityPct       Decimal  @map("humidity_pct") @db.Decimal(5, 1)
+  windKph           Decimal  @map("wind_kph") @db.Decimal(6, 1)
+  rainMm            Decimal  @default(0) @map("rain_mm") @db.Decimal(6, 1)
+  conditions        String
+  icon              String?
+  raw               Json
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  location WeatherLocation @relation(fields: [weatherLocationId], references: [id], map: "weather_observation_location_fkey")
+
+  @@unique([weatherLocationId, fetchedOn], map: "weather_observation_one_per_day")
+  @@map("weather_observation")
+}
+
+/// One daily row, aggregated from the provider's three-hour slots in the
+/// location's timezone. Numbers only (C-16.1). Upserted on (location, day).
+model WeatherForecast {
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  weatherLocationId String   @map("weather_location_id") @db.Uuid
+  forecastFor       DateTime @map("forecast_for") @db.Date
+  fetchedAt         DateTime @map("fetched_at") @db.Timestamptz(6)
+  tempMaxC          Decimal  @map("temp_max_c") @db.Decimal(5, 1)
+  tempMinC          Decimal  @map("temp_min_c") @db.Decimal(5, 1)
+  rainMm            Decimal  @default(0) @map("rain_mm") @db.Decimal(6, 1)
+  rainProbability   Decimal  @default(0) @map("rain_probability") @db.Decimal(3, 2)
+  humidityPct       Decimal  @map("humidity_pct") @db.Decimal(5, 1)
+  windKph           Decimal  @map("wind_kph") @db.Decimal(6, 1)
+  conditions        String
+  icon              String?
+  raw               Json
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  location WeatherLocation @relation(fields: [weatherLocationId], references: [id], map: "weather_forecast_location_fkey")
+
+  @@unique([weatherLocationId, forecastFor], map: "weather_forecast_one_per_day")
+  @@index([weatherLocationId, forecastFor], map: "weather_forecast_location_day_idx")
+  @@map("weather_forecast")
 }
 
 /// The listing enums. Values match LISTING_STATUSES / LISTING_CATEGORIES in

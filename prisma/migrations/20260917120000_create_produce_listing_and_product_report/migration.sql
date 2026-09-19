@@ -203,6 +203,9 @@ ALTER TABLE "public"."audit_event" ADD CONSTRAINT "audit_event_action_known" CHE
         'directory_entry.created', 'directory_entry.updated', 'directory_entry.soft_deleted',
         'learning_resource.created', 'learning_resource.updated',
         'learning_resource.published', 'learning_resource.soft_deleted',
+        'weather_location.created',
+        'weather_location.updated',
+        'weather_location.soft_deleted',
         'product_report.created',
         'product_report.status_changed',
         'product_report.listing_removed',
@@ -210,16 +213,38 @@ ALTER TABLE "public"."audit_event" ADD CONSTRAINT "audit_event_action_known" CHE
         'communication.send_failed'
     ));
 
--- A NOTE FOR WHOEVER APPLIES THIS TO STAGING.
+-- THIS FILE WAS EDITED AFTER IT WAS APPLIED AND MERGED. 2026-09-19, #93.
 --
--- The list above equals AUDIT_ACTIONS exactly, which is what a fresh database
--- must end up with and what packages/shared/tests/audit-check-matches-migrations
--- asserts. Staging is a special case: B12 (PR #93, open, not merged) has already
--- been applied there and has written rows carrying `weather_location.created`.
--- Rebuilding this constraint against that data fails, because a CHECK is
--- validated against every existing row.
+-- That is normally forbidden -- migrations are append-only -- and the reasoning
+-- for the exception belongs here rather than only in a log.
 --
--- That key is NOT added here. It belongs to B12 and arrives with B12's own
--- change to AUDIT_ACTIONS, CONVENTIONS section 5.2.2 and its migration -- the
--- procedure this project requires for any new action key. Staging will accept
--- this migration once #93 merges, or once its test rows are gone.
+-- WHAT WAS WRONG. This migration is dated 20260917 and B12's weather migration
+-- 20260915, so on a FRESH database B12 runs first and adds three
+-- `weather_location.*` keys, and this one then rebuilt the constraint from a
+-- list that did not contain them. A CHECK can only be replaced, never
+-- extended, so the three keys were silently dropped and every B12 weather
+-- route would have failed on its audit insert -- on any fresh database,
+-- including production at B11. It was invisible on staging only because both
+-- migrations had been applied there in the order they were written.
+--
+-- `packages/shared/tests/audit-check-matches-migrations` caught it, which is
+-- the eleventh instance's own fix doing its job: the LAST migration to rebuild
+-- the constraint must list exactly AUDIT_ACTIONS, and no migration may narrow
+-- what an earlier one allowed. This file is the last, so the weather keys have
+-- to be in it.
+--
+-- WHY NOT A NEW MIGRATION. A new one dated later would satisfy the first rule
+-- and leave this file still narrowing the second: walked oldest to newest, this
+-- one would still drop three keys 20260915 had added. The narrowing has to be
+-- removed where it is written.
+--
+-- WHY EDITING WAS ACCEPTABLE HERE. The file and the database had ALREADY
+-- diverged: what ran on staging on 2026-09-17 was not this text, and the
+-- recorded checksum has not matched since. `prisma migrate deploy` against
+-- staging already failed before this edit. One of the two had to move, and the
+-- code is the one that can be reviewed. Staging is corrected to match this
+-- file -- the constraint rebuilt with all 55 keys and the migration record
+-- repaired -- not the other way round. Approved by the owner, 2026-09-19.
+--
+-- The six `weather_location.created` rows on staging stay valid: the key is in
+-- the list above. No audit data is touched.

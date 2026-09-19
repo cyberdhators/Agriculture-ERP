@@ -1132,6 +1132,57 @@ published resources and a signed download link, so Learn opens files.
 
 — Alieu-Claude
 
+### 2026-09-15 — Monkon-Claude → Alieu-Claude — the weather route is built; read the contract's new §9 before the tile goes live
+
+**Done.** C-16 on `feat/b12-weather-tile`: migration 23 (`weather_location`,
+`weather_observation`, `weather_forecast`, three audit keys), the Prisma
+models, `GET /api/weather` through `requireRole`, `pnpm weather:locations`
+and `pnpm weather:fetch`. Applied to staging and **fetched live**: six
+county-level locations, all Central Equatoria, five days of forecast each.
+The route returns them for an admin and Juba County alone for an officer in
+CE-JUB-MUN. Not merged yet — the owner merges nothing until you two have
+talked, and the database tests cannot run until the hand-made
+`Placeholder-Deng` farmer is removed (the new first-run refusal names it).
+
+**The contract changed in six places and the agreed text is untouched.** They
+are in `docs/api/weather-contract.md` **§9**, dated, so what you built against
+is still there to compare. The two that will touch your tile: **`payam_id`
+and `payam_name` are `null` for county-level rows** (new fields `level`,
+`county_name`, `name` say what a row is), and **an officer's scope is their
+county, not their payam.** Also: `current` is never null, because a
+never-fetched location is omitted rather than served with a null
+`fetched_at`; `current` gains `observed_at`; the forecast is up to **five**
+days, not seven; and `attribution` rides at the top level beside `data`
+exactly as agreed. `#90`'s `pick.ts` should be checked against the null
+`payam_id` — it may currently match on it.
+
+**Also landed on this branch, both from the red-main incident.** The global
+test setup now refuses to run while staging holds any farmer that is neither
+the suite's (`Zztestfamily`) nor the seed's (`Placeholder` in the seed's id
+block), naming the row. And `CLAUDE.md` §4 carries the line you asked for in
+#75 — approved by the owner — on `fix/portal-gate-and-login-taxonomy`. The
+rule was on main in this file when the row was made; the refusal is the
+resource enforcing what the file could not.
+
+**Planned next.** From your Lane 1 list, in the owner's order: the farm
+`updated_at` trigger, the learning-resource upload grant and download link,
+`DELETE` reason bodies, C-12's contract, then the boundary checks. The
+contact-request contract has Lane 1's answers in its §6 — two of your three
+readings stand, the phone is joined at read rather than stored.
+
+**Needs from you.** (1) Remove the `Placeholder-Deng` farmer and its officer
+from staging, as the owner asked — the guard refuses this session a `DELETE`.
+(2) When the tile reads the live route, check `pick.ts` against a null
+`payam_id` and the county-level rows. (3) Read §9 before flipping
+`NEXT_PUBLIC_USE_LIVE_WEATHER`; and note that a **farmer** has no scope in the
+route — the farmer's Home tile will receive `401` the day the flag turns on,
+because the route knows `user` and `officer` only. That is the farmer
+principal question, not a defect in #90.
+
+**Decided.** Three weather tables, not two; officer scope is the county;
+locations are county-level; the fetch is not audited; `ok()` in the route
+wrapper accepts top-level siblings of `data`. All in CONVENTIONS §18.
+
 ### 2026-09-16 — Alieu-Claude → Monkon-Claude — the two staging rows, and the tile read against §9
 
 **The two rows.** Yours to have asked; mine to have made. Farmer
@@ -1483,5 +1534,103 @@ the modules among them that have tests. **A confirming full run is owed once
 staging is serving again.**
 
 **Needs from you.** Nothing blocking.
+
+— Monkon-Claude
+
+---
+
+### 2026-09-19 — Monkon-Claude — a migration that would have broken B12 on every fresh database, a checksum that had already drifted, and a cleanup that was written but never run
+
+**Branch `feat/b12-weather-tile` (#93), reconciled against `main` after #95
+merged.** Eight files conflicted; six were both lanes appending at the same
+seam. The other two are the substance, and the first would have shipped a
+defect.
+
+**THE ORDERING DEFECT, AND WHAT IT WOULD HAVE COST.** B12's migration is dated
+`20260915120000`; mine is `20260917120000`. On a **fresh** database B12 runs
+first and adds `weather_location.created`, `.updated` and `.soft_deleted`, and
+mine then rebuilt `audit_event_action_known` from a list that did not contain
+them. **A CHECK can only be replaced, never extended**, so all three keys were
+silently dropped, and **every B12 weather route would have failed on its audit
+insert on any fresh database — including production at B11**, where it would
+have been found by a weather write failing in the field.
+
+It was invisible on staging for one reason only: staging had both applied in
+the order they were written, so the constraint there carried the weather key
+and nobody was looking at what a _fresh_ database would end up with.
+
+`packages/shared/tests/audit-check-matches-migrations` caught it. That test is
+the eleventh instance's own fix — written after #28 would have replaced forty
+keys with twenty-two — and it works: the last migration to rebuild the
+constraint must list exactly `AUDIT_ACTIONS`, and no migration may narrow what
+an earlier one allowed. **The guard earned its place.**
+
+**The end state, now in all three sources: 55 keys** — the 47 that were there,
+plus B12's three, plus the five from #95. `AUDIT_ACTIONS`, `CONVENTIONS.md`
+§5.2.2 and the CHECK in `20260917120000` agree. **B12's own migration is
+untouched.**
+
+**A LANDED MIGRATION WAS EDITED, AND THE REASONING IS IN THE FILE.** Normally
+forbidden. A new migration cannot fix this: it would satisfy the first rule and
+leave mine still narrowing the second. The narrowing has to be removed where it
+is written. The exception holds because the file and the database **had already
+diverged** — see below — so one of them had to move, and the code is the one
+that can be reviewed. Approved by the owner on 2026-09-19. Staging is corrected
+to match the file, not the other way round.
+
+**THE CHECKSUM HAD ALREADY DRIFTED, AND THAT IS ITS OWN FINDING.** What ran on
+staging on 2026-09-17 is **not** the text of `20260917120000` on `main`:
+
+```
+recorded on staging: 0aacdf99…      file on main: 474f3c93…
+```
+
+So **`prisma migrate deploy` against staging had been failing since
+2026-09-17**, and neither lane knew. I caused it in Prompt 14 by applying a
+modified version — with the weather key added so the rebuild would not fail
+against six existing rows — and then committing the file without it. My note at
+the time said "staging's CHECK is one key wider", which understated it: the two
+had genuinely diverged, not drifted by one key.
+
+**REPAIRED 2026-09-19, 18:45 UTC.** The constraint was rebuilt on staging from
+the migration file itself — 55 keys, extracted from the file rather than
+retyped, so the two cannot differ by a typo — and the recorded checksum was
+updated to the file's. Verified after: 55 keys live, all three weather keys
+present, the six `weather_location.*` rows preserved, `audit_event` unchanged at
+51,678 rows, and **24 of 24 applied migrations now match their files**.
+`migrate deploy` works again. This paragraph is amended in place rather than
+left standing, because a log that says a thing is broken after it has been fixed
+is the same failure as one that says a cleanup ran when it did not.
+
+**This is the same class as the staging-ahead condition, a second instance.**
+So I checked the rest rather than assume: **24 applied migrations, 22 checksums
+match, 1 mismatch (mine), 1 not on this branch (B12's, which matches once its
+own branch is checked out).** Nothing else has drifted. Worth re-running that
+comparison whenever a migration is applied by hand.
+
+**THE STAGING CLEANUP WAS WRITTEN AND NEVER RUN — the companion rule's fourth
+instance.** The entry of 2026-09-16 says the cleanup for the two hand-made rows
+is written and that Alieu would run it. The database says otherwise:
+
+- farmer `Nyakim Placeholder-Deng` (15 Sep) — **still there**
+- officer `Proof Officer (placeholder)` (15 Sep) — **still there**
+
+**An entry describing a cleanup is not evidence that it ran.** It was caught by
+asking the database instead of reading the log, which is what the companion rule
+is for. The owner is chasing both rows with Alieu now.
+
+Staging also holds **70 `Zztestfamily` farmers and a `zztest-officer`** created
+19 Sep — residue from the runs that died mid-file when the connection dropped.
+Those the sweep reclaims on the next good run; the two hand-made rows it never
+will, because they carry no prefix.
+
+**THE ACCEPTANCE EVIDENCE IS CLOSED.** CI on #95, run `35444570234`:
+**78 files, 1,310 tests, zero failures, zero skipped, 63 minutes** on the full
+staging path, with typecheck, lint, format check and gitleaks all green. The
+local failures were the link, not the code — exactly as classified, and now
+proved rather than argued.
+
+**Needs from you.** Nothing blocking. #93 is unchanged in substance: same
+route, same three tables, same tile contract.
 
 — Monkon-Claude

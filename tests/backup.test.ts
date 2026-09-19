@@ -6,6 +6,7 @@ import * as attachmentConfirm from '../apps/web/app/api/visits/[id]/attachments/
 import * as visitAttachments from '../apps/web/app/api/visits/[id]/attachments/route';
 import * as visitItem from '../apps/web/app/api/visits/[id]/route';
 import {
+  MANIFEST_EXCLUDED_TABLES,
   MANIFEST_TABLES,
   type Manifest,
   compareManifests,
@@ -90,6 +91,35 @@ run('the manifest (C-11.5)', () => {
         table,
       );
       expect(exists?.n, `${table} exists`).toBe(1);
+    }
+  });
+
+  it('every table that exists is either in the manifest or excluded with a reason (C-16.12)', async () => {
+    // THE OTHER DIRECTION. The check above catches a table removed or renamed;
+    // it cannot catch a table ADDED, because it iterates the list and not the
+    // catalogue. B8, B10 and B11 each added tables and each remembered the
+    // manifest by habit. C-16 would have been the first to forget, and the
+    // manifest would have reported a clean restore while counting nothing for
+    // three tables. This compares the catalogue back to the list, so a new
+    // table fails here by name until someone lists it or excludes it with a
+    // reason. A gate that compares (docs/PROJECT-STATE.md).
+    const inCatalogue = (
+      await prisma.$queryRawUnsafe<{ table_name: string }[]>(
+        `SELECT table_name FROM information_schema.tables
+          WHERE table_schema = 'public' AND table_type = 'BASE TABLE' ORDER BY table_name`,
+      )
+    ).map((r) => r.table_name);
+    const known = new Set<string>([...MANIFEST_TABLES, ...Object.keys(MANIFEST_EXCLUDED_TABLES)]);
+    const unlisted = inCatalogue.filter((t) => !known.has(t));
+    expect(
+      unlisted,
+      'These tables exist in staging and are in neither MANIFEST_TABLES nor MANIFEST_EXCLUDED_TABLES. ' +
+        'A restore verified against this manifest would report clean while counting nothing for them. ' +
+        'Add each to MANIFEST_TABLES, or to MANIFEST_EXCLUDED_TABLES with the reason it is not backed up.',
+    ).toEqual([]);
+    // And the exclusions are real, so a stale exclusion is a finding too.
+    for (const t of Object.keys(MANIFEST_EXCLUDED_TABLES)) {
+      expect(inCatalogue, `excluded table ${t} still exists`).toContain(t);
     }
   });
 
