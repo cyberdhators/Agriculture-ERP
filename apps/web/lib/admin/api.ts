@@ -50,9 +50,36 @@ export interface Officer {
 
 interface Envelope<T> {
   data?: T;
-  page?: { cursor: string | null; hasMore: boolean };
+  /**
+   * `orphan_auth_accounts` rides on the users page beside cursor and hasMore.
+   * The route computes it for an ADMINISTRATOR on the FIRST page only — it is a
+   * scan of every authentication account, and a supervisor has no business
+   * knowing about accounts outside their state — so it is absent the rest of
+   * the time and must never be rendered as a zero.
+   */
+  page?: { cursor: string | null; hasMore: boolean; orphan_auth_accounts?: number };
   error?: { code: string; message: string; rule?: string };
 }
+
+/** One page of a cursor-paginated list, as CONVENTIONS §6.1 shapes it. */
+export interface Page<T> {
+  rows: T[];
+  cursor: string | null;
+  hasMore: boolean;
+}
+
+export interface PageParams {
+  cursor?: string;
+  limit?: number;
+}
+
+const pageQuery = (params: PageParams): string => {
+  const qs = new URLSearchParams();
+  if (params.cursor) qs.set('cursor', params.cursor);
+  if (params.limit !== undefined) qs.set('limit', String(params.limit));
+  const query = qs.toString();
+  return query ? `?${query}` : '';
+};
 
 async function request<T>(path: string, init?: RequestInit): Promise<Envelope<T>> {
   const res = await fetch(path, {
@@ -74,9 +101,30 @@ async function request<T>(path: string, init?: RequestInit): Promise<Envelope<T>
 
 // ── Staff accounts ─────────────────────────────────────────────────────────
 
-export async function listStaff(): Promise<StaffUser[]> {
-  const body = await request<StaffUser[]>('/api/users');
-  return body.data ?? [];
+/**
+ * One page of staff accounts.
+ *
+ * It used to take no parameters, fetch the first page and throw the cursor
+ * away — which made a national list look complete when it was one page of it.
+ * The route pages by cursor and reports no total, so the caller gets the page,
+ * the cursor for the next one, and the administrator-only orphan diagnostic
+ * when the route chose to send it.
+ */
+export interface StaffPage extends Page<StaffUser> {
+  /** Present only when the route sent it: administrator, first page. */
+  orphanAuthAccounts?: number;
+}
+
+export async function listStaff(params: PageParams = {}): Promise<StaffPage> {
+  const body = await request<StaffUser[]>(`/api/users${pageQuery(params)}`);
+  return {
+    rows: body.data ?? [],
+    cursor: body.page?.cursor ?? null,
+    hasMore: body.page?.hasMore ?? false,
+    ...(body.page?.orphan_auth_accounts === undefined
+      ? {}
+      : { orphanAuthAccounts: body.page.orphan_auth_accounts }),
+  };
 }
 
 export async function createStaff(input: CreateUser): Promise<StaffUser> {
@@ -104,9 +152,14 @@ export async function deactivateStaff(id: string): Promise<void> {
 
 // ── Extension officers ─────────────────────────────────────────────────────
 
-export async function listOfficers(): Promise<Officer[]> {
-  const body = await request<Officer[]>('/api/officers');
-  return body.data ?? [];
+/** One page of extension officers, by cursor. Same correction as listStaff. */
+export async function listOfficers(params: PageParams = {}): Promise<Page<Officer>> {
+  const body = await request<Officer[]>(`/api/officers${pageQuery(params)}`);
+  return {
+    rows: body.data ?? [],
+    cursor: body.page?.cursor ?? null,
+    hasMore: body.page?.hasMore ?? false,
+  };
 }
 
 export async function createOfficer(input: CreateOfficer): Promise<Officer> {
@@ -127,9 +180,37 @@ export async function patchOfficer(id: string, input: PatchOfficer): Promise<Off
   return body.data;
 }
 
-/** C-3.6: an officer is deactivated by status, and it ends access at once. */
-export function setOfficerActive(id: string, active: boolean): Promise<Officer> {
-  return patchOfficer(id, { status: active ? 'active' : 'inactive' });
+/**
+ * DEACTIVATION, AND THE NUMBER IT RETURNS.
+ *
+ * C-8R.3, added by the owner: the act that leaves farmers without a working
+ * officer says how many. The route answers the deactivation with
+ * `unassigned_farmers` beside the officer record — only on a PATCH that
+ * actually moves the status to `inactive`, never on reactivation and never on
+ * the soft delete, which answers 204 with no body at all.
+ *
+ * This is a COUNT RETURNED BY THE SERVER, not something a client can work out:
+ * there is no route that reports an officer's caseload, and counting from a
+ * paginated farmer list would be wrong. When it is absent it is absent — the
+ * caller must not print zero.
+ */
+export interface OfficerStatusResult {
+  officer: Officer;
+  /** Present only on a deactivation the server performed. Never fabricated. */
+  unassignedFarmers?: number;
+}
+
+export async function setOfficerActive(id: string, active: boolean): Promise<OfficerStatusResult> {
+  const body = await request<Officer & { unassigned_farmers?: number }>(
+    `/api/officers/${encodeURIComponent(id)}`,
+    { method: 'PATCH', body: JSON.stringify({ status: active ? 'active' : 'inactive' }) },
+  );
+  if (!body.data) throw new AdminApiError(500, 'empty', 'No officer in the response');
+  const { unassigned_farmers, ...officer } = body.data;
+  return {
+    officer: officer as Officer,
+    ...(unassigned_farmers === undefined ? {} : { unassignedFarmers: unassigned_farmers }),
+  };
 }
 
 // ── Audit trail (deliverable (s), C-4) ──────────────────────────────────────

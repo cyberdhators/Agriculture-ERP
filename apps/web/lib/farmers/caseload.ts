@@ -28,8 +28,13 @@ export function useOfficers(enabled: boolean): {
     if (!live || !enabled) return;
     let on = true;
     setLoading(true);
-    listOfficers()
-      .then((r) => on && (setOfficers(r), setError(undefined)))
+    // The officer picker wants every officer who could take the caseload, and
+    // the route pages. MAX_LIMIT in one request keeps the picker a single
+    // request rather than a loop, and the eligibility filter below narrows it
+    // to the farmer's own payam anyway. If a payam ever holds more officers
+    // than one page, this needs paging — noted rather than assumed away.
+    listOfficers({ limit: 200 })
+      .then((r) => on && (setOfficers(r.rows), setError(undefined)))
       .catch((e: unknown) => {
         if (on) setError(e instanceof Error ? e.message : 'Could not load officers.');
       })

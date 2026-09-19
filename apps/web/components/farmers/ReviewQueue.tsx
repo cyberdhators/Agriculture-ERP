@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 
-import { REJECTION_REASONS, type RejectionReason } from '@agri-erp/shared';
+import { REJECTION_REASONS, VERIFICATION_LIMITS, type RejectionReason } from '@agri-erp/shared';
 
 import { CROP_LABELS, formatPhone, pluralise } from '@/lib/format';
 import {
@@ -397,12 +397,16 @@ export function ReviewQueue() {
             </Select>
           )}
         </Field>
-        <Field label="Note" optional hint="At most 280 characters. Shown to the officer.">
+        <Field
+          label="Note"
+          optional
+          hint={`${note.length} / ${VERIFICATION_LIMITS.noteMax} characters. Shown to the officer.`}
+        >
           {(ids) => (
             <Textarea
               {...ids}
               value={note}
-              maxLength={280}
+              maxLength={VERIFICATION_LIMITS.noteMax}
               onChange={(e) => setNote(e.target.value)}
               placeholder="Explain what is missing or wrong…"
             />

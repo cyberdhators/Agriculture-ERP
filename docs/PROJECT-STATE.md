@@ -513,6 +513,101 @@ read. Not "is this correct" — both claims were correct — but **"do I know th
 or did something tell me it"**, which is the same question as reading a document
 as its recipient, pointed at an input rather than an output.
 
+## THE QUEUE IS SELF-TESTING (2026-09-16)
+
+**Worth recording as a property, at the owner's instruction, because it was not
+designed and it is the most useful thing the staging-rows refusal produced.**
+
+The refusal added in the global test setup runs **before any test, as CI's first
+real action**, and fails naming the offending row. So:
+
+> **A pull request's own CI answers whether staging is clean. If a run gets past
+> setup, the row is gone. If it does not, the first line of the log names what
+> is in the way.**
+
+**Why that is more than a convenience.** The condition gating five held branches
+lives in a shared database that no document can describe accurately for long —
+`docs/HANDOFF.md` said the rule and the row was made anyway; a session asking
+the owner gets an answer that was true when they last looked. **Pushing the
+branch asks the system.** It is the fourth silent-class instance's companion
+rule — _ask the system rather than the record_ — arrived at by accident: the
+cheapest way to check the precondition is to attempt the work and read why it
+refused.
+
+**The property in general form.** A precondition enforced at the start of the
+work, failing loudly and naming its cause, turns every attempt into a
+diagnostic. The alternative — a precondition checked by a person, or documented
+and trusted — produced the three red main runs this refusal exists to prevent.
+
+**Its limit, so it is not over-claimed.** This works because the check is
+**first, cheap and specific**: it runs before the fifty-minute suite, costs one
+query, and its message names the row rather than reporting a count mismatch
+fifty minutes later in a test about something else. A precondition that fails
+late, or vaguely, is not a diagnostic — it is the count being off by one in
+`tests/reporting.test.ts`, which is exactly what this replaced.
+
+## A TEST THAT PINS A SHAPE, AND A TEST THAT COMPARES TWO SOURCES (2026-09-16)
+
+**The clearest demonstration yet of the gate principle, because the same test
+was written both ways within a day and the second way found something the first
+could not.**
+
+**What happened.** `apps/web/lib/auth/portal-gate.test.ts` was written to close
+the three-hand-maintained-lists problem in the auth gate. Its third assertion
+compared the middleware's `config.matcher` to `PORTAL_PREFIXES` **by equality**:
+the matcher must be exactly each portal prefix plus the login page. It passed,
+and it was proved failing in both directions.
+
+**Then it was rebased onto a main that had moved seventeen commits, and it went
+red.** The design had changed underneath it: the middleware now also matches
+`/market` and `/farmer`, because `NEXT_PUBLIC_MARKET_OPEN=0` gates the
+marketplace behind the staff session (the owner's decision, 2026-09-15).
+
+> **The assertion was wrong. The design was right.** An equality test on a list
+> that another decision is entitled to extend does not protect the gate; it
+> reports every legitimate extension as a fault.
+
+**What correcting it surfaced, which neither version covered.** Rewritten to
+compare **two sources in both directions** — every gated prefix has a matcher
+entry, and every matcher entry is a prefix something gates — it now catches a
+case that was invisible to the equality version and to the design review that
+produced it:
+
+> **A market prefix missing from the matcher makes `NEXT_PUBLIC_MARKET_OPEN=0`
+> silently do nothing.** `isPortalPath` would return `true` for `/market`, so
+> the code reads as though the gate closes — and the middleware would never be
+> asked, because it does not run there. **A gate that appears to close and does
+> not.**
+
+That is the first-pattern failure in the switch built to close the marketplace,
+and nothing in the repository would have reported it. Proved by planting it: the
+test names `/market` and says what it means.
+
+### WHY THIS IS THE SHARPEST VERSION OF THE PRINCIPLE SO FAR
+
+The gate principle has been recorded, argued, given worked examples and applied
+to guards about guards. **This is the same test, by the same author, one day
+apart, in both forms:**
+
+|                                         | The equality version             | The comparison version         |
+| --------------------------------------- | -------------------------------- | ------------------------------ |
+| What it asserts                         | the matcher **equals** this list | two lists **cover** each other |
+| When the design legitimately grows      | **red, wrongly**                 | green                          |
+| A gated prefix missing from the matcher | red                              | red                            |
+| A matcher entry nothing gates           | red                              | red, and named                 |
+| `MARKET_OPEN=0` silently doing nothing  | **invisible**                    | **red**                        |
+
+**The difference is not strictness.** The equality version is _stricter_ and
+catches _less_. It fails on changes that are correct and stays silent on the one
+that is dangerous, because it was pinning a shape rather than checking a
+relationship. **A test that pins a shape encodes today's design; a test that
+compares two sources encodes the rule the design must satisfy.**
+
+**The practical tell, for the next test written here:** if a legitimate future
+change would turn the assertion red, it is pinning a shape. Ask what the two
+things are that must agree, and assert _that_ — then the design may grow and the
+rule still holds.
+
 ## A MISSING OPTIONAL FIELD IS THE FAILURE NO TEST ASSERTS (2026-09-15)
 
 **Found by reading a signature, not by testing an output, and recorded at the
@@ -1905,6 +2000,57 @@ have reported success having changed nothing, which is the first pattern again.
 protects the contractual documents, and the state documents are still formatted,
 which is correct — they are prose and should be. The rule here is about how a
 session edits them, not about excluding them.
+
+## A LAW IN A FILE ONLY GOVERNS SESSIONS THAT OPEN THE FILE (2026-09-15)
+
+**The owner's sentence, and it is the useful fact from a red main.**
+
+**What happened.** On 2026-09-14 the owner approved a line for `CLAUDE.md` §4:
+_staging rows are the test suite's or the seed's, never hand-made._ It was
+written, committed, and held on a branch. On **2026-09-15 at 07:48** a Lane 2
+session created an officer named `Proof Officer (placeholder)` in staging by
+hand, and at **08:07** registered a farmer against it. Neither row is prefixed
+`zztest`, so the suite's sweep leaves them; `tests/reporting.test.ts` counts
+state CE by hand from its fixture, found one pending farmer too many, and main
+went red twice. **Same mechanism as #75, one day later, same lane.**
+
+**The precision that matters — corrected the same day, because the first
+version of this paragraph was wrong.** It said no file on main contained the
+rule. **It did.** #75, Lane 2's pull request carrying the rule, was closed
+unmerged — but the same HANDOFF entry reached main inside #79 at
+**2026-09-14 21:23 UTC**, ten and a half hours before the officer row was made.
+`docs/HANDOFF.md` is the one file every session is instructed to read before
+any work. So the rule was on main, in the file sessions are told to open first,
+written by the same lane that then broke it. **The owner's sentence stands, and
+it is sharper than the first version made it:** a law in a file governs only the
+sessions that open the file — and here the file was the one they are required
+to open. What is not yet on main is the `CLAUDE.md` §4 line, which sits on a
+held branch.
+
+_The first version was written from #75's state without checking whether its
+content had landed another way. Same fault as characterising the SMS account
+from three of eight messages: the record was consulted instead of the system._
+
+**What follows, in two parts.**
+
+- **Landing matters more than writing.** The §4 line should go to main on its
+  own, ahead of the code it shares a branch with. But this incident shows that
+  landing is necessary and not sufficient: the rule was landed, in the required
+  file, and was not followed.
+- **A file is not enough for a rule about a shared resource.** `CLAUDE.md` and
+  `HANDOFF.md` govern sessions that open them and act on what they read. A
+  staging database is touched by sessions proving UI, by scripts, and by people
+  in a hurry. The durable form is the one already used for `zztest`: **the
+  resource itself refuses.** `farmers-seed-lib.mjs` refuses to register a
+  placeholder farmer against a `zztest` officer; the equivalent for hand-made
+  rows is a check the suite runs first — every officer and farmer in staging is
+  either `zztest`-prefixed or came from the seed — that goes red naming the row,
+  before the counting tests fail on it obliquely. Sized at about half an hour,
+  not built. **After this incident it is the fix, not an option.**
+
+**The row is Lane 2's to remove**, at the owner's request, since the auto-mode
+guard refuses this session a `DELETE` on the shared database and Alieu ran the
+last cleanup.
 
 ## THE ELABORATION FAILURE — THE SEAM BETWEEN THE OWNER'S JUDGEMENT AND A SESSION'S (2026-09-11)
 

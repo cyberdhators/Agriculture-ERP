@@ -3,10 +3,15 @@
 import Link from 'next/link';
 import { useMemo, useState, type ReactNode } from 'react';
 
-import { patchFarmerSchema, REJECTION_REASONS, type RejectionReason } from '@agri-erp/shared';
+import {
+  patchFarmerSchema,
+  REJECTION_REASONS,
+  VERIFICATION_LIMITS,
+  type RejectionReason,
+} from '@agri-erp/shared';
 
 import { CROP_LABELS, LANGUAGE_LABELS, formatDate, formatPhone } from '@/lib/format';
-import { patchFarmer } from '@/lib/farmers/api';
+import { patchFarmer, removeFarmer } from '@/lib/farmers/api';
 import {
   correctionFrom,
   patchDiff,
@@ -35,6 +40,7 @@ import {
 } from '@/lib/farmers/verification';
 import { eligibleOfficers, useOfficers } from '@/lib/farmers/caseload';
 import { LIVE_REASSIGN, reassignFarmer } from '@/lib/farmers/reassign';
+import { MERGE_CONSEQUENCE, MERGE_CONSTRAINT, MERGE_IRREVERSIBLE } from '@/lib/farmers/recovery';
 import { totalArea } from '@/lib/farms/api';
 import {
   coopById,
@@ -88,12 +94,35 @@ const REASON_LABEL: Record<RejectionReason, string> = {
   other: 'Other',
 };
 
-function maskNid(nid: string): string {
-  if (nid.length <= 4) return nid;
-  return `${'•'.repeat(Math.max(0, nid.length - 4))}${nid.slice(-4)}`;
+/**
+ * C-5.8, both halves of it.
+ *
+ * The ROUTE decides who may see a national ID, and enforces it by omitting the
+ * key — an administrator and the farmer's own caseload officer get the value,
+ * everybody else gets no key at all. So by the time a row reaches this screen,
+ * a present `national_id` means "you are entitled to read this", and masking it
+ * to ••••1234 would withhold from the one reader the rule exists to serve.
+ *
+ * The three cases below are therefore not interchangeable:
+ *   absent  → render NO row. The reader was not told, and a row saying
+ *             "None recorded" would be a placeholder for a withheld field.
+ *   null    → render "None recorded". Measured: this farmer has no ID on file.
+ *   string  → render it, in full.
+ */
+function nationalIdRow(farmer: Farmer): { term: string; value: ReactNode } | null {
+  if (farmer.national_id === undefined) return null;
+  return {
+    term: 'National id',
+    value: farmer.national_id ? (
+      <span className="mono">{farmer.national_id}</span>
+    ) : (
+      <span className="muted">None recorded</span>
+    ),
+  };
 }
 
-type ActionKind = 'verify' | 'merge' | 'reject' | 'reassign' | 'correct' | 'resubmit' | null;
+type ActionKind =
+  'verify' | 'merge' | 'reject' | 'reassign' | 'correct' | 'resubmit' | 'remove' | null;
 
 export function FarmerDossier({ id }: { id: string }) {
   const { role, hydrated, me } = usePreview();
@@ -115,6 +144,8 @@ export function FarmerDossier({ id }: { id: string }) {
   // C-8R: the caseload pointer after a reassignment, held here because the
   // route returns it and the rest of the dossier does not need a refetch.
   const [reassignTarget, setReassignTarget] = useState('');
+  /** Set once a soft removal has been recorded, so the page stops offering actions. */
+  const [removed, setRemoved] = useState(false);
   const [movedTo, setMovedTo] = useState<string | null>(null);
   const isAdmin = hydrated && role === 'admin';
   const officerList = useOfficers(isAdmin);
@@ -186,6 +217,12 @@ export function FarmerDossier({ id }: { id: string }) {
     (caseloadId ? caseloadId.slice(0, 8) : null);
   const eligible = eligibleOfficers(officerList.officers, farmer.payam_id, caseloadId);
   const canReassign = isAdmin && !farmer.merged_into && status !== 'merged';
+  /**
+   * DELETE /api/farmers/:id is administrator-only, and soft. A record already
+   * merged is not offered for removal: it has already left the active lists,
+   * and removing it again would be a second answer to a settled question.
+   */
+  const canRemove = isAdmin && !farmer.merged_into && status !== 'merged' && !removed;
   const survivor = farmer.merged_into ? farmerById(farmer.merged_into) : null;
   const age = TODAY_YEAR - farmer.year_of_birth;
   const showActions = hydrated && canReview(role) && status === 'pending';
@@ -195,9 +232,6 @@ export function FarmerDossier({ id }: { id: string }) {
     const who = `${farmer!.given_name} ${farmer!.family_name}`;
     const preview = actionsLive ? '' : 'Recorded (preview, no server): ';
     const targetLabel = farmerById(mergeTarget)?.farmer_number ?? mergeTarget;
-    const detail = reasonCode
-      ? `${REASON_LABEL[reasonCode]}${reason.trim() ? '. ' + reason.trim() : ''}`
-      : reason.trim();
     setBusy(true);
     try {
       if (kind === 'correct' || kind === 'resubmit') {
@@ -245,6 +279,15 @@ export function FarmerDossier({ id }: { id: string }) {
         setReassignTarget('');
         return;
       }
+      if (kind === 'remove') {
+        if (live) await removeFarmer(farmer!.id);
+        setRemoved(true);
+        setRecorded(
+          `${live ? '' : 'Recorded (preview, no server): '}${who} removed from active lists and reporting. The record and its history remain.`,
+        );
+        setAction(null);
+        return;
+      }
       if (actionsLive) {
         if (kind === 'verify') await verifyFarmer(farmer!.id);
         if (kind === 'merge') await mergeFarmer(farmer!.id, { target_id: mergeTarget });
@@ -255,7 +298,14 @@ export function FarmerDossier({ id }: { id: string }) {
           });
       }
       if (kind === 'verify') setRecorded(`${preview}${who} verified as a new farmer.`);
-      if (kind === 'reject') setRecorded(`${preview}${who} rejected. Reason: ${detail}`);
+      // C-6.3 with the personal-data law: the banner names the fixed reason
+      // code and never the free-text note. The note is a sentence about a
+      // named person and belongs on the record, not in a message that may be
+      // read over a shoulder or copied into a ticket.
+      if (kind === 'reject')
+        setRecorded(
+          `${preview}${who} rejected. Reason: ${reasonCode ? REASON_LABEL[reasonCode] : 'not given'}.`,
+        );
       if (kind === 'merge') setRecorded(`${preview}${who} merged into ${targetLabel}.`);
       setAction(null);
       setReason('');
@@ -404,6 +454,11 @@ export function FarmerDossier({ id }: { id: string }) {
             </Notice>
           ) : null}
 
+          {canRemove ? (
+            <Button variant="danger" onClick={() => setAction('remove')}>
+              Remove farmer
+            </Button>
+          ) : null}
           {canReassign ? (
             <Card padded>
               <p className="label" style={{ marginBottom: 'var(--s-3)' }}>
@@ -467,14 +522,7 @@ export function FarmerDossier({ id }: { id: string }) {
                     </a>
                   ),
                 },
-                {
-                  term: 'National id',
-                  value: farmer.national_id ? (
-                    <span className="mono">{maskNid(farmer.national_id)}</span>
-                  ) : (
-                    <span className="muted">None recorded</span>
-                  ),
-                },
+                ...(nationalIdRow(farmer) ? [nationalIdRow(farmer)!] : []),
                 {
                   term: 'Location',
                   value: `${STATE_NAMES[farmer.state_id] ?? farmer.state_id} › Juba › ${farmerPayamName(farmer.payam_id)}`,
@@ -545,9 +593,28 @@ export function FarmerDossier({ id }: { id: string }) {
                     <Boundary farm={farm} size={360} showArea={false} />
                     <div className={styles.farmFacts}>
                       <div className={styles.farmFactsGrid}>
-                        <Mini label="Area" value={`${farm.area_ha.toFixed(2)} ha`} mono />
-                        <Mini label="Points" value={String(farm.point_count)} mono />
-                        <Mini label="GPS accuracy" value={`±${farm.gps_accuracy_m} m`} mono />
+                        {/*
+                         * C-7.8: absent means the route did not send it, not
+                         * that the figure is zero. "±0 m" is a perfect GPS fix
+                         * and was what a supervisor used to be shown.
+                         */}
+                        <Mini
+                          label="Area"
+                          value={farm.area_ha === undefined ? '—' : `${farm.area_ha.toFixed(2)} ha`}
+                          mono
+                        />
+                        <Mini
+                          label="Points"
+                          value={farm.point_count === undefined ? '—' : String(farm.point_count)}
+                          mono
+                        />
+                        <Mini
+                          label="GPS accuracy"
+                          value={
+                            farm.gps_accuracy_m === undefined ? '—' : `±${farm.gps_accuracy_m} m`
+                          }
+                          mono
+                        />
                         <Mini
                           label="Trace"
                           value={
@@ -816,6 +883,46 @@ export function FarmerDossier({ id }: { id: string }) {
       </div>
 
       {/* ---- Action dialogs ---- */}
+      {/*
+       * SOFT REMOVAL, SAID PLAINLY.
+       *
+       * The route stamps `deleted_at`; nothing is destroyed. So the words here
+       * are "remove from active lists and reporting", never "delete
+       * permanently" — an administrator who believes they have erased a record
+       * will answer a data-subject request wrongly, and the history is still
+       * there either way. The dialog names the farmer it is about, because a
+       * confirmation that says "this record" is a confirmation somebody
+       * eventually gives to the wrong one.
+       */}
+      <Dialog
+        open={action === 'remove'}
+        onClose={() => setAction(null)}
+        title="Remove this farmer?"
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setAction(null)}>
+              Cancel
+            </Button>
+            <Button variant="danger" onClick={() => submit('remove')} disabled={busy}>
+              {busy ? 'Removing…' : 'Remove farmer'}
+            </Button>
+          </>
+        }
+      >
+        <p>
+          Remove{' '}
+          <strong>
+            {farmer.given_name} {farmer.family_name}
+          </strong>{' '}
+          <span className="mono">({farmer.farmer_number})</span> from active lists and reporting?
+        </p>
+        <p className="small muted">
+          The record stops appearing in the register, in counts and in exports. Historical
+          information — the registration, its consent, farms, visits and the audit trail — remains
+          available to authorised users. This is not a permanent deletion.
+        </p>
+      </Dialog>
+
       <Dialog
         open={action === 'verify'}
         onClose={() => setAction(null)}
@@ -859,7 +966,18 @@ export function FarmerDossier({ id }: { id: string }) {
           </>
         }
       >
-        <p>Choose the surviving record. This record is kept but points to the survivor.</p>
+        {/*
+         * The one consequential action that did not say what it does. The
+         * client cannot pre-filter the survivor — no route looks a farmer up
+         * by number — so the constraint is stated before the act and the
+         * server's own refusal is shown if it is broken.
+         */}
+        <p>Choose the surviving record.</p>
+        <p className="small">{MERGE_CONSEQUENCE}</p>
+        <Notice kind="warn" title="Before you merge">
+          <p className="small">{MERGE_CONSTRAINT}</p>
+          <p className="small">{MERGE_IRREVERSIBLE}</p>
+        </Notice>
         {live ? (
           <Field
             label="Survivor"
@@ -936,11 +1054,16 @@ export function FarmerDossier({ id }: { id: string }) {
             </Select>
           )}
         </Field>
-        <Field label="Note" optional error={undefined}>
+        <Field
+          label="Note"
+          optional
+          hint={`${reason.length} / ${VERIFICATION_LIMITS.noteMax} characters. Shown to the officer.`}
+        >
           {(ids) => (
             <Textarea
               {...ids}
               value={reason}
+              maxLength={VERIFICATION_LIMITS.noteMax}
               onChange={(e) => setReason(e.target.value)}
               placeholder="Explain what is missing or wrong…"
             />

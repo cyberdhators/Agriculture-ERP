@@ -24,8 +24,15 @@ export function PlaceholderSection({
             body={body}
             actions={
               <>
-                <ButtonLink href="/directories" variant="secondary">
-                  Open directories
+                {/*
+                 * Pointed at the register rather than the directories: that
+                 * destination is no longer part of the redesigned
+                 * administrator experience. Nothing imports this component
+                 * today, so the link renders nowhere — changed so a revival
+                 * cannot quietly reintroduce the destination.
+                 */}
+                <ButtonLink href="/farmers" variant="secondary">
+                  Open the register
                 </ButtonLink>
                 <ButtonLink href="/library" variant="ghost">
                   Open learning library

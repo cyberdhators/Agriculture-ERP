@@ -149,6 +149,7 @@ model Payam {
   farmers  Farmer[]
   farms    Farm[]
   visits   Visit[]
+  produceListings ProduceListing[]
 
   /// Target of the composite key on officer.
   @@unique([id, stateId], map: "payam_id_state_id_key")
@@ -334,6 +335,9 @@ model User {
   learningResourcesDeleted  LearningResource[] @relation("LearningResourceDeletedBy")
   visitsDeleted             Visit[]            @relation("VisitDeletedBy")
   reportExports             ReportExport[]
+  produceListingsDeleted    ProduceListing[]   @relation("ProduceListingDeletedBy")
+  productReportsResolved    ProductReport[]    @relation("ProductReportResolvedBy")
+  productReportsDeleted     ProductReport[]    @relation("ProductReportDeletedBy")
 
   @@index([role], map: "user_role_idx")
   @@index([scopeStateId], map: "user_scope_state_id_idx")
@@ -517,6 +521,7 @@ model Farmer {
   farms              Farm[]
   visits             Visit[]
   mergeTargetOf      VerificationEvent[] @relation("MergeTargetEvents")
+  produceListings    ProduceListing[]
 
   @@index([payamId, verificationStatus, deletedAt], map: "farmer_payam_status_idx")
   @@index([countyId], map: "farmer_county_id_idx")
@@ -819,4 +824,113 @@ model ReportExport {
 
   @@index([exportedAt(sort: Desc), id(sort: Desc)], map: "report_export_exported_idx")
   @@map("report_export")
+}
+
+/// The listing enums. Values match LISTING_STATUSES / LISTING_CATEGORIES in
+/// apps/web/lib/fixtures/farmers.ts, which the marketplace screens already use.
+enum ListingStatus {
+  draft
+  listed
+  withdrawn
+  sold
+
+  @@map("listing_status")
+}
+
+enum ListingCategory {
+  crop
+  vegetable
+  fruit
+  livestock
+  poultry
+  dairy
+  fish
+  processed
+  seeds_inputs
+  other
+
+  @@map("listing_category")
+}
+
+/// PROPOSED in docs/api/product-reports-contract.md and approved 2026-09-17.
+enum ReportReason {
+  prohibited_content
+  misleading_listing
+  counterfeit_or_fraud
+  inappropriate_content
+  duplicate_or_spam
+  other
+
+  @@map("report_reason")
+}
+
+enum ReportStatus {
+  new
+  reviewing
+  resolved
+  dismissed
+
+  @@map("report_status")
+}
+
+/// The MINIMUM listing persistence a report can point at -- identity,
+/// ownership, what is being sold, lifecycle. Price, quantity, photos,
+/// availability and delivery belong to the marketplace unit proper and are
+/// deliberately not invented here.
+model ProduceListing {
+  id          String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  farmerId    String          @map("farmer_id") @db.Uuid
+  /// The name buyers see: a farm or stall name, NEVER the farmer's legal name.
+  /// The scope's marketplace amendment says a listing publishes no personal
+  /// data, which is why the moderation queue shows this as the vendor.
+  tradingName String          @map("trading_name")
+  title       String
+  category    ListingCategory
+  productName String          @map("product_name")
+  status      ListingStatus   @default(draft)
+  payamId     String          @map("payam_id")
+  stateId     String          @map("state_id")
+  createdAt   DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime        @default(now()) @map("updated_at") @db.Timestamptz(6)
+  deletedAt   DateTime?       @map("deleted_at") @db.Timestamptz(6)
+  deletedBy   String?         @map("deleted_by") @db.Uuid
+
+  farmer  Farmer          @relation(fields: [farmerId], references: [id], map: "produce_listing_farmer_id_fkey")
+  payam   Payam           @relation(fields: [payamId, stateId], references: [id, stateId], map: "produce_listing_payam_state_fkey")
+  deleter User?           @relation("ProduceListingDeletedBy", fields: [deletedBy], references: [id], map: "produce_listing_deleted_by_fkey")
+  reports ProductReport[]
+
+  @@map("produce_listing")
+}
+
+/// One report about one listing.
+///
+/// NO REPORTER IDENTITY IS STORED. A marketplace visitor holds no account, so
+/// a name or phone would make the report personal data about the reporter too.
+/// `submissionDigest` is a one-way hash kept only so a repeated submission
+/// about the same listing can be refused; it identifies nobody, is never
+/// returned by any route, and cannot be reversed.
+model ProductReport {
+  id               String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  listingId        String       @map("listing_id") @db.Uuid
+  reason           ReportReason
+  /// Free text a member of the public wrote. Never enters an audit row and
+  /// never appears in a list response.
+  description      String?
+  status           ReportStatus @default(new)
+  submissionDigest String?      @map("submission_digest")
+  resolvedBy       String?      @map("resolved_by") @db.Uuid
+  resolvedAt       DateTime?    @map("resolved_at") @db.Timestamptz(6)
+  createdAt        DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime     @default(now()) @map("updated_at") @db.Timestamptz(6)
+  deletedAt        DateTime?    @map("deleted_at") @db.Timestamptz(6)
+  deletedBy        String?      @map("deleted_by") @db.Uuid
+
+  // The three partial indexes on this table live in the migration only:
+  // Prisma cannot express `WHERE deleted_at IS NULL`.
+  listing  ProduceListing @relation(fields: [listingId], references: [id], map: "product_report_listing_id_fkey")
+  resolver User?          @relation("ProductReportResolvedBy", fields: [resolvedBy], references: [id], map: "product_report_resolved_by_fkey")
+  deleter  User?          @relation("ProductReportDeletedBy", fields: [deletedBy], references: [id], map: "product_report_deleted_by_fkey")
+
+  @@map("product_report")
 }

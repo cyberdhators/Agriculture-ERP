@@ -134,6 +134,37 @@ export async function listAuthAccountIds(): Promise<string[]> {
 }
 
 /**
+ * The email address of each given authentication account.
+ *
+ * THIS IS THE ONLY PLACE A STAFF EMAIL IS READ, and it is read from the
+ * authentication store rather than from a column: the `user` table has no
+ * email, deliberately, so an address cannot drift from the credential it
+ * belongs to. Nothing else in the application returns an address — the users
+ * route does not, and must not start.
+ *
+ * An id with no account, or an account with no address, is simply absent from
+ * the map. The caller counts those as unreachable and reports the number,
+ * rather than failing a whole send because one account was closed.
+ */
+export async function adminAuthEmails(
+  authUserIds: readonly string[],
+): Promise<Map<string, string>> {
+  const wanted = new Set(authUserIds);
+  const found = new Map<string, string>();
+  if (wanted.size === 0) return found;
+
+  const client = adminClient();
+  for (const id of wanted) {
+    const { data, error } = await client.auth.admin.getUserById(id);
+    // A missing account is not an error here: it is a recipient who cannot be
+    // reached, which the caller reports as such.
+    if (error || !data.user?.email) continue;
+    found.set(id, data.user.email);
+  }
+  return found;
+}
+
+/**
  * ============================================================================
  * STORAGE (B8, C-8.8). Bytes never pass through a route: the API issues a
  * grant for one object path, the phone uploads straight to Storage, and the

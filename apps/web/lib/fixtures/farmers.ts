@@ -74,7 +74,17 @@ export interface Farmer {
   sex: Sex;
   year_of_birth: number;
   phone: string;
-  national_id: string | null;
+  /**
+   * C-5.8. THREE STATES, NOT TWO.
+   *   a string  — the caller is entitled to it and the farmer has one;
+   *   null      — the caller is entitled to it and the farmer has none;
+   *   undefined — the route did not send the field, because this role may not
+   *               receive it. The key is ABSENT, never masked: a masked value
+   *               still tells you an identity document exists.
+   * Collapsing `undefined` into `null` loses the distinction and makes the UI
+   * print "none recorded" at a supervisor who was simply not told.
+   */
+  national_id?: string | null;
   payam_id: string;
   state_id: string;
   registered_by: string | null;
@@ -83,6 +93,12 @@ export interface Farmer {
   registration_source: RegistrationSource;
   verification_status: VerificationStatus;
   merged_into: string | null;
+  /**
+   * C-5.6. The server's own judgement that this record may duplicate another —
+   * an INDICATION, never a verdict. It warns; the survivor is a person's
+   * decision. Optional because the fixtures predate it being surfaced.
+   */
+  duplicate_flag?: boolean;
   consent_id: string;
   created_at: string;
   /** The latest rejection, as the API serves it (C-6.3). Absent on fixtures; null when never rejected. */
@@ -99,10 +115,22 @@ export interface Farm {
   id: string;
   farmer_id: string;
   boundary: { type: 'Polygon'; coordinates: [Ring] } | null;
-  centroid: { lon: number; lat: number };
-  area_ha: number;
-  point_count: number;
-  gps_accuracy_m: number;
+  /**
+   * C-7.8. ABSENT IS NOT THE ORIGIN, AND ABSENT IS NOT ZERO.
+   *
+   * Geometry and accuracy reach an administrator and the boundary's own
+   * mapping officer; for anyone else the route omits them. These four were
+   * defaulted — `centroid` to `{lon: 0, lat: 0}` and the figures to `0` — so a
+   * supervisor was shown a farm at 0°N 0°E in the Atlantic with a GPS accuracy
+   * of ±0 m, which reads as a perfect fix rather than as "you were not told".
+   * A farm with no boundary walked yet produced the same lie.
+   *
+   * They are optional now. Absent stays absent all the way to the screen.
+   */
+  centroid?: { lon: number; lat: number };
+  area_ha?: number;
+  point_count?: number;
+  gps_accuracy_m?: number;
   accuracy_flag: AccuracyFlag;
   mapped_by: string;
   mapped_at: string;
@@ -1419,7 +1447,8 @@ export function cropsForFarmer(farmerId: string): Crop[] {
 export function totalAreaHa(farmerId: string): number {
   return Number(
     farmsForFarmer(farmerId)
-      .reduce((sum, f) => sum + f.area_ha, 0)
+      // Only what was reported: a withheld area adds nothing rather than a zero.
+      .reduce((sum, f) => sum + (f.area_ha ?? 0), 0)
       .toFixed(2),
   );
 }

@@ -83,7 +83,17 @@ export function toInput(row: LearningResourceRow): LearningResourceInput {
   };
 }
 
-/** Every resource the caller may see, following the cursor to the end. */
+/**
+ * Every resource the caller may see, following the cursor to the end.
+ *
+ * NOT a first page mistaken for the whole: the loop runs until `hasMore` is
+ * false. The catalogue is a small reference shelf rather than a register, so
+ * reading all of it is what lets the format tallies and the title filter on
+ * the screen be accurate instead of counting whatever happened to load. The
+ * route's own topic, crop and language filters are therefore not needed to
+ * make the screen honest — it narrows a COMPLETE set, which is the thing that
+ * matters.
+ */
 export async function listLearningResources(): Promise<LearningResourceRow[]> {
   const out: LearningResourceRow[] = [];
   let cursor: string | null = null;

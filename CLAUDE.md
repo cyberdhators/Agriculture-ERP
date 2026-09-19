@@ -97,11 +97,20 @@ Decided. Do not substitute, add or upgrade any of these without asking.
 | Errors | Sentry |
 | Maps | Mapbox |
 | SMS | Bird |
-| Email | SendGrid |
+| Email | Resend |
 | Weather | OpenWeather |
 
 All third-party service accounts are held in CORWADO's name. Never create an
 account under our own.
+
+**Two rows have been substituted, and the two are not the same kind of change.**
+SMS was Africa's Talking, and that was **a correction**: they do not serve South
+Sudan at all, so the original choice could not have delivered deliverable (n) to
+a farmer here. Email was SendGrid, and that is **a preference, not a fix** —
+SendGrid works and is on Supabase's own list of recommended SMTP providers. The
+case for Resend is a better free tier at this stage and less setup to do, which
+is convenience rather than capability. Anyone reading this table later should be
+able to tell the two apart; both are in `docs/DECISIONS.md` with their grounds.
 
 ---
 
@@ -157,8 +166,11 @@ tests, the linter, the formatter check and the type check before committing —
 do not leave it to CI to find what you could have found locally.
 
 **Personal data.** Real farmer data exists in production only. Staging and local
-machines use generated fake data. If the client sends a real list "to try", it
-goes to production or nowhere.
+machines use generated fake data. Staging rows are the test suite's or the
+seed's, never hand-made: every row the suite creates is prefixed `zztest` so a
+crashed run's residue is swept rather than tripped over, and a row made by hand
+outside that convention breaks the sweep for everyone. If the client sends a
+real list "to try", it goes to production or nowhere.
 
 ---
 

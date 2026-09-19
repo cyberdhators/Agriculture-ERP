@@ -70,15 +70,46 @@ describe('toFarm', () => {
     expect(toFarm(row).crops).toEqual(['sorghum', 'maize']);
   });
 
-  it('renders as unmapped when the caller may not see the geometry (C-7.8)', () => {
+  it('leaves withheld geometry ABSENT rather than defaulting it (C-7.8)', () => {
+    // CHANGED, and the change is the point. This used to assert
+    // `centroid === { lon: 0, lat: 0 }` — the origin, in the Atlantic — and a
+    // GPS accuracy of 0, which reads as a perfect fix. Both were defaults
+    // invented by the client for fields the route deliberately omits from
+    // anyone but an administrator and the boundary's mapping officer. A
+    // supervisor was shown a farm off the coast of Africa with flawless GPS.
     const hidden = { ...current };
     delete (hidden as Partial<typeof hidden>).boundary;
     delete (hidden as Partial<typeof hidden>).centroid;
     delete (hidden as Partial<typeof hidden>).gps_accuracy_m;
     const { farm } = toFarm({ ...row, boundaries: [hidden] });
+
     expect(farm.boundary).toBeNull();
-    expect(farm.centroid).toEqual({ lon: 0, lat: 0 });
+    expect('centroid' in farm).toBe(false);
+    expect(farm.centroid).toBeUndefined();
+    expect('gps_accuracy_m' in farm).toBe(false);
+    expect(farm.gps_accuracy_m).toBeUndefined();
+    // The area was sent, so it survives: absent and zero are different, and so
+    // are absent and present.
     expect(farm.area_ha).toBe(1.25);
+  });
+
+  it('never places an unmapped farm at 0°N 0°E', () => {
+    // The origin is a real location a map will happily draw. A farm with no
+    // boundary walked yet must not appear to be in the Gulf of Guinea.
+    const { farm } = toFarm({ ...row, boundaries: [] });
+    expect(farm.centroid).toBeUndefined();
+    expect(JSON.stringify(farm)).not.toContain('"lon":0');
+  });
+
+  it('never reports a withheld GPS accuracy as ±0 m', () => {
+    const hidden = { ...current };
+    delete (hidden as Partial<typeof hidden>).gps_accuracy_m;
+    delete (hidden as Partial<typeof hidden>).point_count;
+    const { farm } = toFarm({ ...row, boundaries: [hidden] });
+    expect(farm.gps_accuracy_m).not.toBe(0);
+    expect(farm.point_count).not.toBe(0);
+    expect(farm.gps_accuracy_m).toBeUndefined();
+    expect(farm.point_count).toBeUndefined();
   });
 
   it('survives a farm with no boundary at all', () => {
