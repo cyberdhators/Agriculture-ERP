@@ -18,6 +18,11 @@ describe('pickLocation', () => {
   it('prefers the farmer’s own payam', () => {
     expect(pickLocation(rows, 'CE-JUB-MUN')?.payam_id).toBe('CE-JUB-MUN');
   });
+  it('reads a county-level row, whose payam is null, as the county (contract §9.1)', () => {
+    const county = [{ payam_id: null, county_id: 'CE-JUB' }];
+    expect(pickLocation(county, 'CE-JUB-MUN')).toEqual({ payam_id: null, county_id: 'CE-JUB' });
+  });
+
   it('falls back to any row in the county — one row, never a comparison', () => {
     expect(pickLocation(rows, 'CE-JUB-REJ')?.payam_id).toBe('CE-JUB-JUB');
   });
