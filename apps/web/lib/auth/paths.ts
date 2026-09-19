@@ -11,10 +11,13 @@
 export const PORTAL_PREFIXES = [
   '/dashboard',
   '/farmers',
+  '/farms',
   '/desk',
   '/visits',
   '/reports',
   '/admin',
+  '/communications',
+  '/product-reports',
   '/directories',
   '/library',
   '/design',

@@ -386,14 +386,22 @@ export function PasswordInput({
   );
 }
 
+/**
+ * `labelHidden` keeps the label for a screen reader and takes it off the
+ * screen — for a checkbox in a table row, where the visible column heading
+ * already says what the column is but "Select" repeated down forty rows tells
+ * a screen-reader user nothing about WHICH row they are on. The label still
+ * names the farmer; it is simply not drawn.
+ */
 export function Checkbox({
   label,
+  labelHidden = false,
   ...rest
-}: { label: ReactNode } & InputHTMLAttributes<HTMLInputElement>) {
+}: { label: ReactNode; labelHidden?: boolean } & InputHTMLAttributes<HTMLInputElement>) {
   return (
     <label className={styles.checkbox}>
       <input type="checkbox" {...rest} />
-      <span>{label}</span>
+      <span className={labelHidden ? 'visually-hidden' : undefined}>{label}</span>
     </label>
   );
 }

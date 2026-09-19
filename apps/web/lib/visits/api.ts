@@ -6,10 +6,12 @@
 // this module never talks to the database. Gated by NEXT_PUBLIC_USE_LIVE_VISITS
 // (off = the fixtures in ./fixtures).
 
+import { correctVisitSchema } from '@agri-erp/shared';
 import type {
   AttachmentFailureCode,
   AttachmentKind,
   AttachmentStatus,
+  CorrectVisit,
   GeoJsonPoint,
   RecordVisit,
   VisitTopic,
@@ -241,4 +243,42 @@ export async function listVisitAttachments(visitId: string): Promise<VisitAttach
     `/api/visits/${encodeURIComponent(visitId)}/attachments`,
   );
   return (body.data ?? []).map(toAttachment);
+}
+
+/* ---- Administrative correction and removal ---------------------------- */
+
+/**
+ * CORRECT A VISIT. `PATCH /api/visits/:id`, administrator or the visit's own
+ * officer — and for the officer only within the correction window the server
+ * measures from ITS moment, not the phone's.
+ *
+ * WHAT MAY BE CORRECTED IS THE SCHEMA'S DECISION, NOT THIS SCREEN'S.
+ * `correctVisitSchema` accepts the observation, the advice, the topics, the
+ * duration, the attendee count and a follow-up link. It does NOT accept the
+ * position, the GPS accuracy, the farmer, the officer or the moment of the
+ * visit — those are what the field recorded, and an administrator correcting a
+ * record is not re-recording the fieldwork. An empty body is refused.
+ *
+ * The body is validated here by the same shared schema the route uses, so the
+ * form cannot disagree with the server about what a correction is.
+ */
+export async function correctVisit(id: string, input: CorrectVisit): Promise<Visit> {
+  const parsed = correctVisitSchema.parse(input);
+  const body = await request<VisitDto>(`/api/visits/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    body: JSON.stringify(parsed),
+  });
+  if (!body.data) throw new VisitApiError(500, 'empty', 'No visit in the response');
+  return toVisit(body.data);
+}
+
+/**
+ * SOFT REMOVAL of a visit. `DELETE /api/visits/:id`, administrator only.
+ *
+ * Stamps `deleted_at`: the visit leaves every list, count, export and reach
+ * figure, and its row and audit history remain. Nothing restores it — no route
+ * offers that — so no screen should imply otherwise.
+ */
+export async function removeVisit(id: string): Promise<void> {
+  await request<unknown>(`/api/visits/${encodeURIComponent(id)}`, { method: 'DELETE' });
 }

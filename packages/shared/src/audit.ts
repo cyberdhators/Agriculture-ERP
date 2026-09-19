@@ -62,6 +62,15 @@ export const AUDIT_ACTIONS = [
   'learning_resource.updated',
   'learning_resource.published',
   'learning_resource.soft_deleted',
+  // Marketplace moderation and administrator communications, added 2026-09-17.
+  // The CHECK in migration 20260917120000 is generated from this list; the two
+  // change together in one commit or the database refuses the key.
+  'product_report.created',
+  'product_report.status_changed',
+  'product_report.listing_removed',
+  // The SEND is audited; the message body never is (C-4.6, C-4.7).
+  'communication.email_sent',
+  'communication.send_failed',
 ] as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];

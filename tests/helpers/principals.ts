@@ -181,6 +181,18 @@ export async function sweep(prisma: PrismaClient): Promise<void> {
   await prisma.$executeRawUnsafe(
     `DELETE FROM public.report_export WHERE exported_by IN (SELECT id FROM public."user" WHERE name LIKE '${TEST_PREFIX}%')`,
   );
+  // Prompt 13: reports hang off listings, listings off farmers. Both go before
+  // the farmer chain below, or the farmer DELETE trips the new foreign key.
+  await prisma.$executeRawUnsafe(
+    `DELETE FROM public.product_report WHERE listing_id IN
+       (SELECT l.id FROM public.produce_listing l JOIN public.farmer fr ON fr.id = l.farmer_id
+         WHERE fr.family_name LIKE '${FARMER_TEST_FAMILY}%')`,
+  );
+  await prisma.$executeRawUnsafe(
+    `DELETE FROM public.produce_listing WHERE farmer_id IN
+       (SELECT id FROM public.farmer WHERE family_name LIKE '${FARMER_TEST_FAMILY}%')`,
+  );
+
   // B8: attachments hang off visits; visits off farmers and officers, and off
   // each other (follow_up_of, NO ACTION, checked at statement end — one DELETE
   // takes a whole chain).

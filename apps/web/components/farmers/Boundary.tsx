@@ -114,13 +114,19 @@ export function Boundary({
         height={size}
         className={styles.boundarySvg}
         role="img"
-        aria-label={`Farm boundary, ${formatArea(farm.area_ha)}, ${farm.point_count} points`}
+        aria-label={
+          farm.area_ha === undefined
+            ? 'Farm boundary. Area and point count are not shown for your role.'
+            : `Farm boundary, ${formatArea(farm.area_ha)}, ${farm.point_count ?? 0} points`
+        }
       >
         <polygon points={points} className={styles.boundaryPoly} />
         <circle cx={cx} cy={cy} r={dot} className={styles.boundaryCentroid} />
       </svg>
       {showArea ? (
-        <figcaption className={styles.boundaryArea}>{formatArea(farm.area_ha)}</figcaption>
+        <figcaption className={styles.boundaryArea}>
+          {farm.area_ha === undefined ? '—' : formatArea(farm.area_ha)}
+        </figcaption>
       ) : null}
     </figure>
   );

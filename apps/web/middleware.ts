@@ -69,6 +69,9 @@ export const config = {
   matcher: [
     '/dashboard/:path*',
     '/farmers/:path*',
+    '/farms/:path*',
+    '/communications/:path*',
+    '/product-reports/:path*',
     '/desk/:path*',
     '/visits/:path*',
     '/reports/:path*',

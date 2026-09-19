@@ -379,6 +379,11 @@ change.
 | `learning_resource.updated`      |
 | `learning_resource.published`    |
 | `learning_resource.soft_deleted` |
+| `product_report.created`         |
+| `product_report.status_changed`  |
+| `product_report.listing_removed` |
+| `communication.email_sent`       |
+| `communication.send_failed`      |
 
 `before` and `after` hold **changed fields only**, never whole rows, and never a
 password, token, authentication identifier, national id, phone, email, given

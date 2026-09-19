@@ -42,15 +42,22 @@ interface FarmerRowDto {
   registration_source: Farmer['registration_source'];
   verification_status: Farmer['verification_status'];
   merged_into: string | null;
+  /** C-5.6: the route already computes and returns this; it was never mapped. */
+  duplicate_flag?: boolean;
   consent: { id: string };
   created_at: string;
   /** C-6.3: the latest rejection, nested, present only while the record is rejected. */
   rejection?: { reason_code: string | null; note: string | null; decided_at: string | null } | null;
 }
 
-/** Map one API row onto the view type. The only shape differences from
- *  `present()` are `consent.id` → `consent_id` and an absent `national_id`
- *  (hidden from supervisor/read_only) becoming `null`. */
+/** Map one API row onto the view type. The only shape difference from
+ *  `present()` is `consent.id` → `consent_id`.
+ *
+ *  `national_id` is copied ONLY when the row carries the key. C-5.8 withholds
+ *  it from anyone but an administrator and the farmer's own caseload officer,
+ *  and withholds it by OMITTING the key rather than by masking the value. A
+ *  client that defaults the missing key to null throws that away, and the
+ *  screen then reports "none recorded" to a supervisor who was never told. */
 export function toFarmer(row: FarmerRowDto): Farmer {
   return {
     id: row.id,
@@ -60,7 +67,7 @@ export function toFarmer(row: FarmerRowDto): Farmer {
     sex: row.sex,
     year_of_birth: row.year_of_birth,
     phone: row.phone,
-    national_id: row.national_id ?? null,
+    ...('national_id' in row ? { national_id: row.national_id ?? null } : {}),
     payam_id: row.payam_id,
     state_id: row.state_id,
     registered_by: row.registered_by,
@@ -70,6 +77,7 @@ export function toFarmer(row: FarmerRowDto): Farmer {
     registration_source: row.registration_source,
     verification_status: row.verification_status,
     merged_into: row.merged_into,
+    ...(row.duplicate_flag === undefined ? {} : { duplicate_flag: row.duplicate_flag }),
     consent_id: row.consent.id,
     created_at: row.created_at,
     // C-6.3: the latest rejection travels with the record so the caseload
@@ -112,6 +120,9 @@ export interface FarmerListParams {
   registered_from?: string;
   registered_to?: string;
   duplicate_flag?: 'true' | 'false';
+  /** C-9.9: rows whose server moment of last change is after this. Already in
+   *  `farmerFilterSchema`; it was simply never surfaced on this client type. */
+  updated_since?: string;
   limit?: number;
   cursor?: string;
 }
@@ -163,4 +174,18 @@ export async function patchFarmer(id: string, input: PatchFarmer): Promise<Farme
   });
   if (!body.data) throw new FarmerApiError(500, 'empty', 'No farmer in the response');
   return { farmer: toFarmer(body.data), duplicates: body.warnings?.duplicates ?? [] };
+}
+
+/**
+ * SOFT REMOVAL (C-5 and the deletion law): `DELETE /api/farmers/:id`.
+ *
+ * Administrator only, and soft by construction — the route stamps `deleted_at`
+ * and the record leaves every list, count, export and report. Nothing is
+ * destroyed: the row, its consent, its farms, its visits and its audit trail
+ * all remain, readable by anyone the scope rules already allow. There is no
+ * hard delete anywhere in this system, and no screen should offer words that
+ * suggest otherwise.
+ */
+export async function removeFarmer(id: string): Promise<void> {
+  await request<unknown>(`/api/farmers/${encodeURIComponent(id)}`, { method: 'DELETE' });
 }

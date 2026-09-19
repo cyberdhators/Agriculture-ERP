@@ -23,7 +23,8 @@ import {
   formatDate,
   pluralise,
 } from '@/lib/format';
-import { canEdit, canSeeHidden, usePreview } from '@/lib/preview';
+import { canEdit, usePreview } from '@/lib/preview';
+import { canSeeUnpublished } from '@/lib/library/library-view';
 import { useQueryState } from '@/lib/query-state';
 
 import {
@@ -52,9 +53,11 @@ function pick<T extends string>(list: readonly T[], value: string): T | '' {
  * Learning library, C-13.6 to C-13.9. A repository: browse by topic, crop,
  * language and format, open one, download it. No enrolment, no progress.
  *
- * Roles: officers and read-only users see published resources only.
- * Administrators and supervisors can also see unpublished ones, marked, with
- * "Show unpublished". Administrators add, edit and remove.
+ * Roles, as the route actually enforces them: everyone but an administrator
+ * sees published resources only — the list adds `published = true` for any
+ * caller whose scope is not `all`, and only an administrator has that scope.
+ * An administrator can also see unpublished ones, marked, with "Show
+ * unpublished", and is the only role that adds, edits or removes.
  */
 export function LibraryScreen() {
   const { role, resources, hydrated, catalog } = usePreview();
@@ -65,7 +68,16 @@ export function LibraryScreen() {
   const crop = pick(CROPS, get('crop'));
   const language = pick(LANGUAGES, get('lang'));
   const query = get('q');
-  const showUnpublished = canSeeHidden(role) && get('drafts') === '1';
+  /*
+   * ONLY AN ADMINISTRATOR IS SENT A DRAFT.
+   *
+   * `GET /api/learning-resources` adds `published = true` for any caller whose
+   * scope is not `all`, and only an administrator has that scope. The shared
+   * `canSeeHidden` helper says admin OR supervisor, so this switch used to be
+   * offered to a supervisor who could never be sent an unpublished card: the
+   * control did nothing and the description beside it claimed otherwise.
+   */
+  const showUnpublished = canSeeUnpublished(role) && get('drafts') === '1';
   const selectedId = get('resource');
   const editor = hydrated && canEdit(role);
 
@@ -185,7 +197,7 @@ export function LibraryScreen() {
             ))}
           </Select>
         </div>
-        {hydrated && canSeeHidden(role) ? (
+        {hydrated && canSeeUnpublished(role) ? (
           <Checkbox
             label="Show unpublished"
             checked={showUnpublished}

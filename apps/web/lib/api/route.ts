@@ -130,8 +130,19 @@ export interface RouteContext<TBody> {
 }
 
 export interface RouteDefinition<TBody = undefined> {
-  /** Which roles may call this. There is no "any authenticated" shortcut by accident. */
-  readonly roles: readonly Role[];
+  /**
+   * Which roles may call this. There is no "any authenticated" shortcut by
+   * accident.
+   *
+   * `'public'` is the ONE exception, and it is spelled out rather than implied
+   * by an empty array — an empty array is what a mistake looks like, and it
+   * must never mean "anyone". A public route is read by a person with no
+   * account at all, so it gets no `auth` and can scope nothing: it must
+   * therefore write only what it is given and read nothing it was not asked
+   * for. There is exactly one such route (marketplace report submission) and
+   * adding a second is a decision, not a convenience.
+   */
+  readonly roles: readonly Role[] | 'public';
   /** Present means a body is expected, validated by this schema before the handler runs. */
   readonly bodySchema?: ZodType<TBody>;
   readonly handler: (ctx: RouteContext<TBody>) => Promise<RouteResult>;
@@ -190,7 +201,14 @@ function wrap<TBody>(definition: RouteDefinition<TBody>): NextRouteHandler {
       // 1. Authenticate and authorise BEFORE anything reads the body or the
       //    database. An unauthenticated caller learns nothing about the shape
       //    of the request they got wrong.
-      const auth = await requireRole(request, definition.roles);
+      //
+      //    A route declared `roles: 'public'` skips this deliberately and
+      //    receives no principal. Everything else is unchanged: every existing
+      //    route passes an array and behaves exactly as before.
+      const auth =
+        definition.roles === 'public'
+          ? (null as unknown as Authenticated)
+          : await requireRole(request, definition.roles);
 
       // 2. The body, in the order CONVENTIONS section 9 fixes: what it claims
       //    to be, how big it claims to be, whether it can be read, whether it
@@ -272,7 +290,7 @@ function wrap<TBody>(definition: RouteDefinition<TBody>): NextRouteHandler {
  * open here and recovered by inference at each call site.
  */
 type AnyRouteDefinition = {
-  readonly roles: readonly Role[];
+  readonly roles: readonly Role[] | 'public';
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   readonly bodySchema?: ZodType<any>;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -45,14 +45,25 @@ describe('toFarmer', () => {
     expect(f.caseload_officer_id).toBe('o-3');
     expect(f.national_id).toBe('99A2211455');
     expect(f.verification_status).toBe('verified');
-    // county_id / updated_at / duplicate_flag are not part of the view type
+    // county_id and updated_at are not part of the view type. duplicate_flag
+    // now is: the route has always returned it and it was simply never mapped.
     expect('county_id' in f).toBe(false);
   });
 
-  it('turns an absent national_id (hidden from lower roles) into null', () => {
+  it('leaves an absent national_id ABSENT, rather than defaulting it to null', () => {
+    // CHANGED, and the change is the point. This used to assert null, which
+    // read as "this farmer has no national ID" — a statement the response
+    // never made. C-5.8 withholds the field from anyone but an administrator
+    // and the farmer's own caseload officer, and withholds it by omitting the
+    // key. Defaulting the omission to null destroyed the difference between
+    // "you were not told" and "there is none", and the dossier then printed
+    // "None recorded" at a supervisor. The key now stays missing so the screen
+    // can decline to render the row at all.
     const { national_id: _omit, ...withoutNid } = row;
     void _omit;
-    expect(toFarmer(withoutNid).national_id).toBeNull();
+    const farmer = toFarmer(withoutNid);
+    expect('national_id' in farmer).toBe(false);
+    expect(farmer.national_id).toBeUndefined();
   });
 });
 

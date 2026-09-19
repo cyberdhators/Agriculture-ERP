@@ -81,6 +81,35 @@ export function VisitDetail({
         ))}
       </p>
 
+      {/*
+       * LOCATION — C-8.4 with C-7.8's visibility.
+       *
+       * `position` and `gps_accuracy_m` reach an ADMINISTRATOR and the visit's
+       * own officer, and nobody else: the route omits the keys rather than
+       * masking the values. So this section renders only when the fields
+       * actually arrived. A supervisor sees no "Position: —" row, because that
+       * row would be a placeholder for something they were never told, and
+       * would also tell them a position exists.
+       *
+       * The accuracy is printed as the metres that were recorded. No tier is
+       * computed from it here: the only classification this system has is the
+       * boundary `accuracy_flag`, and a visit does not carry one.
+       */}
+      {visit.position || visit.gps_accuracy_m !== undefined ? (
+        <section className={styles.detailSection}>
+          <h3>Where it was recorded</h3>
+          {visit.position ? (
+            <p className={styles.num}>
+              Position {visit.position.coordinates[1]!.toFixed(6)},{' '}
+              {visit.position.coordinates[0]!.toFixed(6)}
+            </p>
+          ) : null}
+          {visit.gps_accuracy_m !== undefined ? (
+            <p className={styles.num}>GPS accuracy ±{visit.gps_accuracy_m} m</p>
+          ) : null}
+        </section>
+      ) : null}
+
       <section className={styles.detailSection}>
         <h3>Advice given</h3>
         <p className={styles.prose} dir="auto">

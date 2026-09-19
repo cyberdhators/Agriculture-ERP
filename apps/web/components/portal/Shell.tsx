@@ -1,175 +1,123 @@
 'use client';
 
-import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { usePathname } from 'next/navigation';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
 
-import { ROLE_LABELS, usePreview } from '@/lib/preview';
+import { usePreview } from '@/lib/preview';
 
 import { Wordmark } from '../brand/Wordmark';
-import { IconSearch } from '../ui/icons';
-import styles from './portal.module.css';
+import { ToastProvider } from '../ui/feedback';
+import { Sidebar } from './Sidebar';
+import { TopBar } from './TopBar';
+import styles from './shell.module.css';
 
 /**
- * The staff masthead. A forest band carries the AgriOne wordmark, the primary
- * navigation as plain text tabs and a global search field. There is no
- * sidebar: this is a register, read across, not an admin console. The
- * role-preview select is design tooling — it renders only when the page is
- * opened with `?preview`, never in the product chrome.
+ * THE STAFF SHELL: a standing rail, a quiet header, one content well.
+ *
+ * It replaces a row of text tabs in a dark masthead. The reason is not taste.
+ * A national administrator's remit is eleven destinations across six groups,
+ * and a row of tabs can only show them by hiding the grouping — so the reader
+ * had to already know what the platform could do in order to find it. A rail
+ * shows the whole remit at once, grouped and labelled, which is the
+ * specification's "discoverability over density" in one component.
+ *
+ * "The Register" is unchanged underneath: same tokens, same type, same 2px
+ * controls, same hairline structure. This is a rearrangement, not a reskin.
+ *
+ * ONE SHELL, FOUR ROLES. Nothing here is administrator-specific. What each
+ * person sees comes from lib/portal/nav.ts, which copies its role lists from
+ * the routes themselves, and the server re-checks every one of them anyway.
  */
 
-// Only the screens that exist today. Cooperatives (C-12), Marketplace (phase 5)
-// and Reports (phase 7) rejoin the nav when their screens are built; a nav item
-// with no route behind it is a 404, so it does not ship early.
-const NAV: ReadonlyArray<{ href: string; label: string }> = [
-  { href: '/farmers', label: 'Farmers' },
-  { href: '/desk', label: 'Field desk' },
-  { href: '/visits', label: 'Visits' },
-  { href: '/directories', label: 'Directories' },
-  { href: '/library', label: 'Library' },
-  { href: '/reports', label: 'Reports' },
-  { href: '/admin', label: 'Administration' },
-];
+const COLLAPSE_KEY = 'agrione.rail.collapsed';
 
 export function Shell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const router = useRouter();
   const { role, me, authError, signOut } = usePreview();
-  const searchRef = useRef<HTMLInputElement>(null);
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
-  // The mobile menu is a per-page affordance: close it on navigation.
+  // Read the stored preference after mount: reading it during render would
+  // make the server's HTML and the browser's first paint disagree.
   useEffect(() => {
-    setMenuOpen(false);
+    try {
+      setCollapsed(window.localStorage.getItem(COLLAPSE_KEY) === '1');
+    } catch {
+      // A browser refusing storage is not a reason to fail to render a menu.
+    }
+  }, []);
+
+  const toggleCollapsed = useCallback(() => {
+    setCollapsed((was) => {
+      const next = !was;
+      try {
+        window.localStorage.setItem(COLLAPSE_KEY, next ? '1' : '0');
+      } catch {
+        // Preference not kept; the menu still works for this session.
+      }
+      return next;
+    });
+  }, []);
+
+  // The drawer is a per-page affordance on a narrow screen: navigating closes it.
+  useEffect(() => {
+    setDrawerOpen(false);
   }, [pathname]);
 
-  // "/" and ⌘K focus the register search, the way a working tool is driven
-  // from the keyboard. Ignored while typing in another field.
+  // Escape closes the drawer, the way every other dismissible layer behaves.
   useEffect(() => {
+    if (!drawerOpen) return;
     function onKey(event: KeyboardEvent) {
-      const target = event.target as HTMLElement | null;
-      const typing =
-        target &&
-        (target.tagName === 'INPUT' ||
-          target.tagName === 'TEXTAREA' ||
-          target.tagName === 'SELECT' ||
-          target.isContentEditable);
-      if (
-        (event.key === '/' && !typing) ||
-        (event.key === 'k' && (event.metaKey || event.ctrlKey))
-      ) {
-        event.preventDefault();
-        searchRef.current?.focus();
-        searchRef.current?.select();
-      }
+      if (event.key === 'Escape') setDrawerOpen(false);
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, []);
+  }, [drawerOpen]);
 
   return (
-    <div className={styles.shell}>
-      <a href="#main" className="skip-link">
-        Skip to content
-      </a>
+    // The toast region lives at the shell so any screen can report the outcome
+    // of a write without mounting its own. It is a polite live region: the
+    // outcome is announced without taking focus off what the reader was doing.
+    <ToastProvider>
+      <div className={styles.shell}>
+        <a href="#main" className="skip-link">
+          Skip to content
+        </a>
 
-      <header className={`${styles.masthead} no-print`}>
-        <div className={styles.mastheadInner}>
-          <div className={styles.wordmark}>
-            <Wordmark size={22} tagline onBand href="/dashboard" />
-          </div>
+        <Sidebar
+          role={role}
+          pathname={pathname}
+          name={me?.name ?? (authError ? 'Account not loaded' : '…')}
+          collapsed={collapsed}
+          open={drawerOpen}
+          onToggleCollapsed={toggleCollapsed}
+          onSignOut={() => void signOut()}
+        />
 
+        {drawerOpen ? (
           <button
             type="button"
-            className={styles.menuToggle}
-            aria-expanded={menuOpen}
-            aria-controls="portal-nav"
-            aria-label={menuOpen ? 'Close menu' : 'Open menu'}
-            onClick={() => setMenuOpen((open) => !open)}
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden>
-              {menuOpen ? (
-                <path
-                  d="M6 6l12 12M18 6L6 18"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                />
-              ) : (
-                <path
-                  d="M4 7h16M4 12h16M4 17h16"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                />
-              )}
-            </svg>
-          </button>
+            className={styles.scrimOpen}
+            aria-label="Close the menu"
+            onClick={() => setDrawerOpen(false)}
+          />
+        ) : (
+          <span className={styles.scrim} />
+        )}
 
-          <form
-            className={styles.search}
-            role="search"
-            onSubmit={(event) => {
-              event.preventDefault();
-              const q = searchRef.current?.value.trim() ?? '';
-              router.push(q ? `/farmers?q=${encodeURIComponent(q)}` : '/farmers');
-            }}
-          >
-            <span className={styles.searchIcon} aria-hidden>
-              <IconSearch size={18} />
-            </span>
-            <input
-              ref={searchRef}
-              type="search"
-              className={styles.searchInput}
-              placeholder="Search the register: farmers, cooperatives, directories"
-              aria-label="Search the register by name, phone or number"
-            />
-            <button type="submit" className={styles.searchBtn} aria-label="Search the register">
-              <IconSearch size={18} />
-            </button>
-          </form>
+        <div className={styles.main}>
+          <TopBar pathname={pathname} role={role} onOpenMenu={() => setDrawerOpen(true)} />
 
-          <nav
-            id="portal-nav"
-            className={`${styles.nav} ${menuOpen ? styles.navOpen : ''}`}
-            aria-label="Primary"
-          >
-            {NAV.map((item) => {
-              const active = pathname.startsWith(item.href);
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={styles.navTab}
-                  aria-current={active ? 'page' : undefined}
-                >
-                  {item.label}
-                </Link>
-              );
-            })}
-          </nav>
+          <main id="main" className={styles.content} tabIndex={-1}>
+            {children}
+          </main>
 
-          <div className={`${styles.roleSwitch} ${menuOpen ? styles.roleSwitchOpen : ''}`}>
-            <span className={styles.who} dir="auto" title={authError}>
-              {me?.name ?? (authError ? 'Account not loaded' : '…')}
-            </span>
-            <span className={styles.roleSwitchLabel}>{ROLE_LABELS[role]}</span>
-            <button type="button" className={styles.signOut} onClick={() => void signOut()}>
-              Sign out
-            </button>
-          </div>
+          <footer className={`${styles.footer} no-print`}>
+            <Wordmark size={16} />
+            <span>© {new Date().getFullYear()} AgriOne South Sudan · CORWADO</span>
+          </footer>
         </div>
-      </header>
-
-      <main id="main" className={styles.content} tabIndex={-1}>
-        {children}
-      </main>
-
-      <footer className={`${styles.footer} no-print`}>
-        <Wordmark size={18} tagline />
-        <span>© {new Date().getFullYear()} AgriOne South Sudan</span>
-      </footer>
-    </div>
+      </div>
+    </ToastProvider>
   );
 }

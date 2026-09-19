@@ -7,9 +7,15 @@ export function kpisFrom(summary: Summary): {
   verified: number;
   pending: number;
   rejected: number;
+  merged: number;
 } {
-  const { verified, pending, rejected } = summary.farmers;
-  return { in_scope: verified + pending + rejected, verified, pending, rejected };
+  const { verified, pending, rejected, merged } = summary.farmers;
+  // `merged` is REPORTED but never added to in_scope: a merged record is the
+  // same farmer as the one it was merged into, and counting it again would
+  // inflate reach by exactly the number of duplicates the merge removed
+  // (C-6.8). It is surfaced because "how many duplicates did we resolve" is a
+  // question an administrator asks, not because it is a population.
+  return { in_scope: verified + pending + rejected, verified, pending, rejected, merged };
 }
 
 export interface QueueRow {

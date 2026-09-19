@@ -1,0 +1,476 @@
+/*
+ * Data-display primitives for "The Register".
+ *
+ * Same rules as the rest of the kit: hairline structure, 2px controls, 4px
+ * cards, no shadow except a dialog, tabular numerals for every figure. All
+ * directional properties are logical, so RTL is a document attribute and not
+ * a second stylesheet.
+ */
+
+/* ---- StatCard --------------------------------------------------------- */
+
+.statGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--s-4);
+}
+
+.stat {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  padding: var(--s-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  min-inline-size: 0;
+  /* Matches .skelCard exactly, so the layout does not shift when data lands. */
+  min-block-size: 118px;
+}
+
+.statAttention {
+  border-color: var(--pending);
+  border-inline-start-width: 3px;
+  background: linear-gradient(to bottom, var(--pending-tint) 0 3px, var(--card) 3px);
+}
+
+.statLabel {
+  font-size: var(--text-label);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 600;
+  margin: 0;
+}
+
+.statValue {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 30px;
+  line-height: 1.05;
+  color: var(--ink);
+  margin: 0;
+}
+
+.statValueMuted {
+  color: var(--muted);
+  font-size: 22px;
+}
+
+.statNote {
+  font-size: var(--text-small);
+  color: var(--muted);
+  margin: 0;
+}
+
+.statFoot {
+  margin-block-start: auto;
+  padding-block-start: var(--s-2);
+}
+
+/* ---- Unmeasured: a figure the routes do not serve --------------------- */
+
+.unmeasured {
+  border-style: dashed;
+  background: var(--paper);
+}
+
+.unmeasuredTag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1);
+  font-size: var(--text-label);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--info);
+  background: var(--info-tint);
+  border: 1px solid color-mix(in srgb, var(--info) 30%, transparent);
+  border-radius: var(--radius-control);
+  padding: 2px var(--s-2);
+  font-weight: 600;
+}
+
+/* ---- DataTable -------------------------------------------------------- */
+
+.tableWrap {
+  inline-size: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--card);
+}
+
+.table {
+  inline-size: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-body);
+}
+
+.table caption {
+  text-align: start;
+  padding: var(--s-4) var(--s-5) 0;
+  color: var(--muted);
+  font-size: var(--text-small);
+}
+
+.table th {
+  text-align: start;
+  font-size: var(--text-label);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 600;
+  padding: var(--s-3) var(--s-5);
+  border-block-end: 1px solid var(--line-strong);
+  white-space: nowrap;
+  background: var(--card);
+}
+
+.table td {
+  padding: var(--s-3) var(--s-5);
+  border-block-end: 1px solid var(--line);
+  color: var(--ink);
+  vertical-align: middle;
+  min-block-size: 44px;
+}
+
+.table tbody tr:last-child td {
+  border-block-end: 0;
+}
+
+.table tbody tr:hover td {
+  background: color-mix(in srgb, var(--green-tint) 45%, transparent);
+}
+
+.num {
+  text-align: end;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.nowrap {
+  white-space: nowrap;
+}
+
+.rowHeader {
+  font-weight: 600;
+}
+
+/* Mobile: every row becomes a card, each cell labelled by its column. */
+@media (max-width: 720px) {
+  .tableWrap {
+    border: 0;
+    background: transparent;
+    overflow-x: visible;
+  }
+
+  .table,
+  .table tbody,
+  .table tr,
+  .table td {
+    display: block;
+    inline-size: 100%;
+  }
+
+  .table thead {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  .table tr {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-card);
+    margin-block-end: var(--s-3);
+    padding: var(--s-2) 0;
+  }
+
+  .table td {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--s-4);
+    border-block-end: 0;
+    padding: var(--s-2) var(--s-4);
+    min-block-size: 0;
+  }
+
+  .table td::before {
+    content: attr(data-label);
+    font-size: var(--text-label);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 600;
+    flex: 0 0 auto;
+  }
+
+  .num {
+    text-align: end;
+  }
+}
+
+/* ---- FilterBar -------------------------------------------------------- */
+
+.filterBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--s-3);
+  padding: var(--s-4);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  margin-block-end: var(--s-4);
+}
+
+.filterGrow {
+  flex: 1 1 220px;
+  min-inline-size: 0;
+}
+
+.filterActions {
+  margin-inline-start: auto;
+  display: flex;
+  gap: var(--s-2);
+}
+
+.filterCount {
+  font-size: var(--text-small);
+  color: var(--muted);
+  align-self: center;
+}
+
+/* ---- DateRangePicker -------------------------------------------------- */
+
+.range {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--s-2);
+}
+
+.rangeTo {
+  padding-block-end: 10px;
+  color: var(--muted);
+  font-size: var(--text-small);
+}
+
+/* ---- Pagination ------------------------------------------------------- */
+
+.pager {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding-block: var(--s-4);
+}
+
+.pagerNote {
+  font-size: var(--text-small);
+  color: var(--muted);
+  margin-inline-end: auto;
+}
+
+/* ---- ChartCard -------------------------------------------------------- */
+
+.chart {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  padding: var(--s-5);
+}
+
+.chartHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-4);
+  margin-block-end: var(--s-4);
+}
+
+.chartTitle {
+  font-family: var(--font-display);
+  font-size: var(--text-subhead);
+  margin: 0;
+  color: var(--ink);
+}
+
+.chartNote {
+  font-size: var(--text-small);
+  color: var(--muted);
+  margin: 0;
+}
+
+.bars {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+}
+
+.barRow {
+  display: grid;
+  grid-template-columns: minmax(80px, 150px) 1fr auto;
+  align-items: center;
+  gap: var(--s-3);
+}
+
+.barName {
+  font-size: var(--text-small);
+  color: var(--ink-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.barTrack {
+  block-size: 10px;
+  background: var(--dust);
+  border-radius: var(--radius-control);
+  overflow: hidden;
+}
+
+.barFill {
+  display: block;
+  block-size: 100%;
+  background: var(--green);
+  border-radius: var(--radius-control);
+}
+
+.barFillPending {
+  background: var(--pending);
+}
+
+.barValue {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--text-small);
+  color: var(--ink-2);
+}
+
+/* ---- LoadingState ----------------------------------------------------- */
+
+.loading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  padding: var(--s-5);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+}
+
+/* ---- DonutChart ------------------------------------------------------- */
+
+.donutWrap {
+  display: flex;
+  align-items: center;
+  gap: var(--s-6);
+  flex-wrap: wrap;
+}
+
+.donutFigure {
+  flex: 0 0 auto;
+  inline-size: 168px;
+  block-size: 168px;
+  transform: rotate(-90deg);
+}
+
+.donutTrack {
+  stroke: var(--dust);
+}
+
+.donutHole {
+  fill: none;
+}
+
+.donutLegend {
+  flex: 1 1 200px;
+  min-inline-size: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.legendRow {
+  display: grid;
+  grid-template-columns: 12px 1fr auto auto;
+  align-items: baseline;
+  gap: var(--s-3);
+  font-size: var(--text-small);
+}
+
+/* A square of colour, plus the label and the number — never colour alone. */
+.legendSwatch {
+  inline-size: 10px;
+  block-size: 10px;
+  border-radius: 1px;
+  align-self: center;
+}
+
+.legendLabel {
+  color: var(--ink-2);
+}
+
+.legendValue {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+.legendPercent {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+  min-inline-size: 42px;
+  text-align: end;
+}
+
+/* ---- Unavailable panel ------------------------------------------------ */
+
+.unavailable {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-3);
+  padding: var(--s-5);
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius-card);
+  background: var(--paper);
+  color: var(--ink-2);
+}
+
+.unavailableTitle {
+  font-weight: 600;
+  margin: 0 0 var(--s-1);
+  color: var(--ink);
+  font-size: var(--text-body);
+}
+
+.unavailableBody {
+  margin: 0;
+  font-size: var(--text-small);
+  color: var(--muted);
+}
+
+/* ---- Section skeleton ------------------------------------------------- */
+
+.skelGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--s-4);
+}
+
+.skelCard {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  padding: var(--s-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  min-block-size: 118px;
+}

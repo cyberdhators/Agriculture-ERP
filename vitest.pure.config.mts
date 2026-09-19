@@ -1,3 +1,5 @@
+import { fileURLToPath } from 'node:url';
+
 import { defineConfig } from 'vitest/config';
 
 /**
@@ -26,6 +28,16 @@ import { defineConfig } from 'vitest/config';
  *      this suite red rather than being quietly left out of it.
  */
 export default defineConfig({
+  /**
+   * `@/…` is apps/web's own alias, and without it here a pure test cannot
+   * import any module that uses one — which is why, until now, no test did.
+   * Type-only imports were erased and survived; the first runtime one
+   * (lib/farmers/presentation.ts → lib/format) failed to resolve. Resolving it
+   * lets a pure test cover client logic that was previously untestable.
+   */
+  resolve: {
+    alias: { '@': fileURLToPath(new URL('./apps/web', import.meta.url)) },
+  },
   test: {
     include: [
       'tests/conventions-rules.test.ts',

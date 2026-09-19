@@ -71,6 +71,7 @@ export function AccountForm({
   kind,
   staff,
   officer,
+  canSetPassword = true,
   onClose,
   onSavedStaff,
   onSavedOfficer,
@@ -78,6 +79,13 @@ export function AccountForm({
   kind: AccountKind;
   staff?: StaffUser;
   officer?: Officer;
+  /**
+   * False when the account being edited is the signed-in administrator's own.
+   * The specification says an administrator does not set their own password
+   * through the administrative action, and no route offers a self-service
+   * one — so the field is not rendered rather than rendered and refused.
+   */
+  canSetPassword?: boolean;
   onClose: () => void;
   onSavedStaff: (u: StaffUser) => void;
   onSavedOfficer: (o: Officer) => void;
@@ -336,26 +344,45 @@ export function AccountForm({
           </>
         )}
 
-        <Field
-          label={editing ? 'New password' : 'Initial password'}
-          optional={editing}
-          error={errors.password}
-          hint={
-            editing
-              ? 'Leave blank to keep the current password.'
-              : 'At least 12 characters. The account holder changes it after first sign-in.'
-          }
-        >
-          {(ids) => (
-            <Input
-              {...ids}
-              type="text"
-              autoComplete="off"
-              value={values.password}
-              onChange={(e) => set('password', e.target.value)}
-            />
-          )}
-        </Field>
+        {/*
+         * SETTING A PASSWORD, NOT SENDING A RESET.
+         *
+         * `PATCH` sets the credential directly; there is no reset-email route,
+         * no reset link and no temporary-password flow anywhere in this system,
+         * so the field says what it does. It is masked: an administrator sets
+         * this at a desk that other people walk past, and `type="text"` put a
+         * live credential on screen in plain sight. The value is never echoed
+         * into a message, a URL or an audit row — the route writes
+         * `user.password_set` with before and after both null (C-4.6).
+         *
+         * Absent entirely when the account is the administrator's own.
+         */}
+        {canSetPassword ? (
+          <Field
+            label={editing ? 'Set password' : 'Initial password'}
+            optional={editing}
+            error={errors.password}
+            hint={
+              editing
+                ? 'Leave blank to keep the current password. At least 12 characters if you set one.'
+                : 'At least 12 characters. The account holder changes it after first sign-in.'
+            }
+          >
+            {(ids) => (
+              <Input
+                {...ids}
+                type="password"
+                autoComplete="new-password"
+                value={values.password}
+                onChange={(e) => set('password', e.target.value)}
+              />
+            )}
+          </Field>
+        ) : (
+          <p className="small muted">
+            You cannot set the password on your own account through this screen.
+          </p>
+        )}
       </form>
     </Dialog>
   );

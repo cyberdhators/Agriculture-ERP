@@ -667,3 +667,247 @@
     position: static;
   }
 }
+
+/* ---- Prompt 3: the national register -------------------------------- */
+
+.registerStack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-5);
+}
+
+.scopeBand {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-3) var(--s-4);
+  background: var(--band);
+  color: var(--band-ink);
+  border-radius: var(--radius-card);
+  font-size: var(--text-label);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.scopeBandNote {
+  margin-inline-start: auto;
+  letter-spacing: 0;
+  text-transform: none;
+  font-weight: 400;
+  font-size: var(--text-small);
+  color: color-mix(in srgb, var(--band-ink) 72%, transparent);
+}
+
+/* Tab strip: text tabs on a rule, the active one inked. */
+.tabs {
+  display: flex;
+  gap: var(--s-5);
+  border-block-end: 1px solid var(--line);
+  overflow-x: auto;
+}
+
+.tab {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  border-block-end: 2px solid transparent;
+  padding: var(--s-3) 0;
+  margin-block-end: -1px;
+  font: inherit;
+  font-size: var(--text-body);
+  color: var(--muted);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.tab:hover {
+  color: var(--ink);
+}
+
+.tab:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.tabActive {
+  color: var(--ink);
+  font-weight: 600;
+  border-block-end-color: var(--green);
+}
+
+.filterGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: var(--s-3);
+  align-items: end;
+}
+
+.filterAdvanced {
+  margin-block-start: var(--s-4);
+  padding-block-start: var(--s-4);
+  border-block-start: 1px solid var(--line);
+}
+
+.filterFoot {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  margin-block-start: var(--s-4);
+}
+
+.filterHint {
+  font-size: var(--text-small);
+  color: var(--muted);
+  margin: 0;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+  align-items: center;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: var(--text-small);
+  background: var(--green-tint);
+  border: 1px solid color-mix(in srgb, var(--green) 30%, transparent);
+  border-radius: var(--radius-control);
+  padding: 3px var(--s-2) 3px var(--s-3);
+  color: var(--ink);
+}
+
+.chipRemove {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--ink-2);
+  cursor: pointer;
+  line-height: 1;
+  padding: 2px;
+  border-radius: var(--radius-control);
+  display: inline-flex;
+}
+
+.chipRemove:hover {
+  color: var(--danger);
+}
+
+.chipRemove:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.dupFlag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1);
+  font-size: var(--text-label);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--pending);
+  font-weight: 600;
+}
+
+.skelTable {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--card);
+  overflow: hidden;
+}
+
+.skelRow {
+  display: grid;
+  grid-template-columns: 2fr 1.4fr 1fr 1fr 1fr;
+  gap: var(--s-4);
+  padding: var(--s-4) var(--s-5);
+  border-block-end: 1px solid var(--line);
+  align-items: center;
+}
+
+.skelRow:last-child {
+  border-block-end: 0;
+}
+
+.filterBarWrap {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  padding: var(--s-5);
+}
+
+.recordNumberCell {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: var(--text-small);
+  color: var(--muted);
+}
+
+/* Skeleton cells: the dust tone, never text, and animated only if the reader
+   has not asked for less motion. */
+.skelCell {
+  display: block;
+  block-size: 12px;
+  border-radius: var(--radius-control);
+  background: var(--dust);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .skelCell {
+    animation: farmerSkeleton 1.4s ease-in-out infinite;
+  }
+}
+
+@keyframes farmerSkeleton {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+/* ---- Selection bar (restored) ---------------------------------------- */
+
+.bulkBar {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  flex-wrap: wrap;
+  padding: var(--s-3) var(--s-4);
+  background: var(--green-tint);
+  border: 1px solid color-mix(in srgb, var(--green) 32%, transparent);
+  border-radius: var(--radius-card);
+}
+
+.bulkCount {
+  font-weight: 600;
+  font-size: var(--text-small);
+  color: var(--ink);
+}
+
+/* Says what selecting does, because it does less than a bulk bar implies. */
+.bulkNote {
+  font-size: var(--text-small);
+  color: var(--ink-2);
+  flex: 1 1 260px;
+  min-inline-size: 0;
+}
+
+/* ---- Printed sheet ---------------------------------------------------- */
+
+@media print {
+  .print-only h1,
+  .registerStack h1 {
+    font-size: 16pt;
+  }
+
+  .registerStack {
+    gap: var(--s-3);
+  }
+}

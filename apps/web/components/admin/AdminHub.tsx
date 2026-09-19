@@ -83,19 +83,17 @@ const CARDS = [
   },
 ];
 
+/*
+ * COMING LATER MUST STAY TRUE AS THINGS LAND.
+ *
+ * Two entries were removed here on 2026-09-18 because they had been built and
+ * this card was still calling them future: "Coverage & reporting — Phase 7" is
+ * now `/reports`, and "Verification oversight — Needs B6" is now the review
+ * queue at `/farmers/review`. Both are in the sidebar. A screen that describes
+ * a shipped capability as unbuilt is worse than one that says nothing, because
+ * a reader trusts it and stops looking.
+ */
 const PLANNED = [
-  {
-    glyph: 'coverage' as const,
-    title: 'Coverage & reporting',
-    body: 'Registration and verification by state and payam; exports with a logged cut-off.',
-    when: 'Phase 7',
-  },
-  {
-    glyph: 'verify' as const,
-    title: 'Verification oversight',
-    body: 'Pending queues, escalations past seven days, approvals and rejections across officers.',
-    when: 'Needs B6',
-  },
   {
     glyph: 'reference' as const,
     title: 'Reference data',

@@ -241,3 +241,144 @@ a.hubCard:hover {
   color: var(--ink-2);
   font-size: var(--text-small);
 }
+
+/* Row actions: small, outlined, and never the brightest thing in the row. */
+.rowActions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  flex-wrap: wrap;
+}
+
+/* ---- Audit log: filter → results → detail ---------------------------- */
+
+.auditFilters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--s-3);
+  align-items: start;
+}
+
+.auditFilterFoot {
+  display: flex;
+  gap: var(--s-3);
+  margin-block-start: var(--s-4);
+}
+
+.auditChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+  margin-block-start: var(--s-3);
+}
+
+.auditChip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: var(--text-small);
+  background: var(--green-tint);
+  border: 1px solid color-mix(in srgb, var(--green) 30%, transparent);
+  border-radius: var(--radius-control);
+  padding: 3px var(--s-2) 3px var(--s-3);
+}
+
+.auditChipRemove {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--ink-2);
+  cursor: pointer;
+  font-size: 15px;
+  line-height: 1;
+  padding: 0 2px;
+}
+
+.auditChipRemove:hover {
+  color: var(--danger);
+}
+
+.auditChipRemove:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.auditCount {
+  font-size: var(--text-small);
+  color: var(--muted);
+  margin-block: var(--s-4) var(--s-2);
+}
+
+.auditMono {
+  font-family: var(--font-mono);
+  font-size: var(--text-small);
+  color: var(--muted);
+  margin-inline-start: var(--s-2);
+  overflow-wrap: anywhere;
+}
+
+/* A damaged identifier: a neutral label with a rule, never red, never a
+   fabricated id. It is a fact about storage, not a fault of the event. */
+.auditDamaged {
+  display: inline-flex;
+  align-items: center;
+  font-size: var(--text-label);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+  border-inline-start: 2px solid var(--line-strong);
+  padding-inline-start: var(--s-2);
+}
+
+.auditFacts {
+  display: grid;
+  grid-template-columns: minmax(96px, auto) 1fr;
+  gap: var(--s-2) var(--s-4);
+  margin: 0 0 var(--s-4);
+  font-size: var(--text-small);
+}
+
+.auditFacts dt {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.auditFacts dd {
+  margin: 0;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.auditSubhead {
+  font-family: var(--font-display);
+  font-size: var(--text-subhead);
+  margin: var(--s-5) 0 var(--s-3);
+}
+
+.auditDiff {
+  inline-size: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-small);
+}
+
+.auditDiff th,
+.auditDiff td {
+  text-align: start;
+  padding: var(--s-2) var(--s-3);
+  border-block-end: 1px solid var(--line);
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+
+.auditDiff thead th {
+  font-size: var(--text-label);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  border-block-end: 1px solid var(--line-strong);
+}
+
+.auditDiff tbody th {
+  font-weight: 600;
+  color: var(--ink-2);
+}

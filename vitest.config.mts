@@ -1,3 +1,5 @@
+import { fileURLToPath } from 'node:url';
+
 import { defineConfig } from 'vitest/config';
 import { loadEnvLocal } from './scripts/load-env.mjs';
 
@@ -36,6 +38,16 @@ const forTestProcess = (url: string | undefined): string => {
 };
 
 export default defineConfig({
+  /**
+   * `@/…` is apps/web's own alias. The no-database config resolves it; this one
+   * did not, so a test importing a module that uses one passed under
+   * `vitest.pure.config.mts` and failed here — and this config runs every test,
+   * including the pure ones. The two runners must agree about resolution or a
+   * test's result depends on which command a person happened to type.
+   */
+  resolve: {
+    alias: { '@': fileURLToPath(new URL('./apps/web', import.meta.url)) },
+  },
   test: {
     include: ['apps/**/*.test.ts', 'packages/**/*.test.ts', 'tests/**/*.test.ts'],
     environment: 'node',
