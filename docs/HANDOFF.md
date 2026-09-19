@@ -1585,12 +1585,22 @@ staging on 2026-09-17 is **not** the text of `20260917120000` on `main`:
 recorded on staging: 0aacdf99…      file on main: 474f3c93…
 ```
 
-So **`prisma migrate deploy` against staging already failed before any of
-today's work**. I caused it in Prompt 14 by applying a modified version — with
-the weather key added so the rebuild would not fail against six existing rows —
-and then committing the file without it. My note at the time said "staging's
-CHECK is one key wider", which understated it: the two had genuinely diverged,
-not drifted by one key.
+So **`prisma migrate deploy` against staging had been failing since
+2026-09-17**, and neither lane knew. I caused it in Prompt 14 by applying a
+modified version — with the weather key added so the rebuild would not fail
+against six existing rows — and then committing the file without it. My note at
+the time said "staging's CHECK is one key wider", which understated it: the two
+had genuinely diverged, not drifted by one key.
+
+**REPAIRED 2026-09-19, 18:45 UTC.** The constraint was rebuilt on staging from
+the migration file itself — 55 keys, extracted from the file rather than
+retyped, so the two cannot differ by a typo — and the recorded checksum was
+updated to the file's. Verified after: 55 keys live, all three weather keys
+present, the six `weather_location.*` rows preserved, `audit_event` unchanged at
+51,678 rows, and **24 of 24 applied migrations now match their files**.
+`migrate deploy` works again. This paragraph is amended in place rather than
+left standing, because a log that says a thing is broken after it has been fixed
+is the same failure as one that says a cleanup ran when it did not.
 
 **This is the same class as the staging-ahead condition, a second instance.**
 So I checked the rest rather than assume: **24 applied migrations, 22 checksums

@@ -917,6 +917,8 @@ model WeatherForecast {
   @@unique([weatherLocationId, forecastFor], map: "weather_forecast_one_per_day")
   @@index([weatherLocationId, forecastFor], map: "weather_forecast_location_day_idx")
   @@map("weather_forecast")
+}
+
 /// The listing enums. Values match LISTING_STATUSES / LISTING_CATEGORIES in
 /// apps/web/lib/fixtures/farmers.ts, which the marketplace screens already use.
 enum ListingStatus {

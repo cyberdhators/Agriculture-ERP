@@ -1765,6 +1765,37 @@ A gate that compares needs no vigilance: the two sources drift and it goes red
 by itself. A single-fact gate needs a person to remember, and the record of
 this project is eight demonstrations that nobody does.
 
+**THE STRONGEST DEMONSTRATION YET, AND IT WAS A NEAR MISS (2026-09-19, #93).**
+Two migrations rebuilt the same audit CHECK. B12's is dated `20260915120000`
+and adds three `weather_location.*` keys; #95's is dated `20260917120000` and
+rebuilt the constraint from a list that did not contain them. A CHECK can only
+be replaced, never extended, so on a **fresh** database the later one silently
+dropped all three, and **every B12 weather route would have failed on its audit
+insert — on production at B11**, discovered by a weather write failing in the
+field.
+
+**Staging could not have caught it, by construction.** Staging had both
+migrations applied in the order they were written, so its constraint carried the
+weather key and everything worked. **A database only ever sees one migration
+order — the one it happened to receive — so it can never tell you what a
+different order produces.** A fresh database is the only place the fault exists,
+and B11 is the first fresh database this project will ever create.
+
+**This is the argument in its clearest form.** A single-fact gate here would
+have compared `AUDIT_ACTIONS` to the live staging CHECK, found them equal, and
+passed — `tests/audit-actions-constraint.test.ts` does exactly that and was
+green throughout. What caught it was
+`packages/shared/tests/audit-check-matches-migrations`, which compares the
+constant against **the migrations as text, in folder order**, and asserts that
+no migration narrows what an earlier one allowed. It reads no database, so it
+cannot be fooled by the one order that happens to work.
+
+That test was written after the eleventh instance, to catch a thing that had
+not yet happened a second time. It then caught it. **The eleventh instance's own
+fix working is the best evidence in this project that the gate principle pays
+for itself** — and worth remembering the next time a comparing gate looks like
+more work than asserting the fact.
+
 **A WORKED EXAMPLE FROM A PLACE NOBODY WOULD THINK TO PUT A GATE (2026-09-14).**
 The edit scripts this project uses to change documents are written as:
 
@@ -3062,6 +3093,28 @@ drill: that needs a scratch project under CORWADO's name (C-11.7).
 
 **The drill: not yet run.** Record the date and result here when it has been.
 Production receives its first migration only after.
+
+**STEP, NOT A SUGGESTION: compare every recorded checksum against its file
+after any hand-applied migration, and again before the restore drill.**
+
+```
+for each row in _prisma_migrations where finished_at is not null
+    and rolled_back_at is null:
+  sha256(prisma/migrations/<migration_name>/migration.sql) == row.checksum
+```
+
+The drill runs `prisma migrate deploy` against a **fresh** database, which is
+exactly where a mismatch stops being annoying and becomes unrecoverable: the
+deploy refuses, and the restore has no schema to restore into. **B11 is the one
+place in this project where this class of drift cannot be worked around.**
+
+It has happened once already. `20260917120000` was applied to staging by hand
+on 2026-09-17 in a form that differed from the file that was committed, and
+`migrate deploy` against staging failed silently from that day until 2026-09-19
+because nobody compared the two. When it was finally compared, 22 of 24 matched
+and one did not. **The comparison takes seconds and is the only thing that finds
+it** — a schema check passes, the tests pass, and the database serves every
+query correctly the whole time.
 
 **Open, for the owner:** the plan CORWADO's projects are on and whether
 point-in-time recovery is purchasable (C-11.1's number); the scratch project
