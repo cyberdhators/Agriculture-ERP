@@ -1,0 +1,153 @@
+/* Farms & maps — the administrator's inspection workspace. "The Register". */
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-5);
+}
+
+.scopeBand {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-3) var(--s-4);
+  background: var(--band);
+  color: var(--band-ink);
+  border-radius: var(--radius-card);
+  font-size: var(--text-label);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.scopeBandNote {
+  margin-inline-start: auto;
+  letter-spacing: 0;
+  text-transform: none;
+  font-weight: 400;
+  font-size: var(--text-small);
+  color: color-mix(in srgb, var(--band-ink) 72%, transparent);
+}
+
+.filters {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  padding: var(--s-5);
+}
+
+.filterGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: var(--s-3);
+  align-items: end;
+}
+
+.filterFoot {
+  display: flex;
+  gap: var(--s-3);
+  margin-block-start: var(--s-4);
+}
+
+/* One card per recorded boundary. The shape, then the record beside it. */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: var(--s-4);
+}
+
+.card {
+  display: flex;
+  gap: var(--s-4);
+  padding: var(--s-4);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  min-inline-size: 0;
+}
+
+.shape {
+  flex: 0 0 auto;
+}
+
+.facts {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+}
+
+.season {
+  font-family: var(--font-display);
+  font-size: var(--text-subhead);
+  margin: 0;
+  color: var(--ink);
+}
+
+.factRow {
+  display: flex;
+  gap: var(--s-2);
+  font-size: var(--text-small);
+  color: var(--ink-2);
+  min-inline-size: 0;
+}
+
+.factLabel {
+  color: var(--muted);
+  flex: 0 0 auto;
+}
+
+.coord {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+/* Grade: the backend's own word, with a rule beside it — never colour alone. */
+.grade {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: var(--text-label);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-weight: 600;
+  border-inline-start: 3px solid var(--line-strong);
+  padding-inline-start: var(--s-2);
+}
+
+.gradeGood {
+  border-inline-start-color: var(--verified);
+  color: var(--verified);
+}
+
+.gradePoor {
+  border-inline-start-color: var(--pending);
+  color: var(--pending);
+}
+
+.gradeUnusable {
+  border-inline-start-color: var(--danger);
+  color: var(--danger);
+}
+
+.cardFoot {
+  margin-block-start: auto;
+  padding-block-start: var(--s-2);
+  display: flex;
+  gap: var(--s-2);
+  flex-wrap: wrap;
+}
+
+.pageNote {
+  font-size: var(--text-small);
+  color: var(--muted);
+  margin: 0;
+}
+
+@media (max-width: 520px) {
+  .card {
+    flex-direction: column;
+  }
+}

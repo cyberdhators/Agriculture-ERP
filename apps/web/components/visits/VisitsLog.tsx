@@ -2,10 +2,10 @@
 
 import { useEffect, useMemo, useState } from 'react';
 
-import { Button, EmptyState, KpiStrip, Notice } from '@/components/ui';
+import { Button, Dialog, EmptyState, Field, KpiStrip, Notice, Textarea } from '@/components/ui';
 import { IconImage, IconPlus } from '@/components/ui/icons';
 import { usePreview } from '@/lib/preview';
-import { listVisits, LIVE_VISITS, type Visit } from '@/lib/visits/api';
+import { correctVisit, listVisits, LIVE_VISITS, removeVisit, type Visit } from '@/lib/visits/api';
 import { VISITS_FIXTURE, VISIT_TOPIC_LABELS } from '@/lib/visits/fixtures';
 import { useVisitNames } from '@/lib/visits/names';
 
@@ -48,6 +48,12 @@ export function VisitsLog() {
   const [detail, setDetail] = useState<Visit | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [recorded, setRecorded] = useState<string | undefined>();
+  const [correcting, setCorrecting] = useState<Visit | null>(null);
+  const [removing, setRemoving] = useState<Visit | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [advice, setAdvice] = useState('');
+  const [observation, setObservation] = useState('');
+  const [actionError, setActionError] = useState<string | undefined>();
 
   useEffect(() => {
     if (!LIVE_VISITS) return;
@@ -113,6 +119,8 @@ export function VisitsLog() {
   );
 
   const canRecord = role === 'officer';
+  /** Correction and soft removal are the administrator's; fieldwork is not. */
+  const isAdmin = hydrated && role === 'admin';
 
   function onRecorded(visit: Visit) {
     setVisits((list) => [visit, ...list]);
@@ -226,6 +234,7 @@ export function VisitsLog() {
                 <th>Payam</th>
                 <th>Topics and advice</th>
                 <th>Files</th>
+                {isAdmin ? <th className="no-print">Record</th> : null}
               </tr>
             </thead>
             <tbody>
@@ -270,6 +279,39 @@ export function VisitsLog() {
                       <span className={styles.muted}>—</span>
                     )}
                   </td>
+                  {/*
+                   * ADMINISTRATIVE CUSTODY OF THE RECORD, not fieldwork.
+                   * "Correct" changes what is stored; it does not re-record a
+                   * visit, and nothing here captures a position or a GPS
+                   * reading. "Remove" is soft. Both stop the row's own click
+                   * from opening the detail behind the dialog.
+                   */}
+                  {isAdmin ? (
+                    <td className="no-print">
+                      <span className={styles.rowActions}>
+                        <Button
+                          variant="secondary"
+                          size="small"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setCorrecting(v);
+                          }}
+                        >
+                          Correct
+                        </Button>
+                        <Button
+                          variant="danger"
+                          size="small"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setRemoving(v);
+                          }}
+                        >
+                          Remove
+                        </Button>
+                      </span>
+                    </td>
+                  ) : null}
                 </tr>
               ))}
             </tbody>
@@ -284,6 +326,144 @@ export function VisitsLog() {
           </Button>
         </div>
       ) : null}
+
+      {/*
+       * CORRECT VISIT — `PATCH /api/visits/:id`, and only what
+       * `correctVisitSchema` accepts. The advice and the observation are the
+       * two a custodian of the record actually corrects; the position, the GPS
+       * accuracy, the farmer, the officer and the moment of the visit are what
+       * the field recorded and the schema does not take them. Nothing here
+       * claims the visit itself changed — only the record of it.
+       */}
+      <Dialog
+        open={correcting !== null}
+        onClose={() => setCorrecting(null)}
+        title="Correct visit"
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setCorrecting(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              disabled={busy || (advice.trim() === '' && observation.trim() === '')}
+              onClick={() => {
+                if (!correcting) return;
+                setBusy(true);
+                setActionError(undefined);
+                const patch = {
+                  ...(advice.trim() ? { advice: advice.trim() } : {}),
+                  ...(observation.trim() ? { observation: observation.trim() } : {}),
+                };
+                correctVisit(correcting.id, patch)
+                  .then((updated) => {
+                    setVisits((list) => list.map((v) => (v.id === updated.id ? updated : v)));
+                    setRecorded('The stored record was corrected.');
+                    setCorrecting(null);
+                    setAdvice('');
+                    setObservation('');
+                  })
+                  .catch((e: unknown) =>
+                    setActionError(
+                      e instanceof Error ? e.message : 'The correction could not be saved.',
+                    ),
+                  )
+                  .finally(() => setBusy(false));
+              }}
+            >
+              {busy ? 'Saving…' : 'Save correction'}
+            </Button>
+          </>
+        }
+      >
+        {actionError ? (
+          <Notice kind="error">
+            <p className="small">{actionError}</p>
+          </Notice>
+        ) : null}
+        <p className="small muted">
+          This changes the stored record. It does not change what happened in the field, and it
+          cannot alter where or when the visit was recorded.
+        </p>
+        <Field
+          label="Advice given"
+          optional
+          hint={correcting ? `Currently: ${correcting.advice}` : undefined}
+        >
+          {(ids) => (
+            <Textarea
+              {...ids}
+              value={advice}
+              onChange={(e) => setAdvice(e.target.value)}
+              placeholder="Leave blank to keep the recorded advice"
+            />
+          )}
+        </Field>
+        <Field
+          label="Observation"
+          optional
+          hint={correcting?.observation ? `Currently: ${correcting.observation}` : 'None recorded'}
+        >
+          {(ids) => (
+            <Textarea
+              {...ids}
+              value={observation}
+              onChange={(e) => setObservation(e.target.value)}
+              placeholder="Leave blank to keep the recorded observation"
+            />
+          )}
+        </Field>
+      </Dialog>
+
+      {/* SOFT REMOVAL. No permanent deletion exists, and no route restores. */}
+      <Dialog
+        open={removing !== null}
+        onClose={() => setRemoving(null)}
+        title="Remove visit?"
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setRemoving(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant="danger"
+              disabled={busy}
+              onClick={() => {
+                if (!removing) return;
+                setBusy(true);
+                setActionError(undefined);
+                removeVisit(removing.id)
+                  .then(() => {
+                    setVisits((list) => list.filter((v) => v.id !== removing.id));
+                    setRecorded('The visit was removed from active lists and reporting.');
+                    setRemoving(null);
+                  })
+                  .catch((e: unknown) =>
+                    setActionError(
+                      e instanceof Error ? e.message : 'The visit could not be removed.',
+                    ),
+                  )
+                  .finally(() => setBusy(false));
+              }}
+            >
+              {busy ? 'Removing…' : 'Remove visit'}
+            </Button>
+          </>
+        }
+      >
+        {removing ? (
+          <>
+            <p>
+              Remove the visit to <strong dir="auto">{farmerName(removing.farmer_id)}</strong> on{' '}
+              {fmtDate(removing.visited_at)}?
+            </p>
+            <p className="small muted">
+              The visit leaves active lists, counts, exports and reach figures. The record and its
+              audit trail remain. This is not a permanent deletion, and nothing restores it.
+            </p>
+          </>
+        ) : null}
+      </Dialog>
 
       {detail ? <VisitDetail visit={detail} names={names} onClose={() => setDetail(null)} /> : null}
       {showForm && hydrated ? (

@@ -7,7 +7,11 @@ import { pickLocation } from './pick';
 /**
  * Client data layer for the weather tile (C-16), written to the route
  * contract agreed before either half existed: docs/api/weather-contract.md
- * (#78). GET /api/weather, no parameters; the server scopes by role; a caller
+ * (#78), including its dated §9 on where the built route (#93) diverged:
+ * locations are county-level, so payam_id and payam_name are null and the row
+ * carries level, name and county_name; an officer's scope is their county;
+ * an unfetched location is omitted, so current is never null; the forecast is
+ * up to five days; current carries observed_at. GET /api/weather, no parameters; the server scopes by role; a caller
  * with no locations gets 200 and an empty list, which is a normal state and
  * renders as "no weather location for your area yet", never as an error.
  * The route never renders a sentence — numbers and provider strings only —
@@ -17,6 +21,8 @@ import { pickLocation } from './pick';
 export const LIVE_WEATHER = process.env.NEXT_PUBLIC_USE_LIVE_WEATHER === '1';
 
 export interface WeatherCurrent {
+  /** The provider's moment, beside our fetched_at (§9.4). */
+  observed_at: string | null;
   temp_c: number;
   humidity_pct: number;
   wind_kph: number;
@@ -31,15 +37,21 @@ export interface WeatherDay {
   temp_min_c: number;
   rain_mm: number;
   rain_probability: number;
+  humidity_pct: number;
+  wind_kph: number;
   conditions: string;
   icon: string | null;
 }
 
 export interface WeatherLocation {
   location_id: string;
-  payam_id: string;
-  payam_name: string;
+  /** What the place is called on screen, e.g. "Juba County" (§9.1). */
+  name: string;
+  level: 'county' | 'payam';
+  payam_id: string | null;
+  payam_name: string | null;
   county_id: string;
+  county_name: string;
   state_id: string;
   latitude: number;
   longitude: number;
@@ -100,15 +112,19 @@ export const FIXTURE: WeatherResponse = {
   data: [
     {
       location_id: '00000000-0000-4000-8000-00000000c16a',
-      payam_id: 'CE-JUB-JUB',
-      payam_name: 'Juba',
+      name: 'Juba County',
+      level: 'county',
+      payam_id: null,
+      payam_name: null,
       county_id: 'CE-JUB',
+      county_name: 'Juba',
       state_id: 'CE',
       latitude: 4.85,
       longitude: 31.58,
       fetched_at: '2026-09-15T05:00:00Z',
       stale: false,
       current: {
+        observed_at: '2026-09-15T04:50:00Z',
         temp_c: 29,
         humidity_pct: 68,
         wind_kph: 9,
@@ -123,6 +139,8 @@ export const FIXTURE: WeatherResponse = {
           temp_min_c: 22,
           rain_mm: 6,
           rain_probability: 0.6,
+          humidity_pct: 70,
+          wind_kph: 10,
           conditions: 'light rain',
           icon: '10d',
         },
@@ -132,6 +150,8 @@ export const FIXTURE: WeatherResponse = {
           temp_min_c: 22,
           rain_mm: 11,
           rain_probability: 0.7,
+          humidity_pct: 70,
+          wind_kph: 10,
           conditions: 'rain',
           icon: '10d',
         },
@@ -141,6 +161,8 @@ export const FIXTURE: WeatherResponse = {
           temp_min_c: 23,
           rain_mm: 0,
           rain_probability: 0.1,
+          humidity_pct: 70,
+          wind_kph: 10,
           conditions: 'clear sky',
           icon: '01d',
         },
@@ -162,7 +184,15 @@ export interface WeatherView {
   attribution: WeatherAttribution;
 }
 
-/** The one row for a farmer's place, or null when the route has none yet. */
+/**
+ * The one row for a farmer's place, or null when the route has none yet.
+ *
+ * NOT YET READABLE BY A FARMER: GET /api/weather admits the four staff roles,
+ * and a farmer holds no server session (audit, root cause 1). Switching
+ * LIVE_WEATHER on today would give a farmer "could not be read". The tile stays
+ * on the labelled placeholder until the farmer principal exists or the route
+ * admits a farmer's county read — Lane 1's call, asked in HANDOFF.
+ */
 export function useWeather(payamId: string | null): WeatherView {
   const [res, setRes] = useState<WeatherResponse | null>(LIVE_WEATHER ? null : FIXTURE);
   const [loading, setLoading] = useState(LIVE_WEATHER);

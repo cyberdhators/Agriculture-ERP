@@ -11,10 +11,13 @@
 export const PORTAL_PREFIXES = [
   '/dashboard',
   '/farmers',
+  '/farms',
   '/desk',
   '/visits',
   '/reports',
   '/admin',
+  '/communications',
+  '/product-reports',
   '/directories',
   '/library',
   '/design',
@@ -42,8 +45,15 @@ export function frontDoor(marketOpen: boolean = MARKET_OPEN): string {
   return marketOpen ? '/market' : LOGIN_PATH;
 }
 
-/** A post-login target is honoured only if it is a same-origin path. */
+/**
+ * A post-login target is honoured only if it is a same-origin path.
+ *
+ * Backslashes are refused as well as `//`: some browsers normalise `\` to `/`,
+ * so `/\evil.example` can become protocol-relative after the check has passed
+ * it. Cheaper to refuse than to reason about per-browser normalisation.
+ */
 export function safeNext(next: string | null | undefined): string {
   if (!next || !next.startsWith('/') || next.startsWith('//')) return HOME_PATH;
+  if (next.includes('\\')) return HOME_PATH;
   return next;
 }

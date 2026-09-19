@@ -1,0 +1,306 @@
+/* The overview's own layout. Tokens only; logical properties only. */
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-6);
+}
+
+.groupLabel {
+  font-size: var(--text-label);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 600;
+  margin: 0 0 var(--s-3);
+}
+
+/* The exception band: work that is not being done, given its own width. */
+.exception {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-4);
+  padding: var(--s-5);
+  background: var(--card);
+  border: 1px solid var(--pending);
+  border-inline-start-width: 3px;
+  border-radius: var(--radius-card);
+}
+
+.exceptionUnmeasured {
+  border-color: var(--line-strong);
+  border-style: dashed;
+  background: var(--paper);
+}
+
+.exceptionBody {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+}
+
+.exceptionTitle {
+  font-family: var(--font-display);
+  font-size: var(--text-subhead);
+  margin: 0 0 var(--s-1);
+  color: var(--ink);
+}
+
+.exceptionText {
+  margin: 0;
+  font-size: var(--text-small);
+  color: var(--ink-2);
+}
+
+.exceptionFigure {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 34px;
+  line-height: 1;
+  color: var(--pending);
+  flex: 0 0 auto;
+}
+
+.columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(280px, 1fr);
+  gap: var(--s-6);
+  align-items: start;
+}
+
+.panel {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  padding: var(--s-5);
+}
+
+.panelHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-4);
+  margin-block-end: var(--s-4);
+}
+
+.panelTitle {
+  font-family: var(--font-display);
+  font-size: var(--text-subhead);
+  margin: 0;
+  color: var(--ink);
+}
+
+.panelStack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-6);
+}
+
+.recordLink {
+  font-weight: 600;
+}
+
+.recordNumber {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: var(--text-small);
+  color: var(--muted);
+}
+
+@media (max-width: 1100px) {
+  .columns {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .exception {
+    flex-direction: column;
+  }
+}
+
+/* ---- Prompt 2: the national overview -------------------------------- */
+
+.scopeBand {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-3) var(--s-4);
+  background: var(--band);
+  color: var(--band-ink);
+  border-radius: var(--radius-card);
+  font-size: var(--text-label);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.scopeBandNote {
+  margin-inline-start: auto;
+  letter-spacing: 0;
+  text-transform: none;
+  font-weight: 400;
+  font-size: var(--text-small);
+  color: color-mix(in srgb, var(--band-ink) 72%, transparent);
+}
+
+.headerControls {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--s-3);
+  flex-wrap: wrap;
+}
+
+.sectionHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-4);
+  margin-block-end: var(--s-3);
+}
+
+.sectionTitle {
+  font-family: var(--font-display);
+  font-size: var(--text-h2);
+  margin: 0;
+  color: var(--ink);
+}
+
+.sectionNote {
+  font-size: var(--text-small);
+  color: var(--muted);
+  margin: 0;
+}
+
+/* Exceptions: three across on a wide screen, never narrower than readable. */
+.exceptionRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--s-4);
+}
+
+.exceptionCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  padding: var(--s-5);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-inline-start: 3px solid var(--line-strong);
+  border-radius: var(--radius-card);
+  min-block-size: 158px;
+}
+
+.exceptionCardActive {
+  border-color: var(--pending);
+  border-inline-start-color: var(--pending);
+}
+
+.exceptionCardUnmeasured {
+  border-style: dashed;
+  background: var(--paper);
+}
+
+/* A whole card that is a link. The hover is a rule and a tint, not a lift. */
+.exceptionCardLink {
+  text-decoration: none;
+  color: inherit;
+  transition:
+    background 120ms ease,
+    border-color 120ms ease;
+}
+
+.exceptionCardLink:hover {
+  background: color-mix(in srgb, var(--green-tint) 40%, var(--card));
+  border-color: var(--green);
+}
+
+.exceptionCardLink:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.exceptionHead {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: var(--text-label);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.exceptionNumber {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 38px;
+  line-height: 1;
+  color: var(--ink);
+  margin: 0;
+}
+
+.exceptionNumberAlert {
+  color: var(--pending);
+}
+
+.exceptionWhy {
+  font-size: var(--text-small);
+  color: var(--ink-2);
+  margin: 0;
+}
+
+.exceptionAction {
+  margin-block-start: auto;
+  font-size: var(--text-small);
+  font-weight: 600;
+  color: var(--green);
+}
+
+.exceptionRequires {
+  margin-block-start: auto;
+  font-size: var(--text-label);
+  color: var(--muted);
+  font-style: italic;
+}
+
+/* Two-column analysis rows. */
+.split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--s-6);
+  align-items: start;
+}
+
+.splitWide {
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+}
+
+.notes {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  padding: var(--s-5);
+}
+
+.notesList {
+  margin: 0;
+  padding-inline-start: var(--s-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  font-size: var(--text-small);
+  color: var(--ink-2);
+}
+
+.notesUnavailable {
+  margin-block-start: var(--s-4);
+  padding-block-start: var(--s-4);
+  border-block-start: 1px solid var(--line);
+}
+
+@media (max-width: 1100px) {
+  .split,
+  .splitWide {
+    grid-template-columns: 1fr;
+  }
+}

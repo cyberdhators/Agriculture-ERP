@@ -534,6 +534,17 @@ option verified working end to end.**
 - **Derived in exactly one function**, deterministically, from the E.164 phone.
 - **Never typed by a human, never displayed, never in an error message.** It is
   an authentication detail, not an address.
+  _Amended 2026-09-14 by Lane 1, after reading #67:_ **the first clause no
+  longer holds and is kept, struck, rather than deleted.** The staff login form
+  (`components/auth/LoginForm.tsx`) takes an email address and a password, so an
+  officer who knows their derived identifier **can type it** and sign in to the
+  portal. That is deliberate — the form says "Staff and extension officers" and
+  `/desk` is an officer screen — and **the decision itself is unchanged**,
+  because it was always about not surfacing the identifier as an address: it is
+  still never displayed, never in an error message, never stored on the officer
+  row, and still derived in exactly one function. What changed is that a human
+  who already knows it has a place to put it. The sentence is amended in place
+  so that a session reading it does not conclude a rule is being broken.
 - **A non-routable domain**, so nothing can ever receive mail there.
 - **Officer records store the real E.164 phone.** The derived identifier is not
   a field of the officer and is not stored on the officer row.
@@ -2943,3 +2954,110 @@ client eventually needs to be told.** The detail is in
 **Spending is paused** until Bird answers the Liberia question, at the owner's
 instruction. Each rejection bills in full, and six have now taught the same
 thing.
+
+---
+
+## The email provider is Resend, not SendGrid — and this one is a preference, not a fix (2026-09-15)
+
+**Approved by the owner on 2026-09-15 after a findings-first write-up. Nothing
+is built.** `CLAUDE.md` §3, Email row. One line.
+
+**The owner asked that this be recorded honestly, and the honest thing is the
+difference from the SMS substitution.** Africa's Talking does not serve South
+Sudan at all, so that row was **a correction**: the stack table named a provider
+that could not have delivered deliverable (n) to a farmer in this country.
+**SendGrid works.** It is on Supabase's own list of recommended SMTP providers,
+beside Resend, AWS SES, Postmark, ZeptoMail and Brevo. So the case for Resend is
+**a better free tier at this stage and less setup** — 3,000 emails a month, 100
+a day, 3 domains, 30-day log retention, against SendGrid's withdrawn free tier;
+and a configuration of six fields with `username: resend` and an API key as the
+password. **That is convenience rather than capability**, and a reader of the
+stack table later should be able to tell the two substitutions apart. The note
+under the table says so.
+
+**What it costs: nothing at this volume.** 100 emails a day against three staff
+accounts. First paid tier is $20/month for 50,000, which this project will not
+approach.
+
+**What we lose:** SendGrid's maturity at volume and its template tooling,
+neither of which this project uses; and the fact that it was already in a signed
+stack document, changed for a benefit that is convenience.
+
+**No application code is involved.** Supabase's custom SMTP setting is the whole
+of it: host `smtp.resend.com`, port 587, username `resend`, password an API key,
+a sender address and a sender name. **Today the project is on Supabase's default
+SMTP, which their own documentation calls "not meant for production use",
+"best-effort only", at two messages per hour.**
+
+**The one blocking prerequisite is not ours.** Resend has no shared test domain
+in its SMTP path, so a verified sending domain is required.
+`agrionesouthsudan.com` is already set up for mail — MX at `secureserver.net`,
+SPF published, DMARC at `p=quarantine` — so verification adds a DKIM record
+beside them. **That is a DNS change on the client's domain and CORWADO's to
+make.**
+
+---
+
+## EMAIL IS NOT THE CHANNEL FOR DELIVERABLE (n), AND NEVER WILL BE (2026-09-15)
+
+**Recorded at the owner's instruction so a future session does not reach for
+email when SMS turns out to be expensive.** It will turn out to be expensive:
+0.18–0.20 EUR per segment, billed on rejection, and an Arabic-script advisory is
+three segments. That is the moment someone will ask this question, and the
+answer is no.
+
+**Farmers have phones and no email address, and that is not a schema gap.**
+
+- **`Farmer` has no email column.** The only `email` column in the entire
+  schema belongs to `directory_entry` — a named place with a phone number, not
+  an account, and it is optional there.
+- **Adding one is not a migration, it is a request to a farmer.** Every
+  registered farmer consented on text that describes phone contact. An email
+  address is a field nobody has ever asked a South Sudanese smallholder for,
+  and asking for it at scale is field work by officers, not a column.
+- **An officer cannot receive email either, by construction.** B3's derived
+  identifier lives on `officers.invalid` — RFC 2606 reserved, chosen precisely
+  "so nothing can ever receive mail there". Measured on staging: of 15 auth
+  accounts, 7 are `@officers.invalid`, 4 `@example.invalid`, 1 `@corwado.test`.
+  **Eight of fifteen are on domains selected so that delivery is impossible.**
+  Three have real addresses, all office staff.
+
+> **Email reaches three office staff. It cannot reach an extension officer by
+> design, and it cannot reach a farmer at all. It is not a channel; it is
+> plumbing for one staff feature.**
+
+**So (n) is SMS, and the levers on its cost are the ones already recorded:**
+write advisories in Latin script rather than Arabic (one segment instead of
+three), send only what a `warning` justifies, and treat a carrier rejection as
+terminal rather than retryable. Not a different channel.
+
+---
+
+## The one real use for email, sized: staff password reset (2026-09-15)
+
+**On the buildable list, below the thirteen from the audit.** Not built, and it
+needs criteria of its own.
+
+**Why it matters, and it is a genuine gap rather than a nicety.** C-3 says _"An
+administrator sets any account's password. Any account may change its own."_
+That is a complete reset path with no email in it — and it means **an
+administrator is today a single point of failure for their own lockout.** There
+is no self-service reset anywhere in the system: no `resetPasswordForEmail`, no
+`generateLink`, nothing. The last-administrator rule protects CORWADO from being
+locked out by a deletion; nothing protects a single administrator who forgets
+their own password.
+
+**Why it is small.** Supabase Auth implements the flow; the work is a page, a
+callback, and the SMTP configuration. **No new table, no new route pattern.**
+
+**Why it is not next.** Three people can use it. C-3 does not require it. And
+it is **blocked on CORWADO verifying `agrionesouthsudan.com` in DNS**, which is
+theirs to do, not ours — so it cannot be started to completion by this team
+whatever its priority.
+
+**Two things its criteria must settle**, noted so they are not discovered
+during the build: a reset link is a credential in an inbox, so its lifetime and
+single use are the design, not details; and **officers must be excluded
+explicitly**, because their addresses are unroutable and a reset email to an
+officer would fail silently rather than visibly — exactly the shape this project
+keeps finding.

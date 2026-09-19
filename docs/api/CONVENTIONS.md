@@ -382,6 +382,11 @@ change.
 | `weather_location.created`       |
 | `weather_location.updated`       |
 | `weather_location.soft_deleted`  |
+| `product_report.created`         |
+| `product_report.status_changed`  |
+| `product_report.listing_removed` |
+| `communication.email_sent`       |
+| `communication.send_failed`      |
 
 `before` and `after` hold **changed fields only**, never whole rows, and never a
 password, token, authentication identifier, national id, phone, email, given

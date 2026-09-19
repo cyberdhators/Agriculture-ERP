@@ -62,10 +62,13 @@ export interface FarmWithCrops {
 }
 
 /**
- * Flatten one API farm onto the view type. The current boundary supplies the
- * shape and figures; a farm with no current boundary, or whose geometry the
- * caller may not see, becomes `boundary: null` with an origin centroid, which
- * the Boundary SVG already renders as "not mapped".
+ * Flatten one API farm onto the view type.
+ *
+ * The current boundary supplies the shape and the figures. When there is no
+ * current boundary — or when the caller is not entitled to the geometry —
+ * those keys are LEFT OFF rather than defaulted. They used to become an origin
+ * centroid and zeroes, which put the farm in the Atlantic with a perfect GPS
+ * fix; the screens now render nothing where nothing was sent (C-7.8).
  */
 export function toFarm(row: FarmDto): FarmWithCrops {
   const current = row.boundaries.find((b) => b.is_current) ?? row.boundaries[0];
@@ -74,12 +77,17 @@ export function toFarm(row: FarmDto): FarmWithCrops {
     id: row.id,
     farmer_id: row.farmer_id,
     boundary: ring ? { type: 'Polygon', coordinates: [ring] } : null,
-    centroid: current?.centroid
-      ? { lon: current.centroid.coordinates[0], lat: current.centroid.coordinates[1] }
-      : { lon: 0, lat: 0 },
-    area_ha: current?.area_ha ?? 0,
-    point_count: current?.point_count ?? 0,
-    gps_accuracy_m: current?.gps_accuracy_m ?? 0,
+    ...(current?.centroid
+      ? {
+          centroid: {
+            lon: current.centroid.coordinates[0]!,
+            lat: current.centroid.coordinates[1]!,
+          },
+        }
+      : {}),
+    ...(current?.area_ha === undefined ? {} : { area_ha: current.area_ha }),
+    ...(current?.point_count === undefined ? {} : { point_count: current.point_count }),
+    ...(current?.gps_accuracy_m === undefined ? {} : { gps_accuracy_m: current.gps_accuracy_m }),
     accuracy_flag: current?.grade ?? 'unusable',
     mapped_by: current?.mapped_by ?? row.created_by,
     mapped_at: current?.mapped_at ?? row.created_at,
@@ -115,7 +123,143 @@ export async function listFarmerFarms(farmerId: string): Promise<FarmWithCrops[]
   return (body.data ?? []).map(toFarm);
 }
 
-/** Total current area across a farmer's farms, in hectares. */
+/**
+ * Total current area across a farmer's farms, in hectares.
+ *
+ * Sums only the farms whose area was actually reported. A withheld area
+ * contributes nothing rather than a zero — the total is then "the area of the
+ * farms you can see", which is the honest figure for a reader who was not sent
+ * all of them.
+ */
 export function totalArea(farms: readonly FarmWithCrops[]): number {
-  return farms.reduce((sum, f) => sum + f.farm.area_ha, 0);
+  return farms.reduce((sum, f) => sum + (f.farm.area_ha ?? 0), 0);
+}
+
+/* ---- The national map and list (administrator workspace) -------------- */
+
+/**
+ * ONE FEATURE FROM `GET /api/farms/geojson`.
+ *
+ * The route is the map: administrator and supervisor only, scoped, current
+ * boundaries only, `unusable` grades excluded, cursor-paginated. `grade` is the
+ * BACKEND's own classification — `good`, `poor`, `unusable` from ACCURACY_FLAGS
+ * — not a label invented here, and nothing in this client compares a metre
+ * reading against a threshold of its own.
+ */
+export interface FarmFeature {
+  type: 'Feature';
+  id: string;
+  geometry: { type: 'Polygon'; coordinates: number[][][] } | null;
+  properties: {
+    farm_id: string;
+    boundary_id: string;
+    farmer_id: string;
+    payam_id: string;
+    county_id: string;
+    state_id: string;
+    season: string;
+    area_ha: number;
+    grade: AccuracyFlag;
+    mapped_at: string;
+  };
+}
+
+export interface GeoJsonPage {
+  features: FarmFeature[];
+  cursor: string | null;
+  hasMore: boolean;
+}
+
+/** The filters the geojson route accepts. Payam and season, and nothing else. */
+export interface MapFilterParams {
+  payam?: string;
+  season?: string;
+  cursor?: string;
+  limit?: number;
+}
+
+const query = (params: Record<string, string | number | undefined>): string => {
+  const qs = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined && value !== '') qs.set(key, String(value));
+  }
+  const out = qs.toString();
+  return out ? `?${out}` : '';
+};
+
+/**
+ * The map's features, by cursor.
+ *
+ * This is the only route that serves boundary geometry across farms, and the
+ * only place a supervisor sees coordinates at all — it is the state's map, not
+ * a person's record. An officer is refused outright.
+ */
+export async function listFarmGeoJson(params: MapFilterParams = {}): Promise<GeoJsonPage> {
+  const body = await requestPage<FarmFeature[]>(`/api/farms/geojson${query({ ...params })}`);
+  return {
+    features: body.data ?? [],
+    cursor: body.page?.cursor ?? null,
+    hasMore: body.page?.hasMore ?? false,
+  };
+}
+
+/** The filters `GET /api/farms` accepts. NOTE: no season — that is the map's alone. */
+export interface FarmListParams {
+  farmer?: string;
+  payam?: string;
+  updated_since?: string;
+  cursor?: string;
+  limit?: number;
+}
+
+export interface FarmListPage {
+  farms: FarmWithCrops[];
+  cursor: string | null;
+  hasMore: boolean;
+}
+
+export async function listFarms(params: FarmListParams = {}): Promise<FarmListPage> {
+  const body = await requestPage<FarmDto[]>(`/api/farms${query({ ...params })}`);
+  return {
+    farms: (body.data ?? []).map(toFarm),
+    cursor: body.page?.cursor ?? null,
+    hasMore: body.page?.hasMore ?? false,
+  };
+}
+
+/**
+ * SOFT REMOVAL of a farm. `DELETE /api/farms/:id`, administrator only.
+ *
+ * The route stamps `deleted_at`. The farm leaves every list, count and export;
+ * the row, its boundaries and its history remain. There is no hard delete in
+ * this system and no route that restores a removed farm, so no screen should
+ * offer either.
+ */
+export async function removeFarm(id: string): Promise<void> {
+  await requestPage<unknown>(`/api/farms/${encodeURIComponent(id)}`, { method: 'DELETE' });
+}
+
+interface PagedEnvelope<T> {
+  data?: T;
+  page?: { cursor: string | null; hasMore: boolean };
+  error?: { code: string; message: string; rule?: string };
+}
+
+async function requestPage<T>(path: string, init?: RequestInit): Promise<PagedEnvelope<T>> {
+  const res = await fetch(path, {
+    ...init,
+    headers: { 'content-type': 'application/json', ...init?.headers },
+  });
+  if (res.status === 204) return {};
+  const body = (await res.json().catch(() => ({}))) as PagedEnvelope<T>;
+  if (!res.ok) {
+    const err = body.error;
+    throw new FarmApiError(
+      res.status,
+      err?.code ?? 'unknown',
+      err?.message ?? `Request failed (${res.status})`,
+      err?.rule,
+    );
+  }
+  return body;
 }

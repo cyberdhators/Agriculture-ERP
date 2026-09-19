@@ -143,3 +143,74 @@
     grid-template-columns: 1fr 1fr;
   }
 }
+
+/* The export confirmation's fact list: label left, value right, ruled. */
+.exportFacts {
+  display: grid;
+  grid-template-columns: minmax(110px, auto) 1fr;
+  gap: var(--s-2) var(--s-4);
+  margin: var(--s-4) 0;
+  font-size: var(--text-small);
+}
+
+.exportFacts dt {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.exportFacts dd {
+  margin: 0;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+/* Active filter chips. "visits only" is a scope note, not decoration. */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+  align-items: center;
+  margin-block: var(--s-3);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: var(--text-small);
+  background: var(--green-tint);
+  border: 1px solid color-mix(in srgb, var(--green) 30%, transparent);
+  border-radius: var(--radius-control);
+  padding: 3px var(--s-2) 3px var(--s-3);
+  color: var(--ink);
+}
+
+.chipScope {
+  font-size: var(--text-label);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+  border-inline-start: 1px solid var(--line-strong);
+  padding-inline-start: var(--s-2);
+}
+
+.chipRemove {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--ink-2);
+  cursor: pointer;
+  font-size: 15px;
+  line-height: 1;
+  padding: 0 2px;
+  border-radius: var(--radius-control);
+}
+
+.chipRemove:hover {
+  color: var(--danger);
+}
+
+.chipRemove:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}

@@ -1,0 +1,484 @@
+/*
+ * THE PORTAL SHELL — a persistent rail, a quiet header, one content well.
+ *
+ * "The Register" unchanged: bone ground, forest ink, 2px controls, structure
+ * from hairlines rather than shadow. What changes is the ARRANGEMENT — a
+ * standing rail instead of a row of text tabs, so a national administrator
+ * can see the whole remit at once instead of remembering it.
+ *
+ * EVERY DIRECTIONAL PROPERTY HERE IS LOGICAL — inline-start/end, not left/
+ * right; padding-inline, not padding-left; border-inline-start, not
+ * border-left. Arabi Juba's script is unsettled (scope document, open question
+ * 4), so the interface ships English and LTR — but when `dir="rtl"` is set on
+ * <html>, the rail moves to the right, the chevrons turn and the rules swap
+ * sides without a line of this file changing. That is the difference between
+ * being ready for RTL and faking it by aligning text right.
+ */
+
+.shell {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  min-height: 100vh;
+  background: var(--paper);
+}
+
+/* ---- The rail ------------------------------------------------------- */
+
+.rail {
+  position: sticky;
+  top: 0;
+  align-self: start;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  inline-size: 256px;
+  background: var(--band);
+  color: var(--band-ink);
+  border-inline-end: 1px solid var(--band-line);
+  transition: inline-size 160ms ease;
+  z-index: 30;
+}
+
+.railCollapsed {
+  inline-size: 68px;
+}
+
+.railHead {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  block-size: var(--masthead-h);
+  padding-inline: var(--s-4);
+  border-block-end: 1px solid var(--band-line);
+  flex: 0 0 auto;
+}
+
+.railCollapsed .railHead {
+  padding-inline: var(--s-2);
+  justify-content: center;
+}
+
+.railWordmark {
+  display: flex;
+  align-items: center;
+  min-inline-size: 0;
+  overflow: hidden;
+}
+
+.collapseBtn {
+  margin-inline-start: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 28px;
+  block-size: 28px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--band-ink);
+  cursor: pointer;
+  opacity: 0.7;
+}
+
+.collapseBtn:hover {
+  opacity: 1;
+  border-color: var(--band-line);
+}
+
+.railCollapsed .collapseBtn {
+  margin-inline-start: 0;
+}
+
+/* ---- Sections and items --------------------------------------------- */
+
+.railNav {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-block: var(--s-4);
+}
+
+.sectionHeading {
+  font-family: var(--font-body);
+  font-size: var(--text-label);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--band-ink) 55%, transparent);
+  padding-inline: var(--s-5);
+  padding-block: var(--s-3) var(--s-2);
+  margin: 0;
+}
+
+.sectionRule {
+  block-size: 1px;
+  background: var(--band-line);
+  margin-inline: var(--s-4);
+  margin-block: var(--s-3) 0;
+  border: 0;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding-inline: var(--s-5);
+  padding-block: 9px;
+  min-block-size: var(--touch);
+  color: color-mix(in srgb, var(--band-ink) 82%, transparent);
+  text-decoration: none;
+  font-size: var(--text-body);
+  border-inline-start: 2px solid transparent;
+  white-space: nowrap;
+}
+
+.item:hover {
+  color: var(--band-ink);
+  background: color-mix(in srgb, var(--band-ink) 7%, transparent);
+}
+
+.item:focus-visible {
+  outline: 2px solid var(--sprout);
+  outline-offset: -2px;
+}
+
+.itemActive {
+  color: var(--band-ink);
+  background: color-mix(in srgb, var(--band-ink) 11%, transparent);
+  border-inline-start-color: var(--sprout);
+  font-weight: 600;
+}
+
+.itemIcon {
+  flex: 0 0 auto;
+  display: inline-flex;
+  opacity: 0.9;
+}
+
+.itemLabel {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.railCollapsed .item {
+  justify-content: center;
+  padding-inline: 0;
+}
+
+.railCollapsed .itemLabel,
+.railCollapsed .sectionHeading {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ---- Rail foot: who is signed in ------------------------------------ */
+
+.railFoot {
+  flex: 0 0 auto;
+  border-block-start: 1px solid var(--band-line);
+  padding: var(--s-4) var(--s-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+}
+
+.railCollapsed .railFoot {
+  padding-inline: var(--s-2);
+  align-items: center;
+}
+
+.whoName {
+  font-size: var(--text-small);
+  font-weight: 600;
+  color: var(--band-ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.whoRole {
+  font-size: var(--text-label);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--band-ink) 60%, transparent);
+}
+
+.signOut {
+  margin-block-start: var(--s-2);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  background: transparent;
+  border: 1px solid var(--band-line);
+  border-radius: var(--radius-control);
+  color: var(--band-ink);
+  font: inherit;
+  font-size: var(--text-small);
+  padding: 6px var(--s-3);
+  cursor: pointer;
+  min-block-size: 32px;
+}
+
+.signOut:hover {
+  background: color-mix(in srgb, var(--band-ink) 10%, transparent);
+}
+
+.railCollapsed .signOut {
+  padding-inline: var(--s-2);
+}
+
+/* ---- The header ------------------------------------------------------ */
+
+.main {
+  display: flex;
+  flex-direction: column;
+  min-inline-size: 0;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  min-block-size: var(--masthead-h);
+  padding-inline: var(--s-8);
+  padding-block: var(--s-3);
+  background: var(--card);
+  border-block-end: 1px solid var(--line);
+}
+
+.topbarText {
+  min-inline-size: 0;
+  flex: 1 1 auto;
+}
+
+.pageTitle {
+  font-family: var(--font-display);
+  font-size: var(--text-h2);
+  line-height: 1.15;
+  margin: 0;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.topbarSide {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  flex: 0 0 auto;
+}
+
+.scopeChip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: var(--text-small);
+  color: var(--ink-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  padding: 5px var(--s-3);
+  background: var(--paper);
+  white-space: nowrap;
+}
+
+.menuToggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  inline-size: 36px;
+  block-size: 36px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  background: var(--card);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+/* ---- Breadcrumbs ----------------------------------------------------- */
+
+.crumbs {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--s-1);
+  font-size: var(--text-small);
+  color: var(--muted);
+  margin: 0 0 2px;
+  padding: 0;
+  list-style: none;
+}
+
+.crumb {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1);
+}
+
+.crumb a {
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.crumb a:hover {
+  color: var(--ink);
+  text-decoration: underline;
+}
+
+.crumbCurrent {
+  color: var(--ink-2);
+}
+
+/* The separator turns with the writing direction: a chevron is directional. */
+.crumbSep {
+  color: var(--line-strong);
+}
+
+[dir='rtl'] .crumbSep {
+  transform: scaleX(-1);
+}
+
+/* ---- Content well ---------------------------------------------------- */
+
+.content {
+  flex: 1 1 auto;
+  inline-size: 100%;
+  max-inline-size: var(--content-max);
+  margin-inline: auto;
+  padding: var(--s-8);
+}
+
+.footer {
+  border-block-start: 1px solid var(--line);
+  padding: var(--s-5) var(--s-8);
+  color: var(--muted);
+  font-size: var(--text-small);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-4);
+  flex-wrap: wrap;
+}
+
+/* ---- Scrim for the rail as a drawer, below 1024px -------------------- */
+
+.scrim {
+  display: none;
+}
+
+@media (max-width: 1024px) {
+  .shell {
+    grid-template-columns: 1fr;
+  }
+
+  .rail {
+    position: fixed;
+    inset-block: 0;
+    inset-inline-start: 0;
+    transform: translateX(-100%);
+    transition: transform 160ms ease;
+  }
+
+  [dir='rtl'] .rail {
+    transform: translateX(100%);
+  }
+
+  .railOpen {
+    transform: translateX(0);
+  }
+
+  .railCollapsed {
+    inline-size: 256px;
+  }
+
+  .railCollapsed .itemLabel,
+  .railCollapsed .sectionHeading {
+    position: static;
+    inline-size: auto;
+    block-size: auto;
+    clip-path: none;
+  }
+
+  .railCollapsed .item {
+    justify-content: flex-start;
+    padding-inline: var(--s-5);
+  }
+
+  .collapseBtn {
+    display: none;
+  }
+
+  .menuToggle {
+    display: inline-flex;
+  }
+
+  .scrimOpen {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 31, 22, 0.4);
+    z-index: 25;
+    border: 0;
+  }
+
+  .topbar {
+    padding-inline: var(--s-5);
+  }
+
+  .content {
+    padding: var(--s-5);
+  }
+}
+
+@media (max-width: 640px) {
+  .pageTitle {
+    font-size: var(--text-subhead);
+  }
+
+  .scopeChip {
+    display: none;
+  }
+
+  .content {
+    padding: var(--s-4);
+  }
+}
+
+@media print {
+  .rail,
+  .topbar,
+  .footer {
+    display: none;
+  }
+
+  .content {
+    padding: 0;
+  }
+}
+
+/* The product-reports count. Drawn only when the server supplied a number. */
+.badge {
+  margin-inline-start: auto;
+  min-inline-size: 20px;
+  padding-inline: 6px;
+  border-radius: 10px;
+  background: var(--sprout);
+  color: var(--band);
+  font-size: var(--text-label);
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
+  flex: 0 0 auto;
+}
+
+.railCollapsed .badge {
+  display: none;
+}

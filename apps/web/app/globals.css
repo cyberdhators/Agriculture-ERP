@@ -451,4 +451,15 @@ table {
   .print-break-before {
     break-before: page;
   }
+
+  /* Shown only on paper: the title block, the filter context and the
+     generated-at line that let a printed sheet be checked a week later. */
+  .print-only {
+    display: block !important;
+  }
+}
+
+/* Its screen half: invisible until the page is printed. */
+.print-only {
+  display: none;
 }

@@ -91,7 +91,9 @@ export function FarmerFarm() {
                           {t('account.plot', language)} {i + 1}
                         </button>
                       </td>
-                      <td className="num">{farm.area_ha.toFixed(2)}</td>
+                      <td className="num">
+                        {farm.area_ha === undefined ? '—' : farm.area_ha.toFixed(2)}
+                      </td>
                       <td>{crops.length > 0 ? crops.join(', ') : '—'}</td>
                       <td>
                         <Stamp kind={b.kind}>{t(b.label, language)}</Stamp>

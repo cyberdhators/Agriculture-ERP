@@ -1,0 +1,144 @@
+/* Overlays and transient messages. Logical properties throughout. */
+
+.drawer {
+  position: fixed;
+  inset-block: 0;
+  inset-inline-end: 0;
+  inline-size: min(480px, 100vw);
+  background: var(--card);
+  border-inline-start: 1px solid var(--line-strong);
+  box-shadow: var(--shadow-dialog);
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform 160ms ease;
+}
+
+[dir='rtl'] .drawer {
+  transform: translateX(-100%);
+}
+
+.drawerOpen {
+  transform: translateX(0);
+}
+
+.drawerScrim {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 31, 22, 0.4);
+  z-index: 55;
+  border: 0;
+  padding: 0;
+}
+
+.drawerHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-4);
+  padding: var(--s-5);
+  border-block-end: 1px solid var(--line);
+}
+
+.drawerTitle {
+  font-family: var(--font-display);
+  font-size: var(--text-h2);
+  margin: 0;
+  color: var(--ink);
+}
+
+.drawerBody {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: var(--s-5);
+}
+
+.drawerFoot {
+  border-block-start: 1px solid var(--line);
+  padding: var(--s-4) var(--s-5);
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--s-3);
+}
+
+.closeBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 32px;
+  block-size: 32px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  background: var(--card);
+  color: var(--ink-2);
+  cursor: pointer;
+}
+
+.closeBtn:hover {
+  border-color: var(--line-strong);
+  color: var(--ink);
+}
+
+/* ---- Toasts ----------------------------------------------------------- */
+
+.toastRegion {
+  position: fixed;
+  inset-block-end: var(--s-6);
+  inset-inline-end: var(--s-6);
+  z-index: 80;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  max-inline-size: min(420px, calc(100vw - var(--s-8)));
+}
+
+.toast {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-3);
+  background: var(--card);
+  border: 1px solid var(--line-strong);
+  border-inline-start: 3px solid var(--green);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-dialog);
+  padding: var(--s-4);
+  font-size: var(--text-body);
+  color: var(--ink);
+}
+
+.toastError {
+  border-inline-start-color: var(--danger);
+}
+
+.toastWarn {
+  border-inline-start-color: var(--pending);
+}
+
+.toastText {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+}
+
+.toastTitle {
+  font-weight: 600;
+  margin: 0 0 2px;
+}
+
+.toastBody {
+  margin: 0;
+  font-size: var(--text-small);
+  color: var(--ink-2);
+}
+
+@media (max-width: 640px) {
+  .toastRegion {
+    inset-inline: var(--s-4);
+    inset-block-end: var(--s-4);
+    max-inline-size: none;
+  }
+
+  .drawer {
+    inline-size: 100vw;
+  }
+}

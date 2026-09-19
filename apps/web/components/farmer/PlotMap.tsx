@@ -15,7 +15,8 @@ interface Plot {
   points: string;
   cx: number;
   cy: number;
-  area_ha: number;
+  /** Absent when the caller was not sent the figure (C-7.8). Never defaulted to 0. */
+  area_ha?: number;
   index: number;
 }
 
@@ -149,7 +150,7 @@ export function PlotMap({
           >
             <polygon points={p.points} />
             <text x={p.cx} y={p.cy} className={styles.mapArea} textAnchor="middle">
-              {p.area_ha.toFixed(2)} ha
+              {p.area_ha === undefined ? '—' : `${p.area_ha.toFixed(2)} ha`}
             </text>
           </g>
         );

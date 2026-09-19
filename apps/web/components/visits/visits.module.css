@@ -257,3 +257,11 @@
     grid-template-columns: 1fr 1fr;
   }
 }
+
+/* Administrative row actions: outlined, small, never the loudest thing in the row. */
+.rowActions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  flex-wrap: wrap;
+}

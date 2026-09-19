@@ -251,3 +251,39 @@ export {
   type ReportType,
 } from './report';
 export * from './weather';
+
+// Administrator communications and marketplace product reports. Both are
+// contracts proposed on 2026-09-17 and approved as scope additions; neither has
+// a route behind it yet. Appended, never reordered (HANDOFF's shared-objects
+// rule).
+export {
+  CHANNEL_RECIPIENTS,
+  COMMUNICATION_CHANNELS,
+  COMMUNICATION_LIMITS,
+  COMMUNICATION_MESSAGES,
+  RECIPIENT_TYPES,
+  sendCommunicationSchema,
+  type CommunicationChannel,
+  type CommunicationResult,
+  type RecipientType,
+  type SendCommunication,
+} from './communications';
+
+export {
+  MODERATION_ACTIONS,
+  PRODUCT_REPORT_LIMITS,
+  PRODUCT_REPORT_MESSAGES,
+  REPORT_REASONS,
+  REPORT_STATUSES,
+  moderateReportSchema,
+  productReportFilterSchema,
+  submitProductReportSchema,
+  type ModerateReport,
+  type ModerationAction,
+  type ProductReport,
+  type ProductReportFilter,
+  type ReportReason,
+  type ReportStatus,
+  type SubmitProductReport,
+  type UnreadReportCount,
+} from './product-reports';

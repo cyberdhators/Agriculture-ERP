@@ -163,6 +163,111 @@ let f5Visit = '';
 let f6Farm = '';
 const LAST_MONTH = new Date(Date.now() - 40 * 86_400_000);
 
+/*
+ * ============================================================================
+ * COUNTING THE FIXTURE, NOT THE DATABASE.
+ * ============================================================================
+ *
+ * Every figure below is counted by hand from the fixture at the top of this
+ * file. It used to be asserted against the WHOLE total the route returned,
+ * which quietly assumed that the fixture is the only thing in the database.
+ * That assumption is not the project's: CLAUDE.md section 4 says staging rows
+ * are the suite's or the seed's, and warns in the same breath that "a row made
+ * by hand outside that convention breaks the sweep for everyone". One did --
+ * a pending farmer in CE, created by hand before this suite ran, which the
+ * sweep correctly refuses to touch because it is not a zztest row. It is not
+ * this suite's to delete, and it must not be this suite's to trip over.
+ *
+ * So each figure is now asserted against the DIFFERENCE: the same summary is
+ * taken once before the fixture exists and once after, and the hand-counted
+ * expectations below are unchanged, because the fixture's contribution is
+ * exactly what they always described. A row this suite did not create cancels
+ * out of both sides.
+ *
+ * WHAT THIS DOES NOT DO is weaken the figure. The route still computes over
+ * everything it can see; a double count, a miscounted merge, a farm counted
+ * for a removed farmer, a scope that leaks the fixture's own rows -- each
+ * still lands in the difference and still fails. What cancels is only what was
+ * already there when the suite started.
+ */
+
+/** Fixed at import so the baseline and the observation ask for the same window. */
+const RECENT_FROM = new Date(Date.now() - 7 * 86_400_000).toISOString();
+const AROUND_LAST_MONTH = {
+  from: new Date(LAST_MONTH.getTime() - 86_400_000).toISOString(),
+  to: new Date(LAST_MONTH.getTime() + 86_400_000).toISOString(),
+};
+
+/** Every (caller, filter) pair a hand-counted figure is asserted against. */
+const VIEWS = {
+  ce: () => [supervisorA, { season: SEASON }],
+  ceRecent: () => [supervisorA, { season: SEASON, from: RECENT_FROM }],
+  ceAroundLastMonth: () => [supervisorA, { season: SEASON, ...AROUND_LAST_MONTH }],
+  caseloadA: () => [officerA, { season: SEASON }],
+  national: () => [admin, { season: SEASON }],
+  ee: () => [supervisorB, { season: SEASON }],
+  eeAskingForCe: () => [supervisorB, { season: SEASON, state: STATE_A }],
+  readOnlyCe: () => [readOnly, { season: SEASON }],
+} satisfies Record<string, () => [TestPrincipal, Record<string, string>]>;
+
+type ViewName = keyof typeof VIEWS;
+
+/** What each view already said before a single fixture row existed. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- the summary is asserted shape by shape below
+const BASELINE = {} as Record<ViewName, Record<string, any>>;
+
+/** after − before, field by field. */
+const minus = (after: Record<string, number>, before: Record<string, number>) =>
+  Object.fromEntries(Object.keys(after).map((k) => [k, after[k]! - (before[k] ?? 0)]));
+
+/** after − before, row by row on `key`; a row that nets to nothing disappears. */
+function minusRows<T extends { key: string }>(after: T[], before: T[]): T[] {
+  const had = new Map(before.map((row) => [row.key, row as Record<string, unknown>]));
+  return after
+    .map(
+      (row) =>
+        Object.fromEntries(
+          Object.entries(row).map(([k, v]) =>
+            k === 'key'
+              ? [k, v]
+              : [k, (v as unknown as number) - ((had.get(row.key)?.[k] as number) ?? 0)],
+          ),
+        ) as T,
+    )
+    .filter((row) =>
+      Object.entries(row).some(([k, v]) => k !== 'key' && (v as unknown as number) !== 0),
+    );
+}
+
+/**
+ * The summary with every additive figure reduced to what this fixture added.
+ * `as_of`, `period`, `season` and `notes` pass through untouched: they are
+ * statements about the request, not counts of rows.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- the summary is asserted shape by shape below
+function contributed(after: Record<string, any>, before: Record<string, any>): Record<string, any> {
+  return {
+    ...after,
+    farmers: minus(after.farmers, before.farmers),
+    reach: minus(after.reach, before.reach),
+    land: minus(after.land, before.land),
+    by: {
+      sex: minusRows(after.by.sex, before.by.sex),
+      age_band: minusRows(after.by.age_band, before.by.age_band),
+      state: minusRows(after.by.state, before.by.state),
+      county: minusRows(after.by.county, before.by.county),
+      payam: minusRows(after.by.payam, before.by.payam),
+      crop: minusRows(after.by.crop, before.by.crop),
+    },
+  };
+}
+
+/** Ask a view now and subtract what it already said in beforeAll. */
+const fixtureOnly = async (view: ViewName) => {
+  const [as, query] = VIEWS[view]();
+  return contributed(await summary(as, query), BASELINE[view]);
+};
+
 beforeAll(async () => {
   await sweep(prisma);
   await prisma.$executeRawUnsafe(
@@ -183,7 +288,25 @@ beforeAll(async () => {
   officerA = await createPrincipal(prisma, 'officer', { payamId: PAYAM_A });
   officerB = await createPrincipal(prisma, 'officer', { payamId: PAYAM_B });
   officerEE = await createPrincipal(prisma, 'officer', { payamId: PAYAM_EE });
+});
 
+/*
+ * A SECOND HOOK, DELIBERATELY. Setting this fixture up takes minutes -- every
+ * principal is a real Supabase account and every row goes through its route --
+ * and the baselines are eight more round trips on top. Vitest gives each
+ * beforeAll its own timeout, so the two are separated rather than raising a
+ * limit that is there to catch a genuinely stuck run.
+ */
+beforeAll(async () => {
+  // Before a single fixture row exists. Whatever staging already held is
+  // recorded here and subtracted from every hand-counted figure below.
+  for (const view of Object.keys(VIEWS) as ViewName[]) {
+    const [as, query] = VIEWS[view]();
+    BASELINE[view] = await summary(as, query);
+  }
+});
+
+beforeAll(async () => {
   F.f1 = (await register(officerA, { sex: 'f', year_of_birth: 1990 })).id as string;
   F.f2 = (await register(officerB, { sex: 'm', year_of_birth: 1970, payam_id: PAYAM_B }))
     .id as string;
@@ -301,7 +424,7 @@ run('the merge repoints, the removal excludes (C-10.1)', () => {
 
 run('the figures (C-10.2 to C-10.7)', () => {
   it('a supervisor’s summary for state CE: counted by hand from the fixture', async () => {
-    const s = await summary(supervisorA, { season: SEASON });
+    const s = await fixtureOnly('ce');
     // People by status: F1, F2 verified; F3 pending; F4 rejected; F5 merged; F6 removed and absent.
     expect(s.farmers).toEqual({ verified: 2, pending: 1, rejected: 1, merged: 1 });
     // Reach: F1 (two visits, one last month — one farmer) and F2; F3 is pending, so beside.
@@ -344,16 +467,15 @@ run('the figures (C-10.2 to C-10.7)', () => {
   });
 
   it('the period bounds reach by the server’s moment; a reversed period and a future cut-off are refused', async () => {
-    const thisMonth = new Date(Date.now() - 7 * 86_400_000).toISOString();
-    const s = await summary(supervisorA, { season: SEASON, from: thisMonth });
+    const s = await fixtureOnly('ceRecent');
     expect(s.reach.farmers_reached).toBe(2);
     expect(s.reach.visits).toBe(3);
-    const before = await summary(supervisorA, {
-      season: SEASON,
-      from: new Date(LAST_MONTH.getTime() - 86_400_000).toISOString(),
-      to: new Date(LAST_MONTH.getTime() + 86_400_000).toISOString(),
+    const lastMonthOnly = await fixtureOnly('ceAroundLastMonth');
+    expect(lastMonthOnly.reach).toEqual({
+      farmers_reached: 1,
+      visits: 1,
+      other_farmers_visited: 0,
     });
-    expect(before.reach).toEqual({ farmers_reached: 1, visits: 1, other_farmers_visited: 0 });
     const reversed = await checked(reportSummary, 'GET', {
       as: supervisorA,
       query: { from: new Date().toISOString(), to: LAST_MONTH.toISOString() },
@@ -369,16 +491,16 @@ run('the figures (C-10.2 to C-10.7)', () => {
   });
 
   it('C-10.10: an officer sees their caseload, a supervisor their state, an administrator all; a filter never widens scope', async () => {
-    const mine = await summary(officerA, { season: SEASON });
+    const mine = await fixtureOnly('caseloadA');
     expect(mine.farmers).toEqual({ verified: 1, pending: 1, rejected: 1, merged: 1 });
     expect(mine.land.farms_mapped).toBe(2); // F1's own and F5's, now F1's
-    const all = await summary(admin, { season: SEASON });
+    const all = await fixtureOnly('national');
     expect(all.farmers.pending).toBe(2); // F3 and F7 in EE
-    const ee = await summary(supervisorB, { season: SEASON });
+    const ee = await fixtureOnly('ee');
     expect(ee.farmers).toEqual({ verified: 0, pending: 1, rejected: 0, merged: 0 });
-    const widened = await summary(supervisorB, { season: SEASON, state: STATE_A });
+    const widened = await fixtureOnly('eeAskingForCe');
     expect(widened.farmers.verified).toBe(0);
-    const ro = await summary(readOnly, { season: SEASON });
+    const ro = await fixtureOnly('readOnlyCe');
     expect(ro.farmers.verified).toBe(2);
   });
 });

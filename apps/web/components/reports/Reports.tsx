@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { AGE_BANDS, type ReportFilter, type ReportType } from '@agri-erp/shared';
 
@@ -18,7 +18,30 @@ import {
   type Summary,
 } from '@/lib/reports/api';
 
-import { Button, Card, EmptyState, Field, Input, KpiStrip, Notice, PageHeader } from '../ui';
+import { useLocationNames } from '@/lib/portal/locations';
+import { useQueryState } from '@/lib/query-state';
+import {
+  clearReportFilters,
+  describeExport,
+  fromQuery,
+  reportChips,
+  ROW_COUNT_UNKNOWN,
+  seasonOptions,
+  toReportFilter,
+} from '@/lib/reports/report-filters';
+
+import {
+  Button,
+  Card,
+  Dialog,
+  EmptyState,
+  Field,
+  Input,
+  KpiStrip,
+  Notice,
+  PageHeader,
+  Select,
+} from '../ui';
 import screens from '../screens.module.css';
 import { EXPORTS_FIXTURE, SUMMARY_FIXTURE } from './fixtures';
 import styles from './reports.module.css';
@@ -41,8 +64,22 @@ const AGE_LABEL: Record<string, string> = Object.fromEntries(
  */
 export function Reports() {
   const { role, hydrated } = usePreview();
+  const { get, set } = useQueryState();
+  /**
+   * The applied filters live in the URL, as they do on the register: a report
+   * can then be bookmarked, sent to a colleague, or reopened after following a
+   * link out of it — and the chips below are read from the same place, so the
+   * two cannot disagree about what is narrowing the figures.
+   */
+  const urlState = useMemo(() => fromQuery(get), [get]);
   const [draft, setDraft] = useState<ReportFilter>({});
-  const [filter, setFilter] = useState<ReportFilter>({});
+  /** `isoDate` refuses a cut-off later than now, so the picker offers none. */
+  const TODAY = new Date().toISOString().slice(0, 10);
+  const filter = useMemo(() => toReportFilter(urlState), [urlState]);
+  /** Place names for the pickers and the export summary. One fetch, shared. */
+  const names = useLocationNames(hydrated);
+  /** The export awaiting confirmation. Nothing runs until it is confirmed. */
+  const [pendingExport, setPendingExport] = useState<ReportType | null>(null);
   const [summary, setSummary] = useState<Summary | null>(LIVE_REPORTS ? null : SUMMARY_FIXTURE);
   const [exports, setExports] = useState<ExportRecord[]>(LIVE_REPORTS ? [] : EXPORTS_FIXTURE);
   const [loading, setLoading] = useState(LIVE_REPORTS);
@@ -68,6 +105,18 @@ export function Reports() {
   }, []);
 
   useEffect(() => {
+    setDraft({
+      ...(urlState.cutoff ? { cutoff: urlState.cutoff } : {}),
+      ...(urlState.from ? { from: `${urlState.from}T00:00:00Z` } : {}),
+      ...(urlState.to ? { to: `${urlState.to}T23:59:59Z` } : {}),
+      ...(urlState.season ? { season: urlState.season } : {}),
+      ...(urlState.state ? { state: urlState.state } : {}),
+      ...(urlState.county ? { county: urlState.county } : {}),
+      ...(urlState.payam ? { payam: urlState.payam } : {}),
+    });
+  }, [urlState]);
+
+  useEffect(() => {
     void load(filter);
   }, [filter, load]);
 
@@ -85,14 +134,28 @@ export function Reports() {
   }, [canExport]);
 
   function apply() {
-    const next: ReportFilter = {};
-    for (const [k, v] of Object.entries(draft)) if (v) (next as Record<string, string>)[k] = v;
-    setFilter(next);
+    // `draft` holds the form's own shape (dates as dates); the URL holds the
+    // same keys, and `toReportFilter` turns them into the schema's timestamps
+    // when the request is built. One conversion, in one place.
+    set({
+      cutoff: draft.cutoff ?? null,
+      from: draft.from ? draft.from.slice(0, 10) : null,
+      to: draft.to ? draft.to.slice(0, 10) : null,
+      season: draft.season ?? null,
+      state: draft.state ?? null,
+      county: draft.county ?? null,
+      payam: draft.payam ?? null,
+    });
   }
 
   function reset() {
     setDraft({});
-    setFilter({});
+    set(clearReportFilters());
+  }
+
+  /** Remove one chip: clear that key and leave every other filter standing. */
+  function removeFilter(key: string) {
+    set({ [key]: null });
   }
 
   async function runExport(type: ReportType) {
@@ -161,6 +224,7 @@ export function Reports() {
               <Input
                 {...ids}
                 type="date"
+                max={TODAY}
                 value={draft.cutoff ?? ''}
                 onChange={(e) => setDraft({ ...draft, cutoff: e.target.value || undefined })}
               />
@@ -196,26 +260,83 @@ export function Reports() {
               />
             )}
           </Field>
-          <Field label="Season" hint="e.g. 2026A. Latest present if blank.">
+          {/*
+           * A closed list, not a text box. `SEASON_PATTERN` is
+           * `YYYY-main` / `YYYY-second`, and this field used to hint "2026A" —
+           * a format the schema refuses, so the hint taught the reader to be
+           * rejected.
+           */}
+          <Field label="Season" hint="Latest present if blank.">
             {(ids) => (
-              <Input
+              <Select
                 {...ids}
-                className="mono"
-                placeholder="2026A"
                 value={draft.season ?? ''}
                 onChange={(e) => setDraft({ ...draft, season: e.target.value || undefined })}
-              />
+              >
+                <option value="">Latest present</option>
+                {seasonOptions().map((season) => (
+                  <option key={season} value={season}>
+                    {season}
+                  </option>
+                ))}
+              </Select>
             )}
           </Field>
-          <Field label="Payam" hint="Narrows within your scope, never beyond it.">
+          <Field label="State" hint="Narrows within your scope, never beyond it.">
             {(ids) => (
-              <Input
+              <Select
                 {...ids}
-                className="mono"
-                placeholder="CE-JUB-MUN"
+                value={draft.state ?? ''}
+                onChange={(e) =>
+                  setDraft({
+                    ...draft,
+                    state: e.target.value || undefined,
+                    county: undefined,
+                    payam: undefined,
+                  })
+                }
+              >
+                <option value="">All states</option>
+                {names.states.map((row) => (
+                  <option key={row.id} value={row.id}>
+                    {row.name}
+                  </option>
+                ))}
+              </Select>
+            )}
+          </Field>
+          <Field label="County">
+            {(ids) => (
+              <Select
+                {...ids}
+                value={draft.county ?? ''}
+                onChange={(e) =>
+                  setDraft({ ...draft, county: e.target.value || undefined, payam: undefined })
+                }
+              >
+                <option value="">All counties</option>
+                {names.countiesIn(draft.state ?? '').map((row) => (
+                  <option key={row.id} value={row.id}>
+                    {row.name}
+                  </option>
+                ))}
+              </Select>
+            )}
+          </Field>
+          <Field label="Payam">
+            {(ids) => (
+              <Select
+                {...ids}
                 value={draft.payam ?? ''}
                 onChange={(e) => setDraft({ ...draft, payam: e.target.value || undefined })}
-              />
+              >
+                <option value="">All payams</option>
+                {names.payamsIn(draft.state ?? '', draft.county ?? '').map((row) => (
+                  <option key={row.id} value={row.id}>
+                    {row.name}
+                  </option>
+                ))}
+              </Select>
             )}
           </Field>
           <div className={styles.apply}>
@@ -230,6 +351,47 @@ export function Reports() {
           </div>
         </div>
       </Card>
+
+      {/*
+       * ACTIVE FILTERS, EACH SAYING WHAT IT MOVES.
+       *
+       * "Visits from 1 September" beside a verified count of 12,480 invites
+       * the reader to believe those farmers were verified in September. They
+       * were not: that is a cumulative total as of the cut-off, and the visit
+       * period moves reach and visits alone. The chip carries the distinction
+       * so the sentence cannot be misread.
+       */}
+      {reportChips(urlState, {
+        state: names.state,
+        county: names.county,
+        payam: names.payam,
+      }).length > 0 ? (
+        <div className={styles.chips}>
+          {reportChips(urlState, {
+            state: names.state,
+            county: names.county,
+            payam: names.payam,
+          }).map((chip) => (
+            <span key={chip.key} className={styles.chip}>
+              {chip.label}
+              {chip.affects === 'visits' ? (
+                <span className={styles.chipScope}>visits only</span>
+              ) : null}
+              <button
+                type="button"
+                className={styles.chipRemove}
+                onClick={() => removeFilter(chip.key)}
+                aria-label={`Remove filter ${chip.label}`}
+              >
+                ×
+              </button>
+            </span>
+          ))}
+          <Button variant="ghost" size="small" onClick={reset}>
+            Clear all
+          </Button>
+        </div>
+      ) : null}
 
       {error ? (
         <Notice kind="error" title="Could not load the figures">
@@ -360,9 +522,73 @@ export function Reports() {
         <p className="muted">Loading the figures…</p>
       ) : null}
 
-      {/* ---- Export log (C-10.8) ---- */}
+      {/*
+       * EXPORT CONFIRMATION (C-10.8, C-10.11).
+       *
+       * An export is a recorded act against real people's records, so it is
+       * not a one-click button. This says what will be produced, at what
+       * cut-off, under which filters, and — for the farmer list — states the
+       * privacy guarantee in the same breath: farmer numbers only, and no
+       * name, phone, national ID or rejection note, because the export query
+       * does not select them.
+       *
+       * There is NO row count here. The server counts rows as it builds the
+       * export and records the figure in the log; an estimate taken from a
+       * page of the register would be a guess dressed as a fact.
+       */}
+      <Dialog
+        open={pendingExport !== null}
+        onClose={() => setPendingExport(null)}
+        title="Generate export"
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setPendingExport(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              disabled={exporting !== null}
+              onClick={() => {
+                const kind = pendingExport;
+                setPendingExport(null);
+                if (kind) void runExport(kind);
+              }}
+            >
+              {exporting ? 'Running…' : 'Generate export'}
+            </Button>
+          </>
+        }
+      >
+        {pendingExport ? (
+          <>
+            <p>
+              <strong>{describeExport(pendingExport).title}</strong>
+            </p>
+            <p className="small">{describeExport(pendingExport).contains}</p>
+            <dl className={styles.exportFacts}>
+              <dt>Scope</dt>
+              <dd>{role === 'admin' ? 'National · all states' : 'Your assigned state'}</dd>
+              <dt>Figures as of</dt>
+              <dd className="mono">{filter.cutoff ?? 'today'}</dd>
+              <dt>Filters</dt>
+              <dd>{compactFilters(filter) || 'None'}</dd>
+              <dt>Fields</dt>
+              <dd className="mono small">{describeExport(pendingExport).columns.join(', ')}</dd>
+              <dt>Format</dt>
+              <dd>JSON — the only format this route produces.</dd>
+              <dt>Rows</dt>
+              <dd className="small">{ROW_COUNT_UNKNOWN}</dd>
+            </dl>
+            <Notice kind="info" title="What leaves the building">
+              <p className="small">{describeExport(pendingExport).privacy}</p>
+            </Notice>
+          </>
+        ) : null}
+      </Dialog>
+
+      {/* ---- Export log (C-10.8). `id` is where the sidebar's Exports link lands. ---- */}
       {canExport ? (
-        <Card padded>
+        <Card padded id="exports">
           <div className={styles.exportHead}>
             <div>
               <p className="label">Exports</p>
@@ -374,14 +600,14 @@ export function Reports() {
             <div className={styles.exportActions}>
               <Button
                 variant="secondary"
-                onClick={() => runExport('summary')}
+                onClick={() => setPendingExport('summary')}
                 disabled={exporting !== null}
               >
                 {exporting === 'summary' ? 'Running…' : 'Export these figures'}
               </Button>
               <Button
                 variant="secondary"
-                onClick={() => runExport('farmers')}
+                onClick={() => setPendingExport('farmers')}
                 disabled={exporting !== null}
               >
                 {exporting === 'farmers' ? 'Running…' : 'Export farmer numbers'}

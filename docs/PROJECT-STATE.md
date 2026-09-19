@@ -448,6 +448,420 @@ document outliving its premise.
 
 ---
 
+## TWO CAUGHT EARLIER THAN THE LAST ONE — WHAT IMPROVEMENT LOOKS LIKE (2026-09-14)
+
+**Recorded at the owner's instruction, and the reason is the measurement:
+_the pattern getting caught sooner is the thing worth measuring._** A list of
+faults only ever gets longer. What tells you whether anything is improving is
+how far a fault travels before something stops it.
+
+Both of these are the same shape as errors already in this document. Neither
+reached a record, a client paragraph, or a commit.
+
+### 1. A legal document that could not be read, and was not guessed at
+
+The licence question gated the whole C-16 cache design — if storing forecasts
+were restricted, the design changed rather than the wording. OpenWeather's terms
+are a PDF whose text is glyph-encoded through a subset font, so two extraction
+attempts returned 31,000 characters of plausible-looking nonsense with zero
+keyword hits.
+
+**The third attempt was not made.** A partial decode of a licence clause is
+worse than no decode: it produces a confident, sourced, quotable sentence about
+what is permitted, and nobody downstream can tell it was reconstructed from a
+substitution cipher. The route taken instead was a first-party HTML page that
+states the licence in plain text.
+
+**Distance travelled: zero.** No record was written from the bad decode.
+
+### 2. A search summary about to become a first-party fact
+
+The ODbL answer first appeared in a **search-engine summary** of pages that had
+not been fetched. It was very nearly written into the record as _"ODbL, so
+storing is fine"_ — correct, as it happens, and **sourced to nothing.** The
+first-party FAQ was then checked and **does not name ODbL at all**, which is
+what stopped it; the licence was only confirmed by fetching the pricing page and
+reading the sentence there.
+
+**This is the message-history error exactly** — the fourth instance of the
+third pattern, where I characterised an SMS account from the three messages I had
+sent myself and never listed the other five. **Same shape: a conclusion from a
+sample I had not verified, presented with the confidence of a fact.**
+
+**Distance travelled: zero.** The earlier instance reached a paragraph written
+for the client and had to be retracted.
+
+### WHAT THE COMPARISON IS ACTUALLY WORTH
+
+| Instance                                   | Where it was caught                         | Distance travelled                 |
+| ------------------------------------------ | ------------------------------------------- | ---------------------------------- |
+| Audit CHECK "generated from AUDIT_ACTIONS" | by a rebase, days later                     | 3 documents, 1 worked-example list |
+| `.env.example` "all are listed"            | by a finding written about something else   | 1 state document, 9 days           |
+| The SMS account "has never delivered"      | by reading the history, after writing it up | a paragraph prepared for CORWADO   |
+| The glyph-encoded PDF                      | before the second extraction was trusted    | **nothing**                        |
+| The search-summary licence                 | before it was written down                  | **nothing**                        |
+
+**Two caught at the point of formation rather than after publication.** That is
+one data point, not a trend, and the honest reading is narrow: **the two that
+were caught early were both cases where the source of the claim was visible and
+suspect** — a garbled decode, a search summary — rather than cases where the
+reasoning was sound and the input was quietly stale. The harder class is still
+the one that gets through, and nothing here shows it is improving.
+
+**The practice that did the work in both cases is the one already recorded:**
+ask what this claim is sourced to, and whether the source is a thing I actually
+read. Not "is this correct" — both claims were correct — but **"do I know this,
+or did something tell me it"**, which is the same question as reading a document
+as its recipient, pointed at an input rather than an output.
+
+## THE QUEUE IS SELF-TESTING (2026-09-16)
+
+**Worth recording as a property, at the owner's instruction, because it was not
+designed and it is the most useful thing the staging-rows refusal produced.**
+
+The refusal added in the global test setup runs **before any test, as CI's first
+real action**, and fails naming the offending row. So:
+
+> **A pull request's own CI answers whether staging is clean. If a run gets past
+> setup, the row is gone. If it does not, the first line of the log names what
+> is in the way.**
+
+**Why that is more than a convenience.** The condition gating five held branches
+lives in a shared database that no document can describe accurately for long —
+`docs/HANDOFF.md` said the rule and the row was made anyway; a session asking
+the owner gets an answer that was true when they last looked. **Pushing the
+branch asks the system.** It is the fourth silent-class instance's companion
+rule — _ask the system rather than the record_ — arrived at by accident: the
+cheapest way to check the precondition is to attempt the work and read why it
+refused.
+
+**The property in general form.** A precondition enforced at the start of the
+work, failing loudly and naming its cause, turns every attempt into a
+diagnostic. The alternative — a precondition checked by a person, or documented
+and trusted — produced the three red main runs this refusal exists to prevent.
+
+**Its limit, so it is not over-claimed.** This works because the check is
+**first, cheap and specific**: it runs before the fifty-minute suite, costs one
+query, and its message names the row rather than reporting a count mismatch
+fifty minutes later in a test about something else. A precondition that fails
+late, or vaguely, is not a diagnostic — it is the count being off by one in
+`tests/reporting.test.ts`, which is exactly what this replaced.
+
+## A TEST THAT PINS A SHAPE, AND A TEST THAT COMPARES TWO SOURCES (2026-09-16)
+
+**The clearest demonstration yet of the gate principle, because the same test
+was written both ways within a day and the second way found something the first
+could not.**
+
+**What happened.** `apps/web/lib/auth/portal-gate.test.ts` was written to close
+the three-hand-maintained-lists problem in the auth gate. Its third assertion
+compared the middleware's `config.matcher` to `PORTAL_PREFIXES` **by equality**:
+the matcher must be exactly each portal prefix plus the login page. It passed,
+and it was proved failing in both directions.
+
+**Then it was rebased onto a main that had moved seventeen commits, and it went
+red.** The design had changed underneath it: the middleware now also matches
+`/market` and `/farmer`, because `NEXT_PUBLIC_MARKET_OPEN=0` gates the
+marketplace behind the staff session (the owner's decision, 2026-09-15).
+
+> **The assertion was wrong. The design was right.** An equality test on a list
+> that another decision is entitled to extend does not protect the gate; it
+> reports every legitimate extension as a fault.
+
+**What correcting it surfaced, which neither version covered.** Rewritten to
+compare **two sources in both directions** — every gated prefix has a matcher
+entry, and every matcher entry is a prefix something gates — it now catches a
+case that was invisible to the equality version and to the design review that
+produced it:
+
+> **A market prefix missing from the matcher makes `NEXT_PUBLIC_MARKET_OPEN=0`
+> silently do nothing.** `isPortalPath` would return `true` for `/market`, so
+> the code reads as though the gate closes — and the middleware would never be
+> asked, because it does not run there. **A gate that appears to close and does
+> not.**
+
+That is the first-pattern failure in the switch built to close the marketplace,
+and nothing in the repository would have reported it. Proved by planting it: the
+test names `/market` and says what it means.
+
+### WHY THIS IS THE SHARPEST VERSION OF THE PRINCIPLE SO FAR
+
+The gate principle has been recorded, argued, given worked examples and applied
+to guards about guards. **This is the same test, by the same author, one day
+apart, in both forms:**
+
+|                                         | The equality version             | The comparison version         |
+| --------------------------------------- | -------------------------------- | ------------------------------ |
+| What it asserts                         | the matcher **equals** this list | two lists **cover** each other |
+| When the design legitimately grows      | **red, wrongly**                 | green                          |
+| A gated prefix missing from the matcher | red                              | red                            |
+| A matcher entry nothing gates           | red                              | red, and named                 |
+| `MARKET_OPEN=0` silently doing nothing  | **invisible**                    | **red**                        |
+
+**The difference is not strictness.** The equality version is _stricter_ and
+catches _less_. It fails on changes that are correct and stays silent on the one
+that is dangerous, because it was pinning a shape rather than checking a
+relationship. **A test that pins a shape encodes today's design; a test that
+compares two sources encodes the rule the design must satisfy.**
+
+**The practical tell, for the next test written here:** if a legitimate future
+change would turn the assertion red, it is pinning a shape. Ask what the two
+things are that must agree, and assert _that_ — then the design may grow and the
+rule still holds.
+
+## A MISSING OPTIONAL FIELD IS THE FAILURE NO TEST ASSERTS (2026-09-15)
+
+**Found by reading a signature, not by testing an output, and recorded at the
+owner's instruction because the finding method is the transferable part.**
+
+**What happened.** C-16.10 requires OpenWeather's attribution in the route's
+payload — **a licence condition, not a courtesy**. The route was written as:
+
+```ts
+return ok(rows.map(...), undefined, { attribution: attribution() });
+```
+
+which reads correctly, compiles, lints, and would have shipped a payload with no
+`attribution` in it. `ok()`'s signature was `(data, headers?)`. **A third
+argument to a two-argument function is silently discarded by JavaScript.** No
+type error: the extra argument is simply not checked. No test failure: the
+route's tests assert what `data` contains, and nothing asserted that a field
+_was there_.
+
+**How it was found.** Before writing the route's assertions, the wrapper's
+`ok()` was read to check what it did with a third argument. The answer was
+nothing. `ok()` then gained an `extra` bag of top-level siblings, which refuses
+the envelope's own names (`data`, `warnings`, `page`, `error`) so a future
+caller cannot quietly overwrite the envelope.
+
+**THE SHAPE, AND IT IS A NEW ONE FOR THIS LIST.** Every silent instance recorded
+above is a check that ran and examined the wrong thing. This is not that. **It
+is the absence of a check entirely, in a place where absence is invisible:**
+
+> **A test asserts what is present. Almost nothing asserts what is missing.**
+
+A wrong value fails an equality. A missing optional field fails nothing —
+`body.attribution` is `undefined`, the reader renders nothing where the notice
+should be, and every existing assertion still passes. It is the same family as
+`audit_event.device_id` (the eighth instance: a column the law required and no
+request ever sent) and `updated_at` (the seventh: a column nobody wrote), but
+those were found by looking at the database. **This one had no column to look
+at** — it is a field in a JSON body that simply was not there.
+
+**The rule this earns, and it is cheap.** For anything the payload must carry
+because a contract or a licence says so — not merely because a screen wants it —
+**assert its presence explicitly**, not only the correctness of its value:
+
+```ts
+expect(body.attribution).toEqual(WEATHER_ATTRIBUTION); // presence AND value
+```
+
+`tests/weather.test.ts` asserts exactly that, twice, including on the **empty**
+response — because an empty `data` array is the case where a payload sibling is
+easiest to drop and hardest to notice.
+
+**And the wider form, which is the owner's point.** The finding came from
+reading the callee's signature rather than the caller's output. For a shared
+helper, **what it accepts is a fact about the helper, and it is cheaper to read
+than to infer from behaviour** — particularly in a language that discards extra
+arguments without complaint.
+
+## THE BACKUP MANIFEST GATE IS ONE-DIRECTIONAL (2026-09-14)
+
+**Found while writing C-16, and it is worse than the criterion it produced.**
+`MANIFEST_TABLES` in `apps/web/lib/backup/manifest.ts` is the list of tables a
+backup must carry. `tests/backup.test.ts` checks it in one direction only:
+
+```ts
+// Every table a backup must carry is a real table: a renamed table would be a
+// finding here, not a silent zero.
+for (const table of MANIFEST_TABLES) {
+  /* ... assert it exists in information_schema ... */
+}
+```
+
+**That catches a table removed or renamed. It cannot catch a table added.**
+Nothing compares the catalogue back to the list, so **a new table is silently
+absent from the manifest**, and the manifest is what a restore is verified
+against.
+
+**Why this is the worst place in the project for it to happen.** The manifest is
+C-11's instrument for proving a recovery worked. `compareManifests` would report
+every difference explained and `isVerified` would return true, **while counting
+nothing for the missing table** — a clean bill of health on a restore that lost
+a table entirely. **The first pattern, in the unit whose entire purpose is
+proving recovery works.** It is exactly the shape recorded eleven times above: a
+gate asserting one fact, true when written, quietly false the moment something
+new appears.
+
+**It has not bitten yet**, and the reason is luck rather than design: every
+table since B8 was added by a session that also wrote the manifest entry. C-16
+would have been the first to add tables without that habit, which is why C-16.12
+names it — but a criterion in one unit is not a fix.
+
+**THE FIX, SIZED AND NOT BUILT: about half an hour.** One test that reads
+`information_schema.tables` for the public schema, subtracts an explicit
+allowlist (`_prisma_migrations`, and any table deliberately excluded with its
+reason), and asserts the remainder equals `MANIFEST_TABLES`. **That turns a
+single-fact gate into a gate that compares** — two sources moving independently,
+red by itself when either moves alone — which is the principle recorded above
+and the same shape as the two audit-CHECK gates merged in #70.
+
+**Recorded as an open item rather than left in C-16**, at the owner's
+instruction: _"It should not wait for someone to notice a missing table during a
+restore."_ The half hour is cheaper than the alternative by any measure, and the
+alternative is discovering it in an emergency.
+
+## I-03 WEATHER — WHAT CORWADO MUST BE TOLD BEFORE (e) IS PROMISED (2026-09-14)
+
+**Findings before any code, at the owner's instruction. Two of them belong to
+CORWADO rather than to us, and they are put first because they change what the
+client should be promised.**
+
+### 1. SOUTH SUDAN HAS ALMOST NO WEATHER OBSERVATION, SO A PAYAM FORECAST IS MODEL OUTPUT
+
+**This is the finding to give CORWADO, not to bury in a design note.**
+
+|                                       |                                            |
+| ------------------------------------- | ------------------------------------------ |
+| Automatic weather stations installed  | **13**                                     |
+| Being added (FAO-supported, Feb 2026) | **27**, for 40 total                       |
+| Manual synoptic stations              | about **3**                                |
+| Country area                          | roughly **644,000 km²**, larger than Kenya |
+
+South Sudan Meteorological Services sits inside the Civil Aviation Authority and
+provides mainly aeronautical forecasts and a radio bulletin.
+
+**What that means for a number on a screen or in an SMS.** OpenWeather serves
+"any coordinates around the globe" and markets **100 m resolution with 10-minute
+updates** from its own model. Over South Sudan there is almost nothing to observe
+with, so **a payam centroid receives interpolated global-model output — GFS and
+ECMWF — not a nearby measurement.** A 100-metre grid over an unobserved region is
+resolution, not accuracy: the figure describes the output, not the input.
+OpenWeather nowhere discloses where real station data exists.
+
+**Three consequences, stated plainly:**
+
+- **Neighbouring payams inside one county will read alike**, because they are
+  often the same model cell. Payam-level distinctness is largely illusory today.
+- **So county-level locations are the right default to start**, which gives
+  nearly the same information for roughly a sixth of the calls (about 80
+  counties against about 500 payams). Payam-level becomes a deliberate choice
+  when the network densifies, not the starting assumption.
+- **Nobody should promise a farmer precision the data cannot support.** An
+  advisory saying it will rain in your payam on Thursday is a model's view of a
+  region with three manual stations in it. That is still useful — a flood watch
+  is worth sending — but it is not a local observation and should never be
+  described as one.
+
+**The trajectory is genuinely upward.** Those 27 stations exist specifically to
+feed WMO's WIS2 and the Global Basic Observing Network, whose purpose is to
+improve global forecasting over exactly this territory. The data behind this
+deliverable gets better on a timescale that matters to the project. `raw` on
+`weather_forecast` is kept partly for that reason: when the inputs improve, it is
+how anyone reconstructs what we told a farmer and why.
+
+### 2. THE LICENCE PERMITS THE CACHE — AND THE ATTRIBUTION RULE COLLIDES WITH SMS
+
+**Read from OpenWeather's own pricing page, because the whole design depends on
+storing forecasts and the answer was unconfirmed.**
+
+> _"All automated self-service plans are provided under the ODbL (Open Database
+> License)."_
+
+**Storing forecasts is permitted, and the design does not change.** Commercial
+use is allowed; there is no obligation to open-source the application or share
+product code. Share-alike attaches only if OpenWeather data is restructured or
+enriched into **our own dataset or API made available outside the
+organisation** — then that must be offered under ODbL too. An internal cache
+behind `requireRole`, feeding a staff dashboard, is not that. **The rule to
+carry forward: do not expose the forecast cache as a public dataset or API
+without accepting ODbL on it.**
+
+**But attribution is a live constraint, and it lands on deliverable (e) rather
+than on the tile.** OpenWeather requires attribution **visible where the data is
+displayed** — _"attribution placed only in hidden documentation or deep legal
+pages is not sufficient"_ — and gives the line as `Weather data © OpenWeather`.
+
+> **A one-segment SMS is 160 GSM-7 characters, or 70 in Arabic script.
+> `Weather data © OpenWeather` is 26 of them.** That is 16% of a Latin segment
+> and over a third of an Arabic one, on a message that already costs 0.20 EUR
+> per recipient per segment.
+
+**THIS IS CORWADO'S TO RESOLVE, NOT OURS, AND IT HAS A NUMBER ATTACHED.**
+Twenty-six characters of a hundred and sixty, **on every recipient of every
+advisory**, or over a third of an Arabic-script segment. At 0.20 EUR per
+segment, carrying the attribution on a 148-character advisory pushes it to a
+second segment and **doubles the cost of the send** — 400 EUR per thousand
+farmers instead of 200.
+
+Three options, and CORWADO should choose knowingly:
+
+1. **Carry it and write shorter.** Advisories are held to ~134 Latin characters
+   so the attribution fits in one segment. Cheapest in money, tightest in
+   language, and hardest in Arabic script where 26 characters of 70 leaves
+   almost nothing.
+2. **Decide an SMS is not a "display" of the data**, with attribution on the
+   dashboard and in the farmer-facing terms instead. Plausible — the licence
+   language is about where data is displayed, and it was written for screens —
+   but it is a legal reading and not ours to make.
+3. **Avoid OpenWeather-derived content in advisories altogether**, and this is
+   worth naming because **it may be the cheapest.** An advisory that says "heavy
+   rain is forecast this week, cover stored grain" carries agronomic guidance
+   triggered by a forecast rather than the forecast itself. The numbers stay on
+   the dashboard where attribution is easy; the SMS carries the instruction. It
+   removes the licence question, shortens nothing, and costs nobody a segment.
+
+**Unresolved, and recorded as unresolved.** It does not affect the tile, which
+has room for the line and must carry it.
+
+**Note the inconsistency, since someone will implement whichever they read
+first.** The pricing page gives `Weather data © OpenWeather`; the FAQ requires
+_"Weather data provided by OpenWeather"_, a hyperlink to openweathermap.org
+**and** the OpenWeather logo, obligatory on all plans between Free and
+Professional. The stricter reading is the FAQ's, and the tile should satisfy it.
+
+### 3. I-03's STATE: THE FREE TIER IS ENOUGH TO BUILD AND PROVE
+
+**No CORWADO account is needed to build this.** The Free plan is **60 calls per
+minute and 1,000,000 calls per month**, registered with an email address, and
+covers Current Weather, Geocoding, Air Pollution and historical data. Exceeding
+the per-minute rate returns `429`; nothing bills.
+
+**What the free tier does not clearly include is One Call** — the product that
+returns current, hourly and daily in a single call. OpenWeather's pricing page
+lists the newer timeline-based product under **Startup and above**. Secondary
+sources report One Call 3.0 as 1,000 calls/day free and about 0.0012 GBP per
+call beyond that, and **no first-party page publishes that per-call rate**. So
+the free tier is enough to build and prove the tile using Current Weather plus
+the free forecast endpoint; whether the eventual shape is One Call is a question
+the account will answer, and it is not on the critical path.
+
+**Fetch budget, computed rather than guessed**, against 1,000,000 calls/month:
+
+| Scale                                 | Fetches/day | Fetches/month | Share of free allowance |
+| ------------------------------------- | ----------- | ------------- | ----------------------- |
+| 12 payams (staging placeholder today) | 12          | ~360          | 0.04%                   |
+| ~80 counties (real, county-level)     | 80          | ~2,400        | 0.24%                   |
+| ~500 payams (real, payam-level)       | 500         | ~15,000       | 1.5%                    |
+
+**The binding constraint is 60 calls per minute, not the monthly total.** A
+naive loop over 500 locations returns `429` partway and leaves a half-filled
+cache, so the scheduled fetch must be paced regardless of how generous the
+monthly figure looks.
+
+### 4. A DEPENDENCY NOBODY HAD STATED: WEATHER LOCATIONS INHERIT I-07
+
+`weather_location.payam_id` ties this deliverable to the location hierarchy, and
+**that hierarchy is placeholder data**. Staging holds 10 states, 6 counties and
+12 payams; `scripts/locations-lib.mjs` says the codes _"are invented for this
+project and will not match the boundary lists when they arrive"_.
+
+**So any weather location seeded now must be re-pointed when CORWADO's list
+lands.** B10 did exactly that exercise once already — migration 20 was the
+reporting repoint. It is cheap if expected and expensive if discovered, which is
+why it is written here before the first row exists.
+
 ## KNOWN CONDITION — CORRECTED: THE POOLER WAS NEVER FLAKY; PRISMA'S CONNECT TIMEOUT WAS TOO SHORT
 
 `DIRECT_URL` reaches staging through the **session pooler**
@@ -1587,6 +2001,57 @@ have reported success having changed nothing, which is the first pattern again.
 protects the contractual documents, and the state documents are still formatted,
 which is correct — they are prose and should be. The rule here is about how a
 session edits them, not about excluding them.
+
+## A LAW IN A FILE ONLY GOVERNS SESSIONS THAT OPEN THE FILE (2026-09-15)
+
+**The owner's sentence, and it is the useful fact from a red main.**
+
+**What happened.** On 2026-09-14 the owner approved a line for `CLAUDE.md` §4:
+_staging rows are the test suite's or the seed's, never hand-made._ It was
+written, committed, and held on a branch. On **2026-09-15 at 07:48** a Lane 2
+session created an officer named `Proof Officer (placeholder)` in staging by
+hand, and at **08:07** registered a farmer against it. Neither row is prefixed
+`zztest`, so the suite's sweep leaves them; `tests/reporting.test.ts` counts
+state CE by hand from its fixture, found one pending farmer too many, and main
+went red twice. **Same mechanism as #75, one day later, same lane.**
+
+**The precision that matters — corrected the same day, because the first
+version of this paragraph was wrong.** It said no file on main contained the
+rule. **It did.** #75, Lane 2's pull request carrying the rule, was closed
+unmerged — but the same HANDOFF entry reached main inside #79 at
+**2026-09-14 21:23 UTC**, ten and a half hours before the officer row was made.
+`docs/HANDOFF.md` is the one file every session is instructed to read before
+any work. So the rule was on main, in the file sessions are told to open first,
+written by the same lane that then broke it. **The owner's sentence stands, and
+it is sharper than the first version made it:** a law in a file governs only the
+sessions that open the file — and here the file was the one they are required
+to open. What is not yet on main is the `CLAUDE.md` §4 line, which sits on a
+held branch.
+
+_The first version was written from #75's state without checking whether its
+content had landed another way. Same fault as characterising the SMS account
+from three of eight messages: the record was consulted instead of the system._
+
+**What follows, in two parts.**
+
+- **Landing matters more than writing.** The §4 line should go to main on its
+  own, ahead of the code it shares a branch with. But this incident shows that
+  landing is necessary and not sufficient: the rule was landed, in the required
+  file, and was not followed.
+- **A file is not enough for a rule about a shared resource.** `CLAUDE.md` and
+  `HANDOFF.md` govern sessions that open them and act on what they read. A
+  staging database is touched by sessions proving UI, by scripts, and by people
+  in a hurry. The durable form is the one already used for `zztest`: **the
+  resource itself refuses.** `farmers-seed-lib.mjs` refuses to register a
+  placeholder farmer against a `zztest` officer; the equivalent for hand-made
+  rows is a check the suite runs first — every officer and farmer in staging is
+  either `zztest`-prefixed or came from the seed — that goes red naming the row,
+  before the counting tests fail on it obliquely. Sized at about half an hour,
+  not built. **After this incident it is the fix, not an option.**
+
+**The row is Lane 2's to remove**, at the owner's request, since the auto-mode
+guard refuses this session a `DELETE` on the shared database and Alieu ran the
+last cleanup.
 
 ## THE ELABORATION FAILURE — THE SEAM BETWEEN THE OWNER'S JUDGEMENT AND A SESSION'S (2026-09-11)
 

@@ -220,3 +220,95 @@ export const IconVideo = (p: IconProps) => (
     <path d="m16 10 5-3v10l-5-3" />
   </Icon>
 );
+
+/* Navigation, part two: the destinations the portal sidebar names. */
+
+export const IconVisits = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M12 21s7-5.7 7-11a7 7 0 1 0-14 0c0 5.3 7 11 7 11Z" />
+    <path d="m9.2 10.4 1.9 1.9 3.7-3.7" />
+  </Icon>
+);
+
+export const IconOfficer = (p: IconProps) => (
+  <Icon {...p}>
+    <circle cx="12" cy="7.5" r="3.5" />
+    <path d="M5 20.5a7 7 0 0 1 14 0" />
+    <path d="M16.5 13.5 19 12l1 2.5" />
+  </Icon>
+);
+
+export const IconStaff = (p: IconProps) => (
+  <Icon {...p}>
+    <rect x="3" y="6" width="18" height="14" rx="2" />
+    <path d="M9 6V4.5A1.5 1.5 0 0 1 10.5 3h3A1.5 1.5 0 0 1 15 4.5V6M3 12h18M11 15h2" />
+  </Icon>
+);
+
+export const IconReports = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />
+  </Icon>
+);
+
+export const IconExport = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M12 15V3M8.5 6.5 12 3l3.5 3.5" />
+    <path d="M5 14v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5" />
+  </Icon>
+);
+
+export const IconAudit = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M6 3h8l5 5v13H6Z" />
+    <path d="M14 3v5h5M9 13h6M9 17h6" />
+  </Icon>
+);
+
+export const IconDesk = (p: IconProps) => (
+  <Icon {...p}>
+    <rect x="3" y="4" width="18" height="12" rx="2" />
+    <path d="M8 20h8M12 16v4" />
+  </Icon>
+);
+
+export const IconMap = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="m9 4-6 2.5v13L9 17l6 2.5 6-2.5v-13L15 7 9 4Z" />
+    <path d="M9 4v13M15 7v12.5" />
+  </Icon>
+);
+
+export const IconMenu = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M4 7h16M4 12h16M4 17h16" />
+  </Icon>
+);
+
+export const IconSidebarCollapse = (p: IconProps) => (
+  <Icon {...p}>
+    <rect x="3" y="4" width="18" height="16" rx="2" />
+    <path d="M9 4v16" />
+  </Icon>
+);
+
+export const IconSignOut = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M10 21H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+    <path d="M16 16.5 20.5 12 16 7.5M20 12H9" />
+  </Icon>
+);
+
+export const IconChevronDown = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="m6 9 6 6 6-6" />
+  </Icon>
+);
+
+/* Marketplace moderation. `IconMail` already exists above and is reused. */
+
+export const IconFlag = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M5 21V4M5 4h11l-2 3.5L16 11H5" />
+  </Icon>
+);
