@@ -2299,6 +2299,45 @@ writing it.** Three instances in one session, by the session that had just
 recorded the pattern. That is the argument for gates that compare rather than
 resolutions to be careful.
 
+**A FOURTH INSTANCE, 2026-09-19, AND THE READER WAS THE FAULT THIS TIME.**
+`pnpm schema:check` was run as `node scripts/schema-check.mjs 2>&1 | tail -3 ||
+true` while `prisma/schema.prisma` was invalid. The script behaved perfectly:
+it printed `schema:check could not read the database. Nothing was changed.` as
+its FIRST line and exited 1. What `tail -3` kept was the last three lines of
+Prisma's own output —
+
+```
+Prisma CLI Version : 6.19.3
+```
+
+— and `|| true` discarded the exit status. **A version banner was read as a
+result.** The invalid schema went to CI, where `pnpm install` failed with five
+P1012 errors and the whole Test step was skipped, so the constraint test that
+run existed to check never ran at all.
+
+**The rule at the level that generalises, and it has two halves.**
+
+> **A check must produce a verdict, and a verdict must survive being read
+> carelessly.** A check whose output can be truncated to something that looks
+> like reassurance has not finished the job of reporting.
+
+1. **For the reader:** never pipe a check through `tail`, `head` or `grep` and
+   never append `|| true`. Both destroy the two things a check produces — the
+   verdict and the exit status — and leave the vendor's footer, which always
+   looks calm. Read the exit code; if the output is long, that is what the
+   status is for.
+2. **For the check:** print the verdict at BOTH ends. `schema-check.mjs` now
+   repeats it as its last line so that whichever end a reader cuts to, they see
+   the result and not a banner. Cheap, and it removes the reader's ability to
+   get it wrong — which is the same move as B5.5's guard refusing loudly rather
+   than skipping, and the same move as this section's own rule.
+
+**What it shares with the first three.** Those were absences read as reports:
+nothing arrived and nothing was the answer. This is the inversion — **something
+arrived, it was not the answer, and it was read as one**. A banner is not an
+absence; it is noise wearing the shape of a result, which is worse, because
+silence at least invites a question.
+
 **The three patterns together, as questions to ask of any check:**
 
 1. Does it compare two things that can move independently, or assert one fact?
@@ -3072,6 +3111,41 @@ directory freshness tile (needs a merged route writing `last_verified_at`).
 **The backend bar one.** With B10, every backend unit from B2 to B10 is built
 and merged or open. B11 is the production drill; its checklist is below and
 is the next thing to read.
+
+## RESOLVING A CONFLICT IS NOT ONE OPERATION (2026-09-19, #93)
+
+**Concatenating both sides is correct for an append seam and wrong inside a
+declaration, and nothing in the resolution path distinguishes them.**
+
+Eight files conflicted when #93 was reconciled with main. Seven were both lanes
+appending at the same point — a nav entry, an env block, an export list, a log
+entry — where keeping both sides in order is exactly right. The eighth was
+`prisma/schema.prisma`, where one conflict boundary fell **inside** the
+`WeatherForecast` model: its closing brace was in the removed region, so
+concatenating ours-then-theirs produced a model that never closed and an enum
+that appeared to be four malformed fields.
+
+**The trap is that the two cases look identical to the resolver.** A conflict
+block is just lines; whether those lines are a complete unit or half of one is a
+property of the file's grammar, which no merge tool and no hand-editing script
+knows anything about.
+
+**The mitigation is cheap and it is not "be careful".** After resolving any
+conflict in a file with a grammar, **validate that file's own syntax**, not only
+the tests:
+
+| File                   | The check that reads it                                               |
+| ---------------------- | --------------------------------------------------------------------- |
+| `prisma/schema.prisma` | `node scripts/with-env.mjs prisma validate`, then `pnpm schema:check` |
+| `*.ts`, `*.tsx`        | `pnpm typecheck`                                                      |
+| `*.json`               | any parse; `pnpm format:check` will do                                |
+| `*.md`                 | `pnpm format:check`                                                   |
+
+The reason this was missed is worth stating plainly: **typecheck, lint and 626
+pure tests all passed on the broken tree, because not one of them reads
+`schema.prisma`.** A green check set is only evidence about the files the checks
+actually open, and the most confident-looking run in this project so far was
+green on a schema that could not be parsed.
 
 ## B11 — BACKUP AND RECOVERY (2026-09-09)
 

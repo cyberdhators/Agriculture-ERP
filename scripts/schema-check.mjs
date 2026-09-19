@@ -109,6 +109,14 @@ const result = spawnSync(
 if (result.status !== 0) {
   console.error('\nschema:check could not read the database. Nothing was changed.\n');
   console.error(result.stderr || result.stdout);
+  // THE VERDICT IS REPEATED AS THE LAST LINE, AND THAT IS THE POINT.
+  // 2026-09-19: this script failed correctly -- verdict first, exit 1 -- and was
+  // read through `| tail -3 || true`, which kept only Prisma's version banner
+  // and discarded the status. The banner was taken as reassurance and an
+  // invalid schema went to CI. A verdict a reader can cut off is a verdict that
+  // can be missed, so it is printed at BOTH ends: whichever end you look at,
+  // you see the result and not the vendor's footer.
+  console.error('\nschema:check FAILED. The schema could not be read. Nothing was changed.\n');
   process.exit(1);
 }
 
