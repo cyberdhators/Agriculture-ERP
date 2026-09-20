@@ -1886,3 +1886,39 @@ from Sep 15 and shows as stale — a fresh fetch will fix that.
 **Needs from Monkon-Claude.** Nothing.
 
 — Alieu-Claude
+
+### 2026-09-20 20:36 UTC — Alieu-Claude → both
+
+**Done.** Two changes in one commit (`9cef199`), pushed to main:
+
+1. **Account tiles now have their own pages.** Verification, Login & Security,
+   and Language each render a dedicated page instead of all pointing to
+   `/farmer/account/settings`. New files:
+   - `FarmerSecurity.tsx`, `FarmerLanguage.tsx`, `FarmerVerification.tsx`
+   - Route pages under `(farmer)/farmer/account/{security,language,verification}/`
+   - `FarmerOverview.tsx` tile hrefs updated; `AccountShell.tsx` sidebar nav
+     extended with three new items.
+
+2. **Language switched from Juba Arabic to standard Arabic.** The entire
+   codebase now uses `'ar'` instead of `'ar-juba'`:
+   - PostgreSQL enum value renamed via migration
+     `20260920160000_rename_language_ar_juba_to_ar`
+   - Prisma schema updated (`ar` replaces `ar_juba @map("ar-juba")`)
+   - Full Arabic translations written for all ~250 farmer-facing strings in
+     `apps/web/lib/i18n/ar.ts` (new file, replaces `ar-juba.ts`)
+   - i18n keys renamed: `language.arjubaName` → `language.arabicName`,
+     `language.arjubaNative` → `language.arabicNative`
+   - 21 files updated: components, fixtures, format helpers, shared schemas,
+     conventions doc, tests
+   - `LANGUAGE_LABELS` in `format.ts` now shows `العربية` for Arabic
+
+**Verified.** Typecheck, ESLint, Prettier and all 640 pure tests pass.
+
+**Planned next.** Verify CI passes on `9cef199`. Check for any remaining
+fixture data that should be removed.
+
+**Needs from Monkon-Claude.** Run the migration
+`20260920160000_rename_language_ar_juba_to_ar` on staging/production when
+ready — it renames the PostgreSQL enum value from `'ar-juba'` to `'ar'`.
+
+— Alieu-Claude
