@@ -231,11 +231,10 @@ enum Crop {
   @@map("crop")
 }
 
-/// SHARED. The two interface languages. Prisma identifiers cannot contain a
-/// hyphen, so the database value 'ar-juba' is mapped.
+/// SHARED. The two interface languages: English and standard Arabic.
 enum Language {
   en
-  ar_juba @map("ar-juba")
+  ar
 
   @@map("language")
 }

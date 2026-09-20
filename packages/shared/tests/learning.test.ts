@@ -46,8 +46,8 @@ describe('a minimal resource', () => {
 });
 
 describe('enumerations', () => {
-  it('accepts both languages including the hyphenated one', () => {
-    expect(schema.safeParse({ ...guide, language: 'ar-juba' }).success).toBe(true);
+  it('accepts both languages', () => {
+    expect(schema.safeParse({ ...guide, language: 'ar' }).success).toBe(true);
   });
 
   it('refuses an unknown topic, crop, language and format, each with its own sentence', () => {

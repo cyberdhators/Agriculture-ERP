@@ -114,7 +114,7 @@ const ACCOUNT_TILES: ReadonlyArray<{
     ),
   },
   {
-    href: '/farmer/account/settings',
+    href: '/farmer/account/security',
     title: 'account.tileSecurity',
     sub: 'account.tileSecuritySub',
     glyph: (
@@ -132,7 +132,7 @@ const ACCOUNT_TILES: ReadonlyArray<{
     ),
   },
   {
-    href: '/farmer/account/settings',
+    href: '/farmer/account/language',
     title: 'account.tileLanguage',
     sub: 'account.tileLanguageSub',
     glyph: (
@@ -150,7 +150,7 @@ const ACCOUNT_TILES: ReadonlyArray<{
     ),
   },
   {
-    href: '/farmer/account/settings',
+    href: '/farmer/account/verification',
     title: 'account.tileVerification',
     sub: 'account.tileVerificationSub',
     glyph: (

@@ -153,14 +153,14 @@ run('C-13.7: one live catalogue card per stored file', () => {
     expect(row.published).toBe(false);
   });
 
-  it('stores the hyphenated language value exactly', async () => {
+  it('stores the Arabic language value exactly', async () => {
     const row = await prisma.learningResource.create({
-      data: { ...card, storagePath: `${PATH}/arabi.pdf`, language: 'ar_juba' },
+      data: { ...card, storagePath: `${PATH}/arabi.pdf`, language: 'ar' },
     });
     const raw = await prisma.$queryRawUnsafe<{ language: string }[]>(
       `SELECT language::text FROM public.learning_resource WHERE id = '${row.id}'::uuid`,
     );
-    expect(raw[0]?.language).toBe('ar-juba');
+    expect(raw[0]?.language).toBe('ar');
   });
 });
 

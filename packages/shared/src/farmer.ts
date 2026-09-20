@@ -48,7 +48,7 @@ export const FARMER_MESSAGES = {
   consentNotObject: 'Consent must be recorded as an object.',
   consentTextVersionRequired: 'Record which consent text was read.',
   consentTextVersionTooLong: 'The consent text version can be at most 32 characters.',
-  consentLanguageInvalid: 'Choose en or ar-juba for the consent language.',
+  consentLanguageInvalid: 'Choose en or ar for the consent language.',
   consentGrantedNotBoolean: 'Say whether consent was granted, true or false.',
   filterStatusInvalid: 'Choose pending, verified or rejected.',
   filterDateInvalid: 'Give the date as an ISO 8601 timestamp.',

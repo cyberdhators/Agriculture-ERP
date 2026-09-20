@@ -54,7 +54,7 @@ export const CROP_LABELS: Record<Crop, string> = {
 
 export const LANGUAGE_LABELS: Record<Language, string> = {
   en: 'English',
-  'ar-juba': 'Arabi Juba',
+  ar: 'العربية',
 };
 
 export const FORMAT_LABELS: Record<ResourceFormat, string> = {
@@ -74,7 +74,7 @@ const DATE_FORMATTERS = new Map<Language, Intl.DateTimeFormat>();
 function dateFormatter(language: Language): Intl.DateTimeFormat {
   let f = DATE_FORMATTERS.get(language);
   if (!f) {
-    f = new Intl.DateTimeFormat(language === 'ar-juba' ? 'ar' : 'en-GB', DATE_OPTS);
+    f = new Intl.DateTimeFormat(language === 'ar' ? 'ar' : 'en-GB', DATE_OPTS);
     DATE_FORMATTERS.set(language, f);
   }
   return f;

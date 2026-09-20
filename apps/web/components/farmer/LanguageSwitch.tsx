@@ -5,7 +5,7 @@ import { t, type Language } from '@/lib/i18n';
 
 import styles from './farmer.module.css';
 
-/** English / عربي جوبا, two pressed-state buttons. */
+/** English / العربية, two pressed-state buttons. */
 export function LanguageButtons({
   value,
   onChange,
@@ -26,12 +26,12 @@ export function LanguageButtons({
       <button
         type="button"
         className={styles.panelLangBtn}
-        aria-pressed={value === 'ar-juba'}
-        onClick={() => onChange('ar-juba')}
+        aria-pressed={value === 'ar'}
+        onClick={() => onChange('ar')}
         lang="ar"
         dir="rtl"
       >
-        {t('language.arjubaNative', 'en')}
+        {t('language.arabicNative', 'en')}
       </button>
     </div>
   );

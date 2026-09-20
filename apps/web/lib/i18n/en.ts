@@ -1,8 +1,8 @@
 /**
  * The English interface strings for the farmer flow. This is the base
- * dictionary: every key the flow uses lives here, and `ar-juba.ts` overrides
- * only the handful of keys CORWADO has supplied translated text for. English
- * is the fallback for everything else, on purpose (see ar-juba.ts).
+ * dictionary: every key the flow uses lives here, and `ar.ts` overrides
+ * the keys that have Arabic translations. English is the fallback for
+ * everything else, on purpose (see ar.ts).
  */
 export const en = {
   // Wordmark / shell
@@ -17,8 +17,8 @@ export const en = {
 
   // Language screen
   'language.name': 'English',
-  'language.arjubaName': 'Arabi Juba',
-  'language.arjubaNative': 'عربي جوبا',
+  'language.arabicName': 'Arabic',
+  'language.arabicNative': 'العربية',
   'language.title': 'Choose your language',
   'language.subtitle': 'You can change this later in your account.',
   'language.continue': 'Continue',

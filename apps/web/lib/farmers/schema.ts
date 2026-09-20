@@ -169,7 +169,7 @@ export function validateFarmer(
   if (input.registration_source !== 'officer' && input.registration_source !== 'self')
     errors.registration_source = 'Record how the farmer was registered.';
 
-  if (input.consent_language !== 'en' && input.consent_language !== 'ar-juba')
+  if (input.consent_language !== 'en' && input.consent_language !== 'ar')
     errors.consent_language = 'Select the language the consent was read in.';
 
   if (!input.consent_granted)

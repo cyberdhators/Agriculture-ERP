@@ -239,6 +239,57 @@ const NAV_GROUPS: readonly NavGroup[] = [
           </svg>
         ),
       },
+      {
+        href: '/farmer/account/security',
+        key: 'account.tileSecurity',
+        glyph: (
+          <svg
+            viewBox="0 0 24 24"
+            width="20"
+            height="20"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+          >
+            <path d="M12 3l7 3v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z" />
+            <path d="M9.5 12l1.8 1.8L15 10" />
+          </svg>
+        ),
+      },
+      {
+        href: '/farmer/account/language',
+        key: 'account.tileLanguage',
+        glyph: (
+          <svg
+            viewBox="0 0 24 24"
+            width="20"
+            height="20"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+          >
+            <circle cx="12" cy="12" r="9" />
+            <path d="M3 12h18M12 3c2.5 2.5 2.5 15 0 18M12 3c-2.5 2.5-2.5 15 0 18" />
+          </svg>
+        ),
+      },
+      {
+        href: '/farmer/account/verification',
+        key: 'account.tileVerification',
+        glyph: (
+          <svg
+            viewBox="0 0 24 24"
+            width="20"
+            height="20"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+          >
+            <path d="M12 3l2.3 1.6 2.8-.2 1 2.6 2.3 1.6-.8 2.7.8 2.7-2.3 1.6-1 2.6-2.8-.2L12 21l-2.3-1.6-2.8.2-1-2.6-2.3-1.6.8-2.7-.8-2.7 2.3-1.6 1-2.6 2.8.2z" />
+            <path d="M9 12l2 2 4-4" />
+          </svg>
+        ),
+      },
     ],
   },
 ];

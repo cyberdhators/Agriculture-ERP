@@ -7,9 +7,8 @@ import { parseSouthSudanMobile } from '@agri-erp/shared';
 
 import { Button, Field, Notice, PasswordInput, PrefixedInput } from '@/components/ui';
 import { validatePassword } from '@/lib/farmers/schema';
-import { farmerPayamName } from '@/lib/fixtures/farmers';
 import { useFarmerSession } from '@/lib/farmer-session';
-import { t, type Language } from '@/lib/i18n';
+import { t } from '@/lib/i18n';
 import { formatPhone } from '@/lib/format';
 
 import { PageHead } from './AccountShell';
@@ -17,15 +16,8 @@ import styles from './farmer.module.css';
 
 type Panel = 'password' | 'phone' | null;
 
-/**
- * The Account tab: the record as it stands (name, farmer number, phone,
- * payam), the language choice, change password (current, new, again), change
- * phone (asks for the password, B12 point 2) and sign out — four ruled cards
- * on a two-column grid.
- */
-export function FarmerAccount() {
-  const { farmer, language, setLanguage, signOut, changePassword, changePhone } =
-    useFarmerSession();
+export function FarmerSecurity() {
+  const { farmer, language, signOut, changePassword, changePhone } = useFarmerSession();
   const router = useRouter();
 
   const [panel, setPanel] = useState<Panel>(null);
@@ -45,11 +37,6 @@ export function FarmerAccount() {
   const [phoneErrors, setPhoneErrors] = useState<{ password?: string; phone?: string }>({});
 
   if (!farmer) return null;
-  const numberPending = farmer.farmer_number.endsWith('-pending');
-
-  function switchLanguage(lang: Language) {
-    setLanguage(lang);
-  }
 
   function open(which: Panel) {
     setPanel((p) => (p === which ? null : which));
@@ -110,7 +97,10 @@ export function FarmerAccount() {
 
   return (
     <>
-      <PageHead title={t('account.tabAccount', language)} />
+      <PageHead
+        title={t('account.tileSecurity', language)}
+        lead={t('account.tileSecuritySub', language)}
+      />
 
       {done === 'password' ? (
         <Notice kind="success" className={styles.block}>
@@ -125,57 +115,8 @@ export function FarmerAccount() {
 
       <div className={styles.settings}>
         <section className={styles.settingCard}>
-          <h2>{t('account.record', language)}</h2>
-          <dl className={styles.recordRows}>
-            <div className={styles.recordRow}>
-              <dt>{t('account.name', language)}</dt>
-              <dd dir="auto">
-                {farmer.given_name} {farmer.family_name}
-              </dd>
-            </div>
-            <div className={styles.recordRow}>
-              <dt>{t('account.farmerNumber', language)}</dt>
-              <dd className={styles.recordValueMono}>
-                {numberPending ? '—' : farmer.farmer_number}
-                {numberPending ? (
-                  <span className={styles.recordNote}>{t('account.numberPending', language)}</span>
-                ) : null}
-              </dd>
-            </div>
-            <div className={styles.recordRow}>
-              <dt>{t('account.phone', language)}</dt>
-              <dd className={styles.recordValueMono}>{formatPhone(farmer.phone)}</dd>
-            </div>
-            <div className={styles.recordRow}>
-              <dt>{t('account.payam', language)}</dt>
-              <dd>{farmerPayamName(farmer.payam_id)}</dd>
-            </div>
-          </dl>
-        </section>
-
-        <section className={styles.settingCard}>
-          <h2>{t('account.changeLanguage', language)}</h2>
-          <p className="small muted">{t('language.subtitle', language)}</p>
-          <div className={styles.choiceRow}>
-            <button
-              type="button"
-              className={`${styles.choice} ${language === 'en' ? styles.choiceSelected : ''}`}
-              aria-pressed={language === 'en'}
-              onClick={() => switchLanguage('en')}
-            >
-              {t('language.name', language)}
-            </button>
-            <button
-              type="button"
-              className={`${styles.choice} ${language === 'ar' ? styles.choiceSelected : ''}`}
-              aria-pressed={language === 'ar'}
-              onClick={() => switchLanguage('ar')}
-              dir="rtl"
-              lang="ar"
-            >
-              {t('language.arabicNative', language)}
-            </button>
-          </div>
+          <h2>{t('account.phone', language)}</h2>
+          <p className="mono">{formatPhone(farmer.phone)}</p>
         </section>
 
         <section className={styles.settingCard}>

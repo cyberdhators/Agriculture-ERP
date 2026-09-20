@@ -21,8 +21,8 @@ export type VerificationStatus = 'pending' | 'verified' | 'rejected';
 export type RegistrationSource = 'officer' | 'self';
 export type AccuracyFlag = 'good' | 'poor' | 'unusable';
 export type FarmSyncStatus = 'waiting' | 'sending' | 'synced' | 'failed';
-export type ConsentVersion = 'v1.0-en' | 'v1.0-ar-juba';
-export type ConsentLanguage = 'en' | 'ar-juba';
+export type ConsentVersion = 'v1.0-en' | 'v1.0-ar';
+export type ConsentLanguage = 'en' | 'ar';
 export type MemberRole = 'member' | 'chair' | 'treasurer' | 'secretary';
 export type ReviewDecision = 'verified' | 'merged' | 'rejected';
 export type UserRole = 'admin' | 'supervisor' | 'read_only';
@@ -415,7 +415,7 @@ const SEEDS: Seed[] = [
     status: 'verified',
     officer: 1,
     nid: '99C5540098',
-    lang: 'ar-juba',
+    lang: 'ar',
     createdDaysAgo: 52,
     sync: 'synced',
     farms: [{ targetHa: 1.1, accuracy: 'good', gps: 7, crops: ['sesame', 'maize'], centre: C(4) }],
@@ -472,7 +472,7 @@ const SEEDS: Seed[] = [
     status: 'verified',
     officer: 1,
     nid: '99E8890011',
-    lang: 'ar-juba',
+    lang: 'ar',
     createdDaysAgo: 47,
     sync: 'synced',
     farms: [{ targetHa: 0.4, accuracy: 'poor', gps: 22, crops: ['sesame'], centre: C(7) }],
@@ -606,7 +606,7 @@ const SEEDS: Seed[] = [
     status: 'pending',
     officer: 1,
     nid: '99K7712093',
-    lang: 'ar-juba',
+    lang: 'ar',
     createdDaysAgo: 6,
     sync: 'synced',
     farms: [{ targetHa: 1.2, accuracy: 'good', gps: 9, crops: ['sesame'], centre: C(15) }],
@@ -666,7 +666,7 @@ const SEEDS: Seed[] = [
     status: 'pending',
     officer: null,
     nid: null,
-    lang: 'ar-juba',
+    lang: 'ar',
     createdDaysAgo: 16,
     sync: 'waiting',
     farms: [
@@ -846,7 +846,7 @@ const SEEDS: Seed[] = [
     status: 'verified',
     officer: 1,
     nid: '99P2234981',
-    lang: 'ar-juba',
+    lang: 'ar',
     createdDaysAgo: 63,
     sync: 'synced',
     farms: [
@@ -978,7 +978,7 @@ const SEEDS: Seed[] = [
     status: 'pending',
     officer: 1,
     nid: null,
-    lang: 'ar-juba',
+    lang: 'ar',
     createdDaysAgo: 4,
     sync: 'synced',
     farms: [{ targetHa: 0.6, accuracy: 'good', gps: 9, crops: ['sesame'], centre: C(32) }],
@@ -1012,7 +1012,7 @@ const SEEDS: Seed[] = [
     status: 'pending',
     officer: null,
     nid: null,
-    lang: 'ar-juba',
+    lang: 'ar',
     createdDaysAgo: 14,
     sync: 'failed',
     reason: 'no_network',
@@ -1195,7 +1195,7 @@ const farmers: Farmer[] = SEEDS.map((seed, i) => {
   consents.push({
     id: consentId,
     farmer_id: farmerId,
-    text_version: seed.lang === 'ar-juba' ? 'v1.0-ar-juba' : 'v1.0-en',
+    text_version: seed.lang === 'ar' ? 'v1.0-ar' : 'v1.0-en',
     language: seed.lang,
     granted: true,
     granted_at: createdAt,
@@ -1899,7 +1899,7 @@ export const FARMER_FIXTURE_PASSWORD = 'farmer123';
 export const FARMER_LOGIN_PHONES: ReadonlyArray<{ phone: string; who: string }> = [
   { phone: farmers[0]!.phone, who: 'Mary Aluel — verified, live listings' },
   { phone: farmers[12]!.phone, who: 'Nadia Kuku — self-registered, pending' },
-  { phone: farmers[2]!.phone, who: 'محمد إدريس — verified, Arabi Juba' },
+  { phone: farmers[2]!.phone, who: 'محمد إدريس — verified, Arabic' },
 ];
 
 export { CE_PAYAM_IDS };

@@ -81,7 +81,7 @@ function ResourceList({
 }: {
   title: string;
   rows: LearningResourceRow[];
-  language: 'en' | 'ar-juba';
+  language: 'en' | 'ar';
   empty?: string;
 }) {
   return (
