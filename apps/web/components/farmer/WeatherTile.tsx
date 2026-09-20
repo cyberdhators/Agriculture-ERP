@@ -71,7 +71,6 @@ export function WeatherTile({ payamId, language }: { payamId: string; language: 
             <span className={styles.weatherHeroMeta}>
               {loc.stale ? `${t('weather.stale', language)} · ` : ''}
               {t('weather.asOf', language)} {timeOf(loc.fetched_at, language)}
-              {w.live ? '' : ` · ${t('weather.placeholder', language)}`}
             </span>
             {loc.forecast.length > 0 ? (
               <button

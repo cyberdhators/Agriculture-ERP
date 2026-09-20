@@ -1807,3 +1807,82 @@ components.
 end-to-end verification once seeded listings exist in staging.
 
 — Alieu-Claude
+
+### 2026-09-20 (evening) — Alieu-Claude — fixture removal, CI fixes, farmer listings fix
+
+**Done.** Three commits pushed to main:
+
+1. `3e165d9` — CI fix: added two missing audit keys (`weather_location.updated`,
+   `weather_location.soft_deleted`) to the migration CHECK constraint (was 63,
+   now 65 to match `AUDIT_ACTIONS`), added 10 marketplace audit keys to
+   `docs/api/CONVENTIONS.md`, and registered 3 new public listing routes in
+   `public-route-scan.test.ts`.
+
+2. `3931ac6` — Fixture removal + migration fix:
+   - Removed `LISTINGS` fixture import from `farmer-session.ts` (listings state
+     now starts empty instead of from fixture array), `BuyerRequests.tsx`
+     (now fetches listing titles from the API), and `ShopMasthead.tsx` (merged
+     API count with local count).
+   - `FarmerListings.tsx` now merges API results with `listingsFor()` from the
+     client-side store so locally-saved listings are not lost.
+   - New migration `20260920150000`: fixed `contact_phone` DEFAULT from 8 to 9
+     digits after `+211` (was failing the CHECK constraint on INSERT), and
+     recreated `produce_listing_active` view to include the 13 columns added
+     by migration `20260920100000` (PostgreSQL `SELECT *` snapshots columns
+     at CREATE VIEW time).
+
+**Result.** The marketplace now shows only produce entered by real farmers
+via the API. No fixture data leaks into any marketplace component. The
+`LISTINGS` constant still exists in `fixtures/farmers.ts` but nothing imports
+it. The `FARMERS` fixture is still used for the farmer login stub (expected
+until B12 lands real auth).
+
+**CI.** Run #381 (commit `3931ac6`) is in progress. Previous failures:
+- #378: audit key count mismatch → fixed in `3e165d9`
+- #380: phone format DEFAULT + stale view → fixed in `3931ac6`
+
+**Planned next.** Verify CI passes. End-to-end verification of farmer account
+flow (login → create listing → view listings → marketplace visibility) once
+staging has seeded data.
+
+**Needs from Monkon-Claude.** Nothing.
+
+— Alieu-Claude
+
+### 2026-09-20 (evening, continued) — Alieu-Claude — farmer weather powered by live API
+
+**Done.** The farmer dashboard weather tile now fetches live weather data from the
+database via a new public API route, instead of showing hardcoded fixture data.
+
+**What changed, in 4 files:**
+
+- New `app/api/weather/forecast/route.ts`: public route (`roles: 'public'`)
+  accepting `?payam_id=xxx`. Resolves the farmer's county from the payam_id,
+  queries the `weather_location`, `weather_observation` and `weather_forecast`
+  tables, and returns the same shape as the staff `GET /api/weather` route.
+  No auth needed — weather data is not sensitive, and farmers have no server
+  session until B12.
+- `lib/weather/api.ts`: removed the `LIVE_WEATHER` feature gate and the
+  `FIXTURE` constant. Added `fetchFarmerWeather(payamId)` that calls the
+  public endpoint. `useWeather()` now always fetches from the API (keyed on
+  `payamId`), no longer conditional.
+- `components/farmer/WeatherTile.tsx`: removed the "placeholder" label that
+  appeared when `LIVE_WEATHER` was off.
+- `tests/public-route-scan.test.ts`: registered `weather/forecast` as an
+  expected public route.
+
+**Verified.** `GET /api/weather/forecast?payam_id=CE-JUB-001` returns real
+weather data from the database (36.7°C, scattered clouds, Juba County).
+Typecheck, lint, format and 640 pure tests all pass.
+
+**The weather fetch job** (`scripts/weather-fetch.mjs`) already exists and
+populates the database from OpenWeather. It needs `OPENWEATHER_API_KEY` in
+`.env.local` and should be run on a schedule (or manually via
+`pnpm weather:fetch`) to keep the data fresh. The current cached data is
+from Sep 15 and shows as stale — a fresh fetch will fix that.
+
+**Planned next.** Push to main, verify CI passes.
+
+**Needs from Monkon-Claude.** Nothing.
+
+— Alieu-Claude

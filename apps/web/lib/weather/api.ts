@@ -5,23 +5,20 @@ import { useEffect, useMemo, useState } from 'react';
 import { pickLocation } from './pick';
 
 /**
- * Client data layer for the weather tile (C-16), written to the route
- * contract agreed before either half existed: docs/api/weather-contract.md
- * (#78), including its dated §9 on where the built route (#93) diverged:
- * locations are county-level, so payam_id and payam_name are null and the row
- * carries level, name and county_name; an officer's scope is their county;
- * an unfetched location is omitted, so current is never null; the forecast is
- * up to five days; current carries observed_at. GET /api/weather, no parameters; the server scopes by role; a caller
- * with no locations gets 200 and an empty list, which is a normal state and
- * renders as "no weather location for your area yet", never as an error.
- * The route never renders a sentence — numbers and provider strings only —
- * so wording lives here. Gated by NEXT_PUBLIC_USE_LIVE_WEATHER (off =
- * the fixture below, one county-level row, plainly invented).
+ * Client data layer for the weather tile (C-16). Calls the public
+ * GET /api/weather/forecast?payam_id=... endpoint, which reads cached
+ * weather data from the database — no auth required (weather is not
+ * sensitive). The fetch job (scripts/weather-fetch.mjs) fills the cache
+ * on a schedule; this only reads.
  */
-export const LIVE_WEATHER = process.env.NEXT_PUBLIC_USE_LIVE_WEATHER === '1';
+
+const DEFAULT_ATTRIBUTION: WeatherAttribution = {
+  text: 'Weather data provided by OpenWeather',
+  url: 'https://openweathermap.org',
+  logo_required: true,
+};
 
 export interface WeatherCurrent {
-  /** The provider's moment, beside our fetched_at (§9.4). */
   observed_at: string | null;
   temp_c: number;
   humidity_pct: number;
@@ -45,7 +42,6 @@ export interface WeatherDay {
 
 export interface WeatherLocation {
   location_id: string;
-  /** What the place is called on screen, e.g. "Juba County" (§9.1). */
   name: string;
   level: 'county' | 'payam';
   payam_id: string | null;
@@ -55,15 +51,12 @@ export interface WeatherLocation {
   state_id: string;
   latitude: number;
   longitude: number;
-  /** Always the real fetch time, never now(). Shown, deliberately. */
   fetched_at: string;
-  /** The last fetch failed and this row is older than it should be. Served, not hidden. */
   stale: boolean;
   current: WeatherCurrent | null;
   forecast: WeatherDay[];
 }
 
-/** A licence condition, not decoration: rendered where the weather is shown. */
 export interface WeatherAttribution {
   text: string;
   url: string;
@@ -100,108 +93,50 @@ export async function listWeather(): Promise<WeatherResponse> {
   }
   return {
     data: body.data ?? [],
-    attribution: body.attribution ?? FIXTURE.attribution,
+    attribution: body.attribution ?? DEFAULT_ATTRIBUTION,
   };
 }
 
-/**
- * PLACEHOLDER, plainly invented: one county-level row for Juba county, so the
- * tile can be walked before the route exists. Figures are made up.
- */
-export const FIXTURE: WeatherResponse = {
-  data: [
-    {
-      location_id: '00000000-0000-4000-8000-00000000c16a',
-      name: 'Juba County',
-      level: 'county',
-      payam_id: null,
-      payam_name: null,
-      county_id: 'CE-JUB',
-      county_name: 'Juba',
-      state_id: 'CE',
-      latitude: 4.85,
-      longitude: 31.58,
-      fetched_at: '2026-09-15T05:00:00Z',
-      stale: false,
-      current: {
-        observed_at: '2026-09-15T04:50:00Z',
-        temp_c: 29,
-        humidity_pct: 68,
-        wind_kph: 9,
-        rain_mm: 0,
-        conditions: 'scattered clouds',
-        icon: '03d',
-      },
-      forecast: [
-        {
-          forecast_for: '2026-09-16',
-          temp_max_c: 32,
-          temp_min_c: 22,
-          rain_mm: 6,
-          rain_probability: 0.6,
-          humidity_pct: 70,
-          wind_kph: 10,
-          conditions: 'light rain',
-          icon: '10d',
-        },
-        {
-          forecast_for: '2026-09-17',
-          temp_max_c: 31,
-          temp_min_c: 22,
-          rain_mm: 11,
-          rain_probability: 0.7,
-          humidity_pct: 70,
-          wind_kph: 10,
-          conditions: 'rain',
-          icon: '10d',
-        },
-        {
-          forecast_for: '2026-09-18',
-          temp_max_c: 33,
-          temp_min_c: 23,
-          rain_mm: 0,
-          rain_probability: 0.1,
-          humidity_pct: 70,
-          wind_kph: 10,
-          conditions: 'clear sky',
-          icon: '01d',
-        },
-      ],
-    },
-  ],
-  attribution: {
-    text: 'Weather data provided by OpenWeather',
-    url: 'https://openweathermap.org',
-    logo_required: true,
-  },
-};
+export async function fetchFarmerWeather(payamId: string): Promise<WeatherResponse> {
+  const res = await fetch(`/api/weather/forecast?payam_id=${encodeURIComponent(payamId)}`, {
+    headers: { accept: 'application/json' },
+  });
+  const body = (await res.json().catch(() => ({}))) as Partial<WeatherResponse> & {
+    error?: { code: string; message: string };
+  };
+  if (!res.ok) {
+    throw new WeatherApiError(
+      res.status,
+      body.error?.code ?? 'request_failed',
+      body.error?.message ?? `Request failed (${res.status})`,
+    );
+  }
+  return {
+    data: body.data ?? [],
+    attribution: body.attribution ?? DEFAULT_ATTRIBUTION,
+  };
+}
 
 export interface WeatherView {
-  live: boolean;
   loading: boolean;
   error?: string;
   location: WeatherLocation | null;
   attribution: WeatherAttribution;
 }
 
-/**
- * The one row for a farmer's place, or null when the route has none yet.
- *
- * NOT YET READABLE BY A FARMER: GET /api/weather admits the four staff roles,
- * and a farmer holds no server session (audit, root cause 1). Switching
- * LIVE_WEATHER on today would give a farmer "could not be read". The tile stays
- * on the labelled placeholder until the farmer principal exists or the route
- * admits a farmer's county read — Lane 1's call, asked in HANDOFF.
- */
 export function useWeather(payamId: string | null): WeatherView {
-  const [res, setRes] = useState<WeatherResponse | null>(LIVE_WEATHER ? null : FIXTURE);
-  const [loading, setLoading] = useState(LIVE_WEATHER);
+  const [res, setRes] = useState<WeatherResponse | null>(null);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | undefined>();
 
   useEffect(() => {
-    if (!LIVE_WEATHER) return;
+    if (!payamId) {
+      setLoading(false);
+      return;
+    }
     let on = true;
-    listWeather()
+    setLoading(true);
+    fetchFarmerWeather(payamId)
       .then((r) => on && (setRes(r), setError(undefined)))
       .catch((e: unknown) => {
         if (on) setError(e instanceof Error ? e.message : 'Could not read the weather.');
@@ -210,15 +145,14 @@ export function useWeather(payamId: string | null): WeatherView {
     return () => {
       on = false;
     };
-  }, []);
+  }, [payamId]);
 
   return useMemo(
     () => ({
-      live: LIVE_WEATHER,
       loading,
       error,
       location: res && payamId ? pickLocation(res.data, payamId) : null,
-      attribution: res?.attribution ?? FIXTURE.attribution,
+      attribution: res?.attribution ?? DEFAULT_ATTRIBUTION,
     }),
     [res, payamId, loading, error],
   );
