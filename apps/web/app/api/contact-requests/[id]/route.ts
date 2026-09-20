@@ -83,7 +83,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       }
 
       const row = await audited(prisma, async (tx) => {
-        const [updated] = await tx.$queryRawUnsafe<ContactRow[]>(
+        const rows = await tx.$queryRawUnsafe<ContactRow[]>(
           `UPDATE public.contact_request
            SET status = $2::contact_status,
                note = $3,
@@ -99,6 +99,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
           note,
           auth.principal.id,
         );
+        const updated = rows[0]!;
 
         await writeAudit(tx, {
           entityType: 'contact_request',

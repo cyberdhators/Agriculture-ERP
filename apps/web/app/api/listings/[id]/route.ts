@@ -98,7 +98,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   PATCH: {
     roles: 'public',
     handler: async (ctx) => {
-      const { id } = ctx.params;
+      const id = ctx.params.id as string;
 
       let raw: unknown;
       try {
@@ -268,13 +268,14 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       }
 
       const row = await audited(prisma, async (tx) => {
-        const [updated] = await tx.$queryRawUnsafe<ListingRow[]>(
+        const rows = await tx.$queryRawUnsafe<ListingRow[]>(
           `UPDATE public.produce_listing
            SET ${sets.join(', ')}
            WHERE id = $1::uuid
            RETURNING ${SELECT_COLUMNS}`,
           ...params,
         );
+        const updated = rows[0]!;
 
         const action = statusChanged ? 'listing.status_changed' : 'listing.updated';
         await writeAudit(tx, {
@@ -284,7 +285,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
           actorId: null,
           action,
           before: statusChanged ? { status: existing.status } : undefined,
-          after: statusChanged ? { status: input.status } : { title: updated.title },
+          after: statusChanged ? { status: input.status as string } : { title: updated.title },
         });
 
         return updated;

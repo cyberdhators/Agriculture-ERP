@@ -92,7 +92,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
 
       // --- Insert and audit ---
       const row = await audited(prisma, async (tx) => {
-        const [inserted] = await tx.$queryRawUnsafe<ContactRow[]>(
+        const rows = await tx.$queryRawUnsafe<ContactRow[]>(
           `INSERT INTO public.contact_request
              (listing_id, farmer_id, buyer_name, buyer_phone, message, quantity)
            VALUES ($1::uuid, $2::uuid, $3, $4, $5, $6)
@@ -107,6 +107,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
           message,
           quantity,
         );
+        const inserted = rows[0]!;
 
         await writeAudit(tx, {
           entityType: 'contact_request',
