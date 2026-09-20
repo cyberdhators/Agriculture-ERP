@@ -51,6 +51,11 @@ export default defineConfig({
   test: {
     include: ['apps/**/*.test.ts', 'packages/**/*.test.ts', 'tests/**/*.test.ts'],
     environment: 'node',
+    // Stated, not inherited. An empty run is a failure: a glob that stops
+    // matching would otherwise exit 0 and report nothing, which is the shape
+    // of every silent-class finding in PROJECT-STATE. The pure config has said
+    // this since 2026-09-11; this one was relying on the default.
+    passWithNoTests: false,
     // B5.5: refuse to run without the staging environment, and hold the
     // one-run-at-a-time advisory lock for the whole run.
     globalSetup: ['./vitest.global-setup.ts'],

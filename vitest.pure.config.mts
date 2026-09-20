@@ -41,6 +41,7 @@ export default defineConfig({
   test: {
     include: [
       'tests/conventions-rules.test.ts',
+      'tests/database-suite-complete.test.ts',
       'tests/pure-suite-complete.test.ts',
       'apps/web/**/*.test.ts',
       'packages/shared/tests/**/*.test.ts',

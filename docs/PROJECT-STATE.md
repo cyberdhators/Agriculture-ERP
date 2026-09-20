@@ -2299,6 +2299,44 @@ writing it.** Three instances in one session, by the session that had just
 recorded the pattern. That is the argument for gates that compare rather than
 resolutions to be careful.
 
+**THE OTHER SIDE OF THE SAME COIN, AND IT COMPLETES THE GATE PRINCIPLE
+(2026-09-20).** This section says absence of a report is not a report. Here is
+what produces that absence:
+
+> **A guard that lives inside the thing it guards cannot report on that thing's
+> absence.** It can only ever speak for what is already running.
+
+**B5.5 closed a mechanism, not a class.** Its fix was `requireTestEnv`, which
+makes a database test refuse loudly when its variables are missing instead of
+skipping — and that genuinely closed the eight-silently-skipped-files fault. But
+the guard is a call INSIDE each test file. A file that is deleted, renamed out
+of the include globs, or emptied never executes, so it never reaches its own
+guard, and the suite reports green with one file fewer. **The run's total is
+printed and was never asserted.** Checked on 2026-09-20: the pure suite had a
+completeness guard since 2026-09-11 and the staging suite had none.
+
+**So the gate principle has a completing half:**
+
+> **A comparing gate must compare FROM OUTSIDE, or it can only ever check what
+> is present.**
+
+An inside guard answers "is this thing correct?" — a useful question, and the
+only one it can answer. An outside guard answers "is this thing here at all?",
+which is the question that goes unasked because nothing is there to ask it.
+Every silent-class finding in this project is one or the other of those two
+questions having no owner.
+
+`tests/database-suite-complete.test.ts` is the outside guard for the staging
+suite: it walks the repository, compares the files that reach the database
+against a declared list, and fails in **both** directions — a file present and
+undeclared, and a name declared that is no longer there. The second catches a
+deletion. **It asserts the set, not the count**, because a count is brittle
+against legitimate additions and brittle guards get relaxed rather than obeyed.
+It was proved by making it fail: `tests/reporting.test.ts` was moved aside and
+the guard named it. And on its first run it caught ITSELF — the marker names
+appeared in its own prose, so it read as a database test and failed for being
+undeclared, exactly as the pure guard had done before it.
+
 **A FOURTH INSTANCE, 2026-09-19, AND THE READER WAS THE FAULT THIS TIME.**
 `pnpm schema:check` was run as `node scripts/schema-check.mjs 2>&1 | tail -3 ||
 true` while `prisma/schema.prisma` was invalid. The script behaved perfectly:
@@ -3347,6 +3385,24 @@ audit and the fetch's silence — and **has not run**, because the staging-rows
 refusal in the global setup fires on the hand-made `Placeholder-Deng` farmer,
 as designed. It runs the moment that row is gone.
 
+**CORRECTION, 2026-09-20: THIS FILE WAS NEVER MERGED UNPROVEN.** Git:
+`tests/weather.test.ts` first reached `main` in `f1d42ad` (#93), the same commit
+that made its tests pass. It spent five days **unmerged with red CI** and merged
+the hour it went green. That is the gate working exactly as designed, not a file
+slipping through it.
+
+**AND THE RECORD WAS NOT AT FAULT — THE INFERENCE FROM IT WAS.** The entry
+below said "has not run", which was accurate about the file's state and stayed
+accurate. What went wrong is that it was read as **"merged unproven"** and
+repeated as fact in an instruction, and the distance between those two readings
+is the entire finding: the record was right about WHAT the file was, and the
+error was an assumption about WHERE it was. Stated plainly rather than kindly,
+because a tally that softens its entries stops being a tally. **The fourth wrong
+premise recorded in this project, and the second caught in two days** — both by
+querying the system instead of re-reading the record, which is the only method
+that works here, since re-reading a record cannot surface a belief the record
+never contained.
+
 **IT RAN ON 2026-09-20 AND FAILED ON FIRST CONTACT — THREE OF ITS TESTS.** The
 row was removed and the file executed for the first time since it was written.
 A scope assertion demanded that the suite's two locations be the ONLY ones in
@@ -3363,6 +3419,12 @@ the file sat in the record among what B12 had built, in a section headed by what
 the unit proved, and **a test that has never run is not evidence.** It is an
 intention. The distance between "written" and "passing" was three real defects
 wide, and none of them was visible from reading it.
+
+**What survives the correction, and what does not.** The rule below stands: a
+criterion is met when a test that has RUN says so. What does not stand is the
+implication that this repository let an unproven file into `main` — it did not,
+and a check of B2 through B11 on 2026-09-20 found **no test file in any unit
+merged without ever running against staging**.
 
 **So the rule for the criteria table below, and for every unit after this one:**
 a criterion is met when a test that has RUN says so. A written test is worth
