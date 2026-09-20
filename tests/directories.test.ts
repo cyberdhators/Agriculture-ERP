@@ -203,7 +203,7 @@ run('the backstop and the shared types', () => {
     expect(byName['crop']).toEqual(
       expect.arrayContaining(['sorghum', 'groundnut', 'sesame', 'maize', 'cowpea']),
     );
-    expect(byName['language']).toEqual(expect.arrayContaining(['en', 'ar-juba']));
+    expect(byName['language']).toEqual(expect.arrayContaining(['en', 'ar']));
   });
 
   it('payam carries the composite target every scoped table needs', async () => {

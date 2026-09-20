@@ -323,7 +323,7 @@ export function DesignPage() {
               Inactive
             </Badge>
             <Badge tone="nile" outline>
-              Arabi Juba
+              Arabic
             </Badge>
             <Badge tone="neutral" outline>
               Draft
@@ -661,7 +661,7 @@ export function DesignPage() {
           </li>
           <li>
             <strong>User text is bidirectional.</strong> Anything a person typed renders with
-            dir="auto" so Arabi Juba reads correctly.
+            dir="auto" so Arabic reads correctly.
           </li>
           <li>
             <strong>Validation is shared.</strong> Forms run the Zod schema from packages/shared and
