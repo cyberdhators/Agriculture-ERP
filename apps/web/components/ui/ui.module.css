@@ -528,9 +528,16 @@ select.control {
 /* ---- Tabs (underlined text, like the masthead) ----------------------- */
 
 .tabs {
-  display: inline-flex;
+  display: flex;
   gap: var(--s-4);
   border-bottom: 1px solid var(--line);
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tabs::-webkit-scrollbar {
+  display: none;
 }
 
 .tab {

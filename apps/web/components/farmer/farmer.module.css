@@ -25,6 +25,8 @@
   background: var(--paper);
   font-size: var(--text-body);
   line-height: 1.5;
+  max-width: 100vw;
+  overflow-x: hidden;
 }
 
 .scope > * {
@@ -469,6 +471,7 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  overflow-x: hidden;
 }
 
 .masthead {
@@ -556,6 +559,7 @@
   max-width: var(--content-max);
   margin: 0 auto;
   width: 100%;
+  min-width: 0;
 }
 
 .sidebar {
@@ -633,6 +637,7 @@
   max-width: var(--content-max);
   margin: 0 auto;
   padding: var(--s-6) var(--s-8) var(--s-10);
+  min-width: 0;
 }
 
 .main:focus {
@@ -1294,6 +1299,7 @@
   top: 0;
   z-index: 20;
   background: var(--band);
+  max-width: 100%;
 }
 
 .shopBar {
@@ -1782,6 +1788,42 @@
 
   .shopStrip {
     padding-inline: var(--s-4);
+  }
+
+  .main {
+    padding: var(--s-4) var(--s-4) var(--s-10);
+  }
+
+  .pageHead {
+    gap: var(--s-3);
+    padding-bottom: var(--s-4);
+    margin-bottom: var(--s-4);
+  }
+
+  .pageTitle h1 {
+    font-size: 24px;
+  }
+
+  .pageLead {
+    font-size: var(--text-small);
+  }
+
+  .footerInner {
+    padding-inline: var(--s-4);
+  }
+
+  .learnItem {
+    grid-template-columns: 28px minmax(0, 1fr);
+    gap: var(--s-2);
+  }
+
+  .learnIcon {
+    width: 28px;
+    height: 28px;
+  }
+
+  .blockHead h2 {
+    font-size: var(--text-subhead);
   }
 }
 
