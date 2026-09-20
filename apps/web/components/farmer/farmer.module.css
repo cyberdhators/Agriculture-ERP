@@ -609,7 +609,9 @@
   font-weight: 500;
   color: var(--ink-2);
   text-decoration: none;
-  transition: background-color 100ms ease, color 100ms ease;
+  transition:
+    background-color 100ms ease,
+    color 100ms ease;
 }
 
 .sidebarItem:hover {

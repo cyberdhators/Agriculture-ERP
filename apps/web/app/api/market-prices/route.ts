@@ -76,9 +76,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
         const cursor = decodeCursor(rawCursor);
         if (!cursor) throw invalidCursor();
         params.push(cursor.createdAt, cursor.id);
-        where.push(
-          `(recorded_on, id) < ($${params.length - 1}::date, $${params.length}::uuid)`,
-        );
+        where.push(`(recorded_on, id) < ($${params.length - 1}::date, $${params.length}::uuid)`);
       }
 
       const rows = await prisma.$queryRawUnsafe<MarketPriceRow[]>(
@@ -95,8 +93,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       const last = page[page.length - 1];
 
       return paged(page.map(present), {
-        cursor:
-          hasMore && last ? encodeCursor({ createdAt: last.recorded_on, id: last.id }) : null,
+        cursor: hasMore && last ? encodeCursor({ createdAt: last.recorded_on, id: last.id }) : null,
         hasMore,
       });
     },

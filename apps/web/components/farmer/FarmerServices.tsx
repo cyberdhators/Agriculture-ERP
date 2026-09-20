@@ -37,30 +37,23 @@ export function FarmerServices() {
 
   const tabs = ENTRY_TYPES.map((type) => ({
     key: type,
-    label:
-      type === 'all'
-        ? t('services.allTypes', language)
-        : t(TYPE_LABEL[type], language),
-    count:
-      type === 'all'
-        ? active.length
-        : active.filter((e) => e.entry_type === type).length,
+    label: type === 'all' ? t('services.allTypes', language) : t(TYPE_LABEL[type], language),
+    count: type === 'all' ? active.length : active.filter((e) => e.entry_type === type).length,
   }));
 
   return (
     <>
-      <PageHead
-        title={t('services.title', language)}
-        lead={t('services.lead', language)}
+      <PageHead title={t('services.title', language)} lead={t('services.lead', language)} />
+
+      <Tabs
+        label={t('services.title', language)}
+        items={tabs}
+        value={filter}
+        onChange={setFilter}
       />
 
-      <Tabs label={t('services.title', language)} items={tabs} value={filter} onChange={setFilter} />
-
       {entries.length === 0 ? (
-        <EmptyState
-          title={t('services.empty', language)}
-          body={t('services.lead', language)}
-        />
+        <EmptyState title={t('services.empty', language)} body={t('services.lead', language)} />
       ) : (
         <div className={styles.serviceGrid}>
           {entries.map((entry) => (

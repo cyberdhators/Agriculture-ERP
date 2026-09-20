@@ -47,7 +47,12 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       const where: string[] = ['n.deleted_at IS NULL'];
       const params: unknown[] = [];
 
-      const scope = scopeCondition(auth.scope, 'f.state_id', 'f.caseload_officer_id', params.length + 1);
+      const scope = scopeCondition(
+        auth.scope,
+        'f.state_id',
+        'f.caseload_officer_id',
+        params.length + 1,
+      );
       if (scope.sql) {
         where.push(scope.sql);
         params.push(...scope.params);
@@ -88,8 +93,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       const last = page[page.length - 1];
 
       return paged(page.map(present), {
-        cursor:
-          hasMore && last ? encodeCursor({ createdAt: last.created_at, id: last.id }) : null,
+        cursor: hasMore && last ? encodeCursor({ createdAt: last.created_at, id: last.id }) : null,
         hasMore,
       });
     },

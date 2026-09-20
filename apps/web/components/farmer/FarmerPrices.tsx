@@ -17,13 +17,62 @@ interface PriceRow {
 }
 
 const FIXTURE_PRICES: readonly PriceRow[] = [
-  { id: 'p1', commodity: 'Sorghum', market_name: 'Konyokonyo Market', price_ssp: 35000, unit: 'bag_100kg', recorded_on: '2026-09-18' },
-  { id: 'p2', commodity: 'Groundnut', market_name: 'Konyokonyo Market', price_ssp: 60000, unit: 'bag_50kg', recorded_on: '2026-09-18' },
-  { id: 'p3', commodity: 'Maize', market_name: 'Konyokonyo Market', price_ssp: 28000, unit: 'bag_100kg', recorded_on: '2026-09-17' },
-  { id: 'p4', commodity: 'Sesame', market_name: 'Gudele Market', price_ssp: 90000, unit: 'bag_50kg', recorded_on: '2026-09-16' },
-  { id: 'p5', commodity: 'Cowpea', market_name: 'Kator Market', price_ssp: 45000, unit: 'bag_50kg', recorded_on: '2026-09-15' },
-  { id: 'p6', commodity: 'Okra (fresh)', market_name: 'Konyokonyo Market', price_ssp: 800, unit: 'kg', recorded_on: '2026-09-18' },
-  { id: 'p7', commodity: 'Tomato', market_name: 'Gudele Market', price_ssp: 1200, unit: 'crate', recorded_on: '2026-09-17' },
+  {
+    id: 'p1',
+    commodity: 'Sorghum',
+    market_name: 'Konyokonyo Market',
+    price_ssp: 35000,
+    unit: 'bag_100kg',
+    recorded_on: '2026-09-18',
+  },
+  {
+    id: 'p2',
+    commodity: 'Groundnut',
+    market_name: 'Konyokonyo Market',
+    price_ssp: 60000,
+    unit: 'bag_50kg',
+    recorded_on: '2026-09-18',
+  },
+  {
+    id: 'p3',
+    commodity: 'Maize',
+    market_name: 'Konyokonyo Market',
+    price_ssp: 28000,
+    unit: 'bag_100kg',
+    recorded_on: '2026-09-17',
+  },
+  {
+    id: 'p4',
+    commodity: 'Sesame',
+    market_name: 'Gudele Market',
+    price_ssp: 90000,
+    unit: 'bag_50kg',
+    recorded_on: '2026-09-16',
+  },
+  {
+    id: 'p5',
+    commodity: 'Cowpea',
+    market_name: 'Kator Market',
+    price_ssp: 45000,
+    unit: 'bag_50kg',
+    recorded_on: '2026-09-15',
+  },
+  {
+    id: 'p6',
+    commodity: 'Okra (fresh)',
+    market_name: 'Konyokonyo Market',
+    price_ssp: 800,
+    unit: 'kg',
+    recorded_on: '2026-09-18',
+  },
+  {
+    id: 'p7',
+    commodity: 'Tomato',
+    market_name: 'Gudele Market',
+    price_ssp: 1200,
+    unit: 'crate',
+    recorded_on: '2026-09-17',
+  },
 ];
 
 const UNIT_LABEL: Record<string, string> = {
@@ -50,15 +99,9 @@ export function FarmerPrices() {
 
   return (
     <>
-      <PageHead
-        title={t('prices.title', language)}
-        lead={t('prices.lead', language)}
-      />
+      <PageHead title={t('prices.title', language)} lead={t('prices.lead', language)} />
       {prices.length === 0 ? (
-        <EmptyState
-          title={t('prices.empty', language)}
-          body={t('prices.lead', language)}
-        />
+        <EmptyState title={t('prices.empty', language)} body={t('prices.lead', language)} />
       ) : (
         <div className={styles.priceTableWrap}>
           <table className={styles.priceTable}>

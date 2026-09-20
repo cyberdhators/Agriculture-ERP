@@ -86,13 +86,29 @@ const presentPublic = (row: ListingRow) => ({
 });
 
 const VALID_CATEGORIES = [
-  'crop', 'vegetable', 'fruit', 'livestock', 'poultry',
-  'dairy', 'fish', 'processed', 'seeds_inputs', 'other',
+  'crop',
+  'vegetable',
+  'fruit',
+  'livestock',
+  'poultry',
+  'dairy',
+  'fish',
+  'processed',
+  'seeds_inputs',
+  'other',
 ];
 
 const VALID_UNITS = [
-  'kg', 'bag_50kg', 'bag_100kg', 'sack', 'crate',
-  'bunch', 'piece', 'head', 'litre', 'tin',
+  'kg',
+  'bag_50kg',
+  'bag_100kg',
+  'sack',
+  'crate',
+  'bunch',
+  'piece',
+  'head',
+  'litre',
+  'tin',
 ];
 
 const VALID_STATUSES = ['draft', 'listed', 'withdrawn', 'sold'];
@@ -139,7 +155,8 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
          FROM public.produce_listing
          WHERE id = $1::uuid AND farmer_id = $2::uuid AND deleted_at IS NULL
          LIMIT 1`,
-        id, farmerId,
+        id,
+        farmerId,
       );
       if (!existing) throw notFound();
 
@@ -151,7 +168,11 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
         if (key in input) {
           const val = typeof input[key] === 'string' ? input[key].trim() : '';
           if (val.length < min || val.length > max) {
-            throw new ApiFailure(400, 'invalid_input', `${key} must be ${min} to ${max} characters.`);
+            throw new ApiFailure(
+              400,
+              'invalid_input',
+              `${key} must be ${min} to ${max} characters.`,
+            );
           }
           sets.push(`${key} = $${paramIdx}`);
           params.push(val);
@@ -167,7 +188,11 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       if ('category' in input) {
         const cat = input.category as string;
         if (!VALID_CATEGORIES.includes(cat)) {
-          throw new ApiFailure(400, 'invalid_input', `category must be one of: ${VALID_CATEGORIES.join(', ')}.`);
+          throw new ApiFailure(
+            400,
+            'invalid_input',
+            `category must be one of: ${VALID_CATEGORIES.join(', ')}.`,
+          );
         }
         sets.push(`category = $${paramIdx}::listing_category`);
         params.push(cat);
@@ -187,7 +212,11 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       if ('unit' in input) {
         const u = input.unit as string;
         if (!VALID_UNITS.includes(u)) {
-          throw new ApiFailure(400, 'invalid_input', `unit must be one of: ${VALID_UNITS.join(', ')}.`);
+          throw new ApiFailure(
+            400,
+            'invalid_input',
+            `unit must be one of: ${VALID_UNITS.join(', ')}.`,
+          );
         }
         sets.push(`unit = $${paramIdx}::listing_unit`);
         params.push(u);
@@ -207,7 +236,11 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       if ('price_per' in input) {
         const pp = input.price_per as string;
         if (!VALID_UNITS.includes(pp)) {
-          throw new ApiFailure(400, 'invalid_input', `price_per must be one of: ${VALID_UNITS.join(', ')}.`);
+          throw new ApiFailure(
+            400,
+            'invalid_input',
+            `price_per must be one of: ${VALID_UNITS.join(', ')}.`,
+          );
         }
         sets.push(`price_per = $${paramIdx}::listing_unit`);
         params.push(pp);
@@ -250,14 +283,20 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       }
 
       if ('harvest_season' in input) {
-        const hs = typeof input.harvest_season === 'string' && input.harvest_season.trim() ? input.harvest_season.trim() : null;
+        const hs =
+          typeof input.harvest_season === 'string' && input.harvest_season.trim()
+            ? input.harvest_season.trim()
+            : null;
         sets.push(`harvest_season = $${paramIdx}`);
         params.push(hs);
         paramIdx++;
       }
 
       if ('pickup_notes' in input) {
-        const pn = typeof input.pickup_notes === 'string' && input.pickup_notes.trim() ? input.pickup_notes.trim() : null;
+        const pn =
+          typeof input.pickup_notes === 'string' && input.pickup_notes.trim()
+            ? input.pickup_notes.trim()
+            : null;
         sets.push(`pickup_notes = $${paramIdx}`);
         params.push(pn);
         paramIdx++;
@@ -279,7 +318,11 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       if ('status' in input) {
         const s = input.status as string;
         if (!VALID_STATUSES.includes(s)) {
-          throw new ApiFailure(400, 'invalid_input', `status must be one of: ${VALID_STATUSES.join(', ')}.`);
+          throw new ApiFailure(
+            400,
+            'invalid_input',
+            `status must be one of: ${VALID_STATUSES.join(', ')}.`,
+          );
         }
         sets.push(`status = $${paramIdx}::listing_status`);
         params.push(s);

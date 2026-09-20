@@ -54,13 +54,15 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
 
       const status = input.status as string;
       if (!OUTCOMES.includes(status as Outcome)) {
-        throw new ApiFailure(400, 'invalid_input', `status must be one of: ${OUTCOMES.join(', ')}.`);
+        throw new ApiFailure(
+          400,
+          'invalid_input',
+          `status must be one of: ${OUTCOMES.join(', ')}.`,
+        );
       }
 
       const note =
-        typeof input.note === 'string' && input.note.trim().length > 0
-          ? input.note.trim()
-          : null;
+        typeof input.note === 'string' && input.note.trim().length > 0 ? input.note.trim() : null;
 
       // Scope check: the contact request's farmer must be in the caller's scope.
       const sc = scopeCondition(auth.scope, 'f.state_id', 'f.caseload_officer_id', 3);

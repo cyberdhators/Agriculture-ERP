@@ -1,4 +1,10 @@
-import { DEFAULT_LIMIT, MAX_LIMIT, decodeCursor, encodeCursor, parseSouthSudanMobile } from '@agri-erp/shared';
+import {
+  DEFAULT_LIMIT,
+  MAX_LIMIT,
+  decodeCursor,
+  encodeCursor,
+  parseSouthSudanMobile,
+} from '@agri-erp/shared';
 
 import { audited, writeAudit } from '../../../lib/api/audit';
 import { ApiFailure, invalidCursor } from '../../../lib/api/errors';
@@ -85,13 +91,29 @@ const SELECT_COLUMNS = `id, farmer_id, trading_name, title,
   created_at::text AS created_at, updated_at::text AS updated_at`;
 
 const VALID_CATEGORIES = [
-  'crop', 'vegetable', 'fruit', 'livestock', 'poultry',
-  'dairy', 'fish', 'processed', 'seeds_inputs', 'other',
+  'crop',
+  'vegetable',
+  'fruit',
+  'livestock',
+  'poultry',
+  'dairy',
+  'fish',
+  'processed',
+  'seeds_inputs',
+  'other',
 ];
 
 const VALID_UNITS = [
-  'kg', 'bag_50kg', 'bag_100kg', 'sack', 'crate',
-  'bunch', 'piece', 'head', 'litre', 'tin',
+  'kg',
+  'bag_50kg',
+  'bag_100kg',
+  'sack',
+  'crate',
+  'bunch',
+  'piece',
+  'head',
+  'litre',
+  'tin',
 ];
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -161,8 +183,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       const mapper = farmerId ? present : presentPublic;
 
       return paged(page.map(mapper), {
-        cursor:
-          hasMore && last ? encodeCursor({ createdAt: last.updated_at, id: last.id }) : null,
+        cursor: hasMore && last ? encodeCursor({ createdAt: last.updated_at, id: last.id }) : null,
         hasMore,
       });
     },
@@ -197,7 +218,11 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
 
       const category = typeof input.category === 'string' ? input.category : '';
       if (!VALID_CATEGORIES.includes(category)) {
-        throw new ApiFailure(400, 'invalid_input', `category must be one of: ${VALID_CATEGORIES.join(', ')}.`);
+        throw new ApiFailure(
+          400,
+          'invalid_input',
+          `category must be one of: ${VALID_CATEGORIES.join(', ')}.`,
+        );
       }
 
       const productName = typeof input.product_name === 'string' ? input.product_name.trim() : '';
@@ -217,7 +242,11 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
 
       const unit = typeof input.unit === 'string' ? input.unit : '';
       if (!VALID_UNITS.includes(unit)) {
-        throw new ApiFailure(400, 'invalid_input', `unit must be one of: ${VALID_UNITS.join(', ')}.`);
+        throw new ApiFailure(
+          400,
+          'invalid_input',
+          `unit must be one of: ${VALID_UNITS.join(', ')}.`,
+        );
       }
 
       const priceSsp = typeof input.price_ssp === 'number' ? input.price_ssp : NaN;
@@ -227,18 +256,26 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
 
       const pricePer = typeof input.price_per === 'string' ? input.price_per : unit;
       if (!VALID_UNITS.includes(pricePer)) {
-        throw new ApiFailure(400, 'invalid_input', `price_per must be one of: ${VALID_UNITS.join(', ')}.`);
+        throw new ApiFailure(
+          400,
+          'invalid_input',
+          `price_per must be one of: ${VALID_UNITS.join(', ')}.`,
+        );
       }
 
       const negotiable = input.negotiable === true;
       const deliveryAvailable = input.delivery_available === true;
 
       const today = new Date().toISOString().slice(0, 10);
-      const availableFrom = typeof input.available_from === 'string' && DATE_RE.test(input.available_from)
-        ? input.available_from
-        : today;
+      const availableFrom =
+        typeof input.available_from === 'string' && DATE_RE.test(input.available_from)
+          ? input.available_from
+          : today;
 
-      const availableUntil = typeof input.available_until === 'string' && input.available_until ? input.available_until : null;
+      const availableUntil =
+        typeof input.available_until === 'string' && input.available_until
+          ? input.available_until
+          : null;
       if (availableUntil && !DATE_RE.test(availableUntil)) {
         throw new ApiFailure(400, 'invalid_input', 'available_until must be a date (YYYY-MM-DD).');
       }
@@ -251,12 +288,23 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       }
       const contactPhone = phoneResult.value;
 
-      const harvestSeason = typeof input.harvest_season === 'string' && input.harvest_season.trim() ? input.harvest_season.trim() : null;
-      const pickupNotes = typeof input.pickup_notes === 'string' && input.pickup_notes.trim() ? input.pickup_notes.trim() : null;
+      const harvestSeason =
+        typeof input.harvest_season === 'string' && input.harvest_season.trim()
+          ? input.harvest_season.trim()
+          : null;
+      const pickupNotes =
+        typeof input.pickup_notes === 'string' && input.pickup_notes.trim()
+          ? input.pickup_notes.trim()
+          : null;
 
-      const status = typeof input.status === 'string' && ['draft', 'listed'].includes(input.status) ? input.status : 'draft';
+      const status =
+        typeof input.status === 'string' && ['draft', 'listed'].includes(input.status)
+          ? input.status
+          : 'draft';
 
-      const [farmer] = await prisma.$queryRawUnsafe<{ id: string; payam_id: string; state_id: string }[]>(
+      const [farmer] = await prisma.$queryRawUnsafe<
+        { id: string; payam_id: string; state_id: string }[]
+      >(
         `SELECT id, payam_id, state_id FROM public.farmer WHERE id = $1::uuid AND deleted_at IS NULL LIMIT 1`,
         farmerId,
       );
@@ -276,10 +324,26 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
                    $13::date, $14::date, $15, $16, $17, $18::listing_status,
                    $19, $20)
            RETURNING ${SELECT_COLUMNS}`,
-          farmerId, tradingName, title, category, productName, description,
-          quantity, unit, priceSsp, pricePer, negotiable, deliveryAvailable,
-          availableFrom, availableUntil, harvestSeason, pickupNotes,
-          contactPhone, status, farmer.payam_id, farmer.state_id,
+          farmerId,
+          tradingName,
+          title,
+          category,
+          productName,
+          description,
+          quantity,
+          unit,
+          priceSsp,
+          pricePer,
+          negotiable,
+          deliveryAvailable,
+          availableFrom,
+          availableUntil,
+          harvestSeason,
+          pickupNotes,
+          contactPhone,
+          status,
+          farmer.payam_id,
+          farmer.state_id,
         );
         const inserted = rows[0]!;
         await writeAudit(tx, {

@@ -53,7 +53,10 @@ export function FarmerNotifications() {
     <>
       <PageHead title={t('notifications.title', language)} />
       {notifications.length === 0 ? (
-        <EmptyState title={t('notifications.empty', language)} body={t('notifications.title', language)} />
+        <EmptyState
+          title={t('notifications.empty', language)}
+          body={t('notifications.title', language)}
+        />
       ) : (
         <ul className={styles.notiList}>
           {notifications.map((n) => (

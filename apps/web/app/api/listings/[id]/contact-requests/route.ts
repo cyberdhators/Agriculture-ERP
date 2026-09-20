@@ -68,7 +68,11 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
           ? input.message.trim()
           : null;
       if (message && message.length > LIMITS.messageMax) {
-        throw new ApiFailure(400, 'invalid_input', `message must be under ${LIMITS.messageMax} characters.`);
+        throw new ApiFailure(
+          400,
+          'invalid_input',
+          `message must be under ${LIMITS.messageMax} characters.`,
+        );
       }
 
       const quantity =

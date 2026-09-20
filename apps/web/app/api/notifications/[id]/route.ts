@@ -38,7 +38,12 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       const scopeParams: unknown[] = [id];
       scopeWhere.push(`n.id = $1::uuid`);
 
-      const scope = scopeCondition(auth.scope, 'f.state_id', 'f.caseload_officer_id', scopeParams.length + 1);
+      const scope = scopeCondition(
+        auth.scope,
+        'f.state_id',
+        'f.caseload_officer_id',
+        scopeParams.length + 1,
+      );
       if (scope.sql) {
         scopeWhere.push(scope.sql);
         scopeParams.push(...scope.params);
