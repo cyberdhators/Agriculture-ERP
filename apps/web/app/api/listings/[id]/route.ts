@@ -24,12 +24,20 @@ interface ListingRow {
   harvest_season: string | null;
   pickup_notes: string | null;
   contact_phone: string;
+  photo_storage_paths: string[];
   status: string;
   created_at: string;
   updated_at: string;
 }
 
-const SELECT_COLUMNS = `id, farmer_id, trading_name, title,
+interface BrowseRow extends ListingRow {
+  seller_verification_status: string;
+  seller_payam_id: string;
+  seller_payam_name: string;
+  seller_created_at: string;
+}
+
+const RETURNING_COLUMNS = `id, farmer_id, trading_name, title,
   category::text AS category, product_name, description,
   quantity::text AS quantity, unit::text AS unit,
   price_ssp::text AS price_ssp, price_per::text AS price_per,
@@ -37,9 +45,25 @@ const SELECT_COLUMNS = `id, farmer_id, trading_name, title,
   to_char(available_from, 'YYYY-MM-DD') AS available_from,
   CASE WHEN available_until IS NOT NULL
     THEN to_char(available_until, 'YYYY-MM-DD') ELSE NULL END AS available_until,
-  harvest_season, pickup_notes, contact_phone,
+  harvest_season, pickup_notes, contact_phone, photo_storage_paths,
   status::text AS status,
   created_at::text AS created_at, updated_at::text AS updated_at`;
+
+const BROWSE_COLUMNS = `pl.id, pl.farmer_id, pl.trading_name, pl.title,
+  pl.category::text AS category, pl.product_name, pl.description,
+  pl.quantity::text AS quantity, pl.unit::text AS unit,
+  pl.price_ssp::text AS price_ssp, pl.price_per::text AS price_per,
+  pl.negotiable, pl.delivery_available,
+  to_char(pl.available_from, 'YYYY-MM-DD') AS available_from,
+  CASE WHEN pl.available_until IS NOT NULL
+    THEN to_char(pl.available_until, 'YYYY-MM-DD') ELSE NULL END AS available_until,
+  pl.harvest_season, pl.pickup_notes, pl.contact_phone, pl.photo_storage_paths,
+  pl.status::text AS status,
+  pl.created_at::text AS created_at, pl.updated_at::text AS updated_at,
+  f.verification_status::text AS seller_verification_status,
+  f.payam_id AS seller_payam_id,
+  pm.name AS seller_payam_name,
+  f.created_at::text AS seller_created_at`;
 
 const present = (row: ListingRow) => ({
   id: row.id,
@@ -60,13 +84,15 @@ const present = (row: ListingRow) => ({
   harvest_season: row.harvest_season,
   pickup_notes: row.pickup_notes,
   contact_phone: row.contact_phone,
+  photo_storage_paths: row.photo_storage_paths,
   status: row.status,
   created_at: row.created_at,
   updated_at: row.updated_at,
 });
 
-const presentPublic = (row: ListingRow) => ({
+const presentBrowse = (row: BrowseRow) => ({
   id: row.id,
+  farmer_id: row.farmer_id,
   trading_name: row.trading_name,
   title: row.title,
   category: row.category,
@@ -80,9 +106,16 @@ const presentPublic = (row: ListingRow) => ({
   delivery_available: row.delivery_available,
   available_from: row.available_from,
   available_until: row.available_until,
+  harvest_season: row.harvest_season,
+  pickup_notes: row.pickup_notes,
+  photo_storage_paths: row.photo_storage_paths,
   status: row.status,
   created_at: row.created_at,
   updated_at: row.updated_at,
+  seller_verification_status: row.seller_verification_status,
+  seller_payam_id: row.seller_payam_id,
+  seller_payam_name: row.seller_payam_name,
+  seller_created_at: row.seller_created_at,
 });
 
 const VALID_CATEGORIES = [
@@ -119,15 +152,17 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
     roles: 'public',
     handler: async (ctx) => {
       const { id } = ctx.params;
-      const [row] = await prisma.$queryRawUnsafe<ListingRow[]>(
-        `SELECT ${SELECT_COLUMNS}
-         FROM public.produce_listing
-         WHERE id = $1::uuid AND deleted_at IS NULL
+      const [row] = await prisma.$queryRawUnsafe<BrowseRow[]>(
+        `SELECT ${BROWSE_COLUMNS}
+         FROM public.produce_listing pl
+         JOIN public.farmer f ON f.id = pl.farmer_id AND f.deleted_at IS NULL
+         JOIN public.payam pm ON pm.id = f.payam_id
+         WHERE pl.id = $1::uuid AND pl.deleted_at IS NULL
          LIMIT 1`,
         id,
       );
       if (!row) throw notFound();
-      return ok(presentPublic(row));
+      return ok(presentBrowse(row));
     },
   },
 
@@ -151,7 +186,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       if (!farmerId) throw new ApiFailure(400, 'invalid_input', 'farmer_id is required.');
 
       const [existing] = await prisma.$queryRawUnsafe<ListingRow[]>(
-        `SELECT ${SELECT_COLUMNS}
+        `SELECT ${RETURNING_COLUMNS}
          FROM public.produce_listing
          WHERE id = $1::uuid AND farmer_id = $2::uuid AND deleted_at IS NULL
          LIMIT 1`,
@@ -335,7 +370,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
           `UPDATE public.produce_listing
            SET ${sets.join(', ')}
            WHERE id = $1::uuid AND deleted_at IS NULL
-           RETURNING ${SELECT_COLUMNS}`,
+           RETURNING ${RETURNING_COLUMNS}`,
           ...params,
         );
         const updated = rows[0]!;

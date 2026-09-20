@@ -2,13 +2,14 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 
 import { Wordmark } from '@/components/brand/Wordmark';
 import { IconSearch } from '@/components/ui/icons';
 import { useFarmerSession } from '@/lib/farmer-session';
 import { CATEGORY_KEY } from '@/lib/farmers/listings';
-import { LISTING_CATEGORIES, listingsForFarmer } from '@/lib/fixtures/farmers';
+import { LISTING_CATEGORIES } from '@/lib/fixtures/farmers';
+import { fetchListings } from '@/lib/listings/api-client';
 import { t } from '@/lib/i18n';
 
 import { LanguageButtons } from './LanguageSwitch';
@@ -28,8 +29,20 @@ export function ShopMasthead({ subnav, hideStrip }: { subnav?: ReactNode; hideSt
   const { farmer, language, setLanguage } = useFarmerSession();
   const router = useRouter();
   const [query, setQuery] = useState('');
+  const [listingCount, setListingCount] = useState(0);
 
-  const listingCount = farmer ? listingsForFarmer(farmer.id).length : 0;
+  useEffect(() => {
+    if (!farmer) return;
+    let cancelled = false;
+    fetchListings({ farmer_id: farmer.id, limit: 200 })
+      .then((data) => {
+        if (!cancelled) setListingCount(data.length);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [farmer]);
 
   function onSearch(event: React.FormEvent) {
     event.preventDefault();

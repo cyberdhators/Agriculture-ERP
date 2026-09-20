@@ -1,20 +1,21 @@
 'use client';
 
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { ListingCard } from '@/components/listings/ListingCard';
 import { ProductPage } from '@/components/listings/ProductPage';
 import { Button, Dialog, Field, Notice, Textarea } from '@/components/ui';
-import { farmerById } from '@/lib/fixtures/farmers';
 import { CATEGORY_KEY } from '@/lib/farmers/listings';
 import { t, type Language } from '@/lib/i18n';
+import { fetchListing, toListing } from '@/lib/listings/api-client';
+import type { ProduceListing } from '@/lib/fixtures/farmers';
 import type { Role } from '@/lib/preview';
 
 import { useMarketModeration } from './moderation';
 import {
   liveCount,
-  marketRows,
+  loadMarketRows,
   moreFromSeller,
   similarRows,
   type MarketMode,
@@ -22,11 +23,6 @@ import {
 } from './marketplace';
 import styles from '@/components/listings/listings.module.css';
 
-/**
- * A product page on the marketplace, for buyers and staff alike. Admins and
- * supervisors additionally get the one moderation action: withdraw with a
- * reason, which is recorded against the listing and shown to the farmer.
- */
 export function MarketDetail({
   id,
   mode,
@@ -41,14 +37,62 @@ export function MarketDetail({
   backHref: string;
 }) {
   const { overrides, reasons, withdraw } = useMarketModeration();
-  const rows = useMemo(() => marketRows(mode, role, overrides), [mode, role, overrides]);
-  const row = rows.find((r) => r.listing.id === id);
+  const [listing, setListing] = useState<ProduceListing | null>(null);
+  const [allRows, setAllRows] = useState<MarketRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState('');
   const [error, setError] = useState<string | undefined>();
   const detailHref = (lid: string) => `${backHref}/${lid}`;
 
-  if (!row) {
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setNotFound(false);
+
+    Promise.all([fetchListing(id), loadMarketRows()])
+      .then(([detail, rows]) => {
+        if (cancelled) return;
+        setListing(toListing(detail));
+        setAllRows(rows);
+      })
+      .catch(() => {
+        if (!cancelled) setNotFound(true);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
+
+  const row = useMemo(() => {
+    if (!listing) return null;
+    const found = allRows.find((r) => r.listing.id === id);
+    if (found) {
+      const override = overrides.get(found.listing.id);
+      return override ? { ...found, listing: override } : found;
+    }
+    return null;
+  }, [allRows, id, listing, overrides]);
+
+  if (loading) {
+    return (
+      <>
+        <nav className={styles.breadcrumb} aria-label={t('market.breadcrumb', lang)}>
+          <Link href={backHref}>{t('market.title', lang)}</Link>
+        </nav>
+        <p className="muted" style={{ padding: 'var(--s-6)' }}>
+          {t('market.loading', lang)}
+        </p>
+      </>
+    );
+  }
+
+  if (notFound || !row) {
     return (
       <>
         <nav className={styles.breadcrumb} aria-label={t('market.breadcrumb', lang)}>
@@ -61,20 +105,21 @@ export function MarketDetail({
     );
   }
 
-  const { listing } = row;
-  const seller = farmerById(listing.farmer_id)!;
+  const { listing: currentListing, seller } = row;
   const canModerate =
-    mode === 'staff' && (role === 'admin' || role === 'supervisor') && listing.status === 'listed';
-  const withdrawnReason = reasons.get(listing.id);
-  const more = moreFromSeller(rows, seller.id, listing.id);
-  const similar = similarRows(rows, listing.category, listing.id);
+    mode === 'staff' &&
+    (role === 'admin' || role === 'supervisor') &&
+    currentListing.status === 'listed';
+  const withdrawnReason = reasons.get(currentListing.id);
+  const more = moreFromSeller(allRows, seller.id, currentListing.id);
+  const similar = similarRows(allRows, currentListing.category, currentListing.id);
 
   function confirm() {
     if (reason.trim().length < 3) {
       setError(t('market.withdrawReasonError', lang));
       return;
     }
-    withdraw(listing, reason.trim());
+    withdraw(currentListing, reason.trim());
     setOpen(false);
   }
 
@@ -84,12 +129,12 @@ export function MarketDetail({
       <span className={styles.breadcrumbSep} aria-hidden>
         ›
       </span>
-      <span>{t(CATEGORY_KEY[listing.category], lang)}</span>
+      <span>{t(CATEGORY_KEY[currentListing.category], lang)}</span>
       <span className={styles.breadcrumbSep} aria-hidden>
         ›
       </span>
       <span className={styles.breadcrumbCurrent} dir="auto">
-        {listing.title}
+        {currentListing.title}
       </span>
     </nav>
   );
@@ -120,9 +165,9 @@ export function MarketDetail({
       ) : null}
 
       <ProductPage
-        listing={listing}
+        listing={currentListing}
         seller={seller}
-        sellerListingCount={liveCount(rows, seller.id)}
+        sellerListingCount={liveCount(allRows, seller.id)}
         lang={lang}
         breadcrumb={breadcrumb}
         sellerListingsHref={backHref}
@@ -141,7 +186,7 @@ export function MarketDetail({
           <>
             {relatedBlock(t('market.moreFromSeller', lang), more)}
             {relatedBlock(
-              `${t('market.similar', lang)} ${t(CATEGORY_KEY[listing.category], lang)}`,
+              `${t('market.similar', lang)} ${t(CATEGORY_KEY[currentListing.category], lang)}`,
               similar,
             )}
           </>

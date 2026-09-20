@@ -1,34 +1,26 @@
-import {
-  FARMERS,
-  LISTINGS,
-  farmerById,
-  farmerPayamName,
-  type Farmer,
-  type ListingCategory,
-  type ListingStatus,
-  type ListingUnit,
-  type ProduceListing,
+import type {
+  ListingCategory,
+  ListingStatus,
+  ListingUnit,
+  ProduceListing,
 } from '@/lib/fixtures/farmers';
-import { scopeFarmers } from '@/lib/farmers/presentation';
-import type { Role } from '@/lib/preview';
+import {
+  fetchListings,
+  toListing,
+  toSeller,
+  type ApiListing,
+  type SellerInfo,
+} from '@/lib/listings/api-client';
 
-/**
- * The marketplace read model: every listing joined to its seller. Farmers and
- * buyers see listed produce from verified sellers everywhere; staff see the
- * rows their role may see (the same scope the register applies), plus sold
- * and withdrawn rows for the record. Reading is a pure function of the
- * fixture so the B12 swap is a fetch, not a rewrite.
- */
 export interface MarketRow {
   listing: ProduceListing;
-  seller: Farmer;
+  seller: SellerInfo;
 }
 
 export type MarketMode = 'public' | 'staff';
 export type Availability = 'any' | 'now' | 'soon';
 export type MarketSort = 'newest' | 'price_low' | 'price_high' | 'quantity';
 
-/** Listings per page in the browse grid. The B12 fetch keeps the same window. */
 export const PAGE_SIZE = 24;
 
 export interface MarketFilters {
@@ -57,7 +49,6 @@ export const DEFAULT_FILTERS: MarketFilters = {
   status: 'listed',
 };
 
-/** True when the shopper has narrowed the browse in any way (not the defaults). */
 export function filtersActive(f: MarketFilters): boolean {
   return (
     f.q.trim() !== '' ||
@@ -72,16 +63,18 @@ export function filtersActive(f: MarketFilters): boolean {
   );
 }
 
-export function marketRows(
-  mode: MarketMode,
-  role: Role,
-  overrides: ReadonlyMap<string, ProduceListing> = new Map(),
-): MarketRow[] {
-  const pool = mode === 'staff' ? new Set(scopeFarmers(FARMERS, role).map((f) => f.id)) : null;
-  return LISTINGS.map((l) => overrides.get(l.id) ?? l)
-    .filter((l) => (pool ? pool.has(l.farmer_id) : l.status === 'listed'))
-    .map((listing) => ({ listing, seller: farmerById(listing.farmer_id) }))
-    .filter((r): r is MarketRow => Boolean(r.seller));
+export async function loadMarketRows(): Promise<MarketRow[]> {
+  const listings = await fetchListings({ limit: 200 });
+  return listings.map(apiToRow);
+}
+
+export async function loadFarmerListings(farmerId: string): Promise<MarketRow[]> {
+  const listings = await fetchListings({ farmer_id: farmerId, limit: 200 });
+  return listings.map(apiToRow);
+}
+
+function apiToRow(api: ApiListing): MarketRow {
+  return { listing: toListing(api), seller: toSeller(api) };
 }
 
 export function applyFilters(
@@ -129,7 +122,6 @@ export function sortRows(rows: readonly MarketRow[], sort: MarketSort): MarketRo
   }
 }
 
-/** The freshest listed rows for the "Fresh this week" featured strip. */
 export function featuredRows(rows: readonly MarketRow[], count = 4): MarketRow[] {
   return sortRows(
     rows.filter((r) => r.listing.status === 'listed'),
@@ -137,7 +129,6 @@ export function featuredRows(rows: readonly MarketRow[], count = 4): MarketRow[]
   ).slice(0, count);
 }
 
-/** Other listed rows from the same seller, newest first. */
 export function moreFromSeller(
   rows: readonly MarketRow[],
   sellerId: string,
@@ -155,7 +146,6 @@ export function moreFromSeller(
   ).slice(0, count);
 }
 
-/** Other listed rows in the same category, newest first. */
 export function similarRows(
   rows: readonly MarketRow[],
   category: string,
@@ -173,11 +163,10 @@ export function similarRows(
   ).slice(0, count);
 }
 
-/** Payams present among the rows, named, for the rail. */
 export function payamOptions(rows: readonly MarketRow[]): { id: string; name: string }[] {
   const seen = new Map<string, string>();
   rows.forEach(({ seller }) => {
-    if (!seen.has(seller.payam_id)) seen.set(seller.payam_id, farmerPayamName(seller.payam_id));
+    if (seller.payam_id && !seen.has(seller.payam_id)) seen.set(seller.payam_id, seller.payam_name);
   });
   return [...seen].map(([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name));
 }

@@ -30,9 +30,17 @@ interface ListingRow {
   harvest_season: string | null;
   pickup_notes: string | null;
   contact_phone: string;
+  photo_storage_paths: string[];
   status: string;
   created_at: string;
   updated_at: string;
+}
+
+interface BrowseRow extends ListingRow {
+  seller_verification_status: string;
+  seller_payam_id: string;
+  seller_payam_name: string;
+  seller_created_at: string;
 }
 
 const present = (row: ListingRow) => ({
@@ -54,13 +62,15 @@ const present = (row: ListingRow) => ({
   harvest_season: row.harvest_season,
   pickup_notes: row.pickup_notes,
   contact_phone: row.contact_phone,
+  photo_storage_paths: row.photo_storage_paths,
   status: row.status,
   created_at: row.created_at,
   updated_at: row.updated_at,
 });
 
-const presentPublic = (row: ListingRow) => ({
+const presentBrowse = (row: BrowseRow) => ({
   id: row.id,
+  farmer_id: row.farmer_id,
   trading_name: row.trading_name,
   title: row.title,
   category: row.category,
@@ -74,11 +84,19 @@ const presentPublic = (row: ListingRow) => ({
   delivery_available: row.delivery_available,
   available_from: row.available_from,
   available_until: row.available_until,
+  harvest_season: row.harvest_season,
+  pickup_notes: row.pickup_notes,
+  photo_storage_paths: row.photo_storage_paths,
+  status: row.status,
   created_at: row.created_at,
   updated_at: row.updated_at,
+  seller_verification_status: row.seller_verification_status,
+  seller_payam_id: row.seller_payam_id,
+  seller_payam_name: row.seller_payam_name,
+  seller_created_at: row.seller_created_at,
 });
 
-const SELECT_COLUMNS = `id, farmer_id, trading_name, title,
+const RETURNING_COLUMNS = `id, farmer_id, trading_name, title,
   category::text AS category, product_name, description,
   quantity::text AS quantity, unit::text AS unit,
   price_ssp::text AS price_ssp, price_per::text AS price_per,
@@ -86,9 +104,25 @@ const SELECT_COLUMNS = `id, farmer_id, trading_name, title,
   to_char(available_from, 'YYYY-MM-DD') AS available_from,
   CASE WHEN available_until IS NOT NULL
     THEN to_char(available_until, 'YYYY-MM-DD') ELSE NULL END AS available_until,
-  harvest_season, pickup_notes, contact_phone,
+  harvest_season, pickup_notes, contact_phone, photo_storage_paths,
   status::text AS status,
   created_at::text AS created_at, updated_at::text AS updated_at`;
+
+const BROWSE_COLUMNS = `pl.id, pl.farmer_id, pl.trading_name, pl.title,
+  pl.category::text AS category, pl.product_name, pl.description,
+  pl.quantity::text AS quantity, pl.unit::text AS unit,
+  pl.price_ssp::text AS price_ssp, pl.price_per::text AS price_per,
+  pl.negotiable, pl.delivery_available,
+  to_char(pl.available_from, 'YYYY-MM-DD') AS available_from,
+  CASE WHEN pl.available_until IS NOT NULL
+    THEN to_char(pl.available_until, 'YYYY-MM-DD') ELSE NULL END AS available_until,
+  pl.harvest_season, pl.pickup_notes, pl.contact_phone, pl.photo_storage_paths,
+  pl.status::text AS status,
+  pl.created_at::text AS created_at, pl.updated_at::text AS updated_at,
+  f.verification_status::text AS seller_verification_status,
+  f.payam_id AS seller_payam_id,
+  pm.name AS seller_payam_name,
+  f.created_at::text AS seller_created_at`;
 
 const VALID_CATEGORIES = [
   'crop',
@@ -134,20 +168,20 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
         limit = Math.min(parsed, MAX_LIMIT);
       }
 
-      const where: string[] = ['deleted_at IS NULL'];
+      const where: string[] = ['pl.deleted_at IS NULL'];
       const params: unknown[] = [];
 
       if (farmerId) {
         params.push(farmerId);
-        where.push(`farmer_id = $${params.length}::uuid`);
+        where.push(`pl.farmer_id = $${params.length}::uuid`);
       } else {
-        where.push("status = 'listed'");
+        where.push("pl.status = 'listed'");
       }
 
       const category = url.searchParams.get('category');
       if (category) {
         params.push(category);
-        where.push(`category = $${params.length}::listing_category`);
+        where.push(`pl.category = $${params.length}::listing_category`);
       }
 
       const q = url.searchParams.get('q');
@@ -155,7 +189,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
         const escaped = q.trim().replace(/[%_\\]/g, '\\$&');
         params.push(`%${escaped}%`);
         where.push(
-          `(title ILIKE $${params.length} ESCAPE '\\' OR product_name ILIKE $${params.length} ESCAPE '\\' OR trading_name ILIKE $${params.length} ESCAPE '\\')`,
+          `(pl.title ILIKE $${params.length} ESCAPE '\\' OR pl.product_name ILIKE $${params.length} ESCAPE '\\' OR pl.trading_name ILIKE $${params.length} ESCAPE '\\')`,
         );
       }
 
@@ -164,15 +198,17 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
         if (!cursor) throw invalidCursor();
         params.push(cursor.createdAt, cursor.id);
         where.push(
-          `(updated_at, id) < ($${params.length - 1}::timestamptz, $${params.length}::uuid)`,
+          `(pl.updated_at, pl.id) < ($${params.length - 1}::timestamptz, $${params.length}::uuid)`,
         );
       }
 
-      const rows = await prisma.$queryRawUnsafe<ListingRow[]>(
-        `SELECT ${SELECT_COLUMNS}
-         FROM public.produce_listing
+      const rows = await prisma.$queryRawUnsafe<BrowseRow[]>(
+        `SELECT ${BROWSE_COLUMNS}
+         FROM public.produce_listing pl
+         JOIN public.farmer f ON f.id = pl.farmer_id AND f.deleted_at IS NULL
+         JOIN public.payam pm ON pm.id = f.payam_id
          WHERE ${where.join(' AND ')}
-         ORDER BY updated_at DESC, id DESC
+         ORDER BY pl.updated_at DESC, pl.id DESC
          LIMIT ${limit + 1}`,
         ...params,
       );
@@ -180,9 +216,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       const hasMore = rows.length > limit;
       const page = rows.slice(0, limit);
       const last = page[page.length - 1];
-      const mapper = farmerId ? present : presentPublic;
-
-      return paged(page.map(mapper), {
+      return paged(farmerId ? page.map(present) : page.map(presentBrowse), {
         cursor: hasMore && last ? encodeCursor({ createdAt: last.updated_at, id: last.id }) : null,
         hasMore,
       });
@@ -323,7 +357,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
                    $7, $8::listing_unit, $9, $10::listing_unit, $11, $12,
                    $13::date, $14::date, $15, $16, $17, $18::listing_status,
                    $19, $20)
-           RETURNING ${SELECT_COLUMNS}`,
+           RETURNING ${RETURNING_COLUMNS}`,
           farmerId,
           tradingName,
           title,

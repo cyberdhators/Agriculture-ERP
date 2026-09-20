@@ -475,6 +475,7 @@ export const en = {
   'market.similar': 'Similar in',
   'market.listingNo': 'Listing no.',
   'market.negotiable': 'Negotiable',
+  'market.loading': 'Loading listings…',
 
   // Sidebar navigation sections
   'nav.myFarm': 'My farm',

@@ -22,7 +22,6 @@ import { IconX } from '@/components/ui/icons';
 import {
   LISTING_CATEGORIES,
   LISTING_UNITS,
-  farmerPayamName,
   type ListingCategory,
   type ListingStatus,
   type ListingUnit,
@@ -48,11 +47,12 @@ import {
   applyFilters,
   featuredRows,
   filtersActive,
-  marketRows,
+  loadMarketRows,
   payamOptions,
   sortRows,
   type MarketFilters,
   type MarketMode,
+  type MarketRow,
   type MarketSort,
 } from './marketplace';
 import styles from '@/components/listings/listings.module.css';
@@ -66,13 +66,6 @@ const SORT_KEY = {
 } as const;
 const STAFF_STATUSES: readonly ListingStatus[] = ['listed', 'sold', 'withdrawn'];
 
-/**
- * The marketplace browse, built like a marketplace people have used: a search
- * band with a category chip strip over a sticky filter rail and a paged
- * product grid. `mode` decides scope — the public marketplace shows listed
- * produce from everywhere; staff see what their role may see, with a status
- * filter, sold and withdrawn rows kept for the record, and a moderation menu.
- */
 export function Market({
   mode,
   role,
@@ -90,7 +83,6 @@ export function Market({
   const [filters, setFilters] = useState<MarketFilters>({ ...DEFAULT_FILTERS, q: qParam });
   const [sort, setSort] = useState<MarketSort>('newest');
   const [view, setView] = useState<'cards' | 'list'>('cards');
-  // Phones: the filter rail is closed until asked for, so produce comes first.
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [page, setPage] = useState(1);
   const [moderating, setModerating] = useState<ProduceListing | null>(null);
@@ -99,15 +91,43 @@ export function Market({
   const gridTop = useRef<HTMLDivElement>(null);
   const today = new Date().toISOString().slice(0, 10);
 
-  const rows = useMemo(() => marketRows(mode, role, overrides), [mode, role, overrides]);
+  const [rows, setRows] = useState<MarketRow[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    loadMarketRows()
+      .then((data) => {
+        if (!cancelled) setRows(data);
+      })
+      .catch(() => {
+        if (!cancelled) setRows([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const withOverrides = useMemo(() => {
+    if (overrides.size === 0) return rows;
+    return rows.map((r) => {
+      const override = overrides.get(r.listing.id);
+      return override ? { ...r, listing: override } : r;
+    });
+  }, [rows, overrides]);
+
   const matched = useMemo(
-    () => sortRows(applyFilters(rows, filters, today, mode), sort),
-    [rows, filters, today, mode, sort],
+    () => sortRows(applyFilters(withOverrides, filters, today, mode), sort),
+    [withOverrides, filters, today, mode, sort],
   );
-  const payams = useMemo(() => payamOptions(rows), [rows]);
-  const featured = useMemo(() => featuredRows(rows), [rows]);
+  const payams = useMemo(() => payamOptions(withOverrides), [withOverrides]);
+  const featured = useMemo(() => featuredRows(withOverrides), [withOverrides]);
   const categoryCount = (c: ListingCategory | '') =>
-    applyFilters(rows, { ...filters, category: c }, today, mode).length;
+    applyFilters(withOverrides, { ...filters, category: c }, today, mode).length;
 
   const active = filtersActive(filters);
   const pages = Math.max(1, Math.ceil(matched.length / PAGE_SIZE));
@@ -128,8 +148,6 @@ export function Market({
     gridTop.current?.scrollIntoView({ block: 'start', behavior: 'smooth' });
   }
 
-  // The search lives in the masthead; it navigates to /market?q=… and this
-  // keeps the marketplace's own filter in step with that query.
   useEffect(() => {
     setFilters((f) => (f.q === qParam ? f : { ...f, q: qParam }));
   }, [qParam]);
@@ -146,12 +164,11 @@ export function Market({
     setReasonError(undefined);
   }
 
-  // Removable chips describing what the shopper has narrowed to.
   const applied: Array<{ key: string; label: string; clear: () => void }> = [];
   if (filters.q.trim())
     applied.push({
       key: 'q',
-      label: `“${filters.q.trim()}”`,
+      label: `"${filters.q.trim()}"`,
       clear: () => set('q', ''),
     });
   if (filters.category)
@@ -160,12 +177,14 @@ export function Market({
       label: t(CATEGORY_KEY[filters.category], lang),
       clear: () => set('category', ''),
     });
-  if (filters.payam)
+  if (filters.payam) {
+    const payam = payams.find((p) => p.id === filters.payam);
     applied.push({
       key: 'payam',
-      label: farmerPayamName(filters.payam),
+      label: payam?.name ?? filters.payam,
       clear: () => set('payam', ''),
     });
+  }
   if (filters.unit)
     applied.push({ key: 'unit', label: unitLabel(filters.unit), clear: () => set('unit', '') });
   if (filters.priceMin || filters.priceMax)
@@ -192,8 +211,6 @@ export function Market({
   if (!filters.verifiedOnly)
     applied.push({
       key: 'verified',
-      // The active deviation is that unverified sellers are shown; clearing it
-      // restores the verified-only default.
       label: t('market.includingUnverified', lang),
       clear: () => set('verifiedOnly', true),
     });
@@ -202,10 +219,18 @@ export function Market({
     setFilters(DEFAULT_FILTERS);
   }
 
+  if (loading) {
+    return (
+      <div className={styles.browse}>
+        <p className="muted" style={{ padding: 'var(--s-6)' }}>
+          {t('market.loading', lang)}
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className={styles.browse}>
-      {/* Search and the category strip live in the masthead; the left rail
-          holds the full filter set. No in-page search band here. */}
       <div className={styles.body}>
         <button
           type="button"
@@ -516,7 +541,7 @@ export function Market({
                           {t(VERIFICATION_KEY[seller.verification_status], lang)}
                         </Stamp>
                       </td>
-                      <td>{farmerPayamName(seller.payam_id)}</td>
+                      <td>{seller.payam_name}</td>
                       <td className="num">{formatDate(listing.updated_at, lang)}</td>
                     </tr>
                   ))}

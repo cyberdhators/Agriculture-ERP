@@ -2,7 +2,8 @@ import Link from 'next/link';
 import type { ReactNode } from 'react';
 
 import { ButtonLink, Stamp } from '@/components/ui';
-import { farmerPayamName, type Farmer, type ProduceListing } from '@/lib/fixtures/farmers';
+import type { ProduceListing } from '@/lib/fixtures/farmers';
+import type { SellerInfo } from '@/lib/listings/api-client';
 import {
   CATEGORY_KEY,
   STATUS_KEY,
@@ -47,7 +48,7 @@ export function ListingCard({
   listing: ProduceListing;
   href: string;
   lang: Language;
-  seller?: Farmer;
+  seller?: SellerInfo;
   showStatus?: boolean;
   actions?: ReactNode;
   onModerate?: (listing: ProduceListing) => void;
@@ -119,7 +120,7 @@ export function ListingCard({
             <Stamp kind={verificationStamp(seller.verification_status)}>
               {t(VERIFICATION_KEY[seller.verification_status], lang)}
             </Stamp>
-            <span className={styles.cardSellerPayam}>{farmerPayamName(seller.payam_id)}</span>
+            <span className={styles.cardSellerPayam}>{seller.payam_name}</span>
           </div>
           <div className={styles.cardContact}>
             <ButtonLink href={href} variant="secondary" size="small">

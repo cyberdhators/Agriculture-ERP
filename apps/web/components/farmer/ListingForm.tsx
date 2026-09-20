@@ -25,6 +25,7 @@ import {
   type ProduceListing,
 } from '@/lib/fixtures/farmers';
 import { useFarmerSession } from '@/lib/farmer-session';
+import { createListing, updateListing } from '@/lib/listings/api-client';
 import {
   CATEGORY_KEY,
   UNIT_KEY,
@@ -157,7 +158,7 @@ export function ListingForm({ listingId }: { listingId?: string }) {
     });
   }
 
-  function persist(status: ListingStatus) {
+  async function persist(status: ListingStatus) {
     const result = validateListing(
       values,
       farmer ? { given_name: farmer.given_name, family_name: farmer.family_name } : null,
@@ -168,21 +169,28 @@ export function ListingForm({ listingId }: { listingId?: string }) {
       if (first) document.getElementById(`listing-${first}`)?.focus();
       return;
     }
-    const now = new Date().toISOString();
-    const listing: ProduceListing = {
-      id: own?.id ?? newListingId(),
-      farmer_id: farmer!.id,
-      ...result.values,
-      photo_storage_paths: photos,
-      status,
-      created_at: own?.created_at ?? now,
-      updated_at: now,
-    };
-    saveListing(listing);
-    if (status === 'draft' && !verified) {
-      setSaved('draft');
+
+    const body = { ...result.values, farmer_id: farmer!.id, status };
+
+    try {
+      const saved = own ? await updateListing(own.id, body) : await createListing(body);
+      if (status === 'draft' && !verified) setSaved('draft');
+      router.push(`/farmer/account/listings/${saved.id}`);
+    } catch {
+      const now = new Date().toISOString();
+      const listing: ProduceListing = {
+        id: own?.id ?? newListingId(),
+        farmer_id: farmer!.id,
+        ...result.values,
+        photo_storage_paths: photos,
+        status,
+        created_at: own?.created_at ?? now,
+        updated_at: now,
+      };
+      saveListing(listing);
+      if (status === 'draft' && !verified) setSaved('draft');
+      router.push(`/farmer/account/listings/${listing.id}`);
     }
-    router.push(`/farmer/account/listings/${listing.id}`);
   }
 
   const status = own?.status ?? 'draft';

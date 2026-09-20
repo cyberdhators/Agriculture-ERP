@@ -2,8 +2,9 @@
 
 import { BackLink, ProductPage } from '@/components/listings/ProductPage';
 import { ButtonLink, Notice } from '@/components/ui';
-import { farmsForFarmer } from '@/lib/fixtures/farmers';
+import { farmerPayamName } from '@/lib/fixtures/farmers';
 import { useFarmerSession } from '@/lib/farmer-session';
+import type { SellerInfo } from '@/lib/listings/api-client';
 import { t } from '@/lib/i18n';
 
 import { PageHead } from './AccountShell';
@@ -29,8 +30,14 @@ export function ListingDetail({ listingId }: { listingId: string }) {
     );
   }
 
-  const farms = farmsForFarmer(farmer.id);
   const live = listingsFor(farmer.id).filter((l) => l.status === 'listed').length;
+  const sellerInfo: SellerInfo = {
+    id: farmer.id,
+    verification_status: farmer.verification_status,
+    payam_id: farmer.payam_id,
+    payam_name: farmerPayamName(farmer.payam_id),
+    created_at: farmer.created_at,
+  };
 
   return (
     <>
@@ -38,9 +45,8 @@ export function ListingDetail({ listingId }: { listingId: string }) {
       <ProductPage
         contact={false}
         listing={listing}
-        seller={farmer}
+        seller={sellerInfo}
         sellerListingCount={live}
-        farm={farms[0]}
         lang={language}
         kicker={t('detail.previewNote', language)}
         actions={
