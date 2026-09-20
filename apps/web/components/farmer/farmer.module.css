@@ -1722,29 +1722,62 @@
 
 @media (max-width: 640px) {
   .shopBar {
-    flex-wrap: wrap;
-    gap: var(--s-2) var(--s-3);
-    padding: var(--s-3) var(--s-4);
+    display: grid;
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto auto;
+    gap: var(--s-2);
+    padding: var(--s-2) var(--s-4);
+    align-items: center;
   }
 
-  /* Row 1: logo + tools. Row 2: full-width search. */
   .shopSearch {
-    order: 3;
-    flex: 1 1 100%;
+    grid-column: 1 / -1;
+    grid-row: 2;
     max-width: none;
     height: 40px;
   }
 
   .shopTools {
-    margin-inline-start: auto;
-    gap: var(--s-2);
-    flex-wrap: wrap;
-    justify-content: flex-end;
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
+    display: flex;
+    align-items: center;
+    gap: var(--s-3);
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
   }
 
-  /* Drop the long "Hi, name" line; keep the "My account" label. */
+  .shopTools::-webkit-scrollbar {
+    display: none;
+  }
+
+  .shopLang {
+    transform: scale(0.85);
+  }
+
   .shopAcctLine1 {
     display: none;
+  }
+
+  .shopAcctLine2 {
+    font-size: 11px;
+  }
+
+  .shopCartLabel {
+    font-size: 11px;
+  }
+
+  .shopCartBadge {
+    min-width: 18px;
+    height: 18px;
+    font-size: 11px;
+  }
+
+  .shopAcct,
+  .shopCart {
+    padding: 2px var(--s-1);
   }
 
   .shopStrip {
