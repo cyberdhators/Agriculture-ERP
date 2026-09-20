@@ -4,7 +4,7 @@ import { useState } from 'react';
 
 import { Badge, Card, CardBody, EmptyState, Tabs } from '@/components/ui';
 import { useFarmerSession } from '@/lib/farmer-session';
-import { DIRECTORY_ENTRIES, type DirectoryEntryRow } from '@/lib/fixtures/p1';
+import type { DirectoryEntryRow } from '@/lib/fixtures/p1';
 import { formatPhone } from '@/lib/format';
 import { t, type Language } from '@/lib/i18n';
 
@@ -32,7 +32,9 @@ export function FarmerServices() {
 
   if (!farmer) return null;
 
-  const active = DIRECTORY_ENTRIES.filter((e) => e.active);
+  // Directory entries will come from the directory API (deliverable (h))
+  // once it is wired to the farmer view. Until then, empty state.
+  const active: DirectoryEntryRow[] = [];
   const entries = filter === 'all' ? active : active.filter((e) => e.entry_type === filter);
 
   const tabs = ENTRY_TYPES.map((type) => ({

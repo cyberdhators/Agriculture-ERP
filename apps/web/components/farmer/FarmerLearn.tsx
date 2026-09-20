@@ -7,7 +7,7 @@ import { LEARNING_TOPICS, type LearningTopic } from '@agri-erp/shared';
 import { FormatIcon } from '@/components/library/resource-presentation';
 import { Notice, Tabs } from '@/components/ui';
 import { useFarmerSession } from '@/lib/farmer-session';
-import { LEARNING_RESOURCES, type LearningResourceRow } from '@/lib/fixtures/p1';
+import type { LearningResourceRow } from '@/lib/fixtures/p1';
 import { FORMAT_LABELS, TOPIC_LABELS, formatBytes, formatDate } from '@/lib/format';
 import { t } from '@/lib/i18n';
 
@@ -21,7 +21,9 @@ export function FarmerLearn() {
   const [topic, setTopic] = useState<TopicFilter>('all');
   if (!farmer) return null;
 
-  const published = LEARNING_RESOURCES.filter((r) => r.published && r.deleted_at === null);
+  // Learning resources will come from the learning API (deliverable (m))
+  // once it is wired to the farmer view. Until then, empty state.
+  const published: LearningResourceRow[] = [];
   const filtered = topic === 'all' ? published : published.filter((r) => r.topic === topic);
   const mine = filtered.filter((r) => r.language === language);
   const other = filtered.filter((r) => r.language !== language);

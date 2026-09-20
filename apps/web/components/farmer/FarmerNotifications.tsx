@@ -17,37 +17,13 @@ interface NotificationRow {
   created_at: string;
 }
 
-const FIXTURE_NOTIFICATIONS: readonly NotificationRow[] = [
-  {
-    id: 'n1',
-    channel: 'in_app',
-    title: 'Your listing was approved',
-    body: 'Your listing "Sorghum — 50 bags" is now live on the marketplace.',
-    read_at: null,
-    created_at: '2026-09-19T10:00:00Z',
-  },
-  {
-    id: 'n2',
-    channel: 'in_app',
-    title: 'New buyer enquiry',
-    body: 'A buyer is interested in your groundnut listing. Your officer will call you.',
-    read_at: null,
-    created_at: '2026-09-18T14:30:00Z',
-  },
-  {
-    id: 'n3',
-    channel: 'in_app',
-    title: 'Weather advisory',
-    body: 'Heavy rain expected in your area over the next two days. Consider protecting stored harvest.',
-    read_at: '2026-09-17T09:00:00Z',
-    created_at: '2026-09-16T08:00:00Z',
-  },
-];
+// Notifications will come from the notification API (deliverable (n))
+// once it is wired. Until then, empty state.
 
 export function FarmerNotifications() {
   const { language } = useFarmerSession();
 
-  const notifications = FIXTURE_NOTIFICATIONS;
+  const notifications: readonly NotificationRow[] = [];
 
   return (
     <>

@@ -1838,6 +1838,7 @@ it. The `FARMERS` fixture is still used for the farmer login stub (expected
 until B12 lands real auth).
 
 **CI.** Run #381 (commit `3931ac6`) is in progress. Previous failures:
+
 - #378: audit key count mismatch → fixed in `3e165d9`
 - #380: phone format DEFAULT + stale view → fixed in `3931ac6`
 

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 
 import { Chips, EmptyState, Stamp } from '@/components/ui';
-import { cropsForFarm, farmsForFarmer, totalAreaHa, type Farm } from '@/lib/fixtures/farmers';
+import { cropsForFarm, totalAreaHa, type Farm } from '@/lib/fixtures/farmers';
 import { useFarmerSession } from '@/lib/farmer-session';
 import { CROP_LABELS, formatDate } from '@/lib/format';
 import { t, type Language, type TKey } from '@/lib/i18n';
@@ -31,7 +31,9 @@ function boundaryOf(farm: Farm): Boundary {
  */
 export function FarmerFarm() {
   const { farmer, language } = useFarmerSession();
-  const farms = farmsForFarmer(farmer?.id ?? '');
+  // Farm data will come from the farm-mapping API (deliverable (c))
+  // once it is wired to the farmer view. Until then, empty state.
+  const farms: Farm[] = [];
   const [selected, setSelected] = useState(farms[0]?.id ?? '');
   if (!farmer) return null;
 
