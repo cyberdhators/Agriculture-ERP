@@ -3112,6 +3112,90 @@ directory freshness tile (needs a merged route writing `last_verified_at`).
 and merged or open. B11 is the production drill; its checklist is below and
 is the next thing to read.
 
+## AN EXCLUSION LIST IS ITSELF A CLAIM ABOUT THE WORLD (2026-09-20, #93)
+
+> **A key that matches nothing is indistinguishable from a key doing its job.**
+> Any list of exceptions in this project must be able to fail for naming
+> something that does not exist.
+
+`MANIFEST_EXCLUDED_TABLES` carried `spatial_ref_sys` from B11 until 2026-09-20.
+It matched **nothing** for that entire time. The table is real and has 8,500
+rows, but it lives in the `extensions` schema and the check only ever read
+`public`, so the exclusion was a sentence about a table the gate could not see.
+The map looked perfectly consistent the whole time — two names, two reasons,
+nothing obviously wrong — because **a list of exceptions gives no sign when one
+of its entries stops corresponding to anything.**
+
+**The general form, and it applies to every such list here** — the manifest
+exclusions, the `schema:check` residue lists (`EXPECTED_DROPPED_INDEXES`,
+`EXPECTED_UNRESTORED_FKS`), any allowlist added later:
+
+1. **Every entry must resolve.** The list is asserted against reality, and an
+   entry naming something absent is a finding — either it was removed and the
+   exclusion is stale, or it never matched and the list has been lying since it
+   was written. Both are worth a red run.
+2. **Every entry must be unambiguous.** Bare names are not unique: on this
+   database `schema_migrations` exists in **both `auth` and `realtime`**. An
+   unqualified key either matches nothing, or matches two things and means
+   neither. The manifest exclusions are now `schema.table` and the gate refuses
+   a key that is not.
+
+This is the same family as the gate principle, one level in: a comparing gate
+catches two sources drifting, and **this catches the gate's own configuration
+drifting away from the world it describes.** An exception list is code that
+nobody runs, and it decays silently.
+
+## A CATALOGUE QUERY PROVES INSTALLATION AND NOTHING ELSE (2026-09-20)
+
+When `spatial_ref_sys` appeared to be missing, the question was whether PostGIS
+was intact — B7's areas depend on it. `pg_extension` answered immediately:
+**postgis 3.3.7, schema `extensions`**. That answer was true and worthless. It
+says a row exists in a catalogue; it says nothing about whether the extension
+can compute.
+
+What settled it was running the thing:
+
+```
+ST_Transform(ST_SetSRID(ST_MakePoint(31.6, 4.85), 4326), 3857)
+  -> POINT(3517695.909067445 540545.4504560678)
+```
+
+**`ST_Transform` cannot execute without reading `spatial_ref_sys`.** A correct
+projection out the other side proves the table, its 8,500 rows and the PROJ
+library behind it, all at once — which no catalogue query can do.
+
+> **To prove a dependency works, use it. Asking whether it is installed is a
+> different question with a more reassuring answer.**
+
+## C-16.12'S FIRST RUN CAUGHT TWO FAULTS IN OPPOSITE DIRECTIONS (2026-09-20)
+
+The manifest gate was made two-directional in #93 — the catalogue compared to
+the list, and the list compared back to the catalogue. **Its first real run
+found a fault in each direction, neither of which was visible before the gate
+existed, and both in code that had already merged:**
+
+- **Outward:** `produce_listing` and `product_report` were in the database and
+  in no list. They arrived with #95's migration on 17 September. **A restore
+  verified against the manifest would have reported clean while counting
+  nothing for either.**
+- **Inward:** `spatial_ref_sys` was in the exclusion list and in no schema the
+  check could read — an exclusion that had never matched anything.
+
+One direction finds what the database gained; the other finds what the list
+claims and cannot support. **A gate with only the first direction would have
+caught the two tables and kept the dead exclusion forever; one with only the
+second would have caught the exclusion and let the two tables fall out of
+backup.** That is the argument for building both directions rather than the one
+that catches the failure you happen to be imagining.
+
+The check now reads **every schema**, classifying each base table as backed up,
+excluded by schema, excluded by name, or unaccounted for. Measured on staging
+the day it was written: **133 base tables, 24 backed up, 107 excluded by schema,
+2 excluded by name, 0 unaccounted for.** The platform's schemas — `auth`,
+`storage`, `realtime`, `vault` — and Postgres's own catalogues are excluded **by
+name with a reason each**, not by a silent `WHERE table_schema = 'public'`,
+because that filter is what made the gate blind in the first place.
+
 ## A TEST REMOVES WHAT IT CREATED, BY ID (2026-09-20, #93)
 
 > **A cleanup defined by exclusion will delete rows it does not own. The set of

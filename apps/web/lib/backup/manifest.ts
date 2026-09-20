@@ -22,7 +22,19 @@ export interface Manifest {
   readonly storage_objects: number | null;
 }
 
-/** The tables a backup must carry. A table not here is a finding, not an omission. */
+/**
+ * The tables a backup must carry. A table not here is a finding, not an omission.
+ *
+ * THESE STAY BARE WHILE THE EXCLUSIONS ARE SCHEMA-QUALIFIED, AND THAT LOOKS
+ * LIKE AN INCONSISTENCY UNTIL YOU KNOW WHY. These names are the manifest's
+ * JSON KEYS -- its wire format. `compareManifests` reads them, and a manifest
+ * taken before a rename would stop comparing against one taken after, which is
+ * the one thing the restore drill cannot afford. The exclusions have no wire
+ * format and span schemas, so they are qualified; these are all `public` by
+ * definition, and the check below qualifies them to `public.<name>` when it
+ * classifies the catalogue. If a table outside `public` ever has to be backed
+ * up, the gate will call it unaccounted for and force the decision then.
+ */
 export const MANIFEST_TABLES = [
   'state',
   'county',
@@ -55,15 +67,45 @@ export const MANIFEST_TABLES = [
 ] as const;
 
 /**
- * Tables that exist in the public schema and are DELIBERATELY not in the
- * manifest, each with its reason. tests/backup.test.ts compares the catalogue
- * against MANIFEST_TABLES plus this list, so a new table that is in neither
- * fails the run by name (C-16.12) instead of silently falling out of backup
- * verification.
+ * WHOLE SCHEMAS that are not ours to back up, each with its reason.
+ *
+ * Stated rather than filtered. The check below reads EVERY schema, so the
+ * platform's own tables have to be accounted for somewhere, and a silent
+ * `WHERE table_schema = 'public'` would make the gate blind by another route --
+ * which is exactly the fault that produced this map (see PROJECT-STATE,
+ * C-16.12's first run).
+ *
+ * `extensions` is deliberately ABSENT. It holds one table today, excluded by
+ * name below; a second one appearing there should fail loudly and be decided
+ * on, not disappear behind a wholesale exclusion.
+ */
+export const MANIFEST_EXCLUDED_SCHEMAS: Readonly<Record<string, string>> = {
+  pg_catalog: "Postgres's own catalogue, not a table this database has.",
+  information_schema: "Postgres's own catalogue, not a table this database has.",
+  auth: "Supabase Auth's tables; the platform owns them and restores them with the project.",
+  storage: "Supabase Storage's object metadata; the bucket copy is C-11's separate question.",
+  realtime: "Supabase Realtime's own bookkeeping, recreated by the platform.",
+  vault: 'Supabase Vault; secrets, and never in a backup of ours.',
+};
+
+/**
+ * Individual tables that are DELIBERATELY not in the manifest, each with its
+ * reason. `tests/backup.test.ts` classifies every table in every schema as
+ * backed up, excluded by schema, excluded by name, or UNACCOUNTED FOR -- and
+ * the last fails the run by name (C-16.12).
+ *
+ * KEYS ARE SCHEMA-QUALIFIED, AND THE GATE REFUSES A BARE ONE. `spatial_ref_sys`
+ * sat here unqualified from B11 until 2026-09-20 and matched NOTHING the whole
+ * time: it lives in `extensions`, the check only ever read `public`, and a key
+ * that matches nothing is indistinguishable from a key doing its job. Names are
+ * not unique across schemas either -- `schema_migrations` exists in both `auth`
+ * and `realtime` on this database -- so a bare key could also match two things
+ * and mean neither.
  */
 export const MANIFEST_EXCLUDED_TABLES: Readonly<Record<string, string>> = {
-  _prisma_migrations: "Prisma's own ledger; the manifest lists applied migrations separately.",
-  spatial_ref_sys: 'PostGIS reference data, recreated by the extension, never ours.',
+  'public._prisma_migrations':
+    "Prisma's own ledger; the manifest lists applied migrations separately.",
+  'extensions.spatial_ref_sys': 'PostGIS reference data, recreated by the extension, never ours.',
 };
 
 export async function takeManifest(
