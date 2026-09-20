@@ -6,6 +6,8 @@ import * as attachmentConfirm from '../apps/web/app/api/visits/[id]/attachments/
 import * as visitAttachments from '../apps/web/app/api/visits/[id]/attachments/route';
 import * as visitItem from '../apps/web/app/api/visits/[id]/route';
 import {
+  MANIFEST_EXCLUDED_SCHEMAS,
+  MANIFEST_EXCLUDED_TABLES,
   MANIFEST_TABLES,
   type Manifest,
   compareManifests,
@@ -90,6 +92,77 @@ run('the manifest (C-11.5)', () => {
         table,
       );
       expect(exists?.n, `${table} exists`).toBe(1);
+    }
+  });
+
+  it('every table that exists is either in the manifest or excluded with a reason (C-16.12)', async () => {
+    // THE OTHER DIRECTION. The check above catches a table removed or renamed;
+    // it cannot catch a table ADDED, because it iterates the list and not the
+    // catalogue. B8, B10 and B11 each added tables and each remembered the
+    // manifest by habit. C-16 would have been the first to forget, and the
+    // manifest would have reported a clean restore while counting nothing for
+    // three tables. This compares the catalogue back to the list, so a new
+    // table fails here by name until someone lists it or excludes it with a
+    // reason. A gate that compares (docs/PROJECT-STATE.md).
+    //
+    // EVERY SCHEMA, NOT JUST `public`. This read `table_schema = 'public'` until
+    // 2026-09-20, which made it blind to anything outside it -- including the
+    // one table it already claimed to exclude. Now every base table in the
+    // database is classified as exactly one of: backed up, excluded by schema,
+    // excluded by name, or UNACCOUNTED FOR.
+    const inCatalogue = (
+      await prisma.$queryRawUnsafe<{ table_schema: string; table_name: string }[]>(
+        `SELECT table_schema, table_name FROM information_schema.tables
+          WHERE table_type = 'BASE TABLE' ORDER BY table_schema, table_name`,
+      )
+    ).map((r) => `${r.table_schema}.${r.table_name}`);
+
+    const backedUp = new Set(MANIFEST_TABLES.map((t) => `public.${t}`));
+    const excludedByName = new Set(Object.keys(MANIFEST_EXCLUDED_TABLES));
+    const schemaOf = (qualified: string) => qualified.slice(0, qualified.indexOf('.'));
+
+    const unaccounted = inCatalogue.filter(
+      (t) =>
+        !backedUp.has(t) && !excludedByName.has(t) && !(schemaOf(t) in MANIFEST_EXCLUDED_SCHEMAS),
+    );
+    expect(
+      unaccounted,
+      'These tables exist in staging and are in none of MANIFEST_TABLES, ' +
+        'MANIFEST_EXCLUDED_SCHEMAS or MANIFEST_EXCLUDED_TABLES. A restore verified against this ' +
+        'manifest would report clean while counting nothing for them. Add each to ' +
+        'MANIFEST_TABLES, or exclude it -- by schema or by name -- with the reason it is not ' +
+        'backed up.',
+    ).toEqual([]);
+
+    /*
+     * AN EXCLUSION LIST IS ITSELF A CLAIM ABOUT THE WORLD.
+     *
+     * A key that matches nothing is indistinguishable from a key doing its job,
+     * and `spatial_ref_sys` sat here unqualified from B11 until 2026-09-20
+     * matching nothing at all while the map looked perfectly consistent. Both
+     * checks below exist so that cannot happen again: a key must be
+     * schema-qualified, and it must name something that is really there.
+     */
+    for (const key of Object.keys(MANIFEST_EXCLUDED_TABLES)) {
+      expect(
+        key.split('.').length,
+        `the exclusion "${key}" is not schema-qualified. Names are not unique across schemas ` +
+          '(schema_migrations exists in both auth and realtime), and an unqualified key matches ' +
+          'nothing at all in a check that reads every schema.',
+      ).toBe(2);
+      expect(
+        inCatalogue,
+        `the exclusion "${key}" names a table that does not exist. Either it was dropped and the ` +
+          'exclusion is stale, or it never matched and the list has been lying since it was written.',
+      ).toContain(key);
+    }
+    for (const schema of Object.keys(MANIFEST_EXCLUDED_SCHEMAS)) {
+      expect(
+        inCatalogue.some((t) => schemaOf(t) === schema) ||
+          ['pg_catalog', 'information_schema'].includes(schema),
+        `the excluded schema "${schema}" holds no tables. Either it is gone and the exclusion is ` +
+          'stale, or it never existed and the list has been lying since it was written.',
+      ).toBe(true);
     }
   });
 

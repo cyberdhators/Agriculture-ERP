@@ -70,16 +70,17 @@ for deployments.
 false.** Seven required names were absent from that file until this was found on
 2026-09-13 — see _Seven variables the code requires and nothing declares_ below.
 
-| Name                     | Used by                                        | For                                                                                                                                                                                                                                                                                          |
-| ------------------------ | ---------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `DATABASE_URL`           | Prisma at runtime                              | Pooled connection, port 6543, `pgbouncer=true`, `connection_limit=1`.                                                                                                                                                                                                                        |
-| `DIRECT_URL`             | `prisma/schema.prisma`, `scripts/db-reset.mjs` | **Session pooler**, port 5432 — NOT the direct host, which is IPv6-only. Migrations, introspection, operational scripts and database tests.                                                                                                                                                  |
-| `NEXT_PUBLIC_SENTRY_DSN` | `apps/web/sentry.shared.ts`                    | Where errors go. **Public by design** — see `docs/DECISIONS.md`. Empty switches reporting off. **Lives in Vercel's environment variables, not on any laptop** — see _The DSN and local machines_ below.                                                                                      |
-| `SENTRY_ENVIRONMENT`     | same                                           | **Set explicitly in Vercel: `staging` for preview deployments, `production` for production.** Decided 2026-09-04. The code falls back to `VERCEL_ENV`, then `development`, but the fallback must never be what produces the value — `VERCEL_ENV` says `preview`, which is not a name we use. |
-| `SENTRY_RELEASE`         | same                                           | Which build. Falls back to `VERCEL_GIT_COMMIT_SHA`, then `unknown`.                                                                                                                                                                                                                          |
-| `BIRD_API_KEY`           | `scripts/bird-sms-verify.mjs`                  | **Secret.** Bearer token for the Bird SMS API; it can send messages CORWADO pays for. Never `NEXT_PUBLIC_`.                                                                                                                                                                                  |
-| `BIRD_API_BASE_URL`      | same                                           | The workspace's regional host, e.g. `https://us1.platform.bird.com`. Region is part of the URL and differs per workspace.                                                                                                                                                                    |
-| `BIRD_SMS_SENDER_ID`     | same                                           | The alphanumeric sender, 3-11 chars, at least one letter. The ONLY sender type Bird offers for +211.                                                                                                                                                                                         |
+| Name                     | Used by                                                       | For                                                                                                                                                                                                                                                                                          |
+| ------------------------ | ------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`           | Prisma at runtime                                             | Pooled connection, port 6543, `pgbouncer=true`, `connection_limit=1`.                                                                                                                                                                                                                        |
+| `DIRECT_URL`             | `prisma/schema.prisma`, `scripts/db-reset.mjs`                | **Session pooler**, port 5432 — NOT the direct host, which is IPv6-only. Migrations, introspection, operational scripts and database tests.                                                                                                                                                  |
+| `NEXT_PUBLIC_SENTRY_DSN` | `apps/web/sentry.shared.ts`                                   | Where errors go. **Public by design** — see `docs/DECISIONS.md`. Empty switches reporting off. **Lives in Vercel's environment variables, not on any laptop** — see _The DSN and local machines_ below.                                                                                      |
+| `SENTRY_ENVIRONMENT`     | same                                                          | **Set explicitly in Vercel: `staging` for preview deployments, `production` for production.** Decided 2026-09-04. The code falls back to `VERCEL_ENV`, then `development`, but the fallback must never be what produces the value — `VERCEL_ENV` says `preview`, which is not a name we use. |
+| `SENTRY_RELEASE`         | same                                                          | Which build. Falls back to `VERCEL_GIT_COMMIT_SHA`, then `unknown`.                                                                                                                                                                                                                          |
+| `BIRD_API_KEY`           | `scripts/bird-sms-verify.mjs`                                 | **Secret.** Bearer token for the Bird SMS API; it can send messages CORWADO pays for. Never `NEXT_PUBLIC_`.                                                                                                                                                                                  |
+| `BIRD_API_BASE_URL`      | same                                                          | The workspace's regional host, e.g. `https://us1.platform.bird.com`. Region is part of the URL and differs per workspace.                                                                                                                                                                    |
+| `BIRD_SMS_SENDER_ID`     | same                                                          | The alphanumeric sender, 3-11 chars, at least one letter. The ONLY sender type Bird offers for +211.                                                                                                                                                                                         |
+| `OPENWEATHER_API_KEY`    | `scripts/weather-fetch.mjs`, `scripts/openweather-verify.mjs` | **Secret, server-only.** Read by the fetch job and the verify script only; no route fetches weather (C-16.6), so it never nears a browser. A fresh key returns 401 for up to two hours.                                                                                                      |
 
 ### Seven variables the code requires and nothing declares (found 2026-09-13)
 
@@ -1764,6 +1765,37 @@ A gate that compares needs no vigilance: the two sources drift and it goes red
 by itself. A single-fact gate needs a person to remember, and the record of
 this project is eight demonstrations that nobody does.
 
+**THE STRONGEST DEMONSTRATION YET, AND IT WAS A NEAR MISS (2026-09-19, #93).**
+Two migrations rebuilt the same audit CHECK. B12's is dated `20260915120000`
+and adds three `weather_location.*` keys; #95's is dated `20260917120000` and
+rebuilt the constraint from a list that did not contain them. A CHECK can only
+be replaced, never extended, so on a **fresh** database the later one silently
+dropped all three, and **every B12 weather route would have failed on its audit
+insert — on production at B11**, discovered by a weather write failing in the
+field.
+
+**Staging could not have caught it, by construction.** Staging had both
+migrations applied in the order they were written, so its constraint carried the
+weather key and everything worked. **A database only ever sees one migration
+order — the one it happened to receive — so it can never tell you what a
+different order produces.** A fresh database is the only place the fault exists,
+and B11 is the first fresh database this project will ever create.
+
+**This is the argument in its clearest form.** A single-fact gate here would
+have compared `AUDIT_ACTIONS` to the live staging CHECK, found them equal, and
+passed — `tests/audit-actions-constraint.test.ts` does exactly that and was
+green throughout. What caught it was
+`packages/shared/tests/audit-check-matches-migrations`, which compares the
+constant against **the migrations as text, in folder order**, and asserts that
+no migration narrows what an earlier one allowed. It reads no database, so it
+cannot be fooled by the one order that happens to work.
+
+That test was written after the eleventh instance, to catch a thing that had
+not yet happened a second time. It then caught it. **The eleventh instance's own
+fix working is the best evidence in this project that the gate principle pays
+for itself** — and worth remembering the next time a comparing gate looks like
+more work than asserting the fact.
+
 **A WORKED EXAMPLE FROM A PLACE NOBODY WOULD THINK TO PUT A GATE (2026-09-14).**
 The edit scripts this project uses to change documents are written as:
 
@@ -2266,6 +2298,45 @@ that ends with work pushed on an inference.
 writing it.** Three instances in one session, by the session that had just
 recorded the pattern. That is the argument for gates that compare rather than
 resolutions to be careful.
+
+**A FOURTH INSTANCE, 2026-09-19, AND THE READER WAS THE FAULT THIS TIME.**
+`pnpm schema:check` was run as `node scripts/schema-check.mjs 2>&1 | tail -3 ||
+true` while `prisma/schema.prisma` was invalid. The script behaved perfectly:
+it printed `schema:check could not read the database. Nothing was changed.` as
+its FIRST line and exited 1. What `tail -3` kept was the last three lines of
+Prisma's own output —
+
+```
+Prisma CLI Version : 6.19.3
+```
+
+— and `|| true` discarded the exit status. **A version banner was read as a
+result.** The invalid schema went to CI, where `pnpm install` failed with five
+P1012 errors and the whole Test step was skipped, so the constraint test that
+run existed to check never ran at all.
+
+**The rule at the level that generalises, and it has two halves.**
+
+> **A check must produce a verdict, and a verdict must survive being read
+> carelessly.** A check whose output can be truncated to something that looks
+> like reassurance has not finished the job of reporting.
+
+1. **For the reader:** never pipe a check through `tail`, `head` or `grep` and
+   never append `|| true`. Both destroy the two things a check produces — the
+   verdict and the exit status — and leave the vendor's footer, which always
+   looks calm. Read the exit code; if the output is long, that is what the
+   status is for.
+2. **For the check:** print the verdict at BOTH ends. `schema-check.mjs` now
+   repeats it as its last line so that whichever end a reader cuts to, they see
+   the result and not a banner. Cheap, and it removes the reader's ability to
+   get it wrong — which is the same move as B5.5's guard refusing loudly rather
+   than skipping, and the same move as this section's own rule.
+
+**What it shares with the first three.** Those were absences read as reports:
+nothing arrived and nothing was the answer. This is the inversion — **something
+arrived, it was not the answer, and it was read as one**. A banner is not an
+absence; it is noise wearing the shape of a result, which is worse, because
+silence at least invites a question.
 
 **The three patterns together, as questions to ask of any check:**
 
@@ -3041,6 +3112,165 @@ directory freshness tile (needs a merged route writing `last_verified_at`).
 and merged or open. B11 is the production drill; its checklist is below and
 is the next thing to read.
 
+## AN EXCLUSION LIST IS ITSELF A CLAIM ABOUT THE WORLD (2026-09-20, #93)
+
+> **A key that matches nothing is indistinguishable from a key doing its job.**
+> Any list of exceptions in this project must be able to fail for naming
+> something that does not exist.
+
+`MANIFEST_EXCLUDED_TABLES` carried `spatial_ref_sys` from B11 until 2026-09-20.
+It matched **nothing** for that entire time. The table is real and has 8,500
+rows, but it lives in the `extensions` schema and the check only ever read
+`public`, so the exclusion was a sentence about a table the gate could not see.
+The map looked perfectly consistent the whole time — two names, two reasons,
+nothing obviously wrong — because **a list of exceptions gives no sign when one
+of its entries stops corresponding to anything.**
+
+**The general form, and it applies to every such list here** — the manifest
+exclusions, the `schema:check` residue lists (`EXPECTED_DROPPED_INDEXES`,
+`EXPECTED_UNRESTORED_FKS`), any allowlist added later:
+
+1. **Every entry must resolve.** The list is asserted against reality, and an
+   entry naming something absent is a finding — either it was removed and the
+   exclusion is stale, or it never matched and the list has been lying since it
+   was written. Both are worth a red run.
+2. **Every entry must be unambiguous.** Bare names are not unique: on this
+   database `schema_migrations` exists in **both `auth` and `realtime`**. An
+   unqualified key either matches nothing, or matches two things and means
+   neither. The manifest exclusions are now `schema.table` and the gate refuses
+   a key that is not.
+
+This is the same family as the gate principle, one level in: a comparing gate
+catches two sources drifting, and **this catches the gate's own configuration
+drifting away from the world it describes.** An exception list is code that
+nobody runs, and it decays silently.
+
+## A CATALOGUE QUERY PROVES INSTALLATION AND NOTHING ELSE (2026-09-20)
+
+When `spatial_ref_sys` appeared to be missing, the question was whether PostGIS
+was intact — B7's areas depend on it. `pg_extension` answered immediately:
+**postgis 3.3.7, schema `extensions`**. That answer was true and worthless. It
+says a row exists in a catalogue; it says nothing about whether the extension
+can compute.
+
+What settled it was running the thing:
+
+```
+ST_Transform(ST_SetSRID(ST_MakePoint(31.6, 4.85), 4326), 3857)
+  -> POINT(3517695.909067445 540545.4504560678)
+```
+
+**`ST_Transform` cannot execute without reading `spatial_ref_sys`.** A correct
+projection out the other side proves the table, its 8,500 rows and the PROJ
+library behind it, all at once — which no catalogue query can do.
+
+> **To prove a dependency works, use it. Asking whether it is installed is a
+> different question with a more reassuring answer.**
+
+## C-16.12'S FIRST RUN CAUGHT TWO FAULTS IN OPPOSITE DIRECTIONS (2026-09-20)
+
+The manifest gate was made two-directional in #93 — the catalogue compared to
+the list, and the list compared back to the catalogue. **Its first real run
+found a fault in each direction, neither of which was visible before the gate
+existed, and both in code that had already merged:**
+
+- **Outward:** `produce_listing` and `product_report` were in the database and
+  in no list. They arrived with #95's migration on 17 September. **A restore
+  verified against the manifest would have reported clean while counting
+  nothing for either.**
+- **Inward:** `spatial_ref_sys` was in the exclusion list and in no schema the
+  check could read — an exclusion that had never matched anything.
+
+One direction finds what the database gained; the other finds what the list
+claims and cannot support. **A gate with only the first direction would have
+caught the two tables and kept the dead exclusion forever; one with only the
+second would have caught the exclusion and let the two tables fall out of
+backup.** That is the argument for building both directions rather than the one
+that catches the failure you happen to be imagining.
+
+The check now reads **every schema**, classifying each base table as backed up,
+excluded by schema, excluded by name, or unaccounted for. Measured on staging
+the day it was written: **133 base tables, 24 backed up, 107 excluded by schema,
+2 excluded by name, 0 unaccounted for.** The platform's schemas — `auth`,
+`storage`, `realtime`, `vault` — and Postgres's own catalogues are excluded **by
+name with a reason each**, not by a silent `WHERE table_schema = 'public'`,
+because that filter is what made the gate blind in the first place.
+
+## A TEST REMOVES WHAT IT CREATED, BY ID (2026-09-20, #93)
+
+> **A cleanup defined by exclusion will delete rows it does not own. The set of
+> things that are not mine is unbounded and includes other people's work.**
+
+`tests/weather.test.ts` ended its audit test with this:
+
+```sql
+DELETE FROM public.weather_location
+ WHERE level = 'county' AND deleted_at IS NULL
+   AND name NOT LIKE 'zztest%' AND id NOT IN (…others…)
+```
+
+The comment above it said _"remove what this test inserted so staging stays as
+it was."_ **The predicate does not say that.** It says "every county-level row
+that is not mine", and on staging that matched six locations seeded by hand on
+2026-09-15 which this test did not create. It was stopped by
+`weather_observation_location_fkey` — a foreign key, not by its own design.
+**That is luck, not safety.** Had those six carried no observations they would
+have been deleted and the test would have passed.
+
+**The rule, at the level that generalises.** A test removes **what it created,
+by id** — captured before it acts and diffed after, or tracked as it inserts.
+Never "everything that is not mine": that set has no boundary, it grows every
+time somebody else uses the database, and it is indistinguishable from a
+deliberate sweep right up until it takes something.
+
+**The whole tree was checked rather than assumed.** Every other `DELETE` in
+`tests/`, `tests/helpers/` and the package tests defines what it owns
+**inclusively** — `LIKE 'zztest%'`, `LIKE '<prefix>%'`, `= $1::uuid`, or a
+subselect on the test family. `tests/weather.test.ts:298` was the only exclusion
+predicate in the repository, and the same file's own `beforeAll` sweep is
+inclusive, so the pattern was written once and not copied.
+
+**IT IS THE SAME FAULT AS THE HAND-MADE ROWS, SEEN FROM THE OTHER END.** One put
+a row in the suite's way; this would have taken rows out of somebody else's
+work. Both come from **a test and a database disagreeing about who owns what is
+in it** — and the answer in both directions is that ownership must be positive
+and stated, never inferred from what is left over.
+
+## RESOLVING A CONFLICT IS NOT ONE OPERATION (2026-09-19, #93)
+
+**Concatenating both sides is correct for an append seam and wrong inside a
+declaration, and nothing in the resolution path distinguishes them.**
+
+Eight files conflicted when #93 was reconciled with main. Seven were both lanes
+appending at the same point — a nav entry, an env block, an export list, a log
+entry — where keeping both sides in order is exactly right. The eighth was
+`prisma/schema.prisma`, where one conflict boundary fell **inside** the
+`WeatherForecast` model: its closing brace was in the removed region, so
+concatenating ours-then-theirs produced a model that never closed and an enum
+that appeared to be four malformed fields.
+
+**The trap is that the two cases look identical to the resolver.** A conflict
+block is just lines; whether those lines are a complete unit or half of one is a
+property of the file's grammar, which no merge tool and no hand-editing script
+knows anything about.
+
+**The mitigation is cheap and it is not "be careful".** After resolving any
+conflict in a file with a grammar, **validate that file's own syntax**, not only
+the tests:
+
+| File                   | The check that reads it                                               |
+| ---------------------- | --------------------------------------------------------------------- |
+| `prisma/schema.prisma` | `node scripts/with-env.mjs prisma validate`, then `pnpm schema:check` |
+| `*.ts`, `*.tsx`        | `pnpm typecheck`                                                      |
+| `*.json`               | any parse; `pnpm format:check` will do                                |
+| `*.md`                 | `pnpm format:check`                                                   |
+
+The reason this was missed is worth stating plainly: **typecheck, lint and 626
+pure tests all passed on the broken tree, because not one of them reads
+`schema.prisma`.** A green check set is only evidence about the files the checks
+actually open, and the most confident-looking run in this project so far was
+green on a schema that could not be parsed.
+
 ## B11 — BACKUP AND RECOVERY (2026-09-09)
 
 **What exists.** Migration 21: the `system.restored` audit key and the
@@ -3062,9 +3292,112 @@ drill: that needs a scratch project under CORWADO's name (C-11.7).
 **The drill: not yet run.** Record the date and result here when it has been.
 Production receives its first migration only after.
 
+**STEP, NOT A SUGGESTION: compare every recorded checksum against its file
+after any hand-applied migration, and again before the restore drill.**
+
+```
+for each row in _prisma_migrations where finished_at is not null
+    and rolled_back_at is null:
+  sha256(prisma/migrations/<migration_name>/migration.sql) == row.checksum
+```
+
+The drill runs `prisma migrate deploy` against a **fresh** database, which is
+exactly where a mismatch stops being annoying and becomes unrecoverable: the
+deploy refuses, and the restore has no schema to restore into. **B11 is the one
+place in this project where this class of drift cannot be worked around.**
+
+It has happened once already. `20260917120000` was applied to staging by hand
+on 2026-09-17 in a form that differed from the file that was committed, and
+`migrate deploy` against staging failed silently from that day until 2026-09-19
+because nobody compared the two. When it was finally compared, 22 of 24 matched
+and one did not. **The comparison takes seconds and is the only thing that finds
+it** — a schema check passes, the tests pass, and the database serves every
+query correctly the whole time.
+
 **Open, for the owner:** the plan CORWADO's projects are on and whether
 point-in-time recovery is purchasable (C-11.1's number); the scratch project
 for the drill; the destination account for the bucket copy.
+
+## B12 — THE WEATHER TILE, C-16 (2026-09-15)
+
+**What exists.** Migration 23: `weather_location`, `weather_observation`,
+`weather_forecast`, the `weather_location_active` view, three audit keys, RLS on
+all three. Prisma models for all three (`pnpm schema:check` passes). `GET
+/api/weather` through `requireRole`. `packages/shared/src/weather.ts`: the
+daily aggregation, the schemas, the constants. `pnpm weather:locations` (one
+county-level row per county, audited as `system`), `pnpm weather:fetch` (paced,
+idempotent, floored, not audited), `pnpm weather:verify` (throwaway).
+CONVENTIONS §18. The contract's §9 records every divergence, dated, with the
+agreed text left untouched. The I-03 findings behind the design are on #78.
+
+**Proved live on staging, 2026-09-15.** The OpenWeather key activated within
+the hour and the free plan answers both inputs; **One Call is a separate
+subscription** — first-party, from its own 401: _"requires a separate
+subscription to the One Call by Call plan."_ Six counties seeded and fetched —
+36.7 °C in Juba, five days each, 1.2 s pacing, none failed. A second run inside
+the hour skipped all six (the floor). The route's query returns the six rows for
+an admin and Juba County alone for an officer in CE-JUB-MUN. Six
+`weather_location.created` audit rows as `system`; **zero** audit rows from
+fetching.
+
+**What was not proved, and why.** `tests/weather.test.ts` is written — scoping
+for all four roles, empty as success, stale served with its real time,
+idempotent upsert, the level/payam CHECK, soft-delete hiding a row, the seed's
+audit and the fetch's silence — and **has not run**, because the staging-rows
+refusal in the global setup fires on the hand-made `Placeholder-Deng` farmer,
+as designed. It runs the moment that row is gone.
+
+**IT RAN ON 2026-09-20 AND FAILED ON FIRST CONTACT — THREE OF ITS TESTS.** The
+row was removed and the file executed for the first time since it was written.
+A scope assertion demanded that the suite's two locations be the ONLY ones in
+the caller's state and got eight, six of them the county rows seeded by hand on
+15 September. A constraint assertion matched on a constraint NAME that Prisma
+does not surface, so a correct refusal read as a wrong one. A cleanup defined by
+exclusion reached for six rows it did not own and was stopped by a foreign key.
+All three were the tests; none was the route, the migration or the contract.
+
+**THE LABELLING WORKED AND THE EVIDENCE DID NOT EXIST.** Nobody was misled —
+this entry said plainly that the file had not run, and said why. That is the
+honest thing and it is why the failure was expected rather than alarming. But
+the file sat in the record among what B12 had built, in a section headed by what
+the unit proved, and **a test that has never run is not evidence.** It is an
+intention. The distance between "written" and "passing" was three real defects
+wide, and none of them was visible from reading it.
+
+**So the rule for the criteria table below, and for every unit after this one:**
+a criterion is met when a test that has RUN says so. A written test is worth
+recording, but it belongs on the side of the ledger with the work still to do,
+not the side with the proof. Where a suite cannot run, the criterion is
+**unproved**, and the entry should say which of the two it is.
+
+| Criterion                                                                  | State                                                                   |
+| -------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| C-16.1 forecasts as numbers                                                | DONE — **three tables, not two**; the reason is in CONVENTIONS §18      |
+| C-16.2 explicit scope, never a null meaning something                      | DONE — `level` + `payam_id` paired by CHECK                             |
+| C-16.3 denormalised `state_id`, composite keys                             | DONE — to payam and to county                                           |
+| C-16.4 `deleted_at` beside `active`                                        | DONE                                                                    |
+| C-16.5 no `sms_campaign_id`                                                | DONE                                                                    |
+| C-16.6 one fetch per location per day, no route fetches, paced, idempotent | DONE — proved live                                                      |
+| C-16.7 stale served with real time; refetch floor                          | DONE — floor proved live; stale in the unrun test                       |
+| C-16.8 the route, scoped                                                   | DONE — **officer scope is county, not payam**                           |
+| C-16.9 empty is a success                                                  | DONE — the live case for nine states                                    |
+| C-16.10 attribution served                                                 | DONE — `ok()` gained an `extra` bag to carry it beside `data`           |
+| C-16.11 audit locations, never fetches                                     | DONE — proved live                                                      |
+| C-16.12 manifest knows the tables; catalogue→list gate                     | DONE — `MANIFEST_EXCLUDED_TABLES` names the two exceptions with reasons |
+| C-16.13 county level to start                                              | DONE — six counties                                                     |
+| C-16.14 re-pointable under I-07                                            | DONE — centroids looked up by name, rows reference ids only             |
+
+**Decisions taken in the build, for the owner.** Three tables where the
+criterion said two, so a fetch never looks like an edit to a location. Officer
+scope is the county. A never-fetched location is omitted so `fetched_at` keeps
+its promise. `ok()` in the route wrapper accepts top-level siblings of `data`,
+refusing the envelope's own names.
+
+**Two gates fired during the build and were right both times.** `schema:check`
+named `weather_location_county_id_fkey` — Prisma cannot restate a second key
+over the same field set — and it was added to the residue deliberately with the
+reason. The seed refused on `Yei River`, the placeholder county's real name,
+and inserted nothing until the centroid existed.
 
 ## B11 CHECKLIST — WHAT A FRESH PRODUCTION PROJECT MUST BE GIVEN BY HAND
 

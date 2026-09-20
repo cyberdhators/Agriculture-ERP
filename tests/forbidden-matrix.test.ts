@@ -25,6 +25,7 @@ import * as farmerResubmit from '../apps/web/app/api/farmers/[id]/resubmit/route
 import * as farmerVerify from '../apps/web/app/api/farmers/[id]/verify/route';
 import * as farmers from '../apps/web/app/api/farmers/route';
 import * as verificationQueue from '../apps/web/app/api/verification/queue/route';
+import * as weather from '../apps/web/app/api/weather/route';
 import * as directoryItem from '../apps/web/app/api/directory-entries/[id]/route';
 import * as directory from '../apps/web/app/api/directory-entries/route';
 import * as learningItem from '../apps/web/app/api/learning-resources/[id]/route';
@@ -566,6 +567,13 @@ const ROUTES = [
     method: 'GET' as const,
     allow: ['admin', 'supervisor', 'read_only', 'officer'],
     params: () => ({ id: visitId, aid: attachmentId }),
+  },
+  // C-16. The weather tile: everyone in scope reads; nothing writes through a route.
+  {
+    name: 'GET /api/weather',
+    mod: weather,
+    method: 'GET' as const,
+    allow: ['admin', 'supervisor', 'read_only', 'officer'],
   },
   // P1 (C-13). The directories and the learning library: everyone in scope reads, only an administrator writes.
   {

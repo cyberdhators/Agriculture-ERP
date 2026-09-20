@@ -62,6 +62,11 @@ export const AUDIT_ACTIONS = [
   'learning_resource.updated',
   'learning_resource.published',
   'learning_resource.soft_deleted',
+  // C-16: a weather location is a managed record. A forecast fetch is NOT audited
+  // (C-16.11) -- it is a scheduled read of a third party, not an action on a record.
+  'weather_location.created',
+  'weather_location.updated',
+  'weather_location.soft_deleted',
   // Marketplace moderation and administrator communications, added 2026-09-17.
   // The CHECK in migration 20260917120000 is generated from this list; the two
   // change together in one commit or the database refuses the key.
