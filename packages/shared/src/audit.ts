@@ -62,6 +62,16 @@ export const AUDIT_ACTIONS = [
   'learning_resource.updated',
   'learning_resource.published',
   'learning_resource.soft_deleted',
+  'listing.created',
+  'listing.updated',
+  'listing.status_changed',
+  'listing.soft_deleted',
+  'contact_request.created',
+  'contact_request.handled',
+  'market_price.created',
+  'market_price.soft_deleted',
+  'notification.created',
+  'notification.read',
 ] as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];

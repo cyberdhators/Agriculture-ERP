@@ -104,7 +104,8 @@ model State {
   officers Officer[]
   farmers  Farmer[]
   farms    Farm[]
-  visits   Visit[]
+  visits       Visit[]
+  marketPrices MarketPrice[]
 
   @@map("state")
 }
@@ -334,6 +335,10 @@ model User {
   learningResourcesDeleted  LearningResource[] @relation("LearningResourceDeletedBy")
   visitsDeleted             Visit[]            @relation("VisitDeletedBy")
   reportExports             ReportExport[]
+  listingsDeleted           ProduceListing[]   @relation("ProduceListingDeletedBy")
+  contactRequestsHandled    ContactRequest[]   @relation("ContactRequestHandledBy")
+  marketPricesCreated       MarketPrice[]      @relation("MarketPriceCreatedBy")
+  marketPricesDeleted       MarketPrice[]      @relation("MarketPriceDeletedBy")
 
   @@index([role], map: "user_role_idx")
   @@index([scopeStateId], map: "user_scope_state_id_idx")
@@ -517,6 +522,9 @@ model Farmer {
   farms              Farm[]
   visits             Visit[]
   mergeTargetOf      VerificationEvent[] @relation("MergeTargetEvents")
+  listings           ProduceListing[]
+  contactRequests    ContactRequest[]
+  notifications      Notification[]
 
   @@index([payamId, verificationStatus, deletedAt], map: "farmer_payam_status_idx")
   @@index([countyId], map: "farmer_county_id_idx")
@@ -819,4 +827,167 @@ model ReportExport {
 
   @@index([exportedAt(sort: Desc), id(sort: Desc)], map: "report_export_exported_idx")
   @@map("report_export")
+}
+
+// -----------------------------------------------------------------------------
+// Marketplace — produce listings and contact requests (deliverable (g))
+// Migration 22, 23.
+// -----------------------------------------------------------------------------
+
+enum ListingStatus {
+  draft
+  listed
+  withdrawn
+  sold
+
+  @@map("listing_status")
+}
+
+enum ListingCategory {
+  crop
+  vegetable
+  fruit
+  livestock
+  poultry
+  dairy
+  fish
+  processed
+  seeds_inputs
+  other
+
+  @@map("listing_category")
+}
+
+enum ListingUnit {
+  kg
+  bag_50kg
+  bag_100kg
+  sack
+  crate
+  bunch
+  piece
+  head
+  litre
+  tin
+
+  @@map("listing_unit")
+}
+
+model ProduceListing {
+  id                 String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  farmerId           String          @map("farmer_id") @db.Uuid
+  tradingName        String          @map("trading_name")
+  title              String
+  category           ListingCategory
+  productName        String          @map("product_name")
+  description        String
+  quantity           Decimal         @db.Decimal(12, 2)
+  unit               ListingUnit
+  priceSsp           Decimal         @map("price_ssp") @db.Decimal(12, 2)
+  pricePer           ListingUnit     @map("price_per")
+  negotiable         Boolean         @default(false)
+  photoStoragePaths  String[]        @default([]) @map("photo_storage_paths")
+  availableFrom      DateTime        @map("available_from") @db.Date
+  availableUntil     DateTime?       @map("available_until") @db.Date
+  harvestSeason      String?         @map("harvest_season")
+  pickupNotes        String?         @map("pickup_notes")
+  contactPhone       String          @map("contact_phone")
+  deliveryAvailable  Boolean         @default(false) @map("delivery_available")
+  status             ListingStatus   @default(draft)
+  createdAt          DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime        @default(now()) @map("updated_at") @db.Timestamptz(6)
+  deletedAt          DateTime?       @map("deleted_at") @db.Timestamptz(6)
+  deletedBy          String?         @map("deleted_by") @db.Uuid
+
+  farmer          Farmer           @relation(fields: [farmerId], references: [id], map: "produce_listing_farmer_id_fkey")
+  deleter         User?            @relation("ProduceListingDeletedBy", fields: [deletedBy], references: [id], map: "produce_listing_deleted_by_fkey")
+  contactRequests ContactRequest[]
+
+  @@index([farmerId, updatedAt(sort: Desc)], map: "produce_listing_farmer_idx")
+  @@index([status, category, updatedAt(sort: Desc)], map: "produce_listing_browse_idx")
+  @@map("produce_listing")
+}
+
+enum ContactStatus {
+  new_request @map("new")
+  introduced
+  declined
+  no_answer
+
+  @@map("contact_status")
+}
+
+model ContactRequest {
+  id         String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  listingId  String        @map("listing_id") @db.Uuid
+  farmerId   String        @map("farmer_id") @db.Uuid
+  buyerName  String        @map("buyer_name")
+  buyerPhone String        @map("buyer_phone")
+  message    String?
+  quantity   String?
+  status     ContactStatus @default(new_request)
+  note       String?
+  createdAt  DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  handledAt  DateTime?     @map("handled_at") @db.Timestamptz(6)
+  handledBy  String?       @map("handled_by") @db.Uuid
+
+  listing  ProduceListing @relation(fields: [listingId], references: [id], map: "contact_request_listing_id_fkey")
+  farmer   Farmer         @relation(fields: [farmerId], references: [id], map: "contact_request_farmer_id_fkey")
+  handler  User?          @relation("ContactRequestHandledBy", fields: [handledBy], references: [id], map: "contact_request_handled_by_fkey")
+
+  @@index([listingId, createdAt(sort: Desc)], map: "contact_request_listing_idx")
+  @@index([farmerId, createdAt(sort: Desc)], map: "contact_request_farmer_idx")
+  @@map("contact_request")
+}
+
+// -----------------------------------------------------------------------------
+// Market prices — deliverable (n). Migration 24.
+// -----------------------------------------------------------------------------
+
+model MarketPrice {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  commodity  String
+  marketName String   @map("market_name")
+  priceSsp   Decimal  @map("price_ssp") @db.Decimal(12, 2)
+  unit       ListingUnit
+  recordedOn DateTime @map("recorded_on") @db.Date
+  stateId    String   @map("state_id")
+  createdBy  String?  @map("created_by") @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  deletedAt  DateTime? @map("deleted_at") @db.Timestamptz(6)
+  deletedBy  String?  @map("deleted_by") @db.Uuid
+
+  state   State @relation(fields: [stateId], references: [id], map: "market_price_state_id_fkey")
+  creator User? @relation("MarketPriceCreatedBy", fields: [createdBy], references: [id], map: "market_price_created_by_fkey")
+  deleter User? @relation("MarketPriceDeletedBy", fields: [deletedBy], references: [id], map: "market_price_deleted_by_fkey")
+
+  @@index([stateId, recordedOn(sort: Desc)], map: "market_price_browse_idx")
+  @@map("market_price")
+}
+
+// -----------------------------------------------------------------------------
+// Notifications — deliverable (p). Migration 25.
+// -----------------------------------------------------------------------------
+
+enum NotificationChannel {
+  sms
+  in_app
+
+  @@map("notification_channel")
+}
+
+model Notification {
+  id        String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  farmerId  String              @map("farmer_id") @db.Uuid
+  channel   NotificationChannel @default(in_app)
+  title     String
+  body      String
+  readAt    DateTime?           @map("read_at") @db.Timestamptz(6)
+  createdAt DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  deletedAt DateTime?           @map("deleted_at") @db.Timestamptz(6)
+
+  farmer Farmer @relation(fields: [farmerId], references: [id], map: "notification_farmer_id_fkey")
+
+  @@index([farmerId, createdAt(sort: Desc)], map: "notification_farmer_unread_idx")
+  @@map("notification")
 }

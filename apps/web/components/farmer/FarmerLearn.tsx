@@ -1,7 +1,11 @@
 'use client';
 
+import { useState } from 'react';
+
+import { LEARNING_TOPICS, type LearningTopic } from '@agri-erp/shared';
+
 import { FormatIcon } from '@/components/library/resource-presentation';
-import { Notice } from '@/components/ui';
+import { Notice, Tabs } from '@/components/ui';
 import { useFarmerSession } from '@/lib/farmer-session';
 import { LEARNING_RESOURCES, type LearningResourceRow } from '@/lib/fixtures/p1';
 import { FORMAT_LABELS, TOPIC_LABELS, formatBytes, formatDate } from '@/lib/format';
@@ -10,21 +14,26 @@ import { t } from '@/lib/i18n';
 import { PageHead } from './AccountShell';
 import styles from './farmer.module.css';
 
-/**
- * Learning materials, for a farmer. Published resources only, the farmer's
- * language first. The files themselves do not open here yet: the library has
- * no upload or signed-link route (audit, B1), so the page says how the farmer
- * gets the material today — from their officer on a visit — rather than
- * offering a button that does nothing. Off live this reads the fixtures; a
- * farmer-side route replaces that when the farmer principal lands.
- */
+type TopicFilter = 'all' | LearningTopic;
+
 export function FarmerLearn() {
   const { farmer, language } = useFarmerSession();
+  const [topic, setTopic] = useState<TopicFilter>('all');
   if (!farmer) return null;
 
   const published = LEARNING_RESOURCES.filter((r) => r.published && r.deleted_at === null);
-  const mine = published.filter((r) => r.language === language);
-  const other = published.filter((r) => r.language !== language);
+  const filtered = topic === 'all' ? published : published.filter((r) => r.topic === topic);
+  const mine = filtered.filter((r) => r.language === language);
+  const other = filtered.filter((r) => r.language !== language);
+
+  const tabs: { key: TopicFilter; label: string; count: number }[] = [
+    { key: 'all', label: t('learn.allTopics', language), count: published.length },
+    ...LEARNING_TOPICS.filter((tp) => published.some((r) => r.topic === tp)).map((tp) => ({
+      key: tp as TopicFilter,
+      label: TOPIC_LABELS[tp],
+      count: published.filter((r) => r.topic === tp).length,
+    })),
+  ];
 
   return (
     <>
@@ -34,7 +43,14 @@ export function FarmerLearn() {
         <p className="small">{t('learn.howBody', language)}</p>
       </Notice>
 
-      {published.length === 0 ? (
+      <Tabs
+        label={t('learn.filterByTopic', language)}
+        items={tabs}
+        value={topic}
+        onChange={setTopic}
+      />
+
+      {filtered.length === 0 ? (
         <p className="muted">{t('learn.empty', language)}</p>
       ) : (
         <>

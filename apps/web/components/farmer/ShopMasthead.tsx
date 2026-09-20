@@ -24,7 +24,7 @@ import styles from './farmer.module.css';
  * The masthead search navigates to the marketplace, where the in-page search
  * band does the filtering; it changes chrome only, never data.
  */
-export function ShopMasthead({ subnav }: { subnav?: ReactNode }) {
+export function ShopMasthead({ subnav, hideStrip }: { subnav?: ReactNode; hideStrip?: boolean }) {
   const { farmer, language, setLanguage } = useFarmerSession();
   const router = useRouter();
   const [query, setQuery] = useState('');
@@ -87,13 +87,15 @@ export function ShopMasthead({ subnav }: { subnav?: ReactNode }) {
         </div>
       </div>
 
-      <div className={styles.shopStrip}>
-        <span className={styles.shopStripAll} aria-hidden>
-          <span className={styles.shopBurger} />
-          {t('market.allCategories', language)}
-        </span>
-        {subnav ?? <ShopCategoryLinks />}
-      </div>
+      {hideStrip ? null : (
+        <div className={styles.shopStrip}>
+          <span className={styles.shopStripAll} aria-hidden>
+            <span className={styles.shopBurger} />
+            {t('market.allCategories', language)}
+          </span>
+          {subnav ?? <ShopCategoryLinks />}
+        </div>
+      )}
     </header>
   );
 }

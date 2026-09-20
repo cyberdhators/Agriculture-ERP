@@ -120,7 +120,11 @@ export const empty = (status: number, headers?: Record<string, string>): RouteRe
 
 export interface RouteContext<TBody> {
   readonly request: Request;
-  /** Null only on a route declared `roles: 'public'`. */
+  /**
+   * The resolved session. Null only on a route declared `roles: 'public'` — a
+   * public handler must cast or check before using it. Every authenticated
+   * route can use it directly.
+   */
   readonly auth: Authenticated;
   readonly body: TBody;
   readonly params: Record<string, string>;
@@ -130,8 +134,12 @@ export interface RouteContext<TBody> {
 }
 
 export interface RouteDefinition<TBody = undefined> {
-  /** Which roles may call this. There is no "any authenticated" shortcut by accident. */
-  readonly roles: readonly Role[];
+  /**
+   * Which roles may call this. `'public'` skips authentication entirely — the
+   * handler receives `auth: null`. Use only for endpoints a caller with no
+   * account must reach (the buyer contact-request POST is the first).
+   */
+  readonly roles: readonly Role[] | 'public';
   /** Present means a body is expected, validated by this schema before the handler runs. */
   readonly bodySchema?: ZodType<TBody>;
   readonly handler: (ctx: RouteContext<TBody>) => Promise<RouteResult>;
@@ -189,8 +197,12 @@ function wrap<TBody>(definition: RouteDefinition<TBody>): NextRouteHandler {
 
       // 1. Authenticate and authorise BEFORE anything reads the body or the
       //    database. An unauthenticated caller learns nothing about the shape
-      //    of the request they got wrong.
-      const auth = await requireRole(request, definition.roles);
+      //    of the request they got wrong. A route declared `roles: 'public'`
+      //    skips this step: any caller may reach it, and the handler receives
+      //    null (cast to keep RouteContext compatible for authenticated routes).
+      const auth = (
+        definition.roles === 'public' ? null : await requireRole(request, definition.roles)
+      ) as Authenticated;
 
       // 2. The body, in the order CONVENTIONS section 9 fixes: what it claims
       //    to be, how big it claims to be, whether it can be read, whether it
@@ -272,7 +284,7 @@ function wrap<TBody>(definition: RouteDefinition<TBody>): NextRouteHandler {
  * open here and recovered by inference at each call site.
  */
 type AnyRouteDefinition = {
-  readonly roles: readonly Role[];
+  readonly roles: readonly Role[] | 'public';
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   readonly bodySchema?: ZodType<any>;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

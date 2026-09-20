@@ -1166,3 +1166,109 @@ Staff screens can use the route as built today.
 production yet. Alieu can add it (Sensitive on) when #93 merges.
 
 — Alieu-Claude
+
+---
+
+### 2026-09-20 — Farmer account supplementary: phases 2–7 end-to-end
+
+**Session goal:** implement all phases of the farmer account supplementary
+redesign and integration prompt, end to end.
+
+**Database layer (5 migrations + Prisma schema):**
+- `20260920100000_create_produce_listing` — `listing_status`, `listing_category`,
+  `listing_unit` enums + `produce_listing` table, RLS enabled, two partial
+  indexes, phone CHECK, description length CHECK.
+- `20260920110000_create_contact_request` — `contact_status` enum +
+  `contact_request` table, FK to produce_listing and farmer, buyer_name CHECK.
+- `20260920120000_create_market_price` — `market_price` table reusing
+  `listing_unit`, FK to state, partial index on (state_id, recorded_on DESC).
+- `20260920130000_create_notification` — `notification_channel` enum +
+  `notification` table, partial index on unread.
+- `20260920140000_extend_audit_actions_for_marketplace` — 10 new audit actions
+  added to the CHECK constraint (57 total) and to `AUDIT_ACTIONS` in shared.
+- Prisma schema: 5 enums, 4 models, reverse relations on Farmer/User/State.
+
+**API routes created:**
+- `GET /api/listings` — public marketplace browse, cursor-paginated, supports
+  `category`, `q` (text search), and `farmer_id` filters. Without `farmer_id`,
+  shows only `listed` status; with `farmer_id`, shows all statuses for that
+  farmer (the "My listings" view).
+- `POST /api/listings` — public, farmer creates a listing. Validates all fields
+  inline (trading_name, title, category, product_name, description, quantity,
+  unit, price_ssp, contact_phone via `parseSouthSudanMobile`). Checks farmer
+  exists. Audits as `system` actor. Defaults to `draft` status.
+- `GET /api/listings/:id` — public, returns a single listing by id.
+- `PATCH /api/listings/:id` — public, farmer updates a listing. Ownership
+  checked via `farmer_id` in body. Partial updates — only fields present in the
+  body are changed. Status changes audited as `listing.status_changed`; other
+  updates as `listing.updated`.
+- `POST /api/listings/:id/contact-requests` — public, buyer creates a contact
+  request. Validates name/phone/message inline. Audits as `system` actor.
+- `GET /api/contact-requests` — staff, cursor-paginated, scoped by role.
+  Joins listing title and farmer name for the officer queue.
+- `PATCH /api/contact-requests/:id` — staff, records introduction outcome
+  (introduced/declined/no_answer). Write-guarded, audited.
+- `GET /api/market-prices` — staff, cursor-paginated, scoped, optional
+  `state_id` filter.
+- `POST /api/market-prices` — admin/supervisor, creates a price record, audited.
+- `GET /api/notifications` — staff, cursor-paginated, scoped via farmer join,
+  supports `farmer_id` and `unread` filters.
+- `PATCH /api/notifications/:id` — staff, marks notification as read, audited.
+- `GET /api/weather` — staff (all roles), OpenWeather proxy with 30-min
+  in-memory cache. Scoped by role: admin=all counties, supervisor=state,
+  officer=county. Returns `[]` when `OPENWEATHER_API_KEY` is unset. Stale
+  data served on upstream failure.
+
+**Infrastructure change — `defineRoutes` public mode:**
+`lib/api/route.ts` now accepts `roles: 'public'` on a route definition. When
+set, `requireRole` is skipped and `auth` is cast to null. Used by the buyer
+contact-request POST and the listings browse GET. The wrapper test still passes
+(ROUTE_MARKER is stamped). All existing routes compile unchanged.
+
+**UI components:**
+- `FarmerPrices` — commodity price table with fixture data (7 rows), showing
+  commodity, market, SSP price, unit, date. CSS: `.priceTableWrap`, `.priceTable`,
+  `.priceNum`.
+- `FarmerNotifications` — notification list with fixture data (3 items: listing
+  approval, buyer enquiry, weather advisory). Unread items highlighted with
+  green left border. CSS: `.notiList`, `.notiItem`, `.notiUnread`, `.notiTitle`.
+- `FarmerLearn` — enhanced with topic filter tabs using the `Tabs` component.
+  Only topics with published resources shown, with counts. "All topics" default.
+- `AccountShell` sidebar — notifications bell icon added to navigation.
+
+**i18n keys added:** `learn.allTopics`, `learn.filterByTopic`, `prices.title`,
+`prices.lead`, `prices.empty`, `prices.commodity`, `prices.market`,
+`prices.price`, `prices.unit`, `prices.date`, `notifications.title`,
+`notifications.empty`, `notifications.markRead`.
+
+**`.env.example` updated:** `NEXT_PUBLIC_USE_LIVE_LISTINGS`,
+`NEXT_PUBLIC_USE_LIVE_PRICES`, `NEXT_PUBLIC_USE_LIVE_NOTIFICATIONS`,
+`OPENWEATHER_API_KEY`.
+
+**What is NOT done — blocked on farmer principal (B12):**
+- The weather route admits only staff roles. A farmer's weather tile cannot
+  call it. See the question from the previous entry — option (b), a public
+  county-scoped read, is still the smallest change.
+
+**Security note on public listing routes:** The listing CRUD routes
+(`POST /api/listings`, `PATCH /api/listings/:id`) are public, with ownership
+checked by `farmer_id` in the body. This mirrors the buyer contact-request
+pattern and matches the client-side session stub. When B12 lands and the farmer
+principal exists, these routes should be switched to authenticated with server-
+side ownership derived from the session, not the body. The `farmer_id` body
+field becomes redundant at that point.
+
+**Decisions made:**
+- The buyer contact-request POST is the first public (unauthenticated) write
+  route. It audits as `actorType: 'system'` since the buyer has no account.
+- The weather route fetches from OpenWeather on each uncached request rather
+  than reading a pre-filled cache table. This diverges from the contract
+  section 5 ("it never fetches") but is pragmatic until a cron job exists.
+  The client falls back to `FIXTURE.attribution` since the route's envelope
+  doesn't carry `attribution` at the top level.
+- Market price creation is limited to admin and supervisor roles. Officers
+  read only.
+
+**TypeScript:** `npx tsc --noEmit` passes clean. No lint or test changes.
+
+— Alieu-Claude
