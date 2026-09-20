@@ -65,6 +65,26 @@ const present = (row: ListingRow) => ({
   updated_at: row.updated_at,
 });
 
+const presentPublic = (row: ListingRow) => ({
+  id: row.id,
+  trading_name: row.trading_name,
+  title: row.title,
+  category: row.category,
+  product_name: row.product_name,
+  description: row.description,
+  quantity: Number(row.quantity),
+  unit: row.unit,
+  price_ssp: Number(row.price_ssp),
+  price_per: row.price_per,
+  negotiable: row.negotiable,
+  delivery_available: row.delivery_available,
+  available_from: row.available_from,
+  available_until: row.available_until,
+  status: row.status,
+  created_at: row.created_at,
+  updated_at: row.updated_at,
+});
+
 const VALID_CATEGORIES = [
   'crop', 'vegetable', 'fruit', 'livestock', 'poultry',
   'dairy', 'fish', 'processed', 'seeds_inputs', 'other',
@@ -91,7 +111,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
         id,
       );
       if (!row) throw notFound();
-      return ok(present(row));
+      return ok(presentPublic(row));
     },
   },
 
@@ -271,7 +291,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
         const rows = await tx.$queryRawUnsafe<ListingRow[]>(
           `UPDATE public.produce_listing
            SET ${sets.join(', ')}
-           WHERE id = $1::uuid
+           WHERE id = $1::uuid AND deleted_at IS NULL
            RETURNING ${SELECT_COLUMNS}`,
           ...params,
         );

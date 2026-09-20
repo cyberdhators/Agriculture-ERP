@@ -117,7 +117,6 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
           action: 'contact_request.created',
           after: {
             listing_id: inserted.listing_id,
-            buyer_phone: buyerPhone,
           },
         });
 

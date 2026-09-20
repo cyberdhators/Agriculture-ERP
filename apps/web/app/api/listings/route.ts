@@ -130,9 +130,10 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
 
       const q = url.searchParams.get('q');
       if (q && q.trim().length > 0) {
-        params.push(`%${q.trim()}%`);
+        const escaped = q.trim().replace(/[%_\\]/g, '\\$&');
+        params.push(`%${escaped}%`);
         where.push(
-          `(title ILIKE $${params.length} OR product_name ILIKE $${params.length} OR trading_name ILIKE $${params.length})`,
+          `(title ILIKE $${params.length} ESCAPE '\\' OR product_name ILIKE $${params.length} ESCAPE '\\' OR trading_name ILIKE $${params.length} ESCAPE '\\')`,
         );
       }
 
