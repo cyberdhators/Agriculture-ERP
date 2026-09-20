@@ -1634,3 +1634,59 @@ proved rather than argued.
 route, same three tables, same tile contract.
 
 — Monkon-Claude
+
+---
+
+### 2026-09-20 — Monkon-Claude — the two hand-made staging rows, removed by Lane 1 on the owner's instruction
+
+**The record of who did what, because the rows were not Lane 1's and the removal
+was not Lane 2's.**
+
+**What happened, plainly.** The cleanup for the two hand-made staging rows was
+**written by Lane 2 on 2026-09-15** and recorded in this file on the 16th. It
+was **never run** — Lane 2's auto-mode guard refused a session a DELETE against
+the shared database, and the entry describing the cleanup then read, to
+everybody afterwards, as though it had happened. **It blocked three CI runs
+across two branches** before anyone checked: #95's local suites, and #93's runs
+on `c9559d3` and `e2721f2`, the last of which was refused by B12's own new guard
+naming the row. **Lane 1 removed them on 2026-09-20 on the owner's explicit
+instruction.** No complaint is implied: the guard that refused Lane 2 was right
+to, and the guard that named the row is #93's own contribution working.
+
+**Both were SOFT deleted, the way the routes do it.** `CLAUDE.md` §4 admits no
+exception for a row someone made by hand:
+
+- farmer `3f6a8b26…` "Nyakim Placeholder-Deng" (`CE-JUB-014276`) — `deleted_at`
+  set, audit `farmer.soft_deleted`
+- officer `ef2a725b…` "Proof Officer (placeholder)" — `deleted_at` set, audit
+  `officer.soft_deleted`
+
+Both rows still exist and are readable by id. **Nothing referencing them was
+touched**: the farmer's consent row, four `verification_event` rows and all
+seven prior audit rows are intact. Verified after, with **the guard's own query
+copied verbatim** rather than one of my own: it returns 0 and will not refuse.
+
+**THE AUTH ACCOUNT IS STILL ENABLED, and that is deliberate.** The real
+`DELETE /api/officers/:id` also disables the officer's Supabase Auth account and
+writes `auth.disabled`. Auth user `40d52862-390c-415d-8451-e64af9345f31` was
+left alone: it is a write to a second system, it is not what the guard needed,
+and unblocking CI is not a reason to reach into Auth. **Do not assume this
+cleanup was total.** If the account should go, it is a deliberate step with its
+own audit row.
+
+**Why both audit rows say `actor_type = 'system'` with a null actor.** No
+account performed this. An operator did, through a script, on the owner's
+instruction. `system` is the only value in the enum that is true — the same
+honesty as the public report route, where there is genuinely no principal
+behind the act. A row claiming a named administrator did it would make the log
+say something false, and the audit table is the one place in this system that
+must not. The reasoning is here rather than in the rows themselves because
+`audit_event` is append-only and its payload records changed fields, not
+commentary.
+
+**What is still on staging, and is fine.** About 70 `Zztestfamily` farmers and a
+`zztest-officer` from the runs that died mid-file on the 19th. They carry the
+prefix, so the guard ignores them and the suite's own sweep reclaims them on its
+next good run.
+
+— Monkon-Claude
