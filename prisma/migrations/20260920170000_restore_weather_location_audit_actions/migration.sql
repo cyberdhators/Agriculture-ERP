@@ -1,0 +1,78 @@
+-- Migration 20260920140000 was edited after staging had applied it: the two
+-- keys 'weather_location.updated' and 'weather_location.soft_deleted' were
+-- added to the file in place, so a database that ran the earlier text has a
+-- CHECK of 63 keys and refuses those two audit writes. A CHECK can only be
+-- replaced, so this recreates it with the full list. On a fresh database it
+-- is a no-op in effect: same 65 keys as the migration before it.
+
+ALTER TABLE "public"."audit_event"
+    DROP CONSTRAINT "audit_event_action_known";
+
+ALTER TABLE "public"."audit_event"
+    ADD CONSTRAINT "audit_event_action_known" CHECK ("action" IN (
+        'user.created',
+        'user.updated',
+        'user.password_set',
+        'user.soft_deleted',
+        'officer.created',
+        'officer.updated',
+        'officer.status_changed',
+        'officer.password_set',
+        'officer.soft_deleted',
+        'auth.disabled',
+        'auth.disable_failed',
+        'auth.account_orphaned',
+        'location.created',
+        'location.renamed',
+        'location.soft_deleted',
+        'farmer.created',
+        'farmer.updated',
+        'farmer.soft_deleted',
+        'consent.recorded',
+        'farmer.verified',
+        'farmer.rejected',
+        'farmer.merged',
+        'farmer.resubmitted',
+        'farmer.reassigned',
+        'farm.created',
+        'farm.boundary_added',
+        'farm.boundary_superseded',
+        'farm.crops_declared',
+        'farm.soft_deleted',
+        'farm.repointed',
+        'visit.recorded',
+        'visit.corrected',
+        'visit.soft_deleted',
+        'visit.attachment_declared',
+        'visit.attachment_arrived',
+        'visit.attachment_failed',
+        'visit.attachment_link_issued',
+        'visit.repointed',
+        'report.exported',
+        'system.restored',
+        'directory_entry.created',
+        'directory_entry.updated',
+        'directory_entry.soft_deleted',
+        'learning_resource.created',
+        'learning_resource.updated',
+        'learning_resource.published',
+        'learning_resource.soft_deleted',
+        'product_report.created',
+        'product_report.listing_removed',
+        'product_report.status_changed',
+        'communication.email_sent',
+        'communication.send_failed',
+        'weather_location.created',
+        'weather_location.updated',
+        'weather_location.soft_deleted',
+        'listing.created',
+        'listing.updated',
+        'listing.status_changed',
+        'listing.soft_deleted',
+        'contact_request.created',
+        'contact_request.handled',
+        'market_price.created',
+        'market_price.soft_deleted',
+        'notification.created',
+        'notification.read'
+    ));

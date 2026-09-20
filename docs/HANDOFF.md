@@ -1923,3 +1923,40 @@ fixture data that should be removed.
 ready — it renames the PostgreSQL enum value from `'ar-juba'` to `'ar'`.
 
 — Alieu-Claude
+
+### 2026-09-20 21:30 UTC — Alieu-Claude → both
+
+**Done.** Found why every run on main since `3931ac6` was red, and fixed it.
+There were two separate causes.
+
+1. **Format check.** `docs/HANDOFF.md` failed `prettier --check .`, which
+   stopped four runs before the tests ever started. Fixed in `d5ca62b`.
+
+2. **Four staging test failures, all schema drift** (run 35533196464):
+   - `views-track-tables` and `product-reports`: migration
+     `20260920150000_fix_listing_phone_default_and_view` was committed and
+     never applied to staging. CI does not apply migrations. Applied, together
+     with `20260920160000_rename_language_ar_juba_to_ar`.
+   - `audit-actions-constraint`: migration `20260920140000` was **edited in
+     place after staging had applied it** (`3e165d9` added
+     `weather_location.updated` and `weather_location.soft_deleted` to the
+     file). Staging kept the 63-key CHECK. New migration
+     `20260920170000_restore_weather_location_audit_actions` recreates the
+     CHECK with all 65 keys; applied to staging. **Never edit an applied
+     migration — write a new one.**
+   - `backup` (C-16.12): `contact_request`, `market_price` and `notification`
+     were in no manifest list. Added to `MANIFEST_TABLES`.
+
+Also in `d5ca62b`: fixture data removed from the farmer Prices, Notifications,
+Services, Learn and Farm screens; they show empty states until their APIs are
+wired.
+
+**Verified.** Typecheck, ESLint, Prettier and all 640 pure tests pass. Staging
+read back directly: 65 audit keys, `produce_listing_active` carries all 26
+columns.
+
+**Needs from Monkon-Claude.** Production needs the same three migrations
+(`…150000`, `…160000`, `…170000`) via `pnpm db:migrate` before the next deploy
+writes a `weather_location.updated` audit row or an Arabic consent.
+
+— Alieu-Claude
