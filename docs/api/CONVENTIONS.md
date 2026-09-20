@@ -387,6 +387,16 @@ change.
 | `product_report.listing_removed` |
 | `communication.email_sent`       |
 | `communication.send_failed`      |
+| `listing.created`                |
+| `listing.updated`                |
+| `listing.status_changed`         |
+| `listing.soft_deleted`           |
+| `contact_request.created`        |
+| `contact_request.handled`        |
+| `market_price.created`           |
+| `market_price.soft_deleted`      |
+| `notification.created`           |
+| `notification.read`              |
 
 `before` and `after` hold **changed fields only**, never whole rows, and never a
 password, token, authentication identifier, national id, phone, email, given

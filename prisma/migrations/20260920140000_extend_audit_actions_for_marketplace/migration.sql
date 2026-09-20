@@ -3,7 +3,7 @@
 --
 -- Widens audit_event_action_known to include ALL keys from every migration:
 -- the original set, product_report/communication from migration 20260917,
--- and the marketplace/prices/notifications keys from this session (62 total).
+-- and the marketplace/prices/notifications keys from this session (65 total).
 
 ALTER TABLE "public"."audit_event"
     DROP CONSTRAINT "audit_event_action_known";
@@ -63,6 +63,8 @@ ALTER TABLE "public"."audit_event"
         'communication.email_sent',
         'communication.send_failed',
         'weather_location.created',
+        'weather_location.updated',
+        'weather_location.soft_deleted',
         'listing.created',
         'listing.updated',
         'listing.status_changed',
