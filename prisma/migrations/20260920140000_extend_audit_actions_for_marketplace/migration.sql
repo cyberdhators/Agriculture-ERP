@@ -1,8 +1,9 @@
--- Migration 26 -- marketplace, market prices, and notifications audit actions.
+-- Migration 26 -- marketplace, market prices, notifications, product reports
+-- and communication audit actions.
 --
--- Widens audit_event_action_known to the ten keys these four tables add, in
--- lockstep with AUDIT_ACTIONS in packages/shared/src/audit.ts. The constraint
--- is dropped and recreated with the FULL list (57 keys).
+-- Widens audit_event_action_known to include ALL keys from every migration:
+-- the original set, product_report/communication from migration 20260917,
+-- and the marketplace/prices/notifications keys from this session (62 total).
 
 ALTER TABLE "public"."audit_event"
     DROP CONSTRAINT "audit_event_action_known";
@@ -56,6 +57,12 @@ ALTER TABLE "public"."audit_event"
         'learning_resource.updated',
         'learning_resource.published',
         'learning_resource.soft_deleted',
+        'product_report.created',
+        'product_report.listing_removed',
+        'product_report.status_changed',
+        'communication.email_sent',
+        'communication.send_failed',
+        'weather_location.created',
         'listing.created',
         'listing.updated',
         'listing.status_changed',

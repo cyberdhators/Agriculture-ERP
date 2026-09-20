@@ -232,10 +232,10 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       const negotiable = input.negotiable === true;
       const deliveryAvailable = input.delivery_available === true;
 
-      const availableFrom = typeof input.available_from === 'string' ? input.available_from : '';
-      if (!DATE_RE.test(availableFrom)) {
-        throw new ApiFailure(400, 'invalid_input', 'available_from must be a date (YYYY-MM-DD).');
-      }
+      const today = new Date().toISOString().slice(0, 10);
+      const availableFrom = typeof input.available_from === 'string' && DATE_RE.test(input.available_from)
+        ? input.available_from
+        : today;
 
       const availableUntil = typeof input.available_until === 'string' && input.available_until ? input.available_until : null;
       if (availableUntil && !DATE_RE.test(availableUntil)) {
@@ -255,8 +255,8 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
 
       const status = typeof input.status === 'string' && ['draft', 'listed'].includes(input.status) ? input.status : 'draft';
 
-      const [farmer] = await prisma.$queryRawUnsafe<{ id: string }[]>(
-        `SELECT id FROM public.farmer WHERE id = $1::uuid AND deleted_at IS NULL LIMIT 1`,
+      const [farmer] = await prisma.$queryRawUnsafe<{ id: string; payam_id: string; state_id: string }[]>(
+        `SELECT id, payam_id, state_id FROM public.farmer WHERE id = $1::uuid AND deleted_at IS NULL LIMIT 1`,
         farmerId,
       );
       if (!farmer) {
@@ -269,15 +269,16 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
              (farmer_id, trading_name, title, category, product_name, description,
               quantity, unit, price_ssp, price_per, negotiable, delivery_available,
               available_from, available_until, harvest_season, pickup_notes,
-              contact_phone, status)
+              contact_phone, status, payam_id, state_id)
            VALUES ($1::uuid, $2, $3, $4::listing_category, $5, $6,
                    $7, $8::listing_unit, $9, $10::listing_unit, $11, $12,
-                   $13::date, $14::date, $15, $16, $17, $18::listing_status)
+                   $13::date, $14::date, $15, $16, $17, $18::listing_status,
+                   $19, $20)
            RETURNING ${SELECT_COLUMNS}`,
           farmerId, tradingName, title, category, productName, description,
           quantity, unit, priceSsp, pricePer, negotiable, deliveryAvailable,
           availableFrom, availableUntil, harvestSeason, pickupNotes,
-          contactPhone, status,
+          contactPhone, status, farmer.payam_id, farmer.state_id,
         );
         await writeAudit(tx, {
           entityType: 'produce_listing',
