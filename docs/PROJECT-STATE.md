@@ -2315,6 +2315,43 @@ guard, and the suite reports green with one file fewer. **The run's total is
 printed and was never asserted.** Checked on 2026-09-20: the pure suite had a
 completeness guard since 2026-09-11 and the staging suite had none.
 
+**THE HONEST LIMIT ON ALL OF THIS, AND IT IS WORTH STATING BEFORE THE PRINCIPLE
+GETS TRUSTED TOO FAR (2026-09-20).**
+
+Twelve silent-class instances resolve into one sentence, and the sentence is
+true. But look at when each comparing gate was WRITTEN:
+
+| Gate                             | Written after                                   |
+| -------------------------------- | ----------------------------------------------- |
+| `views-track-tables`             | a view that had stopped tracking its table      |
+| the CONVENTIONS drift test       | a rule sentence that had drifted from the code  |
+| `audit-check-matches-migrations` | #28 nearly replacing forty keys with twenty-two |
+| `pure-suite-complete`            | eight files silently skipping in CI for months  |
+| the manifest's two directions    | three tables added without the manifest         |
+| `database-suite-complete`        | the question being asked directly, this week    |
+
+**Every one but the last was written after something got through.** The
+principle tells you what to build once you know where to look. **It does not
+tell you where to look first**, and a project that only ever adds a gate after
+a failure is paying full price for each lesson.
+
+Two things are worth saying about what might answer it, neither of them built:
+
+1. **The seams are findable by shape, not by incident.** Every gate above sits
+   where **one fact is written down twice** — a constant and a CHECK, a view and
+   a table, a list and a catalogue, a config and a directory. That is an
+   enumerable property: two places holding the same truth with nothing between
+   them. A sweep for duplicated facts would find candidate seams before either
+   copy moves, rather than after.
+2. **The failures cluster where a thing is declared in one language and
+   enforced in another** — TypeScript and SQL, a config and a filesystem, a
+   document and code. Each crossing is a translation nobody re-checks, and all
+   twelve instances are at one.
+
+Neither is a plan; they are the two patterns visible in the list. What would
+settle it is counting the seams the same way the instances were counted, and
+seeing whether the ones without gates are the ones that have not failed _yet_.
+
 **So the gate principle has a completing half:**
 
 > **A comparing gate must compare FROM OUTSIDE, or it can only ever check what
