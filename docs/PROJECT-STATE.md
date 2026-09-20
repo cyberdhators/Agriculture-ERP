@@ -3112,6 +3112,46 @@ directory freshness tile (needs a merged route writing `last_verified_at`).
 and merged or open. B11 is the production drill; its checklist is below and
 is the next thing to read.
 
+## A TEST REMOVES WHAT IT CREATED, BY ID (2026-09-20, #93)
+
+> **A cleanup defined by exclusion will delete rows it does not own. The set of
+> things that are not mine is unbounded and includes other people's work.**
+
+`tests/weather.test.ts` ended its audit test with this:
+
+```sql
+DELETE FROM public.weather_location
+ WHERE level = 'county' AND deleted_at IS NULL
+   AND name NOT LIKE 'zztest%' AND id NOT IN (…others…)
+```
+
+The comment above it said _"remove what this test inserted so staging stays as
+it was."_ **The predicate does not say that.** It says "every county-level row
+that is not mine", and on staging that matched six locations seeded by hand on
+2026-09-15 which this test did not create. It was stopped by
+`weather_observation_location_fkey` — a foreign key, not by its own design.
+**That is luck, not safety.** Had those six carried no observations they would
+have been deleted and the test would have passed.
+
+**The rule, at the level that generalises.** A test removes **what it created,
+by id** — captured before it acts and diffed after, or tracked as it inserts.
+Never "everything that is not mine": that set has no boundary, it grows every
+time somebody else uses the database, and it is indistinguishable from a
+deliberate sweep right up until it takes something.
+
+**The whole tree was checked rather than assumed.** Every other `DELETE` in
+`tests/`, `tests/helpers/` and the package tests defines what it owns
+**inclusively** — `LIKE 'zztest%'`, `LIKE '<prefix>%'`, `= $1::uuid`, or a
+subselect on the test family. `tests/weather.test.ts:298` was the only exclusion
+predicate in the repository, and the same file's own `beforeAll` sweep is
+inclusive, so the pattern was written once and not copied.
+
+**IT IS THE SAME FAULT AS THE HAND-MADE ROWS, SEEN FROM THE OTHER END.** One put
+a row in the suite's way; this would have taken rows out of somebody else's
+work. Both come from **a test and a database disagreeing about who owns what is
+in it** — and the answer in both directions is that ownership must be positive
+and stated, never inferred from what is left over.
+
 ## RESOLVING A CONFLICT IS NOT ONE OPERATION (2026-09-19, #93)
 
 **Concatenating both sides is correct for an append seam and wrong inside a
@@ -3222,6 +3262,29 @@ idempotent upsert, the level/payam CHECK, soft-delete hiding a row, the seed's
 audit and the fetch's silence — and **has not run**, because the staging-rows
 refusal in the global setup fires on the hand-made `Placeholder-Deng` farmer,
 as designed. It runs the moment that row is gone.
+
+**IT RAN ON 2026-09-20 AND FAILED ON FIRST CONTACT — THREE OF ITS TESTS.** The
+row was removed and the file executed for the first time since it was written.
+A scope assertion demanded that the suite's two locations be the ONLY ones in
+the caller's state and got eight, six of them the county rows seeded by hand on
+15 September. A constraint assertion matched on a constraint NAME that Prisma
+does not surface, so a correct refusal read as a wrong one. A cleanup defined by
+exclusion reached for six rows it did not own and was stopped by a foreign key.
+All three were the tests; none was the route, the migration or the contract.
+
+**THE LABELLING WORKED AND THE EVIDENCE DID NOT EXIST.** Nobody was misled —
+this entry said plainly that the file had not run, and said why. That is the
+honest thing and it is why the failure was expected rather than alarming. But
+the file sat in the record among what B12 had built, in a section headed by what
+the unit proved, and **a test that has never run is not evidence.** It is an
+intention. The distance between "written" and "passing" was three real defects
+wide, and none of them was visible from reading it.
+
+**So the rule for the criteria table below, and for every unit after this one:**
+a criterion is met when a test that has RUN says so. A written test is worth
+recording, but it belongs on the side of the ledger with the work still to do,
+not the side with the proof. Where a suite cannot run, the criterion is
+**unproved**, and the entry should say which of the two it is.
 
 | Criterion                                                                  | State                                                                   |
 | -------------------------------------------------------------------------- | ----------------------------------------------------------------------- |

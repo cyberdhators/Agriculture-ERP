@@ -138,11 +138,28 @@ describe('who sees which locations (C-16.8)', () => {
   });
 
   it('a supervisor and a read-only user see their own state only', async () => {
+    /*
+     * ASSERTED AS SCOPE, NOT AS "THESE TWO AND NOTHING ELSE".
+     *
+     * This read `toEqual([freshId, staleId])`, which assumes the suite's rows
+     * are the only fetched locations in the caller's state. Staging holds six
+     * county rows seeded on 2026-09-15, all in CE, and they are legitimately in
+     * a CE supervisor's scope -- so the assertion failed on a correct answer.
+     * What C-16.8 actually requires is that NOTHING OUTSIDE THE CALLER'S STATE
+     * comes back, which is checked here against every row returned rather than
+     * against the two this file happens to know about. Stronger, not looser.
+     */
     for (const who of [supervisorA, readOnlyA]) {
       const r = await call(weather, 'GET', { as: who });
       expect(r.status).toBe(200);
       const got = ids(r.body);
-      expect(got).toEqual([freshId, staleId].sort());
+      expect(got).toContain(freshId);
+      expect(got).toContain(staleId);
+      const states = await prisma.$queryRawUnsafe<{ state_id: string }[]>(
+        `SELECT DISTINCT state_id FROM public.weather_location WHERE id = ANY($1::uuid[])`,
+        got,
+      );
+      expect(states.map((x) => x.state_id)).toEqual([STATE_A]);
     }
   });
 
@@ -210,17 +227,28 @@ describe('one fetch per location per day is idempotent (C-16.6)', () => {
       freshId,
     );
     expect(after[0]!.n).toBe(before[0]!.n);
-    // And a duplicate forecast day is refused by the constraint, which is what the job's upsert relies on.
+    /*
+     * And a duplicate forecast day is refused, which is what the job's upsert
+     * relies on. PINNED BY SQLSTATE AND COLUMNS, NOT BY THE CONSTRAINT NAME:
+     * Postgres puts the name in its primary message and the offending tuple in
+     * DETAIL, and Prisma surfaces the DETAIL and drops the line carrying the
+     * name. Matching `/weather_forecast_one_per_day/` therefore failed on a
+     * correct refusal. 23505 plus the column pair says more than the name did.
+     */
     const d = new Date(Date.now() + 86_400_000).toISOString().slice(0, 10);
-    await expect(
-      prisma.$executeRawUnsafe(
+    const refusal = await prisma
+      .$executeRawUnsafe(
         `INSERT INTO public.weather_forecast
            (weather_location_id, forecast_for, fetched_at, temp_max_c, temp_min_c, humidity_pct, wind_kph, conditions, raw)
          VALUES ($1::uuid, $2::date, now(), 30, 20, 60, 10, 'x', '{}'::jsonb)`,
         freshId,
         d,
-      ),
-    ).rejects.toThrow(/weather_forecast_one_per_day/);
+      )
+      .then(() => null)
+      .catch((error: { meta?: { code?: string; message?: string } }) => error);
+    expect(refusal, 'a duplicate forecast day was accepted').not.toBeNull();
+    expect(refusal!.meta?.code, 'not a unique violation').toBe('23505');
+    expect(String(refusal!.meta?.message)).toContain('weather_location_id, forecast_for');
   });
 });
 
@@ -267,10 +295,22 @@ describe('audit (C-16.11)', () => {
       `SELECT name FROM public.county WHERE id = $1`,
       countyA,
     );
-    // Remove any existing county-level row for this county so the seed has something to do; restore after.
-    const others = await prisma.$queryRawUnsafe<{ id: string }[]>(
-      `SELECT id FROM public.weather_location WHERE county_id = $1 AND level = 'county' AND deleted_at IS NULL AND name NOT LIKE 'zztest%'`,
-      countyA,
+    /*
+     * EVERY LOCATION ID THAT EXISTS BEFORE THE SEED RUNS.
+     *
+     * The cleanup at the end of this test removes what the seed INSERTED, by
+     * id, found by difference against this set. It used to delete "every
+     * county-level row that is not zztest-named and not in `others`", which is
+     * a set defined by exclusion: on staging that matched six locations seeded
+     * by hand on 2026-09-15 that this test did not create and does not own. A
+     * foreign key from `weather_observation` refused the delete and the test
+     * went red -- which is luck, not safety. See PROJECT-STATE, "a test removes
+     * what it created, by id".
+     */
+    const existingIds = new Set(
+      (
+        await prisma.$queryRawUnsafe<{ id: string }[]>(`SELECT id FROM public.weather_location`)
+      ).map((r) => r.id),
     );
     const centroids: Record<string, { latitude: number; longitude: number }> = {};
     const all = await prisma.$queryRawUnsafe<{ name: string }[]>(
@@ -293,10 +333,25 @@ describe('audit (C-16.11)', () => {
       expect(a!.actor_type).toBe('system');
       expect(a!.actor_id).toBeNull();
     }
-    // The seed's rows are not zztest-named; remove what this test inserted so staging stays as it was.
-    await prisma.$executeRawUnsafe(
-      `DELETE FROM public.weather_location WHERE level = 'county' AND deleted_at IS NULL AND name NOT LIKE 'zztest%' AND id NOT IN (${others.length ? others.map((o) => `'${o.id}'::uuid`).join(',') : "'00000000-0000-0000-0000-000000000000'::uuid"})`,
-    );
+    // Remove exactly what the seed inserted, by id, and nothing else. Anything
+    // that was here before this test ran is somebody else's and stays.
+    const inserted = (
+      await prisma.$queryRawUnsafe<{ id: string }[]>(`SELECT id FROM public.weather_location`)
+    )
+      .map((r) => r.id)
+      .filter((id) => !existingIds.has(id));
+    if (inserted.length > 0) {
+      for (const table of ['weather_forecast', 'weather_observation']) {
+        await prisma.$executeRawUnsafe(
+          `DELETE FROM public.${table} WHERE weather_location_id = ANY($1::uuid[])`,
+          inserted,
+        );
+      }
+      await prisma.$executeRawUnsafe(
+        `DELETE FROM public.weather_location WHERE id = ANY($1::uuid[])`,
+        inserted,
+      );
+    }
     void c;
     // An observation write (what the fetch job does) adds no audit row.
     const beforeObs = await prisma.$queryRawUnsafe<{ n: number }[]>(

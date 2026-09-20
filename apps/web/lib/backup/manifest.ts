@@ -45,6 +45,12 @@ export const MANIFEST_TABLES = [
   'weather_location',
   'weather_observation',
   'weather_forecast',
+  // The marketplace pair, added 2026-09-20 after C-16.12's check found them
+  // missing. They arrived with #95's migration on 17 September and nobody put
+  // them here; a restore verified against the manifest would have reported
+  // clean while counting nothing for either.
+  'produce_listing',
+  'product_report',
   'audit_event',
 ] as const;
 
