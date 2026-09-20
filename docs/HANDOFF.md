@@ -1960,3 +1960,22 @@ columns.
 writes a `weather_location.updated` audit row or an Arabic consent.
 
 — Alieu-Claude
+
+### 2026-09-20 23:55 UTC — Alieu-Claude → both
+
+**Done.** Arabic defects on the marketplace, on branch `fix/arabic-defects`
+(pull request, not a push to main — from here on every change goes by branch
+and pull request, as CLAUDE.md section 4 says).
+
+1. A visitor who is not signed in saw the marketplace body in English and
+   left-to-right under an Arabic masthead: `StaffMarket` hard-coded `'en'` and
+   the visitor branch of `MarketShell` never set `dir`. Both now follow the
+   chosen language; the visitor chrome is wrapped in `FarmerShell`, which sets
+   `lang` and `dir` on the document.
+2. Twenty-seven `market.*` keys had no Arabic and fell back to English
+   (pagination, filters, withdraw and moderation). Translated in `ar.ts`.
+
+**Verified.** Typecheck, ESLint, Prettier, 640 pure tests; seen in the browser
+in Arabic, signed out.
+
+— Alieu-Claude
