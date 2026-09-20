@@ -76,6 +76,16 @@ export const AUDIT_ACTIONS = [
   // The SEND is audited; the message body never is (C-4.6, C-4.7).
   'communication.email_sent',
   'communication.send_failed',
+  'listing.created',
+  'listing.updated',
+  'listing.status_changed',
+  'listing.soft_deleted',
+  'contact_request.created',
+  'contact_request.handled',
+  'market_price.created',
+  'market_price.soft_deleted',
+  'notification.created',
+  'notification.read',
 ] as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];
