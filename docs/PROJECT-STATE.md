@@ -3385,14 +3385,23 @@ audit and the fetch's silence — and **has not run**, because the staging-rows
 refusal in the global setup fires on the hand-made `Placeholder-Deng` farmer,
 as designed. It runs the moment that row is gone.
 
-**CORRECTION, 2026-09-20: THIS FILE WAS NEVER MERGED UNPROVEN.** An earlier
-version of this entry said it was, and said so on my account. Git says
-otherwise: `tests/weather.test.ts` first reached `main` in `f1d42ad` (#93), the
-same commit that made its tests pass. It spent five days **unmerged with red
-CI**, and merged the hour it went green. That is the gate working exactly as
-designed, not a file slipping through it. **The correction came from checking
-git rather than re-reading this entry** — the entry was the thing that was
-wrong, and re-reading it would have confirmed the error rather than found it.
+**CORRECTION, 2026-09-20: THIS FILE WAS NEVER MERGED UNPROVEN.** Git:
+`tests/weather.test.ts` first reached `main` in `f1d42ad` (#93), the same commit
+that made its tests pass. It spent five days **unmerged with red CI** and merged
+the hour it went green. That is the gate working exactly as designed, not a file
+slipping through it.
+
+**AND THE RECORD WAS NOT AT FAULT — THE INFERENCE FROM IT WAS.** The entry
+below said "has not run", which was accurate about the file's state and stayed
+accurate. What went wrong is that it was read as **"merged unproven"** and
+repeated as fact in an instruction, and the distance between those two readings
+is the entire finding: the record was right about WHAT the file was, and the
+error was an assumption about WHERE it was. Stated plainly rather than kindly,
+because a tally that softens its entries stops being a tally. **The fourth wrong
+premise recorded in this project, and the second caught in two days** — both by
+querying the system instead of re-reading the record, which is the only method
+that works here, since re-reading a record cannot surface a belief the record
+never contained.
 
 **IT RAN ON 2026-09-20 AND FAILED ON FIRST CONTACT — THREE OF ITS TESTS.** The
 row was removed and the file executed for the first time since it was written.
