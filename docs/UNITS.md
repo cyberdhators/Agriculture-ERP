@@ -18,40 +18,58 @@ otherwise for B3, B9 and B11 until 2026-09-08; they were the plan of
 against the lane statement. A fresh session reads this table to learn who
 owns what, so it now agrees with HANDOFF row for row.
 
-| Unit     | What it covers                                              | Owner      | Status                                                                    |
-| -------- | ----------------------------------------------------------- | ---------- | ------------------------------------------------------------------------- |
-| **B0**   | Accounts                                                    | Alieu      | Done                                                                      |
-| **B1.1** | Repository skeleton                                         | Alieu      | Done                                                                      |
-| **B1.2** | CI pipeline                                                 | Alieu      | Done                                                                      |
-| **B1.3** | Prisma to staging Supabase                                  | Alieu      | Done                                                                      |
-| **B1.4** | API conventions, Zod, error shape                           | Alieu      | Done                                                                      |
-| **B1.5** | Sentry and the scrubber                                     | Alieu      | Done                                                                      |
-| **B1.6** | README and project state                                    | Alieu      | Done — #12                                                                |
-| **B2**   | Locations: state, county, payam                             | Monkonmlah | Merged — #15                                                              |
-| **B3**   | Identity, roles, `requireRole`, RLS                         | Monkonmlah | Merged — #20                                                              |
-| **B4**   | Audit log, append-only                                      | Monkonmlah | Merged — #24                                                              |
-| **B5**   | Farmer core, consent, soft delete                           | Monkonmlah | Merged — #32                                                              |
-| **B5.5** | CI runs the database tests                                  | Monkonmlah | Merged — #33                                                              |
-| **B6**   | Verification and escalation                                 | Monkonmlah | Merged — #34                                                              |
-| **B6.5** | Auth outage is 503, not 401                                 | Monkonmlah | Merged #39                                                                |
-| **B7**   | Farm boundaries and PostGIS                                 | Monkonmlah | Merged #38                                                                |
-| **B8**   | Visit notes and attachments                                 | Monkonmlah | Merged #41                                                                |
-| **B8.5** | Caseload reassignment (admin only)                          | Monkonmlah | Merged #42                                                                |
-| **B9**   | Offline sync endpoint                                       | Monkonmlah | PR open — #44                                                             |
-| **B10**  | Reporting views and export record                           | Monkonmlah | Merged #45                                                                |
-| **B11**  | Backup and restore drill                                    | Monkonmlah | Merged #46                                                                |
-| **B12**  | Weather tile (C-16): three tables, one route, the fetch job | Monkonmlah | Built — `feat/b12-weather-tile`; DB tests await the staging row's removal |
+| Unit     | What it covers                                              | Owner      | Status                  |
+| -------- | ----------------------------------------------------------- | ---------- | ----------------------- |
+| **B0**   | Accounts                                                    | Alieu      | Done                    |
+| **B1.1** | Repository skeleton                                         | Alieu      | Done                    |
+| **B1.2** | CI pipeline                                                 | Alieu      | Done                    |
+| **B1.3** | Prisma to staging Supabase                                  | Alieu      | Done                    |
+| **B1.4** | API conventions, Zod, error shape                           | Alieu      | Done                    |
+| **B1.5** | Sentry and the scrubber                                     | Alieu      | Done                    |
+| **B1.6** | README and project state                                    | Alieu      | Done — #12              |
+| **B2**   | Locations: state, county, payam                             | Monkonmlah | Merged — #15            |
+| **B3**   | Identity, roles, `requireRole`, RLS                         | Monkonmlah | Merged — #20            |
+| **B4**   | Audit log, append-only                                      | Monkonmlah | Merged — #24            |
+| **B5**   | Farmer core, consent, soft delete                           | Monkonmlah | Merged — #32            |
+| **B5.5** | CI runs the database tests                                  | Monkonmlah | Merged — #33            |
+| **B6**   | Verification and escalation                                 | Monkonmlah | Merged — #34            |
+| **B6.5** | Auth outage is 503, not 401                                 | Monkonmlah | Merged #39              |
+| **B7**   | Farm boundaries and PostGIS                                 | Monkonmlah | Merged #38              |
+| **B8**   | Visit notes and attachments                                 | Monkonmlah | Merged #41              |
+| **B8.5** | Caseload reassignment (admin only)                          | Monkonmlah | Merged #42              |
+| **B9**   | Offline sync endpoint                                       | Monkonmlah | Merged #44              |
+| **B10**  | Reporting views and export record                           | Monkonmlah | Merged #45              |
+| **B11**  | Backup and restore drill                                    | Monkonmlah | Merged #46              |
+| **B12**  | Weather tile (C-16): three tables, one route, the fetch job | Monkonmlah | Merged #93 — 2026-09-20 |
 
 ## Parallel units — Lane 2 (Alieu-Claude)
 
 Built alongside the backend spine without touching its tables. Coordination,
 ownership and the log live in `docs/HANDOFF.md`.
 
-| Unit     | What it covers                                                    | Owner                | Status                                     |
-| -------- | ----------------------------------------------------------------- | -------------------- | ------------------------------------------ |
-| **P1**   | Directories (i)(j)(k) and learning library (m): schema, Zod, seed | Alieu (Alieu-Claude) | Merged #17; routes wait for B3/B4          |
-| **UI**   | First portal skin: shell, directories, library on fixtures        | Alieu (Alieu-Claude) | Closed unmerged #18, kept as reference     |
-| **UI-2** | "The Register" re-skin and Farmers screens on fixtures            | Alieu (Alieu-Claude) | PR open — #23 (`feat/ui-farmers-register`) |
+| Unit     | What it covers                                                    | Owner                | Status                                   |
+| -------- | ----------------------------------------------------------------- | -------------------- | ---------------------------------------- |
+| **P1**   | Directories (i)(j)(k) and learning library (m): schema, Zod, seed | Alieu (Alieu-Claude) | Merged #17; routes #28; live on them #79 |
+| **UI**   | First portal skin: shell, directories, library on fixtures        | Alieu (Alieu-Claude) | Closed unmerged #18, kept as reference   |
+| **UI-2** | "The Register" re-skin and Farmers screens on fixtures            | Alieu (Alieu-Claude) | Merged #23                               |
+
+## Work that has landed outside this numbering (2026-09-20)
+
+**This board numbers the backend spine and the two early parallel units. A
+large body of merged work has no unit number, and a reader who takes this table
+as the map of what exists will be wrong about most of the last fortnight.**
+Listed here rather than renumbered, because inventing unit numbers after the
+fact would make the references in `PROJECT-STATE` and `DECISIONS` ambiguous.
+
+| What                                                                    | Where it is recorded                            | PRs               |
+| ----------------------------------------------------------------------- | ----------------------------------------------- | ----------------- |
+| The staff portal going live on the real routes                          | `HANDOFF.md`, Lane 2 entries                    | #67, #70–#74      |
+| The farmer surfaces and the marketplace (C-18, deliberately unnumbered) | `scope-and-acceptance.md` C-18; `DECISIONS.md`  | #77, #83, #88–#92 |
+| Directories and the library on live routes                              | `HANDOFF.md`                                    | #79               |
+| The administrator portal redesign, eleven screens                       | `HANDOFF.md`, 2026-09-17 and 2026-09-18 entries | #95               |
+| Administrator communications (email to staff, Resend)                   | `docs/api/communications-contract.md`           | #95               |
+| Marketplace product reports, incl. the one public route                 | `docs/api/product-reports-contract.md`          | #95               |
+| The staging suite's completeness guard                                  | `PROJECT-STATE.md`, the gate principle          | #96               |
 
 ## Surfaces
 
@@ -61,6 +79,11 @@ After the backend units, work splits by surface:
 | ---------------------------- | ---------- |
 | Web portal (Next.js)         | Alieu      |
 | Officer mobile app (Flutter) | Monkonmlah |
+
+**Crossed once, on the owner's authorisation.** The administrator portal (#95)
+was built by Lane 1 in Lane 2's files. It is recorded in `HANDOFF.md` as it
+happened rather than after, and it does not move the ownership above: the web
+portal is still Alieu's. The Flutter application has not been started.
 
 ## Two units other documents lean on
 
@@ -72,6 +95,11 @@ sections of `docs/api/CONVENTIONS.md` and four opening tasks all come due at onc
 **B11** gates production. The production Supabase project exists but holds no
 data and receives no migrations until B11 is done and the restore drill has
 been run successfully. No real farmer data enters production before that.
+
+**B11's code merged as #46; THE DRILL HAS STILL NOT RUN** (2026-09-20). It
+needs a scratch project under CORWADO's name (C-11.7), which is outstanding
+with the client. So the gate above is still closed, and this is the last
+contracted item with code and no evidence behind it.
 
 ## B8.5 — Caseload reassignment
 
