@@ -19,7 +19,7 @@ type Filter = 'all' | ListingStatus;
 const FILTERS: readonly Filter[] = ['all', 'listed', 'draft', 'sold', 'withdrawn'];
 
 export function FarmerListings() {
-  const { farmer, language } = useFarmerSession();
+  const { farmer, language, listingsFor } = useFarmerSession();
   const [filter, setFilter] = useState<Filter>('all');
   const [all, setAll] = useState<ProduceListing[]>([]);
   const [loading, setLoading] = useState(true);
@@ -30,10 +30,15 @@ export function FarmerListings() {
     setLoading(true);
     fetchListings({ farmer_id: farmer.id, limit: 200 })
       .then((data) => {
-        if (!cancelled) setAll(data.map(toListing));
+        if (cancelled) return;
+        const apiListings = data.map(toListing);
+        const local = listingsFor(farmer.id);
+        const apiIds = new Set(apiListings.map((l) => l.id));
+        const merged = [...apiListings, ...local.filter((l) => !apiIds.has(l.id))];
+        setAll(merged.sort((a, b) => b.updated_at.localeCompare(a.updated_at)));
       })
       .catch(() => {
-        if (!cancelled) setAll([]);
+        if (!cancelled) setAll(listingsFor(farmer.id));
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -41,7 +46,7 @@ export function FarmerListings() {
     return () => {
       cancelled = true;
     };
-  }, [farmer]);
+  }, [farmer, listingsFor]);
 
   if (!farmer) return null;
 

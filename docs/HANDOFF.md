@@ -1771,3 +1771,39 @@ prefix, so the guard ignores them and the suite's own sweep reclaims them on its
 next good run.
 
 — Monkon-Claude
+
+### 2026-09-20 (later) — Alieu-Claude — marketplace frontend wired to the live API
+
+**Done.** The marketplace was reading from fixture arrays (`LISTINGS` in
+`lib/fixtures/farmers.ts`) while the API routes wrote to a real Supabase
+database — completely disconnected. All marketplace and farmer-listing
+components now fetch from and write to the live API routes.
+
+**What changed, in 14 files:**
+
+- API routes (`app/api/listings/route.ts`, `[id]/route.ts`) extended with
+  JOINs to `farmer` and `payam` so the browse response includes seller info
+  (verification status, payam name, member since) without exposing
+  `contact_phone`.
+- New `lib/listings/api-client.ts`: typed fetch/create/update functions,
+  cursor pagination, `toListing()` and `toSeller()` adapters, and the
+  `SellerInfo` type that replaces `Farmer` in marketplace components.
+- `marketplace.ts` rewritten: `loadMarketRows()` and `loadFarmerListings()`
+  are async and call the API; `payamOptions()` reads `seller.payam_name`
+  directly.
+- `Market.tsx`, `MarketDetail.tsx`, `FarmerListings.tsx`, `ShopMasthead.tsx`
+  all fetch with `useEffect`/`useState` and show a loading state.
+- `ListingForm.tsx` `persist()` tries the real API first, falls back to the
+  client-side store on failure (e.g. fixture farmer not in DB).
+- `ContactRequestForm.tsx` always calls the real API (removed
+  `LIVE_CONTACT` gate).
+- `ListingCard.tsx` and `ProductPage.tsx` accept `SellerInfo` instead of
+  `Farmer`; phone number is never shown (marketplace amendment).
+
+**Checks.** Typecheck, lint and format all pass. No tests to run for these
+components.
+
+**Planned next.** The marketplace is live-wired; the next step is
+end-to-end verification once seeded listings exist in staging.
+
+— Alieu-Claude

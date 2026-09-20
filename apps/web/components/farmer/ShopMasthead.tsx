@@ -26,7 +26,7 @@ import styles from './farmer.module.css';
  * band does the filtering; it changes chrome only, never data.
  */
 export function ShopMasthead({ subnav, hideStrip }: { subnav?: ReactNode; hideStrip?: boolean }) {
-  const { farmer, language, setLanguage } = useFarmerSession();
+  const { farmer, language, setLanguage, listingsFor } = useFarmerSession();
   const router = useRouter();
   const [query, setQuery] = useState('');
   const [listingCount, setListingCount] = useState(0);
@@ -34,15 +34,20 @@ export function ShopMasthead({ subnav, hideStrip }: { subnav?: ReactNode; hideSt
   useEffect(() => {
     if (!farmer) return;
     let cancelled = false;
+    const localCount = listingsFor(farmer.id).length;
+    setListingCount(localCount);
     fetchListings({ farmer_id: farmer.id, limit: 200 })
       .then((data) => {
-        if (!cancelled) setListingCount(data.length);
+        if (cancelled) return;
+        const apiIds = new Set(data.map((l) => l.id));
+        const localOnly = listingsFor(farmer.id).filter((l) => !apiIds.has(l.id));
+        setListingCount(data.length + localOnly.length);
       })
       .catch(() => {});
     return () => {
       cancelled = true;
     };
-  }, [farmer]);
+  }, [farmer, listingsFor]);
 
   function onSearch(event: React.FormEvent) {
     event.preventDefault();
