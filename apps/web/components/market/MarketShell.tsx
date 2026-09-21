@@ -28,20 +28,19 @@ export function MarketShell({ children }: { children: ReactNode }) {
     );
   }
   return (
-    <div className={farmer.account}>
-      <a href="#farmer-main" className="skip-link">
-        {t('shell.skip', language)}
-      </a>
-      <ShopMasthead />
-      <main id="farmer-main" className={farmer.main} tabIndex={-1}>
-        {children}
-      </main>
-      <footer className={farmer.footer}>
-        <div className={farmer.footerInner}>
-          <Wordmark size={18} tagline taglineText={t('brand.tagline', language)} />
-          <span>{t('brand.copyright', language)}</span>
-        </div>
-      </footer>
-    </div>
+    <FarmerShell>
+      <div className={farmer.account}>
+        <ShopMasthead />
+        <main id="farmer-main" className={farmer.main} tabIndex={-1}>
+          {children}
+        </main>
+        <footer className={farmer.footer}>
+          <div className={farmer.footerInner}>
+            <Wordmark size={18} tagline taglineText={t('brand.tagline', language)} />
+            <span>{t('brand.copyright', language)}</span>
+          </div>
+        </footer>
+      </div>
+    </FarmerShell>
   );
 }
