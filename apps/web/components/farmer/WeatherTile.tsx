@@ -17,9 +17,17 @@ type Language = 'en' | 'ar';
  * credit sits where the weather is shown. "See full forecast" opens the next
  * days in place — no second page, no other locations.
  */
-export function WeatherTile({ payamId, language }: { payamId: string; language: Language }) {
+export function WeatherTile({
+  payamId,
+  language,
+  forecastOpen = false,
+}: {
+  payamId: string;
+  language: Language;
+  forecastOpen?: boolean;
+}) {
   const w = useWeather(payamId);
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(forecastOpen);
   const loc = w.location;
   // The route names the place (§9.1): a county row is "Juba County", a payam row
   // its payam with the county beside it. One place, never two side by side.
@@ -106,6 +114,9 @@ export function WeatherTile({ payamId, language }: { payamId: string; language: 
                 </li>
               ))}
             </ol>
+          ) : null}
+          {forecastOpen && loc.forecast.length === 0 ? (
+            <p className="small muted">{t('weather.noForecast', language)}</p>
           ) : null}
 
           <a

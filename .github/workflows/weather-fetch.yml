@@ -1,0 +1,60 @@
+name: Weather fetch
+
+# The weather tile reads what scripts/weather-fetch.mjs wrote (C-16.6: no route
+# calls OpenWeather). Without a schedule the cache is only as fresh as the last
+# time somebody ran the job by hand, and the tile shows days-old weather.
+#
+# EVERY THREE HOURS, NOT HOURLY. Each location costs two calls and the free
+# plan allows 1,000 a day: hourly is 48 calls per location per day, which a few
+# dozen locations exhaust. Three-hourly is 16, and OpenWeather's own forecast
+# is in three-hour slots, so nothing fresher exists to fetch.
+#
+# THE DATABASE IS PRODUCTION'S. The three secrets below are set by the project
+# owner; the job fails loudly if one is missing rather than skipping.
+
+on:
+  schedule:
+    - cron: '7 */3 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: weather-fetch
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Fetch weather
+        run: |
+          set -euo pipefail
+          for name in DATABASE_URL DIRECT_URL OPENWEATHER_API_KEY; do
+            if [ -z "${!name:-}" ]; then
+              echo "::error::$name is not set. Add the WEATHER_* repository secrets; nothing was fetched."
+              exit 1
+            fi
+          done
+          node scripts/weather-fetch.mjs
+        env:
+          DATABASE_URL: ${{ secrets.WEATHER_DATABASE_URL }}
+          DIRECT_URL: ${{ secrets.WEATHER_DIRECT_URL }}
+          OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
