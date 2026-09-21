@@ -215,6 +215,7 @@ export const en = {
   'weather.stale': 'Older than usual',
   'weather.placeholder': 'placeholder figures',
   'weather.seeForecast': 'See full forecast',
+  'weather.noForecast': 'No forecast for the coming days yet.',
 
   // Buyer contact request (deliverable (g))
   'contact.button': 'Contact seller',

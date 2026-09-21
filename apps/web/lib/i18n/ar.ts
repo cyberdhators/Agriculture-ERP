@@ -201,6 +201,7 @@ export const ar: Partial<Record<TKey, string>> = {
   'weather.stale': 'أقدم من المعتاد',
   'weather.placeholder': 'أرقام تجريبية',
   'weather.seeForecast': 'عرض التوقعات الكاملة',
+  'weather.noForecast': 'لا توجد توقعات للأيام القادمة بعد.',
   'weather.hideForecast': 'إخفاء التوقعات',
   'weather.pageTitle': 'الطقس',
   'weather.pageLead': 'توقعات الطقس لمنطقتك.',

@@ -13,7 +13,7 @@ export function FarmerWeather() {
   return (
     <>
       <PageHead title={t('weather.pageTitle', language)} lead={t('weather.pageLead', language)} />
-      <WeatherTile payamId={farmer.payam_id} language={language} />
+      <WeatherTile payamId={farmer.payam_id} language={language} forecastOpen />
     </>
   );
 }
