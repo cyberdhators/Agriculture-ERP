@@ -404,6 +404,16 @@ change.
 | `product_report.listing_removed` |
 | `communication.email_sent`       |
 | `communication.send_failed`      |
+| `listing.created`                |
+| `listing.updated`                |
+| `listing.status_changed`         |
+| `listing.soft_deleted`           |
+| `contact_request.created`        |
+| `contact_request.handled`        |
+| `market_price.created`           |
+| `market_price.soft_deleted`      |
+| `notification.created`           |
+| `notification.read`              |
 
 `before` and `after` hold **changed fields only**, never whole rows, and never a
 password, token, authentication identifier, national id, phone, email, given
@@ -445,7 +455,7 @@ These are also exact.
 | Consent: not an object                  | Consent must be recorded as an object.                                                          |
 | Consent text version: missing           | Record which consent text was read.                                                             |
 | Consent text version: over 32 chars     | The consent text version can be at most 32 characters.                                          |
-| Consent language: not en or ar-juba     | Choose en or ar-juba for the consent language.                                                  |
+| Consent language: not en or ar          | Choose en or ar for the consent language.                                                       |
 | Consent granted: not true or false      | Say whether consent was granted, true or false.                                                 |
 | Filter: verification status unknown     | Choose pending, verified or rejected.                                                           |
 | Filter: date not ISO 8601               | Give the date as an ISO 8601 timestamp.                                                         |

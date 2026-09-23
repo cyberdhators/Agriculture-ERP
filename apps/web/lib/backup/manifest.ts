@@ -63,6 +63,9 @@ export const MANIFEST_TABLES = [
   // clean while counting nothing for either.
   'produce_listing',
   'product_report',
+  'contact_request',
+  'market_price',
+  'notification',
   'audit_event',
 ] as const;
 

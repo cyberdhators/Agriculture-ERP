@@ -2,13 +2,14 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 
 import { Wordmark } from '@/components/brand/Wordmark';
 import { IconSearch } from '@/components/ui/icons';
 import { useFarmerSession } from '@/lib/farmer-session';
 import { CATEGORY_KEY } from '@/lib/farmers/listings';
-import { LISTING_CATEGORIES, listingsForFarmer } from '@/lib/fixtures/farmers';
+import { LISTING_CATEGORIES } from '@/lib/fixtures/farmers';
+import { fetchListings } from '@/lib/listings/api-client';
 import { t } from '@/lib/i18n';
 
 import { LanguageButtons } from './LanguageSwitch';
@@ -24,12 +25,29 @@ import styles from './farmer.module.css';
  * The masthead search navigates to the marketplace, where the in-page search
  * band does the filtering; it changes chrome only, never data.
  */
-export function ShopMasthead({ subnav }: { subnav?: ReactNode }) {
-  const { farmer, language, setLanguage } = useFarmerSession();
+export function ShopMasthead({ subnav, hideStrip }: { subnav?: ReactNode; hideStrip?: boolean }) {
+  const { farmer, language, setLanguage, listingsFor } = useFarmerSession();
   const router = useRouter();
   const [query, setQuery] = useState('');
+  const [listingCount, setListingCount] = useState(0);
 
-  const listingCount = farmer ? listingsForFarmer(farmer.id).length : 0;
+  useEffect(() => {
+    if (!farmer) return;
+    let cancelled = false;
+    const localCount = listingsFor(farmer.id).length;
+    setListingCount(localCount);
+    fetchListings({ farmer_id: farmer.id, limit: 200 })
+      .then((data) => {
+        if (cancelled) return;
+        const apiIds = new Set(data.map((l) => l.id));
+        const localOnly = listingsFor(farmer.id).filter((l) => !apiIds.has(l.id));
+        setListingCount(data.length + localOnly.length);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [farmer, listingsFor]);
 
   function onSearch(event: React.FormEvent) {
     event.preventDefault();
@@ -87,13 +105,15 @@ export function ShopMasthead({ subnav }: { subnav?: ReactNode }) {
         </div>
       </div>
 
-      <div className={styles.shopStrip}>
-        <span className={styles.shopStripAll} aria-hidden>
-          <span className={styles.shopBurger} />
-          {t('market.allCategories', language)}
-        </span>
-        {subnav ?? <ShopCategoryLinks />}
-      </div>
+      {hideStrip ? null : (
+        <div className={styles.shopStrip}>
+          <span className={styles.shopStripAll} aria-hidden>
+            <span className={styles.shopBurger} />
+            {t('market.allCategories', language)}
+          </span>
+          {subnav ?? <ShopCategoryLinks />}
+        </div>
+      )}
     </header>
   );
 }

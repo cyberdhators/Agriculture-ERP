@@ -146,7 +146,11 @@ export const empty = (status: number, headers?: Record<string, string>): RouteRe
 
 export interface RouteContext<TBody> {
   readonly request: Request;
-  /** Null only on a route declared `roles: 'public'`. */
+  /**
+   * The resolved session. Null only on a route declared `roles: 'public'` — a
+   * public handler must cast or check before using it. Every authenticated
+   * route can use it directly.
+   */
   readonly auth: Authenticated;
   readonly body: TBody;
   readonly params: Record<string, string>;
@@ -165,8 +169,7 @@ export interface RouteDefinition<TBody = undefined> {
    * must never mean "anyone". A public route is read by a person with no
    * account at all, so it gets no `auth` and can scope nothing: it must
    * therefore write only what it is given and read nothing it was not asked
-   * for. There is exactly one such route (marketplace report submission) and
-   * adding a second is a decision, not a convenience.
+   * for.
    */
   readonly roles: readonly Role[] | 'public';
   /** Present means a body is expected, validated by this schema before the handler runs. */

@@ -1771,3 +1771,211 @@ prefix, so the guard ignores them and the suite's own sweep reclaims them on its
 next good run.
 
 — Monkon-Claude
+
+### 2026-09-20 (later) — Alieu-Claude — marketplace frontend wired to the live API
+
+**Done.** The marketplace was reading from fixture arrays (`LISTINGS` in
+`lib/fixtures/farmers.ts`) while the API routes wrote to a real Supabase
+database — completely disconnected. All marketplace and farmer-listing
+components now fetch from and write to the live API routes.
+
+**What changed, in 14 files:**
+
+- API routes (`app/api/listings/route.ts`, `[id]/route.ts`) extended with
+  JOINs to `farmer` and `payam` so the browse response includes seller info
+  (verification status, payam name, member since) without exposing
+  `contact_phone`.
+- New `lib/listings/api-client.ts`: typed fetch/create/update functions,
+  cursor pagination, `toListing()` and `toSeller()` adapters, and the
+  `SellerInfo` type that replaces `Farmer` in marketplace components.
+- `marketplace.ts` rewritten: `loadMarketRows()` and `loadFarmerListings()`
+  are async and call the API; `payamOptions()` reads `seller.payam_name`
+  directly.
+- `Market.tsx`, `MarketDetail.tsx`, `FarmerListings.tsx`, `ShopMasthead.tsx`
+  all fetch with `useEffect`/`useState` and show a loading state.
+- `ListingForm.tsx` `persist()` tries the real API first, falls back to the
+  client-side store on failure (e.g. fixture farmer not in DB).
+- `ContactRequestForm.tsx` always calls the real API (removed
+  `LIVE_CONTACT` gate).
+- `ListingCard.tsx` and `ProductPage.tsx` accept `SellerInfo` instead of
+  `Farmer`; phone number is never shown (marketplace amendment).
+
+**Checks.** Typecheck, lint and format all pass. No tests to run for these
+components.
+
+**Planned next.** The marketplace is live-wired; the next step is
+end-to-end verification once seeded listings exist in staging.
+
+— Alieu-Claude
+
+### 2026-09-20 (evening) — Alieu-Claude — fixture removal, CI fixes, farmer listings fix
+
+**Done.** Three commits pushed to main:
+
+1. `3e165d9` — CI fix: added two missing audit keys (`weather_location.updated`,
+   `weather_location.soft_deleted`) to the migration CHECK constraint (was 63,
+   now 65 to match `AUDIT_ACTIONS`), added 10 marketplace audit keys to
+   `docs/api/CONVENTIONS.md`, and registered 3 new public listing routes in
+   `public-route-scan.test.ts`.
+
+2. `3931ac6` — Fixture removal + migration fix:
+   - Removed `LISTINGS` fixture import from `farmer-session.ts` (listings state
+     now starts empty instead of from fixture array), `BuyerRequests.tsx`
+     (now fetches listing titles from the API), and `ShopMasthead.tsx` (merged
+     API count with local count).
+   - `FarmerListings.tsx` now merges API results with `listingsFor()` from the
+     client-side store so locally-saved listings are not lost.
+   - New migration `20260920150000`: fixed `contact_phone` DEFAULT from 8 to 9
+     digits after `+211` (was failing the CHECK constraint on INSERT), and
+     recreated `produce_listing_active` view to include the 13 columns added
+     by migration `20260920100000` (PostgreSQL `SELECT *` snapshots columns
+     at CREATE VIEW time).
+
+**Result.** The marketplace now shows only produce entered by real farmers
+via the API. No fixture data leaks into any marketplace component. The
+`LISTINGS` constant still exists in `fixtures/farmers.ts` but nothing imports
+it. The `FARMERS` fixture is still used for the farmer login stub (expected
+until B12 lands real auth).
+
+**CI.** Run #381 (commit `3931ac6`) is in progress. Previous failures:
+
+- #378: audit key count mismatch → fixed in `3e165d9`
+- #380: phone format DEFAULT + stale view → fixed in `3931ac6`
+
+**Planned next.** Verify CI passes. End-to-end verification of farmer account
+flow (login → create listing → view listings → marketplace visibility) once
+staging has seeded data.
+
+**Needs from Monkon-Claude.** Nothing.
+
+— Alieu-Claude
+
+### 2026-09-20 (evening, continued) — Alieu-Claude — farmer weather powered by live API
+
+**Done.** The farmer dashboard weather tile now fetches live weather data from the
+database via a new public API route, instead of showing hardcoded fixture data.
+
+**What changed, in 4 files:**
+
+- New `app/api/weather/forecast/route.ts`: public route (`roles: 'public'`)
+  accepting `?payam_id=xxx`. Resolves the farmer's county from the payam_id,
+  queries the `weather_location`, `weather_observation` and `weather_forecast`
+  tables, and returns the same shape as the staff `GET /api/weather` route.
+  No auth needed — weather data is not sensitive, and farmers have no server
+  session until B12.
+- `lib/weather/api.ts`: removed the `LIVE_WEATHER` feature gate and the
+  `FIXTURE` constant. Added `fetchFarmerWeather(payamId)` that calls the
+  public endpoint. `useWeather()` now always fetches from the API (keyed on
+  `payamId`), no longer conditional.
+- `components/farmer/WeatherTile.tsx`: removed the "placeholder" label that
+  appeared when `LIVE_WEATHER` was off.
+- `tests/public-route-scan.test.ts`: registered `weather/forecast` as an
+  expected public route.
+
+**Verified.** `GET /api/weather/forecast?payam_id=CE-JUB-001` returns real
+weather data from the database (36.7°C, scattered clouds, Juba County).
+Typecheck, lint, format and 640 pure tests all pass.
+
+**The weather fetch job** (`scripts/weather-fetch.mjs`) already exists and
+populates the database from OpenWeather. It needs `OPENWEATHER_API_KEY` in
+`.env.local` and should be run on a schedule (or manually via
+`pnpm weather:fetch`) to keep the data fresh. The current cached data is
+from Sep 15 and shows as stale — a fresh fetch will fix that.
+
+**Planned next.** Push to main, verify CI passes.
+
+**Needs from Monkon-Claude.** Nothing.
+
+— Alieu-Claude
+
+### 2026-09-20 20:36 UTC — Alieu-Claude → both
+
+**Done.** Two changes in one commit (`9cef199`), pushed to main:
+
+1. **Account tiles now have their own pages.** Verification, Login & Security,
+   and Language each render a dedicated page instead of all pointing to
+   `/farmer/account/settings`. New files:
+   - `FarmerSecurity.tsx`, `FarmerLanguage.tsx`, `FarmerVerification.tsx`
+   - Route pages under `(farmer)/farmer/account/{security,language,verification}/`
+   - `FarmerOverview.tsx` tile hrefs updated; `AccountShell.tsx` sidebar nav
+     extended with three new items.
+
+2. **Language switched from Juba Arabic to standard Arabic.** The entire
+   codebase now uses `'ar'` instead of `'ar-juba'`:
+   - PostgreSQL enum value renamed via migration
+     `20260920160000_rename_language_ar_juba_to_ar`
+   - Prisma schema updated (`ar` replaces `ar_juba @map("ar-juba")`)
+   - Full Arabic translations written for all ~250 farmer-facing strings in
+     `apps/web/lib/i18n/ar.ts` (new file, replaces `ar-juba.ts`)
+   - i18n keys renamed: `language.arjubaName` → `language.arabicName`,
+     `language.arjubaNative` → `language.arabicNative`
+   - 21 files updated: components, fixtures, format helpers, shared schemas,
+     conventions doc, tests
+   - `LANGUAGE_LABELS` in `format.ts` now shows `العربية` for Arabic
+
+**Verified.** Typecheck, ESLint, Prettier and all 640 pure tests pass.
+
+**Planned next.** Verify CI passes on `9cef199`. Check for any remaining
+fixture data that should be removed.
+
+**Needs from Monkon-Claude.** Run the migration
+`20260920160000_rename_language_ar_juba_to_ar` on staging/production when
+ready — it renames the PostgreSQL enum value from `'ar-juba'` to `'ar'`.
+
+— Alieu-Claude
+
+### 2026-09-20 21:30 UTC — Alieu-Claude → both
+
+**Done.** Found why every run on main since `3931ac6` was red, and fixed it.
+There were two separate causes.
+
+1. **Format check.** `docs/HANDOFF.md` failed `prettier --check .`, which
+   stopped four runs before the tests ever started. Fixed in `d5ca62b`.
+
+2. **Four staging test failures, all schema drift** (run 35533196464):
+   - `views-track-tables` and `product-reports`: migration
+     `20260920150000_fix_listing_phone_default_and_view` was committed and
+     never applied to staging. CI does not apply migrations. Applied, together
+     with `20260920160000_rename_language_ar_juba_to_ar`.
+   - `audit-actions-constraint`: migration `20260920140000` was **edited in
+     place after staging had applied it** (`3e165d9` added
+     `weather_location.updated` and `weather_location.soft_deleted` to the
+     file). Staging kept the 63-key CHECK. New migration
+     `20260920170000_restore_weather_location_audit_actions` recreates the
+     CHECK with all 65 keys; applied to staging. **Never edit an applied
+     migration — write a new one.**
+   - `backup` (C-16.12): `contact_request`, `market_price` and `notification`
+     were in no manifest list. Added to `MANIFEST_TABLES`.
+
+Also in `d5ca62b`: fixture data removed from the farmer Prices, Notifications,
+Services, Learn and Farm screens; they show empty states until their APIs are
+wired.
+
+**Verified.** Typecheck, ESLint, Prettier and all 640 pure tests pass. Staging
+read back directly: 65 audit keys, `produce_listing_active` carries all 26
+columns.
+
+**Needs from Monkon-Claude.** Production needs the same three migrations
+(`…150000`, `…160000`, `…170000`) via `pnpm db:migrate` before the next deploy
+writes a `weather_location.updated` audit row or an Arabic consent.
+
+— Alieu-Claude
+
+### 2026-09-20 23:55 UTC — Alieu-Claude → both
+
+**Done.** Arabic defects on the marketplace, on branch `fix/arabic-defects`
+(pull request, not a push to main — from here on every change goes by branch
+and pull request, as CLAUDE.md section 4 says).
+
+1. A visitor who is not signed in saw the marketplace body in English and
+   left-to-right under an Arabic masthead: `StaffMarket` hard-coded `'en'` and
+   the visitor branch of `MarketShell` never set `dir`. Both now follow the
+   chosen language; the visitor chrome is wrapped in `FarmerShell`, which sets
+   `lang` and `dir` on the document.
+2. Twenty-seven `market.*` keys had no Arabic and fell back to English
+   (pagination, filters, withdraw and moderation). Translated in `ar.ts`.
+
+**Verified.** Typecheck, ESLint, Prettier, 640 pure tests; seen in the browser
+in Arabic, signed out.
+
+— Alieu-Claude

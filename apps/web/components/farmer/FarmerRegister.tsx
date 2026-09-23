@@ -25,9 +25,9 @@ import styles from './farmer.module.css';
 const REFERENCE = new Date('2026-09-02T00:00:00Z');
 const MAX_YEAR = maxBirthYear(REFERENCE);
 
-const CONSENT_VERSION: Record<'en' | 'ar-juba', string> = {
+const CONSENT_VERSION: Record<'en' | 'ar', string> = {
   en: 'v1.1-en',
-  'ar-juba': 'v1.1-ar-juba',
+  ar: 'v1.1-ar',
 };
 
 function digits(value: string): string {

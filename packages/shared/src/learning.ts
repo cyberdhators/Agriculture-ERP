@@ -27,7 +27,7 @@ export const LEARNING_TOPICS = [
 export const CROPS = ['sorghum', 'groundnut', 'sesame', 'maize', 'cowpea'] as const;
 
 /** SHARED with consent: the two interface languages, docs/data-model.md. */
-export const LANGUAGES = ['en', 'ar-juba'] as const;
+export const LANGUAGES = ['en', 'ar'] as const;
 
 export const RESOURCE_FORMATS = ['pdf', 'image', 'audio', 'video'] as const;
 
@@ -89,7 +89,7 @@ export const LEARNING_MESSAGES = {
   titleTooLong: `A title has at most ${LEARNING_LIMITS.titleMax} characters.`,
   topicUnknown: 'Choose a topic from the list.',
   cropUnknown: 'A crop is sorghum, groundnut, sesame, maize or cowpea, or leave it empty.',
-  languageUnknown: 'A resource is in English or Arabi Juba.',
+  languageUnknown: 'A resource is in English or Arabic.',
   formatUnknown: 'A resource is a PDF, an image, audio or video.',
   storagePathRequired: 'The uploaded file has no storage path.',
   storagePathShape:

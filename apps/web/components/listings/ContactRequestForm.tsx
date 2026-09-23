@@ -3,8 +3,7 @@
 import { useState, type FormEvent } from 'react';
 
 import { Button, Dialog, Field, Input, Notice, Textarea } from '@/components/ui';
-import { createContactRequest, LIVE_CONTACT } from '@/lib/contact/api';
-import { usePreviewContactRequests } from '@/lib/contact/store';
+import { createContactRequest } from '@/lib/contact/api';
 import { validateContactRequest, type ContactRequestErrors } from '@/lib/contact/validate';
 import type { ProduceListing } from '@/lib/fixtures/farmers';
 import { t, type Language } from '@/lib/i18n';
@@ -28,7 +27,6 @@ export function ContactRequestForm({
   open: boolean;
   onClose: () => void;
 }) {
-  const preview = usePreviewContactRequests();
   const [values, setValues] = useState({
     buyer_name: '',
     buyer_phone: '',
@@ -55,8 +53,7 @@ export function ContactRequestForm({
     setErrors({});
     setBusy(true);
     try {
-      if (LIVE_CONTACT) await createContactRequest(listing.id, r.body);
-      else preview.add(listing.id, listing.farmer_id, r.body);
+      await createContactRequest(listing.id, r.body);
       setDone(true);
     } catch (err) {
       setFailed(err instanceof Error ? err.message : t('contact.failed', lang));

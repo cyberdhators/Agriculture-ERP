@@ -167,13 +167,13 @@ export function FarmerAccount() {
             </button>
             <button
               type="button"
-              className={`${styles.choice} ${language === 'ar-juba' ? styles.choiceSelected : ''}`}
-              aria-pressed={language === 'ar-juba'}
-              onClick={() => switchLanguage('ar-juba')}
+              className={`${styles.choice} ${language === 'ar' ? styles.choiceSelected : ''}`}
+              aria-pressed={language === 'ar'}
+              onClick={() => switchLanguage('ar')}
               dir="rtl"
               lang="ar"
             >
-              {t('language.arjubaNative', language)}
+              {t('language.arabicNative', language)}
             </button>
           </div>
         </section>

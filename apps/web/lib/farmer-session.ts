@@ -15,7 +15,6 @@ import { DEFAULT_LANGUAGE, LANG_COOKIE, LANG_STORAGE, isLanguage, type Language 
 import {
   FARMERS,
   FARMER_FIXTURE_PASSWORD,
-  LISTINGS,
   type ConsentLanguage,
   type Farmer,
   type ProduceListing,
@@ -143,7 +142,7 @@ export function FarmerSessionProvider({
   const [language, setLanguageState] = useState<Language>(initialLanguage);
   const [selfFarmers, setSelfFarmers] = useState<Farmer[]>([]);
   const [sessionId, setSessionId] = useState<string | null>(null);
-  const [listings, setListings] = useState<ProduceListing[]>(() => [...LISTINGS]);
+  const [listings, setListings] = useState<ProduceListing[]>([]);
   // Session-only memory of what B12 keeps hashed: passwords set at
   // registration or changed here, phones changed here, sign-in failures.
   const [passwords, setPasswords] = useState<Record<string, string>>({});

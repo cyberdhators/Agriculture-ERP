@@ -107,6 +107,7 @@ export {
  * Re-exported so apps/web can type a schema without taking a direct dependency
  * on zod. This package owns the validation library; the app owns none of it.
  */
+export { z } from 'zod';
 export type { ZodError, ZodType } from 'zod';
 
 export { decodeCursor, encodeCursor, toIso, type Cursor } from './cursor';

@@ -11,7 +11,8 @@ import {
   type ContactStatus,
 } from '@/lib/contact/api';
 import { usePreviewContactRequests } from '@/lib/contact/store';
-import { LISTINGS, type Farmer } from '@/lib/fixtures/farmers';
+import type { Farmer } from '@/lib/fixtures/farmers';
+import { fetchListing, toListing, type ApiListing } from '@/lib/listings/api-client';
 import { formatDate, formatPhone } from '@/lib/format';
 
 import styles from '../screens.module.css';
@@ -39,6 +40,7 @@ export function BuyerRequests({
 }) {
   const preview = usePreviewContactRequests();
   const [live, setLive] = useState<ContactRequest[] | null>(null);
+  const [listingCache, setListingCache] = useState<Map<string, ApiListing>>(new Map());
   const [error, setError] = useState<string | undefined>();
   const [busy, setBusy] = useState<string | null>(null);
 
@@ -59,8 +61,31 @@ export function BuyerRequests({
   const rows = (
     LIVE_CONTACT ? (live ?? []) : preview.requests.filter((r) => mine.has(r.farmer_id))
   ).filter((r) => r.status === 'new');
+
+  useEffect(() => {
+    const ids = rows.map((r) => r.listing_id).filter((id) => !listingCache.has(id));
+    if (ids.length === 0) return;
+    let on = true;
+    Promise.allSettled(ids.map((id) => fetchListing(id))).then((results) => {
+      if (!on) return;
+      setListingCache((prev) => {
+        const next = new Map(prev);
+        results.forEach((r, i) => {
+          if (r.status === 'fulfilled') next.set(ids[i]!, r.value);
+        });
+        return next;
+      });
+    });
+    return () => {
+      on = false;
+    };
+  }, [rows.map((r) => r.listing_id).join(',')]);
+
   const farmerOf = (id: string) => caseload.find((f) => f.id === id);
-  const listingOf = (id: string) => LISTINGS.find((l) => l.id === id);
+  const listingOf = (id: string) => {
+    const cached = listingCache.get(id);
+    return cached ? toListing(cached) : undefined;
+  };
 
   async function record(id: string, status: Exclude<ContactStatus, 'new'>) {
     setBusy(id);

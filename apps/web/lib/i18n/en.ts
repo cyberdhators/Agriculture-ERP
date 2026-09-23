@@ -1,8 +1,8 @@
 /**
  * The English interface strings for the farmer flow. This is the base
- * dictionary: every key the flow uses lives here, and `ar-juba.ts` overrides
- * only the handful of keys CORWADO has supplied translated text for. English
- * is the fallback for everything else, on purpose (see ar-juba.ts).
+ * dictionary: every key the flow uses lives here, and `ar.ts` overrides
+ * the keys that have Arabic translations. English is the fallback for
+ * everything else, on purpose (see ar.ts).
  */
 export const en = {
   // Wordmark / shell
@@ -17,8 +17,8 @@ export const en = {
 
   // Language screen
   'language.name': 'English',
-  'language.arjubaName': 'Arabi Juba',
-  'language.arjubaNative': 'عربي جوبا',
+  'language.arabicName': 'Arabic',
+  'language.arabicNative': 'العربية',
   'language.title': 'Choose your language',
   'language.subtitle': 'You can change this later in your account.',
   'language.continue': 'Continue',
@@ -197,6 +197,8 @@ export const en = {
   'learn.otherLanguages': 'In other languages',
   'learn.noneInLanguage': 'Nothing has been published in your language yet.',
   'learn.empty': 'Nothing has been published yet.',
+  'learn.allTopics': 'All topics',
+  'learn.filterByTopic': 'Filter by topic',
 
   // Weather (farmer home)
   'weather.title': 'Weather',
@@ -473,6 +475,43 @@ export const en = {
   'market.similar': 'Similar in',
   'market.listingNo': 'Listing no.',
   'market.negotiable': 'Negotiable',
+  'market.loading': 'Loading listings…',
+
+  // Sidebar navigation sections
+  'nav.myFarm': 'My farm',
+  'nav.market': 'Market',
+  'nav.learnAndServices': 'Learn & services',
+
+  // Market prices
+  'prices.title': 'Market prices',
+  'prices.lead': 'Current commodity prices in your area.',
+  'prices.empty': 'No market prices are available yet.',
+  'prices.commodity': 'Commodity',
+  'prices.market': 'Market',
+  'prices.price': 'Price (SSP)',
+  'prices.unit': 'Unit',
+  'prices.date': 'Date',
+
+  // Services (farmer-facing)
+  'services.title': 'Services',
+  'services.lead': 'Agro-dealers, input suppliers and financial services near you.',
+  'services.empty': 'No services are listed for your area yet.',
+  'services.agroDealer': 'Agro-dealer',
+  'services.inputSupplier': 'Input supplier',
+  'services.financialService': 'Financial service',
+  'services.contact': 'Contact',
+  'services.address': 'Address',
+  'services.verified': 'Last verified',
+  'services.allTypes': 'All types',
+
+  // Weather (dedicated page)
+  'weather.pageTitle': 'Weather',
+  'weather.pageLead': 'Weather forecast for your area.',
+
+  // Notifications
+  'notifications.title': 'Notifications',
+  'notifications.empty': 'No notifications yet.',
+  'notifications.markRead': 'Mark as read',
 
   // Common
   'common.optional': 'optional',

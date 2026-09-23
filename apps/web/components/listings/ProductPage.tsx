@@ -5,12 +5,8 @@ import { useRef, useState, type ReactNode } from 'react';
 
 import { Button, Stamp } from '@/components/ui';
 import { IconChevronLeft, IconChevronRight } from '@/components/ui/icons';
-import {
-  farmerPayamName,
-  type Farm,
-  type Farmer,
-  type ProduceListing,
-} from '@/lib/fixtures/farmers';
+import type { ProduceListing } from '@/lib/fixtures/farmers';
+import type { SellerInfo } from '@/lib/listings/api-client';
 import {
   CATEGORY_KEY,
   STATUS_KEY,
@@ -59,10 +55,8 @@ export function ProductPage({
   contact = true,
 }: {
   listing: ProduceListing;
-  seller: Farmer;
+  seller: SellerInfo;
   sellerListingCount: number;
-  /** Accepted for the farmer preview's call sites; the map lives on /farm now. */
-  farm?: Farm;
   lang: Language;
   /** Local object URLs standing in for the storage paths (the form's preview). */
   photos?: string[];
@@ -238,7 +232,7 @@ export function ProductPage({
             <dl className={styles.sellerRows}>
               <div className={styles.sellerRow}>
                 <dt>{t('account.payam', lang)}</dt>
-                <dd>{farmerPayamName(seller.payam_id)}</dd>
+                <dd>{seller.payam_name}</dd>
               </div>
               <div className={styles.sellerRow}>
                 <dt>{t('market.memberSince', lang)}</dt>

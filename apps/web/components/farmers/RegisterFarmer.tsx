@@ -39,9 +39,9 @@ import { DuplicateWarning } from './DuplicateWarning';
 const REFERENCE = new Date('2026-09-02T00:00:00Z');
 const MAX_YEAR = maxBirthYear(REFERENCE);
 
-const CONSENT_VERSION: Record<'en' | 'ar-juba', string> = {
+const CONSENT_VERSION: Record<'en' | 'ar', string> = {
   en: 'v1.0-en',
-  'ar-juba': 'v1.0-ar-juba',
+  ar: 'v1.0-ar',
 };
 
 const EMPTY: FarmerFormValues = {
@@ -579,7 +579,7 @@ export function RegisterFarmer() {
                       >
                         <option value="">Select…</option>
                         <option value="en">{LANGUAGE_LABELS.en}</option>
-                        <option value="ar-juba">{LANGUAGE_LABELS['ar-juba']}</option>
+                        <option value="ar">{LANGUAGE_LABELS.ar}</option>
                       </Select>
                     )}
                   </Field>

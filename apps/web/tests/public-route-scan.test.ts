@@ -19,8 +19,14 @@ import { describe, expect, it } from 'vitest';
  */
 const API_DIR = fileURLToPath(new URL('../app/api', import.meta.url));
 
-/** The one route a marketplace visitor with no account must be able to call. */
-const EXPECTED_PUBLIC = ['listings/[id]/reports'];
+/** Routes a marketplace visitor or farmer with no account must be able to call. */
+const EXPECTED_PUBLIC = [
+  'listings',
+  'listings/[id]',
+  'listings/[id]/contact-requests',
+  'listings/[id]/reports',
+  'weather/forecast',
+];
 
 function routeFiles(dir: string): string[] {
   const out: string[] = [];

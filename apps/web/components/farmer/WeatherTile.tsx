@@ -7,7 +7,7 @@ import { t } from '@/lib/i18n';
 
 import styles from './farmer.module.css';
 
-type Language = 'en' | 'ar-juba';
+type Language = 'en' | 'ar';
 
 /**
  * The farmer's weather, first thing on Home, full width on every screen. Built
@@ -71,7 +71,6 @@ export function WeatherTile({ payamId, language }: { payamId: string; language: 
             <span className={styles.weatherHeroMeta}>
               {loc.stale ? `${t('weather.stale', language)} · ` : ''}
               {t('weather.asOf', language)} {timeOf(loc.fetched_at, language)}
-              {w.live ? '' : ` · ${t('weather.placeholder', language)}`}
             </span>
             {loc.forecast.length > 0 ? (
               <button
@@ -153,7 +152,7 @@ function WeatherGlyph({ conditions }: { conditions: string }) {
 }
 
 function dayName(isoDate: string, language: Language): string {
-  return new Intl.DateTimeFormat(language === 'ar-juba' ? 'ar' : 'en', {
+  return new Intl.DateTimeFormat(language === 'ar' ? 'ar' : 'en', {
     weekday: 'short',
     timeZone: 'UTC',
   }).format(new Date(`${isoDate}T00:00:00Z`));
@@ -162,7 +161,7 @@ function dayName(isoDate: string, language: Language): string {
 function timeOf(iso: string, language: Language): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return iso;
-  return new Intl.DateTimeFormat(language === 'ar-juba' ? 'ar' : 'en', {
+  return new Intl.DateTimeFormat(language === 'ar' ? 'ar' : 'en', {
     weekday: 'short',
     hour: '2-digit',
     minute: '2-digit',
