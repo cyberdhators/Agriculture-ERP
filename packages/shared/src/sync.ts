@@ -82,11 +82,24 @@ export const SYNC_OUTCOME_SPECS: Record<SyncOutcome, SyncOutcomeSpec> = {
  * How an HTTP outcome maps to a sync outcome, for the six the server produces.
  * The device applies this after its own hold (C-9.5): a 404 on a child whose
  * parent is not yet acknowledged is a device fault, not left_caseload.
+ *
+ * `rule` IS THE THIRD ARGUMENT BECAUSE IT HAD TO BE. This read
+ * `code === 'attachment_not_arrived'`, and `code` on a 409 is always the
+ * generic `conflict` -- the rule key stayed on the server. The branch could
+ * never fire, so `not_yet` was unreachable and a device would have stopped
+ * retrying an attachment whose bytes were merely still on their way. The key
+ * now travels in the body as `error.rule` and is passed here.
+ *
+ * `code` is still accepted and still checked, so a caller that has not been
+ * updated behaves exactly as before: every 409 is a conflict, which is the
+ * safe reading when nothing better is known.
  */
-export function syncOutcomeFor(status: number, code?: string): SyncOutcome | null {
+export function syncOutcomeFor(status: number, code?: string, rule?: string): SyncOutcome | null {
   if (status === 401) return 'sign_in_again';
   if (status === 503 || status >= 500) return 'retry_later';
-  if (status === 409 && code === 'attachment_not_arrived') return 'not_yet';
+  if (status === 409 && (rule === 'attachment_not_arrived' || code === 'attachment_not_arrived')) {
+    return 'not_yet';
+  }
   if (status === 409) return 'conflict';
   if (status === 404) return 'left_caseload';
   if (status === 400 || status === 413 || status === 422) return 'refused';
