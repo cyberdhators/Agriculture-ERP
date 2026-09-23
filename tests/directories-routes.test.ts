@@ -3,6 +3,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import * as directoryItem from '../apps/web/app/api/directory-entries/[id]/route';
 import * as directory from '../apps/web/app/api/directory-entries/route';
 import * as learningItem from '../apps/web/app/api/learning-resources/[id]/route';
+import * as learningLink from '../apps/web/app/api/learning-resources/[id]/link/route';
 import * as learning from '../apps/web/app/api/learning-resources/route';
 import { makeTestPrisma, requireTestEnv } from './helpers/db';
 import { type TestPrincipal, createPrincipal, sweep } from './helpers/principals';
@@ -66,7 +67,7 @@ const cleanupRows = async () => {
   // invisible to it, and staging growth per run is already known and accepted.
   await prisma.$executeRawUnsafe(`DELETE FROM public.directory_entry WHERE name LIKE 'zztest%'`);
   await prisma.$executeRawUnsafe(
-    `DELETE FROM public.learning_resource WHERE title LIKE 'zztest%' OR storage_path LIKE 'zztest/%'`,
+    `DELETE FROM public.learning_resource WHERE title LIKE 'zztest%' OR storage_path LIKE 'zztest/%' OR storage_path LIKE 'resources/%'`,
   );
 };
 
@@ -98,15 +99,33 @@ const entryBody = (over: Record<string, unknown> = {}) => ({
   ...over,
 });
 
+/**
+ * A card to register. THERE IS NO `storage_path` HERE ANY MORE: the server
+ * mints the id and derives the object path from it, so a caller cannot name
+ * one. What a caller declares is what KIND of file is coming.
+ */
+/** A minimal, real PDF header, so what lands is the type it was declared as. */
+const PDF_BYTES = '%PDF-1.4\n';
+
 const resourceBody = (over: Record<string, unknown> = {}) => ({
   title: 'zztest-guide',
   topic: 'crop_production',
   language: 'en',
   format: 'pdf',
-  storage_path: `zztest/${Math.random().toString(36).slice(2, 10)}.pdf`,
-  byte_size: 2048,
+  content_type: 'application/pdf',
+  byte_size: PDF_BYTES.length,
   ...over,
 });
+
+/** Sends the bytes to the grant the registration returned, as a phone would. */
+async function uploadTo(grant: { url: string; token: string }, bytes: string) {
+  const res = await fetch(grant.url, {
+    method: 'PUT',
+    headers: { authorization: `Bearer ${grant.token}`, 'content-type': 'application/pdf' },
+    body: bytes,
+  });
+  if (!res.ok) throw new Error(`upload failed: ${res.status} ${await res.text()}`);
+}
 
 const listIds = (body: Record<string, unknown>): string[] =>
   ((body.data as { id: string }[]) ?? []).map((r) => r.id);
@@ -202,12 +221,40 @@ run('a removed entry leaves the list and is its own soft_deleted row (C-13.4)', 
 
 run('a learning resource is published, and the flip is its own row (C-13.6)', () => {
   let resourceId: string;
+  let grant: { url: string; token: string };
 
-  it('an administrator registers an unpublished card', async () => {
+  it('an administrator registers an unpublished card and is given an upload grant', async () => {
     const result = await call(learning, 'POST', { as: admin, body: resourceBody() });
     expect(result.status).toBe(201);
-    expect((result.body.data as { published: boolean }).published).toBe(false);
-    resourceId = (result.body.data as { id: string }).id;
+    const data = result.body.data as {
+      id: string;
+      published: boolean;
+      storage_path: string;
+      upload: { url: string; token: string };
+    };
+    // Born unpublished whatever was asked for: no bytes have arrived.
+    expect(data.published).toBe(false);
+    // The path is the SERVER'S, derived from the id it minted.
+    expect(data.storage_path).toBe(`resources/${data.id}.pdf`);
+    expect(data.upload.url).toBeTruthy();
+    resourceId = data.id;
+    grant = data.upload;
+  });
+
+  it('PUBLISHING BEFORE THE FILE ARRIVES IS REFUSED', async () => {
+    const early = await call(learningItem, 'PATCH', {
+      as: admin,
+      params: { id: resourceId },
+      body: resourceBody({ published: true }),
+    });
+    expect(early.status).toBe(422);
+    expect(early.body).toMatchObject({ error: { code: 'resource_file_missing' } });
+  });
+
+  it('the officer cannot obtain a link for it while it is unpublished', async () => {
+    const refused = await call(learningLink, 'GET', { as: officerA, params: { id: resourceId } });
+    // NOT FOUND, not forbidden: probing ids must tell an officer nothing.
+    expect(refused.status).toBe(404);
   });
 
   it('a non-administrator does not see it while unpublished', async () => {
@@ -217,9 +264,9 @@ run('a learning resource is published, and the flip is its own row (C-13.6)', ()
   });
 
   it('flipping published to true is audited as learning_resource.published', async () => {
-    // A full-object PATCH (the schema is not partial): the same card, now
-    // published. A fresh storage_path is harmless -- it cannot clash -- and the
-    // point under test is the false->true flip, not the path.
+    // The bytes go to the grant first; publishing now finds the file and the
+    // size it was told to expect.
+    await uploadTo(grant, PDF_BYTES);
     const patched = await call(learningItem, 'PATCH', {
       as: admin,
       params: { id: resourceId },
@@ -236,27 +283,53 @@ run('a learning resource is published, and the flip is its own row (C-13.6)', ()
     const result = await call(learning, 'GET', { as: officerA });
     expect(listIds(result.body)).toContain(resourceId);
   });
+
+  it('and can now open it through an expiring signed link, which is audited', async () => {
+    const link = await call(learningLink, 'GET', { as: officerA, params: { id: resourceId } });
+    expect(link.status).toBe(200);
+    const data = link.body.data as { url: string; expires_at: string };
+    // A signed URL, not the bucket path and not a permanent address.
+    expect(data.url).toMatch(/token=|\?.*signature|sign\//i);
+    expect(new Date(data.expires_at).getTime()).toBeGreaterThan(Date.now());
+
+    const rows = await auditRows('learning_resource', resourceId);
+    expect(rows.map((r) => r.action)).toContain('learning_resource.link_issued');
+  });
+
+  it('a link for a resource that does not exist is not found', async () => {
+    const missing = await call(learningLink, 'GET', {
+      as: officerA,
+      params: { id: '00000000-0000-4000-8000-000000000000' },
+    });
+    expect(missing.status).toBe(404);
+  });
 });
 
+/**
+ * C-13.7 USED TO BE ENFORCED BY A CHECK AND A 409, because two cards could name
+ * the same path. They cannot any more: the path is derived from the id the
+ * server mints, so two registrations are two ids and two objects. The rule is
+ * now structural rather than checked, and this proves that rather than the
+ * refusal it replaced. The partial unique index remains as the backstop.
+ */
 run('one live catalogue card per stored file (C-13.7)', () => {
-  it('a second registration of the same path is refused with 409', async () => {
-    const path = `zztest/${Math.random().toString(36).slice(2, 10)}.pdf`;
-    const first = await call(learning, 'POST', {
-      as: admin,
-      body: resourceBody({ storage_path: path }),
-    });
+  it('two registrations get two distinct, server-derived paths', async () => {
+    const first = await call(learning, 'POST', { as: admin, body: resourceBody() });
+    const second = await call(learning, 'POST', { as: admin, body: resourceBody() });
     expect(first.status).toBe(201);
+    expect(second.status).toBe(201);
+    const a = first.body.data as { id: string; storage_path: string };
+    const b = second.body.data as { id: string; storage_path: string };
+    expect(a.storage_path).not.toBe(b.storage_path);
+    expect(a.storage_path).toBe(`resources/${a.id}.pdf`);
+  });
 
-    const second = await call(learning, 'POST', {
+  it('A CALLER CANNOT NAME A PATH: the field is not on the schema', async () => {
+    const attempt = await call(learning, 'POST', {
       as: admin,
-      body: resourceBody({ storage_path: path }),
+      body: resourceBody({ storage_path: 'zztest/somebody-elses-file.pdf' }),
     });
-    expect(second.status).toBe(409);
-    expect(second.body).toMatchObject({
-      error: {
-        code: 'conflict',
-        message: 'A learning resource is already registered for that file.',
-      },
-    });
+    // Strict object: an unknown key is refused before any rule is consulted.
+    expect(attempt.status).toBe(400);
   });
 });
