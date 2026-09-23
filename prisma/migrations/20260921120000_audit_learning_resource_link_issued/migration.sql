@@ -12,9 +12,16 @@
 --
 -- ADDITIVE. The constraint is rebuilt because a CHECK cannot be extended in
 -- place. EVERY action already permitted is carried over unchanged -- the list
--- below is GENERATED from packages/shared/src/audit.ts, not retyped, because a
--- hand-copied list is how this constraint once lost three weather keys and
--- broke every route that wrote them on a fresh database.
+-- below is GENERATED from packages/shared/src/audit.ts, not retyped.
+--
+-- REGENERATED AFTER MERGING main. This migration is timestamped after main's
+-- own audit migrations, so it runs last and its list is the one a fresh
+-- database ends up with. Written before the merge it carried 56 keys and would
+-- have DROPPED the ten marketplace actions main had added -- listing,
+-- contact_request, market_price and notification -- failing every one of those
+-- writes on its audit insert. That is the same way this constraint once lost
+-- three weather keys. The list is generated, so the merge could be absorbed by
+-- regenerating rather than by noticing.
 
 ALTER TABLE "public"."audit_event" DROP CONSTRAINT "audit_event_action_known";
 
@@ -38,5 +45,8 @@ ALTER TABLE "public"."audit_event" ADD CONSTRAINT "audit_event_action_known" CHE
         'learning_resource.published', 'learning_resource.soft_deleted', 'learning_resource.link_issued',
         'weather_location.created', 'weather_location.updated', 'weather_location.soft_deleted',
         'product_report.created', 'product_report.status_changed', 'product_report.listing_removed',
-        'communication.email_sent', 'communication.send_failed'
+        'communication.email_sent', 'communication.send_failed', 'listing.created',
+        'listing.updated', 'listing.status_changed', 'listing.soft_deleted',
+        'contact_request.created', 'contact_request.handled', 'market_price.created',
+        'market_price.soft_deleted', 'notification.created', 'notification.read'
     ));
