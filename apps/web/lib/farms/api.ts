@@ -6,7 +6,15 @@
 // current boundary on it. Geometry is present only for the reader entitled to
 // it (C-7.8); a farm the caller may not see the shape of renders as unmapped.
 
-import type { Crop } from '@agri-erp/shared';
+import {
+  addBoundarySchema,
+  createFarmSchema,
+  declareCropsSchema,
+  type AddBoundary,
+  type CreateFarm,
+  type Crop,
+  type DeclareCrops,
+} from '@agri-erp/shared';
 
 import type { AccuracyFlag, Farm, Ring } from '@/lib/fixtures/farmers';
 
@@ -24,8 +32,16 @@ export class FarmApiError extends Error {
   }
 }
 
-/** One mapping, as `presentBoundary()` gives it. Geometry keys absent when hidden. */
-interface BoundaryDto {
+/**
+ * One mapping, as `presentBoundary()` gives it.
+ *
+ * `gps_accuracy_m`, `boundary` and `centroid` are ABSENT — the key missing
+ * entirely — when the reader is not entitled to the geometry (C-7.8). That is
+ * NOT the same fact as a farm with no boundary walked, and a screen that
+ * cannot tell them apart will report "no boundary" to an officer who simply
+ * was not shown one. `area_ha`, `grade` and `point_count` are always present.
+ */
+export interface FarmBoundaryRecord {
   id: string;
   season: string;
   area_ha: number;
@@ -51,7 +67,7 @@ interface FarmDto {
   captured_at: string | null;
   created_at: string;
   updated_at: string;
-  boundaries: BoundaryDto[];
+  boundaries: FarmBoundaryRecord[];
   crops: { season: string; crop: Crop }[];
 }
 
@@ -225,6 +241,135 @@ export async function listFarms(params: FarmListParams = {}): Promise<FarmListPa
     cursor: body.page?.cursor ?? null,
     hasMore: body.page?.hasMore ?? false,
   };
+}
+
+/* ---- Mapping: the officer's three writes ------------------------------- */
+
+/**
+ * CREATING A FARM IS MAPPING IT. `POST /api/farmers/:id/farms`, officer only.
+ *
+ * There is no draft farm and no empty farm: the schema requires the first
+ * boundary in the same body, so a farm cannot exist without a walked ring.
+ * `id` and `boundary_id` are both client-generated (C-9.1) -- a retry is the
+ * same farm and the same boundary, never a second of either.
+ *
+ * The server computes the area, the centroid, the point count and the accuracy
+ * grade. None of those are sent, and none may be.
+ */
+export async function createFarm(farmerId: string, input: CreateFarm): Promise<FarmWithCrops> {
+  const body = await requestPage<FarmDto>(`/api/farmers/${encodeURIComponent(farmerId)}/farms`, {
+    method: 'POST',
+    body: JSON.stringify(createFarmSchema.parse(input)),
+  });
+  if (!body.data) throw new FarmApiError(500, 'empty', 'No farm in the response');
+  return toFarm(body.data);
+}
+
+/**
+ * RE-MAPPING. `POST /api/farms/:id/boundaries`, officer only.
+ *
+ * NOT a PATCH, and not an edit. A new boundary is INSERTED and becomes current
+ * for its season; the one it replaces is kept with `is_current` false, so the
+ * history of what the land was measured to be is never overwritten (C-7.5).
+ * Mapping a season the farm has never had simply adds that season's first
+ * boundary.
+ */
+export interface AddedBoundary {
+  id: string;
+  season: string;
+  area_ha: number;
+  grade: AccuracyFlag;
+  point_count: number;
+  is_current: boolean;
+  /** The boundary this one replaced, when it replaced one. */
+  superseded: string | null;
+  gps_accuracy_m?: number;
+}
+
+export async function addBoundary(farmId: string, input: AddBoundary): Promise<AddedBoundary> {
+  const body = await requestPage<FarmBoundaryRecord & { superseded: string | null }>(
+    `/api/farms/${encodeURIComponent(farmId)}/boundaries`,
+    { method: 'POST', body: JSON.stringify(addBoundarySchema.parse(input)) },
+  );
+  if (!body.data) throw new FarmApiError(500, 'empty', 'No boundary in the response');
+  const d = body.data;
+  return {
+    id: d.id,
+    season: d.season,
+    area_ha: d.area_ha,
+    grade: d.grade,
+    point_count: d.point_count,
+    is_current: d.is_current,
+    superseded: d.superseded ?? null,
+    // Absent when the caller is not entitled to it (C-7.8) -- not defaulted.
+    ...(d.gps_accuracy_m === undefined ? {} : { gps_accuracy_m: d.gps_accuracy_m }),
+  };
+}
+
+/** Every boundary of a farm, history included, newest season first (C-7.5). */
+export async function listFarmBoundaries(farmId: string): Promise<FarmBoundaryRecord[]> {
+  const body = await requestPage<FarmBoundaryRecord[]>(
+    `/api/farms/${encodeURIComponent(farmId)}/boundaries`,
+  );
+  return body.data ?? [];
+}
+
+/**
+ * DECLARING CROPS. `PUT /api/farms/:id/crops`, officer only.
+ *
+ * A REPLACE, not an append: the route deletes the season's declarations and
+ * writes what it was given, so an empty list clears that season. Crops belong
+ * to a farm AND a season, which is why the season travels with them.
+ */
+export async function declareCrops(
+  farmId: string,
+  input: DeclareCrops,
+): Promise<{ season: string; crop: Crop }[]> {
+  const body = await requestPage<{ season: string; crop: Crop }[]>(
+    `/api/farms/${encodeURIComponent(farmId)}/crops`,
+    { method: 'PUT', body: JSON.stringify(declareCropsSchema.parse(input)) },
+  );
+  return body.data ?? [];
+}
+
+/**
+ * THE WHOLE FARM RECORD, unflattened. `GET /api/farms/:id`.
+ *
+ * `toFarm` exists for the screens that want one farm with one shape on it, and
+ * it is LOSSY on purpose: it keeps a single current boundary and drops
+ * `captured_at`. A farm mapped in both seasons of a year has TWO current
+ * boundaries — one per season — and a review screen has to show both, so it
+ * reads the record as the route actually returns it.
+ *
+ * Nothing is defaulted here. Keys the route omitted stay omitted.
+ */
+export interface FarmRecord {
+  id: string;
+  farmer_id: string;
+  payam_id: string;
+  county_id: string;
+  state_id: string;
+  season: string;
+  created_by: string;
+  captured_at: string | null;
+  created_at: string;
+  updated_at: string;
+  /** Current boundaries: one per season the farm has been mapped for. */
+  boundaries: FarmBoundaryRecord[];
+  crops: { season: string; crop: Crop }[];
+}
+
+export async function getFarmRecord(id: string): Promise<FarmRecord> {
+  const body = await requestPage<FarmRecord>(`/api/farms/${encodeURIComponent(id)}`);
+  if (!body.data) throw new FarmApiError(500, 'empty', 'No farm in the response');
+  return body.data;
+}
+
+/** GET /api/farms/:id — one farm, scoped; out of scope is 404. */
+export async function getFarm(id: string): Promise<FarmWithCrops> {
+  const body = await requestPage<FarmDto>(`/api/farms/${encodeURIComponent(id)}`);
+  if (!body.data) throw new FarmApiError(500, 'empty', 'No farm in the response');
+  return toFarm(body.data);
 }
 
 /**

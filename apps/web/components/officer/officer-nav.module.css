@@ -1,0 +1,79 @@
+/*
+ * A bottom bar, sized for a thumb and for sunlight.
+ *
+ * 56px targets rather than the 32px a desktop control gets away with; the
+ * safe-area inset so the bar clears a phone's home indicator; and it is hidden
+ * from the tablet breakpoint up, where the portal's own sidebar is the better
+ * pattern and is already there.
+ */
+.bar {
+  position: fixed;
+  inset-inline: 0;
+  inset-block-end: 0;
+  z-index: 40;
+  background: var(--card);
+  border-block-start: 1px solid var(--line-strong);
+  padding-block-end: env(safe-area-inset-bottom, 0);
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+}
+
+.item {
+  display: flex;
+}
+
+.link {
+  flex: 1;
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 4px;
+  /* A thumb, not a cursor. */
+  min-block-size: 56px;
+  padding-block: var(--s-2);
+  color: var(--muted);
+  text-decoration: none;
+  font-size: var(--text-small);
+  font-weight: 600;
+}
+
+.link:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+/*
+ * Current is said three ways -- colour, a solid top rule, and heavier text --
+ * because colour alone fails in sunlight and for a colour-blind reader, and
+ * `aria-current="page"` carries it to a screen reader.
+ */
+.current {
+  color: var(--green-deep);
+  box-shadow: inset 0 3px 0 var(--green-deep);
+  background: var(--green-tint);
+  font-weight: 700;
+}
+
+.label {
+  line-height: 1;
+  /* Four labels across a 360px phone: 90px each. "Learning" must not clip. */
+  font-size: 0.75rem;
+  letter-spacing: -0.01em;
+  max-inline-size: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (min-width: 768px) {
+  .bar {
+    display: none;
+  }
+}
