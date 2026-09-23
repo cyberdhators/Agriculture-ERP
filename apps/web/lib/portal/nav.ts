@@ -45,6 +45,17 @@ export interface NavItem {
   readonly icon: IconKey;
   /** Exactly the roles the routes behind this screen accept. */
   readonly roles: readonly Role[];
+  /**
+   * The route this screen cannot render without, as `METHOD /api/path`.
+   *
+   * NOT PROSE, BECAUSE A GATE HAS TO READ IT. `because` explains the decision
+   * to a person; this is the machine-checkable half. `nav-roles-match-routes`
+   * opens the file this names, reads its `roles:` declaration, and fails if it
+   * disagrees with `roles` above -- and fails just as loudly if the route
+   * named here does not exist, because a mapping that can name nothing is a
+   * mapping that can quietly check nothing.
+   */
+  readonly route: string;
   /** Why these roles, naming the route. Read by nav.test.ts and by the next reader. */
   readonly because: string;
 }
@@ -66,6 +77,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
         href: '/dashboard',
         label: 'Dashboard',
         icon: 'dashboard',
+        route: 'GET /api/reports/summary',
         roles: ALL,
         because: 'GET /api/reports/summary accepts every role; the server scopes the figures.',
       },
@@ -78,6 +90,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
         href: '/farmers',
         label: 'Farmers',
         icon: 'farmers',
+        route: 'GET /api/farmers',
         roles: ALL,
         because: 'GET /api/farmers accepts every role.',
       },
@@ -85,6 +98,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
         href: '/farms',
         label: 'Farms & maps',
         icon: 'map',
+        route: 'GET /api/farms/geojson',
         roles: ['admin', 'supervisor'],
         because:
           'GET /api/farms/geojson is admin and supervisor only — it is the one route that ' +
@@ -94,6 +108,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
         href: '/visits',
         label: 'Visits',
         icon: 'visits',
+        route: 'GET /api/visits',
         roles: ALL,
         because: 'GET /api/visits accepts every role.',
       },
@@ -101,6 +116,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
         href: '/desk',
         label: 'Field desk',
         icon: 'desk',
+        route: 'GET /api/sync/caseload',
         roles: ['officer'],
         because:
           'GET /api/sync/caseload is officer-only. Without this an officer has no home in the nav.',
@@ -109,6 +125,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
         href: '/admin/users#officers',
         label: 'Extension officers',
         icon: 'officer',
+        route: 'GET /api/users',
         roles: STAFF,
         because:
           'The officers table shares a screen with staff accounts, and that screen also reads ' +
@@ -123,6 +140,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
         href: '/admin/users',
         label: 'Staff accounts',
         icon: 'staff',
+        route: 'GET /api/users',
         roles: STAFF,
         because: 'GET /api/users accepts admin, supervisor and read_only. Writes are admin-only.',
       },
@@ -135,6 +153,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
         href: '/communications',
         label: 'Communications',
         icon: 'mail',
+        route: 'POST /api/admin/communications',
         roles: ['admin'],
         because:
           'POST /api/admin/communications is administrator-only. Email reaches staff accounts ' +
@@ -149,6 +168,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
         href: '/reports',
         label: 'Reports',
         icon: 'reports',
+        route: 'GET /api/reports/summary',
         roles: ALL,
         because: 'GET /api/reports/summary accepts every role.',
       },
@@ -156,6 +176,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
         href: '/reports#exports',
         label: 'Exports',
         icon: 'export',
+        route: 'GET /api/reports/exports',
         roles: ['admin', 'supervisor'],
         because: 'GET and POST /api/reports/exports accept admin and supervisor only.',
       },
@@ -184,6 +205,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
         href: '/library',
         label: 'Learning library',
         icon: 'library',
+        route: 'GET /api/learning-resources',
         roles: ALL,
         because: 'GET /api/learning-resources accepts every role; writing is admin-only.',
       },
@@ -196,6 +218,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
         href: '/admin/audit',
         label: 'Audit trail',
         icon: 'audit',
+        route: 'GET /api/audit',
         roles: ['admin'],
         because: 'GET /api/audit is admin-only (C-4.8).',
       },
@@ -206,6 +229,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
         href: '/product-reports',
         label: 'Product reports',
         icon: 'flag',
+        route: 'GET /api/admin/product-reports',
         roles: ['admin'],
         because:
           'GET /api/admin/product-reports is administrator-only, and so are the detail and the ' +

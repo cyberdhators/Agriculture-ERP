@@ -59,7 +59,6 @@ interface FormState {
   crop: string;
   language: string;
   format: string;
-  storage_path: string;
   byte_size: string;
   description: string;
   published: boolean;
@@ -72,7 +71,6 @@ function fromRow(row: LearningResourceRow | null): FormState {
     crop: row?.crop ?? '',
     language: row?.language ?? 'en',
     format: row?.format ?? 'pdf',
-    storage_path: row?.storage_path ?? '',
     byte_size: row ? String(row.byte_size) : '',
     description: row?.description ?? '',
     published: row?.published ?? false,
@@ -86,7 +84,6 @@ function toBody(form: FormState): unknown {
     crop: form.crop === '' ? null : form.crop,
     language: form.language,
     format: form.format,
-    storage_path: form.storage_path,
     byte_size: form.byte_size.trim() === '' ? undefined : Number(form.byte_size),
     description: form.description,
     published: form.published,
@@ -102,20 +99,9 @@ function formatFromMime(mime: string): ResourceFormat | null {
   return null;
 }
 
-/** File name -> a safe path segment the storage_path schema accepts. */
-function safeSegment(name: string): string {
-  return (
-    name
-      .normalize('NFKD')
-      .replace(/[^\w.-]+/g, '-')
-      .replace(/^[-.]+|[-.]+$/g, '')
-      .toLowerCase() || 'file'
-  );
-}
-
 export function ResourceForm({ existing }: { existing: LearningResourceRow | null }) {
   const router = useRouter();
-  const { saveResource } = usePreview();
+  const { saveResource, registerResource } = usePreview();
   const [form, setForm] = useState<FormState>(() => fromRow(existing));
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saved, setSaved] = useState<LearningResourceInput | null>(null);
@@ -123,6 +109,7 @@ export function ResourceForm({ existing }: { existing: LearningResourceRow | nul
   const [busy, setBusy] = useState(false);
   const [attempted, setAttempted] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
+  const [chosen, setChosen] = useState<File | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
@@ -137,12 +124,14 @@ export function ResourceForm({ existing }: { existing: LearningResourceRow | nul
   function onFile(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file) return;
-    const year = new Date().getUTCFullYear();
     const guessed = formatFromMime(file.type);
+    // The file itself is kept: it is uploaded on submit. The path is NOT
+    // invented here -- the server derives it from the id it mints, so there is
+    // nothing for this form to name.
+    setChosen(file);
     setFileName(file.name);
     setForm((f) => ({
       ...f,
-      storage_path: `${guessed ?? f.format}/${year}/${safeSegment(file.name)}`,
       byte_size: String(file.size),
       format: guessed ?? f.format,
       title: f.title || file.name.replace(/\.[^.]+$/, ''),
@@ -169,7 +158,7 @@ export function ResourceForm({ existing }: { existing: LearningResourceRow | nul
       crop: value.crop ?? null,
       language: value.language,
       format: value.format,
-      storage_path: value.storage_path,
+      storage_path: existing?.storage_path ?? '',
       byte_size: value.byte_size,
       description: value.description ?? null,
       published: value.published,
@@ -177,9 +166,37 @@ export function ResourceForm({ existing }: { existing: LearningResourceRow | nul
       uploaded_at: existing?.uploaded_at ?? new Date().toISOString(),
       deleted_at: null,
     };
+    // A NEW resource must bring its file: the row and the object are created
+    // together, and a card with nothing behind it could never be published.
+    if (!existing && !chosen) {
+      setErrors({ file: 'Choose the file for this resource.' });
+      setServerError(null);
+      window.scrollTo({ top: 0 });
+      return;
+    }
+
     setBusy(true);
     try {
-      await saveResource(row);
+      if (!existing && chosen) {
+        // Register, then send the bytes to the path the server derived. The
+        // row is born unpublished; publishing is a separate, deliberate edit
+        // once the file has landed.
+        await registerResource(
+          {
+            title: value.title,
+            topic: value.topic,
+            crop: value.crop ?? null,
+            language: value.language,
+            format: value.format,
+            byte_size: value.byte_size,
+            description: value.description ?? null,
+            content_type: chosen.type.toLowerCase(),
+          },
+          chosen,
+        );
+      } else {
+        await saveResource(row);
+      }
     } catch (e) {
       setServerError(e instanceof Error ? e.message : 'The resource could not be saved.');
       window.scrollTo({ top: 0 });
@@ -294,20 +311,6 @@ export function ResourceForm({ existing }: { existing: LearningResourceRow | nul
               </div>
 
               <div className={styles.formGrid}>
-                <Field
-                  label="Storage path"
-                  error={errors['storage_path']}
-                  hint="Filled in by the upload. Relative to the bucket."
-                >
-                  {(ids) => (
-                    <Input
-                      {...ids}
-                      value={form.storage_path}
-                      onChange={(event) => update('storage_path', event.target.value)}
-                      spellCheck={false}
-                    />
-                  )}
-                </Field>
                 <Field
                   label="Size in bytes"
                   error={errors['byte_size']}

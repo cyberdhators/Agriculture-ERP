@@ -1,0 +1,366 @@
+/*
+ * Mapping a farm on a phone, outdoors, while moving.
+ *
+ * Built for 360px first. The two controls that matter while walking — "Mark
+ * this corner" and "Undo" — are full width and oversized, because they are
+ * pressed with a thumb, in sunlight, possibly one-handed while holding a
+ * notebook. Nothing here is a table and nothing scrolls sideways.
+ */
+.page {
+  display: grid;
+  gap: var(--s-5);
+  max-inline-size: 560px;
+}
+
+.back {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 44px;
+  color: var(--ink-2);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.back:hover {
+  text-decoration: underline;
+}
+
+.back:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.375rem, 5.5vw, 1.75rem);
+  line-height: 1.15;
+  color: var(--ink);
+}
+
+.sub {
+  margin: 0;
+  font-size: var(--text-small);
+  color: var(--muted);
+}
+
+.walk {
+  display: grid;
+  gap: var(--s-4);
+  padding: var(--s-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  background: var(--card);
+}
+
+.blockHead {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: var(--text-label);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* ---- The trace ---------------------------------------------------------- */
+
+.trace {
+  inline-size: 100%;
+  max-inline-size: 280px;
+  block-size: auto;
+  justify-self: center;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+}
+
+.traceEmpty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 100%;
+  max-inline-size: 280px;
+  aspect-ratio: 1;
+  justify-self: center;
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius-control);
+  color: var(--muted);
+  font-size: var(--text-small);
+}
+
+.traceLine {
+  fill: none;
+  stroke: var(--green-deep);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-dasharray: 5 4;
+}
+
+.traceFill {
+  fill: color-mix(in srgb, var(--harvest) 28%, transparent);
+  stroke: none;
+}
+
+.traceLineOnly {
+  fill: none;
+  stroke: var(--green-deep);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+
+.traceDot {
+  fill: var(--green-deep);
+}
+
+/* The corner the officer started from: the one they must walk back to. */
+.traceStart {
+  fill: var(--card);
+  stroke: var(--green-deep);
+  stroke-width: 2.5;
+}
+
+/* ---- Figures ------------------------------------------------------------ */
+
+.figures {
+  display: grid;
+  gap: var(--s-2);
+  margin: 0;
+}
+
+.figures > div {
+  display: grid;
+  grid-template-columns: 45% 1fr;
+  gap: var(--s-3);
+  align-items: baseline;
+}
+
+.figures dt {
+  font-size: var(--text-small);
+  color: var(--muted);
+}
+
+.figures dd {
+  margin: 0;
+  color: var(--ink);
+  font-weight: 600;
+}
+
+/* Absent is said in words, never as a zero or a dash pretending to be one. */
+.none {
+  color: var(--muted);
+  font-weight: 400;
+  font-style: italic;
+}
+
+.grade_good {
+  color: var(--green-deep);
+  text-transform: uppercase;
+  font-size: var(--text-label);
+  letter-spacing: 0.06em;
+}
+
+.grade_poor {
+  color: var(--harvest-ink);
+  text-transform: uppercase;
+  font-size: var(--text-label);
+  letter-spacing: 0.06em;
+}
+
+.grade_unusable {
+  color: var(--danger);
+  text-transform: uppercase;
+  font-size: var(--text-label);
+  letter-spacing: 0.06em;
+}
+
+/* ---- Controls ----------------------------------------------------------- */
+
+/* The one pressed at every corner: bigger than everything else on the screen. */
+.mark {
+  inline-size: 100%;
+  min-block-size: 64px;
+  font-size: 1.0625rem;
+}
+
+.wide {
+  inline-size: 100%;
+  min-block-size: 52px;
+}
+
+.note {
+  margin: 0;
+  font-size: var(--text-small);
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.ready {
+  margin: 0;
+  font-size: var(--text-small);
+  font-weight: 600;
+  color: var(--green-deep);
+}
+
+.warn {
+  margin: 0;
+  padding: var(--s-3);
+  border-inline-start: 3px solid var(--harvest-deep);
+  background: var(--harvest-tint);
+  color: var(--harvest-ink);
+  font-size: var(--text-small);
+  font-weight: 600;
+}
+
+.fieldError {
+  margin: 0;
+  color: var(--danger);
+  font-size: var(--text-small);
+  font-weight: 600;
+}
+
+.errors {
+  margin: 0;
+  padding-inline-start: var(--s-5);
+  color: var(--danger);
+  font-size: var(--text-small);
+  font-weight: 600;
+}
+
+.skeleton {
+  block-size: 200px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  background: var(--card);
+}
+
+/* ---- Crops -------------------------------------------------------------- */
+
+.crops {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+}
+
+.crop {
+  min-block-size: 48px;
+  padding-inline: var(--s-4);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-control);
+  background: var(--paper);
+  color: var(--ink-2);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.cropOn {
+  background: var(--green-deep);
+  border-color: var(--green-deep);
+  color: var(--band-ink, #fff);
+}
+
+.crop:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ---- After saving ------------------------------------------------------- */
+
+.done {
+  display: grid;
+  gap: var(--s-2);
+  padding: var(--s-5);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  background: var(--card);
+  text-align: center;
+}
+
+.doneLabel {
+  margin: 0;
+  font-size: var(--text-label);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--green-deep);
+}
+
+/* The server's figure, set large because it is the answer to the walk. */
+.area {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: clamp(1.5rem, 7vw, 2rem);
+  color: var(--ink);
+}
+
+.doneName {
+  margin: 0;
+  color: var(--ink-2);
+}
+
+.doneActions {
+  display: grid;
+  gap: var(--s-3);
+}
+
+/* ---- Farm detail -------------------------------------------------------- */
+
+.list {
+  display: grid;
+  gap: var(--s-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.seasonRow {
+  display: grid;
+  gap: 2px;
+  padding: var(--s-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  background: var(--card);
+}
+
+.seasonName {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.seasonFacts {
+  font-size: var(--text-small);
+  color: var(--ink-2);
+}
+
+.superseded {
+  font-size: var(--text-label);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.shapeWrap {
+  display: flex;
+  justify-content: center;
+}
+
+.cropsRead {
+  display: grid;
+  gap: var(--s-3);
+}
+
+.body {
+  margin: 0;
+  color: var(--ink);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+/* The failure's own name, so a problem is read before its explanation. */
+.problemTitle {
+  display: block;
+  font-weight: 700;
+}

@@ -6,12 +6,13 @@
 // this module never talks to the database. Gated by NEXT_PUBLIC_USE_LIVE_VISITS
 // (off = the fixtures in ./fixtures).
 
-import { correctVisitSchema } from '@agri-erp/shared';
+import { correctVisitSchema, declareAttachmentSchema } from '@agri-erp/shared';
 import type {
   AttachmentFailureCode,
   AttachmentKind,
   AttachmentStatus,
   CorrectVisit,
+  DeclareAttachment,
   GeoJsonPoint,
   RecordVisit,
   VisitTopic,
@@ -243,6 +244,175 @@ export async function listVisitAttachments(visitId: string): Promise<VisitAttach
     `/api/visits/${encodeURIComponent(visitId)}/attachments`,
   );
   return (body.data ?? []).map(toAttachment);
+}
+
+/**
+ * THE FOLLOW-UP CHAIN. `GET /api/visits/:id/chain` (C-8.3).
+ *
+ * Every earlier visit from the first down to this one, then this one, then its
+ * direct follow-ups. Scoped by the visit itself -- `loadVisibleVisit` answers
+ * 404 outside the caller's scope -- and the chain never leaves the farmer, so
+ * what is visible for one link is visible for all.
+ *
+ * A REMOVED ANCESTOR KEEPS ITS PLACE AS AN ID AND NOTHING ELSE (C-8.11). It is
+ * not dropped, because dropping it would silently reorder the history, and it
+ * is not filled in with a placeholder, because nothing about it may be read.
+ * `RemovedLink` is that shape, and callers must tell the two apart.
+ */
+export interface RemovedLink {
+  id: string;
+  removed: true;
+}
+
+export type ChainLink = Visit | RemovedLink;
+
+export const isRemovedLink = (link: ChainLink): link is RemovedLink =>
+  (link as RemovedLink).removed === true;
+
+export interface VisitChain {
+  earlier: ChainLink[];
+  visit: Visit;
+  follow_ups: Visit[];
+}
+
+export async function getVisitChain(id: string): Promise<VisitChain> {
+  const body = await request<{
+    earlier: (VisitDto | RemovedLink)[];
+    visit: VisitDto;
+    follow_ups: VisitDto[];
+  }>(`/api/visits/${encodeURIComponent(id)}/chain`);
+  if (!body.data) throw new VisitApiError(500, 'empty', 'No chain in the response');
+  return {
+    earlier: body.data.earlier.map((link) =>
+      (link as RemovedLink).removed === true
+        ? ({ id: link.id, removed: true } as RemovedLink)
+        : toVisit(link as VisitDto),
+    ),
+    visit: toVisit(body.data.visit),
+    follow_ups: body.data.follow_ups.map(toVisit),
+  };
+}
+
+/* ---- Attachments: the row, then the bytes, then the word ---------------- */
+
+/**
+ * THE THREE STEPS, AND WHY THEY ARE THREE.
+ *
+ * An attachment is not a field on a visit. The visit is complete and saved
+ * first; the file follows, and may never arrive. So:
+ *
+ *   1. DECLARE (`POST /api/visits/:id/attachments`) writes the row and returns
+ *      a short-lived grant for one object path. The size and type are judged
+ *      HERE, before a byte travels: an over-large photo is refused now.
+ *   2. UPLOAD puts the bytes straight to Storage with that grant. This is the
+ *      only step that does not touch our API.
+ *   3. CONFIRM (`.../confirm`) asks the server to check what actually landed
+ *      against what was declared. The server, not the phone, decides that it
+ *      arrived -- a grant is never a grant to store anything.
+ *
+ * `fail` is the phone saying it gave up, so the row stops claiming to be on its
+ * way. None of this is a queue: there is no retry loop, no background sync and
+ * nothing kept on the device. Re-declaring the same id is how "send it again"
+ * works, and that is a deliberate act by the officer.
+ */
+export interface UploadGrant {
+  url: string;
+  token: string;
+  expires_at: string;
+}
+
+export interface DeclaredAttachment extends VisitAttachment {
+  upload?: UploadGrant;
+}
+
+export async function declareAttachment(
+  visitId: string,
+  input: DeclareAttachment,
+): Promise<DeclaredAttachment> {
+  const parsed = declareAttachmentSchema.parse(input);
+  const body = await request<AttachmentDto & { upload?: UploadGrant }>(
+    `/api/visits/${encodeURIComponent(visitId)}/attachments`,
+    { method: 'POST', body: JSON.stringify(parsed) },
+  );
+  if (!body.data) throw new VisitApiError(500, 'empty', 'No attachment in the response');
+  const attachment: DeclaredAttachment = toAttachment(body.data);
+  if (body.data.upload) attachment.upload = body.data.upload;
+  return attachment;
+}
+
+/**
+ * Step two: the bytes, straight to Storage with the grant's own token. Never
+ * through our API -- the file does not pass through the application at all.
+ */
+export async function uploadAttachmentBytes(grant: UploadGrant, file: Blob): Promise<void> {
+  const res = await fetch(grant.url, {
+    method: 'PUT',
+    headers: { authorization: `Bearer ${grant.token}`, 'content-type': file.type },
+    body: file,
+  });
+  if (!res.ok) {
+    throw new VisitApiError(res.status, 'upload_failed', 'The file did not reach the store.');
+  }
+}
+
+/** Step three: the server checks what landed against what was declared. */
+export async function confirmAttachment(
+  visitId: string,
+  attachmentId: string,
+): Promise<VisitAttachment> {
+  const body = await request<AttachmentDto>(
+    `/api/visits/${encodeURIComponent(visitId)}/attachments/${encodeURIComponent(attachmentId)}/confirm`,
+    { method: 'POST' },
+  );
+  if (!body.data) throw new VisitApiError(500, 'empty', 'No attachment in the response');
+  return toAttachment(body.data);
+}
+
+/**
+ * A READ LINK FOR AN ARRIVED ATTACHMENT. `GET .../attachments/:aid/link`.
+ *
+ * The bucket is private and has no public policy, so a file is never at a
+ * guessable address: the server issues a link per request that expires in
+ * minutes (C-8.8), and scope is the visit's -- outside it the visit is not
+ * found, so neither is the file.
+ *
+ * ONLY AN ARRIVED ATTACHMENT HAS ONE. A waiting or failed row has nothing to
+ * open and the route answers 409 `attachment_not_received`, so the screen
+ * offers the action only for the state that has something behind it.
+ *
+ * EVERY ONE OF THESE IS AUDITED. The link outlives the request and can be
+ * forwarded, so who asked for what and when is recorded. Fetch it when the
+ * officer asks to open the file, never speculatively for a list.
+ */
+export interface AttachmentLink {
+  attachment_id: string;
+  content_type: string;
+  url: string;
+  expires_at: string;
+}
+
+export async function getAttachmentLink(
+  visitId: string,
+  attachmentId: string,
+): Promise<AttachmentLink> {
+  const body = await request<AttachmentLink>(
+    `/api/visits/${encodeURIComponent(visitId)}/attachments/${encodeURIComponent(attachmentId)}/link`,
+  );
+  if (!body.data) throw new VisitApiError(500, 'empty', 'No link in the response');
+  return body.data;
+}
+
+/** The phone gave up. The row stops claiming to be on its way. */
+export async function failAttachment(
+  visitId: string,
+  attachmentId: string,
+): Promise<VisitAttachment> {
+  const body = await request<AttachmentDto>(
+    `/api/visits/${encodeURIComponent(visitId)}/attachments/${encodeURIComponent(attachmentId)}/fail`,
+    { method: 'POST', body: JSON.stringify({}) },
+  );
+  if (!body.data) throw new VisitApiError(500, 'empty', 'No attachment in the response');
+  return toAttachment(body.data);
 }
 
 /* ---- Administrative correction and removal ---------------------------- */

@@ -76,7 +76,6 @@ export function toInput(row: LearningResourceRow): LearningResourceInput {
     crop: row.crop,
     language: row.language,
     format: row.format,
-    storage_path: row.storage_path,
     byte_size: row.byte_size,
     description: row.description,
     published: row.published,
@@ -118,6 +117,79 @@ export async function saveLearningResource(
   );
   if (!body.data) throw new LibraryApiError(500, 'empty', 'No resource in the response');
   return toRow(body.data);
+}
+
+/**
+ * THE THREE STEPS OF PUTTING A FILE IN THE LIBRARY.
+ *
+ *   1. REGISTER the card. The server mints the id, derives the object path
+ *      from it, and returns a short-lived grant for that one path. The row is
+ *      born unpublished whatever was asked for, because no bytes have arrived.
+ *   2. UPLOAD the bytes straight to Storage with that grant. This is the only
+ *      step that does not touch our API; the file never passes through it.
+ *   3. PUBLISH with a PATCH. The server asks the provider what is actually at
+ *      the path and refuses if nothing is there or the size disagrees, so a
+ *      half-uploaded file is never offered to an officer.
+ *
+ * The client never names a path, a bucket, or an address. It names a KIND of
+ * file, and the server decides where it goes.
+ */
+export interface ResourceUploadGrant {
+  url: string;
+  token: string;
+  expires_in_minutes: number;
+}
+
+export interface RegisteredResource {
+  row: LearningResourceRow;
+  upload: ResourceUploadGrant;
+}
+
+export async function registerLearningResource(
+  input: Omit<LearningResourceInput, 'published'> & { content_type: string },
+): Promise<RegisteredResource> {
+  const body = await request<LearningResourceApi & { upload: ResourceUploadGrant }>(
+    '/api/learning-resources',
+    { method: 'POST', body: JSON.stringify({ ...input, published: false }) },
+  );
+  if (!body.data) throw new LibraryApiError(500, 'empty', 'No resource in the response');
+  return { row: toRow(body.data), upload: body.data.upload };
+}
+
+/** Step two: the bytes, straight to Storage. Never through our API. */
+export async function uploadResourceBytes(grant: ResourceUploadGrant, file: Blob): Promise<void> {
+  const res = await fetch(grant.url, {
+    method: 'PUT',
+    headers: { authorization: `Bearer ${grant.token}`, 'content-type': file.type },
+    body: file,
+  });
+  if (!res.ok) {
+    throw new LibraryApiError(res.status, 'upload_failed', 'The file did not reach the store.');
+  }
+}
+
+/**
+ * A READ LINK FOR ONE RESOURCE. `GET /api/learning-resources/:id/link`.
+ *
+ * Asked for at the moment an officer opens something, never in advance for a
+ * list: every issue is audited, and a link fetched speculatively would record
+ * a reading that never happened. An unpublished resource is not found to an
+ * officer, exactly as it is absent from their list.
+ */
+export interface ResourceLink {
+  resource_id: string;
+  title: string;
+  format: string;
+  url: string;
+  expires_at: string;
+}
+
+export async function getLearningResourceLink(id: string): Promise<ResourceLink> {
+  const body = await request<ResourceLink>(
+    `/api/learning-resources/${encodeURIComponent(id)}/link`,
+  );
+  if (!body.data) throw new LibraryApiError(500, 'empty', 'No link in the response');
+  return body.data;
 }
 
 /** Soft delete. The file stays in storage; the row keeps its history (C-13). */

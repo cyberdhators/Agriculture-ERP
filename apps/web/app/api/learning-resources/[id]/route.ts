@@ -1,10 +1,11 @@
-import { learningResourceInputSchema, toIso } from '@agri-erp/shared';
+import { LEARNING_RESOURCE_BUCKET, learningResourceInputSchema, toIso } from '@agri-erp/shared';
 
 import { audited, writeAudit } from '../../../../lib/api/audit';
-import { conflict, notFound } from '../../../../lib/api/errors';
+import { notFound, unprocessable } from '../../../../lib/api/errors';
 import { defineRoutes, empty, ok } from '../../../../lib/api/route';
 import { requireWriter } from '../../../../lib/api/scope';
 import { prisma } from '../../../../lib/db';
+import { describeStoredObject } from '../../../../lib/supabase/admin';
 
 /**
  * A single learning resource (C-13.6 to C-13.9). Unit P1. Writes are
@@ -69,16 +70,24 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       requireWriter(auth);
       const target = await loadVisible(params.id ?? '');
 
-      // Registering the card against a different file must respect the one
-      // live resource per file rule, but the card keeping its own path is not a
-      // clash with itself.
-      if (body.storage_path !== target.storage_path) {
-        const [clash] = await prisma.$queryRawUnsafe<{ id: string }[]>(
-          'SELECT id FROM public.learning_resource_active WHERE storage_path = $1 AND id <> $2::uuid',
-          body.storage_path,
-          target.id,
-        );
-        if (clash) throw conflict('resource_file_already_registered');
+      /*
+       * THE FILE DOES NOT MOVE. `storage_path` was derived from this row's id
+       * when it was created and is not in the edit schema, so a correction to
+       * the card can never repoint it at another object. Replacing the file
+       * means registering a new resource.
+       *
+       * PUBLISHING IS WHERE THE FILE IS CHECKED. The column's own comment sets
+       * the rule -- "a half-uploaded file is never offered to an officer" -- so
+       * a false->true publish asks the provider what is actually at the path
+       * and refuses if nothing is there, or if what is there is not the size
+       * this card claims. An officer's tap then reaches a file that exists.
+       */
+      if (!target.published && body.published) {
+        const stored = await describeStoredObject(LEARNING_RESOURCE_BUCKET, target.storage_path);
+        if (!stored) throw unprocessable('resource_file_missing');
+        if (stored.byteSize !== null && stored.byteSize !== body.byte_size) {
+          throw unprocessable('resource_file_mismatch');
+        }
       }
 
       const row = await audited(prisma, async (tx) => {
@@ -86,7 +95,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
           `UPDATE public.learning_resource
            SET title = $2, topic = $3::public.learning_topic, crop = $4::public.crop,
                language = $5::public.language, format = $6::public.resource_format,
-               storage_path = $7, byte_size = $8, description = $9, published = $10
+               byte_size = $7, description = $8, published = $9
            WHERE id = $1::uuid AND deleted_at IS NULL
            RETURNING ${SELECT_COLUMNS}`,
           target.id,
@@ -95,7 +104,6 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
           body.crop ?? null,
           body.language,
           body.format,
-          body.storage_path,
           body.byte_size,
           body.description ?? null,
           body.published,
@@ -117,7 +125,6 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
           ['crop', target.crop, next.crop],
           ['language', target.language, next.language],
           ['format', target.format, next.format],
-          ['storage_path', target.storage_path, next.storage_path],
           ['byte_size', target.byte_size, next.byte_size],
           ['description', target.description, next.description],
         ] as const) {

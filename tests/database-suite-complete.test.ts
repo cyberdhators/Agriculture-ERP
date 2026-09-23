@@ -68,6 +68,7 @@ const DATABASE_SUITE = [
   'tests/communications.test.ts',
   'tests/directories-routes.test.ts',
   'tests/directories.test.ts',
+  'tests/enums-match-constants.test.ts',
   'tests/farmers-seed.test.ts',
   'tests/farmers.test.ts',
   'tests/farms.test.ts',
