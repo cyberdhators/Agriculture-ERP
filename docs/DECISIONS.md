@@ -3088,3 +3088,48 @@ not before.
 **Not decided here:** who at CORWADO approves a campaign, whether prices go out
 automatically, and whether the regulator requires sender registration. Those
 three remain open against C-15.
+
+---
+
+## The owner's record — a merge order that began by bypassing the Secrets law (2026-10-01)
+
+Recorded as the owner's, in his words:
+
+> "I set a merge order whose first step required merging past a red secret scan.
+> A gate that is red for a reason unrelated to the branch is still red, and an
+> order that starts by bypassing the Secrets law to land a law is the wrong
+> order. The fix to the gate goes first."
+
+**What the system said when it was checked.** The branch the order began with was
+not red. It had **no verdict at all** — its latest run shows `cancelled`, zero
+jobs, and a lifetime under three minutes, having been evicted from the queue
+before anything ran. Four more branches in the same order were in the same state.
+So the first merge would not have been made past a red check; it would have been
+made past **nothing**, which is the harder case to notice. See
+`docs/PROJECT-STATE.md`, "A cancelled run is not a failed run."
+
+**What changed.** The CI fix is first in the order. Nothing else merges until the
+gate judges branches on their own commits.
+
+---
+
+## The owner's record — an inference stated as an observation (2026-10-01)
+
+Recorded as the owner's, in his words:
+
+> "I wrote that every branch was red on the repository-wide secret scan. I had
+> evidence for one branch and generalised it to seven — an inference stated as an
+> observation, one message after I told the session that a scan's answer is a
+> property of the ref set it was given. Five of those branches had no verdict at
+> all."
+
+**Why it is worth a record rather than a correction.** The inference was sound:
+the scan did walk all refs, so those branches _would_ have gone red. It was still
+wrong to state, because the shape of what was actually there — five branches with
+no verdict — calls for a different response than seven red ones. A sound
+inference that happens to land near the truth is the hardest kind to catch, and
+the only defence is the habit of saying which of the two a sentence is.
+
+**The method that caught it** was asking the system rather than the record: one
+`gh run list` across every branch, which cost seconds and returned `cancelled`
+five times.

@@ -3220,6 +3220,153 @@ catches two sources drifting, and **this catches the gate's own configuration
 drifting away from the world it describes.** An exception list is code that
 nobody runs, and it decays silently.
 
+## THE SECRET SCAN WAS MEASURING THE WRONG UNIVERSE (2026-10-01)
+
+> **A gate whose verdict depends on what other branches exist is not reporting on
+> this branch.**
+
+**The observation, not the argument.** #107's secret scan found **one** leak at
+09:46 and **two** at 10:18. Between those runs #107 gained nothing: its two
+commits are documentation and contain no credential pattern of any kind. What
+changed is that **#108 was pushed.** A branch's verdict changed because a
+different branch existed.
+
+The mechanism is that `gitleaks git .` with no `--log-opts` reads every ref the
+runner has fetched, and `fetch-depth: 0` fetches all of them. So the scan was
+never answering "does this branch add a secret"; it was answering "does any
+secret exist anywhere in this repository", on every branch, every time.
+
+> **A blocking scan over all history cannot be made green, so it will be
+> bypassed. Block on what the branch adds; audit history on a schedule.**
+
+**It had already begun to cost something.** The first casualty was nearly the
+Secrets law itself: a merge order was set whose opening step was to merge past
+this red scan in order to land a law. That is what a permanently red gate does —
+not argument, erosion.
+
+**What replaced it.** `ci.yml` blocks on the branch's own commits plus the working
+tree as it stands; `secret-audit.yml` reads all history weekly and on demand, and
+gates no merge. The intent recorded on the old checkout step survives unchanged:
+a secret added and then reverted **within the branch** is still inside the
+branch's range, so "I removed it in a later commit" is still a finding. Only
+inherited history left.
+
+### THE REFUSAL NOW NAMES ITS SUBJECT
+
+> **A refusal that does not name its subject cannot be acted on; it only tells
+> you to go looking.**
+
+The old step ran at `--log-level info` and printed `leaks found: 1` — no rule, no
+file, no line, no commit. A real committed password sat behind that line while
+every branch went red for it, and the gate could never say which file to open.
+Determining it took reading five branches' histories by hand.
+
+It now prints rule, file, line, commit and fingerprint, and **never** the matched
+value, the match, or the source line. The JSON report carries the secret, so it
+is parsed in the step and dies with the runner: **it is never uploaded as an
+artifact**, because an artifact is a downloadable copy of the credential for
+anyone who can see the run. `tests/ci-secret-findings.test.ts` holds the renderer
+to that, including a test that the no-leak check is itself capable of failing.
+
+### THE BRANCH THAT CHANGES THE GATE JUDGING IT
+
+> **A branch that changes the gate judging it must argue the change in its body.
+> Green is then evidence about the argument, not about the branch.**
+
+This change makes its own branch green by its own edit. That is also exactly the
+shape of a branch weakening the gate that judges it, and the colour cannot
+distinguish the two. So the argument lives in the pull request body and a reader
+is asked to weigh it rather than the check.
+
+### THE TEMPORARY TRIGGER
+
+> **A temporary thing removed by intention will be forgotten. A temporary thing
+> that cannot act outside its purpose is safe either way.**
+
+`workflow_dispatch` cannot be dispatched for a workflow absent from the default
+branch, and main is not pushed to — so the audit's findings could not be read
+before it merged, and the first `.gitleaksignore` entries would have been written
+about findings nobody had seen. The audit therefore carries a `pull_request`
+trigger **pinned to this branch's head ref**, so it cannot act on any other pull
+request. It is still to be removed before the branch goes ready; the pin is what
+makes that promise unnecessary.
+
+### THE GATE CAUGHT ITS OWN AUTHOR AGAIN, BEFORE THE PUSH THIS TIME
+
+> **The instrument that checks a class of fault is written in the same idiom as
+> the fault. Scan your own new gate against the rule it enforces before you push
+> it.**
+
+`tests/ci-secret-findings.test.ts` needs a fixture finding to prove the renderer
+never prints the matched value. The first version wrote
+`Secret: 'ZZTEST-NOT-A-REAL-VALUE'` with a `Match` of
+`const PASSWORD = 'ZZTEST-NOT-A-REAL-VALUE';` — faithful to the real finding it
+describes, and **exactly the shape `generic-api-key` hunts**. The test of the
+secret gate would have become a finding in the secret gate.
+
+Caught by running the custom rules against the staged diff before committing,
+which is now the habit this record asks for. The fixture carries readable
+sentences instead: no keyword-plus-entropy pair, nothing for a rule to match.
+This is the same family as the guard that caught its author and then caught
+itself (2026-09-11), and as the audit-constraint gate that exhibited the fault it
+was built to catch (2026-09-14) — a third instance, found before it shipped
+rather than after.
+
+### AND THE ONE THAT IS NOT ABOUT SECRETS AT ALL
+
+> **Protection inherited from an unrelated entry is protection nobody decided on.
+> State it where it applies.**
+
+`.gitignore` ignores `.local/`, filed under "os" beside `.DS_Store`. A generated
+credential written there is protected — by an entry written for another reason,
+which nobody chose for this purpose and which a later tidy-up could remove
+without knowing what it was holding.
+
+## A CANCELLED RUN IS NOT A FAILED RUN (2026-10-01)
+
+> **A cancelled run is not a failed run. It is no run, and no run looks like
+> nothing is wrong — red refuses visibly, a killed queue entry leaves a merge
+> button with nothing behind it.**
+
+Five branches — #102, #104, #103, #106 and #105 — had **no verdict at all**. Each
+shows `cancelled`, **zero jobs**, and a lifetime under three minutes: killed while
+pending, having run nothing. It was read as "those branches are red", which is a
+different and much more comfortable claim.
+
+**The cause.** `concurrency: group: staging-tests` with `cancel-in-progress:
+false` protects an **in-progress** run. It does not protect a **pending** one:
+GitHub allows one queued run per group, and a newer run evicts the one waiting.
+With eight open pull requests on one group, only the most recently pushed branch
+kept its place in the queue.
+
+**A comment in `ci.yml` said otherwise**, and it has been corrected:
+
+> **A comment is a claim about behaviour and ages like any other claim. This one
+> was verified for in-progress runs and generalised to pending ones.**
+
+It read: _"a superseded run on a branch is no longer cancelled by a newer push —
+it completes, and the newer run waits its turn."_ True of in-progress runs, false
+of pending ones. This file's own record — "pushing while a run is queued cancels
+it" — was the accurate one, and the two sat in the repository disagreeing.
+
+**The fix, and why it is safe.** The group moved off the workflow and onto the one
+job that touches staging. The documents path runs `pnpm test:pure`, which opens no
+connection, so it now queues behind nothing. **The advisory lock in
+`vitest.global-setup.ts`, not the concurrency group, is the mutual exclusion** —
+the lock refuses a second run outright and would do so with no group at all. The
+group only stops runs lining up to collide with it, and a run that never connects
+needs neither.
+
+The group name is computed by a `scope` job before anything starts; the suite
+choice stays where it always was, inside the step, which is still unconditional.
+Both read `scripts/ci-changed-scope.mjs` — one decider for one fact, because three
+guards each holding their own copy of one project reference is how this repository
+learned what two deciders do. And the step asserts the two agreed, so a
+contradiction is named rather than left for the lock to discover. That assertion
+compares **decisions, not sockets**: a step cannot observe whether a connection
+was opened without instrumenting the global setup, so a pass means the group and
+the suite agree and nothing more.
+
 ## A CATALOGUE QUERY PROVES INSTALLATION AND NOTHING ELSE (2026-09-20)
 
 When `spatial_ref_sys` appeared to be missing, the question was whether PostGIS

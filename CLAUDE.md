@@ -149,6 +149,34 @@ only. Any new variable goes in `.env.example` and you tell me its name. CI runs
 a gitleaks scan over full branch history; it has no allowlist, and a false
 positive is a decision I make, not one you set as a default.
 
+**Gates — every "it passed" that came from comparing an empty set.**
+
+- 2026-09-17 and 2026-09-20 — `prisma migrate status` reported staging healthy
+  while an applied migration's recorded checksum disagreed with its file.
+  Found by damage, twice. Stated as observed; the tool's internals are not
+  claimed.
+- First written here — the checksum gate resolved `prisma/migrations` relative
+  to the caller's working directory, so from any other directory every file read
+  as absent, every comparison was skipped, and it passed. Found by running it
+  from a directory it did not expect. Fixed in code at the time and never
+  recorded until now.
+- Prevented, not suffered — on a push to main, `origin/main..HEAD` is empty, so
+  the secret scan would have read nothing at exactly the moment a branch's
+  commits enter main. Found by design review before it shipped.
+
+A gate that cannot determine what to compare must fail, not report clean.
+
+Two of the three are inside gates built to catch this class, and the third is a
+tool we trusted to be one. A reader meeting a single instance will not see the
+fourth coming, which is why the list is the point and not the law alone.
+
+**Gates — what may vary is how a check waits, never whether it speaks.** A path
+filter changes whether the check exists; a group name changes only who it queues
+behind. A required check that silently does not run is a merge button with
+nothing behind it, which is indistinguishable from a green one. So a check's
+concurrency, its queue and its ordering are all free to be computed; its
+existence is not.
+
 **Offline sync.** Records are created with a client-generated UUID so a retried
 upload is idempotent. Upload is one transaction per record. A record is never
 removed from the device until the server acknowledges it by id. Failures set a

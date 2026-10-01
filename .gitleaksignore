@@ -1,0 +1,34 @@
+# ============================================================================
+# ACCOUNTED-FOR SECRET-SCAN FINDINGS
+# ============================================================================
+#
+# Every entry here is a finding the full-history audit reports that we have
+# looked at and decided about. CLAUDE.md's Secrets law says the scan has no
+# allowlist and that a false positive is the owner's deliberate decision, not a
+# default a session sets. This file is where those decisions are written down,
+# which is what keeps them deliberate.
+#
+# THE FILE IS EMPTY OF ENTRIES ON PURPOSE. It lands with the convention and the
+# test, and entries are added only after the audit has actually run and its
+# findings have been read. Writing entries first would be deciding about
+# findings nobody has seen.
+#
+# ----------------------------------------------------------------------------
+# THE CONVENTION: THE REASON GOES ON THE LINE ABOVE THE FINGERPRINT.
+# ----------------------------------------------------------------------------
+#
+#   # <why this finding is accounted for, in a sentence>
+#   <fingerprint>
+#
+# Not a trailing comment on the fingerprint line. Whether gitleaks treats
+# everything after a `#` on an entry line as a comment or as part of the
+# fingerprint was not established, and a convention that depends on an
+# unverified parsing detail fails silently -- the entry simply stops matching
+# and the finding comes back, or worse, matches nothing and is never noticed.
+# The line above parses safely whichever way trailing text is handled.
+#
+# `tests/gitleaksignore-reasons.test.ts` enforces it: an entry with no reason
+# above it fails the suite. An unexplained new finding is red; a known and
+# explained old one is not.
+#
+# A fingerprint is `commit:file:rule:line` and carries no secret value.
