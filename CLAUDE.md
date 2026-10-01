@@ -172,6 +172,23 @@ crashed run's residue is swept rather than tripped over, and a row made by hand
 outside that convention breaks the sweep for everyone. If the client sends a
 real list "to try", it goes to production or nowhere.
 
+**Gates.** A gate exists to compare two sources that can drift apart. These are
+the ways one has been found not to, each after it had already let something
+through:
+
+- `migrate status` reports what is unapplied, not what has changed. The absence
+  of a complaint is not a comparison. *(Thirteenth instance.)*
+- A gate that resolves its own inputs relative to the caller can be made to
+  compare nothing. Run it from a directory it did not expect before you believe
+  its green. *(Fourteenth instance, and the first found inside the gate built to
+  catch the class.)*
+- `git cherry` compares patch-ids, so squash-merged work reads as local-only. A
+  tool that answers a nearby question still answers a different one.
+- A gate whose timeout failure looks like its assertion failure teaches people to
+  disbelieve its real findings. Read once, assert in memory.
+- A gate that can never be green will be ignored. Print what cannot be fixed;
+  fail only on what can.
+
 ---
 
 ## 5. STOP AND ASK
