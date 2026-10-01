@@ -44,6 +44,14 @@ not this one, which has held developer credentials on a laptop and carries a
 throwaway `_smoke` table in its migration history. Reasoning in
 `docs/DECISIONS.md`.
 
+**THIS FILE OWNS THAT FACT (2026-10-01).** `docs/UNITS.md` carried its own
+version of it -- "the production Supabase project exists but holds no data" --
+which `docs/DECISIONS.md` had already recorded as never true, and which
+therefore survived its own correction for a month. UNITS now points here.
+
+> A fact stated in three documents is three facts that can disagree. One place
+> owns it; the others point.
+
 **Resolved 2026-09-03**, all three, so none of it is outstanding: the project was
 renamed from `agri-production`, its database password was rotated, and the
 account-wide access token was revoked. **`pnpm db:reset` is safe to run again** —
