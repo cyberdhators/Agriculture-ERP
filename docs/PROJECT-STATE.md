@@ -54,10 +54,19 @@ exists anywhere, and none enters production until the backup and restore unit is
 done and the restore drill has run successfully.
 
 **OPEN — Supabase plan and point-in-time recovery.** Not yet recorded: the plan
-CORWADO's projects are on, and whether point-in-time recovery is included. B11
-cannot be planned without it, and if PITR is absent this is an **open cost
-question for CORWADO**, not a solved fact. Read it from the dashboard and record
-it here.
+CORWADO's projects are on, and whether point-in-time recovery is included. If
+PITR is absent this is an **open cost question for CORWADO**, not a solved fact.
+Read it from the dashboard and record it here.
+
+**Narrowed 2026-10-01 (owner's decision, #107): this no longer blocks the restore
+drill.** The decision is that _the drill proves our runbook, not the vendor's
+feature_ — what C-11.7 establishes is that a person holding the runbook and a
+backup file can rebuild this system with no session present, and a restore from a
+plain SQL export exercises every step of that. PITR is the platform's claim about
+its own product. So PITR is now purely a **production-plan question** — which plan
+CORWADO buys and what recovery window the client gets — and the drill can run on a
+free scratch project before it is answered. What still cannot be planned without
+it is production's recovery window, not B11's drill.
 
 ---
 
@@ -3390,8 +3399,11 @@ it** — a schema check passes, the tests pass, and the database serves every
 query correctly the whole time.
 
 **Open, for the owner:** the plan CORWADO's projects are on and whether
-point-in-time recovery is purchasable (C-11.1's number); the scratch project
-for the drill; the destination account for the bucket copy.
+point-in-time recovery is purchasable (C-11.1's number) — a production-plan
+question only, and no longer a blocker on the drill, per the 2026-10-01 decision
+recorded above and in `docs/SCRATCH-PROJECT-PREPARATION.md`; the scratch project
+for the drill, prepared but not created; the destination account for the bucket
+copy.
 
 ## B12 — THE WEATHER TILE, C-16 (2026-09-15)
 
