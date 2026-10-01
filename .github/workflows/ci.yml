@@ -18,15 +18,20 @@ on:
 # WHAT THE OLD COMMENT HERE CLAIMED, AND WHERE IT WAS WRONG. It said: "a
 # superseded run on a branch is no longer cancelled by a newer push — it
 # completes, and the newer run waits its turn." That is true of an IN-PROGRESS
-# run, which `cancel-in-progress: false` does protect. It is false of a PENDING
-# one: GitHub allows only one queued run per concurrency group, and a newer run
-# evicts the one waiting. The claim was verified for the in-progress case and
-# generalised to the pending case.
+# run, which `cancel-in-progress: false` does protect. The claim was verified for
+# the in-progress case and generalised to the pending case.
 #
-# The cost was five branches with NO VERDICT AT ALL — #102, #104, #103, #106 and
-# #105 all show `cancelled` with zero jobs and a lifetime under three minutes.
-# They were killed in the queue, having run nothing. docs/PROJECT-STATE.md's
-# record, "pushing while a run is queued cancels it", was the accurate one.
+# OBSERVED — the effect. Five branches had NO VERDICT AT ALL: #102, #104, #103,
+# #106 and #105 all show `cancelled` with ZERO JOBS, lifetimes from 28 seconds to
+# 22.7 minutes, each ending when a newer push arrived. Verified for all five.
+# docs/PROJECT-STATE.md's record, "pushing while a run is queued cancels it", was
+# the accurate one.
+#
+# INFERRED — the cause. That GitHub permits only one PENDING run per concurrency
+# group and a newer run evicts it is reasoned from that effect, not read from a
+# documented rule, and it must not be relied on as established. The remedy below
+# does not depend on it: a run that never opens a connection has no reason to
+# queue behind the staging suite whatever killed those five.
 #
 # WHY THE SPLIT IS SAFE. The staging advisory lock in vitest.global-setup.ts is
 # the mutual exclusion, not this group — the lock refuses a second run outright,

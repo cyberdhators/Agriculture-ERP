@@ -149,6 +149,17 @@ only. Any new variable goes in `.env.example` and you tell me its name. CI runs
 a gitleaks scan over full branch history; it has no allowlist, and a false
 positive is a decision I make, not one you set as a default.
 
+A comment that quotes a removed credential has not removed it. Explain a removal
+without reproducing the thing removed. (Found by review, 2026-10-01.)
+
+A fixture that describes a secret finding is written in the idiom the scanner
+hunts. The test of the gate becomes a finding in the gate. (Found by review,
+2026-10-01.)
+
+Run the rules against your own staged diff before committing — above all when the
+diff is about the rules. Both leaks caught before pushing on 1 October were caught
+this way, and neither would have been caught by the gate they were inside.
+
 **Gates — every "it passed" that came from comparing an empty set.**
 
 - 2026-09-17 and 2026-09-20 — `prisma migrate status` reported staging healthy
@@ -176,6 +187,50 @@ behind. A required check that silently does not run is a merge button with
 nothing behind it, which is indistinguishable from a green one. So a check's
 concurrency, its queue and its ordering are all free to be computed; its
 existence is not.
+
+**Gates — a gate that nothing consults is a document.** Verifying that an
+instrument compares correctly says nothing about whether anything is obliged to
+listen. Both questions have to be asked, and only the first has ever been asked
+here.
+
+**Gates — a law in this file usually exists because a mechanism is missing.** When
+the mechanism arrives, the law stays as the reason and the mechanism does the
+work — and check whether the mechanism was available all along. The force-push law
+was written for a setting that existed and had simply never been switched on. The
+law still earns its place: it governs the *response* to a rejected push — fetch
+and look, report and stop — which no setting expresses.
+
+**Gates — a guard whose condition has been met is replaced, not removed.**
+Deleting it loses the rule it encoded; rewriting it keeps the rule and moves what
+it can check.
+
+**Labelling — every recorded claim is OBSERVED, DOCUMENTED or INFERRED.** OBSERVED
+means we ran it and saw it. DOCUMENTED means a vendor or a specification says so
+and we did not exercise it. INFERRED means we reasoned to it. A documented claim
+is not a tested one, and neither is a guess. The separate damage-versus-review
+label stays, and applies to faults: found by damage, or found by review before it
+shipped.
+
+**Labelling — an observed effect invites an inferred cause, and the inference
+inherits none of the observation's standing.** Label the cause separately —
+especially when a plan depends on it.
+
+**Labelling — when a fact can be checked two ways and they disagree, the record
+names which way it used and why the other misleads.** Three times on 2026-10-01:
+one of two protection mechanisms (classic protection and rulesets); author versus
+committer; commit status versus check runs.
+
+**Labelling — a count in a record should be of something that will still exist
+when the record is read.** A branch's length is a fact about a thing designed to
+disappear.
+
+**Labelling — a figure entering a record carries its cases, or it is not a
+figure.** "Five runs, zero jobs each, lifetimes from 28 seconds to 22.7 minutes"
+carries them; "under three minutes each" destroyed them.
+
+**Labelling — a summary can lose the structure that made the data evidence.** The
+spread in those lifetimes is what shows each run ending when a newer push arrived;
+a uniform figure would have suggested a fixed timeout and supported nothing.
 
 **Offline sync.** Records are created with a client-generated UUID so a retried
 upload is idempotent. Upload is one transaction per record. A record is never

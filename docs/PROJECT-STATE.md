@@ -3220,6 +3220,88 @@ catches two sources drifting, and **this catches the gate's own configuration
 drifting away from the world it describes.** An exception list is code that
 nobody runs, and it decays silently.
 
+## NOTHING IN THIS REPOSITORY IS ENFORCED (2026-10-01)
+
+> **No gate in this repository is enforced, because nothing enforces any check.**
+
+**OBSERVED 2026-10-01.** Branch protection can be enforced two ways, and both were
+checked: `GET branches/main/protection` returned **404, "Branch not protected"**,
+and `GET rulesets` returned an **empty list**. Checking one of the two and
+reporting "unenforced" would have been an exclusion list nobody tested — the first
+version of this finding rested on the classic endpoint alone and did not say so.
+
+So every gate built to date reports and does not prevent: the checksum comparison,
+the allowlist scan, the secret scan, the suite-completeness guards. Each was built
+carefully, each compares correctly, and **nothing is obliged to listen to any of
+them.** A gate that nothing consults is a document.
+
+The owner is configuring protection today. **#102's force-push law was written for
+a mechanism that existed and had never been switched on** — and that law still
+earns its place after the setting arrives, because it governs the _response_ to a
+rejected push (fetch and look, report and stop), which no setting expresses. The
+mechanism blocks the push; the law governs what happens next.
+
+### SEPTEMBER WAS TWO HOLES, NOT ONE
+
+This finding was first attached to September's unauthorised merges, #49 and #50, as
+their explanation. That was wrong twice over, and the correction runs in the
+opposite direction to the one first made.
+
+**OBSERVED, from the check-runs API:**
+
+- **#49** (`7df2775`) — `verify` **started 11:33:47**, the pull request was **merged
+  at 11:34:56** (sixty-nine seconds later, while the check was still running), and
+  `verify` **completed at 12:31:56 with `failure`** — fifty-seven minutes after the
+  merge. Merged while red, and nobody could have known it was red yet.
+- **#50** (`fb1af6d`) — **there is no `verify` check run on that commit at all.**
+  Its only check is `Vercel Preview Comments`. **Why it never ran is not claimed
+  here**; the absence is the fact.
+
+**Required status checks close merging-while-red and merging-while-unjudged, and
+#49 and #50 were one of each.** So today's required checks **do** close that half.
+
+**The other half is authorisation, and it stays open.** Both were merged without
+the owner, asserting a CORWADO authorisation nothing in the repository held
+(`docs/DECISIONS.md`). Required status checks say nothing about approval. What
+closes that is a required review, and:
+
+**The repository has one collaborator, `cyberdhators`, holding admin, and one
+author across all 397 commits on every ref, with `main` at 108.** A required review
+is therefore either ineffective or totalising here: with bypassing allowed it does
+not constrain this account at all, and with bypassing disallowed every pull request
+becomes unmergeable because an author cannot approve their own (**DOCUMENTED** —
+GitHub's stated behaviour, not exercised here). Neither closes the September hole.
+**What makes the control meaningful is a second account for the second lane.**
+
+**Required checks with bypassing disallowed means that if CI breaks or Actions
+billing lapses — as it did on 2026-09-10 — nothing can merge until the setting is
+relaxed. That is accepted: relaxing a setting is a visible act, clicking merge on a
+red pull request is not.**
+
+### TWO WAYS TO CHECK, AND THE OBVIOUS ONE MISLEADS — BOTH TIMES
+
+**Author, not committer.** `git log --all --format='%cn'` shows `cyberdhators` 307
+times and **`GitHub <noreply@github.com>` 90 times** — the latter is the committer
+GitHub records for merges made through the web interface. Not a person and not a
+second lane. The one-author finding is about **author**, and anyone re-verifying it
+will meet the committer figure first.
+
+**Check runs, not commit status.** `GET /commits/<sha>/status` returns
+**`state=success` for both #49 and #50**, because that endpoint reports legacy
+commit statuses — Vercel's — and not check runs. The check-runs endpoint is the one
+that tells the truth, and the misleading one is the obvious one to reach for.
+
+### A PULL REQUEST'S APPARENT STATE AND ITS ACTUAL VERDICT
+
+> **A pull request's apparent state and its actual verdict have been decoupled
+> twice by different mechanisms: #49 merged before its check reported, and five
+> runs were killed while pending and reported nothing. The merge button reports
+> nothing about whether judgment has happened.**
+
+The two are kept apart deliberately: **#49's cause is OBSERVED** — the timestamps
+say it plainly — and **the eviction's cause is INFERRED** from its effect. What
+they share is the shape, and the shape is what a reader needs.
+
 ## THE SECRET SCAN WAS MEASURING THE WRONG UNIVERSE (2026-10-01)
 
 > **A gate whose verdict depends on what other branches exist is not reporting on
@@ -3328,16 +3410,40 @@ without knowing what it was holding.
 > nothing is wrong — red refuses visibly, a killed queue entry leaves a merge
 > button with nothing behind it.**
 
-Five branches — #102, #104, #103, #106 and #105 — had **no verdict at all**. Each
-shows `cancelled`, **zero jobs**, and a lifetime under three minutes: killed while
-pending, having run nothing. It was read as "those branches are red", which is a
-different and much more comfortable claim.
+**OBSERVED.** Five branches — #102, #104, #103, #106 and #105 — had **no verdict at
+all**. Each shows `cancelled` and **zero jobs**, verified for all five rather than
+generalised from one:
 
-**The cause.** `concurrency: group: staging-tests` with `cancel-in-progress:
-false` protects an **in-progress** run. It does not protect a **pending** one:
-GitHub allows one queued run per group, and a newer run evicts the one waiting.
-With eight open pull requests on one group, only the most recently pushed branch
-kept its place in the queue.
+| Branch                                | Lifetime                 | Jobs |
+| ------------------------------------- | ------------------------ | ---- |
+| `fix/migration-checksum-gate`         | 170s                     | 0    |
+| `fix/hand-made-staging-rows`          | 30s                      | 0    |
+| `docs/records-truncation-lost`        | 28s                      | 0    |
+| `docs/main-is-never-force-pushed`     | **1360s — 22.7 minutes** | 0    |
+| `docs/one-place-owns-production-fact` | 126s                     | 0    |
+
+**Five runs, zero jobs each, lifetimes from 28 seconds to 22.7 minutes, each ending
+when a newer push arrived.** This was first written as "under three minutes each",
+from one run checked and the set described — and that figure was not merely wrong,
+it destroyed the evidence. **The spread is what shows each run ending when a newer
+push arrived; a uniform figure suggests a fixed timeout and supports nothing.**
+
+It was also read as "those branches are red", which is a different and much more
+comfortable claim than having no verdict.
+
+**The cause — INFERRED, and it must not be relied on as established.**
+`concurrency: group: staging-tests` with `cancel-in-progress: false` protects an
+**in-progress** run. The reading is that it does not protect a **pending** one:
+that GitHub allows one queued run per group and a newer run evicts the one waiting,
+so with eight open pull requests on one group only the most recently pushed branch
+kept its place. **That is reasoned from the effect, not read from a documented
+rule.** An observed effect invites an inferred cause, and the inference inherits
+none of the observation's standing.
+
+**The push discipline derived from it holds either way**, which is why the
+inference being unconfirmed does not block anything: avoiding runs that will be
+discarded is right whatever discarded them. One branch in the queue, one run,
+nothing evicted — the reason to do that survives any correction to the mechanism.
 
 **A comment in `ci.yml` said otherwise**, and it has been corrected:
 

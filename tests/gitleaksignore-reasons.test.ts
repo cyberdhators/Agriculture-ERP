@@ -92,10 +92,51 @@ describe('.gitleaksignore', () => {
     expect(parse('# a reason\n\n\nabc123:f.mjs:rule:1\n')[0]?.reason).toBe('a reason');
   });
 
-  it('is empty of entries until the audit has actually run', () => {
-    // Removable the moment a real finding is accounted for. Until then it
-    // records that no finding has been decided about rather than that none
-    // exists -- ABSENT is not ZERO.
-    expect(parse(readFileSync(path, 'utf8'))).toHaveLength(0);
+  it('gives every entry a well-formed commit:file:rule:line fingerprint', () => {
+    // ====================================================================
+    // THIS REPLACED AN ASSERTION, IT DID NOT DELETE ONE.
+    // ====================================================================
+    //
+    // Until the audit had run, this file asserted that the ignore list was EMPTY
+    // -- encoding the rule "no entry before a finding is observed", because an
+    // entry written in advance is a decision about something nobody has seen.
+    //
+    // The audit ran on 2026-10-01 and reported its findings, so that assertion's
+    // CONDITION has been met. Its SUBSTANCE has not expired, and deleting it would
+    // have lost the rule along with its expression. A guard whose condition has
+    // been met is replaced, not removed (CLAUDE.md).
+    //
+    // What now carries the meaning: an entry must be shaped like a real finding's
+    // fingerprint, so a hand-written or guessed entry is visible as malformed.
+    //
+    // WHAT IS NOT CHECKABLE HERE, AND A READER MUST TAKE ON THE REASON'S WORD:
+    // whether an entry corresponds to a finding the audit actually reported. That
+    // needs the audit's output, which this suite does not have and must not
+    // fabricate. The reason line above each entry is the only evidence of it, which
+    // is exactly why the reason is mandatory and why it names the run that saw it.
+    const entries = parse(readFileSync(path, 'utf8'));
+    const malformed = entries.filter(
+      (entry) => !/^[0-9a-f]{40}:[^:]+:[^:]+:\d+$/.test(entry.fingerprint),
+    );
+
+    expect(
+      malformed,
+      malformed.length === 0
+        ? ''
+        : 'These .gitleaksignore entries are not shaped like a gitleaks fingerprint ' +
+            `(commit:file:rule:line):\n${malformed.map((e) => `  line ${e.lineNumber}: ${e.fingerprint}`).join('\n')}\n\n` +
+            "Re-derive it from the audit's output. Never broaden an entry to make it match.",
+    ).toEqual([]);
+  });
+
+  it('recognises a malformed fingerprint — the check can fail', () => {
+    // A guard that cannot fail is the fault class this repository has recorded
+    // five ways, so the shape test is held to being capable of refusing.
+    const shape = /^[0-9a-f]{40}:[^:]+:[^:]+:\d+$/;
+    expect(shape.test('f'.repeat(40) + ':a/b.mjs:some-rule:34')).toBe(true);
+    // Broadened to survive a rebase: no commit. This is the entry nobody should write.
+    expect(shape.test('scripts/officer-test-fixture.mjs:generic-api-key')).toBe(false);
+    expect(shape.test('notahash:a/b.mjs:some-rule:34')).toBe(false);
+    expect(shape.test('f'.repeat(40) + ':a/b.mjs:some-rule:notaline')).toBe(false);
   });
 });

@@ -3133,3 +3133,112 @@ the only defence is the habit of saying which of the two a sentence is.
 **The method that caught it** was asking the system rather than the record: one
 `gh run list` across every branch, which cost seconds and returned `cancelled`
 five times.
+
+---
+
+## The owner's record — a general rule written in the same breath as its own counterexample (2026-10-01)
+
+Recorded as the owner's, in his words:
+
+> "I wrote that required status checks close merging-while-red and
+> merging-while-unjudged, and in the next sentence that they would not have stopped
+> #49 and #50 — which were one of each. A general rule written in the same breath as
+> a case is a test of that case."
+
+**OBSERVED.** #49 was merged sixty-nine seconds after `verify` started and
+fifty-seven minutes before it reported `failure` — merging while red. #50 has no
+`verify` check run on its commit at all — merging while unjudged. The rule and the
+case were a sentence apart and nobody held one against the other.
+
+**The useful form of this.** A general rule is a predicate. When it is written
+beside a concrete case, running the predicate over the case costs nothing and
+either confirms the rule or exposes the claim — and here it would have done the
+second immediately.
+
+---
+
+## The owner's record — arguing a cause instead of retrieving it (2026-10-01)
+
+Recorded as the owner's, in his words:
+
+> "On 1 October I asserted that the absent required checks were why September's
+> merges happened, was corrected, accepted the correction, and had the corrected
+> version written into a record. Retrieving the check runs showed the first position
+> substantially right. Both positions were unevidenced; only the query was evidence.
+> The fault was arguing the cause at all instead of asking for the runs."
+
+**This is not a record about trusting an instinct, and must not be read as one.**
+The first position was right about one half of September and was **held for no
+better reason than the second**. A correct guess and an incorrect guess were the
+same act. That the first happened to land closer is luck, and luck is not a method
+— had it landed the other way, the same process would have produced the same
+confidence and a worse record.
+
+**What had standing was one API call.** `GET /commits/<sha>/check-runs` on two
+commits, seconds of work, and it settled in one pass what two rounds of argument
+had moved back and forth. The lesson is **retrieve the runs**, never **trust the
+first reading**.
+
+**And the correction was accepted too readily in the other direction.** When the
+session raised that required checks would not have stopped an authorisation
+failure, that reasoning was sound and still unevidenced about these two merges
+specifically. Accepting a well-argued correction is the same act as holding a
+well-argued position: both substitute argument for retrieval. The question in both
+directions is _what would settle this, and can I just ask?_
+
+---
+
+## The owner's record — a figure written into a record without checking what it counted (2026-10-01)
+
+Recorded as the owner's, in his words:
+
+> "I wrote '109 commits' into the protection record from a figure I had not checked.
+> It was the branch's length, not the repository's, and it understated the finding —
+> one author across 397 commits — while being guaranteed to go stale."
+
+**The figures, OBSERVED.** `ci/secret-scan-scope`: 109 commits. `origin/main`: 108.
+**All refs: 397, every one authored by `cyberdhators`.** So the claim being made —
+one author, repository-wide — was true and stated at a quarter of its strength,
+against a denominator that disappears when the branch merges.
+
+**A count in a record should be of something that will still exist when the record
+is read.** A branch's length is a fact about a thing designed to disappear. In
+CLAUDE.md beside the labelling law.
+
+---
+
+## Shared record — three figures reached durable records unchecked across their cases (2026-10-01)
+
+Not the owner's and not the session's. Both, and the division of labour is the
+finding:
+
+> "Three figures on 1 October reached durable records unchecked across their cases:
+> '109 commits', 'under three minutes each', and 'every branch is red'. In each the
+> session checked one instance and described the set, and the owner wrote the
+> description into a record without asking which cases it rested on. The division of
+> labour was the fault: one generalises, the other makes it permanent, and neither
+> closes the loop."
+
+**What each one actually was:**
+
+- **"109 commits"** — the length of one branch, offered as a fact about the
+  repository. The real figure is **397 across every ref**, with `main` at 108, and
+  the branch's number was guaranteed to go stale the moment it merged.
+- **"under three minutes each"** — one run checked at 170 seconds, five described.
+  One of the five was **1360 seconds**. Worse than wrong: the spread was the
+  evidence, and a uniform figure would have suggested a fixed timeout and supported
+  nothing.
+- **"every branch is red"** — one branch's red verdict, seven described. Five of
+  them had **no verdict at all**, which calls for a different response than red
+  does.
+
+**Why neither party catches it alone.** A generalisation offered in conversation is
+cheap and reads as a summary. Written into a record it becomes a citation, and the
+act of writing does not re-ask what it rested on. Each step is reasonable; the pair
+is not. **The loop closes only if someone asks "across how many cases?" before the
+figure is durable** — and that question belongs to whoever is writing, because the
+figure has already left the hands of whoever measured.
+
+**The remedy in force:** a figure entering a record carries its cases or it is not
+a figure, and a count is of something that will still exist when the record is
+read. Both are in CLAUDE.md beside the labelling law.

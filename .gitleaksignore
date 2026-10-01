@@ -32,3 +32,23 @@
 # explained old one is not.
 #
 # A fingerprint is `commit:file:rule:line` and carries no secret value.
+
+# A real password literal, committed 2026-09-23 and since removed from the tree by
+# the fixture's rewrite (generated per run, never printed, written to a gitignored
+# file). OBSERVED by the full-history audit on 2026-10-01: rule generic-api-key,
+# scripts/officer-test-fixture.mjs line 34.
+#
+# ITS HISTORY IS DELIBERATELY NOT REWRITTEN. A committed credential is burned, and
+# the answer to a burned credential is rotation, not concealment: rewriting history
+# would destroy the evidence and still leave anyone who had already cloned the
+# repository holding a working password. The rotation is that no reusable password
+# exists any more. The value in that commit opens nothing. Accounted for, not
+# silenced.
+#
+# THIS FINGERPRINT NAMES A COMMIT, AND THAT IS CORRECT. A path-plus-rule entry
+# would survive a rebase of #99 -- and would also stop catching a genuine password
+# in that file later, which is worse. So its going stale is correct behaviour: if
+# #99 is rebased the commit hash changes, this entry stops matching, and someone
+# has to look again. When that happens, RE-DERIVE the fingerprint from the audit's
+# output. NEVER broaden the entry to make it survive.
+f2d600310a5db55b0887d87cde5e365ee6575b9a:scripts/officer-test-fixture.mjs:generic-api-key:34
