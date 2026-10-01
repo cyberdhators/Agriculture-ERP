@@ -2080,6 +2080,33 @@ from three of eight messages: the record was consulted instead of the system._
   before the counting tests fail on it obliquely. Sized at about half an hour,
   not built. **After this incident it is the fix, not an option.**
 
+**A CONVENTION INTRODUCED DOES NOT REACH BACK (2026-10-01).**
+
+> A convention introduced does not reach back. A sweep removes only what it was
+> told to look for, so rows predating the rule are permanent until something
+> names them.
+
+Checked against the three rows that prompted this. **A seed farmer IS
+distinguishable from a hand-made one**, and not by name: `seedFarmerId` mints a
+deterministic block, `00000000-0000-4000-8000-0000050…`, and the global setup
+compares against the id as well as the family name — deliberately both, because
+a hand-made row had already copied the name (`Placeholder-Deng`). So a sweep for
+farmers is writable, which answers the design question for that table.
+
+What it does not answer is the general case. The recogniser works because the
+seed's ids are deterministic; nothing makes that true of a table whose rows are
+created by hand or by a screen. And it is not retroactive in the sense that
+matters: a row created before anyone decided what legitimate looks like carries
+no marker, and no sweep can be written to find it without someone first
+enumerating it by hand.
+
+**The three rows were not swept, and did not need to be.** `CE-JUB-014276`,
+`TEST-0001` and `AUDIT-001` were all soft-deleted on 2026-09-20, so the global
+setup's refusal — which reads `deleted_at IS NULL` — passes on zero rows, and
+they are absent from every `_active` view, list, count and export. Hard-deleting
+them would break the Deletion law ("Soft delete only. Never hard-delete a
+record"), so they stay. They are inert, not outstanding.
+
 **The row is Lane 2's to remove**, at the owner's request, since the auto-mode
 guard refuses this session a `DELETE` on the shared database and Alieu ran the
 last cleanup.
