@@ -54,6 +54,12 @@ afterAll(async () => {
  */
 const MIGRATIONS = fileURLToPath(new URL('../prisma/migrations', import.meta.url));
 
+/**
+ * `_prisma_migrations.id` is `varchar(36)`, NOT `uuid`. Comparing it with
+ * `WHERE id = '...'::uuid` fails, and the error Prisma returns names neither the
+ * column nor the cast. One round trip was spent on that; it need not be spent
+ * again. Match on `migration_name`, or compare the id as the text it is.
+ */
 interface Row {
   migration_name: string;
   checksum: string;
