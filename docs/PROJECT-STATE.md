@@ -3333,6 +3333,29 @@ a secret added and then reverted **within the branch** is still inside the
 branch's range, so "I removed it in a later commit" is still a finding. Only
 inherited history left.
 
+### IS `.gitleaksignore` READ WHEN `--config` IS PASSED? OBSERVED: YES
+
+The question was real enough to plan a fallback for — move the entries into the
+config file's own allowlist section if the separate file turned out to be ignored.
+**The fallback is not needed.**
+
+**OBSERVED 2026-10-01**, by running the audit twice across the same ref set with
+one thing changed:
+
+| Audit run | `.gitleaksignore`        | Findings reported               |
+| --------- | ------------------------ | ------------------------------- |
+| `3126165` | no entries               | **2** — `f2d6003` and `5982d7c` |
+| `fe7d6ba` | one entry, for `f2d6003` | **1** — `5982d7c` only          |
+
+The accounted-for finding stopped being reported and the unaccounted one did not.
+That is the whole claim. **How gitleaks reconciles `--config` with
+`.gitleaksignore` is not claimed here** — the tool's internals are not ours to
+describe, and the outcome is what the decision rested on.
+
+The remaining finding is the test fixture on #108, fixed on that branch and held
+unpushed, so the audit is correctly red for something a merge will clear rather
+than for something nobody has looked at.
+
 ### THE REFUSAL NOW NAMES ITS SUBJECT
 
 > **A refusal that does not name its subject cannot be acted on; it only tells
