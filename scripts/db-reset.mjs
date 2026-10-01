@@ -19,15 +19,14 @@
 import { spawn } from 'node:child_process';
 
 import { envLocalPath, loadEnvLocal, resolveLocalBin } from './load-env.mjs';
+import { NON_PRODUCTION_PROJECT_REFS, namesNotAllowed } from './non-production-projects.mjs';
 
 // ---------------------------------------------------------------------------
-// The staging Supabase project reference. Replace the placeholder below with
-// the real reference. Until that happens this script refuses everything,
-// which is the safe state.
+// The projects this script may touch come from the shared closed allowlist in
+// scripts/non-production-projects.mjs: committed literals, never a runtime
+// value. Anything absent from that list is refused, including a project nobody
+// has classified yet. An empty list refuses everything, which is the safe state.
 // ---------------------------------------------------------------------------
-const STAGING_PROJECT_REF = 'xmmxbrxmfgodhpwolrvk';
-
-const PLACEHOLDER = 'SET_STAGING_PROJECT_REF_HERE';
 
 function refuse(headline, ...detail) {
   console.error('');
@@ -44,13 +43,13 @@ function refuse(headline, ...detail) {
   process.exit(1);
 }
 
-if (STAGING_PROJECT_REF === PLACEHOLDER) {
+if (NON_PRODUCTION_PROJECT_REFS.length === 0) {
   refuse(
-    'The staging project reference has not been set.',
-    'Open scripts/db-reset.mjs and replace STAGING_PROJECT_REF with the',
-    'staging Supabase project reference. Until you do, this script refuses',
-    'every target, including staging. That is deliberate: a reset guard that',
-    'does not know what staging looks like must not run at all.',
+    'The allowlist of non-production projects is empty.',
+    'Open scripts/non-production-projects.mjs and add the reference of a',
+    'project known not to hold real farmer data. Until one is listed, this',
+    'script refuses every target. That is deliberate: a reset guard that knows',
+    'of no safe database must not run against any.',
   );
 }
 
@@ -70,27 +69,26 @@ if (missing.length > 0) {
   );
 }
 
-const mismatched = ['DATABASE_URL', 'DIRECT_URL'].filter(
-  (name) => !String(process.env[name]).includes(STAGING_PROJECT_REF),
-);
+const mismatched = namesNotAllowed({
+  DATABASE_URL: process.env.DATABASE_URL,
+  DIRECT_URL: process.env.DIRECT_URL,
+});
 
 if (mismatched.length > 0) {
   const verb = mismatched.length > 1 ? 'do not name' : 'does not name';
   refuse(
-    `This is not the staging database. ${mismatched.join(' and ')} ${verb} the staging project.`,
-    `Expected the project reference "${STAGING_PROJECT_REF}" to appear in every`,
-    'connection string. It does not.',
-    '',
-    'This script only ever runs against staging. If you meant to point at',
-    'staging, fix .env.local. If you were pointing somewhere else on purpose,',
-    'do not use this script.',
+    `This database is not on the allowlist. ${mismatched.join(' and ')} ${verb} a project this script may reset.`,
+    'Point .env.local at a project on the allowlist in',
+    'scripts/non-production-projects.mjs, or do not use this script. A project',
+    'absent from that list is refused whether or not it holds real data,',
+    'because nobody has classified it.',
     '',
     '(The connection strings themselves are not shown here, by design.)',
   );
 }
 
 console.log('');
-console.log(`Target confirmed as staging (project "${STAGING_PROJECT_REF}").`);
+console.log('Target confirmed as a project on the non-production allowlist.');
 console.log('This will DROP EVERYTHING in that database and re-apply migrations.');
 console.log('Prisma will ask you to confirm before anything is destroyed.');
 console.log('');

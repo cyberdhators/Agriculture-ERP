@@ -3220,6 +3220,56 @@ catches two sources drifting, and **this catches the gate's own configuration
 drifting away from the world it describes.** An exception list is code that
 nobody runs, and it decays silently.
 
+## A GUARD'S STRENGTH IS THAT THE LIST IS CLOSED, NOT THAT IT IS LONG (2026-10-01)
+
+> **A guard's strength is that it is a closed allowlist, not that the list has
+> one member. Two known-non-production literals exclude production exactly as
+> well as one does — an allowlist read from the environment excludes nothing.**
+
+Three places refused to touch a database that was not staging, and each carried
+its own copy of the project reference: `scripts/db-reset.mjs`,
+`tests/helpers/principals.ts`, and `scripts/officer-test-fixture.mjs` (the third
+on #99's branch, not yet on main). Three copies of one name is three chances for
+two of them to disagree, and nothing compared them.
+
+They now read one frozen list, `NON_PRODUCTION_PROJECT_REFS` in
+`scripts/non-production-projects.mjs`, and the properties that matter are about
+the **shape** of the list rather than its length:
+
+1. **Committed literals only.** The list is written in the file. It never reads
+   `process.env`, a config file, an argument, or anything else decided at run
+   time. A guard whose allowlist comes from the environment refuses nothing: the
+   environment is exactly what the guard exists to distrust, and whoever points
+   it at production also supplies the list that admits it.
+2. **Closed, not filtered.** Admission is membership. There is no pattern, no
+   "looks like staging", no production denylist — because a denylist has to know
+   every database that exists, and this one does not even know production's
+   reference. **No production reference is committed anywhere in this
+   repository**, and none was added for this work: the test proves refusal by
+   presenting an _unlisted_ reference, which is the property actually wanted.
+3. **Frozen.** `Object.freeze`, so a caller cannot widen the list at run time and
+   then do the thing the guard was there to prevent.
+4. **One member is not a weakness.** The list has one entry today
+   (`agri-staging`). It would exclude production no better with ten. Length is
+   not the safety property; being closed and literal is.
+5. **The refusal names the physical action, not the policy.** `db-reset.mjs`
+   ends with _"Nothing was changed. No connection was opened."_ An officer or a
+   future session reading that knows what did **not** happen. "Refused by
+   allowlist" tells them a rule fired and leaves the state of the database an
+   open question.
+6. **The helper returns names, never values.** `namesNotAllowed()` answers with
+   the _variable names_ that carried an unlisted reference. A guard that prints
+   the offending connection string to make its message helpful has published a
+   credential in CI logs.
+
+Tested in both directions, per the standing rule that a guard refusing
+everything passes every refusal test: the listed project is admitted, an
+unlisted one is refused, a mixed pair is refused, absent and empty are refused,
+and the source is asserted to contain no `process.env`, `argv`, `readFileSync`
+or `require(`. One further test asserts that **neither call site carries its own
+copy of any reference** — the condition this change removed is now the thing
+that would break the build if it came back.
+
 ## A CATALOGUE QUERY PROVES INSTALLATION AND NOTHING ELSE (2026-09-20)
 
 When `spatial_ref_sys` appeared to be missing, the question was whether PostGIS

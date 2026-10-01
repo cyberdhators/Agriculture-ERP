@@ -3,6 +3,10 @@
 // resolves through the real pnpm link so a broken workspace fails.
 import { officerAuthIdentifier } from '../../packages/shared/src/identity';
 import { PrismaClient } from '@prisma/client';
+import {
+  NON_PRODUCTION_PROJECT_REFS,
+  namesNotAllowed,
+} from '../../scripts/non-production-projects.mjs';
 
 /**
  * ============================================================================
@@ -23,8 +27,6 @@ import { PrismaClient } from '@prisma/client';
  * next run sweeps rather than trips over.
  */
 
-const STAGING_PROJECT_REF = 'xmmxbrxmfgodhpwolrvk';
-
 /** The prefix on every account, row and name this helper creates. */
 export const TEST_PREFIX = 'zztest';
 /** Every test farmer carries this family name, so the sweep can find them and no reader mistakes them for people. */
@@ -33,13 +35,24 @@ export const FARMER_TEST_FAMILY = 'Zztestfamily';
 export const TEST_LOCATION_PREFIX = 'EE-ZZT';
 
 export function assertStaging(): void {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
-  const db = process.env.DIRECT_URL ?? process.env.DATABASE_URL ?? '';
-  if (!url.includes(STAGING_PROJECT_REF) || !db.includes(STAGING_PROJECT_REF)) {
+  if (NON_PRODUCTION_PROJECT_REFS.length === 0) {
     throw new Error(
-      'Test principals refuse to run: the Supabase URL and the database URL must both ' +
-        `identify the staging project (${STAGING_PROJECT_REF}). This helper creates and ` +
-        'DELETES authentication accounts and must never point at production.',
+      'Test principals refuse to run: the non-production allowlist in ' +
+        'scripts/non-production-projects.mjs is empty, so no database is known to be ' +
+        'safe. Add the reference of a project that holds no real farmer data.',
+    );
+  }
+  const offending = namesNotAllowed({
+    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+    database: process.env.DIRECT_URL ?? process.env.DATABASE_URL,
+  });
+  if (offending.length > 0) {
+    throw new Error(
+      `Test principals refuse to run: ${offending.join(' and ')} ` +
+        'name no project on the non-production allowlist in ' +
+        'scripts/non-production-projects.mjs. This helper creates and DELETES ' +
+        'authentication accounts, so it runs only against a project somebody has ' +
+        'classified as holding no real farmer data.',
     );
   }
 }
