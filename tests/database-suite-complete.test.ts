@@ -76,6 +76,7 @@ const DATABASE_SUITE = [
   'tests/listings-public-surface.test.ts',
   'tests/locations-reseed.test.ts',
   'tests/locations.test.ts',
+  'tests/migration-checksums.test.ts',
   'tests/new-routes-matrix.test.ts',
   'tests/product-reports.test.ts',
   'tests/reassignment.test.ts',
