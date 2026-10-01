@@ -3463,6 +3463,37 @@ kept its place. **That is reasoned from the effect, not read from a documented
 rule.** An observed effect invites an inferred cause, and the inference inherits
 none of the observation's standing.
 
+### THE SPLIT WORKING, OBSERVED WITHIN HOURS — AND BY MY OWN MISTAKE
+
+**OBSERVED 2026-10-01, on this very branch.** Two commits were pushed to #109 in
+quick succession. The second push cancelled the first's `test` job while it was
+queued behind another run's in-progress `test` — and **`scope` and `verify` both
+completed successfully anyway**, because they are ungrouped:
+
+| Job                                             | Group           | Outcome                     |
+| ----------------------------------------------- | --------------- | --------------------------- |
+| `scope`                                         | none            | success                     |
+| `verify` (typecheck, lint, format, secret scan) | none            | **success**                 |
+| `test` (the staging suite)                      | `staging-tests` | **cancelled while pending** |
+
+**Under the single-job design this would have been the five-branch case again:** one
+`verify` job carrying everything, cancelled in the queue, zero jobs, no verdict on
+anything — including the secret scan. Instead the secret scan, the typecheck, the
+lint and the format check all reported, and only the suite was lost. That is
+precisely what moving the group onto the one job that touches staging was for, and
+it was demonstrated by accident within hours of being written.
+
+It also sharpens the evidence for the inferred cause: the eviction is now observed
+at **job** granularity, not only at run granularity, and it took a newer push to
+cause it. The cause is still INFERRED — nothing documented has been read — but the
+effect has been seen a sixth time, under a design that contains it.
+
+**And the mistake was mine.** The push discipline agreed for this pass was one
+branch in the queue, one run, nothing evicted. I pushed twice to #109 within
+minutes and evicted my own queued job. The discipline was right and I did not
+follow it; the only reason it cost nothing is the split that happened to be in the
+same commit.
+
 **The push discipline derived from it holds either way**, which is why the
 inference being unconfirmed does not block anything: avoiding runs that will be
 discarded is right whatever discarded them. One branch in the queue, one run,
