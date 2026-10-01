@@ -220,6 +220,28 @@ names which way it used and why the other misleads.** Three times on 2026-10-01:
 one of two protection mechanisms (classic protection and rulesets); author versus
 committer; commit status versus check runs.
 
+**Labelling — change one thing, observe both outcomes, claim the outcome and not
+the mechanism.** Used twice on 2026-10-01: #107's leak count rose from one to two
+because #108 was pushed, with #107's own commits unchanged; and the accounted-for
+finding stopped being reported while the unaccounted one did not, with the same ref
+set either side. Both settled questions that reading documentation would not have.
+
+**Labelling — an INFERRED claim carries the instances it rests on**, for the same
+reason a figure carries its cases. A guess from one observation and a conclusion
+from six are both inferences, and the label alone cannot tell them apart. Queue
+eviction: six instances, one of them a push that killed a pending job while leaving
+completed jobs in the same run untouched. Still INFERRED — nothing documented has
+been read.
+
+**Labelling — faults are found by damage, by review, or by mistake.** Damage means
+the fault itself hurt. Review means it was caught before it shipped. **Mistake
+means an unrelated error exposed it** — which is weaker evidence than review, since
+nobody was looking, and stronger than damage, since it cost nothing.
+
+**Gates — a duration gate fires before the timeout, so drift is a finding rather
+than an outage.** Nothing was comparing elapsed time to anything, and a 38% drift
+went unremarked for ten days until the margin was 6%.
+
 **Labelling — a count in a record should be of something that will still exist
 when the record is read.** A branch's length is a fact about a thing designed to
 disappear.

@@ -173,9 +173,26 @@ jobs:
     concurrency:
       group: ${{ needs.scope.outputs.group }}
       cancel-in-progress: false
-    # The database suite is 10-20 minutes from a runner; a hung run must not hold
-    # the staging lock for the default six hours.
-    timeout-minutes: 90
+    # ========================================================================
+    # THE TIMEOUT, AND WHERE ITS NUMBER COMES FROM.
+    # ========================================================================
+    #
+    # 120 minutes. The derivation lives in scripts/ci-suite-duration.mjs, which is
+    # the ONE owner of the suite's expected duration -- this comment deliberately
+    # asserts no figure of its own, because four numbers used to claim to be this
+    # suite's duration and none of them agreed. One of them, "10-20 minutes", sat
+    # exactly here, above the timeout that depended on it, and was wrong by a
+    # factor of four.
+    #
+    # In short: set against an observed 85-minute suite on 2026-10-01, roughly 41%
+    # headroom, to be revisited when the expected duration changes. At the previous
+    # value of 90 the margin above an observed 84.9-minute run was 5.1 minutes, and
+    # nothing had noticed the suite drifting into it.
+    #
+    # A TIMEOUT WITH NO STATED DERIVATION IS THE THING THAT NEARLY BIT US. It is a
+    # backstop against a hung job holding the staging lock, not a target. The
+    # duration gate at the end of this job is what is supposed to fire first.
+    timeout-minutes: 120
     steps:
       - name: Checkout (full history)
         uses: actions/checkout@v4
@@ -199,11 +216,15 @@ jobs:
       # run — loudly, not by skipping — if any is missing, and refuse to run
       # against any project but staging whatever the values say.
       #
-      # THE SHORT PATH (2026-09-11, the fifth CI edit). 98% of a run is this
-      # step: on #54's green run it was 44m46s and every other step together
-      # was 47s. A pull request that changes nothing but documents needs none
-      # of the staging suite, and four of six pull requests open that day were
-      # documents only.
+      # THE SHORT PATH (2026-09-11, the fifth CI edit). Almost all of a run is
+      # this step; every other step together is under a minute. A pull request
+      # that changes nothing but documents needs none of the staging suite, and
+      # four of six pull requests open that day were documents only.
+      #
+      # This comment used to say "on #54's green run it was 44m46s", which read as
+      # the suite's duration and was one measurement from one day. The expected
+      # duration and its observed history have one owner:
+      # scripts/ci-suite-duration.mjs. No comment here states a figure.
       #
       # THE STEP IS NEVER CONDITIONAL. It always runs, always reports, and
       # decides INSIDE which suite to run. A required check that silently does
@@ -255,5 +276,30 @@ jobs:
             pnpm test:pure
           else
             echo "FULL SUITE: changed files outside docs/ — running everything."
+            started=$(date +%s)
             pnpm test
+            elapsed=$(( $(date +%s) - started ))
+
+            # ================================================================
+            # THE GATE THAT WAS MISSING, AND THE REASON IT IS A GATE.
+            # ================================================================
+            #
+            # Nothing was comparing elapsed time to anything. The suite drifted
+            # 37.8% in ten days -- 61.6 minutes on 21 September, 84.9 on 1 October,
+            # on near-identical test content -- while every run printed its own
+            # duration and no one held it against an expectation. It went unnoticed
+            # until the margin to the timeout was six percent.
+            #
+            # The band's upper bound sits BELOW the timeout on purpose, so drift
+            # fires THIS, which says what happened, before it fires the cliff,
+            # which just kills the job. Asserted in tests/ci-suite-duration.test.ts
+            # rather than left to this comment.
+            #
+            # IT FAILS, IT DOES NOT WARN. A warning nobody reads is the whole of
+            # the evidence above.
+            #
+            # It runs after the suite, so a failing suite is red on its own merits
+            # and is never masked by a duration complaint -- and on a failing suite
+            # this never runs at all, which is the right order.
+            node scripts/ci-suite-duration-check.mjs "$elapsed"
           fi

@@ -3242,3 +3242,35 @@ figure has already left the hands of whoever measured.
 **The remedy in force:** a figure entering a record carries its cases or it is not
 a figure, and a count is of something that will still exist when the record is
 read. Both are in CLAUDE.md beside the labelling law.
+
+---
+
+## The session's record — a guess presented as a citation, while correcting the owner for the same thing (2026-10-01)
+
+Mine, not the owner's:
+
+> "I stated '52-65 minutes' as the suite's documented duration. No such figure
+> exists in the repository; it matched the two 21 September runs by coincidence, and
+> I presented a guess as a citation while correcting the session for the same class
+> of error."
+
+**OBSERVED.** The repository contained no such figure. What it contained was
+`ci.yml`'s _"44m46s on #54's green run"_ and _"the database suite is 10-20 minutes
+from a runner"_ — the second wrong by a factor of four and sitting directly above
+the timeout that depended on it. The two 21 September runs came in at 53.6 and 61.6
+minutes, which is why the invented range looked right.
+
+**Why this one is worse than an ordinary error.** The word "documented" is a
+citation. It tells the reader that the number has provenance and that they need not
+check it. I supplied that assurance for a figure I had made up, in the same pass in
+which I was asking the owner which cases his figures rested on. The form of the
+sentence did the damage: "the suite is documented at 52-65 minutes" cannot be
+doubted by a reader the way "I think it is about an hour" can.
+
+**The remedy, and it is structural rather than a resolution.** One owner for the
+expected duration: `scripts/ci-suite-duration.mjs`, carrying the observed history
+with the run ids it was read from, the band, the timeout, and the derivation of
+each. The timeout and the gate reference it, and no comment anywhere states a
+figure of its own. The same remedy as the production-project fact and the staging
+project reference — **and the third time this repository has fixed a disagreement
+between comments by giving the fact one place to live.**

@@ -3427,6 +3427,111 @@ credential written there is protected — by an entry written for another reason
 which nobody chose for this purpose and which a later tidy-up could remove
 without knowing what it was holding.
 
+## THE SUITE DRIFTED 38% AND NOTHING WAS COMPARING IT TO ANYTHING (2026-10-01)
+
+> **A duration gate fires before the timeout, so drift is a finding rather than an
+> outage.**
+
+**OBSERVED.** Job time, queue excluded, read from the Actions API:
+
+| Date       | Branch | Duration              | Run           |
+| ---------- | ------ | --------------------- | ------------- |
+| 2026-09-21 | #101   | 53.6 min              | `35551340622` |
+| 2026-09-21 | main   | 61.6 min              | `35551165343` |
+| 2026-10-01 | #103   | 85.2 min              | `36837814704` |
+| 2026-10-01 | #108   | 84.6 min              | `36847625786` |
+| 2026-10-01 | #109   | **84.9 min, success** | `36865645947` |
+
+**A 37.8% increase in ten days on near-identical test content** — #103, #108 and
+#109 are main plus a handful of commits, and main has not moved since the
+61.6-minute run.
+
+**The job was investigated because it looked hung at two hours. It was not.** It
+started eight seconds after the run was created, ran 84m53s, and completed
+successfully. The 90-minute `timeout-minutes` was configured and behaved exactly as
+documented. **Nothing was broken; something had drifted, and the margin to the
+cliff was 5.1 minutes — six percent.**
+
+**That is the empty-set law in its operational form.** Every run printed its own
+duration. No gate held that duration against an expectation, so a 38% drift was
+invisible for ten days, and the next drift of the same size would have presented as
+every run failing on a timeout with no prior warning.
+
+**What was built.** The timeout is raised to 120 minutes with its derivation stated,
+and a duration gate at the end of the suite compares elapsed time against a
+committed band of 45–100 minutes and **fails** outside it. The band's upper bound
+sits below the timeout deliberately, so drift hits the gate — which says what
+happened — before it hits the cliff, which only kills the job. That ordering is
+asserted in `tests/ci-suite-duration.test.ts`, not left to a comment. **The band is
+a claim about the suite as of 2026-10-01 and will go stale; it is to be revised
+deliberately and never widened to silence a failure**, which would turn the one
+instrument watching for drift into a record of the drift it stopped catching.
+
+### FOUR NUMBERS CLAIMED TO BE THIS SUITE'S DURATION AND NONE AGREED
+
+`ci.yml` said _"44m46s on #54's green run"_ and _"the database suite is 10-20
+minutes from a runner"_ — the second **wrong by a factor of four and sitting
+directly above the timeout that depended on it**. A session added _"52-65 minutes"_
+as though citing something; it is written nowhere and matched the September runs by
+coincidence. The 90-minute timeout was the only one with teeth and had no stated
+derivation at all.
+
+Fixed the way the production-project fact and the staging project reference were
+fixed: **one place owns it.** `scripts/ci-suite-duration.mjs` carries the observed
+history with the run ids it was read from, the band, the timeout and the derivation
+of each; the timeout comment and the gate reference it; and no comment states a
+figure of its own. Third time this repository has resolved disagreeing comments by
+giving the fact one home.
+
+### WHY IT GREW IS UNESTABLISHED — AND THE OBVIOUS CAUSE IS REFUTED
+
+The reflex explanation is staging accumulating rows the suite never sweeps.
+**Measured, and it does not hold:**
+
+- `audit_event` on staging: **65,609 rows, 53 MB**, spanning 2026-09-03 to
+  2026-10-01 across 21 distinct days.
+- At the 61.6-minute baseline run on 21 September it held about **62,705**.
+- **Growth since the baseline: 4.6%. Slowdown over the same period: 37.8%.**
+
+Sixty-five thousand rows and 53 MB do not cost twenty-three minutes. Candidates not
+tested: runner variance, the staging instance's own performance, latency to the
+pooler. **The cause is UNESTABLISHED and is not guessed at in the record or in the
+code.** No reset-and-compare was run, because the counts already refute the
+hypothesis it would have tested and the only mechanism for clearing the table is a
+full schema drop.
+
+### AN APPEND-ONLY TABLE THE SUITE WRITES TO, THAT NOTHING CAN CLEAR
+
+**Reported, and nothing changed — the remedy is the owner's design question.**
+
+- **The suite never sweeps `audit_event`.** `tests/helpers/principals.ts` removes
+  users, officers, farmers and export rows; audit rows are not touched by name
+  anywhere in the suite. Every run's rows are permanent. Staging currently holds 4
+  farmers, 7 users and 2 officers — and 65,609 audit rows.
+- **It cannot be cleared by any ordinary path.** The `audit_event_append_only`
+  trigger raises on UPDATE and DELETE **for every role including the owner**, and
+  the migration that created it says so explicitly. UPDATE, DELETE and TRUNCATE are
+  revoked from `anon` and `authenticated`.
+- **What can clear it, by whom.** Only deliberate DDL by the database owner: `DROP
+TRIGGER`, `ALTER TABLE ... DISABLE TRIGGER`, or `TRUNCATE` — which the creating
+  migration names as acts "visible as migration drift, not something an ordinary
+  code path does by accident". Or a full schema drop.
+- **By what script.** `scripts/db-reset.mjs` (`pnpm db:reset`) runs `prisma migrate
+reset`, which drops and recreates the schema. **It does not name `audit_event` at
+  all** — it clears the table only as collateral of destroying everything, which
+  would also take the officer test fixture and all seeded data with it. **There is
+  no way to reset the audit table alone.**
+- **Does anything currently do it?** No. Not CI, not the suite, not any scheduled
+  job. The table has never been cleared.
+
+So the shape of it: **an append-only table that the test suite writes to on every
+run, that nothing sweeps, that cannot be selectively cleared by design, and whose
+only reset is a full wipe.** Today it is 53 MB and harmless — and it is not the
+cause of the slowdown. It grows without bound regardless, and the design question
+is the owner's: whether staging's audit history is meant to be permanent, whether
+the suite should write to it at all, or whether a staging-only exception to the
+append-only rule is warranted. **Nothing was changed.**
+
 ## A CANCELLED RUN IS NOT A FAILED RUN (2026-10-01)
 
 > **A cancelled run is not a failed run. It is no run, and no run looks like
@@ -3488,11 +3593,20 @@ at **job** granularity, not only at run granularity, and it took a newer push to
 cause it. The cause is still INFERRED — nothing documented has been read — but the
 effect has been seen a sixth time, under a design that contains it.
 
+**FOUND BY MISTAKE — a third label beside damage and review.** Damage means the
+fault itself hurt; review means it was caught before it shipped; **mistake means an
+unrelated error exposed it.** That is weaker evidence than review, because nobody
+was looking, and stronger than damage, because it cost nothing.
+
+> **On 1 October a second push to #109 within minutes evicted the first run's queued
+> test job, while scope and verify — ungrouped — completed and reported. Under the
+> single-job design this would have lost the secret-scan verdict as well, as it did
+> for five branches earlier the same day. A structural fix proves itself not when
+> nothing goes wrong, but when the same wrong thing costs less.**
+
 **And the mistake was mine.** The push discipline agreed for this pass was one
-branch in the queue, one run, nothing evicted. I pushed twice to #109 within
-minutes and evicted my own queued job. The discipline was right and I did not
-follow it; the only reason it cost nothing is the split that happened to be in the
-same commit.
+branch in the queue, one run, nothing evicted. I pushed twice to #109 within minutes
+and evicted my own queued job. The discipline was right and I did not follow it.
 
 **The push discipline derived from it holds either way**, which is why the
 inference being unconfirmed does not block anything: avoiding runs that will be
