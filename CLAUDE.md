@@ -172,9 +172,32 @@ crashed run's residue is swept rather than tripped over, and a row made by hand
 outside that convention breaks the sweep for everyone. If the client sends a
 real list "to try", it goes to production or nowhere.
 
-**Gates.** A gate exists to compare two sources that can drift apart. These are
-the ways one has been found not to, each after it had already let something
-through:
+**Gates.** The principle, moved here from `docs/PROJECT-STATE.md` on
+2026-10-01 because its consequences were already in this file and the rule was
+not:
+
+> **A gate that compares two sources which can drift apart cannot be quietly
+> wrong about both at once. A gate that asserts a single fact can be quietly
+> wrong the moment the fact stops being true.**
+
+Ask of any gate being written:
+
+1. **Does it compare two things that can move independently, or does it assert
+   one thing?**
+2. **If it asserts one thing: what makes it fail when that thing stops being
+   true?** If the answer is "someone would notice", it is not a gate.
+
+A gate that compares needs no vigilance: the two sources drift and it goes red
+by itself. A single-fact gate needs a person to remember, and the record of this
+project is that nobody does. The instances that produced the rule stay in
+`docs/PROJECT-STATE.md`, which is where records of state belong.
+
+When a guard already exists for a question, answer the question with the guard,
+not with a fresh query. A hand-written query competing with an existing gate
+will eventually disagree with it, and only one of the two has been reviewed.
+
+These are the ways a gate has been found not to compare, each after it had
+already let something through:
 
 - `migrate status` reports what is unapplied, not what has changed. The absence
   of a complaint is not a comparison. *(Thirteenth instance.)*

@@ -1723,9 +1723,12 @@ The seams list below asks where two rules touch. This asks the same kind of
 question one level down, about gates, and it is a design principle rather than
 a fact about any one of them:
 
-> **A gate that compares two sources which can drift apart cannot be quietly
-> wrong about both at once. A gate that asserts a single fact can be quietly
-> wrong the moment the fact stops being true.**
+**The principle itself now lives in `CLAUDE.md` section 4, under Gates** (moved
+2026-10-01): a gate that compares two sources which can drift apart cannot be
+quietly wrong about both at once; one that asserts a single fact can be. It was
+moved because `CLAUDE.md` is the law and is parsed every session, while this file
+is a record of state, and a law living here can be lost in a rewrite. What stays
+below is the evidence that produced it.
 
 **Every silent finding in this project was single-source.** Set out plainly,
 because the pattern is only visible in the list:
@@ -1754,16 +1757,9 @@ other: **the first gate in this project that compares.** It holds the files on
 disk against a config's patterns, two sources that move independently, and it
 found a defect in the change it was written for and then one in itself.
 
-**THE QUESTION TO ASK OF ANY GATE BEING WRITTEN:**
-
-1. **Does it compare two things that can move independently, or does it assert
-   one thing?**
-2. **If it asserts one thing: what makes it fail when that thing stops being
-   true?** If the answer is "someone would notice", it is not a gate.
-
-A gate that compares needs no vigilance: the two sources drift and it goes red
-by itself. A single-fact gate needs a person to remember, and the record of
-this project is eight demonstrations that nobody does.
+**The two questions to ask of any gate being written** are in `CLAUDE.md`
+section 4 with the principle. The eight demonstrations that a single-fact gate
+needs a person to remember, and that nobody does, are the table above.
 
 **THE STRONGEST DEMONSTRATION YET, AND IT WAS A NEAR MISS (2026-09-19, #93).**
 Two migrations rebuilt the same audit CHECK. B12's is dated `20260915120000`
