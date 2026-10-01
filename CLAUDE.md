@@ -169,7 +169,12 @@ do not leave it to CI to find what you could have found locally.
 `--force`, not `--force-with-lease`, not a reset followed by a push, not a
 rebase of a published branch onto it. A rejected push to `main` means the
 remote holds something this machine has not seen, and the only correct response
-is to fetch and look at what that is. Two lanes share one GitHub identity, so
+is to fetch and look at what that is.
+
+`--force-with-lease` reads as the careful option and is not: the lease proves
+only that nobody moved the ref since this machine last looked, not that this
+machine ever saw their work. Those are different facts, and the second is the
+one that matters. Two lanes share one GitHub identity, so
 whatever a force-push would discard belongs to someone who cannot be asked
 first and may not notice for days. If a push to `main` is rejected: report the
 rejection and stop.
