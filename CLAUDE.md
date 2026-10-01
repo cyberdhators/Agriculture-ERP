@@ -165,6 +165,15 @@ default. Use constraints and indexes. PostGIS for all spatial data.
 tests, the linter, the formatter check and the type check before committing —
 do not leave it to CI to find what you could have found locally.
 
+**`main` is never force-pushed, by any lane, for any reason.** Not
+`--force`, not `--force-with-lease`, not a reset followed by a push, not a
+rebase of a published branch onto it. A rejected push to `main` means the
+remote holds something this machine has not seen, and the only correct response
+is to fetch and look at what that is. Two lanes share one GitHub identity, so
+whatever a force-push would discard belongs to someone who cannot be asked
+first and may not notice for days. If a push to `main` is rejected: report the
+rejection and stop.
+
 **Personal data.** Real farmer data exists in production only. Staging and local
 machines use generated fake data. Staging rows are the test suite's or the
 seed's, never hand-made: every row the suite creates is prefixed `zztest` so a
