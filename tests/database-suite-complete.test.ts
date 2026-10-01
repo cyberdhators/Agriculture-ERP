@@ -74,6 +74,7 @@ const DATABASE_SUITE = [
   'tests/forbidden-matrix.test.ts',
   'tests/locations-reseed.test.ts',
   'tests/locations.test.ts',
+  'tests/migration-checksums.test.ts',
   'tests/new-routes-matrix.test.ts',
   'tests/product-reports.test.ts',
   'tests/reassignment.test.ts',
