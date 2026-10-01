@@ -161,6 +161,10 @@ the filters and the data cut-off date.
 **Migrations.** Always Prisma migrations, never manual schema edits. Additive by
 default. Use constraints and indexes. PostGIS for all spatial data.
 
+A migration's recorded checksum is the only evidence of what that migration
+ran. Repairing it to match an edited file does not fix the record; it destroys
+the field's function for that row and makes the gate green on a falsehood.
+
 **Git.** Never push to `main`. Feature branches and pull requests only. Run the
 tests, the linter, the formatter check and the type check before committing —
 do not leave it to CI to find what you could have found locally.

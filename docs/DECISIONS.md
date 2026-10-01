@@ -3088,3 +3088,39 @@ not before.
 **Not decided here:** who at CORWADO approves a campaign, whether prices go out
 automatically, and whether the regulator requires sender registration. Those
 three remain open against C-15.
+
+## The decision rule compared the wrong two things (2026-10-01)
+
+**Mine, and the correction is mine too.** I had the repair selected by comparing
+the live `audit_event_action_known` constraint against the migration file. That
+is the wrong comparison. The live constraint is downstream of fourteen rebuilds
+and cannot testify about what any single migration ran.
+
+> I made the decision rule compare the wrong two things. I selected the repair
+> by comparing the live constraint to the file; the live constraint is downstream
+> of fourteen rebuilds and cannot testify about any one of them. A record of what
+> ran is answered by what ran, not by where things ended up.
+
+The two things that do answer it were both already in hand: the pre-edit file
+(63 keys) and the applied checksum (`07e3a4c3…`). They agree with each other and
+with nothing else.
+
+**What the mis-specified rule produced.** `20260920140000_extend_audit_actions_for_marketplace`
+was edited after it landed. Selecting on the live constraint chose "repair the
+record", so the recorded checksum was rewritten to match a file that had never
+run. The new gate in `tests/migration-checksums.test.ts` then reported green --
+on a record made false to satisfy it. For that row the gate's green had stopped
+meaning anything, which is the class this project has spent a month closing.
+
+**The case that actually obtained** was a fourth one not written down: the file
+was edited, and the edit's effect was separately delivered by a later forward
+migration (`20260920170000_restore_weather_location_audit_actions`), so the final
+schema converges either way. The repair there is to restore the file to what ran
+and write nothing to the database.
+
+**The check that would have made the record-repair correct**, and was run before
+reversing: does any migration between the two write an `audit_event` row carrying
+`weather_location.updated` or `weather_location.soft_deleted`? If one did, a
+restored 63-key file would break a fresh database at that point and convergence
+would not hold. Neither intervening migration writes an audit row at all, so the
+reversal was safe.
