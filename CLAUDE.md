@@ -284,6 +284,25 @@ default. Use constraints and indexes. PostGIS for all spatial data.
 tests, the linter, the formatter check and the type check before committing —
 do not leave it to CI to find what you could have found locally.
 
+**Temporary things.** A temporary thing removed by intention will be forgotten. A
+temporary thing that cannot act outside its purpose is safe either way.
+
+> **A temporary thing that cannot act outside its purpose is safe either way — and
+> generates no pressure to remove it. Safety removes the urgency that would otherwise
+> do the removing. Pin it AND date it: the pin makes it harmless, the date is the only
+> thing that ends it.**
+
+Observed on it: the audit workflow's temporary `pull_request` trigger was pinned to one
+head ref so it could not act on any other pull request, and it was removed on
+2026-10-02 before that pull request went ready. **The pin is what would have let it
+survive indefinitely.** Nothing about a harmless thing creates pressure to take it out;
+the removal happened because a date was attached to it rather than a condition.
+
+**This law was recorded in a workflow comment and in `docs/PROJECT-STATE.md` and was
+not in this file.** Neither of those governs a session that does not open them — see
+PROJECT-STATE, "A law in a file only governs sessions that open the file", which this is
+a recurrence of.
+
 **`main` is never force-pushed, by any lane, for any reason.** Not
 `--force`, not `--force-with-lease`, not a reset followed by a push, not a
 rebase of a published branch onto it. A rejected push to `main` means the
