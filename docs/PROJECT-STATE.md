@@ -2033,6 +2033,43 @@ protects the contractual documents, and the state documents are still formatted,
 which is correct — they are prose and should be. The rule here is about how a
 session edits them, not about excluding them.
 
+## ONE COMMITMENT GREW INTO A PROGRAMME IN A MORNING (2026-10-02)
+
+**History, not a law. The law it produced is in `CLAUDE.md` under "Dated work".**
+
+A commitment opened on 1 October as a bounded thing: audit where the laws dictated that
+day had landed, and move them. By midday on 2 October the same entry carried four pieces
+of work — the placement audit, resolving the placement notes, an identifier scheme for
+every law with a gate comparing quoted law text against laws that exist, and replacing the
+duration band's lower bound with a test count. Each addition was well-founded. Each was
+appended to the open commitment because it was the thing nearest to hand.
+
+**Every one of them was due on the same Monday**, and that is what made the date
+unrealistic rather than any single item being large.
+
+**Split 2026-10-02 into three, each with its own date**, and the dates differ in kind as
+well as in value:
+
+| Task                      | Due               | Why that date                                                                             |
+| ------------------------- | ----------------- | ----------------------------------------------------------------------------------------- |
+| The sweep                 | Monday 2026-10-05 | Bounded reading and moving; the backstop clause already attached                          |
+| The law identifier scheme | Friday 2026-10-09 | **Every record written after it is one more to retrofit** — the cost grows while it waits |
+| The test-count gate       | Friday 2026-10-16 | Least urgent; the bound it replaces is provisional and twelve minutes clear               |
+
+The middle one is the instructive case. Its date is not a judgement about urgency but
+about a cost that accrues with delay, which is a different argument for a deadline than
+"this matters most".
+
+**And the three were in the wrong file.** They are tasks, and they sat in `CLAUDE.md`,
+which is law. The repository has **never used GitHub issues** and nothing in `HANDOFF.md`,
+`UNITS.md` or this file carries a due date — so there is no dated-work home to move them
+to, and one was not improvised. They are held in `CLAUDE.md` marked as awaiting a home.
+**That is the second placement fault of the same day**: on 2 October a law was found
+living in a workflow comment, and three tasks were found living in the law file.
+
+Which is why the sweep's own scope now says the taxonomy is three-way: LAW, RECORD, TASK.
+A two-way sort would have moved a task into the law file and called it filed.
+
 ## A LAW IN A FILE ONLY GOVERNS SESSIONS THAT OPEN THE FILE (2026-09-15)
 
 **The owner's sentence, and it is the useful fact from a red main.**

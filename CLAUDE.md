@@ -338,12 +338,20 @@ Recurrence of `PROJECT-STATE.md:2036` (2026-09-15), which states the same fault 
 itself in the unread file. **Placement is necessary and not sufficient:** that rule was
 on main, in the required file, and was broken within eleven hours.
 
-### THREE DATED COMMITMENTS
+**Dated work.**
 
-**One date over four pieces of work hides which piece slipped: the whole either holds or
-fails as "in progress". A commitment accretes whatever arises while it is open — this one
-grew from a law-placement audit into a programme in a single morning. Each piece now
-carries its own date, so a slip names itself.**
+> **One date over four pieces of work hides which piece slipped: the whole either holds
+> or fails as "in progress". A commitment accretes whatever arises while it is open. Each
+> piece of work carries its own date, and a slip then names itself.**
+
+### THREE DATED TASKS — AWAITING A HOME, NOT LAWS
+
+**These are TASKS and do not belong in this file.** They are held here only because the
+repository has no dated-work home to move them to: it has **never used GitHub issues**
+(zero, ever — the "10 open" the API reports are pull requests), and nothing in
+`docs/HANDOFF.md`, `docs/UNITS.md` or `docs/PROJECT-STATE.md` carries a due date. A home
+is the owner's decision and is not improvised here. **Move them out when it exists, and
+delete this section — a task left in the law file is read as law.**
 
 **1. THE SWEEP — due Monday 2026-10-05**, and sooner if both conditions are met first:
 immediately after the last branch of the 1–2 October sequence merges, and before B13
@@ -352,6 +360,12 @@ begins.
 Audit every law dictated on 1 and 2 October for whether it landed in `CLAUDE.md` or in
 `docs/PROJECT-STATE.md`, and move the laws. Resolve the italic placement note, and any
 added before the sweep runs. **That is all it is: reading and moving, bounded.**
+
+> **THE TAXONOMY IS THREE-WAY, NOT TWO.** Every item dictated on 1 and 2 October is a
+> **LAW** (`CLAUDE.md`), a **RECORD** (`docs/PROJECT-STATE.md`) or a **TASK** (a dated
+> item in whatever the repository uses for dated work). Today produced all three and
+> filed some of each in the wrong place. **Ask which of the three before moving
+> anything** — a two-way sort would move a task into the law file and call it done.
 
 > **If 5 October arrives with the sequence unfinished, the sweep runs anyway on whatever
 > has merged, and each later branch is swept as it lands. The date overrides the
