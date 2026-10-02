@@ -325,7 +325,8 @@ September merges. A third:
 Which is how the repository looked like it used issues when it never had. `gh issue list
 --state all` is the one that answers the question asked.
 
-*To be appended to that law when #109 lands — a prose resolution, so a judgement.*
+*Owed by #110, due 2026-10-05: append this instance to the law on #109 when that branch
+lands. A prose resolution, so a judgement.*
 
 **Fixes and classes.**
 
@@ -337,9 +338,9 @@ Which is how the repository looked like it used issues when it never had. `gh is
 
 Found by review, 2 October, while verifying the test-count item.
 
-*Placed here rather than beside the other Gates laws, which are on #109 and
-`ci/staging-row-count-gate` and not on this branch. This belongs with them and will need
-placing beside them when those branches land — a prose resolution, which is a judgement.*
+*Owed by #110, due 2026-10-05: this belongs beside the Gates laws, which are on #109 and
+`ci/staging-row-count-gate`. Move it there when those branches land. A prose resolution, so
+a judgement.*
 
 **The four-way sort, and who does the sorting.** Every item that arrives is one of four
 things, and the first question is always which:
@@ -352,10 +353,20 @@ things, and the first question is always which:
 | **NEITHER** | nowhere | Conversational, superseded, or already said — not written down |
 
 **An undated task is the fourth category in disguise and the most common misfiling here.**
-A placement note, a "to be resolved when X lands", a "follow-up" — each is a task whose
-date was omitted, and each therefore has nothing obliging anyone to do it. That is the
-same mechanism as a safe temporary thing: harmless, and so permanent. If it is a task,
-give it a date and an issue; if it does not deserve one, it is NEITHER.
+For anything that reads as a follow-up — a placement note, a "resolve when X lands", a
+"worth doing at some point" — there is one question:
+
+> **Does someone owe this, by a date?**
+>
+> **Yes** → it is a TASK and it gets an issue with that date. **No date, no task.**
+> **No** → nowhere. Delete it.
+>
+> **Carrying it forward unchanged is not an option**, and that is the whole point: a note
+> of that kind is harmless, which is exactly why it survives forever. Same mechanism as
+> the pinned trigger.
+
+A note that cites a dated issue is not a follow-up — it is a pointer to a task, and the
+date lives in the issue where someone can be held to it.
 
 > **A placement instruction from the owner — "beside X", "under Y", "in <file>" — is
 > advisory and is probably wrong. The owner is reasoning about a composite of every open
