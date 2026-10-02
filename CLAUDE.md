@@ -313,6 +313,20 @@ not in this file.** Neither of those governs a session that does not open them �
 PROJECT-STATE, "A law in a file only governs sessions that open the file", which this is
 a recurrence of.
 
+**Two ways to check — a third instance.** The law itself ("when a fact can be checked two
+ways and they disagree, the record names which way it used and why the other misleads") is
+on #109 and not on this branch. Its instances there are the committer figure that looks
+like a second identity, and the commit-status endpoint that reports success for both
+September merges. A third:
+
+> **`open_issues_count` on the repository API counts pull requests. It read 10 against
+> zero issues ever opened.**
+
+Which is how the repository looked like it used issues when it never had. `gh issue list
+--state all` is the one that answers the question asked.
+
+*To be appended to that law when #109 lands — a prose resolution, so a judgement.*
+
 **Fixes and classes.**
 
 > **A fix that closes the route a fault took does not close the class it belongs to.
@@ -344,62 +358,13 @@ on main, in the required file, and was broken within eleven hours.
 > or fails as "in progress". A commitment accretes whatever arises while it is open. Each
 > piece of work carries its own date, and a slip then names itself.**
 
-### THREE DATED TASKS — AWAITING A HOME, NOT LAWS
+> **The law file is not a task tracker, and the required-reading file is not a task store
+> — it points at one. A store read by obligation and a store that survives independently
+> of any branch are different properties; get both by having the obliged one point at the
+> durable one.**
 
-**These are TASKS and do not belong in this file.** They are held here only because the
-repository has no dated-work home to move them to: it has **never used GitHub issues**
-(zero, ever — the "10 open" the API reports are pull requests), and nothing in
-`docs/HANDOFF.md`, `docs/UNITS.md` or `docs/PROJECT-STATE.md` carries a due date. A home
-is the owner's decision and is not improvised here. **Move them out when it exists, and
-delete this section — a task left in the law file is read as law.**
-
-**1. THE SWEEP — due Monday 2026-10-05**, and sooner if both conditions are met first:
-immediately after the last branch of the 1–2 October sequence merges, and before B13
-begins.
-
-Audit every law dictated on 1 and 2 October for whether it landed in `CLAUDE.md` or in
-`docs/PROJECT-STATE.md`, and move the laws. Resolve the italic placement note, and any
-added before the sweep runs. **That is all it is: reading and moving, bounded.**
-
-> **THE TAXONOMY IS THREE-WAY, NOT TWO.** Every item dictated on 1 and 2 October is a
-> **LAW** (`CLAUDE.md`), a **RECORD** (`docs/PROJECT-STATE.md`) or a **TASK** (a dated
-> item in whatever the repository uses for dated work). Today produced all three and
-> filed some of each in the wrong place. **Ask which of the three before moving
-> anything** — a two-way sort would move a task into the law file and call it done.
-
-> **If 5 October arrives with the sequence unfinished, the sweep runs anyway on whatever
-> has merged, and each later branch is swept as it lands. The date overrides the
-> conditions; a backstop that yields to its condition is not one.**
-
-Recorded with a note that the owner first gave two conditions while asking for a date,
-one hour after dictating pin-it-and-date-it.
-
-*One placement note exists today, on the fixes-and-classes law. Any added before the
-sweep are covered by the same obligation.*
-
-**2. THE LAW IDENTIFIER SCHEME — due Friday 2026-10-09.**
-
-Give every `CLAUDE.md` law an identifier that records cite, and a gate comparing quoted
-law text in `PROJECT-STATE.md` against laws that exist. **This is a design change
-touching every record, not a sweep, and bundling it under Monday was what made Monday
-unrealistic.** It goes before 9 October because every record written after it is one more
-to retrofit.
-
-**3. THE TEST-COUNT GATE — due Friday 2026-10-16.**
-
-Replace the duration band's lower bound with a committed expected test count.
-
-> The lower bound exists to catch a suite that did less work, and elapsed time is a poor
-> proxy for that — eight runs span 52.4 to 85.2 minutes on near-identical content, and
-> every new sample has widened the interval rather than confirming it. The completeness
-> gates assert every test file is declared; none asserts how many tests ran, so a file
-> whose tests were all skipped passes today. A count measures the thing directly. The
-> upper bound stays: it guards against a runaway, which duration is the right instrument
-> for.
-
-The bound it replaces is provisional and currently twelve minutes clear of the fastest
-run observed, so this is the least urgent of the three — **which is exactly why it needs
-a date of its own rather than a place in a queue.**
+Dated work lives in the repository's **issues**. `docs/HANDOFF.md`'s start-of-session list
+points at them, which is what makes them read at all.
 
 **Verified before recording:** no gate anywhere asserts a test count. `passWithNoTests:
 false` catches only a wholly empty run. `tests/pure-suite-complete.test.ts` and

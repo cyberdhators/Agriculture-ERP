@@ -2061,11 +2061,30 @@ about a cost that accrues with delay, which is a different argument for a deadli
 "this matters most".
 
 **And the three were in the wrong file.** They are tasks, and they sat in `CLAUDE.md`,
-which is law. The repository has **never used GitHub issues** and nothing in `HANDOFF.md`,
-`UNITS.md` or this file carries a due date — so there is no dated-work home to move them
-to, and one was not improvised. They are held in `CLAUDE.md` marked as awaiting a home.
+which is law.
+
+> **Three dated tasks were written into `CLAUDE.md` for want of anywhere else: the
+> repository had no dated-work home, zero issues had ever been opened, and no tracker
+> carried a due date. They moved to issues, with `HANDOFF.md`'s required reading pointing
+> at them.**
+
+They are now **#110** (the sweep, 2026-10-05), **#111** (the law identifier scheme,
+2026-10-09) and **#112** (the test-count gate, 2026-10-16). `HANDOFF.md`'s
+start-of-session list gained one line telling a session to check the open issues, because
+a durable store nobody is obliged to read is no better than a branch-held note.
+
+**The order mattered and was specified:** the issues were created first, the pointer
+second, and only then was the section deleted from `CLAUDE.md`. Deleting a commitment
+before its destination exists loses it.
+
 **That is the second placement fault of the same day**: on 2 October a law was found
 living in a workflow comment, and three tasks were found living in the law file.
+
+**And one line nearly went with the deletion.** The entry had carried a note that the
+owner first gave two conditions while asking for a date, one hour after dictating
+pin-it-and-date-it. It was neither a law nor a task, so it belonged to neither the
+`CLAUDE.md` law nor any issue, and a check for what the deletion dropped is what caught
+it. **A three-way sort still leaves residue: the thing that is none of the three.**
 
 Which is why the sweep's own scope now says the taxonomy is three-way: LAW, RECORD, TASK.
 A two-way sort would have moved a task into the law file and called it filed.

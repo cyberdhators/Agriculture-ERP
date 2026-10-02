@@ -45,6 +45,8 @@ because a rewrite looks easier than reading.
 **At the start of every session, before any work:**
 
 1. Read this whole file, then `git fetch` and read the open pull requests.
+   **Check the open issues too: that is where dated work lives, and a date is
+   not recorded anywhere else.**
 2. Tell your human, in plain language and in no more than five sentences:
    what the other lane has done since your last entry, what it is waiting on
    from your lane, and whether anything in the log needs a decision from them.
