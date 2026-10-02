@@ -338,14 +338,20 @@ Recurrence of `PROJECT-STATE.md:2036` (2026-09-15), which states the same fault 
 itself in the unread file. **Placement is necessary and not sufficient:** that rule was
 on main, in the required file, and was broken within eleven hours.
 
-**SWEEP DUE no later than Monday 2026-10-05**, and sooner if both conditions are met
-first: immediately after the last branch of the 1–2 October sequence merges, and before
-B13 begins.
+### THREE DATED COMMITMENTS
 
-What the sweep is: audit every law dictated on 1 and 2 October for whether it landed in
-`CLAUDE.md` or in `PROJECT-STATE.md`, move the laws, and give every `CLAUDE.md` law an
-identifier that records cite — so a gate can compare quoted law text against laws that
-exist. A law that lives only in the state document will have no id to cite.
+**One date over four pieces of work hides which piece slipped: the whole either holds or
+fails as "in progress". A commitment accretes whatever arises while it is open — this one
+grew from a law-placement audit into a programme in a single morning. Each piece now
+carries its own date, so a slip names itself.**
+
+**1. THE SWEEP — due Monday 2026-10-05**, and sooner if both conditions are met first:
+immediately after the last branch of the 1–2 October sequence merges, and before B13
+begins.
+
+Audit every law dictated on 1 and 2 October for whether it landed in `CLAUDE.md` or in
+`docs/PROJECT-STATE.md`, and move the laws. Resolve the italic placement note, and any
+added before the sweep runs. **That is all it is: reading and moving, bounded.**
 
 > **If 5 October arrives with the sequence unfinished, the sweep runs anyway on whatever
 > has merged, and each later branch is swept as it lands. The date overrides the
@@ -354,8 +360,20 @@ exist. A law that lives only in the state document will have no id to cite.
 Recorded with a note that the owner first gave two conditions while asking for a date,
 one hour after dictating pin-it-and-date-it.
 
-**AFTER THE SWEEP:** replace the duration band's lower bound with a committed expected
-test count.
+*One placement note exists today, on the fixes-and-classes law. Any added before the
+sweep are covered by the same obligation.*
+
+**2. THE LAW IDENTIFIER SCHEME — due Friday 2026-10-09.**
+
+Give every `CLAUDE.md` law an identifier that records cite, and a gate comparing quoted
+law text in `PROJECT-STATE.md` against laws that exist. **This is a design change
+touching every record, not a sweep, and bundling it under Monday was what made Monday
+unrealistic.** It goes before 9 October because every record written after it is one more
+to retrofit.
+
+**3. THE TEST-COUNT GATE — due Friday 2026-10-16.**
+
+Replace the duration band's lower bound with a committed expected test count.
 
 > The lower bound exists to catch a suite that did less work, and elapsed time is a poor
 > proxy for that — eight runs span 52.4 to 85.2 minutes on near-identical content, and
@@ -365,13 +383,9 @@ test count.
 > upper bound stays: it guards against a runaway, which duration is the right instrument
 > for.
 
-**The sweep also clears the italic placement notes left on this branch's laws.** Each
-says where its law belongs once the branches holding the Gates laws land. A note of that
-kind survives indefinitely if nothing is obliged to resolve it, so resolving them is part
-of the sweep's completion, not a follow-up.
-
-*There is one such note today, on the fixes-and-classes law — not several. Any added
-before the sweep are covered by the same obligation.*
+The bound it replaces is provisional and currently twelve minutes clear of the fastest
+run observed, so this is the least urgent of the three — **which is exactly why it needs
+a date of its own rather than a place in a queue.**
 
 **Verified before recording:** no gate anywhere asserts a test count. `passWithNoTests:
 false` catches only a wholly empty run. `tests/pure-suite-complete.test.ts` and
