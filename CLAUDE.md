@@ -341,6 +341,33 @@ Found by review, 2 October, while verifying the test-count item.
 `ci/staging-row-count-gate` and not on this branch. This belongs with them and will need
 placing beside them when those branches land — a prose resolution, which is a judgement.*
 
+**The four-way sort, and who does the sorting.** Every item that arrives is one of four
+things, and the first question is always which:
+
+| | Goes to | Test |
+| --- | --- | --- |
+| **LAW** | `CLAUDE.md` | Tells a future session what to do |
+| **RECORD** | `docs/PROJECT-STATE.md` | Describes what happened; may cite a law, never introduces one |
+| **TASK** | an issue, **with a date** | Bounded work that someone must do |
+| **NEITHER** | nowhere | Conversational, superseded, or already said — not written down |
+
+**An undated task is the fourth category in disguise and the most common misfiling here.**
+A placement note, a "to be resolved when X lands", a "follow-up" — each is a task whose
+date was omitted, and each therefore has nothing obliging anyone to do it. That is the
+same mechanism as a safe temporary thing: harmless, and so permanent. If it is a task,
+give it a date and an issue; if it does not deserve one, it is NEITHER.
+
+> **A placement instruction from the owner — "beside X", "under Y", "in <file>" — is
+> advisory and is probably wrong. The owner is reasoning about a composite of every open
+> branch; the session has the files. Sort by the four-way taxonomy, place it where it
+> belongs, and say where it went. Do not ask first, and do not report it as a
+> deviation — it is not one.**
+
+That rule exists because the alternative was observed four times on 2 October: "beside the
+gate laws", "beside the labelling law", "beside the place-both instruction" and "beside the
+misleading-endpoint law" each named a law that was not on the branch being edited, because
+`CLAUDE.md` was simultaneously written by seven branches.
+
 **Where a law may live.** `docs/PROJECT-STATE.md` is history and is not required
 reading; `CLAUDE.md` is law and is.
 
