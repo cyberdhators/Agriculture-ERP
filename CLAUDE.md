@@ -365,6 +365,14 @@ test count.
 > upper bound stays: it guards against a runaway, which duration is the right instrument
 > for.
 
+**The sweep also clears the italic placement notes left on this branch's laws.** Each
+says where its law belongs once the branches holding the Gates laws land. A note of that
+kind survives indefinitely if nothing is obliged to resolve it, so resolving them is part
+of the sweep's completion, not a follow-up.
+
+*There is one such note today, on the fixes-and-classes law — not several. Any added
+before the sweep are covered by the same obligation.*
+
 **Verified before recording:** no gate anywhere asserts a test count. `passWithNoTests:
 false` catches only a wholly empty run. `tests/pure-suite-complete.test.ts` and
 `tests/database-suite-complete.test.ts` assert that files are declared, still exist, and
