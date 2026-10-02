@@ -313,6 +313,20 @@ not in this file.** Neither of those governs a session that does not open them �
 PROJECT-STATE, "A law in a file only governs sessions that open the file", which this is
 a recurrence of.
 
+**Fixes and classes.**
+
+> **A fix that closes the route a fault took does not close the class it belongs to.
+> B5.5 made a missing environment variable fail loudly, which is how eight files had
+> reported green for tests that never ran — and left `it.skip`, a conditional `describe`
+> and a filter that matches less entirely open. Ask which one you closed before
+> recording the class as closed.**
+
+Found by review, 2 October, while verifying the test-count item.
+
+*Placed here rather than beside the other Gates laws, which are on #109 and
+`ci/staging-row-count-gate` and not on this branch. This belongs with them and will need
+placing beside them when those branches land — a prose resolution, which is a judgement.*
+
 **Where a law may live.** `docs/PROJECT-STATE.md` is history and is not required
 reading; `CLAUDE.md` is law and is.
 
