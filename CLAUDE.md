@@ -284,6 +284,16 @@ default. Use constraints and indexes. PostGIS for all spatial data.
 tests, the linter, the formatter check and the type check before committing —
 do not leave it to CI to find what you could have found locally.
 
+> **A commit message long enough to need a heredoc is written to a file first, and a
+> heredoc command is never chained with another — the heredoc binds to the last command
+> in the chain, not the intended one. Twice on 2 October the fix was applied after the
+> fact; a habit applied after the fact twice is not a habit.**
+
+The failure mode is a silent two-minute hang, not an error, so it reads as something
+worse than it is. Both times nothing was damaged: no commit was created, the staged
+changes survived, and the message went to a file on the retry — which is the step that
+should have come first.
+
 **Temporary things.** A temporary thing removed by intention will be forgotten. A
 temporary thing that cannot act outside its purpose is safe either way.
 
@@ -302,6 +312,33 @@ the removal happened because a date was attached to it rather than a condition.
 not in this file.** Neither of those governs a session that does not open them — see
 PROJECT-STATE, "A law in a file only governs sessions that open the file", which this is
 a recurrence of.
+
+**Where a law may live.** `docs/PROJECT-STATE.md` is history and is not required
+reading; `CLAUDE.md` is law and is.
+
+> **A law may not live in `PROJECT-STATE.md`, and a record there may cite a law but
+> never introduce one. The test: does the passage describe what happened, or tell a
+> future session what to do?**
+
+Recurrence of `PROJECT-STATE.md:2036` (2026-09-15), which states the same fault and is
+itself in the unread file. **Placement is necessary and not sufficient:** that rule was
+on main, in the required file, and was broken within eleven hours.
+
+**SWEEP DUE no later than Monday 2026-10-05**, and sooner if both conditions are met
+first: immediately after the last branch of the 1–2 October sequence merges, and before
+B13 begins.
+
+What the sweep is: audit every law dictated on 1 and 2 October for whether it landed in
+`CLAUDE.md` or in `PROJECT-STATE.md`, move the laws, and give every `CLAUDE.md` law an
+identifier that records cite — so a gate can compare quoted law text against laws that
+exist. A law that lives only in the state document will have no id to cite.
+
+> **If 5 October arrives with the sequence unfinished, the sweep runs anyway on whatever
+> has merged, and each later branch is swept as it lands. The date overrides the
+> conditions; a backstop that yields to its condition is not one.**
+
+Recorded with a note that the owner first gave two conditions while asking for a date,
+one hour after dictating pin-it-and-date-it.
 
 **`main` is never force-pushed, by any lane, for any reason.** Not
 `--force`, not `--force-with-lease`, not a reset followed by a push, not a
