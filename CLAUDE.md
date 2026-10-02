@@ -204,6 +204,20 @@ and look, report and stop — which no setting expresses.
 Deleting it loses the rule it encoded; rewriting it keeps the rule and moves what
 it can check.
 
+**Conflicts — place both, and know which kind of resolution you are making.** When two
+branches both add to the same file, the resolution keeps both sides; never silently
+choose one. But the two cases are not the same work:
+
+> **"Place both" in prose is a judgement; in a declaration list it is mechanical, and
+> the gate that owns the list is what verifies it. Resolving a config array by reading
+> is how a declaration goes missing.**
+
+So say which kind each resolution was. A record placed beside another record is read and
+weighed. A test file re-added to `vitest.pure.config.mts` and to `PURE_PATTERNS` is
+checked by `tests/pure-suite-complete.test.ts`, which exists precisely because reading
+such a list is unreliable — and a declaration dropped there does not fail loudly, it
+quietly stops running a test.
+
 **Labelling — every recorded claim is OBSERVED, DOCUMENTED or INFERRED.** OBSERVED
 means we ran it and saw it. DOCUMENTED means a vendor or a specification says so
 and we did not exercise it. INFERRED means we reasoned to it. A documented claim

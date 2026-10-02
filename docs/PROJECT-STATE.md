@@ -3393,8 +3393,22 @@ branch, and main is not pushed to — so the audit's findings could not be read
 before it merged, and the first `.gitleaksignore` entries would have been written
 about findings nobody had seen. The audit therefore carries a `pull_request`
 trigger **pinned to this branch's head ref**, so it cannot act on any other pull
-request. It is still to be removed before the branch goes ready; the pin is what
-makes that promise unnecessary.
+request. **REMOVED 2026-10-02, before the pull request went ready, as agreed on 1 October.**
+
+> **The temporary trigger was removed before the pull request went ready, as agreed on
+> 1 October. The head-ref pin made it harmless either way, which is why it would have
+> survived indefinitely had the removal been deferred to a follow-up.**
+
+Both halves of the law held, and the second is the uncomfortable one: **a safe temporary
+thing generates no pressure to remove it.** The pin did its job so well that nothing
+would ever have forced the cleanup, and the removal happened only because a date was
+attached to it rather than a condition.
+
+**The pin went with the trigger.** Its condition could never fire once the trigger was
+gone, and a conditional that cannot fire is the dead-branch fault recorded in this file.
+Kept "in case someone re-adds the trigger", it would have named a branch that no longer
+exists. With the workflow on main, `workflow_dispatch` works and is the way to run the
+audit on demand — which is what the trigger was standing in for all along.
 
 ### THE GATE CAUGHT ITS OWN AUTHOR AGAIN, BEFORE THE PUSH THIS TIME
 
