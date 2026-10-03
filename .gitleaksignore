@@ -1,0 +1,54 @@
+# ============================================================================
+# ACCOUNTED-FOR SECRET-SCAN FINDINGS
+# ============================================================================
+#
+# Every entry here is a finding the full-history audit reports that we have
+# looked at and decided about. CLAUDE.md's Secrets law says the scan has no
+# allowlist and that a false positive is the owner's deliberate decision, not a
+# default a session sets. This file is where those decisions are written down,
+# which is what keeps them deliberate.
+#
+# THE FILE IS EMPTY OF ENTRIES ON PURPOSE. It lands with the convention and the
+# test, and entries are added only after the audit has actually run and its
+# findings have been read. Writing entries first would be deciding about
+# findings nobody has seen.
+#
+# ----------------------------------------------------------------------------
+# THE CONVENTION: THE REASON GOES ON THE LINE ABOVE THE FINGERPRINT.
+# ----------------------------------------------------------------------------
+#
+#   # <why this finding is accounted for, in a sentence>
+#   <fingerprint>
+#
+# Not a trailing comment on the fingerprint line. Whether gitleaks treats
+# everything after a `#` on an entry line as a comment or as part of the
+# fingerprint was not established, and a convention that depends on an
+# unverified parsing detail fails silently -- the entry simply stops matching
+# and the finding comes back, or worse, matches nothing and is never noticed.
+# The line above parses safely whichever way trailing text is handled.
+#
+# `tests/gitleaksignore-reasons.test.ts` enforces it: an entry with no reason
+# above it fails the suite. An unexplained new finding is red; a known and
+# explained old one is not.
+#
+# A fingerprint is `commit:file:rule:line` and carries no secret value.
+
+# A real password literal, committed 2026-09-23 and since removed from the tree by
+# the fixture's rewrite (generated per run, never printed, written to a gitignored
+# file). OBSERVED by the full-history audit on 2026-10-01: rule generic-api-key,
+# scripts/officer-test-fixture.mjs line 34.
+#
+# ITS HISTORY IS DELIBERATELY NOT REWRITTEN. A committed credential is burned, and
+# the answer to a burned credential is rotation, not concealment: rewriting history
+# would destroy the evidence and still leave anyone who had already cloned the
+# repository holding a working password. The rotation is that no reusable password
+# exists any more. The value in that commit opens nothing. Accounted for, not
+# silenced.
+#
+# THIS FINGERPRINT NAMES A COMMIT, AND THAT IS CORRECT. A path-plus-rule entry
+# would survive a rebase of #99 -- and would also stop catching a genuine password
+# in that file later, which is worse. So its going stale is correct behaviour: if
+# #99 is rebased the commit hash changes, this entry stops matching, and someone
+# has to look again. When that happens, RE-DERIVE the fingerprint from the audit's
+# output. NEVER broaden the entry to make it survive.
+f2d600310a5db55b0887d87cde5e365ee6575b9a:scripts/officer-test-fixture.mjs:generic-api-key:34

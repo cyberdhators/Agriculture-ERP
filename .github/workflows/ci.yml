@@ -11,18 +11,41 @@ on:
   push:
     branches: [main]
 
-# One test run at a time across ALL refs, queued, never cancelled: every run
-# holds the staging lock (vitest.global-setup.ts) for twenty to forty
-# minutes, and a run that starts while another holds it refuses. The lock
-# worked; the cost was a manual re-run on every merge, three in a row under
-# the sequential merge order (2026-09-06). GitHub queues them here instead.
-# The trade: a superseded run on a branch is no longer cancelled by a newer
-# push — it completes, and the newer run waits its turn. A run of staging
-# time per superseded push, accepted; a cancelled run could leave its lock
-# behind (PROJECT-STATE, "If a run is killed").
-concurrency:
-  group: staging-tests
-  cancel-in-progress: false
+# ============================================================================
+# CONCURRENCY NOW LIVES ON THE JOB THAT TOUCHES STAGING, NOT ON THE WORKFLOW.
+# ============================================================================
+#
+# WHAT THE OLD COMMENT HERE CLAIMED, AND WHERE IT WAS WRONG. It said: "a
+# superseded run on a branch is no longer cancelled by a newer push — it
+# completes, and the newer run waits its turn." That is true of an IN-PROGRESS
+# run, which `cancel-in-progress: false` does protect. The claim was verified for
+# the in-progress case and generalised to the pending case.
+#
+# OBSERVED — the effect. Five branches had NO VERDICT AT ALL: #102, #104, #103,
+# #106 and #105 all show `cancelled` with ZERO JOBS, lifetimes from 28 seconds to
+# 22.7 minutes, each ending when a newer push arrived. Verified for all five.
+# docs/PROJECT-STATE.md's record, "pushing while a run is queued cancels it", was
+# the accurate one.
+#
+# INFERRED — the cause. That GitHub permits only one PENDING run per concurrency
+# group and a newer run evicts it is reasoned from that effect, not read from a
+# documented rule, and it must not be relied on as established. The remedy below
+# does not depend on it: a run that never opens a connection has no reason to
+# queue behind the staging suite whatever killed those five.
+#
+# WHY THE SPLIT IS SAFE. The staging advisory lock in vitest.global-setup.ts is
+# the mutual exclusion, not this group — the lock refuses a second run outright,
+# and it would do so whether or not a group existed. The group's only job is to
+# stop runs queueing up to collide with it. A run that never opens a connection
+# needs neither: the documents path runs `pnpm test:pure`, whose config opens
+# nothing, so it has no business waiting forty minutes behind a database.
+#
+# WHAT MAY VARY IS HOW A CHECK WAITS, NEVER WHETHER IT SPEAKS. The `test` job's
+# group name is computed by the `scope` job below. The step inside it is still
+# unconditional, still always reports, and still decides which suite to run
+# itself. A `paths:` filter would have been the illegal version of this change:
+# it alters whether the check exists at all, and a required check that silently
+# does not run is a merge button with nothing behind it.
 
 permissions:
   contents: read
@@ -31,15 +54,50 @@ env:
   GITLEAKS_VERSION: 8.30.1
 
 jobs:
+  # --------------------------------------------------------------------------
+  # Seconds long, queues behind nothing, and decides one thing: which group the
+  # test job waits in. It does NOT decide which suite runs.
+  # --------------------------------------------------------------------------
+  scope:
+    name: scope
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      group: ${{ steps.decide.outputs.group }}
+      docs_only: ${{ steps.decide.outputs.docs_only }}
+    steps:
+      - name: Checkout (full history)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Reads scripts/ci-changed-scope.mjs — the same module the Test step reads.
+      # Two independent deciders of one fact drift apart; three guards each
+      # holding their own copy of one project reference is how this repository
+      # learned it. Runs on the runner's preinstalled Node, before any install.
+      - name: Decide the concurrency group
+        id: decide
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            changed="$(git diff --name-only "origin/${{ github.base_ref }}"...HEAD)"
+          else
+            changed="$(git diff --name-only HEAD~1 HEAD || true)"
+          fi
+          echo "changed files:"; echo "$changed" | sed 's/^/  /'
+          printf '%s\n' "$changed" | node scripts/ci-scope-decide.mjs
+
+  # --------------------------------------------------------------------------
+  # Everything that does not touch staging. UNGROUPED on purpose: a committed
+  # credential should not wait forty minutes behind a database lock to be named.
+  # --------------------------------------------------------------------------
   verify:
     name: verify
     runs-on: ubuntu-latest
-    # The database suite is 10-20 minutes from a runner; a hung run must not
-    # hold the staging lock for the default six hours.
-    timeout-minutes: 90
+    timeout-minutes: 20
     steps:
-      # Full history: the secret scan reads every commit on the branch, not
-      # just the tip. A secret added and then "removed" is still a leak.
+      # Full history: the secret scan needs the branch's commits, and the range
+      # it reads is computed from the event rather than assumed.
       - name: Checkout (full history)
         uses: actions/checkout@v4
         with:
@@ -66,22 +124,118 @@ jobs:
       - name: Format check
         run: pnpm format:check
 
+      # ====================================================================
+      # THE SECRET SCAN: THIS BRANCH'S COMMITS, PLUS THE WORKING TREE.
+      # ====================================================================
+      #
+      # Official released binary rather than the marketplace action, which can
+      # require a GITLEAKS_LICENSE repository secret. This workflow uses none.
+      #
+      # It no longer walks all history. gitleaks with no `--log-opts` reads every
+      # ref the runner fetched, so one secret on one unmerged branch turned every
+      # branch red: #107's leak count rose from one to two because #108 was
+      # pushed, while #107's own commits contained no credential pattern at all.
+      # A gate that can never be green is bypassed. Full history moved to
+      # .github/workflows/secret-audit.yml, weekly.
+      #
+      # The old intent survives: a secret added and reverted WITHIN the branch is
+      # still inside the branch's range. Only inherited history leaves.
+      #
+      # The report carries the matched value, so it is parsed in the step and
+      # discarded — never uploaded as an artifact, never printed. Only rule, file,
+      # line, commit and fingerprint are shown, because a refusal that does not
+      # name its subject only tells you to go looking.
+      - name: Secret scan (gitleaks — this branch's commits and the working tree)
+        env:
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          GITHUB_BASE_REF: ${{ github.base_ref }}
+          SCAN_BEFORE_SHA: ${{ github.event.before }}
+        run: |
+          set -euo pipefail
+          curl -sSfL \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" \
+            -o /tmp/gitleaks.tar.gz
+          tar -xzf /tmp/gitleaks.tar.gz -C /tmp gitleaks
+          /tmp/gitleaks version
+          node scripts/ci-secret-scan.mjs
+
+  # --------------------------------------------------------------------------
+  # The suite. THE ONLY JOB THAT MAY TOUCH STAGING, and the only one grouped.
+  # --------------------------------------------------------------------------
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    needs: scope
+    # The group is decided before anything runs, by the scope job. `staging-tests`
+    # when this run will touch staging; a group of its own when it will not, so a
+    # documents-only run queues behind nothing. See the workflow comment above for
+    # why this is safe: the advisory lock is the mutual exclusion, not the group.
+    concurrency:
+      group: ${{ needs.scope.outputs.group }}
+      cancel-in-progress: false
+    # ========================================================================
+    # THE TIMEOUT, AND WHERE ITS NUMBER COMES FROM.
+    # ========================================================================
+    #
+    # 120 minutes. The derivation lives in scripts/ci-suite-duration.mjs, which is
+    # the ONE owner of the suite's expected duration -- this comment deliberately
+    # asserts no figure of its own, because four numbers used to claim to be this
+    # suite's duration and none of them agreed. One of them, "10-20 minutes", sat
+    # exactly here, above the timeout that depended on it, and was wrong by a
+    # factor of four.
+    #
+    # In short: set against an observed 85-minute suite on 2026-10-01, roughly 41%
+    # headroom, to be revisited when the expected duration changes. At the previous
+    # value of 90 the margin above an observed 84.9-minute run was 5.1 minutes, and
+    # nothing had noticed the suite drifting into it.
+    #
+    # A TIMEOUT WITH NO STATED DERIVATION IS THE THING THAT NEARLY BIT US. It is a
+    # backstop against a hung job holding the staging lock, not a target. The
+    # duration gate at the end of this job is what is supposed to fire first.
+    timeout-minutes: 120
+    steps:
+      - name: Checkout (full history)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
       # B5.5: the database tests run against STAGING, never production. The
       # five secrets are set by the project owner; the test helpers refuse to
       # run — loudly, not by skipping — if any is missing, and refuse to run
       # against any project but staging whatever the values say.
       #
-      # THE SHORT PATH (2026-09-11, the fifth CI edit). 98% of a run is this
-      # step: on #54's green run it was 44m46s and every other step together
-      # was 47s. A pull request that changes nothing but documents needs none
-      # of the staging suite, and four of six pull requests open that day were
-      # documents only.
+      # THE SHORT PATH (2026-09-11, the fifth CI edit). Almost all of a run is
+      # this step; every other step together is under a minute. A pull request
+      # that changes nothing but documents needs none of the staging suite, and
+      # four of six pull requests open that day were documents only.
+      #
+      # This comment used to say "on #54's green run it was 44m46s", which read as
+      # the suite's duration and was one measurement from one day. The expected
+      # duration and its observed history have one owner:
+      # scripts/ci-suite-duration.mjs. No comment here states a figure.
       #
       # THE STEP IS NEVER CONDITIONAL. It always runs, always reports, and
       # decides INSIDE which suite to run. A required check that silently does
       # not run is the shape of the eight skipped test files and the null
       # device column (docs/PROJECT-STATE.md) and must not be reintroduced
       # here. There is no `if:` on this step and there must never be one.
+      #
+      # WHAT CHANGED, AND WHAT DID NOT. The concurrency group is now computed
+      # before this job starts. The SUITE CHOICE DID NOT MOVE: it is still made
+      # here, at run time, by this step. What may vary is how a check waits,
+      # never whether it speaks.
       #
       # ABSENCE IS NOT SUCCESS. The short path runs `pnpm test:pure`, whose
       # config sets `passWithNoTests: false` and whose own guard
@@ -93,6 +247,13 @@ jobs:
       # suite, so a CONVENTIONS change still meets the drift test and the
       # rule-sentence test on the short path.
       - name: Test
+        env:
+          SCOPE_DOCS_ONLY: ${{ needs.scope.outputs.docs_only }}
+          DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
+          DIRECT_URL: ${{ secrets.STAGING_DIRECT_URL }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.STAGING_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.STAGING_SUPABASE_SERVICE_ROLE_KEY }}
         run: |
           set -euo pipefail
           if [ "${{ github.event_name }}" = "pull_request" ]; then
@@ -103,48 +264,42 @@ jobs:
             changed="$(git diff --name-only HEAD~1 HEAD || echo FULL)"
           fi
           echo "changed files:"; echo "$changed" | sed 's/^/  /'
-          # Anything outside the documents means the full suite. The set is
-          # docs/, .prettierignore and CLAUDE.md — no test reads any of them.
-          #
-          # CLAUDE.md was excluded from the short path in the fifth CI edit and
-          # added in the sixth (2026-09-11). The reasoning that failed: the law
-          # file felt like it deserved more scrutiny, and a database suite is
-          # not scrutiny of a document. Nothing in the full suite reads
-          # CLAUDE.md; #59, five lines of it, cost 1h5m49s and told us nothing
-          # about what changed. The filter is per-file, so a pull request
-          # touching CLAUDE.md AND any code still takes the full path.
-          outside="$(echo "$changed" | grep -vE '^docs/|^\.prettierignore$|^CLAUDE\.md$' || true)"
-          if [ -z "$changed" ]; then
-            echo "no changed files could be determined — running the full suite"
-            outside="undetermined"
-          fi
-          if [ -n "$outside" ]; then
-            echo "FULL SUITE: these changed files are outside docs/:"
-            echo "$outside" | sed 's/^/  /'
-            pnpm test
-          else
+
+          # Closes the loop with the scope job: both read
+          # scripts/ci-changed-scope.mjs, and this asserts they agreed. A
+          # contradiction is named here rather than left to the advisory lock.
+          printf '%s\n' "$changed" | node scripts/ci-scope-assert.mjs
+
+          # The document set is the module's, not this step's: one decider.
+          if printf '%s\n' "$changed" | node scripts/ci-is-docs-only.mjs; then
             echo "SHORT PATH: documents only. Running the pure suite (no database)."
             pnpm test:pure
-          fi
-        env:
-          DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
-          DIRECT_URL: ${{ secrets.STAGING_DIRECT_URL }}
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.STAGING_SUPABASE_ANON_KEY }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.STAGING_SUPABASE_SERVICE_ROLE_KEY }}
+          else
+            echo "FULL SUITE: changed files outside docs/ — running everything."
+            started=$(date +%s)
+            pnpm test
+            elapsed=$(( $(date +%s) - started ))
 
-      # Official released binary rather than the marketplace action, which can
-      # require a GITLEAKS_LICENSE repository secret. This workflow uses none.
-      - name: Secret scan (gitleaks)
-        run: |
-          set -euo pipefail
-          curl -sSfL \
-            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" \
-            -o /tmp/gitleaks.tar.gz
-          tar -xzf /tmp/gitleaks.tar.gz -C /tmp gitleaks
-          /tmp/gitleaks version
-          /tmp/gitleaks git . \
-            --config .gitleaks.toml \
-            --redact \
-            --no-banner \
-            --log-level info
+            # ================================================================
+            # THE GATE THAT WAS MISSING, AND THE REASON IT IS A GATE.
+            # ================================================================
+            #
+            # Nothing was comparing elapsed time to anything. The suite drifted
+            # 37.8% in ten days -- 61.6 minutes on 21 September, 84.9 on 1 October,
+            # on near-identical test content -- while every run printed its own
+            # duration and no one held it against an expectation. It went unnoticed
+            # until the margin to the timeout was six percent.
+            #
+            # The band's upper bound sits BELOW the timeout on purpose, so drift
+            # fires THIS, which says what happened, before it fires the cliff,
+            # which just kills the job. Asserted in tests/ci-suite-duration.test.ts
+            # rather than left to this comment.
+            #
+            # IT FAILS, IT DOES NOT WARN. A warning nobody reads is the whole of
+            # the evidence above.
+            #
+            # It runs after the suite, so a failing suite is red on its own merits
+            # and is never masked by a duration complaint -- and on a failing suite
+            # this never runs at all, which is the right order.
+            node scripts/ci-suite-duration-check.mjs "$elapsed"
+          fi

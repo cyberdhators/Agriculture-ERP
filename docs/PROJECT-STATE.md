@@ -3220,6 +3220,441 @@ catches two sources drifting, and **this catches the gate's own configuration
 drifting away from the world it describes.** An exception list is code that
 nobody runs, and it decays silently.
 
+## NOTHING IN THIS REPOSITORY IS ENFORCED (2026-10-01)
+
+> **No gate in this repository is enforced, because nothing enforces any check.**
+
+**OBSERVED 2026-10-01.** Branch protection can be enforced two ways, and both were
+checked: `GET branches/main/protection` returned **404, "Branch not protected"**,
+and `GET rulesets` returned an **empty list**. Checking one of the two and
+reporting "unenforced" would have been an exclusion list nobody tested — the first
+version of this finding rested on the classic endpoint alone and did not say so.
+
+So every gate built to date reports and does not prevent: the checksum comparison,
+the allowlist scan, the secret scan, the suite-completeness guards. Each was built
+carefully, each compares correctly, and **nothing is obliged to listen to any of
+them.** A gate that nothing consults is a document.
+
+The owner is configuring protection today. **#102's force-push law was written for
+a mechanism that existed and had never been switched on** — and that law still
+earns its place after the setting arrives, because it governs the _response_ to a
+rejected push (fetch and look, report and stop), which no setting expresses. The
+mechanism blocks the push; the law governs what happens next.
+
+### SEPTEMBER WAS TWO HOLES, NOT ONE
+
+This finding was first attached to September's unauthorised merges, #49 and #50, as
+their explanation. That was wrong twice over, and the correction runs in the
+opposite direction to the one first made.
+
+**OBSERVED, from the check-runs API:**
+
+- **#49** (`7df2775`) — `verify` **started 11:33:47**, the pull request was **merged
+  at 11:34:56** (sixty-nine seconds later, while the check was still running), and
+  `verify` **completed at 12:31:56 with `failure`** — fifty-seven minutes after the
+  merge. Merged while red, and nobody could have known it was red yet.
+- **#50** (`fb1af6d`) — **there is no `verify` check run on that commit at all.**
+  Its only check is `Vercel Preview Comments`. **Why it never ran is not claimed
+  here**; the absence is the fact.
+
+**Required status checks close merging-while-red and merging-while-unjudged, and
+#49 and #50 were one of each.** So today's required checks **do** close that half.
+
+**The other half is authorisation, and it stays open.** Both were merged without
+the owner, asserting a CORWADO authorisation nothing in the repository held
+(`docs/DECISIONS.md`). Required status checks say nothing about approval. What
+closes that is a required review, and:
+
+**The repository has one collaborator, `cyberdhators`, holding admin, and one
+author across all 397 commits on every ref, with `main` at 108.** A required review
+is therefore either ineffective or totalising here: with bypassing allowed it does
+not constrain this account at all, and with bypassing disallowed every pull request
+becomes unmergeable because an author cannot approve their own (**DOCUMENTED** —
+GitHub's stated behaviour, not exercised here). Neither closes the September hole.
+**What makes the control meaningful is a second account for the second lane.**
+
+**Required checks with bypassing disallowed means that if CI breaks or Actions
+billing lapses — as it did on 2026-09-10 — nothing can merge until the setting is
+relaxed. That is accepted: relaxing a setting is a visible act, clicking merge on a
+red pull request is not.**
+
+### TWO WAYS TO CHECK, AND THE OBVIOUS ONE MISLEADS — BOTH TIMES
+
+**Author, not committer.** `git log --all --format='%cn'` shows `cyberdhators` 307
+times and **`GitHub <noreply@github.com>` 90 times** — the latter is the committer
+GitHub records for merges made through the web interface. Not a person and not a
+second lane. The one-author finding is about **author**, and anyone re-verifying it
+will meet the committer figure first.
+
+**Check runs, not commit status.** `GET /commits/<sha>/status` returns
+**`state=success` for both #49 and #50**, because that endpoint reports legacy
+commit statuses — Vercel's — and not check runs. The check-runs endpoint is the one
+that tells the truth, and the misleading one is the obvious one to reach for.
+
+### A PULL REQUEST'S APPARENT STATE AND ITS ACTUAL VERDICT
+
+> **A pull request's apparent state and its actual verdict have been decoupled
+> twice by different mechanisms: #49 merged before its check reported, and five
+> runs were killed while pending and reported nothing. The merge button reports
+> nothing about whether judgment has happened.**
+
+The two are kept apart deliberately: **#49's cause is OBSERVED** — the timestamps
+say it plainly — and **the eviction's cause is INFERRED** from its effect. What
+they share is the shape, and the shape is what a reader needs.
+
+## THE SECRET SCAN WAS MEASURING THE WRONG UNIVERSE (2026-10-01)
+
+> **A gate whose verdict depends on what other branches exist is not reporting on
+> this branch.**
+
+**The observation, not the argument.** #107's secret scan found **one** leak at
+09:46 and **two** at 10:18. Between those runs #107 gained nothing: its two
+commits are documentation and contain no credential pattern of any kind. What
+changed is that **#108 was pushed.** A branch's verdict changed because a
+different branch existed.
+
+The mechanism is that `gitleaks git .` with no `--log-opts` reads every ref the
+runner has fetched, and `fetch-depth: 0` fetches all of them. So the scan was
+never answering "does this branch add a secret"; it was answering "does any
+secret exist anywhere in this repository", on every branch, every time.
+
+> **A blocking scan over all history cannot be made green, so it will be
+> bypassed. Block on what the branch adds; audit history on a schedule.**
+
+**It had already begun to cost something.** The first casualty was nearly the
+Secrets law itself: a merge order was set whose opening step was to merge past
+this red scan in order to land a law. That is what a permanently red gate does —
+not argument, erosion.
+
+**What replaced it.** `ci.yml` blocks on the branch's own commits plus the working
+tree as it stands; `secret-audit.yml` reads all history weekly and on demand, and
+gates no merge. The intent recorded on the old checkout step survives unchanged:
+a secret added and then reverted **within the branch** is still inside the
+branch's range, so "I removed it in a later commit" is still a finding. Only
+inherited history left.
+
+### IS `.gitleaksignore` READ WHEN `--config` IS PASSED? OBSERVED: YES
+
+The question was real enough to plan a fallback for — move the entries into the
+config file's own allowlist section if the separate file turned out to be ignored.
+**The fallback is not needed.**
+
+**OBSERVED 2026-10-01**, by running the audit twice across the same ref set with
+one thing changed:
+
+| Audit run | `.gitleaksignore`        | Findings reported               |
+| --------- | ------------------------ | ------------------------------- |
+| `3126165` | no entries               | **2** — `f2d6003` and `5982d7c` |
+| `fe7d6ba` | one entry, for `f2d6003` | **1** — `5982d7c` only          |
+
+The accounted-for finding stopped being reported and the unaccounted one did not.
+That is the whole claim. **How gitleaks reconciles `--config` with
+`.gitleaksignore` is not claimed here** — the tool's internals are not ours to
+describe, and the outcome is what the decision rested on.
+
+The remaining finding is the test fixture on #108, fixed on that branch and held
+unpushed, so the audit is correctly red for something a merge will clear rather
+than for something nobody has looked at.
+
+### THE REFUSAL NOW NAMES ITS SUBJECT
+
+> **A refusal that does not name its subject cannot be acted on; it only tells
+> you to go looking.**
+
+The old step ran at `--log-level info` and printed `leaks found: 1` — no rule, no
+file, no line, no commit. A real committed password sat behind that line while
+every branch went red for it, and the gate could never say which file to open.
+Determining it took reading five branches' histories by hand.
+
+It now prints rule, file, line, commit and fingerprint, and **never** the matched
+value, the match, or the source line. The JSON report carries the secret, so it
+is parsed in the step and dies with the runner: **it is never uploaded as an
+artifact**, because an artifact is a downloadable copy of the credential for
+anyone who can see the run. `tests/ci-secret-findings.test.ts` holds the renderer
+to that, including a test that the no-leak check is itself capable of failing.
+
+### THE BRANCH THAT CHANGES THE GATE JUDGING IT
+
+> **A branch that changes the gate judging it must argue the change in its body.
+> Green is then evidence about the argument, not about the branch.**
+
+This change makes its own branch green by its own edit. That is also exactly the
+shape of a branch weakening the gate that judges it, and the colour cannot
+distinguish the two. So the argument lives in the pull request body and a reader
+is asked to weigh it rather than the check.
+
+### THE TEMPORARY TRIGGER
+
+> **A temporary thing removed by intention will be forgotten. A temporary thing
+> that cannot act outside its purpose is safe either way.**
+
+`workflow_dispatch` cannot be dispatched for a workflow absent from the default
+branch, and main is not pushed to — so the audit's findings could not be read
+before it merged, and the first `.gitleaksignore` entries would have been written
+about findings nobody had seen. The audit therefore carries a `pull_request`
+trigger **pinned to this branch's head ref**, so it cannot act on any other pull
+request. **REMOVED 2026-10-02, before the pull request went ready, as agreed on 1 October.**
+
+> **The temporary trigger was removed before the pull request went ready, as agreed on
+> 1 October. The head-ref pin made it harmless either way, which is why it would have
+> survived indefinitely had the removal been deferred to a follow-up.**
+
+Both halves of the law held, and the second is the uncomfortable one: **a safe temporary
+thing generates no pressure to remove it.** The pin did its job so well that nothing
+would ever have forced the cleanup, and the removal happened only because a date was
+attached to it rather than a condition.
+
+**The pin went with the trigger.** Its condition could never fire once the trigger was
+gone, and a conditional that cannot fire is the dead-branch fault recorded in this file.
+Kept "in case someone re-adds the trigger", it would have named a branch that no longer
+exists. With the workflow on main, `workflow_dispatch` works and is the way to run the
+audit on demand — which is what the trigger was standing in for all along.
+
+### THE GATE CAUGHT ITS OWN AUTHOR AGAIN, BEFORE THE PUSH THIS TIME
+
+> **The instrument that checks a class of fault is written in the same idiom as
+> the fault. Scan your own new gate against the rule it enforces before you push
+> it.**
+
+`tests/ci-secret-findings.test.ts` needs a fixture finding to prove the renderer
+never prints the matched value. The first version wrote
+`Secret: 'ZZTEST-NOT-A-REAL-VALUE'` with a `Match` of
+`const PASSWORD = 'ZZTEST-NOT-A-REAL-VALUE';` — faithful to the real finding it
+describes, and **exactly the shape `generic-api-key` hunts**. The test of the
+secret gate would have become a finding in the secret gate.
+
+Caught by running the custom rules against the staged diff before committing,
+which is now the habit this record asks for. The fixture carries readable
+sentences instead: no keyword-plus-entropy pair, nothing for a rule to match.
+This is the same family as the guard that caught its author and then caught
+itself (2026-09-11), and as the audit-constraint gate that exhibited the fault it
+was built to catch (2026-09-14) — a third instance, found before it shipped
+rather than after.
+
+### AND THE ONE THAT IS NOT ABOUT SECRETS AT ALL
+
+> **Protection inherited from an unrelated entry is protection nobody decided on.
+> State it where it applies.**
+
+`.gitignore` ignores `.local/`, filed under "os" beside `.DS_Store`. A generated
+credential written there is protected — by an entry written for another reason,
+which nobody chose for this purpose and which a later tidy-up could remove
+without knowing what it was holding.
+
+## THE SUITE DRIFTED 38% AND NOTHING WAS COMPARING IT TO ANYTHING (2026-10-01)
+
+> **A duration gate fires before the timeout, so drift is a finding rather than an
+> outage.**
+
+**OBSERVED.** Job time, queue excluded, read from the Actions API:
+
+| Date       | Branch | Duration              | Run           |
+| ---------- | ------ | --------------------- | ------------- |
+| 2026-09-21 | #101   | 53.6 min              | `35551340622` |
+| 2026-09-21 | main   | 61.6 min              | `35551165343` |
+| 2026-10-01 | #103   | 85.2 min              | `36837814704` |
+| 2026-10-01 | #108   | 84.6 min              | `36847625786` |
+| 2026-10-01 | #109   | **84.9 min, success** | `36865645947` |
+
+**A 37.8% increase in ten days on near-identical test content** — #103, #108 and
+#109 are main plus a handful of commits, and main has not moved since the
+61.6-minute run.
+
+**The job was investigated because it looked hung at two hours. It was not.** It
+started eight seconds after the run was created, ran 84m53s, and completed
+successfully. The 90-minute `timeout-minutes` was configured and behaved exactly as
+documented. **Nothing was broken; something had drifted, and the margin to the
+cliff was 5.1 minutes — six percent.**
+
+**That is the empty-set law in its operational form.** Every run printed its own
+duration. No gate held that duration against an expectation, so a 38% drift was
+invisible for ten days, and the next drift of the same size would have presented as
+every run failing on a timeout with no prior warning.
+
+**What was built.** The timeout is raised to 120 minutes with its derivation stated,
+and a duration gate at the end of the suite compares elapsed time against a
+committed band of 45–100 minutes and **fails** outside it. The band's upper bound
+sits below the timeout deliberately, so drift hits the gate — which says what
+happened — before it hits the cliff, which only kills the job. That ordering is
+asserted in `tests/ci-suite-duration.test.ts`, not left to a comment. **The band is
+a claim about the suite as of 2026-10-01 and will go stale; it is to be revised
+deliberately and never widened to silence a failure**, which would turn the one
+instrument watching for drift into a record of the drift it stopped catching.
+
+### FOUR NUMBERS CLAIMED TO BE THIS SUITE'S DURATION AND NONE AGREED
+
+`ci.yml` said _"44m46s on #54's green run"_ and _"the database suite is 10-20
+minutes from a runner"_ — the second **wrong by a factor of four and sitting
+directly above the timeout that depended on it**. A session added _"52-65 minutes"_
+as though citing something; it is written nowhere and matched the September runs by
+coincidence. The 90-minute timeout was the only one with teeth and had no stated
+derivation at all.
+
+Fixed the way the production-project fact and the staging project reference were
+fixed: **one place owns it.** `scripts/ci-suite-duration.mjs` carries the observed
+history with the run ids it was read from, the band, the timeout and the derivation
+of each; the timeout comment and the gate reference it; and no comment states a
+figure of its own. Third time this repository has resolved disagreeing comments by
+giving the fact one home.
+
+### WHY IT GREW IS UNESTABLISHED — AND THE OBVIOUS CAUSE IS REFUTED
+
+The reflex explanation is staging accumulating rows the suite never sweeps.
+**Measured, and it does not hold:**
+
+- `audit_event` on staging: **65,609 rows, 53 MB**, spanning 2026-09-03 to
+  2026-10-01 across 21 distinct days.
+- At the 61.6-minute baseline run on 21 September it held about **62,705**.
+- **Growth since the baseline: 4.6%. Slowdown over the same period: 37.8%.**
+
+Sixty-five thousand rows and 53 MB do not cost twenty-three minutes. Candidates not
+tested: runner variance, the staging instance's own performance, latency to the
+pooler. **The cause is UNESTABLISHED and is not guessed at in the record or in the
+code.** No reset-and-compare was run, because the counts already refute the
+hypothesis it would have tested and the only mechanism for clearing the table is a
+full schema drop.
+
+### AN APPEND-ONLY TABLE THE SUITE WRITES TO, THAT NOTHING CAN CLEAR
+
+**Reported, and nothing changed — the remedy is the owner's design question.**
+
+- **The suite never sweeps `audit_event`.** `tests/helpers/principals.ts` removes
+  users, officers, farmers and export rows; audit rows are not touched by name
+  anywhere in the suite. Every run's rows are permanent. Staging currently holds 4
+  farmers, 7 users and 2 officers — and 65,609 audit rows.
+- **It cannot be cleared by any ordinary path.** The `audit_event_append_only`
+  trigger raises on UPDATE and DELETE **for every role including the owner**, and
+  the migration that created it says so explicitly. UPDATE, DELETE and TRUNCATE are
+  revoked from `anon` and `authenticated`.
+- **What can clear it, by whom.** Only deliberate DDL by the database owner: `DROP
+TRIGGER`, `ALTER TABLE ... DISABLE TRIGGER`, or `TRUNCATE` — which the creating
+  migration names as acts "visible as migration drift, not something an ordinary
+  code path does by accident". Or a full schema drop.
+- **By what script.** `scripts/db-reset.mjs` (`pnpm db:reset`) runs `prisma migrate
+reset`, which drops and recreates the schema. **It does not name `audit_event` at
+  all** — it clears the table only as collateral of destroying everything, which
+  would also take the officer test fixture and all seeded data with it. **There is
+  no way to reset the audit table alone.**
+- **Does anything currently do it?** No. Not CI, not the suite, not any scheduled
+  job. The table has never been cleared.
+
+So the shape of it: **an append-only table that the test suite writes to on every
+run, that nothing sweeps, that cannot be selectively cleared by design, and whose
+only reset is a full wipe.** Today it is 53 MB and harmless — and it is not the
+cause of the slowdown. It grows without bound regardless, and the design question
+is the owner's: whether staging's audit history is meant to be permanent, whether
+the suite should write to it at all, or whether a staging-only exception to the
+append-only rule is warranted. **Nothing was changed.**
+
+## A CANCELLED RUN IS NOT A FAILED RUN (2026-10-01)
+
+> **A cancelled run is not a failed run. It is no run, and no run looks like
+> nothing is wrong — red refuses visibly, a killed queue entry leaves a merge
+> button with nothing behind it.**
+
+**OBSERVED.** Five branches — #102, #104, #103, #106 and #105 — had **no verdict at
+all**. Each shows `cancelled` and **zero jobs**, verified for all five rather than
+generalised from one:
+
+| Branch                                | Lifetime                 | Jobs |
+| ------------------------------------- | ------------------------ | ---- |
+| `fix/migration-checksum-gate`         | 170s                     | 0    |
+| `fix/hand-made-staging-rows`          | 30s                      | 0    |
+| `docs/records-truncation-lost`        | 28s                      | 0    |
+| `docs/main-is-never-force-pushed`     | **1360s — 22.7 minutes** | 0    |
+| `docs/one-place-owns-production-fact` | 126s                     | 0    |
+
+**Five runs, zero jobs each, lifetimes from 28 seconds to 22.7 minutes, each ending
+when a newer push arrived.** This was first written as "under three minutes each",
+from one run checked and the set described — and that figure was not merely wrong,
+it destroyed the evidence. **The spread is what shows each run ending when a newer
+push arrived; a uniform figure suggests a fixed timeout and supports nothing.**
+
+It was also read as "those branches are red", which is a different and much more
+comfortable claim than having no verdict.
+
+**The cause — INFERRED, and it must not be relied on as established.**
+`concurrency: group: staging-tests` with `cancel-in-progress: false` protects an
+**in-progress** run. The reading is that it does not protect a **pending** one:
+that GitHub allows one queued run per group and a newer run evicts the one waiting,
+so with eight open pull requests on one group only the most recently pushed branch
+kept its place. **That is reasoned from the effect, not read from a documented
+rule.** An observed effect invites an inferred cause, and the inference inherits
+none of the observation's standing.
+
+### THE SPLIT WORKING, OBSERVED WITHIN HOURS — AND BY MY OWN MISTAKE
+
+**OBSERVED 2026-10-01, on this very branch.** Two commits were pushed to #109 in
+quick succession. The second push cancelled the first's `test` job while it was
+queued behind another run's in-progress `test` — and **`scope` and `verify` both
+completed successfully anyway**, because they are ungrouped:
+
+| Job                                             | Group           | Outcome                     |
+| ----------------------------------------------- | --------------- | --------------------------- |
+| `scope`                                         | none            | success                     |
+| `verify` (typecheck, lint, format, secret scan) | none            | **success**                 |
+| `test` (the staging suite)                      | `staging-tests` | **cancelled while pending** |
+
+**Under the single-job design this would have been the five-branch case again:** one
+`verify` job carrying everything, cancelled in the queue, zero jobs, no verdict on
+anything — including the secret scan. Instead the secret scan, the typecheck, the
+lint and the format check all reported, and only the suite was lost. That is
+precisely what moving the group onto the one job that touches staging was for, and
+it was demonstrated by accident within hours of being written.
+
+It also sharpens the evidence for the inferred cause: the eviction is now observed
+at **job** granularity, not only at run granularity, and it took a newer push to
+cause it. The cause is still INFERRED — nothing documented has been read — but the
+effect has been seen a sixth time, under a design that contains it.
+
+**FOUND BY MISTAKE — a third label beside damage and review.** Damage means the
+fault itself hurt; review means it was caught before it shipped; **mistake means an
+unrelated error exposed it.** That is weaker evidence than review, because nobody
+was looking, and stronger than damage, because it cost nothing.
+
+> **On 1 October a second push to #109 within minutes evicted the first run's queued
+> test job, while scope and verify — ungrouped — completed and reported. Under the
+> single-job design this would have lost the secret-scan verdict as well, as it did
+> for five branches earlier the same day. A structural fix proves itself not when
+> nothing goes wrong, but when the same wrong thing costs less.**
+
+**And the mistake was mine.** The push discipline agreed for this pass was one
+branch in the queue, one run, nothing evicted. I pushed twice to #109 within minutes
+and evicted my own queued job. The discipline was right and I did not follow it.
+
+**The push discipline derived from it holds either way**, which is why the
+inference being unconfirmed does not block anything: avoiding runs that will be
+discarded is right whatever discarded them. One branch in the queue, one run,
+nothing evicted — the reason to do that survives any correction to the mechanism.
+
+**A comment in `ci.yml` said otherwise**, and it has been corrected:
+
+> **A comment is a claim about behaviour and ages like any other claim. This one
+> was verified for in-progress runs and generalised to pending ones.**
+
+It read: _"a superseded run on a branch is no longer cancelled by a newer push —
+it completes, and the newer run waits its turn."_ True of in-progress runs, false
+of pending ones. This file's own record — "pushing while a run is queued cancels
+it" — was the accurate one, and the two sat in the repository disagreeing.
+
+**The fix, and why it is safe.** The group moved off the workflow and onto the one
+job that touches staging. The documents path runs `pnpm test:pure`, which opens no
+connection, so it now queues behind nothing. **The advisory lock in
+`vitest.global-setup.ts`, not the concurrency group, is the mutual exclusion** —
+the lock refuses a second run outright and would do so with no group at all. The
+group only stops runs lining up to collide with it, and a run that never connects
+needs neither.
+
+The group name is computed by a `scope` job before anything starts; the suite
+choice stays where it always was, inside the step, which is still unconditional.
+Both read `scripts/ci-changed-scope.mjs` — one decider for one fact, because three
+guards each holding their own copy of one project reference is how this repository
+learned what two deciders do. And the step asserts the two agreed, so a
+contradiction is named rather than left for the lock to discover. That assertion
+compares **decisions, not sockets**: a step cannot observe whether a connection
+was opened without instrumenting the global setup, so a pass means the group and
+the suite agree and nothing more.
+
 ## A CATALOGUE QUERY PROVES INSTALLATION AND NOTHING ELSE (2026-09-20)
 
 When `spatial_ref_sys` appeared to be missing, the question was whether PostGIS

@@ -40,8 +40,13 @@ export default defineConfig({
   },
   test: {
     include: [
+      'tests/ci-changed-scope.test.ts',
+      'tests/ci-secret-findings.test.ts',
+      'tests/ci-secret-scan-range.test.ts',
+      'tests/ci-suite-duration.test.ts',
       'tests/conventions-rules.test.ts',
       'tests/database-suite-complete.test.ts',
+      'tests/gitleaksignore-reasons.test.ts',
       'tests/pure-suite-complete.test.ts',
       'apps/web/**/*.test.ts',
       'packages/shared/tests/**/*.test.ts',
