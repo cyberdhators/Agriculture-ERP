@@ -291,6 +291,46 @@ crashed run's residue is swept rather than tripped over, and a row made by hand
 outside that convention breaks the sweep for everyone. If the client sends a
 real list "to try", it goes to production or nowhere.
 
+**Gates.** The principle, moved here from `docs/PROJECT-STATE.md` on
+2026-10-01 because its consequences were already in this file and the rule was
+not:
+
+> **A gate that compares two sources which can drift apart cannot be quietly
+> wrong about both at once. A gate that asserts a single fact can be quietly
+> wrong the moment the fact stops being true.**
+
+Ask of any gate being written:
+
+1. **Does it compare two things that can move independently, or does it assert
+   one thing?**
+2. **If it asserts one thing: what makes it fail when that thing stops being
+   true?** If the answer is "someone would notice", it is not a gate.
+
+A gate that compares needs no vigilance: the two sources drift and it goes red
+by itself. A single-fact gate needs a person to remember, and the record of this
+project is that nobody does. The instances that produced the rule stay in
+`docs/PROJECT-STATE.md`, which is where records of state belong.
+
+When a guard already exists for a question, answer the question with the guard,
+not with a fresh query. A hand-written query competing with an existing gate
+will eventually disagree with it, and only one of the two has been reviewed.
+
+These are the ways a gate has been found not to compare, each after it had
+already let something through:
+
+- `migrate status` reports what is unapplied, not what has changed. The absence
+  of a complaint is not a comparison. *(Thirteenth instance.)*
+- A gate that resolves its own inputs relative to the caller can be made to
+  compare nothing. Run it from a directory it did not expect before you believe
+  its green. *(Fourteenth instance, and the first found inside the gate built to
+  catch the class.)*
+- `git cherry` compares patch-ids, so squash-merged work reads as local-only. A
+  tool that answers a nearby question still answers a different one.
+- A gate whose timeout failure looks like its assertion failure teaches people to
+  disbelieve its real findings. Read once, assert in memory.
+- A gate that can never be green will be ignored. Print what cannot be fixed;
+  fail only on what can.
+
 ---
 
 ## 5. STOP AND ASK
