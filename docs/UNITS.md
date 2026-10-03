@@ -92,9 +92,12 @@ shared route wrapper, and it is where six parked error codes, two parked
 sections of `docs/api/CONVENTIONS.md` and four opening tasks all come due at once. See
 `docs/PROJECT-STATE.md`.
 
-**B11** gates production. The production Supabase project exists but holds no
-data and receives no migrations until B11 is done and the restore drill has
-been run successfully. No real farmer data enters production before that.
+**B11** gates production. No real farmer data enters production before B11 is
+done and the restore drill has been run successfully.
+
+Whether a production Supabase project exists is owned by `docs/PROJECT-STATE.md`
+and is not restated here. What this file used to claim, and why it was wrong, is
+recorded there.
 
 **B11's code merged as #46; THE DRILL HAS STILL NOT RUN** (2026-09-20). It
 needs a scratch project under CORWADO's name (C-11.7), which is outstanding
