@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 
-import { OfficerDesk } from '@/components/officer/OfficerDesk';
+import { OfficerDashboard } from '@/components/officer/OfficerDashboard';
 
 export const metadata: Metadata = { title: 'Field desk' };
 
 export default function DeskPage() {
-  return <OfficerDesk />;
+  return <OfficerDashboard />;
 }

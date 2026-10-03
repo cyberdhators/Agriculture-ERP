@@ -37,7 +37,51 @@ export const LEARNING_LIMITS = {
   storagePathMax: 1024,
   /** 200 MB. Beyond that a file is not a field resource, it is a mistake. */
   byteSizeMax: 200 * 1024 * 1024,
+  /** Our expiry on an upload grant, as C-8.8 sets for attachments. */
+  grantMinutes: 15,
+  /** A read link lives this long. Long enough to open, short enough to matter. */
+  readLinkSeconds: 300,
 } as const;
+
+/** The bucket. Private, no public policy; one server module issues grants. */
+export const LEARNING_RESOURCE_BUCKET = 'learning-resources';
+
+/**
+ * What each format may actually be. `format` is the word an officer reads;
+ * the content type is what the provider enforces at upload and what decides
+ * the stored object's extension.
+ */
+export const RESOURCE_CONTENT_TYPES = {
+  pdf: ['application/pdf'],
+  image: ['image/jpeg', 'image/png', 'image/webp'],
+  audio: ['audio/mp4', 'audio/aac', 'audio/mpeg', 'audio/ogg', 'audio/webm'],
+  video: ['video/mp4', 'video/webm'],
+} as const satisfies Record<ResourceFormat, readonly string[]>;
+
+const RESOURCE_EXTENSIONS: Record<string, string> = {
+  'application/pdf': 'pdf',
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+  'audio/mp4': 'm4a',
+  'audio/aac': 'aac',
+  'audio/mpeg': 'mp3',
+  'audio/ogg': 'ogg',
+  'audio/webm': 'weba',
+  'video/mp4': 'mp4',
+  'video/webm': 'webm',
+};
+
+/**
+ * THE SERVER'S PATH FOR A RESOURCE, FROM ITS ID -- NEVER FROM THE CLIENT.
+ *
+ * A caller that could name the path could name any path, and would be choosing
+ * which object in the bucket a catalogue row points at. The id is the only
+ * thing the client supplies to anything here, and the id is what the path is
+ * made of, so one row can only ever address one object.
+ */
+export const learningStoragePath = (resourceId: string, contentType: string): string =>
+  `resources/${resourceId}.${RESOURCE_EXTENSIONS[contentType] ?? 'bin'}`;
 
 export const LEARNING_MESSAGES = {
   titleRequired: 'Enter a title.',
@@ -50,20 +94,16 @@ export const LEARNING_MESSAGES = {
   storagePathRequired: 'The uploaded file has no storage path.',
   storagePathShape:
     'A storage path is a relative path inside the bucket, with no leading slash or "..".',
-  storagePathTooLong: `A storage path has at most ${LEARNING_LIMITS.storagePathMax} characters.`,
+  contentTypeUnknown: 'Say what kind of file this is.',
+  contentTypeMismatch: 'The file type does not match the format chosen for this resource.',
+  fileMissing: 'The file has not reached the store yet, so this cannot be published.',
+  fileMismatch: 'The file in the store is not the one this resource describes.',
   byteSizeNotWhole: 'The file size must be a whole number of bytes.',
   byteSizeTooSmall: 'An empty file cannot be published.',
   byteSizeTooLarge:
     'A file larger than 200 MB cannot be offered to a phone on a metered connection.',
   descriptionTooLong: `A description has at most ${LEARNING_LIMITS.descriptionMax} characters.`,
 } as const;
-
-/**
- * A path inside the Storage bucket: segments of safe characters joined by
- * single slashes. No leading slash, no empty segment, no "." or "..", so a
- * path can never point outside the bucket or at a hidden object.
- */
-const STORAGE_PATH = /^(?!.*(^|\/)\.\.?(\/|$))[A-Za-z0-9._-]+(\/[A-Za-z0-9._-]+)*$/;
 
 export const learningResourceInputSchema = z.strictObject({
   title: z
@@ -78,12 +118,6 @@ export const learningResourceInputSchema = z.strictObject({
     .optional(),
   language: z.enum(LANGUAGES, { error: () => LEARNING_MESSAGES.languageUnknown }),
   format: z.enum(RESOURCE_FORMATS, { error: () => LEARNING_MESSAGES.formatUnknown }),
-  storage_path: z
-    .string({ error: () => LEARNING_MESSAGES.storagePathRequired })
-    .trim()
-    .min(1, LEARNING_MESSAGES.storagePathRequired)
-    .max(LEARNING_LIMITS.storagePathMax, LEARNING_MESSAGES.storagePathTooLong)
-    .regex(STORAGE_PATH, LEARNING_MESSAGES.storagePathShape),
   byte_size: z
     .number({ error: () => LEARNING_MESSAGES.byteSizeNotWhole })
     .int(LEARNING_MESSAGES.byteSizeNotWhole)
@@ -103,4 +137,35 @@ export type LearningTopic = (typeof LEARNING_TOPICS)[number];
 export type Crop = (typeof CROPS)[number];
 export type Language = (typeof LANGUAGES)[number];
 export type ResourceFormat = (typeof RESOURCE_FORMATS)[number];
+
+/**
+ * REGISTERING A RESOURCE: the card, plus what KIND of file is coming.
+ *
+ * The caller says what the file IS, never where it will live. The server
+ * derives the path from the id it minted (`learningStoragePath`), so a
+ * catalogue row addresses exactly one object and a caller cannot point a row
+ * at somebody else's file. The old schema took a `storage_path` string from
+ * the client, which is precisely that hazard.
+ *
+ * The content type must match the declared format, so a row labelled "audio"
+ * cannot be carrying a PDF.
+ */
+export const createLearningResourceSchema = learningResourceInputSchema
+  .extend({
+    content_type: z
+      .string({ error: () => LEARNING_MESSAGES.contentTypeUnknown })
+      .trim()
+      .toLowerCase(),
+  })
+  .superRefine((body, ctx) => {
+    const allowed: readonly string[] = RESOURCE_CONTENT_TYPES[body.format];
+    if (!allowed.includes(body.content_type)) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['content_type'],
+        message: LEARNING_MESSAGES.contentTypeMismatch,
+      });
+    }
+  });
+export type CreateLearningResource = z.infer<typeof createLearningResourceSchema>;
 export type LearningResourceInput = z.infer<typeof learningResourceInputSchema>;

@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { LEARNING_LIMITS, LEARNING_MESSAGES, learningResourceInputSchema } from '../src/index';
+import {
+  createLearningResourceSchema,
+  learningResourceInputSchema,
+  learningStoragePath,
+  LEARNING_LIMITS,
+  LEARNING_MESSAGES,
+} from '../src/index';
 
 function omit<T extends object, K extends keyof T>(obj: T, key: K): Omit<T, K> {
   const copy: Partial<T> = { ...obj };
@@ -18,7 +24,6 @@ const guide = {
   crop: 'sorghum',
   language: 'en',
   format: 'pdf',
-  storage_path: 'learning/2026/sorghum-planting.pdf',
   byte_size: 812_000,
 };
 
@@ -79,23 +84,66 @@ describe('title', () => {
   });
 });
 
-describe('storage path', () => {
-  it('accepts a nested relative path', () => {
-    expect(schema.safeParse({ ...guide, storage_path: 'a/b/c.pdf' }).success).toBe(true);
+/**
+ * THE CLIENT NO LONGER NAMES A PATH, so there is no path to validate.
+ *
+ * `storage_path` used to be a string in the request body, guarded by a pattern
+ * that stopped it escaping the bucket. The guard was needed because the caller
+ * chose the path at all — and choosing the path means choosing which object a
+ * catalogue row points at. The server now derives it from the id it mints, so
+ * the hazard is gone rather than defended against.
+ */
+describe('the storage path is the server’s, not the caller’s', () => {
+  it('is not a field the schema accepts, and a strict object refuses it', () => {
+    expect('storage_path' in guide).toBe(false);
+    expect(schema.safeParse({ ...guide, storage_path: 'a/b/c.pdf' }).success).toBe(false);
   });
 
-  it('refuses a leading slash, a parent segment, a double slash and a space', () => {
-    for (const bad of ['/learning/x.pdf', 'learning/../secret.pdf', 'a//b.pdf', 'a b.pdf', '..']) {
-      expect(firstMessage({ ...guide, storage_path: bad }, 'storage_path'), bad).toBe(
-        LEARNING_MESSAGES.storagePathShape,
-      );
-    }
+  it('is derived from the resource id and the content type', () => {
+    const id = 'b2c3d4e5-6f70-4812-9a3b-4c5d6e7f8091';
+    expect(learningStoragePath(id, 'application/pdf')).toBe(`resources/${id}.pdf`);
+    expect(learningStoragePath(id, 'audio/mpeg')).toBe(`resources/${id}.mp3`);
   });
 
-  it('refuses an empty path with its own sentence', () => {
-    expect(firstMessage({ ...guide, storage_path: '' }, 'storage_path')).toBe(
-      LEARNING_MESSAGES.storagePathRequired,
+  it('cannot be steered outside the bucket, because only an id goes into it', () => {
+    const nasty = '../../etc/passwd';
+    expect(learningStoragePath(nasty, 'application/pdf')).toBe(`resources/${nasty}.pdf`);
+    // The route never calls it with anything but a uuid it minted itself, and
+    // refuses a non-uuid id before reading a row at all.
+    expect(/^resources\//.test(learningStoragePath(nasty, 'application/pdf'))).toBe(true);
+  });
+
+  it('an unknown content type still yields one safe segment', () => {
+    const id = 'b2c3d4e5-6f70-4812-9a3b-4c5d6e7f8091';
+    expect(learningStoragePath(id, 'application/x-made-up')).toBe(`resources/${id}.bin`);
+  });
+});
+
+describe('registering a resource declares what kind of file is coming', () => {
+  it('accepts a content type that matches the format', () => {
+    const ok = createLearningResourceSchema.safeParse({
+      ...guide,
+      content_type: 'application/pdf',
+    });
+    expect(ok.success).toBe(true);
+  });
+
+  it('refuses a content type that contradicts the format', () => {
+    const bad = createLearningResourceSchema.safeParse({
+      ...guide,
+      format: 'audio',
+      content_type: 'application/pdf',
+    });
+    expect(bad.success).toBe(false);
+    expect(bad.success ? '' : bad.error.issues[0]?.message).toBe(
+      LEARNING_MESSAGES.contentTypeMismatch,
     );
+  });
+
+  it('refuses a content type nothing may be', () => {
+    expect(
+      createLearningResourceSchema.safeParse({ ...guide, content_type: 'application/zip' }).success,
+    ).toBe(false);
   });
 });
 

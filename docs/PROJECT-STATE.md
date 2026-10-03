@@ -2352,6 +2352,68 @@ Neither is a plan; they are the two patterns visible in the list. What would
 settle it is counting the seams the same way the instances were counted, and
 seeing whether the ones without gates are the ones that have not failed _yet_.
 
+## THE SEAM CENSUS, AND THE TEST THAT ANSWERS THE CAVEAT (2026-09-20)
+
+The census was run. **Twenty-four Postgres enums, plus seams of other shapes:
+nine gated, two half-gated by deliberate containment.** Every ungated one was
+measured rather than assumed: **eighteen enum/constant pairs compared, zero
+drift; twenty-six variables in `.env.example`, all read by code, none
+undeclared; five CI-invoked scripts, all real.**
+
+**The answer is NOT "they are all equally exposed and twelve fired first."**
+The twelve share a property the clean ones do not:
+
+> **The exposure test is not "has it failed" but: CAN ONE SIDE MOVE ALONE, AND
+> DOES ANYTHING FORCE THE OTHER?**
+
+Every one of the twelve was a seam where **one side moves on a forcing event
+and the other moves only when somebody remembers.** A migration lands and a
+constant must be edited by hand; a table gains a column and a view must be
+rewritten; a test file is added and a config must name it. The moving side has
+an event; the static side has only attention, and attention is what this
+project's record says nobody reliably supplies.
+
+The ungated seams that stayed clean have the opposite property: **both sides
+move in the same edit.** Adding a Postgres enum value means writing a migration,
+and the only reason to write one is a feature whose TypeScript you are editing
+the same hour. `.env.example` is touched in the same commit as the code that
+reads the variable, because the variable is useless until both exist. **They are
+not lucky. They are coupled by the work itself.**
+
+**That is what makes a seam findable before it fails**, which is what the caveat
+above said we did not have. It is an inspectable property of a seam, not a
+memory of an incident: look at the two sides and ask whether a change to one has
+any mechanism that reaches the other.
+
+**AND THE QUALIFICATION THAT CARRIES THE MOST WEIGHT.** Coupling is a property
+of **how the work is currently done, not of the code.** A seam that is safe
+today becomes exposed the moment its two sides acquire different owners or move
+into different files. The marketplace enums are the standing example: while one
+person built both halves they were coupled and clean; the day the TypeScript
+moved to `apps/web/lib/fixtures` and the SQL to `prisma/migrations`, nothing
+connected them any more and nobody decided that. **So this census is not a
+one-off finding. Re-run it when the lanes change, when a surface changes hands,
+and before any unit that splits an existing pair across two files.**
+
+**Two gates were built from it, and one exposure was left standing:**
+
+- `tests/enums-match-constants.test.ts` — every enum against the constant that
+  mirrors it, both directions, with a `NO_COUNTERPART` map that must itself
+  resolve. It also refuses to compare against an empty read, after failing once
+  that way and passing three times after.
+- `apps/web/lib/portal/nav-roles-match-routes.test.ts` — every navigation item
+  against the `roles:` of the route it names, with **the mapping asserted too**:
+  naming a route that does not exist fails as loudly as disagreeing with it.
+  Proved by making both halves fail.
+- **Zod schemas ↔ column constraints: KNOWN, EXPOSED, DELIBERATELY UNGATED.** A
+  migration can tighten a length or a nullability with no forcing event on the
+  Zod side, so it meets the exposure test. It is left because the failure is a
+  **500 where a 400 belonged — loud, caught by the first request, and
+  diagnosable from the error** — while the gate would have to model every column
+  constraint against every schema, which is large and would itself be a
+  hand-maintained mapping. Recorded so the next person inherits the reasoning
+  rather than the omission.
+
 **So the gate principle has a completing half:**
 
 > **A comparing gate must compare FROM OUTSIDE, or it can only ever check what

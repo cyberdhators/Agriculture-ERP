@@ -1,0 +1,270 @@
+/*
+ * The caseload, sized for a thumb and for sunlight.
+ *
+ * A list of people the officer is going to walk to, not a grid of records.
+ * Cards rather than rows; the whole card tappable; nothing that needs a
+ * sideways scroll at 360px. The Register's tokens throughout.
+ */
+.page {
+  display: grid;
+  gap: var(--s-5);
+}
+
+.head {
+  display: grid;
+  gap: 2px;
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 6vw, 2rem);
+  line-height: 1.1;
+  color: var(--ink);
+}
+
+.count {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: var(--text-small);
+}
+
+.attention {
+  color: var(--harvest-deep);
+  font-weight: 700;
+}
+
+/* ---- Status chips ------------------------------------------------------- */
+
+.chips {
+  display: flex;
+  gap: var(--s-2);
+  /* Four chips fit 360px; if a label ever grows, they scroll rather than wrap
+     into a second row that pushes the list down the screen. */
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-block-end: 2px;
+}
+
+.chips::-webkit-scrollbar {
+  display: none;
+}
+
+.chip {
+  flex: 1 0 auto;
+  min-block-size: 44px;
+  padding-inline: var(--s-4);
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--ink-2);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.chip:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Selected is said three ways: fill, ink and weight — never colour alone,
+   and aria-pressed carries it to a screen reader. */
+.chipOn {
+  background: var(--green-deep);
+  border-color: var(--green-deep);
+  color: var(--paper);
+  font-weight: 700;
+}
+
+/* ---- The list ----------------------------------------------------------- */
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--s-3);
+}
+
+.item {
+  display: block;
+}
+
+.card {
+  display: grid;
+  gap: 4px;
+  /* The whole card is the target, not a word inside it. */
+  min-block-size: 88px;
+  padding: var(--s-4) var(--s-5);
+  background: var(--card);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-card);
+  color: inherit;
+  text-decoration: none;
+}
+
+.card:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.cardTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--s-3);
+}
+
+/* The person leads. */
+.name {
+  font-size: 1.0625rem;
+  font-weight: 700;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+/* The number confirms; it never outranks the name. */
+.number {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--muted);
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-1) var(--s-3);
+  font-size: var(--text-small);
+  color: var(--ink-2);
+}
+
+.payam {
+  color: var(--muted);
+}
+
+/* Rejected carries a word and a rule, not just a colour. */
+.needsFix {
+  margin-block-start: 2px;
+  padding-block-start: var(--s-2);
+  border-block-start: 1px solid var(--line);
+  font-size: var(--text-small);
+  font-weight: 600;
+  color: var(--harvest-deep);
+}
+
+/* ---- Paging and states -------------------------------------------------- */
+
+.more {
+  min-block-size: 52px;
+  inline-size: 100%;
+  font-weight: 600;
+}
+
+.endOfList {
+  margin: 0;
+  text-align: center;
+  font-size: var(--text-small);
+  color: var(--muted);
+}
+
+.skeleton {
+  min-block-size: 88px;
+  border-radius: var(--radius-card);
+  border: 1px solid var(--line);
+  background: linear-gradient(90deg, var(--dust) 25%, var(--card) 50%, var(--dust) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+.empty {
+  display: grid;
+  gap: var(--s-3);
+  justify-items: start;
+  padding: var(--s-6) var(--s-5);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+}
+
+.emptyTitle {
+  margin: 0;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.emptyNote {
+  margin: 0;
+  font-size: var(--text-small);
+  color: var(--muted);
+}
+
+.backAll {
+  min-block-size: 48px;
+}
+
+/*
+ * Tablet and desktop: denser, never the administrator's table. Two columns of
+ * the same card, so the officer meets one product at every width.
+ */
+@media (min-width: 720px) {
+  .list {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .chip {
+    flex: 0 0 auto;
+  }
+
+  .more {
+    inline-size: auto;
+    justify-self: start;
+    padding-inline: var(--s-8);
+  }
+}
+
+@media (min-width: 1100px) {
+  .list {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* The registration entry point: a full-width target, thumb-sized, sitting
+   above the filters because registering is an act and filtering is a view. */
+.register {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-block-size: 52px;
+  padding-inline: var(--s-4);
+  border: 1px solid var(--green-deep);
+  border-radius: var(--radius-control);
+  color: var(--green-deep);
+  background: var(--card);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.register:hover {
+  background: color-mix(in srgb, var(--green-deep) 8%, var(--card));
+}
+
+.register:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}

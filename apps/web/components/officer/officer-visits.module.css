@@ -1,0 +1,434 @@
+/*
+ * The officer's visit screens: one column, thumb-sized, the same shape as the
+ * farmer screens beside them.
+ *
+ * Built for 360px first and tested at 390 and 430. Nothing here is a table,
+ * nothing scrolls sideways, and every control clears 44px with the inputs at
+ * 52px and 16px text so iOS does not zoom the page on focus.
+ */
+.page {
+  display: grid;
+  gap: var(--s-5);
+  max-inline-size: 560px;
+}
+
+.back {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 44px;
+  color: var(--ink-2);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.back:hover {
+  text-decoration: underline;
+}
+
+.back:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.head {
+  display: grid;
+  gap: 2px;
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.375rem, 5.5vw, 1.75rem);
+  line-height: 1.15;
+  color: var(--ink);
+}
+
+.sub,
+.count {
+  margin: 0;
+  font-size: var(--text-small);
+  color: var(--muted);
+}
+
+.form {
+  display: grid;
+  gap: var(--s-5);
+}
+
+.form :is(input, select, textarea) {
+  font-size: 1rem;
+}
+
+.form :is(input, select) {
+  min-block-size: 52px;
+}
+
+.advice {
+  min-block-size: 132px;
+}
+
+/* Two short numbers sit side by side even at 360px; they are 4 characters. */
+.pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--s-4);
+}
+
+.block {
+  display: grid;
+  gap: var(--s-3);
+  padding: var(--s-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  background: var(--card);
+}
+
+.blockHead {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: var(--text-label);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.body {
+  margin: 0;
+  color: var(--ink);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.facts {
+  display: grid;
+  gap: var(--s-2);
+  margin: 0;
+}
+
+.facts > div {
+  display: grid;
+  grid-template-columns: 50% 1fr;
+  gap: var(--s-3);
+  align-items: baseline;
+}
+
+.facts dt {
+  font-size: var(--text-small);
+  color: var(--muted);
+}
+
+.facts dd {
+  margin: 0;
+  color: var(--ink);
+}
+
+/* ---- Topics: nine chips that wrap, never a select ---------------------- */
+
+.topics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+}
+
+.topic {
+  min-block-size: 44px;
+  padding-inline: var(--s-4);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-control);
+  background: var(--paper);
+  color: var(--ink-2);
+  font: inherit;
+  font-size: var(--text-small);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.topicOn {
+  background: var(--green-deep);
+  border-color: var(--green-deep);
+  color: var(--band-ink, #fff);
+}
+
+.topic:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ---- The GPS reading --------------------------------------------------- */
+
+.fixOk {
+  margin: 0;
+  font-weight: 600;
+  color: var(--green-deep);
+}
+
+/* ---- Buttons and messages ---------------------------------------------- */
+
+.wide,
+.record,
+.more {
+  inline-size: 100%;
+  min-block-size: 52px;
+}
+
+.record {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-control);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.note {
+  margin: 0;
+  font-size: var(--text-small);
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.fieldError,
+.formError {
+  margin: 0;
+  color: var(--danger);
+  font-size: var(--text-small);
+  font-weight: 600;
+}
+
+.errors {
+  margin: 0;
+  padding-inline-start: var(--s-5);
+  color: var(--danger);
+  font-size: var(--text-small);
+  font-weight: 600;
+}
+
+.skeleton {
+  block-size: 180px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  background: var(--card);
+}
+
+/* ---- The list ---------------------------------------------------------- */
+
+.list {
+  display: grid;
+  gap: var(--s-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.card {
+  display: grid;
+  gap: var(--s-2);
+  padding: var(--s-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  background: var(--card);
+  text-decoration: none;
+  color: inherit;
+}
+
+.card:hover {
+  border-color: var(--line-strong);
+}
+
+.card:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.cardTop {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-3);
+}
+
+.cardName {
+  font-weight: 700;
+  color: var(--ink);
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+
+.cardDate {
+  flex: 0 0 auto;
+  font-size: var(--text-small);
+  color: var(--muted);
+}
+
+.cardTopics {
+  font-size: var(--text-small);
+  color: var(--ink-2);
+}
+
+/* Two lines of the advice: enough to recognise the visit, not to re-read it. */
+.cardAdvice {
+  color: var(--ink-2);
+  font-size: var(--text-small);
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.cardFoot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-3);
+  font-size: var(--text-label);
+  font-weight: 600;
+}
+
+.correctable {
+  color: var(--harvest-ink);
+}
+
+.attachCount {
+  color: var(--muted);
+}
+
+/* ---- Attachments ------------------------------------------------------- */
+
+.attachments {
+  display: grid;
+  gap: var(--s-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.attachment {
+  display: grid;
+  gap: 2px;
+  padding-block-end: var(--s-3);
+  border-block-end: 1px solid var(--line);
+}
+
+.attachment:last-child {
+  border-block-end: 0;
+  padding-block-end: 0;
+}
+
+/* The three states are three different facts and never share a colour. */
+.state {
+  font-size: var(--text-label);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.state_arrived {
+  color: var(--green-deep);
+}
+
+.state_waiting {
+  color: var(--harvest-ink);
+}
+
+.state_failed {
+  color: var(--danger);
+}
+
+.attachKind {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.attachMessage {
+  font-size: var(--text-small);
+  color: var(--ink-2);
+  line-height: 1.45;
+}
+
+/* The real input is driven by the button beside it. */
+.filePicker {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+/* ---- After a visit is saved -------------------------------------------- */
+
+.done {
+  display: grid;
+  gap: var(--s-2);
+  padding: var(--s-5);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  background: var(--card);
+  text-align: center;
+}
+
+.doneLabel {
+  margin: 0;
+  font-size: var(--text-label);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--green-deep);
+}
+
+.doneName {
+  margin: 0;
+  font-size: var(--text-subhead);
+  color: var(--ink);
+}
+
+.doneActions {
+  display: grid;
+  gap: var(--s-3);
+}
+
+/* A link inside a sentence, not a button: it reads as part of the line. */
+.chainLink {
+  color: var(--green-deep);
+  font-weight: 600;
+}
+
+/* A per-attachment action: narrow, but still a full 44px target. */
+.openFile {
+  justify-self: start;
+  min-block-size: 44px;
+  margin-block-start: var(--s-2);
+}
+
+/* The canonical accuracy grades, in the same three colours the farm screens
+   use, so "poor" means the same thing wherever an officer reads it. */
+.grade_good {
+  color: var(--green-deep);
+  text-transform: uppercase;
+  font-size: var(--text-label);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.grade_poor {
+  color: var(--harvest-ink);
+  text-transform: uppercase;
+  font-size: var(--text-label);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.grade_unusable {
+  color: var(--danger);
+  text-transform: uppercase;
+  font-size: var(--text-label);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+/* The failure's own name, so a problem is read before its explanation. */
+.problemTitle {
+  display: block;
+  font-weight: 700;
+}

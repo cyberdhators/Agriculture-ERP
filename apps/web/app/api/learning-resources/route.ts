@@ -1,23 +1,30 @@
+import { randomUUID } from 'node:crypto';
+
 import {
   DEFAULT_LIMIT,
+  LEARNING_LIMITS,
+  LEARNING_RESOURCE_BUCKET,
   MAX_LIMIT,
+  createLearningResourceSchema,
   decodeCursor,
   encodeCursor,
-  learningResourceInputSchema,
+  learningStoragePath,
   toIso,
 } from '@agri-erp/shared';
 
 import { audited, writeAudit } from '../../../lib/api/audit';
-import { conflict, invalidCursor } from '../../../lib/api/errors';
+import { invalidCursor } from '../../../lib/api/errors';
 import { created, defineRoutes, paged } from '../../../lib/api/route';
 import { requireWriter } from '../../../lib/api/scope';
 import { prisma } from '../../../lib/db';
+import { issueUploadGrant } from '../../../lib/supabase/admin';
 
 /**
  * The learning resource centre (C-13.6 to C-13.9), deliverable (m). Unit P1.
  *
- * A catalogue of files that live in Supabase Storage: the file is uploaded by
- * the client first, and this registers the card -- title, topic, the
+ * A catalogue of files that live in a PRIVATE Supabase Storage bucket. The
+ * card is registered first and the server answers with a grant to upload the
+ * file to the one path it derived; the card carries -- title, topic, the
  * storage_path and byte_size the download needs. There is no upload endpoint
  * here, on purpose.
  *
@@ -137,38 +144,47 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
     },
   },
 
+  /**
+   * POST — registers a resource and hands back a grant to upload its file.
+   *
+   * THE PATH IS THE SERVER'S. The id is minted here and the object path is
+   * derived from it (`learningStoragePath`), so one catalogue row addresses
+   * exactly one object. The caller says what KIND of file is coming; it never
+   * says where the file goes, and there is no longer a `storage_path` field
+   * for it to say it in.
+   *
+   * THE ROW IS BORN UNPUBLISHED, whatever was asked for. The bytes have not
+   * arrived yet, and the column's own comment is the rule: "New rows start
+   * unpublished so a half-uploaded file is never offered to an officer."
+   * Publishing is a second, deliberate PATCH, and that is where the file is
+   * checked to exist.
+   */
   POST: {
     roles: ['admin'],
-    bodySchema: learningResourceInputSchema,
+    bodySchema: createLearningResourceSchema,
     handler: async ({ auth, body }) => {
       requireWriter(auth);
 
-      // One live resource per stored file (migration 6's partial unique index).
-      // Checking first turns the index violation into a 409 the caller can act
-      // on rather than a 500.
-      const [clash] = await prisma.$queryRawUnsafe<{ id: string }[]>(
-        'SELECT id FROM public.learning_resource_active WHERE storage_path = $1',
-        body.storage_path,
-      );
-      if (clash) throw conflict('resource_file_already_registered');
+      const id = randomUUID();
+      const storagePath = learningStoragePath(id, body.content_type);
 
       const row = await audited(prisma, async (tx) => {
         const [inserted] = await tx.$queryRawUnsafe<ResourceRow[]>(
           `INSERT INTO public.learning_resource
-             (title, topic, crop, language, format, storage_path, byte_size, description,
+             (id, title, topic, crop, language, format, storage_path, byte_size, description,
               published, uploaded_by)
-           VALUES ($1, $2::public.learning_topic, $3::public.crop, $4::public.language,
-                   $5::public.resource_format, $6, $7, $8, $9, $10::uuid)
+           VALUES ($1::uuid, $2, $3::public.learning_topic, $4::public.crop, $5::public.language,
+                   $6::public.resource_format, $7, $8, $9, false, $10::uuid)
            RETURNING ${SELECT_COLUMNS}`,
+          id,
           body.title,
           body.topic,
           body.crop ?? null,
           body.language,
           body.format,
-          body.storage_path,
+          storagePath,
           body.byte_size,
           body.description ?? null,
-          body.published,
           auth.principal.id,
         );
         const createdRow = inserted as ResourceRow;
@@ -189,7 +205,17 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
         return createdRow;
       });
 
-      return created(present(row));
+      // The grant is issued after the row is committed: a grant with no row
+      // would be a path nobody owns. It is for this one object path only.
+      const grant = await issueUploadGrant(LEARNING_RESOURCE_BUCKET, row.storage_path);
+      return created({
+        ...present(row),
+        upload: {
+          url: grant.url,
+          token: grant.token,
+          expires_in_minutes: LEARNING_LIMITS.grantMinutes,
+        },
+      });
     },
   },
 });

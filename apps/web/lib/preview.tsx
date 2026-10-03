@@ -1,5 +1,6 @@
 'use client';
 
+import type { LearningResourceInput } from '@agri-erp/shared';
 import {
   createContext,
   useCallback,
@@ -26,8 +27,10 @@ import {
 import {
   LIVE_LIBRARY,
   listLearningResources,
+  registerLearningResource,
   removeLearningResource,
   saveLearningResource,
+  uploadResourceBytes,
 } from './library/api';
 import { supabaseBrowser } from './supabase/browser';
 
@@ -72,12 +75,26 @@ export function canSeeHidden(role: Role): boolean {
   return role === 'admin' || role === 'supervisor';
 }
 
-/** What GET /api/me returns about the caller. */
+/**
+ * What GET /api/me returns about the caller.
+ *
+ * `scope` is the server's own answer to "what may this person see", and it was
+ * being discarded here until 2026-09-20. It is not a new field: requireRole has
+ * always built it and /api/me has always sent it. An officer's carries the
+ * payam they are posted to, which is the only truthful source for it -- a payam
+ * inferred from a farmer's record would be a guess about the officer.
+ */
+export type MeScope =
+  | { kind: 'all' }
+  | { kind: 'state'; stateId: string }
+  | { kind: 'caseload'; officerId: string; payamId: string };
+
 export interface Me {
   id: string;
   kind: 'user' | 'officer';
   name: string;
   role: Role;
+  scope?: MeScope;
 }
 
 interface PreviewState {
@@ -91,6 +108,16 @@ interface PreviewState {
   saveEntry: (row: DirectoryEntryRow) => Promise<void>;
   removeEntry: (id: string, reason: string) => Promise<void>;
   saveResource: (row: LearningResourceRow) => Promise<void>;
+  /**
+   * Registers a NEW resource and sends its file. Separate from `saveResource`
+   * because creating carries bytes and editing never does: the object path is
+   * derived from the id the server mints, so the file belongs to a row that
+   * does not exist yet when the form is submitted.
+   */
+  registerResource: (
+    input: Omit<LearningResourceInput, 'published'> & { content_type: string },
+    file: File,
+  ) => Promise<LearningResourceRow>;
   removeResource: (id: string, reason: string) => Promise<void>;
   /** The live reads: loading until both lists have answered; error if one could not. */
   catalog: { loading: boolean; error?: string };
@@ -243,6 +270,38 @@ export function PreviewProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const registerResource = useCallback(
+    async (
+      input: Omit<LearningResourceInput, 'published'> & { content_type: string },
+      file: File,
+    ): Promise<LearningResourceRow> => {
+      if (!LIVE_LIBRARY) {
+        // Preview: the card is kept so the screen can be walked, and no bytes
+        // travel because there is nowhere to send them.
+        const row = {
+          id: newId(),
+          ...input,
+          crop: input.crop ?? null,
+          description: input.description ?? null,
+          published: false,
+          uploaded_by: null,
+          uploaded_at: new Date().toISOString(),
+          deleted_at: null,
+          storage_path: '',
+        } as unknown as LearningResourceRow;
+        setResources((list) => [row, ...list]);
+        return row;
+      }
+      const { row, upload } = await registerLearningResource(input);
+      // The row exists whether or not the bytes land; a failed upload leaves an
+      // unpublished card, which is exactly what it is.
+      await uploadResourceBytes(upload, file);
+      setResources((list) => [row, ...list]);
+      return row;
+    },
+    [],
+  );
+
   const removeResource = useCallback(async (id: string) => {
     // Soft delete: the row keeps existing with deleted_at set (CLAUDE.md,
     // "Soft delete only"). The list hides it; nothing is destroyed.
@@ -262,6 +321,7 @@ export function PreviewProvider({ children }: { children: ReactNode }) {
       saveEntry,
       removeEntry,
       saveResource,
+      registerResource,
       removeResource,
       catalog,
       hydrated,
@@ -276,6 +336,7 @@ export function PreviewProvider({ children }: { children: ReactNode }) {
       saveEntry,
       removeEntry,
       saveResource,
+      registerResource,
       removeResource,
       catalog,
       hydrated,

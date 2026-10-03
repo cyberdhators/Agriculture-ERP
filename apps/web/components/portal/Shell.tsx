@@ -7,6 +7,7 @@ import { usePreview } from '@/lib/preview';
 
 import { Wordmark } from '../brand/Wordmark';
 import { ToastProvider } from '../ui/feedback';
+import { OfficerNav } from '../officer/OfficerNav';
 import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
 import styles from './shell.module.css';
@@ -105,7 +106,7 @@ export function Shell({ children }: { children: ReactNode }) {
           <span className={styles.scrim} />
         )}
 
-        <div className={styles.main}>
+        <div className={`${styles.main} ${role === 'officer' ? styles.withBottomBar : ''}`}>
           <TopBar pathname={pathname} role={role} onOpenMenu={() => setDrawerOpen(true)} />
 
           <main id="main" className={styles.content} tabIndex={-1}>
@@ -117,6 +118,15 @@ export function Shell({ children }: { children: ReactNode }) {
             <span>© {new Date().getFullYear()} AgriOne South Sudan · CORWADO</span>
           </footer>
         </div>
+
+        {/*
+          THE OFFICER GETS A BOTTOM BAR, AND ONLY THE OFFICER.
+          They work on a phone, in a field, one-handed; a sidebar made narrow is
+          still a sidebar. It hides itself from the tablet breakpoint up, where
+          the sidebar beside it is the better pattern and is already rendered.
+          Every other role is unchanged.
+        */}
+        {role === 'officer' ? <OfficerNav /> : null}
       </div>
     </ToastProvider>
   );
