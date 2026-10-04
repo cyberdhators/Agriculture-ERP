@@ -20,14 +20,14 @@ describe('the suite duration band', () => {
     expect(EXPECTED_BAND_MINUTES.max).toBeLessThan(TIMEOUT_MINUTES);
   });
 
-  it('is PROVISIONAL and says so — eight runs on three days is not a distribution', () => {
+  it('is PROVISIONAL and says so — ten runs on four days is not a distribution', () => {
     expect(BAND_IS_PROVISIONAL).toBe(true);
   });
 
-  it('admits every duration actually observed — all eight, across the full range', () => {
+  it('admits every duration actually observed — all ten, across the full range', () => {
     // Job time, queue excluded, read from the Actions API. 52.4 and 85.2 are the
     // two ends; the 52.4 moved the FLOOR, which is why the band was widened.
-    for (const minutes of [52.4, 53.4, 53.5, 61.6, 73.9, 84.6, 84.9, 85.2]) {
+    for (const minutes of [52.3, 52.4, 53.1, 53.4, 53.5, 61.6, 73.9, 84.6, 84.9, 85.2]) {
       expect(
         durationComplaint(minutes * 60),
         `${minutes} min was observed and must pass`,
@@ -47,7 +47,7 @@ describe('the suite duration band', () => {
     // At 45 the 52.4-minute run passed by 7.4 minutes. A slightly faster run
     // would have been a false finding, and a gate that cries wolf once is
     // disbelieved afterwards.
-    expect(52.4 - EXPECTED_BAND_MINUTES.min).toBeGreaterThan(10);
+    expect(52.3 - EXPECTED_BAND_MINUTES.min).toBeGreaterThan(10);
   });
 
   it('catches a suite that suddenly runs far faster — absence is not success', () => {
@@ -64,9 +64,9 @@ describe('the suite duration band', () => {
   });
 
   it('leaves the observed spread alone — it is about 63% wide', () => {
-    const spread = (85.2 - 52.4) / 52.4;
+    const spread = (85.2 - 52.3) / 52.3;
     expect(spread).toBeGreaterThan(0.6);
-    expect(durationComplaint(52.4 * 60)).toBeNull();
+    expect(durationComplaint(52.3 * 60)).toBeNull();
     expect(durationComplaint(85.2 * 60)).toBeNull();
   });
 });

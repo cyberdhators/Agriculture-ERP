@@ -63,8 +63,10 @@
  * 53.4-minute run on the same branch and the same content followed hours later.
  * The suite does not have a level. It has a spread.
  *
- * OBSERVED RANGE: 52.4 to 85.2 MINUTES -- about 63% wide, on near-identical
- * content.
+ * OBSERVED RANGE: 52.3 to 85.2 MINUTES -- about 63% wide, on near-identical content,
+ * across TEN runs on four days. The two runs of 2026-10-04 both landed near the fast
+ * end and one of them is a new fastest, which is further evidence that the 45 this
+ * band replaced was too tight: at 45 it would have passed by 7.3 minutes.
  *
  *   date        duration   run
  *   2026-09-21   61.6 min   35551165343
@@ -75,6 +77,8 @@
  *   2026-10-01   73.9 min   36879685459
  *   2026-10-01   53.4 min   36875283354
  *   2026-10-02   52.4 min   36954347577
+ *   2026-10-04   53.1 min   37189266234
+ *   2026-10-04   52.3 min   37189923755   <- new fastest
  *
  * DERIVATION, so the next person argues with the reasoning rather than the number:
  *

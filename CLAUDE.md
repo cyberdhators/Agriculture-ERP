@@ -205,6 +205,17 @@ nothing behind it, which is indistinguishable from a green one. So a check's
 concurrency, its queue and its ordering are all free to be computed; its
 existence is not.
 
+**An edit's reach is the branch it sits on.**
+
+> **Work on an unmerged branch governs nothing, however carefully written — and a sweep,
+> a law or a gate on a held branch is a claim about a repository that does not exist yet.
+> Before recording something as done, ask which ref it is done on.**
+
+Second instance of the unread-file class: the first was a law in a file sessions are not
+told to open, this is a correction in a branch nobody has. On 2026-10-04 a withdrawal
+executed in six places on a held branch left `main` asserting the withdrawn claim in
+seven.
+
 **Gates — a gate that nothing consults is a document.** Verifying that an
 instrument compares correctly says nothing about whether anything is obliged to
 listen. Both questions have to be asked, and only the first has ever been asked

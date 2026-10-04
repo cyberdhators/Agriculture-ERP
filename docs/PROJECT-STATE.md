@@ -3564,14 +3564,24 @@ append-only rule is warranted. **Nothing was changed.**
 
 ## A SWEEP IS ONLY AS REAL AS THE BRANCH IT LANDS ON (2026-10-04)
 
-> **The 1 October drift withdrawal reached six places and missed a seventh: the
-> derivation comment in the file that governs the gate. A gate asserting the absence of a
-> withdrawn claim in one location does not cover the claim's spread. A sweep executed by
-> hand misses copies — assert the absence tree-wide.**
+**Recorded jointly by the owner and the session.**
 
-**And the worse half, found when the assertion was widened.** The six places swept on
-1 October were all on `ci/staging-row-count-gate`, which has not merged. **`main` carried
-the claim in seven places**, every one of them still asserting it on 2026-10-04:
+> **The 1 October drift withdrawal was executed on `ci/staging-row-count-gate`, which has
+> not merged. `main` asserted the withdrawn claim in seven places throughout, including
+> the derivation that governs the gate and the opening of the section recording the
+> withdrawal. The sweep was not careless; it landed nowhere, which is indistinguishable
+> from not sweeping and feels like diligence while it happens.**
+
+And the narrower lesson that prompted the search:
+
+> **A gate asserting the absence of a withdrawn claim in one location does not cover the
+> claim's spread. A sweep executed by hand misses copies — assert the absence tree-wide.**
+
+**Second instance of the unread-file class.** The first was a law in a file sessions are
+not told to open; this is a correction in a branch nobody has. Both look like work that
+exists and neither reaches anyone.
+
+The seven places, every one still asserting it on 2026-10-04:
 
 | File                                  | What it said                                                                 |
 | ------------------------------------- | ---------------------------------------------------------------------------- |
