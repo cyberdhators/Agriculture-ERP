@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  BAND_IS_PROVISIONAL,
   EXPECTED_BAND_MINUTES,
   TIMEOUT_MINUTES,
   durationComplaint,
@@ -19,9 +20,14 @@ describe('the suite duration band', () => {
     expect(EXPECTED_BAND_MINUTES.max).toBeLessThan(TIMEOUT_MINUTES);
   });
 
-  it('admits every duration actually observed', () => {
-    // Job time, queue excluded, read from the Actions API on 2026-10-01.
-    for (const minutes of [53.6, 61.6, 84.6, 84.9, 85.2]) {
+  it('is PROVISIONAL and says so — eight runs on three days is not a distribution', () => {
+    expect(BAND_IS_PROVISIONAL).toBe(true);
+  });
+
+  it('admits every duration actually observed — all eight, across the full range', () => {
+    // Job time, queue excluded, read from the Actions API. 52.4 and 85.2 are the
+    // two ends; the 52.4 moved the FLOOR, which is why the band was widened.
+    for (const minutes of [52.4, 53.4, 53.5, 61.6, 73.9, 84.6, 84.9, 85.2]) {
       expect(
         durationComplaint(minutes * 60),
         `${minutes} min was observed and must pass`,
@@ -29,12 +35,19 @@ describe('the suite duration band', () => {
     }
   });
 
-  it('catches a repeat of the drift already seen', () => {
-    // 37.8% on top of 85 minutes is about 117 — outside the band, inside the
-    // timeout. So the next drift of that size is a finding, not an outage.
-    const drifted = 85 * 1.378;
-    expect(drifted).toBeLessThan(TIMEOUT_MINUTES);
-    expect(durationComplaint(drifted * 60)).not.toBeNull();
+  it('still catches something outside the observed range but inside the timeout', () => {
+    // A run can be a finding without being an outage. That ordering is the design.
+    const beyond = 112;
+    expect(beyond).toBeLessThan(TIMEOUT_MINUTES);
+    expect(beyond).toBeGreaterThan(EXPECTED_BAND_MINUTES.max);
+    expect(durationComplaint(beyond * 60)).not.toBeNull();
+  });
+
+  it('gives the fastest observed run real margin — the old bound did not', () => {
+    // At 45 the 52.4-minute run passed by 7.4 minutes. A slightly faster run
+    // would have been a false finding, and a gate that cries wolf once is
+    // disbelieved afterwards.
+    expect(52.4 - EXPECTED_BAND_MINUTES.min).toBeGreaterThan(10);
   });
 
   it('catches a suite that suddenly runs far faster — absence is not success', () => {
@@ -50,9 +63,10 @@ describe('the suite duration band', () => {
     expect(complaint).toContain('passed or failed on its merits');
   });
 
-  it('leaves ordinary variance alone', () => {
-    // The slowest observed run plus 15% is still inside. A gate that fires on
-    // normal runner variance is a gate that gets ignored.
-    expect(durationComplaint(85.2 * 1.15 * 60)).toBeNull();
+  it('leaves the observed spread alone — it is about 63% wide', () => {
+    const spread = (85.2 - 52.4) / 52.4;
+    expect(spread).toBeGreaterThan(0.6);
+    expect(durationComplaint(52.4 * 60)).toBeNull();
+    expect(durationComplaint(85.2 * 60)).toBeNull();
   });
 });
