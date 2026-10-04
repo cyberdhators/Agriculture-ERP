@@ -303,7 +303,16 @@ at 220 lines.
 > fact; a habit applied after the fact twice is not a habit.**
 
 The failure mode is a silent two-minute hang, not an error, so it reads as something
-worse than it is. Both times nothing was damaged: no commit was created, the staged
+worse than it is.
+
+> **A command whose scope is wider than the intent takes the whole of it. `git checkout
+> <file>` aimed at one planted line discarded every uncommitted change in that file.
+> Twice on 2–4 October: the heredoc that bound to the wrong command, and this. Re-check
+> the file afterwards rather than assuming the narrow effect.**
+
+Both were recovered because the file was re-read rather than assumed — the heredoc case
+by checking that no commit had been made, this one by grepping for the text that should
+have been there and finding it gone. **The check is the habit, not the care.** Both times nothing was damaged: no commit was created, the staged
 changes survived, and the message went to a file on the retry — which is the step that
 should have come first.
 
