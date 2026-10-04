@@ -32,17 +32,17 @@
  *   2026-10-01  84.6 min  #108   (failed at the secret scan, after the suite)
  *   2026-10-01  84.9 min  #109   success   run 36865645947
  *
- * A 37.8% increase in ten days, on near-identical test content: #103, #108 and
- * #109 are all main plus a handful of commits, and main has not moved since the
- * 61.6-minute run.
+ * THIS BLOCK ONCE READ "a 37.8% increase in ten days". IT DID NOT HAPPEN -- see the
+ * derivation below. Three runs taken in one morning were read as a trend, and a
+ * 53.4-minute run on the same branch and content followed hours later.
  *
- * WHY IT GREW IS NOT KNOWN AND IS NOT GUESSED HERE. The obvious candidate --
- * staging accumulating rows the suite never sweeps -- is REFUTED by measurement:
- * `audit_event` held about 62,705 rows at the 61.6-minute run and 65,609 on
- * 1 October, a 4.6% increase against a 37.8% slowdown. 53 MB and 65,000 rows do
- * not cost twenty-three minutes. Candidates not tested: runner variance, the
- * staging instance's own performance, network latency to the pooler. The cause is
- * UNESTABLISHED, and this file does not pretend otherwise.
+ * WHY IT VARIES IS NOT KNOWN AND IS NOT GUESSED HERE. One candidate was tested and
+ * refuted: staging accumulating rows the suite never sweeps. `audit_event` held
+ * about 62,705 rows at the 61.6-minute run and 65,609 on 1 October -- a 4.6%
+ * increase, and there was no slowdown for it to explain in any case. Candidates not
+ * tested: runner variance, the staging instance's own performance, network latency
+ * to the pooler. The cause is UNESTABLISHED and this file does not pretend
+ * otherwise.
  */
 
 /**
@@ -131,13 +131,18 @@ export function durationComplaint(elapsedSeconds) {
     return (
       `The suite took ${minutes.toFixed(1)} minutes, above the expected band of ` +
       `${min}-${max}. Nothing is wrong with this run's results -- every test that ran, ` +
-      `passed or failed on its merits. What is wrong is the trend: the suite drifted ` +
-      `37.8% in ten days once already, unnoticed, until the margin to the ` +
-      `${TIMEOUT_MINUTES}-minute timeout was six percent. This gate exists so the next ` +
-      `drift is a finding instead of an outage.\n\n` +
-      `DO NOT WIDEN THE BAND TO MAKE THIS PASS. Find out what changed, then revise ` +
-      `the band deliberately in scripts/ci-suite-duration.mjs with a new observed ` +
-      `history and a new derivation.`
+      `passed or failed on its merits. What this reports is that the suite left the ` +
+      `range it has been observed in (52.4 to 85.2 minutes), while still finishing ` +
+      `inside the ${TIMEOUT_MINUTES}-minute timeout. The gate exists so that becomes a ` +
+      `finding instead of, eventually, every run failing on a timeout with no ` +
+      `warning.\n\n` +
+      `THE BAND IS PROVISIONAL: eight runs across three days, which is a range and not ` +
+      `a distribution. Read this as "outside what we have seen", not "slower than it ` +
+      `should be".\n\n` +
+      `DO NOT WIDEN THE BAND TO MAKE THIS PASS. That forbids silencing a red run; it ` +
+      `does NOT forbid re-deriving the band from a larger observed history, which is ` +
+      `what a provisional band waits for. Do it deliberately in ` +
+      `scripts/ci-suite-duration.mjs with the new history beside the new derivation.`
     );
   }
 
