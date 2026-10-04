@@ -3274,3 +3274,51 @@ each. The timeout and the gate reference it, and no comment anywhere states a
 figure of its own. The same remedy as the production-project fact and the staging
 project reference — **and the third time this repository has fixed a disagreement
 between comments by giving the fact one place to live.**
+
+---
+
+## The owner's record — a red characterised from one symptom (2026-10-04)
+
+Recorded as the owner's, in his words:
+
+> "I described #99's failure as the audit-key gap, from the one symptom I had been given,
+> and had it written into a PR comment. Two of eight failures were that gap. A reported
+> symptom is one of the failures, not the failure — ask for the whole list before
+> characterising a red."
+
+**OBSERVED.** #99's run `35853905180` (2026-09-23) reports `Test Files 2 failed | 101
+passed`, and the eight failures split:
+
+- **`tests/audit-actions-constraint.test.ts`, 2** — the audit CHECK against
+  `AUDIT_ACTIONS`. This is the gap that was named.
+- **`tests/directories-routes.test.ts`, 6** — learning-resource upload grants, failing
+  with `Could not issue the upload grant: The related resource does not exist`. **Never
+  mentioned, by either of us, for eleven days.**
+
+**The six are known work, established rather than inferred.** The error is thrown by
+`issueUploadGrant` in `apps/web/lib/supabase/admin.ts` from `createSignedUploadUrl`, on
+the bucket `LEARNING_RESOURCE_BUCKET` = `learning-resources`. **Queried on staging:
+`storage.buckets` holds exactly one row, `visit-attachments`, created 2026-09-07. The
+learning bucket does not exist.** "The related resource does not exist" is Storage's
+message for a missing bucket.
+
+So the answer to the question that decided what #99 needs: **not a separate defect.** The
+bucket's absence is OBSERVED; that it explains all six is INFERRED, from the error text,
+the code path, and the six being sequential tests in one block whose first step is the
+upload grant. They were not re-run against an existing bucket.
+
+**Why the error was easy to make and worth a record anyway.** The audit-key gap was real,
+was mentioned in conversation, and was the first thing visible. Nothing about it was
+wrong except its scope — it was offered as _the_ failure and was a quarter of it. **A
+symptom arrives attached to a cause; a failure list does not, and has to be asked for.**
+One `gh api .../jobs` call produced all eight in seconds.
+
+**It also exposed something #99's own CI has never established.** Under the pre-#109
+workflow, gitleaks ran _after_ the test step, so a Test failure meant the secret scan
+never ran at all. The committed password on that branch was found by the full-history
+audit scanning every ref — **not by #99**. A branch can be red for a long time without
+its red covering what you assume it covers.
+
+The blocking count is **four**, not three: the audit CHECK, the missing bucket, the
+committed password (closed by a rebase onto main, which carries the accounting entry),
+and the duplicated project reference (not enforced until #108 lands).

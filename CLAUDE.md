@@ -284,6 +284,19 @@ default. Use constraints and indexes. PostGIS for all spatial data.
 tests, the linter, the formatter check and the type check before committing —
 do not leave it to CI to find what you could have found locally.
 
+> **A squash merge orphans every branch cut from the squashed branch's tip: those commits
+> are not ancestors of main, so a plain rebase replays them against main's own copy of
+> them. Cut branches from main. If one must be cut from another branch, record the base
+> SHA in its first commit message — `--onto <base>` is then the only correct rebase.**
+
+Observed on #109: it merged as `eaa263a`, a single-parent squash, and none of its six
+commits are ancestors of main. `ci/staging-row-count-gate` was cut from its tip, and
+`merge-tree` predicts conflicts in seven files — including two workflow files it never
+edited — because a plain rebase would replay #109's work onto main's copy of it. The
+correct form is `git rebase --onto origin/main b1fb3f7`, replaying only its own four
+commits. Nothing was lost in the squash itself: the commit message kept all six messages
+at 220 lines.
+
 > **A commit message long enough to need a heredoc is written to a file first, and a
 > heredoc command is never chained with another — the heredoc binds to the last command
 > in the chain, not the intended one. Twice on 2 October the fix was applied after the
