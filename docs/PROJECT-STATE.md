@@ -3503,6 +3503,32 @@ to anyone who reached it. No action here; recorded because a public endpoint ser
 stale-as-current data is a different kind of defect from an internal one, and the
 withhold decision above governs a public surface, not an internal view.
 
+## A SWEEP KNOWS ONLY THE TABLES IT NAMES (2026-10-05)
+
+The new `tests/listings-public-surface.test.ts` is the first database test to create a
+`contact_request` row, and its CI run failed — not on an assertion (all 1359 tests passed)
+but in the shared `afterAll` sweep:
+
+```
+23503: update or delete on table "produce_listing" violates foreign key constraint
+       "contact_request_listing_id_fkey" on table "contact_request"
+```
+
+`sweep()` deletes `product_report` before `produce_listing` — FK-safe — but was never
+taught `contact_request`, which references `produce_listing` the same way. It was not a
+latent bug anyone could see: **a sweep that omits a child table is invisible until
+something first creates a row in it**, and until this test no database test exercised the
+contact-request create. The gap and the test that exposes it arrived together.
+
+Same family as the exclusion-list law — a cleanup list is a claim about the world, and an
+incomplete one fails only when reality finally contains the row it forgot. Fixed by adding
+the `contact_request` delete beside the `product_report` one, in FK-safe order.
+
+**The fix's own behaviour was validated by the same run**: every assertion in the listings
+test passed — the 401/403/404/201 matrix, the public reads carrying no `farmer_id` or
+`contact_phone`, the contact-request 201 shape. The file was marked failed only by the
+teardown, which is now corrected.
+
 ## THE LISTINGS WRITES ARE SCOPED NOW, AND WHY THE OWNER CAME FROM THE BODY (2026-10-05)
 
 **Farmer self-listing is blocked on farmer authentication, which does not exist: no login
