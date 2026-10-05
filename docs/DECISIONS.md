@@ -3356,3 +3356,36 @@ to merge came from the same place and were never checked against each other.
 **Also found while re-pushing:** two paragraphs of evidence for the test-count task were
 still in `CLAUDE.md` after the task itself moved to issue #112. The task moved and its
 evidence did not. Removed here; the same facts are in #112.
+
+---
+
+## The owner's record — a signed criterion reversed without reading it, a second time (2026-10-05)
+
+Recorded as the owner's, in his words:
+
+> "Second time I have instructed a change that reverses a signed criterion without reading
+> it first — C-11.7 on 2 October, C-16.7 on 5 October. Both were caught by the session
+> checking scope-and-acceptance before implementing. The fault is designing from first
+> principles without opening the signed document, and the remedy is that check, not a
+> better instinct."
+
+**The two instances.** C-11.7 (2026-10-05... 2 October): the restore-drill ownership
+reading, which contradicted "under CORWADO's name" — withdrawn to a proposal. C-16.7
+(5 October): "withhold stale data rather than label it," which contradicts "yesterday's
+row... never a hidden tile" — recorded as a proposed amendment with a 48-hour withhold that
+preserves the 26-hour label. Both reversals were sound as arguments and wrong to instruct
+as changes, and both were caught the same way: the session opened `scope-and-acceptance.md`
+before writing code.
+
+**Why "a better instinct" is the wrong remedy, stated plainly.** The instinct was right
+twice — both proposals are reasonable. The failure was not bad design; it was designing
+from first principles against a document that already had a clause on the point, without
+opening it. An instinct cannot know whether a signed criterion exists; only the check can.
+So the remedy is procedural and it is already a law: open the signed document before
+instructing a change to behaviour it governs. Pair with CLAUDE.md §0, which asks what the
+brief assumes that has not been verified — a signed criterion on the exact point is the
+first thing to verify.
+
+**The pattern worth naming for the session, not the owner:** both catches came from the
+session reading scope before implementing, which is the habit to keep. A third reversal
+that reaches `main` unread is the one that would matter.

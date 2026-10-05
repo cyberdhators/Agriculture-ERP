@@ -3390,6 +3390,119 @@ is live with no further change. Recorded now because a known, unrecorded defect 
 a deployment switch is the worst state — not fixed ahead of the sequence, because nothing
 public exploits it today.
 
+## THE WEATHER TILE WAS STALE BECAUSE NOTHING REFRESHED IT (2026-10-05)
+
+**The reported bug — wrong date, wrong forecast — is staleness, and the cause is that
+`main` has no scheduler.** `scripts/weather-fetch.mjs` exists; nothing on main runs it.
+The schedule — `.github/workflows/weather-fetch.yml`, `cron: '7 */3 * * *'` — lived only
+on #101 (`chore/weather-fetch-schedule`), unmerged for two weeks. The data last refreshed
+**2026-09-15 13:08** (one manual run); on **2026-10-05** the forecast rows span 16–20
+September, all past.
+
+**A live OpenWeather call confirmed the provider is healthy** (Juba, `city.timezone=7200`
+= UTC+2): it returns 6–10 October correctly. API correct, database three weeks stale, and
+the public read (`forecast_for > CURRENT_DATE`) returns nothing. Every date/timezone step
+in the code is correct — bucketing via the provider's offset, the `CURRENT_DATE` filter,
+`dayName` formatting a local-day string in UTC, `timeOf` in `Africa/Juba`. **No timezone
+bug. The dates are simply twenty days old.**
+
+**The fix is adoption of #101's content, carried onto `fix/weather-fresh-and-scheduled`.**
+Against current main #101 had two live parts, both still needed and both applying cleanly:
+the cron workflow (new), and a small page feature — the Weather page opens the forecast by
+default and shows `weather.noForecast` when there are none. Its two real commits were
+cherry-picked (the merge-noise commit dropped); the only conflict was two log entries
+appended at the same point in `HANDOFF.md`, both kept. **#101 can be closed as superseded;
+its content is preserved here with a fresh verdict.**
+
+**The cron merging is necessary but not sufficient:** the workflow needs three GitHub
+secrets — `WEATHER_DATABASE_URL`, `WEATHER_DIRECT_URL`, `OPENWEATHER_API_KEY` — and until
+they are set the scheduled job fails or no-ops. That is the owner's to configure, and he
+sets them in GitHub by his own hand; no session holds a credential.
+
+**Which database — established 2026-10-05, because the workflow's comment misnames it.**
+The comment says "THE DATABASE IS PRODUCTION'S." There is no production database. The
+account holds **exactly one Supabase project**, reference `xmmxbrxmfgodhpwolrvk`, named
+`agri-staging` (renamed from `agri-production` on 2026-09-03; `docs/DECISIONS.md`, "the
+environments were never separate"). That one project holds the 15 September weather rows,
+is what `.env.local` and `.mcp.json` point at, and is therefore what the deployed app
+reads — there is nothing else to read. So the three secrets point at
+**`agri-staging`, by elimination**: it is the only database that exists. The comment names
+a database that does not exist as a separate thing, and it ages like any other claim — it
+should be corrected to say staging when the withhold decision reopens this file, but that
+is a comment edit, not a secrets question. The secrets answer is unambiguous: there is one
+project, and it is where everything already is.
+
+### THE STALE LABEL RENDERS, AND IT DID NOT HELP — BUT THE REMEDY REVERSES A SIGNED CRITERION
+
+The owner's thesis, confirmed: the observation is served with no freshness bound
+(`ORDER BY fetched_on DESC LIMIT 1`), so with twenty-day data `loc.current` is populated
+and `loc.stale = isStale(fetched_at, now)` is **true** — the tile showed "Older than usual
+· \[conditions]" and the owner read twenty-day-old weather as current. **A warning that
+does not change the reader's conclusion has not warned.**
+
+The proposed remedy — withhold the data rather than label it — **contradicts C-16.7, which
+is in the signed scope document.** C-16.7, verbatim:
+
+> If today's fetch failed, the route returns **yesterday's row with its real `fetched_at`
+> and `stale: true`** — never an error and never a hidden tile. A weather card that
+> disappears when the provider is down is worse than one that says when it last knew
+> something.
+
+Item 2's instruction — hide beyond the stale window, _using `WEATHER_STALE_AFTER_HOURS`
+(26h) as the cutoff_ — would hide **yesterday's** row, which C-16.7 says must be served.
+So that specific instruction reverses the criterion and is **not implemented**; the
+observation read is unchanged pending a decision.
+
+### A PROPOSED AMENDMENT TO C-16.7 — NOT IN FORCE (2026-10-05)
+
+**C-16.7 as written, quoted because the proposal is against it:**
+
+> If today's fetch failed, the route returns **yesterday's row with its real `fetched_at`
+> and `stale: true`** — never an error and **never a hidden tile**. A weather card that
+> disappears when the provider is down is worse than one that says when it last knew
+> something.
+
+**The proposal.**
+
+> Keep `WEATHER_STALE_AFTER_HOURS = 26` as the **label** threshold, unchanged — yesterday's
+> reading still shows, still labelled, exactly as C-16.7 requires. Add a **separate
+> withhold threshold at 48 hours**, for the current-conditions block only: beyond 48 hours
+> the tile shows `weather.noReading` — it says it does not know, rather than presenting a
+> three-week-old reading as current.
+
+**Basis.** C-16.7's case is a provider **outage** — yesterday's reading with its real
+timestamp beats a vanished card, and that is right. **It was not written about a reading
+three weeks old.** A farmer's weather decisions are day-scale; a reading older than two
+days carries no decision value, and presenting it as current is the failure the 20-day
+pathology actually produced. Beyond 48 hours the tile does **not** vanish — it shows
+`weather.noReading`, which is the honesty C-16.7 wanted (a card that says when it last
+knew) applied to the case C-16.7 did not foresee. The forecast read already self-limits by
+`forecast_for > CURRENT_DATE`; this gives the current-conditions block the same honesty.
+
+**WHOSE READING THIS IS.** This is the owner's reading, not CORWADO's instruction. Nothing
+in the repository records CORWADO asking for it or confirming it. It is to be put to them
+for written confirmation — C-16.7 is in the signed scope document — and this note stands
+until they answer. A session reading this file must not cite this section as a client
+decision.
+
+**THE CLAUSE INVERTED FROM THE MARKETPLACE FORM, STATED SO NO READER CARRIES THE ORIGINAL'S
+ACROSS.** The marketplace amendment says "we are **proceeding** on that reading." **This one
+does not. C-16.7 governs until CORWADO rules** — the observation read is unchanged, and the
+26h label still fires, until then. If the amendment is granted, the 48-hour withhold is
+added by a change that names itself; nothing here authorises it in advance.
+
+The tile already degrades gracefully if the observation is withheld — `weather.none` with
+no location, `weather.noReading` with a location but no current — so the withhold, if
+granted, needs no empty-state work.
+
+### DOOR 1 HAS BEEN SERVING A THREE-WEEK-OLD FORECAST PUBLICLY
+
+`GET /api/weather/forecast` is one of main's public reads — Door 1 of the two-doors
+decision — and it has been returning confidently stale weather, with no session required,
+to anyone who reached it. No action here; recorded because a public endpoint serving
+stale-as-current data is a different kind of defect from an internal one, and the
+withhold decision above governs a public surface, not an internal view.
+
 ## NOTHING IN THIS REPOSITORY IS ENFORCED (2026-10-01)
 
 > **No gate in this repository is enforced, because nothing enforces any check.**

@@ -2017,3 +2017,23 @@ currently has **no branch protection and no ruleset** — verified on both mecha
 every gate in this repository reports and does not prevent. The owner is configuring that.
 
 — Monkon-Claude
+
+### 2026-09-21 01:00 UTC — Alieu-Claude → both
+
+**Done.** Why the weather tile was not current, and the fix, on branch
+`chore/weather-fetch-schedule` (pull request).
+
+The tile reads only what `scripts/weather-fetch.mjs` wrote to the database
+(C-16.6: no route calls OpenWeather). **Nothing ran that job on a schedule** —
+it had only ever been run by hand, so the tile showed the last manual fetch
+(15 September) and marked it stale. New workflow
+`.github/workflows/weather-fetch.yml` runs it every three hours and on demand.
+Three-hourly, not hourly: two calls per location against a free plan of 1,000
+a day, and OpenWeather's forecast is in three-hour slots anyway.
+
+**Needs from the project owner before it works.** Three repository secrets:
+`WEATHER_DATABASE_URL` and `WEATHER_DIRECT_URL` (production's connection
+strings) and `OPENWEATHER_API_KEY`. Until they exist the job fails loudly and
+fetches nothing.
+
+— Alieu-Claude
