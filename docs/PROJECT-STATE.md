@@ -3220,6 +3220,120 @@ catches two sources drifting, and **this catches the gate's own configuration
 drifting away from the world it describes.** An exception list is code that
 nobody runs, and it decays silently.
 
+## THE MARKETPLACE PUBLIC WRITES TRUST A CALLER-SUPPLIED OWNER (2026-10-05)
+
+**OBSERVED from the code on `main`.** Reading the five public marketplace handlers:
+
+> Established 2026-10-05 by reading the handlers: `GET /api/listings` returns `farmer_id`
+> and `contact_phone` to any unauthenticated caller; `POST /api/listings` takes its owner
+> from `input.farmer_id`; `PATCH /api/listings/[id]` authorises on `farmer_id` alone. The
+> owner id is therefore a bearer capability, and the public read distributes it. No rate
+> limit, captcha or origin check exists in those five routes or in `apps/web/lib/api`.
+> Five of main's seven public methods were never contemplated by the two-doors decision,
+> which was written four days before they were built.
+
+**The chain is OBSERVED; the exploitability is INFERRED pending exposure** (see below):
+a caller reads a listing with no session → obtains the owner's `farmer_id` from the public
+response → creates or edits listings as that farmer. `POST` with a _fabricated_ id is
+refused 404 ("Farmer not found"), so the public read is the step that supplies a real one.
+`presentBrowse` returns `farmer_id`, `contact_phone`, `seller_verification_status`,
+`seller_payam_id` and `seller_payam_name`.
+
+### IT CONTRADICTS THE SIGNED CONTACT-REQUEST CONTRACT — A SCOPE FINDING, NOT A BUG
+
+`docs/api/contact-request-contract.md` §4, verbatim:
+
+> **Never return the farmer's phone to a buyer.** Not on create, not on any public read.
+> **There is no public read.**
+
+And §1: _"the farmer's phone never leaves it \[the contact request]."_ The contract's whole
+basis — _"Buyers hold no account… a contact request the programme passes on, so the
+farmer's phone never leaves it"_ — assumes the phone is disclosed only through the
+contact-request path. **`GET /api/listings` is a public read that returns `contact_phone`.**
+The condition "there is no public read" is false on main. Whether that is resolved by
+hiding the field or amending the contract is the owner's call, and possibly CORWADO's; it
+is recorded here, not decided.
+
+### A PROPOSED AMENDMENT TO THE CONTACT-REQUEST CONTRACT — NOT IN FORCE (2026-10-05)
+
+One of the two contradictions is not an accident: the owner wants something the contract
+forbids. Recorded here as a proposal, in the marketplace-amendment form, so it is visible
+without being mistaken for the rule.
+
+**§4 as written, quoted because the proposal is against it:**
+
+> **Never return the farmer's phone to a buyer.** Not on create, not on any public read.
+> **There is no public read.**
+
+**The proposal.**
+
+> **The owner's position is that a buyer sees the farmer's number and calls directly. §4
+> says the phone is never returned on any public read and that there is no public read.
+> Until CORWADO rules, the contract governs: the field is removed from the public response
+> and the contact-request path is the only route to a farmer's number.**
+
+**WHOSE READING THIS IS.** This is the owner's reading, not CORWADO's instruction. Nothing
+in the repository records CORWADO asking for it or confirming it. It is to be put to them
+for written confirmation, and this note stands until they answer. A session reading this
+file must not cite this section as a client decision.
+
+**THE CLAUSE INVERTED FROM THE MARKETPLACE FORM, STATED SO NO READER CARRIES THE
+ORIGINAL'S ACROSS.** The marketplace amendment says _"we are proceeding on that reading."_
+**This one does not.** The contract governs until CORWADO answers: the listings fix
+removes `contact_phone` from the public read **now**, and if CORWADO grants the amendment,
+restoring a public phone is a **new** change argued from scratch — not something this
+proposal authorises in advance.
+
+**The practical consequence.** The fix and the proposal do not conflict and are applied in
+that order: the contract is obeyed first (phone and `farmer_id` leave the public surface),
+and the proposal waits. A buyer today reaches a farmer only through the contact-request
+`POST`, which is what §4 describes. If the owner's reading prevails later, the phone
+returns by a decision that names itself, to a surface that was clean in the meantime.
+
+### THE WHOLE CONTRACT COMPARED, CLAUSE BY CLAUSE (2026-10-05)
+
+A comparing gate pointed at a contract — the first clause checked was false, so the rest
+were checked too. `docs/api/contact-request-contract.md` on `main`, against the handlers.
+
+| Contract clause                                                                                                                                                     | Code                                                                                                                                                            | Verdict                                                                                                                                     |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| POST body: `buyer_name` 2–80, `buyer_phone` E.164, `quantity` ≤40 opt, `message` ≤300 opt                                                                           | `contact-requests/route.ts` validates each                                                                                                                      | **IMPLEMENTED**                                                                                                                             |
+| `201` response is `{ id, status, created_at }` — _"Nothing about the farmer comes back. Not a name, not a phone, not the farmer id."_                               | `return created(row)` returns the **whole `ContactRow`** — `farmer_id`, `listing_id`, `buyer_phone`, `handled_by`, all of it. `created(data)` does not project. | **CONTRADICTED**                                                                                                                            |
+| `404` if listing not `listed`                                                                                                                                       | `WHERE … status = 'listed'` → 404                                                                                                                               | **IMPLEMENTED**                                                                                                                             |
+| `429` on rate limit — _"Rate limiting is Lane 1's to design"_                                                                                                       | none in the route or `apps/web/lib/api`                                                                                                                         | **NOT IMPLEMENTED** (contract flags it pending; §5 Q1 asks if friction is even required)                                                    |
+| `GET /api/contact-requests` scoped: officer→caseload, supervisor/read_only→state, admin→all                                                                         | `roles: ALL_ROLES` + `scopeCondition(auth.scope, 'f.state_id', 'f.caseload_officer_id')`                                                                        | **IMPLEMENTED**                                                                                                                             |
+| Staff row carries `buyer_phone`, `farmer_id`; farmer's own name/phone not on it                                                                                     | selects `cr.farmer_id, cr.buyer_name, cr.buyer_phone`, joins farmer for scope only                                                                              | **IMPLEMENTED**                                                                                                                             |
+| PATCH: outcomes `introduced\|declined\|no_answer`, only from `new`, sets `handled_at`/`handled_by`, audited `contact_request.handled` before/after, caseload-scoped | matches exactly                                                                                                                                                 | **IMPLEMENTED**                                                                                                                             |
+| _"Never return the farmer's phone to a buyer. Not on create, not on any public read. There is no public read."_                                                     | `GET /api/listings` is a public read returning `contact_phone`                                                                                                  | **CONTRADICTED** (the finding above)                                                                                                        |
+| _"Never notify anyone by themselves"_                                                                                                                               | routes write rows only, no SMS                                                                                                                                  | **IMPLEMENTED**                                                                                                                             |
+| 14-day expiry                                                                                                                                                       | none                                                                                                                                                            | **NOT A MAIN CLAUSE** — §5 open Q2; the answers live on the unmerged `docs/contact-request-answers`, so main's contract does not require it |
+
+**Two contradictions, not one.** The browse read was the first. The second: **the contact-request create's `201` returns `farmer_id` and the entire row to the unauthenticated buyer**, where the contract says the response is `{ id, status, created_at }` and _"not the farmer id."_ So there are **two** public distributors of the bearer-capability `farmer_id`, not one — the browse GET and the create response.
+
+**Not verified this pass**, stated rather than claimed: that `buyer_phone` is scrubbed from logs and excluded from exports (contract §2, `C-10.11`). The scrubber and export paths were not read.
+
+**What the comparison establishes beyond the two faults:** the contract is otherwise faithfully implemented — scoping, the state machine, the audit action, the 404-hides-withdrawn rule all match. The two failures are both the same shape: **a handler returning more of a row than the contract's response shape allows.** `created(row)` and `presentBrowse` each hand back a column the contract names as never-to-be-returned.
+
+### EXPOSURE, as of 2026-10-05 — OBSERVED, and it is why this is not yet an incident
+
+- **Production (`main` @ `7e1123b`)** deploys to the generated URL
+  `…-99v5rnr4v-…vercel.app`, which returns **302, "Protected by Vercel Authentication."** A
+  stranger cannot reach the API there.
+- **The stable alias `agriculture-erp.vercel.app`** is publicly reachable (HTTP 200) but
+  serves an **HTML shell for every path**, including `/api/listings` and
+  `/api/weather/forecast` (`content-type: text/html`, `x-vercel-cache: HIT`). It does
+  **not** answer the API with JSON — it is a stale or separate artifact, not main's
+  backend. So it leaks no `farmer_id`.
+- **No custom domain** is referenced in `.env.example` or `docs/`. I lack Vercel API
+  access to enumerate domains, so "none exists" is **not established** — only "none found".
+
+**So no publicly reachable deployment currently answers `GET /api/listings` with
+`farmer_id`.** The defect is real in the code and latent in deployment: the day Vercel
+protection is lifted, or the real backend is aliased to a public domain, the chain above
+is live with no further change. Recorded now because a known, unrecorded defect waiting on
+a deployment switch is the worst state — not fixed ahead of the sequence, because nothing
+public exploits it today.
+
 ## NOTHING IN THIS REPOSITORY IS ENFORCED (2026-10-01)
 
 > **No gate in this repository is enforced, because nothing enforces any check.**
