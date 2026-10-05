@@ -426,18 +426,6 @@ on main, in the required file, and was broken within eleven hours.
 Dated work lives in the repository's **issues**. `docs/HANDOFF.md`'s start-of-session list
 points at them, which is what makes them read at all.
 
-**Verified before recording:** no gate anywhere asserts a test count. `passWithNoTests:
-false` catches only a wholly empty run. `tests/pure-suite-complete.test.ts` and
-`tests/database-suite-complete.test.ts` assert that files are declared, still exist, and
-refuse loudly when the environment is missing — never how many tests inside them ran.
-
-**And this fault class has already bitten this project twice.**
-`tests/directories-routes.test.ts` records the second instance in its own header: a file
-that skipped itself with `HAS_ENV ? describe : describe.skip`, part of *"eight files
-reporting green for tests that never ran"*. B5.5 closed that particular route with
-`requireTestEnv`, which fails loudly — but it closed the route, not the class. A count
-is what closes the class.
-
 **`main` is never force-pushed, by any lane, for any reason.** Not
 `--force`, not `--force-with-lease`, not a reset followed by a push, not a
 rebase of a published branch onto it. A rejected push to `main` means the

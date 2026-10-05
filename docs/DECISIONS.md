@@ -3322,3 +3322,37 @@ its red covering what you assume it covers.
 The blocking count is **four**, not three: the audit CHECK, the missing bucket, the
 committed password (closed by a rebase onto main, which carries the accounting entry),
 and the duplicated project reference (not enforced until #108 lands).
+
+---
+
+## The owner's record — third instance of the reach law (2026-10-05)
+
+Recorded as the owner's, in his words:
+
+> "Third instance of the reach law. I wrote a merge order naming #102 next while
+> instructing that nothing be pushed, and spent two days adding laws to a ref that had no
+> remote. The branch merged and eleven twelfths of its work did not. A branch cannot be
+> merged into usefulness from a state it was never pushed to — and the squash-orphan law,
+> which describes exactly what then happened to it, was among the commits that failed to
+> land."
+
+**OBSERVED.** #102 merged at `7e1123b`, a single-parent squash taken from head `b6cd624`
+— the branch's state of 1 October. Fourteen commits existed locally; **none is an
+ancestor of main.** Two landed by content, because `b6cd624` contained them. Twelve did
+not, and **the remote branch was deleted on merge**, leaving one local ref as the only
+copy.
+
+**What was missing from the law file as a result**, for two days during which the sequence
+ran under them: the four-way sort, the forcing question, the reach law, the heredoc and
+command-scope rules, the dated-work law, where-a-law-may-live, and fix-closes-a-route.
+Sessions were expected to follow rules that existed on no remote.
+
+**The three reach instances together.** A law in a file sessions are not told to open; a
+withdrawal swept on a branch that had not merged; and now a plan naming a branch whose
+work was never pushed. **All three look like completed work and none of them reached
+anyone** — and the third is the one where the instruction not to push and the instruction
+to merge came from the same place and were never checked against each other.
+
+**Also found while re-pushing:** two paragraphs of evidence for the test-count task were
+still in `CLAUDE.md` after the task itself moved to issue #112. The task moved and its
+evidence did not. Removed here; the same facts are in #112.
