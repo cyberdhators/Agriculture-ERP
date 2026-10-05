@@ -3254,6 +3254,42 @@ The condition "there is no public read" is false on main. Whether that is resolv
 hiding the field or amending the contract is the owner's call, and possibly CORWADO's; it
 is recorded here, not decided.
 
+### A PROPOSED AMENDMENT TO THE CONTACT-REQUEST CONTRACT — NOT IN FORCE (2026-10-05)
+
+One of the two contradictions is not an accident: the owner wants something the contract
+forbids. Recorded here as a proposal, in the marketplace-amendment form, so it is visible
+without being mistaken for the rule.
+
+**§4 as written, quoted because the proposal is against it:**
+
+> **Never return the farmer's phone to a buyer.** Not on create, not on any public read.
+> **There is no public read.**
+
+**The proposal.**
+
+> **The owner's position is that a buyer sees the farmer's number and calls directly. §4
+> says the phone is never returned on any public read and that there is no public read.
+> Until CORWADO rules, the contract governs: the field is removed from the public response
+> and the contact-request path is the only route to a farmer's number.**
+
+**WHOSE READING THIS IS.** This is the owner's reading, not CORWADO's instruction. Nothing
+in the repository records CORWADO asking for it or confirming it. It is to be put to them
+for written confirmation, and this note stands until they answer. A session reading this
+file must not cite this section as a client decision.
+
+**THE CLAUSE INVERTED FROM THE MARKETPLACE FORM, STATED SO NO READER CARRIES THE
+ORIGINAL'S ACROSS.** The marketplace amendment says _"we are proceeding on that reading."_
+**This one does not.** The contract governs until CORWADO answers: the listings fix
+removes `contact_phone` from the public read **now**, and if CORWADO grants the amendment,
+restoring a public phone is a **new** change argued from scratch — not something this
+proposal authorises in advance.
+
+**The practical consequence.** The fix and the proposal do not conflict and are applied in
+that order: the contract is obeyed first (phone and `farmer_id` leave the public surface),
+and the proposal waits. A buyer today reaches a farmer only through the contact-request
+`POST`, which is what §4 describes. If the owner's reading prevails later, the phone
+returns by a decision that names itself, to a surface that was clean in the meantime.
+
 ### THE WHOLE CONTRACT COMPARED, CLAUSE BY CLAUSE (2026-10-05)
 
 A comparing gate pointed at a contract — the first clause checked was false, so the rest
