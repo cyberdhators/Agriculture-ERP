@@ -3441,7 +3441,7 @@ credential written there is protected — by an entry written for another reason
 which nobody chose for this purpose and which a later tidy-up could remove
 without knowing what it was holding.
 
-## THE SUITE DRIFTED 38% AND NOTHING WAS COMPARING IT TO ANYTHING (2026-10-01)
+## NOTHING WAS COMPARING ELAPSED TIME TO ANYTHING — AND THE 38% DRIFT DID NOT HAPPEN (2026-10-01)
 
 > **A duration gate fires before the timeout, so drift is a finding rather than an
 > outage.**

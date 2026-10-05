@@ -30,8 +30,19 @@ import { fileURLToPath } from 'node:url';
  */
 const root = fileURLToPath(new URL('..', import.meta.url));
 
-/** The withdrawn claim's distinctive tokens. Nothing else in this project uses them. */
-const WITHDRAWN = /37\.8|38%\s*drift/i;
+/**
+ * The withdrawn claim's distinctive tokens. Nothing else in this project uses them.
+ *
+ * TWO PATTERNS, AND THE SECOND IS WHY. The first version was
+ * `/37\.8|38%\s*drift/` -- which requires the number BEFORE the word, and so missed
+ * `## THE SUITE DRIFTED 38% AND NOTHING WAS COMPARING IT TO ANYTHING`, a heading on
+ * `main` asserting the claim at the top of the very section that records its
+ * withdrawal. The gate walked the whole tree and passed over it.
+ *
+ * **A pattern is a claim about the forms a thing takes.** This one now matches the
+ * figure anywhere, and "drift" within forty characters of "38%" in EITHER order.
+ */
+const WITHDRAWN_PATTERNS = [/37\.8/i, /38\s*%[^.]{0,40}?drift|drift\w*[^.]{0,40}?38\s*%/i];
 
 /**
  * Words that mark a mention as a withdrawal rather than an assertion.
@@ -108,16 +119,19 @@ function textFiles(): string[] {
 /** Mentions in one file that have no withdrawal within WINDOW characters. */
 function assertionsIn(contents: string): number[] {
   const lines: number[] = [];
-  const pattern = new RegExp(WITHDRAWN.source, 'gi');
-  let match: RegExpExecArray | null;
-  while ((match = pattern.exec(contents)) !== null) {
-    const from = Math.max(0, match.index - WINDOW);
-    const window = contents.slice(from, match.index + WINDOW);
-    if (!WITHDRAWAL.test(window)) {
-      lines.push(contents.slice(0, match.index).split('\n').length);
+  for (const source of WITHDRAWN_PATTERNS) {
+    const pattern = new RegExp(source.source, 'gi');
+    let match: RegExpExecArray | null;
+    while ((match = pattern.exec(contents)) !== null) {
+      const from = Math.max(0, match.index - WINDOW);
+      const window = contents.slice(from, match.index + WINDOW);
+      if (!WITHDRAWAL.test(window)) {
+        const line = contents.slice(0, match.index).split('\n').length;
+        if (!lines.includes(line)) lines.push(line);
+      }
     }
   }
-  return lines;
+  return lines.sort((a, b) => a - b);
 }
 
 describe('the withdrawn drift claim', () => {
@@ -156,6 +170,17 @@ describe('the withdrawn drift claim', () => {
     // A scan that has never seen a positive is a scan nobody has tested.
     expect(assertionsIn('the suite drifted 37.8% over ten days')).toEqual([1]);
     expect(assertionsIn('a 38% drift went unremarked')).toEqual([1]);
+  });
+
+  it('catches the word before the number, which the first pattern missed', () => {
+    // `## THE SUITE DRIFTED 38% AND NOTHING WAS COMPARING IT TO ANYTHING` was a
+    // heading on main, asserting the claim at the top of the section recording its
+    // withdrawal, and the first pattern walked past it because it required the
+    // number first. A pattern is a claim about the forms a thing takes.
+    expect(assertionsIn('THE SUITE DRIFTED 38% AND NOTHING WAS COMPARING IT')).toEqual([1]);
+    expect(assertionsIn('the suite drifted by 38% over ten days')).toEqual([1]);
+    // And it still accepts the same form carrying its withdrawal.
+    expect(assertionsIn('THE SUITE DRIFTED 38% — it did not happen')).toEqual([]);
   });
 
   it('accepts a mention that carries its withdrawal', () => {
