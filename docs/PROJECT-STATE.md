@@ -3390,6 +3390,81 @@ is live with no further change. Recorded now because a known, unrecorded defect 
 a deployment switch is the worst state — not fixed ahead of the sequence, because nothing
 public exploits it today.
 
+## THE WEATHER TILE WAS STALE BECAUSE NOTHING REFRESHED IT (2026-10-05)
+
+**The reported bug — wrong date, wrong forecast — is staleness, and the cause is that
+`main` has no scheduler.** `scripts/weather-fetch.mjs` exists; nothing on main runs it.
+The schedule — `.github/workflows/weather-fetch.yml`, `cron: '7 */3 * * *'` — lived only
+on #101 (`chore/weather-fetch-schedule`), unmerged for two weeks. The data last refreshed
+**2026-09-15 13:08** (one manual run); on **2026-10-05** the forecast rows span 16–20
+September, all past.
+
+**A live OpenWeather call confirmed the provider is healthy** (Juba, `city.timezone=7200`
+= UTC+2): it returns 6–10 October correctly. API correct, database three weeks stale, and
+the public read (`forecast_for > CURRENT_DATE`) returns nothing. Every date/timezone step
+in the code is correct — bucketing via the provider's offset, the `CURRENT_DATE` filter,
+`dayName` formatting a local-day string in UTC, `timeOf` in `Africa/Juba`. **No timezone
+bug. The dates are simply twenty days old.**
+
+**The fix is adoption of #101's content, carried onto `fix/weather-fresh-and-scheduled`.**
+Against current main #101 had two live parts, both still needed and both applying cleanly:
+the cron workflow (new), and a small page feature — the Weather page opens the forecast by
+default and shows `weather.noForecast` when there are none. Its two real commits were
+cherry-picked (the merge-noise commit dropped); the only conflict was two log entries
+appended at the same point in `HANDOFF.md`, both kept. **#101 can be closed as superseded;
+its content is preserved here with a fresh verdict.**
+
+**The cron merging is necessary but not sufficient:** the workflow needs three GitHub
+secrets — `WEATHER_DATABASE_URL`, `WEATHER_DIRECT_URL`, `OPENWEATHER_API_KEY` — and its
+own comment says the database is production's. Until those are set, the scheduled job
+fails or no-ops. That is the owner's to configure.
+
+### THE STALE LABEL RENDERS, AND IT DID NOT HELP — BUT THE REMEDY REVERSES A SIGNED CRITERION
+
+The owner's thesis, confirmed: the observation is served with no freshness bound
+(`ORDER BY fetched_on DESC LIMIT 1`), so with twenty-day data `loc.current` is populated
+and `loc.stale = isStale(fetched_at, now)` is **true** — the tile showed "Older than usual
+· \[conditions]" and the owner read twenty-day-old weather as current. **A warning that
+does not change the reader's conclusion has not warned.**
+
+The proposed remedy — withhold the data rather than label it — **contradicts C-16.7, which
+is in the signed scope document.** C-16.7, verbatim:
+
+> If today's fetch failed, the route returns **yesterday's row with its real `fetched_at`
+> and `stale: true`** — never an error and never a hidden tile. A weather card that
+> disappears when the provider is down is worse than one that says when it last knew
+> something.
+
+Item 2's instruction — hide beyond the stale window, _using `WEATHER_STALE_AFTER_HOURS`
+(26h) as the cutoff_ — would hide **yesterday's** row, which C-16.7 says must be served.
+So that specific instruction reverses the criterion and is **not implemented**; the
+observation read is unchanged pending a decision.
+
+**A proposed amendment, not in force (2026-10-05).** The owner's reading is that stale
+data should be withheld, not labelled. Recorded as a proposal against C-16.7, to be put to
+the owner and, because C-16.7 is signed scope, possibly to CORWADO.
+
+**A design that fixes the real pathology without reversing C-16.7, offered for the
+decision:** two thresholds, not one. Keep `WEATHER_STALE_AFTER_HOURS` (26h) as the
+_label_ threshold — yesterday's row still shows, still labelled, as C-16.7 requires — and
+add a **separate, larger** bound beyond which the data is withheld, because a twenty-day-old
+row is not the "yesterday's row" C-16.7 speaks to. The brief's "one constant governs both"
+is the only part that collides; a second constant for the withhold bound honours both the
+criterion and the owner's goal. The constant's value, and whether C-16.7's text changes at
+all, are the owner's.
+
+The tile already degrades gracefully if the observation is withheld — `weather.none` with
+no location, `weather.noReading` with a location but no current — so no empty-state work is
+needed when the withhold is decided.
+
+### DOOR 1 HAS BEEN SERVING A THREE-WEEK-OLD FORECAST PUBLICLY
+
+`GET /api/weather/forecast` is one of main's public reads — Door 1 of the two-doors
+decision — and it has been returning confidently stale weather, with no session required,
+to anyone who reached it. No action here; recorded because a public endpoint serving
+stale-as-current data is a different kind of defect from an internal one, and the
+withhold decision above governs a public surface, not an internal view.
+
 ## NOTHING IN THIS REPOSITORY IS ENFORCED (2026-10-01)
 
 > **No gate in this repository is enforced, because nothing enforces any check.**
