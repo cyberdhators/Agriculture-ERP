@@ -3220,6 +3220,60 @@ catches two sources drifting, and **this catches the gate's own configuration
 drifting away from the world it describes.** An exception list is code that
 nobody runs, and it decays silently.
 
+## THE MARKETPLACE PUBLIC WRITES TRUST A CALLER-SUPPLIED OWNER (2026-10-05)
+
+**OBSERVED from the code on `main`.** Reading the five public marketplace handlers:
+
+> Established 2026-10-05 by reading the handlers: `GET /api/listings` returns `farmer_id`
+> and `contact_phone` to any unauthenticated caller; `POST /api/listings` takes its owner
+> from `input.farmer_id`; `PATCH /api/listings/[id]` authorises on `farmer_id` alone. The
+> owner id is therefore a bearer capability, and the public read distributes it. No rate
+> limit, captcha or origin check exists in those five routes or in `apps/web/lib/api`.
+> Five of main's seven public methods were never contemplated by the two-doors decision,
+> which was written four days before they were built.
+
+**The chain is OBSERVED; the exploitability is INFERRED pending exposure** (see below):
+a caller reads a listing with no session → obtains the owner's `farmer_id` from the public
+response → creates or edits listings as that farmer. `POST` with a _fabricated_ id is
+refused 404 ("Farmer not found"), so the public read is the step that supplies a real one.
+`presentBrowse` returns `farmer_id`, `contact_phone`, `seller_verification_status`,
+`seller_payam_id` and `seller_payam_name`.
+
+### IT CONTRADICTS THE SIGNED CONTACT-REQUEST CONTRACT — A SCOPE FINDING, NOT A BUG
+
+`docs/api/contact-request-contract.md` §4, verbatim:
+
+> **Never return the farmer's phone to a buyer.** Not on create, not on any public read.
+> **There is no public read.**
+
+And §1: _"the farmer's phone never leaves it \[the contact request]."_ The contract's whole
+basis — _"Buyers hold no account… a contact request the programme passes on, so the
+farmer's phone never leaves it"_ — assumes the phone is disclosed only through the
+contact-request path. **`GET /api/listings` is a public read that returns `contact_phone`.**
+The condition "there is no public read" is false on main. Whether that is resolved by
+hiding the field or amending the contract is the owner's call, and possibly CORWADO's; it
+is recorded here, not decided.
+
+### EXPOSURE, as of 2026-10-05 — OBSERVED, and it is why this is not yet an incident
+
+- **Production (`main` @ `7e1123b`)** deploys to the generated URL
+  `…-99v5rnr4v-…vercel.app`, which returns **302, "Protected by Vercel Authentication."** A
+  stranger cannot reach the API there.
+- **The stable alias `agriculture-erp.vercel.app`** is publicly reachable (HTTP 200) but
+  serves an **HTML shell for every path**, including `/api/listings` and
+  `/api/weather/forecast` (`content-type: text/html`, `x-vercel-cache: HIT`). It does
+  **not** answer the API with JSON — it is a stale or separate artifact, not main's
+  backend. So it leaks no `farmer_id`.
+- **No custom domain** is referenced in `.env.example` or `docs/`. I lack Vercel API
+  access to enumerate domains, so "none exists" is **not established** — only "none found".
+
+**So no publicly reachable deployment currently answers `GET /api/listings` with
+`farmer_id`.** The defect is real in the code and latent in deployment: the day Vercel
+protection is lifted, or the real backend is aliased to a public domain, the chain above
+is live with no further change. Recorded now because a known, unrecorded defect waiting on
+a deployment switch is the worst state — not fixed ahead of the sequence, because nothing
+public exploits it today.
+
 ## NOTHING IN THIS REPOSITORY IS ENFORCED (2026-10-01)
 
 > **No gate in this repository is enforced, because nothing enforces any check.**
