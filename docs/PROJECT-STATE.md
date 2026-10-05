@@ -3611,7 +3611,7 @@ credential written there is protected — by an entry written for another reason
 which nobody chose for this purpose and which a later tidy-up could remove
 without knowing what it was holding.
 
-## THE SUITE DRIFTED 38% AND NOTHING WAS COMPARING IT TO ANYTHING (2026-10-01)
+## NOTHING WAS COMPARING ELAPSED TIME TO ANYTHING — AND THE 38% DRIFT DID NOT HAPPEN (2026-10-01)
 
 > **A duration gate fires before the timeout, so drift is a finding rather than an
 > outage.**
@@ -3626,9 +3626,21 @@ without knowing what it was holding.
 | 2026-10-01 | #108   | 84.6 min              | `36847625786` |
 | 2026-10-01 | #109   | **84.9 min, success** | `36865645947` |
 
-**A 37.8% increase in ten days on near-identical test content** — #103, #108 and
-#109 are main plus a handful of commits, and main has not moved since the
-61.6-minute run.
+**THE 37.8% DRIFT THIS SECTION FIRST REPORTED DOES NOT EXIST.** Hours after those
+three runs, `36875283354` on the same branch and the same content took **53.4 minutes**,
+starting the minute the 84.9-minute run finished; on 2 October another took **52.4**. The
+three 85-minute runs came from one morning, and the two September runs were taken **back
+to back** and differ from each other by 15%. One afternoon was compared with another and
+the difference was called a ten-day trend.
+
+**The observed range is 52.4 to 85.2 minutes — about 63% of spread on near-identical
+content.** Recorded as the owner's error in `docs/DECISIONS.md`.
+
+**WHY IT VARIES: INFERRED, ONE INSTANCE, NOT ESTABLISHED.** Same branch, same content, 85
+minutes and 53 minutes within hours on 1 October. This makes the runner environment the
+likely factor rather than anything in the repository, and is consistent with the
+accumulation hypothesis having been refuted on row counts. One instance. Not
+established.
 
 **The job was investigated because it looked hung at two hours. It was not.** It
 started eight seconds after the run was created, ran 84m53s, and completed
@@ -3637,9 +3649,10 @@ documented. **Nothing was broken; something had drifted, and the margin to the
 cliff was 5.1 minutes — six percent.**
 
 **That is the empty-set law in its operational form.** Every run printed its own
-duration. No gate held that duration against an expectation, so a 38% drift was
-invisible for ten days, and the next drift of the same size would have presented as
-every run failing on a timeout with no prior warning.
+duration. No gate held that duration against an expectation — so **neither a real drift
+nor a 63% spread was visible to anybody.** The spread had been sitting in the two
+September runs since the baseline, 15% apart and back to back, and nobody had looked. The
+38% drift this section was written for did not happen.
 
 **What was built.** The timeout is raised to 120 minutes with its derivation stated,
 and a duration gate at the end of the suite compares elapsed time against a
@@ -3675,7 +3688,10 @@ The reflex explanation is staging accumulating rows the suite never sweeps.
 - `audit_event` on staging: **65,609 rows, 53 MB**, spanning 2026-09-03 to
   2026-10-01 across 21 distinct days.
 - At the 61.6-minute baseline run on 21 September it held about **62,705**.
-- **Growth since the baseline: 4.6%. Slowdown over the same period: 37.8%.**
+- **Growth since the baseline: 4.6%.** It was compared against an apparent 37.8%
+  slowdown **which later turned out not to be real**, so there is now no slowdown for
+  accumulation to explain. The refutation stands regardless and is the stronger of the
+  two facts: 65,000 rows and 53 MB would not have cost twenty-three minutes either way.
 
 Sixty-five thousand rows and 53 MB do not cost twenty-three minutes. Candidates not
 tested: runner variance, the staging instance's own performance, latency to the
@@ -3715,6 +3731,53 @@ cause of the slowdown. It grows without bound regardless, and the design questio
 is the owner's: whether staging's audit history is meant to be permanent, whether
 the suite should write to it at all, or whether a staging-only exception to the
 append-only rule is warranted. **Nothing was changed.**
+
+## A SWEEP IS ONLY AS REAL AS THE BRANCH IT LANDS ON (2026-10-04)
+
+**Recorded jointly by the owner and the session.**
+
+> **The 1 October drift withdrawal was executed on `ci/staging-row-count-gate`, which has
+> not merged. `main` asserted the withdrawn claim in seven places throughout, including
+> the derivation that governs the gate and the opening of the section recording the
+> withdrawal. The sweep was not careless; it landed nowhere, which is indistinguishable
+> from not sweeping and feels like diligence while it happens.**
+
+And the narrower lesson that prompted the search:
+
+> **A gate asserting the absence of a withdrawn claim in one location does not cover the
+> claim's spread. A sweep executed by hand misses copies — assert the absence tree-wide.**
+
+**Second instance of the unread-file class.** The first was a law in a file sessions are
+not told to open; this is a correction in a branch nobody has. Both look like work that
+exists and neither reaches anyone.
+
+The seven places, every one still asserting it on 2026-10-04:
+
+| File                                  | What it said                                                                 |
+| ------------------------------------- | ---------------------------------------------------------------------------- |
+| `scripts/ci-suite-duration.mjs`       | the derivation, the refutation passage, **and the complaint text CI prints** |
+| `scripts/ci-suite-duration-check.mjs` | the header                                                                   |
+| `.github/workflows/ci.yml`            | the step comment                                                             |
+| `CLAUDE.md`                           | the duration-gate law                                                        |
+| `docs/PROJECT-STATE.md`               | three passages, including this section's own opening                         |
+
+So the copies were not missed by carelessness. **They were swept somewhere that did not
+land**, which is indistinguishable from not sweeping at all and feels like diligence while
+it happens.
+
+**What was built instead of a second hand-sweep.** `tests/withdrawn-claims.test.ts` walks
+every `.md`, `.ts`, `.mts`, `.mjs`, `.js`, `.yml`, `.sql` and `.json` file in the tree and
+fails on any mention of the claim's distinctive tokens that has no withdrawal within a
+paragraph. **It does not forbid the tokens** — a record must be able to say what was
+withdrawn, or the withdrawal cannot be read. It requires that each mention sit _with_ its
+withdrawal, which is a positive property rather than a denylist of phrasings somebody
+routes around.
+
+Deliberately broader than the project-reference scan, which reads source only: **the claim
+reached Markdown, YAML and a workflow comment, and a code-only scan would have missed five
+of the seven.** One exemption, named in the file with its reason: the test itself, which
+defines the tokens it searches for. Proved by planting an assertion and watching it fail
+with the file and line.
 
 ## A CANCELLED RUN IS NOT A FAILED RUN (2026-10-01)
 

@@ -48,6 +48,7 @@ export default defineConfig({
       'tests/database-suite-complete.test.ts',
       'tests/gitleaksignore-reasons.test.ts',
       'tests/pure-suite-complete.test.ts',
+      'tests/withdrawn-claims.test.ts',
       'apps/web/**/*.test.ts',
       'packages/shared/tests/**/*.test.ts',
     ],

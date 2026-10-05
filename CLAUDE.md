@@ -177,6 +177,23 @@ this way, and neither would have been caught by the gate they were inside.
 
 A gate that cannot determine what to compare must fail, not report clean.
 
+**And the same class in sequence form — a failing step hides every step after it.**
+
+> **Under the pre-#109 single-job workflow gitleaks ran after the test step, so #99's
+> eleven-day red never produced a secret-scan verdict at all. A red pull request looks
+> comprehensively judged and may have been judged on one step. Ask which steps ran before
+> reading a red as covering anything beyond the one that failed.**
+
+The empty set here is the set of steps that never ran, and it looks identical to a set
+that ran and passed. **#109's job split closed this route by construction** — the secret
+scan is in an ungrouped job that cannot queue behind the suite, so a test failure can no
+longer suppress it. **It closed the route, not the class:** any two steps in one job are
+still in sequence, and the first failure still ends the job.
+
+And a corollary with teeth, observed the same day: a withdrawn finding was swept from six
+places **on a branch that did not merge**, so `main` carried the claim in seven. A sweep
+is only as real as the branch it lands on.
+
 Two of the three are inside gates built to catch this class, and the third is a
 tool we trusted to be one. A reader meeting a single instance will not see the
 fourth coming, which is why the list is the point and not the law alone.
@@ -187,6 +204,17 @@ behind. A required check that silently does not run is a merge button with
 nothing behind it, which is indistinguishable from a green one. So a check's
 concurrency, its queue and its ordering are all free to be computed; its
 existence is not.
+
+**An edit's reach is the branch it sits on.**
+
+> **Work on an unmerged branch governs nothing, however carefully written — and a sweep,
+> a law or a gate on a held branch is a claim about a repository that does not exist yet.
+> Before recording something as done, ask which ref it is done on.**
+
+Second instance of the unread-file class: the first was a law in a file sessions are not
+told to open, this is a correction in a branch nobody has. On 2026-10-04 a withdrawal
+executed in six places on a held branch left `main` asserting the withdrawn claim in
+seven.
 
 **Gates — a gate that nothing consults is a document.** Verifying that an
 instrument compares correctly says nothing about whether anything is obliged to
@@ -252,9 +280,12 @@ the fault itself hurt. Review means it was caught before it shipped. **Mistake
 means an unrelated error exposed it** — which is weaker evidence than review, since
 nobody was looking, and stronger than damage, since it cost nothing.
 
-**Gates — a duration gate fires before the timeout, so drift is a finding rather
-than an outage.** Nothing was comparing elapsed time to anything, and a 38% drift
-went unremarked for ten days until the margin was 6%.
+**Gates — a duration gate fires before the timeout, so drift is a finding rather than
+an outage.** Nothing was comparing elapsed time to anything. The 38% drift this law was
+first written for **turned out not to exist** — three runs from one morning read as a
+ten-day trend — and the law survives its own evidence: what was actually invisible was a
+63% spread sitting in the baseline runs all along. A gate watching nothing cannot
+distinguish drift from variance, and both matter.
 
 **Labelling — a count in a record should be of something that will still exist
 when the record is read.** A branch's length is a fact about a thing designed to
