@@ -138,7 +138,7 @@ body.
 ## 4. ERROR SHAPE
 
 ```json
-{ "error": { "code": "...", "message": "...", "fields": { ... } } }
+{ "error": { "code": "...", "message": "...", "rule": "...", "fields": { ... } } }
 ```
 
 - **`code`** — a stable, machine-readable string. Clients branch on this, never
@@ -155,6 +155,20 @@ body.
 
 Every other error omits the `fields` key entirely. It is never present and
 empty.
+
+- **`rule`** — present **only** on a `conflict` (409) or an `unprocessable`
+  (422), naming which rule refused. It is one of the keys in section 5.2, never
+  free text. `code` stays the generic `conflict` or `unprocessable`; `rule`
+  says which one, so a caller can act without reading the sentence.
+
+  It exists because the officer app must decide on a phone with no signal
+  (C-9.15). `attachment_not_arrived` means the bytes are still on their way and
+  the device should retry; every other 409 is terminal. Both arrive as
+  `"code": "conflict"`, so without `rule` the two are indistinguishable and a
+  device abandons an upload that only needed a moment. A retryable outcome also
+  carries `Retry-After`.
+
+  Every other error omits the key entirely. It is never present and empty.
 
 ### 4.1 Field keys in `fields`
 
@@ -311,6 +325,8 @@ character.
 | `reassign_officer_not_found`       | No active officer with that identifier works in this farmer's payam. Choose one who does.                                     |
 | `reassign_same_officer`            | This farmer is already with that officer. Nothing to change.                                                                  |
 | `resource_file_already_registered` | A learning resource is already registered for that file.                                                                      |
+| `resource_file_missing`            | The file has not reached the store yet, so this cannot be published.                                                          |
+| `resource_file_mismatch`           | The file in the store is not the one this resource describes.                                                                 |
 
 **A route names a rule; it never writes a sentence.** `conflict()` and
 `unprocessable()` take a key from this registry, not a string. That is how the
@@ -379,6 +395,7 @@ change.
 | `learning_resource.updated`      |
 | `learning_resource.published`    |
 | `learning_resource.soft_deleted` |
+| `learning_resource.link_issued`  |
 | `weather_location.created`       |
 | `weather_location.updated`       |
 | `weather_location.soft_deleted`  |

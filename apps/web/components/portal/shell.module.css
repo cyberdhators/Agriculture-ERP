@@ -240,6 +240,21 @@
   min-inline-size: 0;
 }
 
+/*
+ * Room for the officer's fixed bottom bar, so the footer is not trapped behind
+ * it. Applied to the shell rather than to the dashboard because the footer is
+ * the shell's, and a page cannot pad something outside itself.
+ */
+.withBottomBar {
+  padding-block-end: calc(56px + env(safe-area-inset-bottom, 0px));
+}
+
+@media (min-width: 768px) {
+  .withBottomBar {
+    padding-block-end: 0;
+  }
+}
+
 .topbar {
   position: sticky;
   top: 0;

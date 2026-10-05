@@ -21,6 +21,11 @@ export class ApiFailure extends Error {
   readonly fields?: Record<string, string>;
   /** Extra response headers: Retry-After on a retryable outcome (C-9.15). */
   readonly headers?: Record<string, string>;
+  /**
+   * Which rule refused, when one did. Travels in the body beside `code`, which
+   * does not change. Only ever a key from RULE_MESSAGES.
+   */
+  readonly rule?: string;
 
   constructor(
     status: number,
@@ -28,6 +33,7 @@ export class ApiFailure extends Error {
     publicMessage: string,
     fields?: Record<string, string>,
     headers?: Record<string, string>,
+    rule?: string,
   ) {
     // The Error message is for our logs. It carries the code, never a name,
     // phone number or national id -- see the standing rule in PROJECT-STATE.md.
@@ -38,13 +44,14 @@ export class ApiFailure extends Error {
     this.publicMessage = publicMessage;
     if (fields) this.fields = fields;
     if (headers) this.headers = headers;
+    if (rule) this.rule = rule;
   }
 
   body(): ApiErrorBody {
     if (this.fields) {
       return { error: { code: this.code, message: this.publicMessage, fields: this.fields } };
     }
-    return apiError(this.code, this.publicMessage);
+    return apiError(this.code, this.publicMessage, this.rule);
   }
 }
 
@@ -139,6 +146,11 @@ export const RULE_MESSAGES = {
     "No active officer with that identifier works in this farmer's payam. Choose one who does.",
   reassign_same_officer: 'This farmer is already with that officer. Nothing to change.',
   resource_file_already_registered: 'A learning resource is already registered for that file.',
+  // A card cannot be published before its file has arrived, and cannot claim a
+  // size the stored file does not have (C-13: a half-uploaded file is never
+  // offered to an officer).
+  resource_file_missing: 'The file has not reached the store yet, so this cannot be published.',
+  resource_file_mismatch: 'The file in the store is not the one this resource describes.',
 } as const;
 
 export type RuleKey = keyof typeof RULE_MESSAGES;
@@ -161,11 +173,17 @@ export const conflict = (rule: RuleKey) =>
     rule === 'attachment_not_arrived'
       ? retryAfter(SYNC_OUTCOME_SPECS.not_yet.retryAfterSeconds)
       : undefined,
+    // The rule travels in the body. Without it a device cannot tell
+    // `attachment_not_arrived` -- still on its way, retry soon -- from a
+    // terminal conflict, and `not_yet` was unreachable (C-9.15).
+    rule,
   );
 
 /** A business rule refused it. The rule names itself; no free text enters. */
 export const unprocessable = (rule: RuleKey) =>
-  new ApiFailure(422, ERROR_CODES.unprocessable, RULE_MESSAGES[rule]);
+  // The sentence is unchanged and still the rule's own; the key now travels
+  // beside it so a caller can act without parsing prose.
+  new ApiFailure(422, ERROR_CODES.unprocessable, RULE_MESSAGES[rule], undefined, undefined, rule);
 
 /** An unreadable pagination cursor. CONVENTIONS section 6. */
 export const invalidCursor = () =>

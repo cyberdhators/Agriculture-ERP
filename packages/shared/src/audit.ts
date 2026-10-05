@@ -62,6 +62,16 @@ export const AUDIT_ACTIONS = [
   'learning_resource.updated',
   'learning_resource.published',
   'learning_resource.soft_deleted',
+  /*
+   * THE ONE AUDITED READ OF A RESOURCE.
+   *
+   * A read link outlives the request that asked for it and can be copied or
+   * forwarded, so who asked, for what, and when is recorded -- never the link
+   * itself. The same reasoning, and the same shape, as
+   * `visit.attachment_link_issued`. Listing the catalogue is NOT audited: a
+   * list is metadata, a link is access to the file.
+   */
+  'learning_resource.link_issued',
   // C-16: a weather location is a managed record. A forecast fetch is NOT audited
   // (C-16.11) -- it is a scheduled read of a third party, not an action on a record.
   'weather_location.created',

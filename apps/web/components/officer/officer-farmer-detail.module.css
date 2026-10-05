@@ -1,0 +1,292 @@
+/*
+ * One farmer, on a phone, outdoors.
+ *
+ * Sections stacked in the order the officer asks the questions: who, what
+ * status, what can I do, then the record and its history. No table anywhere --
+ * a definition list reads at 360px where two columns of cells do not.
+ */
+.page {
+  display: grid;
+  gap: var(--s-5);
+  max-inline-size: 760px;
+}
+
+/* Back is a real link, first in the tab order, and big enough to hit. */
+.back {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 44px;
+  padding-inline-end: var(--s-3);
+  color: var(--ink-2);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.back:hover {
+  text-decoration: underline;
+}
+
+.back:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.head {
+  display: grid;
+  gap: var(--s-3);
+}
+
+.name {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 6.5vw, 2.125rem);
+  line-height: 1.1;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.statusRow {
+  display: flex;
+  gap: var(--s-2);
+}
+
+/* ---- Rejection: the one thing here that needs doing --------------------- */
+
+.rejection {
+  display: grid;
+  gap: var(--s-2);
+  padding: var(--s-5);
+  background: var(--harvest-tint);
+  border: 1px solid var(--harvest);
+  /* A solid rule, because a tint alone disappears in sunlight. */
+  border-inline-start: 4px solid var(--harvest-deep);
+  border-radius: var(--radius-card);
+}
+
+.rejectionTitle {
+  margin: 0;
+  font-size: 1rem;
+  font-family: var(--font-display);
+  color: var(--harvest-ink);
+}
+
+.rejectionReason {
+  margin: 0;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.rejectionNote {
+  margin: 0;
+  color: var(--ink-2);
+  overflow-wrap: anywhere;
+}
+
+.rejectionWhen {
+  margin: 0;
+  font-size: var(--text-small);
+  color: var(--muted);
+}
+
+/* ---- Actions ------------------------------------------------------------ */
+
+.actions {
+  display: grid;
+  gap: var(--s-3);
+}
+
+@media (min-width: 560px) {
+  .actions {
+    grid-auto-flow: column;
+    justify-content: start;
+  }
+}
+
+.primaryAction,
+.secondaryAction {
+  min-block-size: 56px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  font-weight: 600;
+  padding-inline: var(--s-6);
+}
+
+.actionError {
+  margin: 0;
+  color: var(--harvest-ink);
+  font-size: var(--text-small);
+  font-weight: 600;
+}
+
+.actionNote,
+.note {
+  margin: 0;
+  font-size: var(--text-small);
+  color: var(--muted);
+}
+
+.retry {
+  justify-self: start;
+  min-block-size: 48px;
+}
+
+/* ---- Sections ----------------------------------------------------------- */
+
+.section {
+  display: grid;
+  gap: var(--s-3);
+  padding-block-start: var(--s-4);
+  border-block-start: 1px solid var(--line);
+}
+
+.h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.0625rem;
+  color: var(--ink);
+}
+
+/*
+ * A definition list, not a table. At 360px the label sits above its value and
+ * nothing is ever cut off; from 480px they pair up and read faster.
+ */
+.rows {
+  display: grid;
+  gap: var(--s-3);
+  margin: 0;
+}
+
+.row {
+  display: grid;
+  gap: 2px;
+  padding-block-end: var(--s-3);
+  border-block-end: 1px solid var(--line);
+}
+
+.row:last-child {
+  border-block-end: 0;
+  padding-block-end: 0;
+}
+
+.row dt {
+  font-size: var(--text-small);
+  color: var(--muted);
+}
+
+.row dd {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+@media (min-width: 480px) {
+  .row {
+    grid-template-columns: 11rem 1fr;
+    align-items: baseline;
+    gap: var(--s-4);
+  }
+}
+
+/* ---- Farms and visits --------------------------------------------------- */
+
+.plainList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--s-3);
+}
+
+.miniCard {
+  display: grid;
+  gap: 2px;
+  padding: var(--s-4);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+}
+
+.miniTitle {
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.miniMeta {
+  font-size: var(--text-small);
+  color: var(--muted);
+}
+
+.miniAdvice {
+  font-size: var(--text-small);
+  color: var(--ink-2);
+  overflow-wrap: anywhere;
+}
+
+/* ---- Loading ------------------------------------------------------------ */
+
+.skeletonHead,
+.skeletonBlock {
+  border-radius: var(--radius-card);
+  border: 1px solid var(--line);
+  background: linear-gradient(90deg, var(--dust) 25%, var(--card) 50%, var(--dust) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+
+.skeletonHead {
+  block-size: 72px;
+}
+
+.skeletonBlock {
+  block-size: 220px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeletonHead,
+  .skeletonBlock {
+    animation: none;
+  }
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+/* The visit action: full width and thumb-sized, like every other action on
+   this screen, and placed above the history it will add to. */
+.recordVisit {
+  inline-size: 100%;
+  min-block-size: 52px;
+}
+
+/* A small action inside a farm row: still a 44px target despite the small type. */
+.miniLink {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 44px;
+  color: var(--green-deep);
+  font-size: var(--text-small);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.miniLink:hover {
+  text-decoration: underline;
+}
+
+/* Two small actions side by side, each still a 44px target. */
+.miniActions {
+  display: flex;
+  gap: var(--s-4);
+  flex-wrap: wrap;
+}

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 
-import { FarmersRegister } from '@/components/farmers/FarmersRegister';
+import { FarmersByRole } from '@/components/farmers/FarmersByRole';
 
 export const metadata: Metadata = { title: 'Farmers' };
 
@@ -9,7 +9,7 @@ export default function FarmersPage() {
   // useSearchParams (filters live in the URL) needs a Suspense boundary.
   return (
     <Suspense fallback={null}>
-      <FarmersRegister />
+      <FarmersByRole />
     </Suspense>
   );
 }

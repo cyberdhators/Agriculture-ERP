@@ -12,6 +12,22 @@ export interface ApiErrorBody {
     readonly code: string;
     readonly message: string;
     readonly fields?: Record<string, string>;
+    /**
+     * WHICH RULE REFUSED, for a caller that must act without reading the
+     * sentence (C-9.15).
+     *
+     * `code` stays the generic `conflict` or `unprocessable` -- nothing about
+     * the existing contract moves -- and this names the rule beside it. It is
+     * the difference between a device knowing an attachment is still on its
+     * way (`attachment_not_arrived`, retry soon) and treating it as a terminal
+     * conflict (stop), which is what happened while the key never left the
+     * server.
+     *
+     * ONLY EVER A KEY FROM THE PUBLISHED RULE LIST. It is not free text, not a
+     * database error and not an internal name; the rules and their sentences
+     * are already documented in CONVENTIONS.md section 5.
+     */
+    readonly rule?: string;
   };
 }
 
@@ -81,9 +97,9 @@ export function isJsonMediaType(headerValue: string | null): boolean {
   return mediaType === REQUIRED_MEDIA_TYPE;
 }
 
-/** Builds an error body with no `fields` key. */
-export function apiError(code: string, message: string): ApiErrorBody {
-  return { error: { code, message } };
+/** Builds an error body with no `fields` key. `rule` is omitted when absent. */
+export function apiError(code: string, message: string, rule?: string): ApiErrorBody {
+  return rule === undefined ? { error: { code, message } } : { error: { code, message, rule } };
 }
 
 /**

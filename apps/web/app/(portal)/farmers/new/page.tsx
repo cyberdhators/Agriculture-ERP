@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 
-import { RegisterFarmer } from '@/components/farmers/RegisterFarmer';
+import { RegisterFarmerByRole } from '@/components/farmers/RegisterFarmerByRole';
 
 export const metadata: Metadata = { title: 'Register a farmer' };
 
 export default function RegisterFarmerPage() {
-  return <RegisterFarmer />;
+  return <RegisterFarmerByRole />;
 }

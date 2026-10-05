@@ -1,0 +1,271 @@
+/*
+ * The officer's home, sized for a phone in a field.
+ *
+ * One column until 768px; targets at 56px rather than the 32px a desktop
+ * control gets away with; numbers at 40px so they read at arm's length in
+ * sunlight; and room at the bottom for the fixed navigation bar so the last
+ * card is never trapped behind it. The Register's tokens throughout -- this is
+ * the same product, dressed for different conditions.
+ */
+.page {
+  display: grid;
+  gap: var(--s-6);
+}
+
+/* ---- A. Header ---------------------------------------------------------- */
+
+.head {
+  display: grid;
+  gap: 2px;
+}
+
+.eyebrow {
+  margin: 0;
+  font-size: var(--text-small);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.name {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 6vw, 2rem);
+  line-height: 1.1;
+  color: var(--ink);
+}
+
+.scope {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: var(--text-small);
+}
+
+/* ---- Sections ----------------------------------------------------------- */
+
+.section {
+  display: grid;
+  gap: var(--s-3);
+}
+
+.h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  color: var(--ink);
+}
+
+.note {
+  margin: 0;
+  font-size: var(--text-small);
+  color: var(--muted);
+}
+
+/* ---- B. Today ----------------------------------------------------------- */
+
+/*
+ * ONE CARD, TWO FIGURES -- not two cards competing.
+ *
+ * Two side-by-side cards at 360px leave about 114px of content each, which is
+ * enough for the number and not enough for the label beneath it without a
+ * three-line wrap. Today is the second thing on the screen and should read as
+ * one statement, so it is one card with a divider and the figures share it.
+ */
+.todayCard {
+  background: var(--card);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-card);
+  /* A solid rule reads in glare where a background tint does not. */
+  border-inline-start: 4px solid var(--green-deep);
+  padding: var(--s-5);
+  display: grid;
+  gap: var(--s-3);
+}
+
+.todayFigures {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--s-4);
+}
+
+.bigStat {
+  margin: 0;
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.todayFigures > .bigStat + .bigStat {
+  border-inline-start: 1px solid var(--line);
+  padding-inline-start: var(--s-4);
+}
+
+.todayNone,
+.floor {
+  margin: 0;
+  font-size: var(--text-small);
+  color: var(--muted);
+  border-block-start: 1px solid var(--line);
+  padding-block-start: var(--s-3);
+}
+
+.bigNumber {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 11vw, 2.75rem);
+  line-height: 1;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.bigLabel {
+  font-size: var(--text-small);
+  color: var(--ink-2);
+}
+
+/* ---- C. Actions --------------------------------------------------------- */
+
+.actions {
+  display: grid;
+  gap: var(--s-3);
+}
+
+@media (min-width: 560px) {
+  .actions {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--s-3);
+  /* One thumb, gloved, in a hurry. */
+  min-block-size: 56px;
+  padding-inline: var(--s-5);
+  font-size: 1rem;
+  font-weight: 600;
+  text-align: start;
+}
+
+/* ---- D. Needs attention ------------------------------------------------- */
+
+.rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--s-3);
+}
+
+.attnCard {
+  display: grid;
+  gap: var(--s-4);
+}
+
+.attnTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--s-3);
+}
+
+.attnWho {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.attnName {
+  font-weight: 700;
+  font-size: 1.0625rem;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.attnMeta {
+  font-size: var(--text-small);
+  color: var(--muted);
+  /* A farmer number plus a date is wider than 360px allows beside a stamp. */
+  overflow-wrap: anywhere;
+}
+
+.attnAction {
+  min-block-size: 52px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+}
+
+.attnWait {
+  margin: 0;
+  font-size: var(--text-small);
+  color: var(--muted);
+}
+
+.clear {
+  margin: 0;
+  color: var(--ink-2);
+}
+
+/* ---- E. Caseload -------------------------------------------------------- */
+
+.counts {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--s-3);
+  margin: 0;
+}
+
+@media (min-width: 560px) {
+  .counts {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.count {
+  padding: var(--s-4);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+}
+
+.count dt {
+  font-size: var(--text-small);
+  color: var(--muted);
+}
+
+.count dd {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+ * SECONDARY SECTIONS READ QUIETER, ON PURPOSE.
+ *
+ * Every section having the same weight is how a dashboard stops having a
+ * hierarchy. The day's work and the four actions are what an officer opens this
+ * screen for; the caseload totals and buyer requests are there when wanted. A
+ * lighter heading and a rule above them says "still here, not urgent" without
+ * hiding anything.
+ */
+.secondary {
+  border-block-start: 1px solid var(--line);
+  padding-block-start: var(--s-5);
+}
+
+.secondary .h2 {
+  font-size: 1rem;
+  color: var(--ink-2);
+}
+
+.footnote {
+  margin: 0;
+  font-size: var(--text-small);
+  color: var(--muted);
+}
