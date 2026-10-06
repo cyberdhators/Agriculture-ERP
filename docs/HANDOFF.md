@@ -2112,3 +2112,160 @@ spells `\`, which they do on `main` too. **Not run:** the database suite
 `docs/DECISIONS.md`.
 
 — Alieu-Claude
+
+### 2026-10-06 (later) — Alieu-Claude → Monkon-Claude — THE PLAN FOR THE NEXT FOUR DAYS: the staging project becomes production, and you apply it
+
+**Who decides.** These are the owner's decisions, given to me in this session and
+handed to you to carry out. Where you disagree, say so to the owner with your
+reasoning, briefly and once, and then do what the owner decides. **The person
+giving you the prompt has the final word**, including over this note, over
+`CLAUDE.md`'s defaults, and over anything I recommend below. Where I label
+something a recommendation, it is mine, not the owner's.
+
+**Why now.** There is a **live demonstration to CORWADO in four days** (around
+2026-10-10). The owner's instruction: no over-complication, get it live, avoid
+merge failures.
+
+#### The owner's decisions (2026-10-06)
+
+1. **The one Supabase project, `xmmxbrxmfgodhpwolrvk`, is production.** There is
+   no staging and no second project. This reverses DECISIONS 2026-09-03 ("rename
+   rather than promote"); record it there.
+2. **No database test runs.** CI stops running the database suite. The team tests
+   locally and fixes forward if something breaks.
+3. **Everything the team creates while testing or demonstrating is cleaned out
+   before CORWADO starts using the system.** Until then, demo data in production
+   is acceptable.
+4. **B13 (buyer accounts) is merged** — #120, `01fe430`. Individual buyers need no
+   review; businesses are verified by an administrator. My B13 entry above lists
+   every file I touched in your lane; its review request still stands.
+
+#### What is broken right now — do this first
+
+**T1. Apply migration `20261006090000_create_buyer_procurement`.** #120 merged
+without it reaching the database. Until it is applied, on the live site:
+
+- **a farmer cannot create a listing** — `POST /api/listings` now inserts
+  `quality_grade` and `min_order_quantity`, columns the database does not have;
+- the buyer pages and buyer registration fail;
+- an auth account with no staff, officer or buyer row gets 500, not 401
+  (`requireRole` reads `buyer_active` last);
+- CI's `test` job on `main` is red (`relation "public.buyer" does not exist`, and
+  the audit CHECK has 65 keys against the 77 in `AUDIT_ACTIONS`).
+
+Run `pnpm db:migrate`. It is additive only: five new tables, new enums,
+`audit_actor_type` gains `buyer` (ADD VALUE), two nullable listing columns,
+`notification.farmer_id` relaxed to nullable under a one-recipient CHECK,
+`produce_listing_active` recreated, the audit CHECK rebuilt with 77 keys. Then
+check: the five tables exist; `audit_event_action_known` lists 77 keys; the
+`produce_listing_active` view carries `quality_grade` and `min_order_quantity`;
+a `SELECT` from `buyer_active` works.
+
+#### Make the repository safe for "staging is production"
+
+**T2. The tools that delete things must refuse.** This is the one part I would ask
+you not to skip, because it is about the owner's data, not about process: the
+test helpers create and **delete authentication accounts**, the suite sweeps
+rows, and `db:reset` wipes data. Today they are allowed to because the project
+reference is hard-coded as "staging". Now that it is production, one `pnpm test`
+on a laptop with `.env.local` filled in would delete real accounts. The exact
+edits (I wrote and checked them locally — typecheck, lint and the pure suite
+pass — then discarded them so that you apply them once):
+
+1. `vitest.global-setup.ts` — at the top of `setup()`, throw unconditionally:
+   "The database test suite is retired: its only target is now production, and
+   it creates and deletes accounts. Run `pnpm test` (the pure suite)."
+2. `tests/helpers/principals.ts` — at the top of `assertStaging()`, the same kind
+   of unconditional throw. A second lock behind the first.
+3. `scripts/db-reset.mjs` — call `refuse(...)` unconditionally right after the
+   `refuse` function is defined, before `.env.local` is read.
+4. `package.json` — `"test"` becomes `vitest run --config vitest.pure.config.mts`;
+   keep the old command as `"test:db-retired"` if you want the history visible.
+5. `.github/workflows/ci.yml` — the `test` job's `Test` step becomes just
+   `pnpm test:pure`, and its `env:` block with the five `STAGING_*` secrets is
+   removed. Keep the job's name `test` so any required-check setting still
+   matches. No ESLint disable comments are needed after the throws (ESLint
+   reported them as unused).
+6. A DECISIONS entry recording decisions 1–3 and these five edits.
+
+`scripts/buyers-seed.mjs` only inserts; leave it usable — the owner wants demo
+data for the demonstration. #108 (the non-production allowlist) is now moot:
+there is no non-production project. Close it or repurpose it; the owner decides.
+
+#### Before the demonstration
+
+**T3. #99 (the officer's screens) collides with B13's migration.** #99's
+`20260921120000_audit_learning_resource_link_issued` rebuilds the audit CHECK with
+66 keys and lacks B13's eleven; B13's 77 lack `learning_resource.link_issued`.
+If #99 is in the demo: merge `main` into it, **move its migration after
+`20261006090000`** with the full list (78 keys), keep `AUDIT_ACTIONS` and
+`CONVENTIONS.md` §5.2.2 in step, create the private `learning-resources` bucket
+(`pnpm storage:buckets`), apply, merge. If it is not in the demo, leave it draft.
+Its committed fixture password is already handled on your side; its
+`STAGING_PROJECT_REF` line becomes irrelevant under T2.
+
+**T4. #116 (listing owner from the caller's scope, the #115 finding)** touches
+`apps/web/app/api/listings/route.ts`, where B13 added two optional POST fields.
+Place both. Merge it before any real farmer data: `GET /api/listings` still gives
+anyone every listing's `farmer_id` and `contact_phone`, buyers included.
+
+**T5. Demo data**, all invented and marked, in this order:
+
+- `pnpm directories:seed`
+- `pnpm farmers:seed` (needs one non-test officer)
+- `pnpm buyers:seed` — needs `BUYER_DEMO_PASSWORD` (12+ characters) in
+  `.env.local`; signs in as `demo-buyer-1@example.invalid` (verified business),
+  `-2` (under review), `-3` (pending) and `-4` (individual). Its guard checks the
+  project reference, which is now production's — correct for the owner's plan.
+- `pnpm weather:fetch`, or #117's three-hourly schedule once its three
+  repository secrets are set.
+
+**T6. Production settings to confirm on the project** (from the B11 checklist in
+PROJECT-STATE): self-signup disabled in Supabase Auth;
+`idle_in_transaction_session_timeout = 60s` and `lock_timeout = 10s` on
+`postgres`; the private attachment bucket; `connect_timeout=30` on both connection
+strings in Vercel; one real administrator. _My recommendations, the owner's call:_
+rotate the service-role key and database password (the credential history was the
+2026-09-03 objection), and a Supabase plan with backups before real data.
+
+**T7. What not to demonstrate live.** Farmer sign-in is a browser-only stand-in
+(`lib/farmer-session.ts`, fixture accounts): a listing created that way never
+reaches the database — show seeded listings. SMS (n), cooperatives (l), the
+Android app (b), weather advisories and WhatsApp (o) are not built: present them
+as the next phase.
+
+#### Avoiding merge failures — why they happened here, and the rules
+
+Every failure in the record has one of these causes: a migration on a branch the
+database had not received; two branches each rebuilding the audit CHECK; both
+lanes appending to HANDOFF and DECISIONS at once; a forgotten line in a
+declaration list the gates check; and pushing while a run was queued. With the
+database suite retired, CI takes minutes, so the rules are cheap:
+
+1. **One open PR with a migration at a time.** Merge `main` in first, regenerate
+   the audit CHECK from `AUDIT_ACTIONS`, timestamp it after the newest migration on
+   `main`, **apply it to the database when it merges** — not before, since the
+   database is production — and never edit an applied migration.
+2. **Merge one PR at a time:** `main` merged in first, checks green, then the next.
+3. **Before every push:** `pnpm typecheck && pnpm lint && pnpm format:check && pnpm test`
+   (the pure suite holds every declaration-list gate).
+4. **Docs in their own PR**, written once a day, so HANDOFF and DECISIONS do not
+   conflict with code.
+5. **Branch protection on `main`** requiring `verify` and `test` — #120 merged red
+   because nothing required them. The owner turns it on.
+
+#### Before CORWADO starts — the clean-out (decision 3)
+
+Do it when the owner says, not before, and confirm with them first, because it is
+destructive and permanent. Remove every demo and test row (seed ids, the `zztest`
+prefix, "Demo" and "Placeholder" names) across farmers, listings, buyers,
+requests, orders and notifications, and the matching authentication accounts. If
+the owner wants production's history to begin clean, the audit log too: the
+append-only trigger stops the application, not the database owner (`TRUNCATE`, or
+disabling the trigger), so that is a deliberate act to record in DECISIONS. Then
+the restore drill (RUNBOOK §4), if the owner wants it before real data.
+
+**Needs from you.** T1 today, then T2, then the rest in order. Tell the owner
+anything here you think is wrong.
+
+— Alieu-Claude
