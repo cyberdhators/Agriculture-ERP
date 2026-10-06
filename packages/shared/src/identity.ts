@@ -61,10 +61,22 @@ export function officerAuthIdentifier(phone: string): string {
 // ---------------------------------------------------------------------------
 
 export const USER_ROLES = ['admin', 'supervisor', 'read_only'] as const;
+/**
+ * Every CORWADO principal: office staff and officers. NOT every role.
+ *
+ * Routes that say `roles: ALL_ROLES` mean "anyone who works for the
+ * programme" -- the contact requests, the locations list. B13's buyer is an
+ * outside party, so it is deliberately absent here: adding it would have
+ * admitted buyers to every such route at once, silently. A route that a buyer
+ * may call names `BUYER_ROLE` explicitly.
+ */
 export const ALL_ROLES = [...USER_ROLES, 'officer'] as const;
 
+/** B13. An outside organisation's purchaser. Named by every route that admits one. */
+export const BUYER_ROLE = 'buyer' as const;
+
 export type UserRole = (typeof USER_ROLES)[number];
-export type Role = (typeof ALL_ROLES)[number];
+export type Role = (typeof ALL_ROLES)[number] | typeof BUYER_ROLE;
 
 export const userRoleSchema = z.enum(USER_ROLES);
 
@@ -89,6 +101,18 @@ export type Scope =
       readonly officerId: string;
       readonly payamId: string;
       readonly stateId: string;
+    }
+  /**
+   * B13. A buyer sees what belongs to THEIR ORGANISATION and nothing of the
+   * register. `verification` travels with the scope so a route decides what the
+   * standing permits without a second read (C-14B.3).
+   */
+  | {
+      readonly kind: 'buyer';
+      readonly buyerId: string;
+      readonly organizationId: string;
+      readonly verification:
+        'pending' | 'under_review' | 'verified' | 'rejected' | 'suspended' | 'not_required';
     };
 
 /** Roles that may write. read_only reads within its state and writes nothing (C-3.9). */

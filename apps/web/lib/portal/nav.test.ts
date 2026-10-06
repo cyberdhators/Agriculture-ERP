@@ -29,6 +29,7 @@ describe('who sees which destination', () => {
       'Overview',
       'Field operations',
       'People & access',
+      'Buyers & procurement',
       'Communications',
       'Reporting',
       'Reference',
@@ -83,10 +84,15 @@ describe('who sees which destination', () => {
     }
   });
 
-  it('offers communications and product reports to administrators alone', () => {
-    // Both routes exist and both are administrator-only on the server. This
+  it('offers communications, product reports and buyer review to administrators alone', () => {
+    // Every route behind these is administrator-only on the server. This
     // asserts the nav agrees with them, not that the nav is the control.
-    for (const href of ['/communications', '/product-reports']) {
+    for (const href of [
+      '/communications',
+      '/product-reports',
+      '/admin/buyers',
+      '/admin/procurement',
+    ]) {
       const offered = ROLES.filter((role) =>
         navFor(role).some((s) => s.items.some((i) => i.href === href)),
       );

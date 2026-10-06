@@ -32,12 +32,35 @@ export const MARKET_OPEN = process.env.NEXT_PUBLIC_MARKET_OPEN !== '0';
 export const LOGIN_PATH = '/login';
 export const HOME_PATH = '/dashboard';
 
+/**
+ * B13. The buyer's side. Every page under it needs a session, except the
+ * application form -- an applicant has no account until they submit it.
+ * Which role the session belongs to is decided by the pages and, for data,
+ * by every route: the middleware only knows signed-in from signed-out.
+ */
+export const BUYER_PREFIX = '/buyer';
+export const BUYER_HOME_PATH = '/buyer/dashboard';
+export const BUYER_REGISTER_PATH = '/buyer/register';
+
 const under = (pathname: string, prefixes: readonly string[]): boolean =>
   prefixes.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 
+export const isBuyerPath = (pathname: string): boolean => under(pathname, [BUYER_PREFIX]);
+
 export function isPortalPath(pathname: string, marketOpen: boolean = MARKET_OPEN): boolean {
   if (under(pathname, PORTAL_PREFIXES)) return true;
+  if (isBuyerPath(pathname)) return !under(pathname, [BUYER_REGISTER_PATH]);
   return !marketOpen && under(pathname, MARKET_PREFIXES);
+}
+
+/**
+ * Where a signed-in principal belongs after sign-in. A buyer is sent to the
+ * buyer side whatever `next` asked for, unless `next` is already there; staff
+ * keep the `next` they were given. Both are only ever same-origin paths.
+ */
+export function homeFor(role: string | undefined, next: string): string {
+  if (role === 'buyer') return isBuyerPath(next) ? next : BUYER_HOME_PATH;
+  return isBuyerPath(next) ? HOME_PATH : next;
 }
 
 /** Where the site root sends a visitor: the marketplace when open, sign-in otherwise. */

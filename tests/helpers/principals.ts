@@ -44,7 +44,7 @@ export function assertStaging(): void {
   }
 }
 
-export type TestRole = 'admin' | 'supervisor' | 'read_only' | 'officer';
+export type TestRole = 'admin' | 'supervisor' | 'read_only' | 'officer' | 'buyer';
 
 export interface TestPrincipal {
   readonly role: TestRole;
@@ -55,6 +55,8 @@ export interface TestPrincipal {
   readonly refreshToken: string;
   /** Officers only. */
   readonly phone?: string;
+  /** Buyers only (B13): the organisation the buyer acts for. */
+  readonly organizationId?: string;
 }
 
 const env = (name: string): string => {
@@ -127,6 +129,18 @@ async function signIn(
   return { access: token.body.access_token as string, refresh: token.body.refresh_token as string };
 }
 
+/**
+ * B13: signs in with an identifier and password a ROUTE created -- the buyer
+ * registration test proves the account it made can actually sign in.
+ */
+export async function signInWith(
+  identifier: string,
+  password: string,
+): Promise<{ access: string; refresh: string }> {
+  assertStaging();
+  return signIn(identifier, password);
+}
+
 export async function deleteAccount(authUserId: string): Promise<void> {
   await authCall(`/auth/v1/admin/users/${authUserId}`, { key: service(), method: 'DELETE' });
 }
@@ -175,6 +189,37 @@ export async function sweep(prisma: PrismaClient): Promise<void> {
      SELECT auth_user_id FROM public."officer" WHERE name LIKE '${TEST_PREFIX}%'`,
   );
   for (const row of rows) await deleteAccount(row.auth_user_id);
+
+  // B13: buyer residue, BEFORE listings and staff users go -- orders reference
+  // listings, and decisions, orders and timeline entries reference staff.
+  // Every test organisation is named with the prefix; everything hangs off one.
+  const testOrgs = `(SELECT id FROM public.buyer_organization WHERE name LIKE '${TEST_PREFIX}%')`;
+  const buyerAccounts = await prisma.$queryRawUnsafe<{ auth_user_id: string }[]>(
+    `SELECT auth_user_id FROM public.buyer WHERE organization_id IN ${testOrgs}`,
+  );
+  for (const row of buyerAccounts) await deleteAccount(row.auth_user_id);
+  await prisma.$executeRawUnsafe(
+    `DELETE FROM public.notification WHERE buyer_organization_id IN ${testOrgs}`,
+  );
+  await prisma.$executeRawUnsafe(
+    `DELETE FROM public.delivery_update WHERE order_id IN
+       (SELECT id FROM public.purchase_order WHERE organization_id IN ${testOrgs}
+          OR listing_id IN (SELECT l.id FROM public.produce_listing l JOIN public.farmer fr
+                             ON fr.id = l.farmer_id WHERE fr.family_name LIKE '${FARMER_TEST_FAMILY}%'))`,
+  );
+  await prisma.$executeRawUnsafe(
+    `DELETE FROM public.purchase_order WHERE organization_id IN ${testOrgs}
+        OR listing_id IN (SELECT l.id FROM public.produce_listing l JOIN public.farmer fr
+                           ON fr.id = l.farmer_id WHERE fr.family_name LIKE '${FARMER_TEST_FAMILY}%')`,
+  );
+  await prisma.$executeRawUnsafe(
+    `DELETE FROM public.purchase_request WHERE organization_id IN ${testOrgs}`,
+  );
+  await prisma.$executeRawUnsafe(`DELETE FROM public.buyer WHERE organization_id IN ${testOrgs}`);
+  await prisma.$executeRawUnsafe(
+    `DELETE FROM public.buyer_organization WHERE name LIKE '${TEST_PREFIX}%'`,
+  );
+
   // B10: export log rows reference the staff users who ran them. The log is
   // append-only in the application; the sweep is the owner removing rows an
   // invented user made.
@@ -287,11 +332,54 @@ export async function sweep(prisma: PrismaClient): Promise<void> {
 export async function createPrincipal(
   prisma: PrismaClient,
   role: TestRole,
-  options: { stateId?: string; payamId?: string; phone?: string } = {},
+  options: {
+    stateId?: string;
+    payamId?: string;
+    phone?: string;
+    /** Buyers only: the organisation's standing. Defaults to pending. */
+    verification?: 'pending' | 'under_review' | 'verified' | 'rejected' | 'suspended';
+    /** Buyers only: join an existing organisation instead of making one. */
+    organizationId?: string;
+  } = {},
 ): Promise<TestPrincipal & { password: string }> {
   assertStaging();
   const password = newPassword();
   const name = `${TEST_PREFIX}-${role}`;
+
+  if (role === 'buyer') {
+    // B13. Written straight to the tables, as the staff principals are: the
+    // registration route is under test elsewhere, and a principal is a
+    // precondition, not the thing being proved.
+    const identifier = `${TEST_PREFIX}-buyer-${Math.random().toString(36).slice(2, 10)}@example.invalid`;
+    const authUserId = await createAccount(identifier, password);
+    let organizationId = options.organizationId;
+    if (!organizationId) {
+      const [org] = await prisma.$queryRawUnsafe<{ id: string }[]>(
+        `INSERT INTO public.buyer_organization (name, organization_type, verification_status)
+         VALUES ($1, 'trader', $2::public.buyer_verification_status) RETURNING id`,
+        `${TEST_PREFIX}-org-${Math.random().toString(36).slice(2, 8)}`,
+        options.verification ?? 'pending',
+      );
+      organizationId = org!.id;
+    }
+    const [row] = await prisma.$queryRawUnsafe<{ id: string }[]>(
+      `INSERT INTO public.buyer (auth_user_id, organization_id, given_name, family_name, phone)
+       VALUES ($1::uuid, $2::uuid, $3, 'Buyer', '+254700000000') RETURNING id`,
+      authUserId,
+      organizationId,
+      name,
+    );
+    const tokens = await signIn(identifier, password);
+    return {
+      role,
+      id: row!.id,
+      authUserId,
+      organizationId,
+      password,
+      accessToken: tokens.access,
+      refreshToken: tokens.refresh,
+    };
+  }
 
   if (role === 'officer') {
     const phone = options.phone ?? `+2119${Math.floor(10_000_000 + Math.random() * 89_999_999)}`;

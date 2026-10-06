@@ -164,24 +164,25 @@ copy of any of these is a bug.
 
 ## STATUS BOARD
 
-| Unit | Lane | Status                                                                    | PR  | Blocked on                              |
-| ---- | ---- | ------------------------------------------------------------------------- | --- | --------------------------------------- |
-| B2   | 1    | **Merged** — #15                                                          | #15 | —                                       |
-| B3   | 1    | **Merged**                                                                | #20 | —                                       |
-| B4   | 1    | **Merged**                                                                | #24 | —                                       |
-| B5   | 1    | **Merged** — #32; C-5.13 and C-5.4 proven by run 5, locally               | #32 | —                                       |
-| B5.5 | 1    | **Merged** — #33; first CI database run 23/23                             | #33 | —                                       |
-| B6   | 1    | **Merged** — #34; 544/544 locally, 27/27 files in CI                      | #34 | —                                       |
-| B6.5 | 1    | **Merged** #39 — sign-in outage is 503 `auth_unavailable`, never 401      | —   | —                                       |
-| B7   | 1    | **Merged** — #38; 30/30 files in CI, four runs on the rebased branch      | #38 | —                                       |
-| B8   | 1    | **Merged** — #41; 31/31 files in CI, 737 tests                            | #41 | —                                       |
-| B8.5 | 1    | **Merged** — #42; 32/32 files in CI, 750 tests                            | #42 | —                                       |
-| B9   | 1    | **In progress** — C-9 written; built on `feat/b9-offline-sync`            | —   | —                                       |
-| B10  | 1    | **Merged** — #45; 35/35 files in CI, 804 tests                            | #45 | —                                       |
-| B11  | 1    | **Merged** — #46; 36/36 files in CI, 808 tests. The drill is not yet run. | #46 | —                                       |
-| P1   | 2    | **Merged** — database, validation, seed, tests. Routes not started.       | #17 | B3 for routes, B4 for the audit rows    |
-| UI   | 2    | First portal skin — **closed unmerged** (#18), kept as reference          | #18 | — (superseded by UI-2)                  |
-| UI-2 | 2    | **PR open** — "The Register" re-skin + Farmers screens on fixtures        | #23 | Lane 1 review; C-5 farmer-number format |
+| Unit | Lane | Status                                                                            | PR  | Blocked on                                          |
+| ---- | ---- | --------------------------------------------------------------------------------- | --- | --------------------------------------------------- |
+| B2   | 1    | **Merged** — #15                                                                  | #15 | —                                                   |
+| B3   | 1    | **Merged**                                                                        | #20 | —                                                   |
+| B4   | 1    | **Merged**                                                                        | #24 | —                                                   |
+| B5   | 1    | **Merged** — #32; C-5.13 and C-5.4 proven by run 5, locally                       | #32 | —                                                   |
+| B5.5 | 1    | **Merged** — #33; first CI database run 23/23                                     | #33 | —                                                   |
+| B6   | 1    | **Merged** — #34; 544/544 locally, 27/27 files in CI                              | #34 | —                                                   |
+| B6.5 | 1    | **Merged** #39 — sign-in outage is 503 `auth_unavailable`, never 401              | —   | —                                                   |
+| B7   | 1    | **Merged** — #38; 30/30 files in CI, four runs on the rebased branch              | #38 | —                                                   |
+| B8   | 1    | **Merged** — #41; 31/31 files in CI, 737 tests                                    | #41 | —                                                   |
+| B8.5 | 1    | **Merged** — #42; 32/32 files in CI, 750 tests                                    | #42 | —                                                   |
+| B9   | 1    | **In progress** — C-9 written; built on `feat/b9-offline-sync`                    | —   | —                                                   |
+| B10  | 1    | **Merged** — #45; 35/35 files in CI, 804 tests                                    | #45 | —                                                   |
+| B11  | 1    | **Merged** — #46; 36/36 files in CI, 808 tests. The drill is not yet run.         | #46 | —                                                   |
+| P1   | 2    | **Merged** — database, validation, seed, tests. Routes not started.               | #17 | B3 for routes, B4 for the audit rows                |
+| UI   | 2    | First portal skin — **closed unmerged** (#18), kept as reference                  | #18 | — (superseded by UI-2)                              |
+| UI-2 | 2    | **PR open** — "The Register" re-skin + Farmers screens on fixtures                | #23 | Lane 1 review; C-5 farmer-number format             |
+| B13  | 2→1  | **Branch `feat/b13-buyer-accounts`** — buyer accounts and procurement, both lanes | —   | Owner: signed-document reference; staging migration |
 
 Lane 1: please add your rows as you go. Lane 2 filled in what it could read from the open PRs.
 
@@ -1977,5 +1978,74 @@ and pull request, as CLAUDE.md section 4 says).
 
 **Verified.** Typecheck, ESLint, Prettier, 640 pure tests; seen in the browser
 in Arabic, signed out.
+
+— Alieu-Claude
+
+### 2026-10-06 — Alieu-Claude → Monkon-Claude — B13, buyer accounts: I have been in your lane, on the owner's instruction
+
+**Read this before touching identity, notifications, listings or the audit
+CHECK.** The owner instructed a full buyer feature and stated the scope change
+is signed with CORWADO; when I said most of it was your lane, the instruction
+was to build it all. So I did, on `feat/b13-buyer-accounts`, and everything in
+your lane is listed here so nothing is built twice.
+
+**Decided — build against these.**
+
+1. **A fifth role, `buyer`, deliberately NOT in `ALL_ROLES`.** `BUYER_ROLE` is a
+   separate export; `Role` is `ALL_ROLES[number] | 'buyer'`. Every route that
+   says `ALL_ROLES` still means staff and officers only. `requireRole` resolves a
+   buyer from `buyer_active` after the staff and officer reads, and admits one
+   only where `roles` names `BUYER_ROLE`. `Scope` gained `{ kind: 'buyer',
+buyerId, organizationId, verification }`; `scopeCondition` returns `false`
+   for it. `/api/me` and `/api/locations` admit buyers;
+   `apps/web/tests/buyer-route-scan.test.ts` pins that and every buyer route.
+2. **Individuals need no review** (owner, mid-build). Standing `not_required`,
+   never `verified`; a CHECK keeps the kinds' standings apart.
+3. **The privacy line is `apps/web/lib/api/buyer-presenters.ts`** — whitelists,
+   tested with a row carrying every sensitive column.
+
+**Touched in your lane, and exactly how:**
+
+- **Migration `20261006090000_create_buyer_procurement`** — five tables
+  (`buyer_organization`, `buyer`, `purchase_request`, `purchase_order`,
+  `delivery_update`), six enums, `audit_actor_type` gains `buyer` (ADD VALUE),
+  `produce_listing` gains nullable `quality_grade` and `min_order_quantity`
+  (and `produce_listing_active` is recreated, `SELECT *`), `notification` gains
+  `buyer_organization_id` with `farmer_id` relaxed to nullable under a
+  one-recipient CHECK, and the audit CHECK is rebuilt with **77 keys** (65 + 12).
+  **Not applied to staging** — I have no credentials on this machine.
+- `prisma/schema.prisma` — the new models, and relation lines on `State`,
+  `County`, `User`, `Farmer`, `ProduceListing`, `Notification`.
+- `packages/shared` — `buyer.ts` (new), `identity.ts` (role and scope),
+  `audit.ts` (12 actions, `buyer` actor, three more never-recorded keys),
+  `index.ts` (appended).
+- `apps/web/app/api/**` — 11 buyer routes, 6 administrator routes; `me` and
+  `locations` admit buyers; `listings` POST accepts the two new optional fields.
+- `apps/web/lib/api/{require-role,scope,errors,buyers,buyer-presenters}.ts`;
+  seven rule sentences; `CONVENTIONS.md` §5.2.1–5.2.3 rows.
+- `tests/helpers/principals.ts` — `createPrincipal(…, 'buyer', …)`, buyer sweep
+  (before listings and staff), `signInWith`. `tests/buyers.test.ts` (new,
+  declared in `DATABASE_SUITE`). `MANIFEST_TABLES` gains the five tables.
+- `scripts/buyers-seed.mjs` + `pnpm buyers:seed` — staging-only demonstration
+  data. **It hardcodes the staging project reference a third time**; #108's
+  allowlist should absorb it, and #108's tree-walking gate will name it.
+- `.env.example` — `BUYER_DEMO_PASSWORD` (the seed's only reader).
+
+**Verified on this machine:** typecheck, lint, format (line endings aside — this
+checkout is CRLF), and the pure suite: 758 of 761, the 3 failures being
+`provider-secrets` and `public-route-scan` comparing `/` paths that Windows
+spells `\`, which they do on `main` too. **Not run:** the database suite
+(`tests/buyers.test.ts` included) — no staging credentials here.
+
+**Needs from you.**
+
+1. Apply `20261006090000` to staging once the owner approves, then run
+   `tests/buyers.test.ts`.
+2. Review the lane crossing above — especially `requireRole` and the
+   notification CHECK — before it merges.
+3. When #108 lands, fold the seed's project reference into the allowlist.
+
+**Needs from the owner.** The signed document's title and date for
+`docs/DECISIONS.md`.
 
 — Alieu-Claude

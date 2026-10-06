@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   AUDIT_ACTIONS,
+  BUYER_MESSAGES,
   ERROR_CODES,
   ERROR_MESSAGES,
   FARM_MESSAGES,
@@ -154,6 +155,7 @@ describe('the documented field reasons match the ones the code actually sends', 
     ...Object.values(VISIT_MESSAGES),
     ...Object.values(SYNC_MESSAGES),
     ...Object.values(REPORT_MESSAGES),
+    ...Object.values(BUYER_MESSAGES),
     ERROR_MESSAGES.unknownField,
     ERROR_MESSAGES.bodyNotExpectedForm,
   ];

@@ -66,6 +66,14 @@ export const MANIFEST_TABLES = [
   'contact_request',
   'market_price',
   'notification',
+  // B13 (2026-10-06): buyer accounts and procurement, added in the same change
+  // as the migration that creates them, so a restore is never verified
+  // against a manifest that forgot them (C-16.12's first finding).
+  'buyer_organization',
+  'buyer',
+  'purchase_request',
+  'purchase_order',
+  'delivery_update',
   'audit_event',
 ] as const;
 

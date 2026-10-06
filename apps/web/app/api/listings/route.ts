@@ -1,5 +1,6 @@
 import {
   DEFAULT_LIMIT,
+  LISTING_GRADES,
   MAX_LIMIT,
   decodeCursor,
   encodeCursor,
@@ -331,6 +332,35 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
           ? input.pickup_notes.trim()
           : null;
 
+      // B13: two optional procurement facts a buyer filters on. Absent is
+      // absent -- never a default grade, which would claim a quality nobody judged.
+      let qualityGrade: string | null = null;
+      if (input.quality_grade !== undefined && input.quality_grade !== null) {
+        if (
+          typeof input.quality_grade !== 'string' ||
+          !(LISTING_GRADES as readonly string[]).includes(input.quality_grade)
+        ) {
+          throw new ApiFailure(400, 'invalid_input', 'quality_grade must be a, b, c or ungraded.');
+        }
+        qualityGrade = input.quality_grade;
+      }
+      let minOrderQuantity: number | null = null;
+      if (input.min_order_quantity !== undefined && input.min_order_quantity !== null) {
+        if (
+          typeof input.min_order_quantity !== 'number' ||
+          !Number.isFinite(input.min_order_quantity) ||
+          input.min_order_quantity <= 0 ||
+          input.min_order_quantity > quantity
+        ) {
+          throw new ApiFailure(
+            400,
+            'invalid_input',
+            'min_order_quantity must be a positive number no larger than quantity.',
+          );
+        }
+        minOrderQuantity = input.min_order_quantity;
+      }
+
       const status =
         typeof input.status === 'string' && ['draft', 'listed'].includes(input.status)
           ? input.status
@@ -352,11 +382,11 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
              (farmer_id, trading_name, title, category, product_name, description,
               quantity, unit, price_ssp, price_per, negotiable, delivery_available,
               available_from, available_until, harvest_season, pickup_notes,
-              contact_phone, status, payam_id, state_id)
+              contact_phone, status, payam_id, state_id, quality_grade, min_order_quantity)
            VALUES ($1::uuid, $2, $3, $4::listing_category, $5, $6,
                    $7, $8::listing_unit, $9, $10::listing_unit, $11, $12,
                    $13::date, $14::date, $15, $16, $17, $18::listing_status,
-                   $19, $20)
+                   $19, $20, $21::listing_grade, $22)
            RETURNING ${RETURNING_COLUMNS}`,
           farmerId,
           tradingName,
@@ -378,6 +408,8 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
           status,
           farmer.payam_id,
           farmer.state_id,
+          qualityGrade,
+          minOrderQuantity,
         );
         const inserted = rows[0]!;
         await writeAudit(tx, {

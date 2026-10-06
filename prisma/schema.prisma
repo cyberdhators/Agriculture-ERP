@@ -107,6 +107,8 @@ model State {
   visits   Visit[]
   weatherLocations WeatherLocation[]
   marketPrices MarketPrice[]
+  /// B13. A buyer organisation in South Sudan may name its state.
+  buyerOrganizations BuyerOrganization[]
 
   @@map("state")
 }
@@ -126,6 +128,7 @@ model County {
   visits  Visit[]
   weatherLocations WeatherLocation[]
   farmerNumberCounter FarmerNumberCounter?
+  buyerOrganizations BuyerOrganization[]
 
   /// Target of the composite key on payam that enforces C-2.3.
   @@unique([id, stateId], map: "county_id_state_id_key")
@@ -345,6 +348,14 @@ model User {
   contactRequestsHandled    ContactRequest[]   @relation("ContactRequestHandledBy")
   marketPricesCreated       MarketPrice[]      @relation("MarketPriceCreatedBy")
   marketPricesDeleted       MarketPrice[]      @relation("MarketPriceDeletedBy")
+  // B13 (2026-10-06). Staff review buyers, decide requests and arrange orders.
+  buyerOrganizationsVerified BuyerOrganization[] @relation("BuyerOrganizationVerifiedBy")
+  buyerOrganizationsDeleted  BuyerOrganization[] @relation("BuyerOrganizationDeletedBy")
+  buyersDeleted              Buyer[]             @relation("BuyerDeletedBy")
+  purchaseRequestsDecided    PurchaseRequest[]   @relation("PurchaseRequestDecidedBy")
+  purchaseOrdersCreated      PurchaseOrder[]     @relation("PurchaseOrderCreatedBy")
+  purchaseOrdersDeleted      PurchaseOrder[]     @relation("PurchaseOrderDeletedBy")
+  deliveryUpdatesRecorded    DeliveryUpdate[]    @relation("DeliveryUpdateRecordedByUser")
 
   @@index([role], map: "user_role_idx")
   @@index([scopeStateId], map: "user_scope_state_id_idx")
@@ -435,6 +446,8 @@ enum AuditActorType {
   read_only
   officer
   system
+  /// B13. Added with ALTER TYPE ... ADD VALUE; existing rows are untouched.
+  buyer
 
   @@map("audit_actor_type")
 }
@@ -531,6 +544,8 @@ model Farmer {
   produceListings    ProduceListing[]
   contactRequests    ContactRequest[]
   notifications      Notification[]
+  /// B13. Internal only: a buyer is never given this relation (C-14B.8).
+  purchaseOrders     PurchaseOrder[]
 
   @@index([payamId, verificationStatus, deletedAt], map: "farmer_payam_status_idx")
   @@index([countyId], map: "farmer_county_id_idx")
@@ -1006,6 +1021,9 @@ model ProduceListing {
   pickupNotes        String?         @map("pickup_notes")
   contactPhone       String          @map("contact_phone")
   deliveryAvailable  Boolean         @default(false) @map("delivery_available")
+  /// B13. Optional procurement facts a buyer filters on.
+  qualityGrade       ListingGrade?   @map("quality_grade")
+  minOrderQuantity   Decimal?        @map("min_order_quantity") @db.Decimal(12, 2)
   status             ListingStatus   @default(draft)
   payamId            String          @map("payam_id")
   stateId            String          @map("state_id")
@@ -1019,6 +1037,8 @@ model ProduceListing {
   deleter         User?            @relation("ProduceListingDeletedBy", fields: [deletedBy], references: [id], map: "produce_listing_deleted_by_fkey")
   reports         ProductReport[]
   contactRequests ContactRequest[]
+  purchaseRequests PurchaseRequest[]
+  purchaseOrders   PurchaseOrder[]
 
   @@index([farmerId, updatedAt(sort: Desc)], map: "produce_listing_farmer_idx")
   @@index([status, category, updatedAt(sort: Desc)], map: "produce_listing_browse_idx")
@@ -1106,18 +1126,269 @@ enum NotificationChannel {
   @@map("notification_channel")
 }
 
+/// Exactly one recipient per row: a farmer, or (B13) a buyer organisation.
+/// The database enforces it with notification_one_recipient.
 model Notification {
-  id        String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  farmerId  String              @map("farmer_id") @db.Uuid
-  channel   NotificationChannel @default(in_app)
-  title     String
-  body      String
-  readAt    DateTime?           @map("read_at") @db.Timestamptz(6)
-  createdAt DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
-  deletedAt DateTime?           @map("deleted_at") @db.Timestamptz(6)
+  id                  String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  farmerId            String?             @map("farmer_id") @db.Uuid
+  buyerOrganizationId String?             @map("buyer_organization_id") @db.Uuid
+  channel             NotificationChannel @default(in_app)
+  title               String
+  body                String
+  readAt              DateTime?           @map("read_at") @db.Timestamptz(6)
+  createdAt           DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  deletedAt           DateTime?           @map("deleted_at") @db.Timestamptz(6)
 
-  farmer Farmer @relation(fields: [farmerId], references: [id], map: "notification_farmer_id_fkey")
+  farmer            Farmer?            @relation(fields: [farmerId], references: [id], map: "notification_farmer_id_fkey")
+  buyerOrganization BuyerOrganization? @relation(fields: [buyerOrganizationId], references: [id], map: "notification_buyer_organization_id_fkey")
 
   @@index([farmerId, createdAt(sort: Desc)], map: "notification_farmer_unread_idx")
+  @@index([buyerOrganizationId, createdAt(sort: Desc)], map: "notification_buyer_unread_idx")
   @@map("notification")
+}
+
+// -----------------------------------------------------------------------------
+// B13 -- BUYER ACCOUNTS AND PROCUREMENT (2026-10-06). Migration
+// 20261006090000. Criteria C-14B; decision in docs/DECISIONS.md.
+// -----------------------------------------------------------------------------
+
+enum ListingGrade {
+  a
+  b
+  c
+  ungraded
+
+  @@map("listing_grade")
+}
+
+enum BuyerOrganizationType {
+  trader
+  aggregator
+  processor
+  wholesaler
+  exporter
+  food_company
+  ngo
+  institution
+  government
+  other
+
+  @@map("buyer_organization_type")
+}
+
+enum BuyerVerificationStatus {
+  pending
+  under_review
+  verified
+  rejected
+  suspended
+  /// An individual buyer: not reviewed, so not "verified" -- exempt from review.
+  not_required
+
+  @@map("buyer_verification_status")
+}
+
+/// Individuals need no review; businesses are verified by CORWADO first.
+enum BuyerAccountType {
+  individual
+  business
+
+  @@map("buyer_account_type")
+}
+
+/// A preference, never a payment. Payments are out of this phase.
+enum BuyerPaymentPreference {
+  cash_on_delivery
+  bank_transfer
+  mobile_money
+  cheque
+  other
+
+  @@map("buyer_payment_preference")
+}
+
+enum PurchaseRequestStatus {
+  draft
+  submitted
+  under_review
+  accepted
+  partially_fulfilled
+  fulfilled
+  cancelled
+  rejected
+
+  @@map("purchase_request_status")
+}
+
+enum PurchaseOrderStatus {
+  pending
+  confirmed
+  processing
+  ready_for_delivery
+  in_transit
+  delivered
+  completed
+  cancelled
+
+  @@map("purchase_order_status")
+}
+
+/// The business a buyer acts for: its profile, its procurement preferences and
+/// its standing. Only an administrator changes verificationStatus.
+model BuyerOrganization {
+  id                   String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  accountType          BuyerAccountType          @default(business) @map("account_type")
+  name                 String
+  organizationType     BuyerOrganizationType     @map("organization_type")
+  registrationNumber   String?                   @map("registration_number")
+  taxId                String?                   @map("tax_id")
+  countryCode          String                    @default("SS") @map("country_code") @db.Char(2)
+  stateId              String?                   @map("state_id")
+  countyId             String?                   @map("county_id")
+  city                 String?
+  address              String?
+  website              String?
+  description          String?
+  interestedCategories ListingCategory[]         @default([]) @map("interested_categories")
+  interestedProducts   String[]                  @default([]) @map("interested_products")
+  preferredStateIds    String[]                  @default([]) @map("preferred_state_ids")
+  minQuantity          Decimal?                  @map("min_quantity") @db.Decimal(12, 2)
+  maxQuantity          Decimal?                  @map("max_quantity") @db.Decimal(12, 2)
+  preferredUnit        ListingUnit?              @map("preferred_unit")
+  deliveryLocations    String[]                  @default([]) @map("delivery_locations")
+  purchasingMonths     Int[]                     @default([]) @map("purchasing_months") @db.SmallInt
+  paymentPreferences   BuyerPaymentPreference[]  @default([]) @map("payment_preferences")
+  verificationStatus   BuyerVerificationStatus   @default(pending) @map("verification_status")
+  verificationNote     String?                   @map("verification_note")
+  verifiedAt           DateTime?                 @map("verified_at") @db.Timestamptz(6)
+  verifiedBy           String?                   @map("verified_by") @db.Uuid
+  createdAt            DateTime                  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime                  @default(now()) @map("updated_at") @db.Timestamptz(6)
+  deletedAt            DateTime?                 @map("deleted_at") @db.Timestamptz(6)
+  deletedBy            String?                   @map("deleted_by") @db.Uuid
+
+  state    State?  @relation(fields: [stateId], references: [id], map: "buyer_organization_state_id_fkey")
+  county   County? @relation(fields: [countyId, stateId], references: [id, stateId], map: "buyer_organization_county_state_consistent_fkey")
+  verifier User?   @relation("BuyerOrganizationVerifiedBy", fields: [verifiedBy], references: [id], map: "buyer_organization_verified_by_fkey")
+  deleter  User?   @relation("BuyerOrganizationDeletedBy", fields: [deletedBy], references: [id], map: "buyer_organization_deleted_by_fkey")
+  buyers           Buyer[]
+  purchaseRequests PurchaseRequest[]
+  purchaseOrders   PurchaseOrder[]
+  notifications    Notification[]
+
+  @@index([verificationStatus, createdAt(sort: Desc)], map: "buyer_organization_status_idx")
+  @@map("buyer_organization")
+}
+
+/// The person who signs in for an organisation. No email column: the address
+/// lives in auth.users only, exactly as for staff.
+model Buyer {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  authUserId     String    @unique(map: "buyer_auth_user_id_key") @map("auth_user_id") @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  givenName      String    @map("given_name")
+  familyName     String    @map("family_name")
+  phone          String
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime  @default(now()) @map("updated_at") @db.Timestamptz(6)
+  deletedAt      DateTime? @map("deleted_at") @db.Timestamptz(6)
+  deletedBy      String?   @map("deleted_by") @db.Uuid
+
+  organization     BuyerOrganization @relation(fields: [organizationId], references: [id], map: "buyer_organization_id_fkey")
+  deleter          User?             @relation("BuyerDeletedBy", fields: [deletedBy], references: [id], map: "buyer_deleted_by_fkey")
+  purchaseRequests PurchaseRequest[]
+  deliveryUpdates  DeliveryUpdate[]  @relation("DeliveryUpdateRecordedByBuyer")
+
+  @@index([organizationId], map: "buyer_organization_id_idx")
+  @@map("buyer")
+}
+
+model PurchaseRequest {
+  id               String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId   String                @map("organization_id") @db.Uuid
+  createdBy        String                @map("created_by") @db.Uuid
+  listingId        String?               @map("listing_id") @db.Uuid
+  category         ListingCategory
+  productName      String                @map("product_name")
+  quantity         Decimal               @db.Decimal(12, 2)
+  unit             ListingUnit
+  deliveryLocation String                @map("delivery_location")
+  requiredBy       DateTime?             @map("required_by") @db.Date
+  notes            String?
+  status           PurchaseRequestStatus @default(draft)
+  submittedAt      DateTime?             @map("submitted_at") @db.Timestamptz(6)
+  decisionNote     String?               @map("decision_note")
+  decidedBy        String?               @map("decided_by") @db.Uuid
+  decidedAt        DateTime?             @map("decided_at") @db.Timestamptz(6)
+  createdAt        DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime              @default(now()) @map("updated_at") @db.Timestamptz(6)
+  deletedAt        DateTime?             @map("deleted_at") @db.Timestamptz(6)
+
+  organization BuyerOrganization @relation(fields: [organizationId], references: [id], map: "purchase_request_organization_id_fkey")
+  creator      Buyer             @relation(fields: [createdBy], references: [id], map: "purchase_request_created_by_fkey")
+  listing      ProduceListing?   @relation(fields: [listingId], references: [id], map: "purchase_request_listing_id_fkey")
+  decider      User?             @relation("PurchaseRequestDecidedBy", fields: [decidedBy], references: [id], map: "purchase_request_decided_by_fkey")
+  orders       PurchaseOrder[]
+
+  @@index([organizationId, createdAt(sort: Desc), id(sort: Desc)], map: "purchase_request_organization_idx")
+  @@index([status, createdAt(sort: Desc)], map: "purchase_request_status_idx")
+  @@map("purchase_request")
+}
+
+/// `order` is reserved; hence purchase_order. totalSsp is GENERATED in the
+/// database and never written by the application.
+model PurchaseOrder {
+  id                   String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orderNumber          String              @unique(map: "purchase_order_order_number_key") @default(dbgenerated("('PO-'::text || lpad((nextval('purchase_order_number_seq'::regclass))::text, 6, '0'::text))")) @map("order_number")
+  organizationId       String              @map("organization_id") @db.Uuid
+  purchaseRequestId    String?             @map("purchase_request_id") @db.Uuid
+  listingId            String              @map("listing_id") @db.Uuid
+  farmerId             String              @map("farmer_id") @db.Uuid
+  category             ListingCategory
+  productName          String              @map("product_name")
+  quantity             Decimal             @db.Decimal(12, 2)
+  unit                 ListingUnit
+  unitPriceSsp         Decimal             @map("unit_price_ssp") @db.Decimal(12, 2)
+  totalSsp             Decimal?            @map("total_ssp") @db.Decimal(14, 2)
+  status               PurchaseOrderStatus @default(pending)
+  deliveryLocation     String              @map("delivery_location")
+  expectedDeliveryDate DateTime?           @map("expected_delivery_date") @db.Date
+  cancelReason         String?             @map("cancel_reason")
+  createdBy            String              @map("created_by") @db.Uuid
+  createdAt            DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime            @default(now()) @map("updated_at") @db.Timestamptz(6)
+  deletedAt            DateTime?           @map("deleted_at") @db.Timestamptz(6)
+  deletedBy            String?             @map("deleted_by") @db.Uuid
+
+  organization    BuyerOrganization @relation(fields: [organizationId], references: [id], map: "purchase_order_organization_id_fkey")
+  purchaseRequest PurchaseRequest?  @relation(fields: [purchaseRequestId], references: [id], map: "purchase_order_purchase_request_id_fkey")
+  listing         ProduceListing    @relation(fields: [listingId], references: [id], map: "purchase_order_listing_id_fkey")
+  farmer          Farmer            @relation(fields: [farmerId], references: [id], map: "purchase_order_farmer_id_fkey")
+  creator         User              @relation("PurchaseOrderCreatedBy", fields: [createdBy], references: [id], map: "purchase_order_created_by_fkey")
+  deleter         User?             @relation("PurchaseOrderDeletedBy", fields: [deletedBy], references: [id], map: "purchase_order_deleted_by_fkey")
+  deliveryUpdates DeliveryUpdate[]
+
+  @@index([organizationId, createdAt(sort: Desc), id(sort: Desc)], map: "purchase_order_organization_idx")
+  @@index([status, createdAt(sort: Desc)], map: "purchase_order_status_idx")
+  @@index([purchaseRequestId], map: "purchase_order_request_idx")
+  @@map("purchase_order")
+}
+
+/// An order's timeline. Appended, never edited or removed. Exactly one of the
+/// two recorders is set (delivery_update_one_recorder).
+model DeliveryUpdate {
+  id              String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orderId         String              @map("order_id") @db.Uuid
+  status          PurchaseOrderStatus
+  note            String?
+  recordedByUser  String?             @map("recorded_by_user") @db.Uuid
+  recordedByBuyer String?             @map("recorded_by_buyer") @db.Uuid
+  occurredAt      DateTime            @default(now()) @map("occurred_at") @db.Timestamptz(6)
+
+  order       PurchaseOrder @relation(fields: [orderId], references: [id], map: "delivery_update_order_id_fkey")
+  userRecorder  User?  @relation("DeliveryUpdateRecordedByUser", fields: [recordedByUser], references: [id], map: "delivery_update_recorded_by_user_fkey")
+  buyerRecorder Buyer? @relation("DeliveryUpdateRecordedByBuyer", fields: [recordedByBuyer], references: [id], map: "delivery_update_recorded_by_buyer_fkey")
+
+  @@index([orderId, occurredAt(sort: Desc)], map: "delivery_update_order_idx")
+  @@map("delivery_update")
 }

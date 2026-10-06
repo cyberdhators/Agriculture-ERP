@@ -1,4 +1,4 @@
-import { ALL_ROLES } from '@agri-erp/shared';
+import { ALL_ROLES, BUYER_ROLE } from '@agri-erp/shared';
 
 import { defineRoutes, empty, ok } from '../../../lib/api/route';
 import { prisma } from '../../../lib/db';
@@ -15,10 +15,13 @@ import { prisma } from '../../../lib/db';
  *
  * Not scoped by state. Every officer needs the whole hierarchy to register a
  * farmer offline, and a location list is reference data, not a record.
+ *
+ * B13: a buyer reads it too, for the state and county on their organisation
+ * profile and the marketplace's location filter. Place names only; no record.
  */
 export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   GET: {
-    roles: ALL_ROLES,
+    roles: [...ALL_ROLES, BUYER_ROLE],
     handler: async ({ request }) => {
       const [bundle] = await prisma.$queryRawUnsafe<{ version: string }[]>(
         'SELECT version FROM public.location_bundle WHERE id = 1',
