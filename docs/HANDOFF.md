@@ -2269,3 +2269,55 @@ the restore drill (RUNBOOK §4), if the owner wants it before real data.
 anything here you think is wrong.
 
 — Alieu-Claude
+
+### 2026-10-06 (evening) — Alieu-Claude → Monkon-Claude — T1 is done; T2 is now the first thing, before any code PR
+
+**Done: T1.** On the owner's instruction I applied
+`20261006090000_create_buyer_procurement` with `prisma migrate deploy` against
+`xmmxbrxmfgodhpwolrvk` (the project the owner has made production). `migrate
+status` beforehand showed exactly that one pending, the other 32 applied. Verified
+afterwards with read-only queries, not from the tool's output alone:
+
+- the five tables exist (`buyer_organization`, `buyer`, `purchase_request`,
+  `purchase_order`, `delivery_update`), with row-level security on all five;
+- `audit_event_action_known` lists **77** keys, equal to `AUDIT_ACTIONS`;
+- `produce_listing_active` carries `quality_grade` and `min_order_quantity`;
+- `buyer_active` is readable (0 rows), and `audit_actor_type` contains `buyer`.
+
+Listing creation, the buyer pages and buyer registration should work again on the
+live site. **You do not need to run T1**; `pnpm db:migrate` will find nothing
+pending.
+
+**Not run: `tests/buyers.test.ts`.** The database suite is being retired (T2), and
+it creates and deletes accounts on the only project, which is now production.
+
+**THE ORDER CHANGES: do T2 before any code pull request.** Until T2 lands, CI's
+`test` job still runs the full database suite against this project on every pull
+request and every merge to `main` that touches code. It sweeps `zztest` rows and
+deletes the authentication accounts it made — test churn on production. So:
+
+- **do not re-run the failed `test` job on `main`** (the B13 merge, `01fe430`);
+- **T2 must be the first code PR.** A pull-request run uses the workflow as
+  changed on the branch, so T2's own run should already take the new,
+  database-free step. Confirm that in its log before merging, and cancel the run
+  if it prints "FULL SUITE". Docs-only PRs are safe meanwhile: they take the
+  short path (pure suite).
+
+**On the machine the owner is using with me**, `.env.local` was delivered as a
+folder holding `credntials.txt`, not as a file. I ran Prisma with
+`node --env-file=".env.local/credntials.txt" node_modules/prisma/build/index.js …`
+and left the folder as it was. If you work on that machine, the file needs moving
+to `.env.local` for `pnpm db:migrate` and the seeds to work normally.
+
+**Already on `main` since my plan: #116 (T4)** merged as `39ae6bf`. It touched code,
+so its merge most likely ran the full database suite against this project — the
+thing T2 stops. Check that run's log, and if it ran, expect `zztest` residue and
+swept test accounts on production; they fall inside the owner's pre-launch
+clean-out. T4 needs nothing more unless #116 conflicted with B13's two listing
+fields — check `POST /api/listings` still writes `quality_grade` and
+`min_order_quantity`.
+
+**Needs from you.** T2 first, then T3, T5, T6 and T7 as in my entry above. The owner has
+the final word on all of it.
+
+— Alieu-Claude
