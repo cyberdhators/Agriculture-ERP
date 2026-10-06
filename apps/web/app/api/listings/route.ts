@@ -10,6 +10,7 @@ import {
 import { audited, writeAudit } from '../../../lib/api/audit';
 import { ApiFailure, invalidCursor } from '../../../lib/api/errors';
 import { created, defineRoutes, paged } from '../../../lib/api/route';
+import { requireWriter, scopeCondition } from '../../../lib/api/scope';
 import { prisma } from '../../../lib/db';
 
 interface ListingRow {
@@ -71,7 +72,6 @@ const present = (row: ListingRow) => ({
 
 const presentBrowse = (row: BrowseRow) => ({
   id: row.id,
-  farmer_id: row.farmer_id,
   trading_name: row.trading_name,
   title: row.title,
   category: row.category,
@@ -109,7 +109,7 @@ const RETURNING_COLUMNS = `id, farmer_id, trading_name, title,
   status::text AS status,
   created_at::text AS created_at, updated_at::text AS updated_at`;
 
-const BROWSE_COLUMNS = `pl.id, pl.farmer_id, pl.trading_name, pl.title,
+const BROWSE_COLUMNS = `pl.id, pl.trading_name, pl.title,
   pl.category::text AS category, pl.product_name, pl.description,
   pl.quantity::text AS quantity, pl.unit::text AS unit,
   pl.price_ssp::text AS price_ssp, pl.price_per::text AS price_per,
@@ -117,7 +117,7 @@ const BROWSE_COLUMNS = `pl.id, pl.farmer_id, pl.trading_name, pl.title,
   to_char(pl.available_from, 'YYYY-MM-DD') AS available_from,
   CASE WHEN pl.available_until IS NOT NULL
     THEN to_char(pl.available_until, 'YYYY-MM-DD') ELSE NULL END AS available_until,
-  pl.harvest_season, pl.pickup_notes, pl.contact_phone, pl.photo_storage_paths,
+  pl.harvest_season, pl.pickup_notes, pl.photo_storage_paths,
   pl.status::text AS status,
   pl.created_at::text AS created_at, pl.updated_at::text AS updated_at,
   f.verification_status::text AS seller_verification_status,
@@ -217,7 +217,12 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       const hasMore = rows.length > limit;
       const page = rows.slice(0, limit);
       const last = page[page.length - 1];
-      return paged(farmerId ? page.map(present) : page.map(presentBrowse), {
+      // The public read NEVER returns farmer_id or contact_phone, whether or not it is
+      // filtered by farmer_id. The `?farmer_id=` filter narrows the rows (a WHERE
+      // clause); it does not widen the response. Before 2026-10-05 the filtered branch
+      // switched to `present`, which carries both, so a caller who harvested a
+      // farmer_id from the default browse could read the phone back through the filter.
+      return paged(page.map(presentBrowse), {
         cursor: hasMore && last ? encodeCursor({ createdAt: last.updated_at, id: last.id }) : null,
         hasMore,
       });
@@ -225,8 +230,10 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   },
 
   POST: {
-    roles: 'public',
+    roles: ['admin', 'officer'],
     handler: async (ctx) => {
+      const { auth } = ctx;
+      requireWriter(auth);
       let raw: unknown;
       try {
         raw = await ctx.request.clone().json();
@@ -366,11 +373,20 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
           ? input.status
           : 'draft';
 
+      // The owner comes from the body, but a caller may only name a farmer in their
+      // own scope: an officer their caseload, an admin any. Out of scope is the same
+      // 404 as "no such farmer" -- C-3.5, a caller must not learn a farmer exists
+      // outside their scope. `farmer_id` is no longer a bearer capability now that the
+      // route is authenticated; this scope check is what replaces it.
+      const sc = scopeCondition(auth.scope, 'state_id', 'caseload_officer_id', 2);
+      const scopeSql = sc.sql ? ` AND ${sc.sql}` : '';
       const [farmer] = await prisma.$queryRawUnsafe<
         { id: string; payam_id: string; state_id: string }[]
       >(
-        `SELECT id, payam_id, state_id FROM public.farmer WHERE id = $1::uuid AND deleted_at IS NULL LIMIT 1`,
+        `SELECT id, payam_id, state_id FROM public.farmer
+         WHERE id = $1::uuid AND deleted_at IS NULL${scopeSql} LIMIT 1`,
         farmerId,
+        ...sc.params,
       );
       if (!farmer) {
         throw new ApiFailure(404, 'not_found', 'Farmer not found.');
@@ -415,8 +431,8 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
         await writeAudit(tx, {
           entityType: 'produce_listing',
           entityId: inserted.id,
-          actorType: 'system',
-          actorId: null,
+          actorType: auth.role,
+          actorId: auth.principal.id,
           action: 'listing.created',
           after: { title, category, status },
         });

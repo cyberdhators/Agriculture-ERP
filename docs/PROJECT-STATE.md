@@ -3503,6 +3503,72 @@ to anyone who reached it. No action here; recorded because a public endpoint ser
 stale-as-current data is a different kind of defect from an internal one, and the
 withhold decision above governs a public surface, not an internal view.
 
+## A SWEEP KNOWS ONLY THE TABLES IT NAMES (2026-10-05)
+
+The new `tests/listings-public-surface.test.ts` is the first database test to create a
+`contact_request` row, and its CI run failed — not on an assertion (all 1359 tests passed)
+but in the shared `afterAll` sweep:
+
+```
+23503: update or delete on table "produce_listing" violates foreign key constraint
+       "contact_request_listing_id_fkey" on table "contact_request"
+```
+
+`sweep()` deletes `product_report` before `produce_listing` — FK-safe — but was never
+taught `contact_request`, which references `produce_listing` the same way. It was not a
+latent bug anyone could see: **a sweep that omits a child table is invisible until
+something first creates a row in it**, and until this test no database test exercised the
+contact-request create. The gap and the test that exposes it arrived together.
+
+Same family as the exclusion-list law — a cleanup list is a claim about the world, and an
+incomplete one fails only when reality finally contains the row it forgot. Fixed by adding
+the `contact_request` delete beside the `product_report` one, in FK-safe order.
+
+**The fix's own behaviour was validated by the same run**: every assertion in the listings
+test passed — the 401/403/404/201 matrix, the public reads carrying no `farmer_id` or
+`contact_phone`, the contact-request 201 shape. The file was marked failed only by the
+teardown, which is now corrected.
+
+## THE LISTINGS WRITES ARE SCOPED NOW, AND WHY THE OWNER CAME FROM THE BODY (2026-10-05)
+
+**Farmer self-listing is blocked on farmer authentication, which does not exist: no login
+route, no farmer role in `ALL_ROLES`, and `farmer-session.ts` is a preview cookie by its
+own header. The public write with a caller-supplied owner was the only shape available,
+and nothing recorded it as an interim. Officer-scoped creation is the interim; the route's
+shape is unchanged for when a farmer principal exists.**
+
+So the fix (`fix/listings-owner-from-scope`): `POST /api/listings` and
+`PATCH /api/listings/[id]` now `requireRole` officer+admin; the body `farmer_id` stays but
+is validated against the caller's scope — an officer's own caseload, an admin
+unrestricted — with the house 404 for out-of-scope, identical to "no such farmer". With
+the route authenticated, `farmer_id` is no longer a bearer capability; the scope check is
+what replaces it. `farmer_id` leaves the public read, `contact_phone` leaves the public
+read, and the contact-request create returns `{ id, status, created_at }` as the contract
+specifies. Rate limiting untouched — an open question, not a gap.
+
+### OBSERVED — A COMMENT NAMED A FUTURE UNIT, AND THE UNIT SHIPPED AS SOMETHING ELSE
+
+**`farmer-session.ts` promises a real farmer principal "when B12 lands". B12 landed as the
+weather tile.** A comment naming a future unit is a claim nothing checks when that unit
+ships, and the interim it was deferring went unrecorded as a result. The marketplace
+write routes were built against that promised principal, did not get it, and fell back to
+a body-supplied owner with no record of the fallback.
+
+### A CORRECTION TO #115, WHICH IS MERGED WITH THE IMPRECISE CLAIM
+
+#115 (now on main) says _"`GET /api/listings` returns `farmer_id` and `contact_phone` to
+any unauthenticated caller."_ The `farmer_id` half is exact. **The `contact_phone` half was
+mis-described.** The default browse uses `presentBrowse`, which never returned
+`contact_phone`; the phone reached the public read only through the `?farmer_id=` filtered
+branch, which switched to the `present` mapper (`page.map(present)` at the filter). The
+conclusion #115 drew — the phone is reachable on a public read — **holds**, and the §4
+contradiction is real; the mechanism was wrong, and it was wrong because the claim was
+read off the SQL `BROWSE_COLUMNS` (which does select `pl.contact_phone`) instead of the
+mapper between the query and the response. **A column a query selects is not a field the
+response returns.** Seventh instance in this stretch of a check narrower than the thing it
+checked; this one reached a merged record, which is why it is corrected here in full
+rather than quietly.
+
 ## NOTHING IN THIS REPOSITORY IS ENFORCED (2026-10-01)
 
 > **No gate in this repository is enforced, because nothing enforces any check.**

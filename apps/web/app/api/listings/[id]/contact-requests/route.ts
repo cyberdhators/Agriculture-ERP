@@ -127,7 +127,12 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
         return inserted;
       });
 
-      return created(row);
+      // The contract (docs/api/contact-request-contract.md) specifies the 201 body as
+      // exactly { id, status, created_at }: "Nothing about the farmer comes back. Not a
+      // name, not a phone, not the farmer id." `row` carries farmer_id, buyer_phone and
+      // the rest; returning it whole handed the buyer the farmer's internal id. Project
+      // to the three fields the contract names.
+      return created({ id: row.id, status: row.status, created_at: row.created_at });
     },
   },
 });
