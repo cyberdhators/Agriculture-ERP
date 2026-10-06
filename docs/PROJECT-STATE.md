@@ -2033,6 +2033,62 @@ protects the contractual documents, and the state documents are still formatted,
 which is correct — they are prose and should be. The rule here is about how a
 session edits them, not about excluding them.
 
+## ONE COMMITMENT GREW INTO A PROGRAMME IN A MORNING (2026-10-02)
+
+**History, not a law. The law it produced is in `CLAUDE.md` under "Dated work".**
+
+A commitment opened on 1 October as a bounded thing: audit where the laws dictated that
+day had landed, and move them. By midday on 2 October the same entry carried four pieces
+of work — the placement audit, resolving the placement notes, an identifier scheme for
+every law with a gate comparing quoted law text against laws that exist, and replacing the
+duration band's lower bound with a test count. Each addition was well-founded. Each was
+appended to the open commitment because it was the thing nearest to hand.
+
+**Every one of them was due on the same Monday**, and that is what made the date
+unrealistic rather than any single item being large.
+
+**Split 2026-10-02 into three, each with its own date**, and the dates differ in kind as
+well as in value:
+
+| Task                      | Due               | Why that date                                                                             |
+| ------------------------- | ----------------- | ----------------------------------------------------------------------------------------- |
+| The sweep                 | Monday 2026-10-05 | Bounded reading and moving; the backstop clause already attached                          |
+| The law identifier scheme | Friday 2026-10-09 | **Every record written after it is one more to retrofit** — the cost grows while it waits |
+| The test-count gate       | Friday 2026-10-16 | Least urgent; the bound it replaces is provisional and twelve minutes clear               |
+
+The middle one is the instructive case. Its date is not a judgement about urgency but
+about a cost that accrues with delay, which is a different argument for a deadline than
+"this matters most".
+
+**And the three were in the wrong file.** They are tasks, and they sat in `CLAUDE.md`,
+which is law.
+
+> **Three dated tasks were written into `CLAUDE.md` for want of anywhere else: the
+> repository had no dated-work home, zero issues had ever been opened, and no tracker
+> carried a due date. They moved to issues, with `HANDOFF.md`'s required reading pointing
+> at them.**
+
+They are now **#110** (the sweep, 2026-10-05), **#111** (the law identifier scheme,
+2026-10-09) and **#112** (the test-count gate, 2026-10-16). `HANDOFF.md`'s
+start-of-session list gained one line telling a session to check the open issues, because
+a durable store nobody is obliged to read is no better than a branch-held note.
+
+**The order mattered and was specified:** the issues were created first, the pointer
+second, and only then was the section deleted from `CLAUDE.md`. Deleting a commitment
+before its destination exists loses it.
+
+**That is the second placement fault of the same day**: on 2 October a law was found
+living in a workflow comment, and three tasks were found living in the law file.
+
+**And one line nearly went with the deletion.** The entry had carried a note that the
+owner first gave two conditions while asking for a date, one hour after dictating
+pin-it-and-date-it. It was neither a law nor a task, so it belonged to neither the
+`CLAUDE.md` law nor any issue, and a check for what the deletion dropped is what caught
+it. **A three-way sort still leaves residue: the thing that is none of the three.**
+
+Which is why the sweep's own scope now says the taxonomy is three-way: LAW, RECORD, TASK.
+A two-way sort would have moved a task into the law file and called it filed.
+
 ## A LAW IN A FILE ONLY GOVERNS SESSIONS THAT OPEN THE FILE (2026-09-15)
 
 **The owner's sentence, and it is the useful fact from a red main.**
@@ -3220,6 +3276,233 @@ catches two sources drifting, and **this catches the gate's own configuration
 drifting away from the world it describes.** An exception list is code that
 nobody runs, and it decays silently.
 
+## THE MARKETPLACE PUBLIC WRITES TRUST A CALLER-SUPPLIED OWNER (2026-10-05)
+
+**OBSERVED from the code on `main`.** Reading the five public marketplace handlers:
+
+> Established 2026-10-05 by reading the handlers: `GET /api/listings` returns `farmer_id`
+> and `contact_phone` to any unauthenticated caller; `POST /api/listings` takes its owner
+> from `input.farmer_id`; `PATCH /api/listings/[id]` authorises on `farmer_id` alone. The
+> owner id is therefore a bearer capability, and the public read distributes it. No rate
+> limit, captcha or origin check exists in those five routes or in `apps/web/lib/api`.
+> Five of main's seven public methods were never contemplated by the two-doors decision,
+> which was written four days before they were built.
+
+**The chain is OBSERVED; the exploitability is INFERRED pending exposure** (see below):
+a caller reads a listing with no session → obtains the owner's `farmer_id` from the public
+response → creates or edits listings as that farmer. `POST` with a _fabricated_ id is
+refused 404 ("Farmer not found"), so the public read is the step that supplies a real one.
+`presentBrowse` returns `farmer_id`, `contact_phone`, `seller_verification_status`,
+`seller_payam_id` and `seller_payam_name`.
+
+### IT CONTRADICTS THE SIGNED CONTACT-REQUEST CONTRACT — A SCOPE FINDING, NOT A BUG
+
+`docs/api/contact-request-contract.md` §4, verbatim:
+
+> **Never return the farmer's phone to a buyer.** Not on create, not on any public read.
+> **There is no public read.**
+
+And §1: _"the farmer's phone never leaves it \[the contact request]."_ The contract's whole
+basis — _"Buyers hold no account… a contact request the programme passes on, so the
+farmer's phone never leaves it"_ — assumes the phone is disclosed only through the
+contact-request path. **`GET /api/listings` is a public read that returns `contact_phone`.**
+The condition "there is no public read" is false on main. Whether that is resolved by
+hiding the field or amending the contract is the owner's call, and possibly CORWADO's; it
+is recorded here, not decided.
+
+### A PROPOSED AMENDMENT TO THE CONTACT-REQUEST CONTRACT — NOT IN FORCE (2026-10-05)
+
+One of the two contradictions is not an accident: the owner wants something the contract
+forbids. Recorded here as a proposal, in the marketplace-amendment form, so it is visible
+without being mistaken for the rule.
+
+**§4 as written, quoted because the proposal is against it:**
+
+> **Never return the farmer's phone to a buyer.** Not on create, not on any public read.
+> **There is no public read.**
+
+**The proposal.**
+
+> **The owner's position is that a buyer sees the farmer's number and calls directly. §4
+> says the phone is never returned on any public read and that there is no public read.
+> Until CORWADO rules, the contract governs: the field is removed from the public response
+> and the contact-request path is the only route to a farmer's number.**
+
+**WHOSE READING THIS IS.** This is the owner's reading, not CORWADO's instruction. Nothing
+in the repository records CORWADO asking for it or confirming it. It is to be put to them
+for written confirmation, and this note stands until they answer. A session reading this
+file must not cite this section as a client decision.
+
+**THE CLAUSE INVERTED FROM THE MARKETPLACE FORM, STATED SO NO READER CARRIES THE
+ORIGINAL'S ACROSS.** The marketplace amendment says _"we are proceeding on that reading."_
+**This one does not.** The contract governs until CORWADO answers: the listings fix
+removes `contact_phone` from the public read **now**, and if CORWADO grants the amendment,
+restoring a public phone is a **new** change argued from scratch — not something this
+proposal authorises in advance.
+
+**The practical consequence.** The fix and the proposal do not conflict and are applied in
+that order: the contract is obeyed first (phone and `farmer_id` leave the public surface),
+and the proposal waits. A buyer today reaches a farmer only through the contact-request
+`POST`, which is what §4 describes. If the owner's reading prevails later, the phone
+returns by a decision that names itself, to a surface that was clean in the meantime.
+
+### THE WHOLE CONTRACT COMPARED, CLAUSE BY CLAUSE (2026-10-05)
+
+A comparing gate pointed at a contract — the first clause checked was false, so the rest
+were checked too. `docs/api/contact-request-contract.md` on `main`, against the handlers.
+
+| Contract clause                                                                                                                                                     | Code                                                                                                                                                            | Verdict                                                                                                                                     |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| POST body: `buyer_name` 2–80, `buyer_phone` E.164, `quantity` ≤40 opt, `message` ≤300 opt                                                                           | `contact-requests/route.ts` validates each                                                                                                                      | **IMPLEMENTED**                                                                                                                             |
+| `201` response is `{ id, status, created_at }` — _"Nothing about the farmer comes back. Not a name, not a phone, not the farmer id."_                               | `return created(row)` returns the **whole `ContactRow`** — `farmer_id`, `listing_id`, `buyer_phone`, `handled_by`, all of it. `created(data)` does not project. | **CONTRADICTED**                                                                                                                            |
+| `404` if listing not `listed`                                                                                                                                       | `WHERE … status = 'listed'` → 404                                                                                                                               | **IMPLEMENTED**                                                                                                                             |
+| `429` on rate limit — _"Rate limiting is Lane 1's to design"_                                                                                                       | none in the route or `apps/web/lib/api`                                                                                                                         | **NOT IMPLEMENTED** (contract flags it pending; §5 Q1 asks if friction is even required)                                                    |
+| `GET /api/contact-requests` scoped: officer→caseload, supervisor/read_only→state, admin→all                                                                         | `roles: ALL_ROLES` + `scopeCondition(auth.scope, 'f.state_id', 'f.caseload_officer_id')`                                                                        | **IMPLEMENTED**                                                                                                                             |
+| Staff row carries `buyer_phone`, `farmer_id`; farmer's own name/phone not on it                                                                                     | selects `cr.farmer_id, cr.buyer_name, cr.buyer_phone`, joins farmer for scope only                                                                              | **IMPLEMENTED**                                                                                                                             |
+| PATCH: outcomes `introduced\|declined\|no_answer`, only from `new`, sets `handled_at`/`handled_by`, audited `contact_request.handled` before/after, caseload-scoped | matches exactly                                                                                                                                                 | **IMPLEMENTED**                                                                                                                             |
+| _"Never return the farmer's phone to a buyer. Not on create, not on any public read. There is no public read."_                                                     | `GET /api/listings` is a public read returning `contact_phone`                                                                                                  | **CONTRADICTED** (the finding above)                                                                                                        |
+| _"Never notify anyone by themselves"_                                                                                                                               | routes write rows only, no SMS                                                                                                                                  | **IMPLEMENTED**                                                                                                                             |
+| 14-day expiry                                                                                                                                                       | none                                                                                                                                                            | **NOT A MAIN CLAUSE** — §5 open Q2; the answers live on the unmerged `docs/contact-request-answers`, so main's contract does not require it |
+
+**Two contradictions, not one.** The browse read was the first. The second: **the contact-request create's `201` returns `farmer_id` and the entire row to the unauthenticated buyer**, where the contract says the response is `{ id, status, created_at }` and _"not the farmer id."_ So there are **two** public distributors of the bearer-capability `farmer_id`, not one — the browse GET and the create response.
+
+**Not verified this pass**, stated rather than claimed: that `buyer_phone` is scrubbed from logs and excluded from exports (contract §2, `C-10.11`). The scrubber and export paths were not read.
+
+**What the comparison establishes beyond the two faults:** the contract is otherwise faithfully implemented — scoping, the state machine, the audit action, the 404-hides-withdrawn rule all match. The two failures are both the same shape: **a handler returning more of a row than the contract's response shape allows.** `created(row)` and `presentBrowse` each hand back a column the contract names as never-to-be-returned.
+
+### EXPOSURE, as of 2026-10-05 — OBSERVED, and it is why this is not yet an incident
+
+- **Production (`main` @ `7e1123b`)** deploys to the generated URL
+  `…-99v5rnr4v-…vercel.app`, which returns **302, "Protected by Vercel Authentication."** A
+  stranger cannot reach the API there.
+- **The stable alias `agriculture-erp.vercel.app`** is publicly reachable (HTTP 200) but
+  serves an **HTML shell for every path**, including `/api/listings` and
+  `/api/weather/forecast` (`content-type: text/html`, `x-vercel-cache: HIT`). It does
+  **not** answer the API with JSON — it is a stale or separate artifact, not main's
+  backend. So it leaks no `farmer_id`.
+- **No custom domain** is referenced in `.env.example` or `docs/`. I lack Vercel API
+  access to enumerate domains, so "none exists" is **not established** — only "none found".
+
+**So no publicly reachable deployment currently answers `GET /api/listings` with
+`farmer_id`.** The defect is real in the code and latent in deployment: the day Vercel
+protection is lifted, or the real backend is aliased to a public domain, the chain above
+is live with no further change. Recorded now because a known, unrecorded defect waiting on
+a deployment switch is the worst state — not fixed ahead of the sequence, because nothing
+public exploits it today.
+
+## THE WEATHER TILE WAS STALE BECAUSE NOTHING REFRESHED IT (2026-10-05)
+
+**The reported bug — wrong date, wrong forecast — is staleness, and the cause is that
+`main` has no scheduler.** `scripts/weather-fetch.mjs` exists; nothing on main runs it.
+The schedule — `.github/workflows/weather-fetch.yml`, `cron: '7 */3 * * *'` — lived only
+on #101 (`chore/weather-fetch-schedule`), unmerged for two weeks. The data last refreshed
+**2026-09-15 13:08** (one manual run); on **2026-10-05** the forecast rows span 16–20
+September, all past.
+
+**A live OpenWeather call confirmed the provider is healthy** (Juba, `city.timezone=7200`
+= UTC+2): it returns 6–10 October correctly. API correct, database three weeks stale, and
+the public read (`forecast_for > CURRENT_DATE`) returns nothing. Every date/timezone step
+in the code is correct — bucketing via the provider's offset, the `CURRENT_DATE` filter,
+`dayName` formatting a local-day string in UTC, `timeOf` in `Africa/Juba`. **No timezone
+bug. The dates are simply twenty days old.**
+
+**The fix is adoption of #101's content, carried onto `fix/weather-fresh-and-scheduled`.**
+Against current main #101 had two live parts, both still needed and both applying cleanly:
+the cron workflow (new), and a small page feature — the Weather page opens the forecast by
+default and shows `weather.noForecast` when there are none. Its two real commits were
+cherry-picked (the merge-noise commit dropped); the only conflict was two log entries
+appended at the same point in `HANDOFF.md`, both kept. **#101 can be closed as superseded;
+its content is preserved here with a fresh verdict.**
+
+**The cron merging is necessary but not sufficient:** the workflow needs three GitHub
+secrets — `WEATHER_DATABASE_URL`, `WEATHER_DIRECT_URL`, `OPENWEATHER_API_KEY` — and until
+they are set the scheduled job fails or no-ops. That is the owner's to configure, and he
+sets them in GitHub by his own hand; no session holds a credential.
+
+**Which database — established 2026-10-05, because the workflow's comment misnames it.**
+The comment says "THE DATABASE IS PRODUCTION'S." There is no production database. The
+account holds **exactly one Supabase project**, reference `xmmxbrxmfgodhpwolrvk`, named
+`agri-staging` (renamed from `agri-production` on 2026-09-03; `docs/DECISIONS.md`, "the
+environments were never separate"). That one project holds the 15 September weather rows,
+is what `.env.local` and `.mcp.json` point at, and is therefore what the deployed app
+reads — there is nothing else to read. So the three secrets point at
+**`agri-staging`, by elimination**: it is the only database that exists. The comment names
+a database that does not exist as a separate thing, and it ages like any other claim — it
+should be corrected to say staging when the withhold decision reopens this file, but that
+is a comment edit, not a secrets question. The secrets answer is unambiguous: there is one
+project, and it is where everything already is.
+
+### THE STALE LABEL RENDERS, AND IT DID NOT HELP — BUT THE REMEDY REVERSES A SIGNED CRITERION
+
+The owner's thesis, confirmed: the observation is served with no freshness bound
+(`ORDER BY fetched_on DESC LIMIT 1`), so with twenty-day data `loc.current` is populated
+and `loc.stale = isStale(fetched_at, now)` is **true** — the tile showed "Older than usual
+· \[conditions]" and the owner read twenty-day-old weather as current. **A warning that
+does not change the reader's conclusion has not warned.**
+
+The proposed remedy — withhold the data rather than label it — **contradicts C-16.7, which
+is in the signed scope document.** C-16.7, verbatim:
+
+> If today's fetch failed, the route returns **yesterday's row with its real `fetched_at`
+> and `stale: true`** — never an error and never a hidden tile. A weather card that
+> disappears when the provider is down is worse than one that says when it last knew
+> something.
+
+Item 2's instruction — hide beyond the stale window, _using `WEATHER_STALE_AFTER_HOURS`
+(26h) as the cutoff_ — would hide **yesterday's** row, which C-16.7 says must be served.
+So that specific instruction reverses the criterion and is **not implemented**; the
+observation read is unchanged pending a decision.
+
+### A PROPOSED AMENDMENT TO C-16.7 — NOT IN FORCE (2026-10-05)
+
+**C-16.7 as written, quoted because the proposal is against it:**
+
+> If today's fetch failed, the route returns **yesterday's row with its real `fetched_at`
+> and `stale: true`** — never an error and **never a hidden tile**. A weather card that
+> disappears when the provider is down is worse than one that says when it last knew
+> something.
+
+**The proposal.**
+
+> Keep `WEATHER_STALE_AFTER_HOURS = 26` as the **label** threshold, unchanged — yesterday's
+> reading still shows, still labelled, exactly as C-16.7 requires. Add a **separate
+> withhold threshold at 48 hours**, for the current-conditions block only: beyond 48 hours
+> the tile shows `weather.noReading` — it says it does not know, rather than presenting a
+> three-week-old reading as current.
+
+**Basis.** C-16.7's case is a provider **outage** — yesterday's reading with its real
+timestamp beats a vanished card, and that is right. **It was not written about a reading
+three weeks old.** A farmer's weather decisions are day-scale; a reading older than two
+days carries no decision value, and presenting it as current is the failure the 20-day
+pathology actually produced. Beyond 48 hours the tile does **not** vanish — it shows
+`weather.noReading`, which is the honesty C-16.7 wanted (a card that says when it last
+knew) applied to the case C-16.7 did not foresee. The forecast read already self-limits by
+`forecast_for > CURRENT_DATE`; this gives the current-conditions block the same honesty.
+
+**WHOSE READING THIS IS.** This is the owner's reading, not CORWADO's instruction. Nothing
+in the repository records CORWADO asking for it or confirming it. It is to be put to them
+for written confirmation — C-16.7 is in the signed scope document — and this note stands
+until they answer. A session reading this file must not cite this section as a client
+decision.
+
+**THE CLAUSE INVERTED FROM THE MARKETPLACE FORM, STATED SO NO READER CARRIES THE ORIGINAL'S
+ACROSS.** The marketplace amendment says "we are **proceeding** on that reading." **This one
+does not. C-16.7 governs until CORWADO rules** — the observation read is unchanged, and the
+26h label still fires, until then. If the amendment is granted, the 48-hour withhold is
+added by a change that names itself; nothing here authorises it in advance.
+
+The tile already degrades gracefully if the observation is withheld — `weather.none` with
+no location, `weather.noReading` with a location but no current — so the withhold, if
+granted, needs no empty-state work.
+
+### DOOR 1 HAS BEEN SERVING A THREE-WEEK-OLD FORECAST PUBLICLY
+
+`GET /api/weather/forecast` is one of main's public reads — Door 1 of the two-doors
+decision — and it has been returning confidently stale weather, with no session required,
+to anyone who reached it. No action here; recorded because a public endpoint serving
+stale-as-current data is a different kind of defect from an internal one, and the
+withhold decision above governs a public surface, not an internal view.
+
 ## NOTHING IN THIS REPOSITORY IS ENFORCED (2026-10-01)
 
 > **No gate in this repository is enforced, because nothing enforces any check.**
@@ -3441,7 +3724,7 @@ credential written there is protected — by an entry written for another reason
 which nobody chose for this purpose and which a later tidy-up could remove
 without knowing what it was holding.
 
-## THE SUITE DRIFTED 38% AND NOTHING WAS COMPARING IT TO ANYTHING (2026-10-01)
+## NOTHING WAS COMPARING ELAPSED TIME TO ANYTHING — AND THE 38% DRIFT DID NOT HAPPEN (2026-10-01)
 
 > **A duration gate fires before the timeout, so drift is a finding rather than an
 > outage.**
@@ -3456,9 +3739,21 @@ without knowing what it was holding.
 | 2026-10-01 | #108   | 84.6 min              | `36847625786` |
 | 2026-10-01 | #109   | **84.9 min, success** | `36865645947` |
 
-**A 37.8% increase in ten days on near-identical test content** — #103, #108 and
-#109 are main plus a handful of commits, and main has not moved since the
-61.6-minute run.
+**THE 37.8% DRIFT THIS SECTION FIRST REPORTED DOES NOT EXIST.** Hours after those
+three runs, `36875283354` on the same branch and the same content took **53.4 minutes**,
+starting the minute the 84.9-minute run finished; on 2 October another took **52.4**. The
+three 85-minute runs came from one morning, and the two September runs were taken **back
+to back** and differ from each other by 15%. One afternoon was compared with another and
+the difference was called a ten-day trend.
+
+**The observed range is 52.4 to 85.2 minutes — about 63% of spread on near-identical
+content.** Recorded as the owner's error in `docs/DECISIONS.md`.
+
+**WHY IT VARIES: INFERRED, ONE INSTANCE, NOT ESTABLISHED.** Same branch, same content, 85
+minutes and 53 minutes within hours on 1 October. This makes the runner environment the
+likely factor rather than anything in the repository, and is consistent with the
+accumulation hypothesis having been refuted on row counts. One instance. Not
+established.
 
 **The job was investigated because it looked hung at two hours. It was not.** It
 started eight seconds after the run was created, ran 84m53s, and completed
@@ -3467,9 +3762,10 @@ documented. **Nothing was broken; something had drifted, and the margin to the
 cliff was 5.1 minutes — six percent.**
 
 **That is the empty-set law in its operational form.** Every run printed its own
-duration. No gate held that duration against an expectation, so a 38% drift was
-invisible for ten days, and the next drift of the same size would have presented as
-every run failing on a timeout with no prior warning.
+duration. No gate held that duration against an expectation — so **neither a real drift
+nor a 63% spread was visible to anybody.** The spread had been sitting in the two
+September runs since the baseline, 15% apart and back to back, and nobody had looked. The
+38% drift this section was written for did not happen.
 
 **What was built.** The timeout is raised to 120 minutes with its derivation stated,
 and a duration gate at the end of the suite compares elapsed time against a
@@ -3505,7 +3801,10 @@ The reflex explanation is staging accumulating rows the suite never sweeps.
 - `audit_event` on staging: **65,609 rows, 53 MB**, spanning 2026-09-03 to
   2026-10-01 across 21 distinct days.
 - At the 61.6-minute baseline run on 21 September it held about **62,705**.
-- **Growth since the baseline: 4.6%. Slowdown over the same period: 37.8%.**
+- **Growth since the baseline: 4.6%.** It was compared against an apparent 37.8%
+  slowdown **which later turned out not to be real**, so there is now no slowdown for
+  accumulation to explain. The refutation stands regardless and is the stronger of the
+  two facts: 65,000 rows and 53 MB would not have cost twenty-three minutes either way.
 
 Sixty-five thousand rows and 53 MB do not cost twenty-three minutes. Candidates not
 tested: runner variance, the staging instance's own performance, latency to the
@@ -3545,6 +3844,53 @@ cause of the slowdown. It grows without bound regardless, and the design questio
 is the owner's: whether staging's audit history is meant to be permanent, whether
 the suite should write to it at all, or whether a staging-only exception to the
 append-only rule is warranted. **Nothing was changed.**
+
+## A SWEEP IS ONLY AS REAL AS THE BRANCH IT LANDS ON (2026-10-04)
+
+**Recorded jointly by the owner and the session.**
+
+> **The 1 October drift withdrawal was executed on `ci/staging-row-count-gate`, which has
+> not merged. `main` asserted the withdrawn claim in seven places throughout, including
+> the derivation that governs the gate and the opening of the section recording the
+> withdrawal. The sweep was not careless; it landed nowhere, which is indistinguishable
+> from not sweeping and feels like diligence while it happens.**
+
+And the narrower lesson that prompted the search:
+
+> **A gate asserting the absence of a withdrawn claim in one location does not cover the
+> claim's spread. A sweep executed by hand misses copies — assert the absence tree-wide.**
+
+**Second instance of the unread-file class.** The first was a law in a file sessions are
+not told to open; this is a correction in a branch nobody has. Both look like work that
+exists and neither reaches anyone.
+
+The seven places, every one still asserting it on 2026-10-04:
+
+| File                                  | What it said                                                                 |
+| ------------------------------------- | ---------------------------------------------------------------------------- |
+| `scripts/ci-suite-duration.mjs`       | the derivation, the refutation passage, **and the complaint text CI prints** |
+| `scripts/ci-suite-duration-check.mjs` | the header                                                                   |
+| `.github/workflows/ci.yml`            | the step comment                                                             |
+| `CLAUDE.md`                           | the duration-gate law                                                        |
+| `docs/PROJECT-STATE.md`               | three passages, including this section's own opening                         |
+
+So the copies were not missed by carelessness. **They were swept somewhere that did not
+land**, which is indistinguishable from not sweeping at all and feels like diligence while
+it happens.
+
+**What was built instead of a second hand-sweep.** `tests/withdrawn-claims.test.ts` walks
+every `.md`, `.ts`, `.mts`, `.mjs`, `.js`, `.yml`, `.sql` and `.json` file in the tree and
+fails on any mention of the claim's distinctive tokens that has no withdrawal within a
+paragraph. **It does not forbid the tokens** — a record must be able to say what was
+withdrawn, or the withdrawal cannot be read. It requires that each mention sit _with_ its
+withdrawal, which is a positive property rather than a denylist of phrasings somebody
+routes around.
+
+Deliberately broader than the project-reference scan, which reads source only: **the claim
+reached Markdown, YAML and a workflow comment, and a code-only scan would have missed five
+of the seven.** One exemption, named in the file with its reason: the test itself, which
+defines the tokens it searches for. Proved by planting an assertion and watching it fail
+with the file and line.
 
 ## A CANCELLED RUN IS NOT A FAILED RUN (2026-10-01)
 

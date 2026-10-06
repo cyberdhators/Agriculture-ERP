@@ -177,6 +177,23 @@ this way, and neither would have been caught by the gate they were inside.
 
 A gate that cannot determine what to compare must fail, not report clean.
 
+**And the same class in sequence form — a failing step hides every step after it.**
+
+> **Under the pre-#109 single-job workflow gitleaks ran after the test step, so #99's
+> eleven-day red never produced a secret-scan verdict at all. A red pull request looks
+> comprehensively judged and may have been judged on one step. Ask which steps ran before
+> reading a red as covering anything beyond the one that failed.**
+
+The empty set here is the set of steps that never ran, and it looks identical to a set
+that ran and passed. **#109's job split closed this route by construction** — the secret
+scan is in an ungrouped job that cannot queue behind the suite, so a test failure can no
+longer suppress it. **It closed the route, not the class:** any two steps in one job are
+still in sequence, and the first failure still ends the job.
+
+And a corollary with teeth, observed the same day: a withdrawn finding was swept from six
+places **on a branch that did not merge**, so `main` carried the claim in seven. A sweep
+is only as real as the branch it lands on.
+
 Two of the three are inside gates built to catch this class, and the third is a
 tool we trusted to be one. A reader meeting a single instance will not see the
 fourth coming, which is why the list is the point and not the law alone.
@@ -187,6 +204,17 @@ behind. A required check that silently does not run is a merge button with
 nothing behind it, which is indistinguishable from a green one. So a check's
 concurrency, its queue and its ordering are all free to be computed; its
 existence is not.
+
+**An edit's reach is the branch it sits on.**
+
+> **Work on an unmerged branch governs nothing, however carefully written — and a sweep,
+> a law or a gate on a held branch is a claim about a repository that does not exist yet.
+> Before recording something as done, ask which ref it is done on.**
+
+Second instance of the unread-file class: the first was a law in a file sessions are not
+told to open, this is a correction in a branch nobody has. On 2026-10-04 a withdrawal
+executed in six places on a held branch left `main` asserting the withdrawn claim in
+seven.
 
 **Gates — a gate that nothing consults is a document.** Verifying that an
 instrument compares correctly says nothing about whether anything is obliged to
@@ -252,9 +280,12 @@ the fault itself hurt. Review means it was caught before it shipped. **Mistake
 means an unrelated error exposed it** — which is weaker evidence than review, since
 nobody was looking, and stronger than damage, since it cost nothing.
 
-**Gates — a duration gate fires before the timeout, so drift is a finding rather
-than an outage.** Nothing was comparing elapsed time to anything, and a 38% drift
-went unremarked for ten days until the margin was 6%.
+**Gates — a duration gate fires before the timeout, so drift is a finding rather than
+an outage.** Nothing was comparing elapsed time to anything. The 38% drift this law was
+first written for **turned out not to exist** — three runs from one morning read as a
+ten-day trend — and the law survives its own evidence: what was actually invisible was a
+63% spread sitting in the baseline runs all along. A gate watching nothing cannot
+distinguish drift from variance, and both matter.
 
 **Labelling — a count in a record should be of something that will still exist
 when the record is read.** A branch's length is a fact about a thing designed to
@@ -283,6 +314,148 @@ default. Use constraints and indexes. PostGIS for all spatial data.
 **Git.** Never push to `main`. Feature branches and pull requests only. Run the
 tests, the linter, the formatter check and the type check before committing —
 do not leave it to CI to find what you could have found locally.
+
+> **A squash merge orphans every branch cut from the squashed branch's tip: those commits
+> are not ancestors of main, so a plain rebase replays them against main's own copy of
+> them. Cut branches from main. If one must be cut from another branch, record the base
+> SHA in its first commit message — `--onto <base>` is then the only correct rebase.**
+
+Observed on #109: it merged as `eaa263a`, a single-parent squash, and none of its six
+commits are ancestors of main. `ci/staging-row-count-gate` was cut from its tip, and
+`merge-tree` predicts conflicts in seven files — including two workflow files it never
+edited — because a plain rebase would replay #109's work onto main's copy of it. The
+correct form is `git rebase --onto origin/main b1fb3f7`, replaying only its own four
+commits. Nothing was lost in the squash itself: the commit message kept all six messages
+at 220 lines.
+
+> **A commit message long enough to need a heredoc is written to a file first, and a
+> heredoc command is never chained with another — the heredoc binds to the last command
+> in the chain, not the intended one. Twice on 2 October the fix was applied after the
+> fact; a habit applied after the fact twice is not a habit.**
+
+The failure mode is a silent two-minute hang, not an error, so it reads as something
+worse than it is.
+
+> **A command whose scope is wider than the intent takes the whole of it. `git checkout
+> <file>` aimed at one planted line discarded every uncommitted change in that file.
+> Twice on 2–4 October: the heredoc that bound to the wrong command, and this. Re-check
+> the file afterwards rather than assuming the narrow effect.**
+
+Both were recovered because the file was re-read rather than assumed — the heredoc case
+by checking that no commit had been made, this one by grepping for the text that should
+have been there and finding it gone. **The check is the habit, not the care.** Both times nothing was damaged: no commit was created, the staged
+changes survived, and the message went to a file on the retry — which is the step that
+should have come first.
+
+**Temporary things.** A temporary thing removed by intention will be forgotten. A
+temporary thing that cannot act outside its purpose is safe either way.
+
+> **A temporary thing that cannot act outside its purpose is safe either way — and
+> generates no pressure to remove it. Safety removes the urgency that would otherwise
+> do the removing. Pin it AND date it: the pin makes it harmless, the date is the only
+> thing that ends it.**
+
+Observed on it: the audit workflow's temporary `pull_request` trigger was pinned to one
+head ref so it could not act on any other pull request, and it was removed on
+2026-10-02 before that pull request went ready. **The pin is what would have let it
+survive indefinitely.** Nothing about a harmless thing creates pressure to take it out;
+the removal happened because a date was attached to it rather than a condition.
+
+**This law was recorded in a workflow comment and in `docs/PROJECT-STATE.md` and was
+not in this file.** Neither of those governs a session that does not open them — see
+PROJECT-STATE, "A law in a file only governs sessions that open the file", which this is
+a recurrence of.
+
+**Two ways to check — a third instance.** The law itself ("when a fact can be checked two
+ways and they disagree, the record names which way it used and why the other misleads") is
+on #109 and not on this branch. Its instances there are the committer figure that looks
+like a second identity, and the commit-status endpoint that reports success for both
+September merges. A third:
+
+> **`open_issues_count` on the repository API counts pull requests. It read 10 against
+> zero issues ever opened.**
+
+Which is how the repository looked like it used issues when it never had. `gh issue list
+--state all` is the one that answers the question asked.
+
+*Owed by #110, due 2026-10-05: append this instance to the law on #109 when that branch
+lands. A prose resolution, so a judgement.*
+
+**Fixes and classes.**
+
+> **A fix that closes the route a fault took does not close the class it belongs to.
+> B5.5 made a missing environment variable fail loudly, which is how eight files had
+> reported green for tests that never ran — and left `it.skip`, a conditional `describe`
+> and a filter that matches less entirely open. Ask which one you closed before
+> recording the class as closed.**
+
+Found by review, 2 October, while verifying the test-count item.
+
+*Owed by #110, due 2026-10-05: this belongs beside the Gates laws, which are on #109 and
+`ci/staging-row-count-gate`. Move it there when those branches land. A prose resolution, so
+a judgement.*
+
+**The four-way sort, and who does the sorting.** Every item that arrives is one of four
+things, and the first question is always which:
+
+| | Goes to | Test |
+| --- | --- | --- |
+| **LAW** | `CLAUDE.md` | Tells a future session what to do |
+| **RECORD** | `docs/PROJECT-STATE.md` | Describes what happened; may cite a law, never introduces one |
+| **TASK** | an issue, **with a date** | Bounded work that someone must do |
+| **NEITHER** | nowhere | Conversational, superseded, or already said — not written down |
+
+**An undated task is the fourth category in disguise and the most common misfiling here.**
+For anything that reads as a follow-up — a placement note, a "resolve when X lands", a
+"worth doing at some point" — there is one question:
+
+> **Does someone owe this, by a date?**
+>
+> **Yes** → it is a TASK and it gets an issue with that date. **No date, no task.**
+> **No** → nowhere. Delete it.
+>
+> **Carrying it forward unchanged is not an option**, and that is the whole point: a note
+> of that kind is harmless, which is exactly why it survives forever. Same mechanism as
+> the pinned trigger.
+
+A note that cites a dated issue is not a follow-up — it is a pointer to a task, and the
+date lives in the issue where someone can be held to it.
+
+> **A placement instruction from the owner — "beside X", "under Y", "in <file>" — is
+> advisory and is probably wrong. The owner is reasoning about a composite of every open
+> branch; the session has the files. Sort by the four-way taxonomy, place it where it
+> belongs, and say where it went. Do not ask first, and do not report it as a
+> deviation — it is not one.**
+
+That rule exists because the alternative was observed four times on 2 October: "beside the
+gate laws", "beside the labelling law", "beside the place-both instruction" and "beside the
+misleading-endpoint law" each named a law that was not on the branch being edited, because
+`CLAUDE.md` was simultaneously written by seven branches.
+
+**Where a law may live.** `docs/PROJECT-STATE.md` is history and is not required
+reading; `CLAUDE.md` is law and is.
+
+> **A law may not live in `PROJECT-STATE.md`, and a record there may cite a law but
+> never introduce one. The test: does the passage describe what happened, or tell a
+> future session what to do?**
+
+Recurrence of `PROJECT-STATE.md:2036` (2026-09-15), which states the same fault and is
+itself in the unread file. **Placement is necessary and not sufficient:** that rule was
+on main, in the required file, and was broken within eleven hours.
+
+**Dated work.**
+
+> **One date over four pieces of work hides which piece slipped: the whole either holds
+> or fails as "in progress". A commitment accretes whatever arises while it is open. Each
+> piece of work carries its own date, and a slip then names itself.**
+
+> **The law file is not a task tracker, and the required-reading file is not a task store
+> — it points at one. A store read by obligation and a store that survives independently
+> of any branch are different properties; get both by having the obliged one point at the
+> durable one.**
+
+Dated work lives in the repository's **issues**. `docs/HANDOFF.md`'s start-of-session list
+points at them, which is what makes them read at all.
 
 **`main` is never force-pushed, by any lane, for any reason.** Not
 `--force`, not `--force-with-lease`, not a reset followed by a push, not a

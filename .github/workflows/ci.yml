@@ -284,11 +284,18 @@ jobs:
             # THE GATE THAT WAS MISSING, AND THE REASON IT IS A GATE.
             # ================================================================
             #
-            # Nothing was comparing elapsed time to anything. The suite drifted
-            # 37.8% in ten days -- 61.6 minutes on 21 September, 84.9 on 1 October,
-            # on near-identical test content -- while every run printed its own
-            # duration and no one held it against an expectation. It went unnoticed
-            # until the margin to the timeout was six percent.
+            # Nothing was comparing elapsed time to anything, and every run printed
+            # its own duration while no one held it against an expectation.
+            #
+            # THE 37.8% DRIFT THIS WAS FIRST WRITTEN FOR DID NOT HAPPEN. Three runs
+            # taken in one morning were read as a ten-day trend; a 53.4-minute run on
+            # the same branch and content followed hours later. The observed range is
+            # 52.4 to 85.2 minutes, about 63% wide, and the band is PROVISIONAL. See
+            # scripts/ci-suite-duration.mjs.
+            #
+            # The gate is still worth having, for the reason the mistake exposed
+            # rather than the one it was built on: nothing was watching, so neither a
+            # real drift nor a 63% spread was visible to anybody.
             #
             # The band's upper bound sits BELOW the timeout on purpose, so drift
             # fires THIS, which says what happened, before it fires the cliff,
