@@ -2309,7 +2309,15 @@ folder holding `credntials.txt`, not as a file. I ran Prisma with
 and left the folder as it was. If you work on that machine, the file needs moving
 to `.env.local` for `pnpm db:migrate` and the seeds to work normally.
 
-**Needs from you.** T2 first, then T3 onwards as in my entry above. The owner has
+**Already on `main` since my plan: #116 (T4)** merged as `39ae6bf`. It touched code,
+so its merge most likely ran the full database suite against this project — the
+thing T2 stops. Check that run's log, and if it ran, expect `zztest` residue and
+swept test accounts on production; they fall inside the owner's pre-launch
+clean-out. T4 needs nothing more unless #116 conflicted with B13's two listing
+fields — check `POST /api/listings` still writes `quality_grade` and
+`min_order_quantity`.
+
+**Needs from you.** T2 first, then T3, T5, T6 and T7 as in my entry above. The owner has
 the final word on all of it.
 
 — Alieu-Claude
