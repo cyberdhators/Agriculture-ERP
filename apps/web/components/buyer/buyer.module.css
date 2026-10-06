@@ -1,0 +1,297 @@
+/*
+ * B13 -- the buyer side, in "The Register". Only what the shared kit does not
+ * already provide: the product grid, the standing banner, the timeline, two
+ * small chart forms. Every value is a token; nothing here invents a colour.
+ */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-6);
+  max-inline-size: var(--content-max);
+}
+
+.twoCol {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+  gap: var(--s-6);
+  align-items: start;
+}
+
+.grid2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s-6);
+}
+
+@media (max-width: 1024px) {
+  .twoCol,
+  .grid2 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ---- Standing banner --------------------------------------------------- */
+
+.standing {
+  display: flex;
+  gap: var(--s-4);
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+/* ---- Marketplace ------------------------------------------------------- */
+
+.filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: var(--s-4);
+  align-items: end;
+}
+
+.filterActions {
+  display: flex;
+  gap: var(--s-2);
+  flex-wrap: wrap;
+}
+
+.products {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: var(--s-4);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.product {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  block-size: 100%;
+  padding: var(--s-4);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.product:hover {
+  border-color: var(--line-strong);
+  box-shadow: var(--shadow-card-hover);
+}
+
+.product:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+}
+
+.productTop {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--s-2);
+  align-items: baseline;
+}
+
+.productTitle {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-subhead);
+  line-height: 1.3;
+}
+
+.productMeta {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--text-small);
+}
+
+.figure {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.price {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--text-subhead);
+  color: var(--ink);
+}
+
+.productFoot {
+  margin-block-start: auto;
+  display: flex;
+  justify-content: space-between;
+  gap: var(--s-2);
+  align-items: center;
+  flex-wrap: wrap;
+  border-block-start: 1px solid var(--line);
+  padding-block-start: var(--s-2);
+  font-size: var(--text-small);
+  color: var(--ink-2);
+}
+
+/* ---- Timeline ---------------------------------------------------------- */
+
+.timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+}
+
+.timelineItem {
+  display: grid;
+  grid-template-columns: 12px minmax(0, 1fr);
+  gap: var(--s-3);
+}
+
+.timelineDot {
+  inline-size: 10px;
+  block-size: 10px;
+  margin-block-start: 6px;
+  border-radius: 50%;
+  background: var(--green);
+}
+
+.timelineBody {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.muted {
+  color: var(--muted);
+  font-size: var(--text-small);
+}
+
+/* ---- Small charts ------------------------------------------------------ */
+
+.months {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: var(--s-1);
+  align-items: end;
+  block-size: 160px;
+  padding-block-start: var(--s-4);
+}
+
+.monthCol {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--s-1);
+  block-size: 100%;
+}
+
+.monthBar {
+  inline-size: 100%;
+  max-inline-size: 28px;
+  background: var(--green);
+  border-radius: var(--radius-control) var(--radius-control) 0 0;
+  min-block-size: 1px;
+}
+
+.monthBarEmpty {
+  background: var(--line);
+}
+
+.monthLabel {
+  font-size: var(--text-label);
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+/* ---- Forms ------------------------------------------------------------- */
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s-4);
+}
+
+.formGridFull {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 720px) {
+  .formGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.fieldset {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  padding: var(--s-4);
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+}
+
+.legend {
+  font-family: var(--font-display);
+  font-size: var(--text-subhead);
+  padding-inline: var(--s-1);
+}
+
+.checkGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: var(--s-2);
+}
+
+.actions {
+  display: flex;
+  gap: var(--s-2);
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+/* ---- Registration page (outside the shell) ----------------------------- */
+
+.registerWrap {
+  min-block-size: 100vh;
+  background: var(--paper);
+  padding: var(--s-8) var(--s-4);
+}
+
+.registerInner {
+  max-inline-size: 880px;
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-6);
+}
+
+.topActions {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+}
+
+.unreadDot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-inline-size: 20px;
+  block-size: 20px;
+  padding-inline: 6px;
+  border-radius: 10px;
+  background: var(--harvest);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+}

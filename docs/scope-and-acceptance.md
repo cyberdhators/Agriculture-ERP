@@ -1093,6 +1093,87 @@ list. If yes, the officer role gets a write route and entries gain a
 
 ---
 
+## C-14B — BUYER ACCOUNTS AND PROCUREMENT
+
+Deliverable: (g) buyer–seller matching, and the buyer side of (f) and (h).
+Unit B13. Added 2026-10-06 on the owner's statement that the scope change is
+signed with CORWADO (`docs/DECISIONS.md`, "Buyers hold accounts"). **The signed
+document is not yet named in the record; the owner owes the reference.** This
+supersedes the 2026-09-09 reading that buyers hold no account; that reading is
+left standing above as history, with an amendment note.
+
+C-14B.1  A buyer creates their own account with a name, an email, a mobile
+         number and a password of at least 12 characters, as an INDIVIDUAL or
+         a BUSINESS. Self-signup on the authentication service stays disabled
+         (C-3.1); the account is created by the server.
+C-14B.2  A business gives its name and type; registration and tax numbers,
+         country, location, website, description and a procurement profile
+         (categories, products, production areas, quantity range, unit,
+         delivery locations, purchasing months, payment preferences) are
+         optional. Every list is from a fixed set where one exists.
+C-14B.3  A business starts PENDING and may browse and save drafts but send no
+         request until an administrator verifies it. An INDIVIDUAL needs no
+         review: their standing is "not required", never "verified", and they
+         may browse and send requests at once. Rejected or suspended accounts,
+         of either kind, read their own history and nothing else. Only an
+         administrator changes a standing; a buyer has no route that does.
+C-14B.4  A buyer signs in through the same sign-in page as staff and lands on
+         the buyer dashboard. A buyer is refused every staff, officer and
+         administrator route; staff are refused every buyer route.
+C-14B.5  The dashboard shows the account's standing and, from the database
+         only: active requests, available products, pending, confirmed and
+         completed orders, and quantity purchased per unit, never summed
+         across units. A figure that cannot be sourced is shown as not
+         measured, never as zero.
+C-14B.7  The marketplace lists produce that is listed now, from sellers not
+         removed. Filters — product text, category, state, county, minimum
+         quantity, available-by date, grade, price range, verified suppliers
+         only — and paging are applied by the server.
+C-14B.8  A buyer never receives a farmer's id, name, phone, national id, sex or
+         year of birth; a listing's contact phone, pickup notes or photo
+         storage paths; or any coordinate. A supplier is the trading name the
+         farmer published, whether the farmer is verified, and the payam,
+         county and state of the listing.
+C-14B.10 A product page shows the product, description, category, available
+         quantity, unit, grade, location, availability, minimum order,
+         indicative price and the supplier as in C-14B.8.
+C-14B.11 A purchase request names a category, product, quantity greater than
+         zero, unit, delivery location, optional date needed by (today or
+         later) and notes. Raised from a listing, the listing's category and
+         product are stored. Its states are draft, submitted, under review,
+         accepted, partially fulfilled, fulfilled, cancelled, rejected. A buyer
+         edits only drafts and cancels only drafts and submitted requests;
+         every other move is an administrator's.
+C-14B.12 An order is arranged by an administrator against a listing, for an
+         organisation that may request (C-14B.3), no larger than the listing's
+         quantity. It carries an order number, product, quantity, unit price,
+         a total computed by the database, status, order date, expected
+         delivery date and delivery location. No payment is taken or recorded.
+         A buyer may cancel an order, with a reason, only while it is pending.
+C-14B.13 Every order status change appends a timeline entry saying what, when
+         and whether CORWADO or the buyer recorded it. There is no GPS
+         tracking; nothing is shown that implies one.
+C-14B.14 A buyer edits their own name and phone and the organisation's details
+         and preferences. Email, password, account kind and standing are not
+         editable there.
+C-14B.16 Every buyer route takes the organisation from the session, never the
+         request. Another organisation's request, order or notification is
+         404, identical to one that does not exist.
+C-14B.20 A buyer organisation is notified in-app, with fixed sentences, when its
+         standing changes, a request is decided, an order is arranged or an
+         order moves.
+C-14B.21 Registration, profile changes, request creation, submission, change,
+         cancellation and decision, order creation, movement and cancellation,
+         and standing decisions each append an audit event. Passwords, names,
+         phones, emails, registration and tax numbers never enter the log.
+C-14B.22 Changing an id in an address reaches nothing that is not the caller's.
+
+### Notes for the builder
+
+**Numbering skips 6, 9, 15, 17–19.** They were sub-headings of the brief that
+became parts of other criteria; the numbers that remain are the ones the code
+and tests cite.
+
 ## SECTIONS NOT YET WRITTEN
 
 Written one unit ahead of the build, not all at once, so that criteria reflect
@@ -1436,6 +1517,11 @@ CORWADO before the affected deliverable is built.
    buyer's behalf, and record an introduction. Self-signup therefore stays
    disabled (C-3.1). **The farmer half stays open** — it is item 2 — and is
    what #27 tried to answer without authority (DECISIONS, "#27 closed").
+
+   _Amended 2026-10-06 by the owner:_ **superseded.** Buyers hold accounts;
+   individuals need no review, businesses are verified first. See C-14B and
+   `docs/DECISIONS.md`, "Buyers hold accounts". The text above is kept as the
+   record of what was decided then.
 
    _What a wider reading would cost, priced so a future request is priced
    rather than re-argued:_ a fifth principal; self-signup re-enabled for one

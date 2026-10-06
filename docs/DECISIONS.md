@@ -3389,3 +3389,54 @@ first thing to verify.
 **The pattern worth naming for the session, not the owner:** both catches came from the
 session reading scope before implementing, which is the habit to keep. A third reversal
 that reaches `main` unread is the one that would matter.
+
+## Buyers hold accounts (2026-10-06) — supersedes "Buyers hold no account in this phase" (2026-09-09)
+
+**Decided by the owner, who states the scope change is signed with CORWADO.**
+The signed document's title and date are **not yet recorded here**: the owner
+gave the instruction as "it is signed" and did not name it. Until it is named,
+this entry is the owner's word, not a citation. **Owed: the reference, by the
+owner — add it beneath this entry.**
+
+What changed, in one list:
+
+1. **A fifth principal: the buyer.** An outside organisation's purchaser, with a
+   Supabase Auth account and a `buyer` row. The role is deliberately **not** in
+   `ALL_ROLES`: routes that say `ALL_ROLES` mean "anyone who works for the
+   programme", and adding the buyer there would have admitted buyers to every
+   such route at once. A route admits a buyer by naming `BUYER_ROLE`, and
+   `apps/web/tests/buyer-route-scan.test.ts` pins every route that does.
+2. **Self-registration exists for buyers only** (`POST /api/buyer/register`,
+   the sixth public route). Self-signup on the authentication service stays
+   disabled (C-3.1): the route creates the account server-side.
+3. **Individuals need no review; businesses do** (the owner, mid-build: "standard
+   buyers/individual buyers shouldn't need review or verification"). An
+   individual's standing is `not_required` — **never `verified`**, because nobody
+   checked them — and a database CHECK keeps the two kinds' standings apart.
+   An administrator can still suspend or reject an individual.
+   _The cost, accepted rather than hidden:_ a business can register as an
+   individual to skip review. Nothing technical prevents it.
+4. **Orders and deliveries exist, payments do not.** CORWADO staff arrange an
+   order against a listing at an agreed unit price; the database computes the
+   total. No money moves through the system (Inception Report 5.1 still excludes
+   mobile-money integration). Delivery tracking is a timeline of statuses staff
+   record — there is no GPS, and nothing pretends otherwise.
+5. **What a buyer may see of a farmer** — the question the 2026-09-09 entry said
+   was the largest part of any wider reading — **is answered: the trading name
+   the farmer published, whether the farmer is verified, and the listing's
+   payam, county and state.** Never the farmer's id, legal name, phone, national
+   id, the listing's contact phone or pickup notes, or any coordinate. The line
+   is drawn once, as whitelisting presenters in
+   `apps/web/lib/api/buyer-presenters.ts`, and proved by a test that hands them a
+   row carrying every sensitive column.
+
+**Built by Alieu-Claude across both lanes, on the owner's instruction** — the
+migration, `packages/shared`, the routes and the screens. Logged in HANDOFF.md
+so Monkon-Claude does not build the same thing. Criteria: C-14B in
+`docs/scope-and-acceptance.md`.
+
+**Known and unclosed:** no rate limiter on the registration route (none exists
+anywhere — the product-report route says the same); an already-registered
+address answers 409, which tells a stranger that the address has an account;
+an applicant's email is not proven to be theirs (accounts are created
+confirmed, as staff accounts are).

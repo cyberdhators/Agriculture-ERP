@@ -29,6 +29,7 @@
     "weather:locations": "node scripts/with-env.mjs node scripts/weather-locations-seed.mjs",
     "weather:fetch": "node scripts/with-env.mjs node scripts/weather-fetch.mjs",
     "farmers:seed": "node scripts/with-env.mjs node scripts/farmers-seed.mjs",
+    "buyers:seed": "node scripts/with-env.mjs node scripts/buyers-seed.mjs",
     "storage:buckets": "pnpm --filter @agri-erp/web storage:buckets",
     "backup:manifest": "pnpm --filter @agri-erp/web backup:manifest",
     "restore:verify": "pnpm --filter @agri-erp/web restore:verify",

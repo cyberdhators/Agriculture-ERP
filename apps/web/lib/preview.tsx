@@ -29,7 +29,11 @@ import {
   removeLearningResource,
   saveLearningResource,
 } from './library/api';
+import { BUYER_HOME_PATH, PORTAL_PREFIXES } from './auth/paths';
 import { supabaseBrowser } from './supabase/browser';
+
+const under = (pathname: string, prefixes: readonly string[]): boolean =>
+  prefixes.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 
 /**
  * The signed-in principal, plus the fixture store the directories and library
@@ -133,6 +137,17 @@ export function PreviewProvider({ children }: { children: ReactNode }) {
           error?: { message?: string };
         };
         if (!on) return;
+        // B13: a buyer on a staff page belongs on the buyer side. Every staff
+        // route refuses a buyer anyway; this only spares them a portal full of
+        // 403s. The public marketplace is left alone -- a buyer may browse it.
+        if (
+          res.ok &&
+          String(body.data?.role) === 'buyer' &&
+          under(window.location.pathname, PORTAL_PREFIXES)
+        ) {
+          window.location.replace(BUYER_HOME_PATH);
+          return;
+        }
         if (res.ok && body.data) {
           const principal = { ...body.data, role: asRole(body.data.role) };
           setMe(principal);

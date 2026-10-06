@@ -65,6 +65,7 @@ const DATABASE_SUITE = [
   'tests/audit.test.ts',
   'tests/auth-unavailable.test.ts',
   'tests/backup.test.ts',
+  'tests/buyers.test.ts',
   'tests/communications.test.ts',
   'tests/directories-routes.test.ts',
   'tests/directories.test.ts',

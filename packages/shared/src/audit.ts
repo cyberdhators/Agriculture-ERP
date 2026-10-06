@@ -86,12 +86,38 @@ export const AUDIT_ACTIONS = [
   'market_price.soft_deleted',
   'notification.created',
   'notification.read',
+  // B13 (2026-10-06): buyer accounts and procurement. The CHECK in migration
+  // 20261006090000 is generated from this list. A verification decision is
+  // its own key so the review trail can be read without decoding `after`.
+  'buyer.registered',
+  'buyer.updated',
+  'buyer_organization.updated',
+  'buyer_organization.verification_changed',
+  'purchase_request.created',
+  'purchase_request.updated',
+  'purchase_request.submitted',
+  'purchase_request.cancelled',
+  'purchase_request.decided',
+  'purchase_order.created',
+  'purchase_order.status_changed',
+  'purchase_order.cancelled',
 ] as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];
 
-/** `system` is for the reseed and any other script with no principal (C-4.3). */
-export const AUDIT_ACTOR_TYPES = ['admin', 'supervisor', 'read_only', 'officer', 'system'] as const;
+/**
+ * `system` is for the reseed and any other script with no principal (C-4.3).
+ * `buyer` (B13) is an outside organisation's purchaser acting on their own
+ * records; the database type gained the value in migration 20261006090000.
+ */
+export const AUDIT_ACTOR_TYPES = [
+  'admin',
+  'supervisor',
+  'read_only',
+  'officer',
+  'system',
+  'buyer',
+] as const;
 
 export type AuditActorType = (typeof AUDIT_ACTOR_TYPES)[number];
 
@@ -139,6 +165,11 @@ const NEVER_RECORDED = new Set([
   'phone',
   'alt_phone',
   'email',
+  // B13. A buyer's credentials never enter the log, and neither do the
+  // registration and tax numbers of their business (C-14B.21).
+  'confirm_password',
+  'registration_number',
+  'tax_id',
 ]);
 
 const normaliseKey = (key: string): string => key.toLowerCase().replace(/[_\-\s]/g, '');

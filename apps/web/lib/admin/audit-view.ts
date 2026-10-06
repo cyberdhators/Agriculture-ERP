@@ -97,6 +97,11 @@ const ENTITY_LABELS: Record<string, string> = {
   directory_entry: 'Directory entry',
   learning_resource: 'Learning resource',
   location: 'Location',
+  buyer: 'Buyer',
+  buyer_organization: 'Buyer organisation',
+  purchase_request: 'Purchase request',
+  purchase_order: 'Purchase order',
+  notification: 'Notification',
 };
 
 /**
@@ -119,6 +124,7 @@ const ACTOR_LABELS: Record<string, string> = {
   read_only: 'Read-only',
   officer: 'Extension officer',
   system: 'System',
+  buyer: 'Buyer',
 };
 
 export const actorLabel = (actorType: string): string => ACTOR_LABELS[actorType] ?? actorType;

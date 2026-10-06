@@ -83,6 +83,9 @@ export const config = {
     '/market',
     '/farmer/:path*',
     '/farmer',
+    // B13: the buyer side. /buyer/register stays open (lib/auth/paths.ts).
+    '/buyer/:path*',
+    '/buyer',
     '/login',
   ],
 };

@@ -6,6 +6,7 @@ import { useState, type FormEvent } from 'react';
 import { Wordmark } from '@/components/brand/Wordmark';
 import { Button, Card, Field, Input, Notice } from '@/components/ui';
 import { loginIdentifier } from '@/lib/auth/identifier';
+import { BUYER_REGISTER_PATH, homeFor } from '@/lib/auth/paths';
 import { supabaseBrowser } from '@/lib/supabase/browser';
 
 import styles from './auth.module.css';
@@ -48,7 +49,14 @@ export function LoginForm({ next }: { next: string }) {
         );
         return;
       }
-      router.replace(next);
+      // B13: the session now exists; ask the server who it belongs to. A buyer
+      // goes to the buyer side, staff to where they were going. If the answer
+      // does not come, staff routing is the default and the portal's own
+      // check sends a buyer on (lib/preview.tsx).
+      const role = await fetch('/api/me')
+        .then(async (res) => ((await res.json()) as { data?: { role?: string } }).data?.role)
+        .catch(() => undefined);
+      router.replace(homeFor(role, next));
       router.refresh();
     } catch {
       setError('Sign-in is not available on this deployment. Tell an administrator.');
@@ -66,8 +74,8 @@ export function LoginForm({ next }: { next: string }) {
         <div>
           <h1 className={styles.title}>Sign in</h1>
           <p className={styles.hint}>
-            Staff sign in with the email on their account. Extension officers sign in with their
-            phone number. Accounts are issued by an administrator.
+            Staff and buyers sign in with the email on their account. Extension officers sign in
+            with their phone number. Staff accounts are issued by an administrator.
           </p>
         </div>
 
@@ -108,6 +116,10 @@ export function LoginForm({ next }: { next: string }) {
             {busy ? 'Signing in…' : 'Sign in'}
           </Button>
         </form>
+        <p className={styles.hint}>
+          Buying produce for an organisation?{' '}
+          <a href={BUYER_REGISTER_PATH}>Apply for a buyer account</a>.
+        </p>
       </Card>
     </main>
   );

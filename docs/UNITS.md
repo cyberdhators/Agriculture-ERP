@@ -41,6 +41,7 @@ owns what, so it now agrees with HANDOFF row for row.
 | **B10**  | Reporting views and export record                           | Monkonmlah | Merged #45              |
 | **B11**  | Backup and restore drill                                    | Monkonmlah | Merged #46              |
 | **B12**  | Weather tile (C-16): three tables, one route, the fetch job | Monkonmlah | Merged #93 — 2026-09-20 |
+| **B13**  | Buyer accounts and procurement (C-14B)                      | Alieu      | PR open — 2026-10-06    |
 
 ## Parallel units — Lane 2 (Alieu-Claude)
 

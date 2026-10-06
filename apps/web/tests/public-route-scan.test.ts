@@ -19,8 +19,15 @@ import { describe, expect, it } from 'vitest';
  */
 const API_DIR = fileURLToPath(new URL('../app/api', import.meta.url));
 
-/** Routes a marketplace visitor or farmer with no account must be able to call. */
+/**
+ * Routes a marketplace visitor or farmer with no account must be able to call.
+ *
+ * `buyer/register` (B13, 2026-10-06): an applicant has no account until this
+ * route makes one. Added deliberately, with its unclosed exposure (no rate
+ * limiter, an address-exists answer) written in the route's own header.
+ */
 const EXPECTED_PUBLIC = [
+  'buyer/register',
   'listings',
   'listings/[id]',
   'listings/[id]/contact-requests',

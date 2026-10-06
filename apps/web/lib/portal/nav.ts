@@ -129,6 +129,29 @@ export const NAV_SECTIONS: readonly NavSection[] = [
     ],
   },
   {
+    heading: 'Buyers & procurement',
+    items: [
+      {
+        href: '/admin/buyers',
+        label: 'Buyer accounts',
+        icon: 'staff',
+        roles: ['admin'],
+        because:
+          'GET and PATCH /api/admin/buyers are administrator-only (B13, C-14B.3): only an ' +
+          'administrator verifies, rejects or suspends a buyer organisation.',
+      },
+      {
+        href: '/admin/procurement',
+        label: 'Requests & orders',
+        icon: 'desk',
+        roles: ['admin'],
+        because:
+          '/api/admin/purchase-requests and /api/admin/orders are administrator-only (B13): ' +
+          'CORWADO decides requests and arranges orders against listings.',
+      },
+    ],
+  },
+  {
     heading: 'Communications',
     items: [
       {
@@ -254,6 +277,8 @@ export interface Crumb {
 const SEGMENT_LABELS: Record<string, string> = {
   admin: 'Administration',
   users: 'Staff accounts',
+  buyers: 'Buyer accounts',
+  procurement: 'Requests & orders',
   audit: 'Audit trail',
   farmers: 'Farmers',
   farms: 'Farms & maps',

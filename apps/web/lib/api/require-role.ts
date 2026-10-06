@@ -15,7 +15,7 @@ import { authUnavailable, forbidden, unauthenticated } from './errors';
  */
 
 export interface Principal {
-  readonly kind: 'user' | 'officer';
+  readonly kind: 'user' | 'officer' | 'buyer';
   /** The application row id, not the auth account id. */
   readonly id: string;
   readonly authUserId: string;
@@ -161,6 +161,48 @@ export async function requireRole(
         officerId: officer.id,
         payamId: officer.payam_id,
         stateId: officer.state_id,
+      },
+    };
+  }
+
+  // B13. A buyer: an outside organisation's purchaser. Read through
+  // buyer_active, so a removed buyer -- or a buyer whose organisation was
+  // removed -- has no row and is refused on their next request, as staff are.
+  // A buyer is admitted ONLY to a route that names 'buyer'; ALL_ROLES does not
+  // include it, so every existing route refuses a buyer with 403.
+  const [buyer] = await prisma.$queryRawUnsafe<
+    {
+      id: string;
+      given_name: string;
+      family_name: string;
+      organization_id: string;
+      verification_status:
+        'pending' | 'under_review' | 'verified' | 'rejected' | 'suspended' | 'not_required';
+    }[]
+  >(
+    `SELECT b.id, b.given_name, b.family_name, b.organization_id,
+            o.verification_status::text AS verification_status
+       FROM public.buyer_active b
+       JOIN public.buyer_organization_active o ON o.id = b.organization_id
+      WHERE b.auth_user_id = $1::uuid LIMIT 1`,
+    authUserId,
+  );
+
+  if (buyer) {
+    if (!allowed.includes('buyer')) throw forbidden();
+    return {
+      principal: {
+        kind: 'buyer',
+        id: buyer.id,
+        authUserId,
+        name: `${buyer.given_name} ${buyer.family_name}`,
+      },
+      role: 'buyer',
+      scope: {
+        kind: 'buyer',
+        buyerId: buyer.id,
+        organizationId: buyer.organization_id,
+        verification: buyer.verification_status,
       },
     };
   }

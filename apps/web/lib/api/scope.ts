@@ -37,6 +37,11 @@ export function scopeCondition(
     return { sql: `${stateColumn} = $${firstParam}`, params: [scope.stateId] };
   }
 
+  // B13. A buyer has no reach into the register at all. No route that uses
+  // this admits a buyer -- requireRole refuses them first -- and this makes the
+  // second line of defence fail closed rather than fall through to "everything".
+  if (scope.kind === 'buyer') return { sql: 'false', params: [] };
+
   // caseload. An officer sees the records THEY registered -- not other
   // officers' records in the same payam. C-3.4 and the note in C-3.
   if (!officerColumn) {
@@ -55,4 +60,16 @@ export function scopeCondition(
  */
 export function requireWriter(auth: Authenticated): void {
   if (auth.role === 'read_only') throw forbidden();
+}
+
+/**
+ * B13. The buyer's scope, or a 403. Every buyer route calls this first, so the
+ * organisation id a query filters on always comes from the session, never from
+ * the request (C-14B.16, C-14B.22).
+ */
+export function buyerScope(
+  auth: Authenticated,
+): Extract<Authenticated['scope'], { kind: 'buyer' }> {
+  if (auth.scope.kind !== 'buyer') throw forbidden();
+  return auth.scope;
 }

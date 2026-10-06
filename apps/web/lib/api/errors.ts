@@ -139,6 +139,16 @@ export const RULE_MESSAGES = {
     "No active officer with that identifier works in this farmer's payam. Choose one who does.",
   reassign_same_officer: 'This farmer is already with that officer. Nothing to change.',
   resource_file_already_registered: 'A learning resource is already registered for that file.',
+  // B13 (C-14B). About an organisation's standing or a record's state, never a person.
+  buyer_not_verified:
+    'Purchase requests open once CORWADO has verified your buyer account. You can save a draft until then.',
+  county_not_found: 'That county could not be found in that state.',
+  listing_not_available: 'That product is no longer available in the marketplace.',
+  request_not_editable:
+    'Only a draft request can be changed. Cancel it and send a new one instead.',
+  order_not_cancellable: 'Only a pending order can be cancelled. Contact CORWADO about this order.',
+  request_other_organization: 'That purchase request belongs to a different buyer organisation.',
+  order_exceeds_listing: 'The order is for more than the listing has available.',
 } as const;
 
 export type RuleKey = keyof typeof RULE_MESSAGES;

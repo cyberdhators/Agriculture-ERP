@@ -311,6 +311,13 @@ character.
 | `reassign_officer_not_found`       | No active officer with that identifier works in this farmer's payam. Choose one who does.                                     |
 | `reassign_same_officer`            | This farmer is already with that officer. Nothing to change.                                                                  |
 | `resource_file_already_registered` | A learning resource is already registered for that file.                                                                      |
+| `buyer_not_verified`               | Purchase requests open once CORWADO has verified your buyer account. You can save a draft until then.                         |
+| `county_not_found`                 | That county could not be found in that state.                                                                                 |
+| `listing_not_available`            | That product is no longer available in the marketplace.                                                                       |
+| `request_not_editable`             | Only a draft request can be changed. Cancel it and send a new one instead.                                                    |
+| `order_not_cancellable`            | Only a pending order can be cancelled. Contact CORWADO about this order.                                                      |
+| `request_other_organization`       | That purchase request belongs to a different buyer organisation.                                                              |
+| `order_exceeds_listing`            | The order is for more than the listing has available.                                                                         |
 
 **A route names a rule; it never writes a sentence.** `conflict()` and
 `unprocessable()` take a key from this registry, not a string. That is how the
@@ -330,73 +337,85 @@ same list, so a key that is not here is refused at the database. Adding one
 means editing `AUDIT_ACTIONS` in `packages/shared` and this table in the same
 change.
 
-| Action key                       |
-| -------------------------------- |
-| `user.created`                   |
-| `user.updated`                   |
-| `user.password_set`              |
-| `user.soft_deleted`              |
-| `officer.created`                |
-| `officer.updated`                |
-| `officer.status_changed`         |
-| `officer.password_set`           |
-| `officer.soft_deleted`           |
-| `auth.disabled`                  |
-| `auth.disable_failed`            |
-| `auth.account_orphaned`          |
-| `location.created`               |
-| `location.renamed`               |
-| `location.soft_deleted`          |
-| `farmer.created`                 |
-| `farmer.updated`                 |
-| `farmer.soft_deleted`            |
-| `consent.recorded`               |
-| `farmer.verified`                |
-| `farmer.rejected`                |
-| `farmer.merged`                  |
-| `farmer.resubmitted`             |
-| `farmer.reassigned`              |
-| `farm.created`                   |
-| `farm.boundary_added`            |
-| `farm.boundary_superseded`       |
-| `farm.crops_declared`            |
-| `farm.soft_deleted`              |
-| `visit.recorded`                 |
-| `visit.corrected`                |
-| `visit.soft_deleted`             |
-| `visit.attachment_declared`      |
-| `visit.attachment_arrived`       |
-| `visit.attachment_failed`        |
-| `visit.attachment_link_issued`   |
-| `farm.repointed`                 |
-| `visit.repointed`                |
-| `report.exported`                |
-| `system.restored`                |
-| `directory_entry.created`        |
-| `directory_entry.updated`        |
-| `directory_entry.soft_deleted`   |
-| `learning_resource.created`      |
-| `learning_resource.updated`      |
-| `learning_resource.published`    |
-| `learning_resource.soft_deleted` |
-| `weather_location.created`       |
-| `weather_location.updated`       |
-| `weather_location.soft_deleted`  |
-| `product_report.created`         |
-| `product_report.status_changed`  |
-| `product_report.listing_removed` |
-| `communication.email_sent`       |
-| `communication.send_failed`      |
-| `listing.created`                |
-| `listing.updated`                |
-| `listing.status_changed`         |
-| `listing.soft_deleted`           |
-| `contact_request.created`        |
-| `contact_request.handled`        |
-| `market_price.created`           |
-| `market_price.soft_deleted`      |
-| `notification.created`           |
-| `notification.read`              |
+| Action key                                |
+| ----------------------------------------- |
+| `user.created`                            |
+| `user.updated`                            |
+| `user.password_set`                       |
+| `user.soft_deleted`                       |
+| `officer.created`                         |
+| `officer.updated`                         |
+| `officer.status_changed`                  |
+| `officer.password_set`                    |
+| `officer.soft_deleted`                    |
+| `auth.disabled`                           |
+| `auth.disable_failed`                     |
+| `auth.account_orphaned`                   |
+| `location.created`                        |
+| `location.renamed`                        |
+| `location.soft_deleted`                   |
+| `farmer.created`                          |
+| `farmer.updated`                          |
+| `farmer.soft_deleted`                     |
+| `consent.recorded`                        |
+| `farmer.verified`                         |
+| `farmer.rejected`                         |
+| `farmer.merged`                           |
+| `farmer.resubmitted`                      |
+| `farmer.reassigned`                       |
+| `farm.created`                            |
+| `farm.boundary_added`                     |
+| `farm.boundary_superseded`                |
+| `farm.crops_declared`                     |
+| `farm.soft_deleted`                       |
+| `visit.recorded`                          |
+| `visit.corrected`                         |
+| `visit.soft_deleted`                      |
+| `visit.attachment_declared`               |
+| `visit.attachment_arrived`                |
+| `visit.attachment_failed`                 |
+| `visit.attachment_link_issued`            |
+| `farm.repointed`                          |
+| `visit.repointed`                         |
+| `report.exported`                         |
+| `system.restored`                         |
+| `directory_entry.created`                 |
+| `directory_entry.updated`                 |
+| `directory_entry.soft_deleted`            |
+| `learning_resource.created`               |
+| `learning_resource.updated`               |
+| `learning_resource.published`             |
+| `learning_resource.soft_deleted`          |
+| `weather_location.created`                |
+| `weather_location.updated`                |
+| `weather_location.soft_deleted`           |
+| `product_report.created`                  |
+| `product_report.status_changed`           |
+| `product_report.listing_removed`          |
+| `communication.email_sent`                |
+| `communication.send_failed`               |
+| `listing.created`                         |
+| `listing.updated`                         |
+| `listing.status_changed`                  |
+| `listing.soft_deleted`                    |
+| `contact_request.created`                 |
+| `contact_request.handled`                 |
+| `market_price.created`                    |
+| `market_price.soft_deleted`               |
+| `notification.created`                    |
+| `notification.read`                       |
+| `buyer.registered`                        |
+| `buyer.updated`                           |
+| `buyer_organization.updated`              |
+| `buyer_organization.verification_changed` |
+| `purchase_request.created`                |
+| `purchase_request.updated`                |
+| `purchase_request.submitted`              |
+| `purchase_request.cancelled`              |
+| `purchase_request.decided`                |
+| `purchase_order.created`                  |
+| `purchase_order.status_changed`           |
+| `purchase_order.cancelled`                |
 
 `before` and `after` hold **changed fields only**, never whole rows, and never a
 password, token, authentication identifier, national id, phone, email, given
@@ -503,6 +522,51 @@ These are also exact.
 | Report period: ends before it starts    | The period ends before it starts.                                                               |
 | Report season: malformed                | Give the season as a year and a name: 2026-main or 2026-second.                                 |
 | Report type: unknown                    | Choose a report: summary or farmers.                                                            |
+| Buyer first name: missing or blank      | Enter your first name.                                                                          |
+| Buyer last name: missing or blank       | Enter your last name.                                                                           |
+| Buyer name: over 100 characters         | A name can be at most 100 characters.                                                           |
+| Buyer phone: not E.164                  | Enter a mobile number in international form, starting with + and the country code.              |
+| Confirm password: differs               | The two passwords do not match.                                                                 |
+| Organisation name: missing or length    | Enter the organisation name: 2 to 160 characters.                                               |
+| Organisation type: not on the list      | Choose an organisation type from the list.                                                      |
+| Registration or tax number: too long    | A registration or tax number can be at most 64 characters.                                      |
+| Country: not two letters                | Give the country as a two-letter code, such as SS.                                              |
+| County without a state                  | Choose a state before choosing a county.                                                        |
+| City: over 120 characters               | A city can be at most 120 characters.                                                           |
+| Address: over 300 characters            | An address can be at most 300 characters.                                                       |
+| Website: not http(s) or too long        | Enter a website starting with http:// or https://, up to 200 characters.                        |
+| Organisation description: too long      | A description can be at most 1000 characters.                                                   |
+| Listing category: not on the list       | Choose a category from the list.                                                                |
+| A list field: not a list                | Send this as a list.                                                                            |
+| Interested products: over 20            | List at most 20 products.                                                                       |
+| Product name: blank or over 120         | A product name is 1 to 120 characters.                                                          |
+| Production areas: over 20               | Choose at most 20 production areas.                                                             |
+| Delivery locations: over 10             | List at most 10 delivery locations.                                                             |
+| Delivery location: length               | A delivery location is 2 to 200 characters.                                                     |
+| Purchasing month: not 1–12              | Choose purchasing months as numbers from 1 to 12.                                               |
+| Payment preference: not on the list     | Choose a payment preference from the list.                                                      |
+| Quantity: not a positive number         | Give the quantity as a number greater than zero.                                                |
+| Quantity range: inverted                | The maximum quantity is less than the minimum.                                                  |
+| Unit: not on the list                   | Choose a unit from the list.                                                                    |
+| Required by: not a date, or past        | Give the date it is needed by as YYYY-MM-DD, today or later.                                    |
+| Request notes: over 1000 characters     | Notes can be at most 1000 characters.                                                           |
+| Request action: not submit or cancel    | Choose submit or cancel.                                                                        |
+| Buyer change: changes nothing           | Change at least one thing, or leave the profile as it is.                                       |
+| Buyer decision: unknown status          | Choose under_review, verified, rejected, suspended or not_required.                             |
+| Buyer account type: unknown             | Choose individual or business.                                                                  |
+| Decision note: over 500 characters      | A note can be at most 500 characters.                                                           |
+| Request decision: unknown status        | Choose under_review, accepted, rejected, partially_fulfilled or fulfilled.                      |
+| Order status: not on the list           | Choose an order status from the list.                                                           |
+| Unit price: not a number zero or more   | Give the unit price in SSP as a number, zero or more.                                           |
+| Buyer-side identifier: malformed        | The identifier is not in the expected form.                                                     |
+| Grade: not a, b, c or ungraded          | Choose a grade: a, b, c or ungraded.                                                            |
+| Search: over 100 characters             | A search can be at most 100 characters.                                                         |
+| Marketplace number filter: malformed    | Give the number as digits, zero or more.                                                        |
+| Marketplace date filter: malformed      | Give the date as YYYY-MM-DD.                                                                    |
+| Price range: inverted                   | The highest price is less than the lowest.                                                      |
+| Supplier filter: not verified           | Choose verified to see only verified suppliers.                                                 |
+| Order cancellation: no reason           | Say why the order is being cancelled, in up to 300 characters.                                  |
+| Buyer list status filter: unknown       | Choose a status from the list.                                                                  |
 
 The key beside each reason is the field name, per section 4.1. An unrecognised
 field named `nickname` therefore produces `{ "nickname": "This field is not

@@ -3,7 +3,14 @@ import { fileURLToPath } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
 
-import { LOGIN_PATH, MARKET_PREFIXES, PORTAL_PREFIXES } from './paths';
+import {
+  BUYER_PREFIX,
+  BUYER_REGISTER_PATH,
+  LOGIN_PATH,
+  MARKET_PREFIXES,
+  PORTAL_PREFIXES,
+  isPortalPath,
+} from './paths';
 
 /**
  * THE PORTAL GATE IS THREE LISTS, AND THIS IS THE ONE THING THAT COMPARES THEM.
@@ -92,7 +99,9 @@ describe('the portal gate compares its three sources', () => {
     // them behind the staff session (owner's decision, 2026-09-15). A market
     // prefix missing from the matcher means that switch silently does nothing:
     // isPortalPath would return true and the middleware would never be asked.
-    const gated = [...PORTAL_PREFIXES, ...MARKET_PREFIXES];
+    // B13: the buyer side is gated too, by isBuyerPath rather than a prefix
+    // list (its application form stays open). The suite below checks it.
+    const gated = [...PORTAL_PREFIXES, ...MARKET_PREFIXES, BUYER_PREFIX];
 
     const missing = gated.filter((p) => !matcher.includes(`${p}/:path*`));
     expect(
@@ -114,5 +123,42 @@ describe('the portal gate compares its three sources', () => {
         'PORTAL_PREFIXES or MARKET_PREFIXES, or remove them from the matcher: a middleware ' +
         'invocation that decides nothing is cost without protection.',
     ).toEqual([]);
+  });
+});
+
+/**
+ * B13. The buyer side's screens, compared from the disk: every page under
+ * app/(buyer)/buyer needs a session except the application form. A page added
+ * there later is gated by construction -- isBuyerPath covers the whole prefix
+ * -- and this proves the one exception stays the only one.
+ */
+describe('the buyer gate', () => {
+  const root = fileURLToPath(new URL('../../app/(buyer)/buyer', import.meta.url));
+  const pages: string[] = [];
+  const walk = (dir: string, url: string): void => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      if (entry.isDirectory()) {
+        // Route groups and dynamic segments: groups vanish from the URL.
+        const segment = entry.name.startsWith('(')
+          ? ''
+          : entry.name.startsWith('[')
+            ? '/x'
+            : `/${entry.name}`;
+        walk(`${dir}/${entry.name}`, `${url}${segment}`);
+      } else if (entry.name === 'page.tsx') {
+        pages.push(url || '/buyer');
+      }
+    }
+  };
+  walk(root, '/buyer');
+
+  it('finds the buyer screens at all', () => {
+    expect(pages.length).toBeGreaterThan(8);
+    expect(pages).toContain(BUYER_REGISTER_PATH);
+  });
+
+  it('every buyer screen needs a session except the application form', () => {
+    const open = pages.filter((p) => !isPortalPath(p, true));
+    expect(open).toEqual([BUYER_REGISTER_PATH]);
   });
 });
