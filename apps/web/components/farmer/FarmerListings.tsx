@@ -8,7 +8,6 @@ import { ButtonLink, EmptyState, Tabs } from '@/components/ui';
 import type { ListingStatus, ProduceListing } from '@/lib/fixtures/farmers';
 import { useFarmerSession } from '@/lib/farmer-session';
 import { STATUS_KEY } from '@/lib/farmers/listings';
-import { fetchListings, toListing } from '@/lib/listings/api-client';
 import { t } from '@/lib/i18n';
 
 import { PageHead } from './AccountShell';
@@ -19,34 +18,17 @@ type Filter = 'all' | ListingStatus;
 const FILTERS: readonly Filter[] = ['all', 'listed', 'draft', 'sold', 'withdrawn'];
 
 export function FarmerListings() {
-  const { farmer, language, listingsFor } = useFarmerSession();
+  const { farmer, language, listingsFor, refresh } = useFarmerSession();
   const [filter, setFilter] = useState<Filter>('all');
-  const [all, setAll] = useState<ProduceListing[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // The session holds the farmer's own listings (GET /api/farmer/listings);
+  // reload on arrival so a listing saved on another device shows here too.
   useEffect(() => {
-    if (!farmer) return;
-    let cancelled = false;
-    setLoading(true);
-    fetchListings({ farmer_id: farmer.id, limit: 200 })
-      .then((data) => {
-        if (cancelled) return;
-        const apiListings = data.map(toListing);
-        const local = listingsFor(farmer.id);
-        const apiIds = new Set(apiListings.map((l) => l.id));
-        const merged = [...apiListings, ...local.filter((l) => !apiIds.has(l.id))];
-        setAll(merged.sort((a, b) => b.updated_at.localeCompare(a.updated_at)));
-      })
-      .catch(() => {
-        if (!cancelled) setAll(listingsFor(farmer.id));
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [farmer, listingsFor]);
+    void refresh().finally(() => setLoading(false));
+  }, [refresh]);
+
+  const all: ProduceListing[] = farmer ? listingsFor(farmer.id) : [];
 
   if (!farmer) return null;
 

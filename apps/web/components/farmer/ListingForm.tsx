@@ -25,7 +25,6 @@ import {
   type ProduceListing,
 } from '@/lib/fixtures/farmers';
 import { useFarmerSession } from '@/lib/farmer-session';
-import { createListing, updateListing } from '@/lib/listings/api-client';
 import {
   CATEGORY_KEY,
   UNIT_KEY,
@@ -62,6 +61,7 @@ export function ListingForm({ listingId }: { listingId?: string }) {
   const own = existing && farmer && existing.farmer_id === farmer.id ? existing : undefined;
   const isEdit = Boolean(listingId);
 
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [values, setValues] = useState<ListingFormValues>(() =>
     own
       ? listingToValues(own)
@@ -170,26 +170,25 @@ export function ListingForm({ listingId }: { listingId?: string }) {
       return;
     }
 
-    const body = { ...result.values, farmer_id: farmer!.id, status };
-
+    // B14: saved to the server, owned by the signed-in farmer. A failure is
+    // shown, never papered over by keeping the listing in the browser only.
+    const now = new Date().toISOString();
+    const listing: ProduceListing = {
+      id: own?.id ?? newListingId(),
+      farmer_id: farmer!.id,
+      ...result.values,
+      photo_storage_paths: [],
+      status,
+      created_at: own?.created_at ?? now,
+      updated_at: now,
+    };
+    setSaveError(null);
     try {
-      const saved = own ? await updateListing(own.id, body) : await createListing(body);
+      const saved = await saveListing(listing);
       if (status === 'draft' && !verified) setSaved('draft');
       router.push(`/farmer/account/listings/${saved.id}`);
-    } catch {
-      const now = new Date().toISOString();
-      const listing: ProduceListing = {
-        id: own?.id ?? newListingId(),
-        farmer_id: farmer!.id,
-        ...result.values,
-        photo_storage_paths: photos,
-        status,
-        created_at: own?.created_at ?? now,
-        updated_at: now,
-      };
-      saveListing(listing);
-      if (status === 'draft' && !verified) setSaved('draft');
-      router.push(`/farmer/account/listings/${listing.id}`);
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : 'The listing could not be saved.');
     }
   }
 
@@ -222,6 +221,11 @@ export function ListingForm({ listingId }: { listingId?: string }) {
         }
       />
 
+      {saveError ? (
+        <Notice kind="error">
+          <p className="small">{saveError}</p>
+        </Notice>
+      ) : null}
       {saved === 'draft' ? (
         <Notice kind="success">
           <p className="small">{t('listingForm.pendingSavedDraft', language)}</p>

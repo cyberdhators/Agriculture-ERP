@@ -43,7 +43,7 @@ export function FarmerSecurity() {
     setDone(null);
   }
 
-  function submitPassword(event: React.FormEvent) {
+  async function submitPassword(event: React.FormEvent) {
     event.preventDefault();
     const errors: typeof passwordErrors = {};
     if (current === '') errors.current = t('account.wrongPassword', language);
@@ -54,7 +54,7 @@ export function FarmerSecurity() {
       setPasswordErrors(errors);
       return;
     }
-    if (!changePassword(current, next)) {
+    if (!(await changePassword(current, next))) {
       setPasswordErrors({ current: t('account.wrongPassword', language) });
       return;
     }
@@ -66,7 +66,7 @@ export function FarmerSecurity() {
     setDone('password');
   }
 
-  function submitPhone(event: React.FormEvent) {
+  async function submitPhone(event: React.FormEvent) {
     event.preventDefault();
     const errors: typeof phoneErrors = {};
     const parsed = parseSouthSudanMobile(newPhone);
@@ -76,7 +76,7 @@ export function FarmerSecurity() {
       setPhoneErrors(errors);
       return;
     }
-    if (!changePhone(phonePassword, parsed.value)) {
+    if (!(await changePhone(phonePassword, parsed.value))) {
       setPhoneErrors({ password: t('account.wrongPassword', language) });
       return;
     }
@@ -87,8 +87,8 @@ export function FarmerSecurity() {
     setDone('phone');
   }
 
-  function onSignOut() {
-    signOut();
+  async function onSignOut() {
+    await signOut();
     router.push('/');
   }
 

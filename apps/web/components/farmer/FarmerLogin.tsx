@@ -28,7 +28,7 @@ export function FarmerLogin() {
   const [phoneError, setPhoneError] = useState<string | undefined>();
   const [failure, setFailure] = useState<'wrong' | 'locked' | null>(null);
 
-  function submit(event: React.FormEvent) {
+  async function submit(event: React.FormEvent) {
     event.preventDefault();
     const parsed = parseSouthSudanMobile(phone);
     if (!parsed.ok) {
@@ -36,9 +36,9 @@ export function FarmerLogin() {
       return;
     }
     setPhoneError(undefined);
-    const result = signIn(parsed.value, password);
+    const result = await signIn(parsed.value, password);
     if (!result.ok) {
-      setFailure(result.reason);
+      setFailure(result.reason === 'locked' ? 'locked' : 'wrong');
       setPassword('');
       return;
     }

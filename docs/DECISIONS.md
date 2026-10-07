@@ -3440,3 +3440,71 @@ anywhere — the product-report route says the same); an already-registered
 address answers 409, which tells a stranger that the address has an account;
 an applicant's email is not proven to be theirs (accounts are created
 confirmed, as staff accounts are).
+
+## Farmers enrol themselves and deal with buyers directly (2026-10-07) — amends "Buyers hold accounts" (2026-10-06) point 5 and C-14B.8
+
+**What CORWADO told the owner, and the owner told us (2026-10-07).** CORWADO has no
+funds for staff to enrol farmers: farmers register themselves, officers help the
+illiterate ones case by case. Farmers upload their own produce. Buyers contact
+farmers directly, with no third party and no CORWADO involvement. The owner's
+answers to the three open questions: a farmer signs in with **phone and password**;
+the farmer's number is given to a buyer **after the buyer sends a request**, and the
+request appears on the farmer's dashboard; build it now, for the demonstration.
+
+This is the owner's written confirmation of the farmer-facing web side that
+CLAUDE.md §2 listed as unresolved, as far as this goes: a farmer account on the
+existing web portal (`/farmer/*`). It is not a farmer-installed mobile app, and
+nothing here builds one. — DOCUMENTED (the owner's instruction in session).
+
+1. **A sixth principal: the farmer.** `farmer.auth_user_id` links a farmer row to
+   a Supabase Auth account whose identifier is derived from the phone
+   (`farmer.<digits>@farmers.invalid`, exactly as an officer's is), so every way of
+   writing one number is one account. `FARMER_ROLE` is, like the buyer's, **not**
+   in `ALL_ROLES`; `requireRole` resolves a farmer last, and the `farmer` scope
+   sees nothing through `scopeFilter` — every farmer route reads its own rows by
+   the session's farmer id (`farmerScope`).
+2. **Self-registration** (`POST /api/farmer/register`, the seventh public route).
+   Short on purpose: name, sex, year of birth, phone, state/county/payam, village,
+   password, consent. CORWADO's paper form (sections B–F and H) is asked as an
+   optional, skippable "About your farm" step and kept in `farmer_profile`.
+   Section G (payments) and the photo are left out: payments are out of scope
+   (Inception Report 5.1). The farmer is `pending`; verification by an officer is
+   optional and shown to buyers as a badge, not a gate.
+3. **A farmer's password is six characters or more** (B12 point 2, the rule the
+   screen already showed). Staff keep twelve. A farmer types it on a basic phone.
+4. **Listings are the farmer's own** (`/api/farmer/listings`). A listing the
+   farmer marks `listed` is in the marketplace at once; a `rejected` farmer cannot
+   publish.
+5. **Point 5 of 2026-10-06 and C-14B.8 are amended — the phone, and only the
+   phone.** Once a buyer has sent a request for a listing, that buyer is given the
+   listing's contact phone (on the product page and the request), and the farmer
+   is given the buyer's name, organisation and phone on their dashboard. A draft
+   or cancelled request reveals nothing. The farmer's id, legal name, national id
+   and coordinates are still never given. Consent text v1.2 says so, in English
+   and Arabic; every farmer registering from now agrees to it.
+6. **The cart.** A buyer gathers products from several farmers and sends them
+   together (`POST /api/buyer/cart`, one transaction; each line becomes its own
+   request to its own farmer, and each farmer is alerted). Every request now
+   names a listing; the free-standing "find me maize" request is gone, because
+   there is no third party to do the finding.
+7. **Accepting is not an order.** The farmer accepts or declines; the buyer is
+   notified. Price and handover are agreed between the two directly. Orders and
+   deliveries are no longer offered in the buyer's navigation; their routes and
+   tables stay, unused.
+
+**Known and unclosed:** no rate limiter on the registration route (none exists);
+an already-registered phone answers 409, which tells a stranger the number has an
+account; the phone is not proven to be the registrant's (no SMS check — Bird is
+not yet live).
+
+## Staging is production: the database suite is retired (2026-10-07) — T2
+
+Since 2026-10-06 the one Supabase project is production (the owner: "no more test
+runs, we run and test locally and push to production, if there's a crash we fix
+it"). The database suite creates and deletes accounts and rows, so it may not run
+against it. Done by replacing the guards, not removing them: `vitest.global-setup.ts`,
+`tests/helpers/principals.ts` and `scripts/db-reset.mjs` now refuse
+unconditionally; `pnpm test` is the pure suite (the old command is kept as
+`test:db-retired`); CI's Test step receives no database secret and always runs
+`pnpm test:pure`. When a disposable database exists again, the guards are the
+place to point it.

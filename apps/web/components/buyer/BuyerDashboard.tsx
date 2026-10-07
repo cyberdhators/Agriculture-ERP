@@ -3,15 +3,8 @@
 import { useEffect, useState } from 'react';
 
 import { getSummary, type BuyerSummary } from '@/lib/buyer/api';
-import {
-  CATEGORY_LABELS,
-  ORDER_STATUS_LABELS,
-  VERIFICATION_MESSAGES,
-  formatMonth,
-  formatQuantity,
-  formatSsp,
-  labelOf,
-} from '@/lib/buyer/labels';
+import { useCart } from '@/lib/buyer/cart';
+import { CATEGORY_LABELS, VERIFICATION_MESSAGES, labelOf } from '@/lib/buyer/labels';
 
 import { ButtonLink, Notice, PageHeader } from '../ui';
 import { CardSkeleton, ChartCard, StatCard, StatGrid } from '../ui/data';
@@ -46,14 +39,13 @@ export function BuyerDashboard() {
 
   const standing = profile.verification.status;
   const kpis = summary?.kpis;
-  const months = summary?.procurement.purchases_by_month ?? [];
-  const monthMax = months.reduce((m, r) => Math.max(m, r.total_ssp), 0);
+  const cart = useCart();
 
   return (
     <div className={styles.page}>
       <PageHeader
         eyebrow={profile.organization.name}
-        title="Procurement dashboard"
+        title="Dashboard"
         subtitle={`Welcome, ${profile.person.given_name}.`}
         actions={
           profile.verification.capabilities.browse ? (
@@ -69,7 +61,7 @@ export function BuyerDashboard() {
         >
           <p>{VERIFICATION_MESSAGES[standing]}</p>
           {profile.verification.note ? (
-            <p className="small">Note from CORWADO: {profile.verification.note}</p>
+            <p className="small">Note from the AgriOne team: {profile.verification.note}</p>
           ) : null}
         </Notice>
       ) : null}
@@ -84,9 +76,9 @@ export function BuyerDashboard() {
         <>
           <StatGrid>
             <StatCard
-              label="Active purchase requests"
+              label="Requests sent"
               value={kpis.active_purchase_requests}
-              note={`${kpis.draft_purchase_requests} draft${kpis.draft_purchase_requests === 1 ? '' : 's'} not yet sent`}
+              note="Waiting for, or answered by, the farmer"
             />
             <StatCard
               label="Available products"
@@ -95,87 +87,18 @@ export function BuyerDashboard() {
               unmeasuredBecause="The marketplace is closed to this account at its current standing."
             />
             <StatCard
-              label="Pending orders"
-              value={kpis.pending_orders}
-              note="Arranged, awaiting confirmation"
-              attention={kpis.pending_orders > 0}
-            />
-            <StatCard
-              label="Confirmed orders"
-              value={kpis.orders_in_progress}
-              note="Confirmed through in transit"
-            />
-            <StatCard
-              label="Completed purchases"
-              value={kpis.completed_purchases}
-              note="Delivered or completed"
-            />
-            <StatCard
-              label="Total quantity purchased"
-              value={
-                kpis.total_quantity_purchased.length === 0
-                  ? 0
-                  : kpis.total_quantity_purchased
-                      .map((q) => formatQuantity(q.quantity, q.unit))
-                      .join(' · ')
+              label="In your cart"
+              value={cart.length}
+              note={
+                cart.length > 0
+                  ? 'Not yet sent to the farmers'
+                  : 'Add products from the marketplace'
               }
-              note="Delivered or completed, per unit — never summed across units"
+              attention={cart.length > 0}
             />
           </StatGrid>
 
           <div className={styles.grid2}>
-            <ChartCard
-              title="Purchases over time"
-              note="Value of orders placed each month, last 12 months, excluding cancelled"
-            >
-              <div
-                className={styles.months}
-                role="img"
-                aria-label={months
-                  .map(
-                    (m) => `${formatMonth(m.month)}: ${formatSsp(m.total_ssp)}, ${m.orders} orders`,
-                  )
-                  .join('; ')}
-              >
-                {months.map((m) => (
-                  <div key={m.month} className={styles.monthCol}>
-                    <span
-                      className={`${styles.monthBar} ${m.total_ssp === 0 ? styles.monthBarEmpty : ''}`}
-                      style={{
-                        blockSize:
-                          monthMax === 0 ? '1px' : `${Math.round((m.total_ssp / monthMax) * 100)}%`,
-                      }}
-                      title={`${formatMonth(m.month)}: ${formatSsp(m.total_ssp)}`}
-                    />
-                    <span className={styles.monthLabel}>{formatMonth(m.month).slice(0, 3)}</span>
-                  </div>
-                ))}
-              </div>
-            </ChartCard>
-
-            <ChartCard
-              title="Orders by status"
-              note="Every order your organisation has, by where it stands"
-              data={summary.procurement.orders_by_status.map((r) => ({
-                key: r.status,
-                label: labelOf(ORDER_STATUS_LABELS, r.status),
-                value: r.n,
-                pending: r.status === 'pending',
-              }))}
-              empty="No orders yet. Orders appear here once CORWADO arranges one from your requests."
-            />
-
-            <ChartCard
-              title="Categories purchased"
-              note="Number of orders per product category, excluding cancelled"
-              data={summary.procurement.categories_purchased.map((r) => ({
-                key: r.category,
-                label: `${labelOf(CATEGORY_LABELS, r.category)} — ${formatSsp(r.total_ssp)}`,
-                value: r.orders,
-              }))}
-              empty="Nothing purchased yet."
-            />
-
             {summary.supply ? (
               <ChartCard
                 title="Supply available now"

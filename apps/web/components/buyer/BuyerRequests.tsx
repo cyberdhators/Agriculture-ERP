@@ -13,7 +13,7 @@ import {
   labelOf,
   stampOf,
 } from '@/lib/buyer/labels';
-import { formatDate } from '@/lib/format';
+import { formatDate, formatPhone } from '@/lib/format';
 
 import { Button, ButtonLink, EmptyState, Field, PageHeader, Select, Stamp } from '../ui';
 import { DataTable, LoadingState, Pagination } from '../ui/data';
@@ -30,11 +30,11 @@ export function BuyerRequests() {
   return (
     <div className={styles.page}>
       <PageHeader
-        title="Purchase requests"
-        subtitle="What your organisation has asked CORWADO to source, and where each stands."
+        title="My requests"
+        subtitle="What you have asked farmers for, and each farmer's answer. Call or message the farmer to agree the price and the handover."
         actions={
           profile.verification.capabilities.browse ? (
-            <ButtonLink href="/buyer/purchase-requests/new">New request</ButtonLink>
+            <ButtonLink href="/buyer/marketplace">Find products</ButtonLink>
           ) : null
         }
       />
@@ -72,7 +72,7 @@ export function BuyerRequests() {
             empty={
               <EmptyState
                 title={status ? 'No requests with this status' : 'No purchase requests yet'}
-                body="Raise one from a product in the marketplace, or describe what you need."
+                body="Add products to your cart from the marketplace and send them to the farmers."
               />
             }
             columns={[
@@ -91,6 +91,19 @@ export function BuyerRequests() {
                 header: 'Quantity',
                 numeric: true,
                 render: (r) => formatQuantity(r.quantity, r.unit),
+              },
+              {
+                key: 'farmer',
+                header: "Farmer's phone",
+                nowrap: true,
+                render: (r) =>
+                  r.farmer_phone ? (
+                    <a href={`tel:${r.farmer_phone}`} className="mono">
+                      {formatPhone(r.farmer_phone)}
+                    </a>
+                  ) : (
+                    '—'
+                  ),
               },
               { key: 'deliver', header: 'Deliver to', render: (r) => r.delivery_location },
               {

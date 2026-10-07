@@ -15,6 +15,7 @@ import {
 import { BUYER_HOME_PATH, HOME_PATH, LOGIN_PATH } from '@/lib/auth/paths';
 import { BuyerApiError, getProfile, listNotifications, type BuyerProfile } from '@/lib/buyer/api';
 import { VERIFICATION_LABELS, VERIFICATION_STAMPS } from '@/lib/buyer/labels';
+import { useCart } from '@/lib/buyer/cart';
 import { supabaseBrowser } from '@/lib/supabase/browser';
 
 import { Wordmark } from '../brand/Wordmark';
@@ -27,7 +28,6 @@ import {
   IconEdit,
   IconMail,
   IconMenu,
-  IconPin,
   IconReports,
   IconSearch,
   IconSignOut,
@@ -75,11 +75,12 @@ const NAV: ReadonlyArray<{
 }> = [
   { href: BUYER_HOME_PATH, label: 'Dashboard', icon: IconDashboard },
   { href: '/buyer/marketplace', label: 'Marketplace', icon: IconSearch },
-  { href: '/buyer/purchase-requests', label: 'Purchase requests', icon: IconEdit },
-  { href: '/buyer/orders', label: 'Orders', icon: IconReports },
-  { href: '/buyer/deliveries', label: 'Deliveries', icon: IconPin },
+  // B14: a buyer deals with the farmer directly, so the cart and the requests
+  // are the whole of buying; orders and deliveries are no longer offered.
+  { href: '/buyer/cart', label: 'Cart', icon: IconReports },
+  { href: '/buyer/purchase-requests', label: 'My requests', icon: IconEdit },
   { href: '/buyer/notifications', label: 'Notifications', icon: IconMail },
-  { href: '/buyer/profile', label: 'Organisation profile', icon: IconStaff },
+  { href: '/buyer/profile', label: 'Profile', icon: IconStaff },
 ];
 
 export function BuyerShell({ children }: { children: ReactNode }) {
@@ -88,6 +89,7 @@ export function BuyerShell({ children }: { children: ReactNode }) {
   const [failure, setFailure] = useState<string | null>(null);
   const [unread, setUnread] = useState<number | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const cart = useCart();
 
   const refresh = useCallback(async () => {
     try {
@@ -175,6 +177,11 @@ export function BuyerShell({ children }: { children: ReactNode }) {
                         <Icon size={19} />
                       </span>
                       <span className={shell.itemLabel}>{item.label}</span>
+                      {item.href === '/buyer/cart' && cart.length > 0 ? (
+                        <span className={shell.badge} aria-label={`${cart.length} in the cart`}>
+                          {cart.length}
+                        </span>
+                      ) : null}
                       {item.href === '/buyer/notifications' && unread !== null && unread > 0 ? (
                         <span className={shell.badge} aria-label={`${unread} unread`}>
                           {unread}

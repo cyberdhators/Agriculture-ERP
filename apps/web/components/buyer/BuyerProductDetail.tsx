@@ -1,7 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
+
+import { LISTING_UNITS } from '@agri-erp/shared';
 
 import { BuyerApiError, getListing, type MarketListing } from '@/lib/buyer/api';
 import {
@@ -12,18 +14,35 @@ import {
   formatSsp,
   labelOf,
 } from '@/lib/buyer/labels';
+import { addToCart, useCart } from '@/lib/buyer/cart';
+import { formatPhone } from '@/lib/format';
 
-import { Card, CardBody, CardHeader, DefinitionList, EmptyState, PageHeader, Stamp } from '../ui';
+import {
+  Button,
+  ButtonLink,
+  Card,
+  CardBody,
+  CardHeader,
+  DefinitionList,
+  EmptyState,
+  Field,
+  Input,
+  Notice,
+  PageHeader,
+  Select,
+  Stamp,
+} from '../ui';
 import { LoadingState } from '../ui/data';
-import { RequestForm } from './RequestForm';
 import styles from './buyer.module.css';
 
 /**
  * ONE PRODUCT, AS A BUYER MAY SEE IT (C-14B.10).
  *
- * The supplier block is the whole of what the route returns about the
- * seller: a trading name, whether the farmer is verified, and the payam,
- * county and state. The purchase request is raised beside it.
+ * The supplier block is what the route returns about the seller: a trading
+ * name, whether the farmer is verified, and the payam, county and state --
+ * and, once this buyer has sent a request for the product, the farmer's phone
+ * (B14: buyer and farmer deal directly). Products go into the cart, and the
+ * cart sends one request to each farmer.
  */
 export function BuyerProductDetail({ id }: { id: string }) {
   const [listing, setListing] = useState<MarketListing | null>(null);
@@ -85,11 +104,11 @@ export function BuyerProductDetail({ id }: { id: string }) {
       <div className={styles.twoCol}>
         <Card>
           <CardHeader
-            title="Request to purchase"
-            subtitle="Tell CORWADO how much you need and where."
+            title="Buy from this farmer"
+            subtitle="Add it to your cart. You can add products from other farmers and send them all together."
           />
           <CardBody>
-            <RequestForm listing={listing} />
+            <AddToCart listing={listing} />
           </CardBody>
         </Card>
 
@@ -154,14 +173,123 @@ export function BuyerProductDetail({ id }: { id: string }) {
                   },
                 ]}
               />
-              <p className={styles.muted}>
-                Supplier contact details are not shared. CORWADO introduces buyers and suppliers
-                once a request is accepted.
-              </p>
+              {listing.farmer_phone ? (
+                <div className={styles.actions}>
+                  <ButtonLink href={`tel:${listing.farmer_phone}`}>
+                    Call {formatPhone(listing.farmer_phone)}
+                  </ButtonLink>
+                  <ButtonLink
+                    variant="secondary"
+                    href={`https://wa.me/${listing.farmer_phone.replace(/\D/g, '')}`}
+                  >
+                    WhatsApp
+                  </ButtonLink>
+                </div>
+              ) : (
+                <p className={styles.muted}>
+                  The farmer&apos;s phone number is shown here once you send them a request.
+                </p>
+              )}
             </CardBody>
           </Card>
         </div>
       </div>
     </div>
+  );
+}
+
+/** Quantity and unit for this product, into the cart (B14). */
+function AddToCart({ listing }: { listing: MarketListing }) {
+  const cart = useCart();
+  const inCart = cart.find((l) => l.listing_id === listing.id);
+  const [quantity, setQuantity] = useState(
+    String(inCart?.quantity ?? listing.min_order_quantity ?? ''),
+  );
+  const [unit, setUnit] = useState(inCart?.unit ?? listing.unit);
+  const [error, setError] = useState<string | null>(null);
+  const [added, setAdded] = useState(false);
+
+  const onSubmit = (event: FormEvent) => {
+    event.preventDefault();
+    const q = Number(quantity);
+    if (quantity.trim() === '' || !Number.isFinite(q) || q <= 0) {
+      setError('Enter how much you want, as a number greater than zero.');
+      return;
+    }
+    if (
+      listing.min_order_quantity !== null &&
+      unit === listing.unit &&
+      q < listing.min_order_quantity
+    ) {
+      setError(
+        `The farmer's minimum order is ${formatQuantity(listing.min_order_quantity, listing.unit)}.`,
+      );
+      return;
+    }
+    const ok = addToCart({
+      listing_id: listing.id,
+      title: listing.title,
+      product_name: listing.product_name,
+      trading_name: listing.supplier.trading_name,
+      location: `${listing.location.payam}, ${listing.location.state}`,
+      quantity: q,
+      unit,
+      price_ssp: listing.indicative_price_ssp,
+      price_per: listing.price_per,
+    });
+    if (!ok) {
+      setError('Your cart is full. Send it first, then add more.');
+      return;
+    }
+    setError(null);
+    setAdded(true);
+  };
+
+  return (
+    <form className={styles.form} onSubmit={onSubmit} noValidate aria-label="Add to cart">
+      {added || inCart ? (
+        <Notice kind="success" title={added ? 'Added to your cart' : 'In your cart'}>
+          <Link href="/buyer/cart">Go to the cart ({cart.length})</Link> or{' '}
+          <Link href="/buyer/marketplace">keep shopping</Link>.
+        </Notice>
+      ) : null}
+      <div className={styles.formGrid}>
+        <Field
+          label="Quantity"
+          error={error ?? undefined}
+          hint={
+            listing.min_order_quantity
+              ? `Minimum order ${formatQuantity(listing.min_order_quantity, listing.unit)}`
+              : `Available ${formatQuantity(listing.available_quantity, listing.unit)}`
+          }
+        >
+          {(ids) => (
+            <Input
+              {...ids}
+              inputMode="decimal"
+              value={quantity}
+              onChange={(e) => {
+                setQuantity(e.target.value);
+                setAdded(false);
+              }}
+            />
+          )}
+        </Field>
+        <Field label="Unit">
+          {(ids) => (
+            <Select {...ids} value={unit} onChange={(e) => setUnit(e.target.value)}>
+              {LISTING_UNITS.map((u) => (
+                <option key={u} value={u}>
+                  {UNIT_LABELS[u]}
+                </option>
+              ))}
+            </Select>
+          )}
+        </Field>
+      </div>
+      <div className={styles.actions}>
+        <Button type="submit">{inCart ? 'Update cart' : 'Add to cart'}</Button>
+      </div>
+    </form>
   );
 }

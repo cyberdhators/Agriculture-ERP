@@ -117,13 +117,13 @@ export const VERIFICATION_MESSAGES: Record<BuyerVerificationStatus, string> = {
 
 export const REQUEST_STATUS_LABELS: Record<PurchaseRequestStatus, string> = {
   draft: 'Draft',
-  submitted: 'Submitted',
+  submitted: 'Sent to farmer',
   under_review: 'Under review',
-  accepted: 'Accepted',
+  accepted: 'Farmer accepted',
   partially_fulfilled: 'Partly fulfilled',
   fulfilled: 'Fulfilled',
   cancelled: 'Cancelled',
-  rejected: 'Declined',
+  rejected: 'Farmer declined',
 };
 
 export const REQUEST_STATUS_STAMPS: Record<PurchaseRequestStatus, StampKind> = {

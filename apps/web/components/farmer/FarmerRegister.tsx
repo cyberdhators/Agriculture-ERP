@@ -4,6 +4,16 @@ import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 import {
+  CONTACT_CHANNELS,
+  HEARD_VIA,
+  LAND_TENURES,
+  LAND_UNITS,
+  PHONE_TYPES,
+  PROFILE_CROPS,
+  SERVICES_WANTED,
+} from '@agri-erp/shared';
+
+import {
   Button,
   Checkbox,
   Field,
@@ -13,48 +23,222 @@ import {
   PrefixedInput,
   Select,
 } from '@/components/ui';
-import { IconWarn } from '@/components/ui/icons';
 import { maxBirthYear, validateFarmer, type FarmerFormValues } from '@/lib/farmers/schema';
-import { FARMERS } from '@/lib/fixtures/farmers';
 import { COUNTIES, PAYAMS, STATES } from '@/lib/fixtures/p1';
-import { useFarmerSession } from '@/lib/farmer-session';
-import { t } from '@/lib/i18n';
+import { FarmerApiError, useFarmerSession } from '@/lib/farmer-session';
+import { t, type Language } from '@/lib/i18n';
 
 import styles from './farmer.module.css';
 
 const REFERENCE = new Date('2026-09-02T00:00:00Z');
 const MAX_YEAR = maxBirthYear(REFERENCE);
 
+/**
+ * v1.2 (2026-10-07): adds that a buyer who sends a request is given the
+ * farmer's phone, as CORWADO's own form declares -- "shared with transporters
+ * and buyers only as needed to link me to them". Every farmer registering from
+ * now agrees to this text, and the version is recorded with the consent.
+ */
 const CONSENT_VERSION: Record<'en' | 'ar', string> = {
-  en: 'v1.1-en',
-  ar: 'v1.1-ar',
+  en: 'v1.2-en',
+  ar: 'v1.2-ar',
 };
 
 function digits(value: string): string {
   return value.replace(/\D/g, '');
 }
 
-type Step = 0 | 1 | 2 | 3;
-const LAST_STEP: Step = 3;
+type Step = 0 | 1 | 2 | 3 | 4;
+const LAST_STEP: Step = 4;
+const FARM_STEP: Step = 3;
 const STEP_KEYS: Array<(keyof FarmerFormValues)[]> = [
   ['given_name', 'family_name', 'sex', 'year_of_birth'],
   ['phone', 'state_id', 'county_id', 'payam_id'],
   ['password'],
+  [],
   ['consent_language', 'consent_granted'],
 ];
 
+/** The optional "About your farm" answers, from CORWADO's registration form. */
+interface FarmAnswers {
+  primary_crops: string[];
+  land_size: string;
+  land_unit: string;
+  land_tenure: string;
+  years_farming: string;
+  group_member: '' | 'yes' | 'no';
+  group_name: string;
+  next_of_kin_name: string;
+  next_of_kin_relationship: string;
+  next_of_kin_phone: string;
+  phone_type: string;
+  has_whatsapp: '' | 'yes' | 'no';
+  preferred_channel: string;
+  heard_via: string;
+  services_wanted: string[];
+}
+
+const EMPTY_FARM: FarmAnswers = {
+  primary_crops: [],
+  land_size: '',
+  land_unit: '',
+  land_tenure: '',
+  years_farming: '',
+  group_member: '',
+  group_name: '',
+  next_of_kin_name: '',
+  next_of_kin_relationship: '',
+  next_of_kin_phone: '',
+  phone_type: '',
+  has_whatsapp: '',
+  preferred_channel: '',
+  heard_via: '',
+  services_wanted: [],
+};
+
+/** Words for this form only, in both languages the farmer flow speaks. */
+const W: Record<'en' | 'ar', Record<string, string>> = {
+  en: {
+    village: 'Village or boma',
+    villageHint: 'Where you live or farm.',
+    stepFarm: 'About your farm (optional)',
+    farmLead: 'These help buyers and CORWADO know your farm. You can skip them and add them later.',
+    skip: 'Skip this step',
+    crops: 'Crops you grow',
+    land: 'Land you farm',
+    landUnit: 'Unit',
+    tenure: 'How you hold the land',
+    years: 'Years farming',
+    group: 'Member of a cooperative or group?',
+    groupName: 'Name of the group',
+    kinName: 'Next of kin (name)',
+    kinRelationship: 'Relationship',
+    kinPhone: 'Next of kin phone',
+    phoneType: 'Type of phone',
+    whatsapp: 'WhatsApp on your number?',
+    channel: 'Best way to reach you',
+    heard: 'How did you hear about AgriOne?',
+    services: 'What would you like help with?',
+    yes: 'Yes',
+    no: 'No',
+    choose: 'Choose…',
+    failed: 'Registration was not completed.',
+    feddan: 'Feddans',
+    acre: 'Acres',
+    hectare: 'Hectares',
+    owned: 'Owned',
+    rented: 'Rented',
+    communal: 'Communal',
+    other: 'Other',
+    smartphone: 'Smartphone',
+    basic: 'Basic phone',
+    none: 'No phone',
+    sms: 'SMS',
+    voice: 'Voice call',
+    app: 'This app',
+    cooperative: 'Cooperative or group',
+    community_leader: 'Community leader',
+    ngo: 'NGO or partner',
+    walk_in: 'Walked in',
+    extension: 'Extension services',
+    agronomy: 'Farming advice',
+    market_information: 'Market prices',
+    transport: 'Transport',
+    buyers: 'Buyers',
+    maize: 'Maize',
+    sorghum: 'Sorghum',
+    cassava: 'Cassava',
+    groundnut: 'Groundnuts',
+    sesame: 'Sesame',
+    beans: 'Beans',
+    vegetables: 'Vegetables',
+    fruits: 'Fruits',
+    rice: 'Rice',
+    millet: 'Millet',
+    cowpea: 'Cowpeas',
+  },
+  ar: {
+    village: 'القرية أو البوما',
+    villageHint: 'المكان الذي تسكن أو تزرع فيه.',
+    stepFarm: 'عن مزرعتك (اختياري)',
+    farmLead:
+      'تساعد هذه المعلومات المشترين وكوروادو على معرفة مزرعتك. يمكنك تخطيها وإضافتها لاحقاً.',
+    skip: 'تخطي هذه الخطوة',
+    crops: 'المحاصيل التي تزرعها',
+    land: 'الأرض التي تزرعها',
+    landUnit: 'الوحدة',
+    tenure: 'طريقة حيازة الأرض',
+    years: 'سنوات الزراعة',
+    group: 'هل أنت عضو في تعاونية أو مجموعة؟',
+    groupName: 'اسم المجموعة',
+    kinName: 'أقرب الأقارب (الاسم)',
+    kinRelationship: 'صلة القرابة',
+    kinPhone: 'هاتف أقرب الأقارب',
+    phoneType: 'نوع الهاتف',
+    whatsapp: 'هل لديك واتساب على رقمك؟',
+    channel: 'أفضل طريقة للتواصل معك',
+    heard: 'كيف سمعت عن أجري ون؟',
+    services: 'ما المساعدة التي تريدها؟',
+    yes: 'نعم',
+    no: 'لا',
+    choose: 'اختر…',
+    failed: 'لم يكتمل التسجيل.',
+    feddan: 'فدان',
+    acre: 'إيكر',
+    hectare: 'هكتار',
+    owned: 'ملك',
+    rented: 'إيجار',
+    communal: 'جماعية',
+    other: 'أخرى',
+    smartphone: 'هاتف ذكي',
+    basic: 'هاتف عادي',
+    none: 'لا يوجد هاتف',
+    sms: 'رسائل نصية',
+    voice: 'مكالمة صوتية',
+    app: 'هذا التطبيق',
+    cooperative: 'تعاونية أو مجموعة',
+    community_leader: 'زعيم المجتمع',
+    ngo: 'منظمة أو شريك',
+    walk_in: 'حضرت بنفسي',
+    extension: 'خدمات الإرشاد',
+    agronomy: 'نصائح زراعية',
+    market_information: 'أسعار السوق',
+    transport: 'النقل',
+    buyers: 'المشترون',
+    maize: 'ذرة شامية',
+    sorghum: 'ذرة رفيعة',
+    cassava: 'كسافا',
+    groundnut: 'فول سوداني',
+    sesame: 'سمسم',
+    beans: 'فاصوليا',
+    vegetables: 'خضروات',
+    fruits: 'فواكه',
+    rice: 'أرز',
+    millet: 'دخن',
+    cowpea: 'لوبيا',
+  },
+};
+
 /**
- * Self-registration in four short steps with a progress rule: name, phone and
- * place, a password (created here, B12 point 2), then consent. It validates
- * through the same `validateFarmer` law the officer intake uses, warns about a
- * possible duplicate (same phone, or same name in the payam) without ever
- * blocking, and on submit creates the record as pending with no farmer number
- * yet (assigned when an officer verifies, C-5). The record lives in client
- * state for the session and the farmer is signed straight in.
+ * SELF-REGISTRATION (B14, 2026-10-07). Farmers enrol themselves -- CORWADO has
+ * no staff to do it -- so the form is short and needs nobody's help:
+ *
+ *   1. name, sex and year of birth;
+ *   2. phone, state, county, payam and village;
+ *   3. a password;
+ *   4. about the farm -- CORWADO's registration-form questions, all optional,
+ *      with a button to skip;
+ *   5. consent (v1.2).
+ *
+ * The farmer is created on the server, signed in at once, and can list
+ * produce straight away; verification by an officer is optional and shown to
+ * buyers. The steps validate with the same law the officer intake uses, and
+ * the server's own field reasons are shown if it refuses anyway.
  */
 export function FarmerRegister() {
   const { language, register } = useFarmerSession();
   const router = useRouter();
+  const w = W[language === 'ar' ? 'ar' : 'en'];
 
   const [step, setStep] = useState<Step>(0);
   const [values, setValues] = useState<FarmerFormValues>({
@@ -72,9 +256,15 @@ export function FarmerRegister() {
     consent_granted: false,
     password: '',
   });
+  const [village, setVillage] = useState('');
+  const [villageError, setVillageError] = useState<string | undefined>();
+  const [farm, setFarm] = useState<FarmAnswers>(EMPTY_FARM);
   const [confirm, setConfirm] = useState('');
   const [confirmError, setConfirmError] = useState<string | undefined>();
   const [errors, setErrors] = useState<Partial<Record<keyof FarmerFormValues, string>>>({});
+  const [serverErrors, setServerErrors] = useState<Record<string, string>>({});
+  const [failure, setFailure] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
   const [done, setDone] = useState<{ number: string } | null>(null);
 
   const counties = useMemo(
@@ -85,24 +275,6 @@ export function FarmerRegister() {
     () => PAYAMS.filter((p) => p.countyId === values.county_id),
     [values.county_id],
   );
-
-  // Possible duplicates, live: same full phone, or same name within the payam.
-  const duplicates = useMemo(() => {
-    const phone = digits(values.phone);
-    const name = `${values.given_name} ${values.family_name}`.trim().toLowerCase();
-    const phoneReady = phone.length >= 9;
-    const nameReady = name.length >= 3 && values.payam_id !== '';
-    if (!phoneReady && !nameReady) return [];
-    return FARMERS.filter((f) => {
-      if (f.merged_into) return false;
-      const samePhone = phoneReady && digits(f.phone).endsWith(phone.slice(-9));
-      const sameName =
-        nameReady &&
-        `${f.given_name} ${f.family_name}`.trim().toLowerCase() === name &&
-        f.payam_id === values.payam_id;
-      return samePhone || sameName;
-    }).slice(0, 3);
-  }, [values.phone, values.given_name, values.family_name, values.payam_id]);
 
   function set<K extends keyof FarmerFormValues>(key: K, value: FarmerFormValues[K]) {
     setValues((prev) => {
@@ -117,6 +289,14 @@ export function FarmerRegister() {
     if (errors[key]) setErrors((prev) => ({ ...prev, [key]: undefined }));
   }
 
+  const setF = <K extends keyof FarmAnswers>(key: K, value: FarmAnswers[K]) =>
+    setFarm((prev) => ({ ...prev, [key]: value }));
+  const toggle = (key: 'primary_crops' | 'services_wanted', item: string) =>
+    setFarm((prev) => ({
+      ...prev,
+      [key]: prev[key].includes(item) ? prev[key].filter((x) => x !== item) : [...prev[key], item],
+    }));
+
   function validateStep(current: Step): boolean {
     const result = validateFarmer({ ...values, consent_language: language }, REFERENCE, {
       requirePassword: true,
@@ -128,10 +308,14 @@ export function FarmerRegister() {
       }
     }
     setErrors(stepErrors);
-    // The confirmation is the form's own check, not the schema's.
+    let villageMissing = false;
+    if (current === 1) {
+      villageMissing = village.trim() === '';
+      setVillageError(villageMissing ? 'Give your village or boma.' : undefined);
+    }
     const mismatch = current === 2 && !stepErrors.password && confirm !== values.password;
     setConfirmError(mismatch ? t('register.passwordMismatch', language) : undefined);
-    return Object.keys(stepErrors).length === 0 && !mismatch;
+    return Object.keys(stepErrors).length === 0 && !mismatch && !villageMissing;
   }
 
   function next() {
@@ -144,44 +328,81 @@ export function FarmerRegister() {
     setStep((s) => Math.max(0, s - 1) as Step);
   }
 
-  function submit() {
+  /** The farm answers as the API takes them: blanks left out, numbers as numbers. */
+  function farmBody(): Record<string, unknown> {
+    const out: Record<string, unknown> = {};
+    if (farm.primary_crops.length) out.primary_crops = farm.primary_crops;
+    if (farm.services_wanted.length) out.services_wanted = farm.services_wanted;
+    if (farm.land_size.trim()) out.land_size = Number(farm.land_size);
+    if (farm.land_unit) out.land_unit = farm.land_unit;
+    if (farm.land_tenure) out.land_tenure = farm.land_tenure;
+    if (farm.years_farming.trim()) out.years_farming = Number(farm.years_farming);
+    if (farm.group_member) out.group_member = farm.group_member === 'yes';
+    if (farm.group_name.trim()) out.group_name = farm.group_name;
+    if (farm.next_of_kin_name.trim()) out.next_of_kin_name = farm.next_of_kin_name;
+    if (farm.next_of_kin_relationship.trim())
+      out.next_of_kin_relationship = farm.next_of_kin_relationship;
+    if (farm.next_of_kin_phone.trim()) out.next_of_kin_phone = farm.next_of_kin_phone;
+    if (farm.phone_type) out.phone_type = farm.phone_type;
+    if (farm.has_whatsapp) out.has_whatsapp = farm.has_whatsapp === 'yes';
+    if (farm.preferred_channel) out.preferred_channel = farm.preferred_channel;
+    if (farm.heard_via) out.heard_via = farm.heard_via;
+    return out;
+  }
+
+  async function submit() {
     const result = validateFarmer({ ...values, consent_language: language }, REFERENCE, {
       requirePassword: true,
     });
     if (!result.ok) {
       setErrors(result.errors);
-      // Jump to the earliest step that still has an error.
       const failStep = STEP_KEYS.findIndex((keys) => keys.some((k) => result.errors[k]));
       if (failStep >= 0) setStep(failStep as Step);
       return;
     }
-    const created = register({
-      given_name: result.values.given_name,
-      family_name: result.values.family_name,
-      sex: result.values.sex,
-      year_of_birth: result.values.year_of_birth,
-      phone: result.values.phone,
-      payam_id: result.values.payam_id,
-      state_id: result.values.state_id,
-      preferred_language: language,
-      consent_version: CONSENT_VERSION[language],
-      password: result.values.password ?? '',
-    });
-    setDone({ number: created.farmer_number });
+    setBusy(true);
+    setFailure(null);
+    setServerErrors({});
+    try {
+      const created = await register({
+        given_name: result.values.given_name,
+        family_name: result.values.family_name,
+        sex: result.values.sex,
+        year_of_birth: Number(result.values.year_of_birth),
+        phone: result.values.phone,
+        password: result.values.password ?? '',
+        confirm_password: result.values.password ?? '',
+        payam_id: result.values.payam_id,
+        village: village.trim(),
+        consent: {
+          text_version: CONSENT_VERSION[language === 'ar' ? 'ar' : 'en'],
+          language: language === 'ar' ? 'ar' : 'en',
+          granted: true,
+        },
+        ...farmBody(),
+      });
+      setDone({ number: created.farmer_number });
+    } catch (error) {
+      if (error instanceof FarmerApiError) {
+        setServerErrors(error.fields);
+        setFailure(error.message);
+      } else {
+        setFailure(w.failed ?? null);
+      }
+    } finally {
+      setBusy(false);
+    }
   }
 
   if (done) {
     return (
       <div className={styles.sheet}>
-        <p className={styles.eyebrow}>
-          <IconWarn size={16} /> {t('account.pending', language)}
-        </p>
         <h1 className={styles.h1}>{t('register.doneTitle', language)}</h1>
         <p className={styles.lede}>{t('register.doneBody', language)}</p>
 
         <div className={styles.receiptNumber}>
           <span className={styles.recordTerm}>{t('register.doneNumber', language)}</span>
-          <span className={styles.receiptNumberValue}>—</span>
+          <span className={`${styles.receiptNumberValue} mono`}>{done.number}</span>
           <span className={styles.receiptNote}>{t('register.donePending', language)}</span>
         </div>
 
@@ -202,8 +423,37 @@ export function FarmerRegister() {
     t('register.stepName', language),
     t('register.stepContact', language),
     t('register.stepPassword', language),
+    w.stepFarm,
     t('register.stepConsent', language),
   ][step];
+
+  const choose = (
+    label: string,
+    value: string,
+    options: readonly string[],
+    onChange: (v: string) => void,
+  ) => (
+    <Field label={label} optional>
+      {(ids) => (
+        <Select {...ids} value={value} onChange={(e) => onChange(e.target.value)}>
+          <option value="">{w.choose}</option>
+          {options.map((o) => (
+            <option key={o} value={o}>
+              {w[o] ?? o}
+            </option>
+          ))}
+        </Select>
+      )}
+    </Field>
+  );
+
+  const yesNo = (
+    label: string,
+    value: '' | 'yes' | 'no',
+    onChange: (v: '' | 'yes' | 'no') => void,
+  ) => choose(label, value, ['yes', 'no'], (v) => onChange(v as '' | 'yes' | 'no'));
+
+  const serverList = Object.values(serverErrors);
 
   return (
     <div className={styles.sheet}>
@@ -213,7 +463,7 @@ export function FarmerRegister() {
           {stepTitle}
         </p>
         <div className={styles.progressTrack} aria-hidden>
-          {[0, 1, 2, 3].map((i) => (
+          {[0, 1, 2, 3, 4].map((i) => (
             <span
               key={i}
               className={`${styles.progressSeg} ${i <= step ? styles.progressSegDone : ''}`}
@@ -224,13 +474,15 @@ export function FarmerRegister() {
 
       <h1 className={styles.h1}>{t('register.title', language)}</h1>
 
-      {duplicates.length > 0 && step > 0 ? (
-        <Notice kind="warn" title={t('brand.tagline', language)}>
-          <p className="small">
-            A record with this phone or name already exists in{' '}
-            {duplicates.map((d) => `${d.given_name} ${d.family_name}`).join(', ')}. You can still
-            register, an officer will check.
-          </p>
+      {failure ? (
+        <Notice kind="error" title={failure}>
+          {serverList.length ? (
+            <ul className="small">
+              {serverList.map((m) => (
+                <li key={m}>{m}</li>
+              ))}
+            </ul>
+          ) : null}
         </Notice>
       ) : null}
 
@@ -267,15 +519,6 @@ export function FarmerRegister() {
                 aria-label={t('register.sex', language)}
                 aria-describedby={ids['aria-describedby']}
                 aria-invalid={ids['aria-invalid']}
-                onKeyDown={(e) => {
-                  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
-                    e.preventDefault();
-                    set('sex', 'm');
-                  } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
-                    e.preventDefault();
-                    set('sex', 'f');
-                  }
-                }}
               >
                 {(['f', 'm'] as const).map((s) => (
                   <button
@@ -283,7 +526,6 @@ export function FarmerRegister() {
                     type="button"
                     role="radio"
                     aria-checked={values.sex === s}
-                    tabIndex={values.sex === s || (values.sex === '' && s === 'f') ? 0 : -1}
                     className={`${styles.choice} ${values.sex === s ? styles.choiceSelected : ''}`}
                     onClick={() => set('sex', s)}
                   >
@@ -295,7 +537,7 @@ export function FarmerRegister() {
           </Field>
           <Field
             label={t('register.yob', language)}
-            hint={t('register.yobHint', language)}
+            hint={`${t('register.yobHint', language)} ${MAX_YEAR}`}
             error={errors.year_of_birth}
           >
             {(ids) => (
@@ -310,15 +552,12 @@ export function FarmerRegister() {
               />
             )}
           </Field>
-          <p className="small muted">
-            {t('register.yobHint', language)} {MAX_YEAR}
-          </p>
         </div>
       ) : null}
 
       {step === 1 ? (
         <div className={styles.stack}>
-          <Field label={t('register.phone', language)} error={errors.phone}>
+          <Field label={t('register.phone', language)} error={errors.phone ?? serverErrors.phone}>
             {(ids) => (
               <PrefixedInput
                 {...ids}
@@ -382,6 +621,23 @@ export function FarmerRegister() {
               </Select>
             )}
           </Field>
+          <Field
+            label={w.village!}
+            hint={w.villageHint}
+            error={villageError ?? serverErrors.village}
+          >
+            {(ids) => (
+              <Input
+                {...ids}
+                dir="auto"
+                value={village}
+                onChange={(e) => {
+                  setVillage(e.target.value);
+                  setVillageError(undefined);
+                }}
+              />
+            )}
+          </Field>
         </div>
       ) : null}
 
@@ -421,12 +677,121 @@ export function FarmerRegister() {
         </div>
       ) : null}
 
-      {step === 3 ? (
+      {step === FARM_STEP ? (
+        <div className={styles.stack}>
+          <p className="small muted">{w.farmLead}</p>
+          <fieldset className={styles.stack} style={{ border: 0, padding: 0, margin: 0 }}>
+            <legend className="small">{w.crops}</legend>
+            <div className={styles.choiceRow} style={{ flexWrap: 'wrap' }}>
+              {PROFILE_CROPS.map((c) => (
+                <Checkbox
+                  key={c}
+                  label={w[c] ?? c}
+                  checked={farm.primary_crops.includes(c)}
+                  onChange={() => toggle('primary_crops', c)}
+                />
+              ))}
+            </div>
+          </fieldset>
+          <Field label={w.land!} optional error={serverErrors.land_size}>
+            {(ids) => (
+              <Input
+                {...ids}
+                inputMode="decimal"
+                className="mono"
+                value={farm.land_size}
+                onChange={(e) => setF('land_size', e.target.value)}
+              />
+            )}
+          </Field>
+          {choose(w.landUnit!, farm.land_unit, LAND_UNITS, (v) => setF('land_unit', v))}
+          {choose(w.tenure!, farm.land_tenure, LAND_TENURES, (v) => setF('land_tenure', v))}
+          <Field label={w.years!} optional error={serverErrors.years_farming}>
+            {(ids) => (
+              <Input
+                {...ids}
+                inputMode="numeric"
+                className="mono"
+                value={farm.years_farming}
+                onChange={(e) => setF('years_farming', digits(e.target.value).slice(0, 3))}
+              />
+            )}
+          </Field>
+          {yesNo(w.group!, farm.group_member, (v) => setF('group_member', v))}
+          {farm.group_member === 'yes' ? (
+            <Field label={w.groupName!} optional>
+              {(ids) => (
+                <Input
+                  {...ids}
+                  dir="auto"
+                  value={farm.group_name}
+                  onChange={(e) => setF('group_name', e.target.value)}
+                />
+              )}
+            </Field>
+          ) : null}
+          <Field label={w.kinName!} optional>
+            {(ids) => (
+              <Input
+                {...ids}
+                dir="auto"
+                value={farm.next_of_kin_name}
+                onChange={(e) => setF('next_of_kin_name', e.target.value)}
+              />
+            )}
+          </Field>
+          <Field label={w.kinRelationship!} optional>
+            {(ids) => (
+              <Input
+                {...ids}
+                dir="auto"
+                value={farm.next_of_kin_relationship}
+                onChange={(e) => setF('next_of_kin_relationship', e.target.value)}
+              />
+            )}
+          </Field>
+          <Field label={w.kinPhone!} optional error={serverErrors.next_of_kin_phone}>
+            {(ids) => (
+              <PrefixedInput
+                {...ids}
+                prefix="+211"
+                inputMode="tel"
+                className="mono"
+                value={farm.next_of_kin_phone}
+                onChange={(e) => setF('next_of_kin_phone', e.target.value)}
+              />
+            )}
+          </Field>
+          {choose(w.phoneType!, farm.phone_type, PHONE_TYPES, (v) => setF('phone_type', v))}
+          {yesNo(w.whatsapp!, farm.has_whatsapp, (v) => setF('has_whatsapp', v))}
+          {choose(w.channel!, farm.preferred_channel, CONTACT_CHANNELS, (v) =>
+            setF('preferred_channel', v),
+          )}
+          {choose(w.heard!, farm.heard_via, HEARD_VIA, (v) => setF('heard_via', v))}
+          <fieldset className={styles.stack} style={{ border: 0, padding: 0, margin: 0 }}>
+            <legend className="small">{w.services}</legend>
+            <div className={styles.choiceRow} style={{ flexWrap: 'wrap' }}>
+              {SERVICES_WANTED.map((s) => (
+                <Checkbox
+                  key={s}
+                  label={w[s] ?? s}
+                  checked={farm.services_wanted.includes(s)}
+                  onChange={() => toggle('services_wanted', s)}
+                />
+              ))}
+            </div>
+          </fieldset>
+        </div>
+      ) : null}
+
+      {step === 4 ? (
         <div className={styles.stack}>
           <div>
             <p className={styles.progressLabel}>{t('register.consentTitle', language)}</p>
             <div className={styles.consentBody}>{t('consent.body', language)}</div>
-            <p className={styles.consentVersion}>{CONSENT_VERSION[language]}</p>
+            <p className={styles.consentVersion}>
+              {CONSENT_VERSION[language === 'ar' ? 'ar' : 'en']}
+            </p>
           </div>
           <Field label={t('register.consentTitle', language)} error={errors.consent_granted}>
             {(ids) => (
@@ -447,10 +812,20 @@ export function FarmerRegister() {
             {t('register.next', language)}
           </Button>
         ) : (
-          <Button variant="primary" className={styles.blockButton} onClick={submit}>
-            {t('register.submit', language)}
+          <Button
+            variant="primary"
+            className={styles.blockButton}
+            onClick={() => void submit()}
+            disabled={busy}
+          >
+            {busy ? '…' : t('register.submit', language)}
           </Button>
         )}
+        {step === FARM_STEP ? (
+          <button type="button" className={styles.textLink} onClick={() => setStep(LAST_STEP)}>
+            {w.skip}
+          </button>
+        ) : null}
         {step > 0 ? (
           <button type="button" className={styles.textLink} onClick={back}>
             {t('register.back', language)}
@@ -460,3 +835,5 @@ export function FarmerRegister() {
     </div>
   );
 }
+
+export type { Language };

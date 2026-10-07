@@ -117,6 +117,8 @@ export const AUDIT_ACTOR_TYPES = [
   'officer',
   'system',
   'buyer',
+  // B14: a farmer acting on their own record, listings and buyer requests.
+  'farmer',
 ] as const;
 
 export type AuditActorType = (typeof AUDIT_ACTOR_TYPES)[number];

@@ -1,5 +1,6 @@
 import type {
   BuyerProfilePatch,
+  CartCheckout,
   BuyerRegistration,
   BuyerVerificationStatus,
   CreateOrder,
@@ -163,6 +164,8 @@ export interface MarketListing {
   supplier: { trading_name: string; verified: boolean };
   location: { payam: string; county_id: string; county: string; state_id: string; state: string };
   updated_at: string;
+  /** B14: the farmer's phone, given only once this buyer has sent a request for it. */
+  farmer_phone?: string | null;
 }
 
 export interface PurchaseRequest {
@@ -184,6 +187,8 @@ export interface PurchaseRequest {
   created_at: string;
   updated_at: string;
   organization?: { id: string; name: string };
+  /** B14: the farmer's phone, once the request has been sent. */
+  farmer_phone?: string | null;
 }
 
 export interface TimelineEntry {
@@ -312,6 +317,9 @@ export const listRequests = (status?: string, cursor?: string | null) =>
   page<PurchaseRequest>(`/api/buyer/purchase-requests${query({ status, cursor })}`);
 export const createRequest = (body: PurchaseRequestInput) =>
   one<PurchaseRequest>('/api/buyer/purchase-requests', json('POST', body));
+/** B14: send the cart -- one request per product, each to its own farmer. */
+export const checkoutCart = (body: CartCheckout) =>
+  one<PurchaseRequest[]>('/api/buyer/cart', json('POST', body));
 export const getRequest = (id: string) =>
   one<PurchaseRequest>(`/api/buyer/purchase-requests/${encodeURIComponent(id)}`);
 export const patchRequest = (id: string, body: PurchaseRequestPatch) =>

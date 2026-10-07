@@ -14,10 +14,11 @@ import {
   labelOf,
   stampOf,
 } from '@/lib/buyer/labels';
-import { formatDate } from '@/lib/format';
+import { formatDate, formatPhone } from '@/lib/format';
 
 import {
   Button,
+  ButtonLink,
   Card,
   CardBody,
   CardHeader,
@@ -34,8 +35,9 @@ import styles from './buyer.module.css';
 
 /**
  * ONE PURCHASE REQUEST (C-14B.11). A draft can be sent or cancelled; a sent
- * request can be cancelled until a reviewer acts on it; after that it is
- * CORWADO's, and this page shows their decision and note.
+ * request can be cancelled until the farmer answers. Once sent, the farmer's
+ * phone is shown so the two can deal directly (B14), with the farmer's answer
+ * and note.
  *
  * Another organisation's request answers 404 at the route, and this page says
  * "not found" -- the same words as an id that never existed.
@@ -71,7 +73,7 @@ export function BuyerRequestDetail({ id }: { id: string }) {
       setConfirmCancel(false);
       toast.show({
         kind: 'success',
-        title: action === 'submit' ? 'Request sent to CORWADO' : 'Request cancelled',
+        title: action === 'submit' ? 'Request sent to the farmer' : 'Request cancelled',
       });
     } catch (e) {
       setFailure(e instanceof Error ? e.message : 'The change was not saved.');
@@ -87,7 +89,7 @@ export function BuyerRequestDetail({ id }: { id: string }) {
         error={state === 'error'}
         title={state === 'missing' ? 'Request not found' : 'The request could not be loaded'}
         body="It may belong to another organisation, or not exist."
-        actions={<Link href="/buyer/purchase-requests">Back to purchase requests</Link>}
+        actions={<Link href="/buyer/purchase-requests">Back to my requests</Link>}
       />
     );
   }
@@ -99,7 +101,7 @@ export function BuyerRequestDetail({ id }: { id: string }) {
   return (
     <div className={styles.page}>
       <Link href="/buyer/purchase-requests" className="small">
-        ← Purchase requests
+        ← My requests
       </Link>
       <PageHeader
         eyebrow={labelOf(CATEGORY_LABELS, request.category)}
@@ -113,7 +115,7 @@ export function BuyerRequestDetail({ id }: { id: string }) {
           <>
             {canSend ? (
               <Button disabled={busy} onClick={() => void act('submit')}>
-                Send to CORWADO
+                Send to the farmer
               </Button>
             ) : null}
             {canCancel ? (
@@ -127,7 +129,7 @@ export function BuyerRequestDetail({ id }: { id: string }) {
 
       {status === 'draft' && !profile.verification.capabilities.request ? (
         <Notice kind="info" title="Saved as a draft">
-          You can send this once CORWADO has verified your organisation.
+          You can send this once your business account has been approved.
         </Notice>
       ) : null}
       {failure ? (
@@ -136,9 +138,31 @@ export function BuyerRequestDetail({ id }: { id: string }) {
         </Notice>
       ) : null}
       {request.decision_note ? (
-        <Notice kind={status === 'rejected' ? 'warn' : 'info'} title="Note from CORWADO">
+        <Notice kind={status === 'rejected' ? 'warn' : 'info'} title="Note from the farmer">
           {request.decision_note}
         </Notice>
+      ) : null}
+
+      {request.farmer_phone ? (
+        <Card>
+          <CardHeader
+            title="Contact the farmer"
+            subtitle="Agree the price, quality and handover directly with the farmer."
+          />
+          <CardBody>
+            <div className={styles.actions}>
+              <ButtonLink href={`tel:${request.farmer_phone}`}>
+                Call {formatPhone(request.farmer_phone)}
+              </ButtonLink>
+              <ButtonLink
+                variant="secondary"
+                href={`https://wa.me/${request.farmer_phone.replace(/\D/g, '')}`}
+              >
+                WhatsApp
+              </ButtonLink>
+            </div>
+          </CardBody>
+        </Card>
       ) : null}
 
       <Card>
@@ -167,7 +191,7 @@ export function BuyerRequestDetail({ id }: { id: string }) {
                 value: request.submitted_at ? formatDate(request.submitted_at) : 'Not yet sent',
               },
               {
-                term: 'Decided',
+                term: 'Farmer answered',
                 value: request.decided_at ? formatDate(request.decided_at) : 'Not yet',
               },
             ]}
@@ -180,7 +204,7 @@ export function BuyerRequestDetail({ id }: { id: string }) {
         onCancel={() => setConfirmCancel(false)}
         onConfirm={() => void act('cancel')}
         title="Cancel this request?"
-        consequence="CORWADO will stop looking for suppliers for it. A cancelled request cannot be sent again; raise a new one if you change your mind."
+        consequence="The farmer will no longer see it as open. A cancelled request cannot be sent again; add the product to your cart again if you change your mind."
         confirmLabel="Cancel request"
         destructive
         busy={busy}

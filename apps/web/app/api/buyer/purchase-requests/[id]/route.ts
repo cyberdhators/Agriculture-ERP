@@ -7,7 +7,12 @@ import {
 } from '@agri-erp/shared';
 
 import { audited, writeAudit } from '../../../../../lib/api/audit';
-import { buyerActor, loadOwnRequest, presentRequest } from '../../../../../lib/api/buyers';
+import {
+  buyerActor,
+  loadOwnRequest,
+  notifyFarmerOfRequest,
+  presentRequest,
+} from '../../../../../lib/api/buyers';
 import { forbidden, unprocessable } from '../../../../../lib/api/errors';
 import { defineRoutes, ok } from '../../../../../lib/api/route';
 import { buyerScope } from '../../../../../lib/api/scope';
@@ -125,6 +130,9 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
             before: { status: 'draft' },
             after: { status: 'submitted' },
           });
+          if (current.listing_id) {
+            await notifyFarmerOfRequest(tx, current.listing_id, buyerActor(auth));
+          }
         }
       });
 

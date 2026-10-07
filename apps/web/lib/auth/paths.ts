@@ -60,6 +60,8 @@ export function isPortalPath(pathname: string, marketOpen: boolean = MARKET_OPEN
  */
 export function homeFor(role: string | undefined, next: string): string {
   if (role === 'buyer') return isBuyerPath(next) ? next : BUYER_HOME_PATH;
+  // B14: a farmer who signs in through the staff form still lands on their own side.
+  if (role === 'farmer') return '/farmer/account';
   return isBuyerPath(next) ? HOME_PATH : next;
 }
 

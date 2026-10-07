@@ -11,32 +11,30 @@ import {
   type ReactNode,
 } from 'react';
 
+import { farmerAuthIdentifier } from '@agri-erp/shared';
+
 import { DEFAULT_LANGUAGE, LANG_COOKIE, LANG_STORAGE, isLanguage, type Language } from '@/lib/i18n';
-import {
-  FARMERS,
-  FARMER_FIXTURE_PASSWORD,
-  type ConsentLanguage,
-  type Farmer,
-  type ProduceListing,
-} from '@/lib/fixtures/farmers';
+import type { Farmer, ProduceListing } from '@/lib/fixtures/farmers';
+import { supabaseBrowser } from '@/lib/supabase/browser';
 
 /**
- * PREVIEW — REPLACED BY THE B12 SESSION.
+ * THE FARMER'S SESSION -- REAL SINCE B14 (2026-10-07).
  *
- * Everything the real farmer flow gets from the server is stubbed here so the
- * screens can be walked end to end: the chosen language (a cookie the layout
- * reads and localStorage so it survives a return), the signed-in farmer (the
- * cookie `farmer_session` carries a fixture farmer id), self-registrations held
- * in client state for the session, and produce listings held the same way.
- * Sign-in is phone + password (B12 point 2): every fixture farmer answers to
- * `FARMER_FIXTURE_PASSWORD`; a self-registered farmer to the password they
- * chose; a changed password or phone is remembered for the session only.
- * Nothing is written anywhere. When B12 lands — `POST /api/farmer/auth/login`,
- * a real `farmer` principal, the `produce_listing` table — this file is
- * deleted and the screens fetch instead, unchanged.
+ * This file used to be a browser-only stand-in: fixture farmers, a cookie
+ * holding an id, listings kept in React state, nothing saved. Farmers now hold
+ * accounts (DECISIONS, "Farmers enrol themselves and deal with buyers
+ * directly"), so the same interface is backed by the real thing:
+ *
+ *   - sign-in is Supabase Auth, phone + password, through the one derived
+ *     identifier (`farmerAuthIdentifier`), exactly as an officer's is;
+ *   - the farmer is GET /api/farmer/me, which requireRole resolves from the
+ *     session; nothing about who is signed in is decided in the browser;
+ *   - listings are /api/farmer/listings, owned by the session's farmer.
+ *
+ * The language choice is still a cookie and local storage: a preference, not
+ * a record. The screens read the same hook as before; where an action now
+ * waits on the network, it returns a promise.
  */
-
-export const SESSION_COOKIE = 'farmer_session';
 
 function readCookie(name: string): string | null {
   if (typeof document === 'undefined') return null;
@@ -46,34 +44,64 @@ function readCookie(name: string): string | null {
 
 function writeCookie(name: string, value: string): void {
   if (typeof document === 'undefined') return;
-  // A year, path-wide; a preview cookie, not a security token.
   document.cookie = `${name}=${encodeURIComponent(value)}; path=/; max-age=31536000; samesite=lax`;
 }
 
-function clearCookie(name: string): void {
-  if (typeof document === 'undefined') return;
-  document.cookie = `${name}=; path=/; max-age=0; samesite=lax`;
-}
-
-/** The fields a self-registration supplies; the rest are filled in as pending. */
-export interface FarmerRegistration {
-  given_name: string;
-  family_name: string;
-  sex: 'f' | 'm';
-  year_of_birth: number;
-  phone: string;
-  payam_id: string;
-  state_id: string;
-  preferred_language: ConsentLanguage;
-  consent_version: string;
-  password: string;
-}
+/** What self-registration sends: POST /api/farmer/register's body. */
+export type FarmerRegistration = Record<string, unknown> & { phone: string; password: string };
 
 /** Why a sign-in or a password/phone change did not go through. */
-export type AuthFailure = 'wrong' | 'locked';
+export type AuthFailure = 'wrong' | 'locked' | 'unavailable';
 
-/** Failed sign-ins before the account locks (B12 point 2: 5 failures → 429). */
-export const MAX_LOGIN_FAILURES = 5;
+/** The farmer as GET /api/farmer/me returns them, in the shape the screens read. */
+type MeResponse = Farmer & {
+  payam_name?: string;
+  village?: string | null;
+  primary_crops?: string[];
+  preferred_language?: string | null;
+};
+
+export class FarmerApiError extends Error {
+  constructor(
+    readonly status: number,
+    readonly code: string,
+    message: string,
+    readonly fields: Record<string, string> = {},
+  ) {
+    super(message);
+    this.name = 'FarmerApiError';
+  }
+}
+
+/** One call to a farmer route. Errors keep the server's own sentence and field reasons. */
+export async function farmerApi<T>(path: string, init: RequestInit = {}): Promise<T> {
+  let response: Response;
+  try {
+    response = await fetch(path, {
+      ...init,
+      headers: init.body ? { 'content-type': 'application/json', ...init.headers } : init.headers,
+    });
+  } catch {
+    throw new FarmerApiError(
+      0,
+      'network',
+      'The server could not be reached. Check the connection.',
+    );
+  }
+  const body = (await response.json().catch(() => ({}))) as {
+    data?: T;
+    error?: { code: string; message: string; fields?: Record<string, string> };
+  };
+  if (!response.ok) {
+    throw new FarmerApiError(
+      response.status,
+      body.error?.code ?? 'unknown',
+      body.error?.message ?? `The request failed (${response.status}).`,
+      body.error?.fields ?? {},
+    );
+  }
+  return body.data as T;
+}
 
 interface FarmerSessionValue {
   hydrated: boolean;
@@ -81,55 +109,30 @@ interface FarmerSessionValue {
   setLanguage: (lang: Language) => void;
 
   /** The signed-in farmer, or null. `(farmer)/account/**` redirects when null. */
-  farmer: Farmer | null;
-  /**
-   * `POST /api/farmer/auth/login {phone, password}`: an unknown phone and a
-   * wrong password fail the same way; the fifth failure locks the phone.
-   */
-  signIn: (phone: string, password: string) => { ok: true } | { ok: false; reason: AuthFailure };
-  register: (input: FarmerRegistration) => Farmer;
-  signOut: () => void;
-  /** `POST /api/farmer/me/password {current, next}`. */
-  changePassword: (current: string, next: string) => boolean;
-  /** `PATCH /api/farmer/me {phone}` — the phone change asks for the password. */
-  changePhone: (password: string, phone: string) => boolean;
+  farmer: MeResponse | null;
+  /** Reload the farmer and their listings from the server. */
+  refresh: () => Promise<void>;
+  signIn: (
+    phone: string,
+    password: string,
+  ) => Promise<{ ok: true } | { ok: false; reason: AuthFailure }>;
+  /** Registers, then signs in. Throws FarmerApiError with field reasons on refusal. */
+  register: (input: FarmerRegistration) => Promise<{ farmer_number: string }>;
+  signOut: () => Promise<void>;
+  changePassword: (current: string, next: string) => Promise<boolean>;
+  changePhone: (password: string, phone: string) => Promise<boolean>;
 
   listingsFor: (farmerId: string) => ProduceListing[];
   listingById: (id: string) => ProduceListing | undefined;
-  saveListing: (listing: ProduceListing) => void;
+  /** Creates or updates one of the farmer's own listings on the server. */
+  saveListing: (listing: ProduceListing) => Promise<ProduceListing>;
   newListingId: () => string;
 }
 
 const FarmerSessionContext = createContext<FarmerSessionValue | null>(null);
 
-const SELF_PREFIX = 'CE-JUB';
-
-function makeSelfFarmer(input: FarmerRegistration, id: string): Farmer {
-  const now = new Date().toISOString();
-  return {
-    id,
-    // Pending: no farmer number is assigned until an officer verifies (C-5).
-    farmer_number: `${SELF_PREFIX}-pending`,
-    given_name: input.given_name,
-    family_name: input.family_name,
-    sex: input.sex,
-    year_of_birth: input.year_of_birth,
-    phone: input.phone,
-    national_id: null,
-    payam_id: input.payam_id,
-    state_id: input.state_id,
-    registered_by: null,
-    // Nobody works this farmer yet: a self-registration is assigned when an
-    // officer picks it up (C-8R), which is why registered_by is null too.
-    caseload_officer_id: null,
-    registration_source: 'self',
-    verification_status: 'pending',
-    merged_into: null,
-    consent_id: `consent-${id}`,
-    created_at: now,
-    preferred_language: input.preferred_language,
-  };
-}
+/** Fields a listing carries that the server owns, never sent back. */
+const SERVER_OWNED = new Set(['farmer_id', 'created_at', 'updated_at', 'photo_storage_paths']);
 
 export function FarmerSessionProvider({
   initialLanguage = DEFAULT_LANGUAGE,
@@ -140,16 +143,22 @@ export function FarmerSessionProvider({
 }) {
   const [hydrated, setHydrated] = useState(false);
   const [language, setLanguageState] = useState<Language>(initialLanguage);
-  const [selfFarmers, setSelfFarmers] = useState<Farmer[]>([]);
-  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [farmer, setFarmer] = useState<MeResponse | null>(null);
   const [listings, setListings] = useState<ProduceListing[]>([]);
-  // Session-only memory of what B12 keeps hashed: passwords set at
-  // registration or changed here, phones changed here, sign-in failures.
-  const [passwords, setPasswords] = useState<Record<string, string>>({});
-  const [phones, setPhones] = useState<Record<string, string>>({});
-  const [failures, setFailures] = useState<Record<string, number>>({});
 
-  // Read the persisted choices once, client-side, so SSR and first paint agree.
+  const load = useCallback(async () => {
+    try {
+      const me = await farmerApi<MeResponse>('/api/farmer/me');
+      setFarmer(me);
+      setListings(await farmerApi<ProduceListing[]>('/api/farmer/listings'));
+    } catch {
+      // 401: nobody signed in. 403: signed in, but not as a farmer (staff or
+      // a buyer browsing the market). Either way there is no farmer here.
+      setFarmer(null);
+      setListings([]);
+    }
+  }, []);
+
   useEffect(() => {
     const storedLang = (() => {
       try {
@@ -158,12 +167,10 @@ export function FarmerSessionProvider({
         return null;
       }
     })();
-    const cookieLang = readCookie(LANG_COOKIE);
-    const lang = [storedLang, cookieLang].find(isLanguage);
+    const lang = [storedLang, readCookie(LANG_COOKIE)].find(isLanguage);
     if (lang) setLanguageState(lang);
-    setSessionId(readCookie(SESSION_COOKIE));
-    setHydrated(true);
-  }, []);
+    void load().finally(() => setHydrated(true));
+  }, [load]);
 
   const setLanguage = useCallback((lang: Language) => {
     setLanguageState(lang);
@@ -171,79 +178,91 @@ export function FarmerSessionProvider({
     try {
       window.localStorage.setItem(LANG_STORAGE, lang);
     } catch {
-      // Private window: the choice still holds for this session via the cookie.
+      // Private window: the cookie still carries the choice.
     }
   }, []);
 
-  const allFarmers = useMemo<readonly Farmer[]>(
-    () =>
-      [...selfFarmers, ...FARMERS].map((f) =>
-        phones[f.id] !== undefined ? { ...f, phone: phones[f.id]! } : f,
-      ),
-    [selfFarmers, phones],
-  );
-
-  const passwordOf = useCallback(
-    (farmerId: string) => passwords[farmerId] ?? FARMER_FIXTURE_PASSWORD,
-    [passwords],
-  );
-
-  const farmer = useMemo(
-    () => (sessionId ? (allFarmers.find((f) => f.id === sessionId) ?? null) : null),
-    [sessionId, allFarmers],
-  );
-
   const signIn = useCallback<FarmerSessionValue['signIn']>(
-    (phone, password) => {
-      if ((failures[phone] ?? 0) >= MAX_LOGIN_FAILURES) return { ok: false, reason: 'locked' };
-      const match = allFarmers.find((f) => f.phone === phone && !f.merged_into);
-      if (!match || passwordOf(match.id) !== password) {
-        const count = (failures[phone] ?? 0) + 1;
-        setFailures((map) => ({ ...map, [phone]: count }));
-        return { ok: false, reason: count >= MAX_LOGIN_FAILURES ? 'locked' : 'wrong' };
+    async (phone, password) => {
+      let identifier: string;
+      try {
+        identifier = farmerAuthIdentifier(phone);
+      } catch {
+        return { ok: false, reason: 'wrong' };
       }
-      setFailures((map) => ({ ...map, [phone]: 0 }));
-      setSessionId(match.id);
-      writeCookie(SESSION_COOKIE, match.id);
+      try {
+        const { error } = await supabaseBrowser().auth.signInWithPassword({
+          email: identifier,
+          password,
+        });
+        if (error) {
+          if (error.status === 429) return { ok: false, reason: 'locked' };
+          const refused = error.status !== undefined && [400, 401, 403, 404].includes(error.status);
+          return { ok: false, reason: refused ? 'wrong' : 'unavailable' };
+        }
+      } catch {
+        return { ok: false, reason: 'unavailable' };
+      }
+      await load();
       return { ok: true };
     },
-    [allFarmers, failures, passwordOf],
+    [load],
   );
 
-  const register = useCallback((input: FarmerRegistration) => {
-    const id =
-      typeof crypto !== 'undefined' && 'randomUUID' in crypto
-        ? crypto.randomUUID()
-        : `self-${Date.now()}`;
-    const created = makeSelfFarmer(input, id);
-    setSelfFarmers((list) => [created, ...list]);
-    setPasswords((map) => ({ ...map, [id]: input.password }));
-    setSessionId(id);
-    writeCookie(SESSION_COOKIE, id);
-    return created;
-  }, []);
-
-  const signOut = useCallback(() => {
-    setSessionId(null);
-    clearCookie(SESSION_COOKIE);
-  }, []);
-
-  const changePassword = useCallback(
-    (current: string, next: string) => {
-      if (!sessionId || passwordOf(sessionId) !== current) return false;
-      setPasswords((map) => ({ ...map, [sessionId]: next }));
-      return true;
+  const register = useCallback<FarmerSessionValue['register']>(
+    async (input) => {
+      const created = await farmerApi<{ farmer_number: string }>('/api/farmer/register', {
+        method: 'POST',
+        body: JSON.stringify(input),
+      });
+      await signIn(input.phone, input.password);
+      return created;
     },
-    [sessionId, passwordOf],
+    [signIn],
   );
 
-  const changePhone = useCallback(
-    (password: string, phone: string) => {
-      if (!sessionId || passwordOf(sessionId) !== password) return false;
-      setPhones((map) => ({ ...map, [sessionId]: phone }));
+  const signOut = useCallback(async () => {
+    await supabaseBrowser()
+      .auth.signOut()
+      .catch(() => undefined);
+    setFarmer(null);
+    setListings([]);
+  }, []);
+
+  /** The password is checked by signing in with it, which the auth service does. */
+  const passwordIsRight = useCallback(
+    async (password: string) => {
+      if (!farmer) return false;
+      const { error } = await supabaseBrowser().auth.signInWithPassword({
+        email: farmerAuthIdentifier(farmer.phone),
+        password,
+      });
+      return !error;
+    },
+    [farmer],
+  );
+
+  const changePassword = useCallback<FarmerSessionValue['changePassword']>(
+    async (current, next) => {
+      if (!(await passwordIsRight(current))) return false;
+      const { error } = await supabaseBrowser().auth.updateUser({ password: next });
+      return !error;
+    },
+    [passwordIsRight],
+  );
+
+  const changePhone = useCallback<FarmerSessionValue['changePhone']>(
+    async (password, phone) => {
+      if (!(await passwordIsRight(password))) return false;
+      try {
+        await farmerApi('/api/farmer/me', { method: 'PATCH', body: JSON.stringify({ phone }) });
+      } catch {
+        return false;
+      }
+      await load();
       return true;
     },
-    [sessionId, passwordOf],
+    [passwordIsRight, load],
   );
 
   const listingsFor = useCallback(
@@ -256,19 +275,30 @@ export function FarmerSessionProvider({
 
   const listingById = useCallback((id: string) => listings.find((l) => l.id === id), [listings]);
 
-  const saveListing = useCallback((listing: ProduceListing) => {
-    setListings((list) => {
-      const index = list.findIndex((l) => l.id === listing.id);
-      if (index === -1) return [listing, ...list];
-      return list.map((l) => (l.id === listing.id ? listing : l));
-    });
-  }, []);
+  const saveListing = useCallback<FarmerSessionValue['saveListing']>(
+    async (listing) => {
+      const exists = listings.some((l) => l.id === listing.id);
+      const body = Object.fromEntries(
+        Object.entries(listing).filter(([k, v]) => !SERVER_OWNED.has(k) && v !== undefined),
+      );
+      if (exists) delete (body as Record<string, unknown>).id;
+      const saved = await farmerApi<ProduceListing>(
+        exists ? `/api/farmer/listings/${listing.id}` : '/api/farmer/listings',
+        { method: exists ? 'PATCH' : 'POST', body: JSON.stringify(body) },
+      );
+      setListings((list) =>
+        exists ? list.map((l) => (l.id === saved.id ? saved : l)) : [saved, ...list],
+      );
+      return saved;
+    },
+    [listings],
+  );
 
   const newListingId = useCallback(
     () =>
       typeof crypto !== 'undefined' && 'randomUUID' in crypto
         ? crypto.randomUUID()
-        : `listing-${Date.now()}`,
+        : `00000000-0000-4000-8000-${Date.now().toString(16).padStart(12, '0').slice(-12)}`,
     [],
   );
 
@@ -278,6 +308,7 @@ export function FarmerSessionProvider({
       language,
       setLanguage,
       farmer,
+      refresh: load,
       signIn,
       register,
       signOut,
@@ -293,6 +324,7 @@ export function FarmerSessionProvider({
       language,
       setLanguage,
       farmer,
+      load,
       signIn,
       register,
       signOut,

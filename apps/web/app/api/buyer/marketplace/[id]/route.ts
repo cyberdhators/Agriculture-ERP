@@ -5,6 +5,7 @@ import {
   MARKET_COLUMNS,
   MARKET_FROM,
   UUID_PATTERN,
+  contactPhoneIfRequested,
   presentMarketListing,
   requireBrowse,
   type MarketRow,
@@ -26,7 +27,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   GET: {
     roles: [BUYER_ROLE],
     handler: async ({ auth, params }) => {
-      requireBrowse(auth);
+      const scope = requireBrowse(auth);
       const id = params.id ?? '';
       if (!UUID_PATTERN.test(id)) throw notFound();
       const [row] = await prisma.$queryRawUnsafe<MarketRow[]>(
@@ -35,7 +36,12 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
         id,
       );
       if (!row) throw notFound();
-      return ok(presentMarketListing(row));
+      // B14: the farmer's number once this buyer's organisation has asked;
+      // null until then. Anonymous visitors never reach this route.
+      return ok({
+        ...presentMarketListing(row),
+        farmer_phone: await contactPhoneIfRequested(prisma, scope.organizationId, id),
+      });
     },
   },
 });

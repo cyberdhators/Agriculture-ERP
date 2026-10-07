@@ -142,7 +142,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
       },
       {
         href: '/admin/procurement',
-        label: 'Requests & orders',
+        label: 'Buyer requests',
         icon: 'desk',
         roles: ['admin'],
         because:
@@ -278,7 +278,7 @@ const SEGMENT_LABELS: Record<string, string> = {
   admin: 'Administration',
   users: 'Staff accounts',
   buyers: 'Buyer accounts',
-  procurement: 'Requests & orders',
+  procurement: 'Buyer requests',
   audit: 'Audit trail',
   farmers: 'Farmers',
   farms: 'Farms & maps',

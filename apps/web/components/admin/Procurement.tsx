@@ -68,7 +68,7 @@ export function Procurement() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s-6)' }}>
       <PageHeader
-        title="Requests & orders"
+        title="Buyer requests"
         subtitle="Decide buyers' purchase requests, arrange orders against listings, and record delivery progress."
       />
       <Tabs

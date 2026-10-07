@@ -15,18 +15,7 @@ import {
   UNIT_LABELS,
 } from '@/lib/buyer/labels';
 
-import {
-  Badge,
-  Button,
-  ButtonLink,
-  EmptyState,
-  Field,
-  Input,
-  Notice,
-  PageHeader,
-  Select,
-  Stamp,
-} from '../ui';
+import { Badge, Button, EmptyState, Field, Input, Notice, PageHeader, Select, Stamp } from '../ui';
 import { CardSkeleton, Pagination } from '../ui/data';
 import { useBuyer } from './BuyerShell';
 import { useCursorList } from './useCursorList';
@@ -247,13 +236,8 @@ export function BuyerMarketplace() {
           title={filtered ? 'Nothing matches these filters' : 'Nothing is listed right now'}
           body={
             filtered
-              ? 'Widen or clear the filters. You can also send a purchase request describing what you need, and CORWADO will look for suppliers.'
-              : 'Send a purchase request describing what you need, and CORWADO will look for suppliers.'
-          }
-          actions={
-            <ButtonLink variant="secondary" href="/buyer/purchase-requests/new">
-              New purchase request
-            </ButtonLink>
+              ? 'Widen or clear the filters to see more of what farmers have listed.'
+              : 'Farmers list their produce here as it becomes available. Check back soon.'
           }
         />
       ) : (

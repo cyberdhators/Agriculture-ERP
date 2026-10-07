@@ -108,6 +108,19 @@ export async function enableAuthAccount(authUserId: string): Promise<void> {
   if (error) throw new Error(`Could not restore the authentication account: ${error.message}`);
 }
 
+/**
+ * B14. Changes an account's sign-in identifier -- a farmer's phone change moves
+ * their derived identifier with it. Confirmed at once: the identifier is
+ * derived, never a mailbox, so there is nothing to confirm.
+ */
+export async function setAuthIdentifier(authUserId: string, identifier: string): Promise<void> {
+  const { error } = await adminClient().auth.admin.updateUserById(authUserId, {
+    email: identifier,
+    email_confirm: true,
+  });
+  if (error) throw new Error(`Could not change the sign-in identifier: ${error.message}`);
+}
+
 /** Sets a password. An administrator may do this for anyone; a principal for themselves. */
 export async function setAuthPassword(authUserId: string, password: string): Promise<void> {
   const { error } = await adminClient().auth.admin.updateUserById(authUserId, { password });

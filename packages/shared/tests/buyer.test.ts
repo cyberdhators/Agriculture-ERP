@@ -215,6 +215,7 @@ describe('buyer profile patch', () => {
 
 describe('purchase requests', () => {
   const valid = () => ({
+    listing_id: '0b9c6a52-6b1e-4d8e-9a43-3f0c2d7e5a11',
     category: 'crop',
     product_name: 'Maize',
     quantity: 5000,
@@ -226,6 +227,12 @@ describe('purchase requests', () => {
 
   it('accepts a valid request', () => {
     expect(purchaseRequestInputSchema.safeParse(valid()).success).toBe(true);
+  });
+
+  it('B14: refuses a request that names no listing -- every request goes to a farmer', () => {
+    const rest: Record<string, unknown> = { ...valid() };
+    delete rest.listing_id;
+    expect(purchaseRequestInputSchema.safeParse(rest).success).toBe(false);
   });
 
   it('refuses a zero, negative or non-numeric quantity', () => {
