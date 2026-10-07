@@ -89,7 +89,7 @@ export function BuyerMarketplace() {
     <div className={styles.page}>
       <PageHeader
         title="Marketplace"
-        subtitle="Produce listed by registered farmers. Prices are indicative; the price on an order is agreed with CORWADO."
+        subtitle="Produce listed by registered farmers. Prices are indicative; you agree the final price with the farmer."
       />
 
       <form className={styles.form} onSubmit={apply} role="search" aria-label="Filter products">

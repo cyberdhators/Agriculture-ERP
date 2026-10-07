@@ -7,7 +7,6 @@ import type {
   OrderStatusChange,
   PurchaseRequestInput,
   PurchaseRequestPatch,
-  RequestDecision,
 } from '@agri-erp/shared';
 
 /**
@@ -363,11 +362,6 @@ export const adminDecideBuyer = (id: string, status: string, note?: string) =>
 
 export const adminListRequests = (status?: string, cursor?: string | null) =>
   page<PurchaseRequest>(`/api/admin/purchase-requests${query({ status, cursor })}`);
-export const adminDecideRequest = (id: string, decision: RequestDecision) =>
-  one<{ id: string; status: string }>(
-    `/api/admin/purchase-requests/${encodeURIComponent(id)}`,
-    json('PATCH', decision),
-  );
 
 export const adminListOrders = (status?: string, cursor?: string | null) =>
   page<Order>(`/api/admin/orders${query({ status, cursor })}`);

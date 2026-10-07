@@ -303,12 +303,12 @@ export const BUYER_NOTICES = {
     body: 'CORWADO is looking for suppliers for one of your requests.',
   },
   request_accepted: {
-    title: 'A purchase request was accepted',
-    body: 'CORWADO accepted one of your requests and will arrange an order.',
+    title: 'A farmer accepted your request',
+    body: 'Call or message the farmer to agree the price and the handover. Their number is on the request.',
   },
   request_rejected: {
-    title: 'A purchase request was declined',
-    body: 'One of your requests could not be met. Open it to see the note.',
+    title: 'A farmer declined your request',
+    body: 'One of your requests was declined by the farmer. Open it to see their note.',
   },
   request_partially_fulfilled: {
     title: 'A purchase request is partly fulfilled',

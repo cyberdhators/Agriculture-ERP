@@ -57,7 +57,7 @@ export function BuyerNotifications() {
       ) : list.rows.length === 0 ? (
         <EmptyState
           title={view === 'unread' ? 'Nothing unread' : 'No notifications yet'}
-          body="You will be told here when CORWADO reviews your account, decides a request or updates an order."
+          body="You will be told here when a farmer answers one of your requests, or when your account is reviewed."
         />
       ) : (
         <>

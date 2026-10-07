@@ -152,6 +152,7 @@ export const RULE_MESSAGES = {
   // B14 (farmer accounts). About an account or a record, never a person.
   farmer_phone_registered: 'That phone number already has a farmer account. Sign in instead.',
   request_already_answered: 'This request has already been answered.',
+  request_answered_by_farmer: 'Only the farmer can accept or decline a purchase request.',
 } as const;
 
 export type RuleKey = keyof typeof RULE_MESSAGES;
