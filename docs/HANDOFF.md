@@ -2348,3 +2348,64 @@ and "Staging is production".
   failures (`provider-secrets` x2, `public-route-scan` "exactly the expected").
 
 — Alieu-Claude
+
+### 2026-10-07 22:15 UTC — Alieu-Claude → Monkon-Claude — B14 is live; the farmer answers requests
+
+Supersedes the "not yet applied" and "not run" lines of my entry above. All of
+this is on `main` and deployed to https://www.agrionesouthsudan.com.
+
+**What landed**
+
+- **#123** (`3e9579f`): farmer accounts, self-registration, the farmer's own
+  listings, requests and notifications, the buyer cart, the farmer's phone given
+  to a buyer after a request, and **T2**. CI on #123 ran the pure suite only.
+- **#124 / #125** (`8bd32cc`, `dd350ef`): **only the farmer accepts or declines a
+  purchase request** (the owner: "purchase requests are accepted by the farmer,
+  not CORWADO"). `PATCH /api/admin/purchase-requests/:id` refuses every call with
+  the new rule `request_answered_by_farmer`; the admin "Buyer requests" page is
+  read-only (no Decide buttons, no Orders tab). The buyer's notice on an answer
+  now names the farmer; it used to say CORWADO accepted and would arrange an
+  order. The same branch was merged twice; `main` carries the change once
+  (checked: one rule key, one DECISIONS entry).
+
+**Database (OBSERVED)**
+
+- Migration `20261007090000_farmer_accounts` is **applied** to the one project
+  (`migrate deploy`, run with the owner's permission, 2026-10-07): 34 of 34.
+- **Demo data now on production**, deliberately named "Demo", not `zztest`: two
+  self-registered farmers (Demo Akello, payam `CE-JUB-KAT`, +211921000101; Demo
+  Lado, `CE-JUB-REJ`, +211921000102), one listed product each, and two
+  purchase requests from the demo buyer (`demo-test-buyer@example.invalid`), one
+  accepted. Their auth accounts are `farmer.211921000101@farmers.invalid` and
+  `farmer.211921000102@farmers.invalid`. All of it is inside the owner's
+  pre-launch clean-out; the owner may keep it for the demo.
+
+**Verified end to end on the live site (OBSERVED, 29 of 29 checks)**, through
+the same API calls the screens make, not through a browser: registration,
+sign-in by phone, listing upload, the listing in the public and buyer
+marketplaces, a two-farmer cart, the farmer's phone to the buyer, the buyer's
+phone and an alert to each farmer, accept, and the answer on the buyer's
+request; plus `/market`, `/market/:id`, `/farmer/register`, `/farmer/login`,
+`/buyer/cart`, `/buyer/marketplace` answering 200. A click-through in a browser
+is the owner's, before the demo.
+
+**What you should know**
+
+- **The database suite cannot run** anywhere now (T2): the global setup,
+  `assertStaging` and `db:reset` throw unconditionally, and `pnpm test` is the
+  pure suite. The old command is `test:db-retired`. When a disposable project
+  exists, the guards are where to point it.
+- **`next build` has not been run on the owner's machine** (out of memory there,
+  OBSERVED); Vercel's build of `main` succeeded, which is what deployed.
+- **Unused, kept:** the admin order routes and the buyer Orders/Deliveries pages
+  still exist; nothing links to them. Remove or reuse later; not urgent.
+- **Your open PRs** #99 and #103-#108 are untouched. #99 (officer field
+  experience) predates B14 and will need checking against `require-role.ts`,
+  `scope.ts`, `AUDIT_ACTOR_TYPES` and the `farmer` view changes before it merges.
+
+**Needs from you:** nothing blocking for the demo. Read DECISIONS ("Farmers enrol
+themselves and deal with buyers directly", "Only the farmer answers a purchase
+request", "Staging is production") before touching the farmer, buyer or test
+code. The owner has the final word.
+
+— Alieu-Claude
