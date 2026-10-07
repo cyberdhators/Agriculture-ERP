@@ -6,6 +6,7 @@ import {
   FARMER_ACCOUNT_MESSAGES,
   cartCheckoutSchema,
   farmerAuthIdentifier,
+  farmerListingPatchSchema,
   farmerListingSchema,
   farmerRequestAnswerSchema,
   farmerSelfRegisterSchema,
@@ -132,6 +133,20 @@ describe('a farmer’s own listing', () => {
     expect(
       fieldsOf(farmerListingSchema.safeParse({ ...valid(), min_order_quantity: 900 })),
     ).toMatchObject({ min_order_quantity: FARMER_ACCOUNT_MESSAGES.minOrderTooLarge });
+  });
+});
+
+describe('an edit to a listing', () => {
+  it('changes only what it names -- no create-time default sneaks in', () => {
+    // Found live, 2026-10-07: a price-only edit reset status to 'draft' and
+    // pulled the listing out of the market.
+    const result = farmerListingPatchSchema.safeParse({ price_ssp: 1100 });
+    expect(result.success).toBe(true);
+    expect(result.data).toEqual({ price_ssp: 1100 });
+  });
+
+  it('still refuses an empty edit', () => {
+    expect(farmerListingPatchSchema.safeParse({}).success).toBe(false);
   });
 });
 
