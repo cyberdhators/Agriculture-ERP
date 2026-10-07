@@ -356,10 +356,23 @@ export const farmerListingSchema = z
 export type FarmerListingInput = z.infer<typeof farmerListingSchema>;
 
 /** A change to one of the farmer's own listings: any field, at least one. */
+/**
+ * A change names only what changes. A field's create-time default must NOT
+ * apply here: zod fills a default even inside .optional(), so a price-only
+ * edit used to reset status to 'draft' (pulling the listing out of the
+ * market), blank the description and clear negotiable/delivery. Found by the
+ * live end-to-end check, 2026-10-07.
+ */
+const withoutDefault = (schema: z.ZodTypeAny): z.ZodTypeAny =>
+  schema instanceof z.ZodDefault ? (schema.unwrap() as z.ZodTypeAny) : schema;
+
 export const farmerListingPatchSchema = z
   .strictObject(
     Object.fromEntries(
-      Object.entries(listingFields).map(([k, v]) => [k, (v as z.ZodTypeAny).optional()]),
+      Object.entries(listingFields).map(([k, v]) => [
+        k,
+        withoutDefault(v as z.ZodTypeAny).optional(),
+      ]),
     ) as { [K in keyof typeof listingFields]: z.ZodOptional<(typeof listingFields)[K]> },
   )
   .superRefine((value, ctx) => {
