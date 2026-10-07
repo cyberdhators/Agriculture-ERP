@@ -3531,7 +3531,7 @@ anything". Registration stays self-service; publishing does not.
   farmer can prepare produce while waiting.
 - The buyer marketplace, the cart and the public marketplace (list and detail)
   show a listing only while it is `listed` **and** its farmer is `verified`. A
-  farmer later rejected drops out of the market at once. The public
+  farmer who stops being verified (a verified record can only be merged) drops out of the market at once. The public
   `?farmer_id=` filter no longer returns drafts.
 - Who verifies: an administrator or supervisor, from the existing review queue
   (`/farmers/review`, `POST /api/farmers/:id/verify`). No officer is needed and
