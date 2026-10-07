@@ -21,6 +21,7 @@ import {
   REQUEST_FROM,
   buyerActor,
   loadOwnRequest,
+  notifyFarmerOfRequest,
   presentRequest,
   requireBrowse,
   requireVerified,
@@ -168,6 +169,10 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
             status,
           },
         });
+        // B14: the farmer is told at once, on their dashboard.
+        if (status === 'submitted') {
+          await notifyFarmerOfRequest(tx, body.listing_id, buyerActor(auth));
+        }
         return row!.id;
       });
 

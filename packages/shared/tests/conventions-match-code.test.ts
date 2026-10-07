@@ -16,6 +16,7 @@ import {
   PAGINATION_MESSAGES,
   VERIFICATION_MESSAGES,
   PHONE_MESSAGES,
+  FARMER_ACCOUNT_MESSAGES,
 } from '../src/index';
 
 /**
@@ -156,6 +157,7 @@ describe('the documented field reasons match the ones the code actually sends', 
     ...Object.values(SYNC_MESSAGES),
     ...Object.values(REPORT_MESSAGES),
     ...Object.values(BUYER_MESSAGES),
+    ...Object.values(FARMER_ACCOUNT_MESSAGES),
     ERROR_MESSAGES.unknownField,
     ERROR_MESSAGES.bodyNotExpectedForm,
   ];

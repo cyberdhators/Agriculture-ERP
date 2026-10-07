@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "pnpm --filter @agri-erp/web dev",
     "build": "pnpm -r build",
-    "test": "vitest run --no-file-parallelism",
+    "test": "vitest run --config vitest.pure.config.mts",
+    "test:db-retired": "vitest run --no-file-parallelism",
     "test:pure": "vitest run --config vitest.pure.config.mts",
     "typecheck": "tsc --noEmit -p tsconfig.json && pnpm -r typecheck",
     "lint": "eslint .",

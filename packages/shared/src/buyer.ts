@@ -316,6 +316,8 @@ export const BUYER_MESSAGES = {
   cancelReasonRequired: 'Say why the order is being cancelled, in up to 300 characters.',
   statusFilterUnknown: 'Choose a status from the list.',
   accountTypeUnknown: 'Choose individual or business.',
+  cartEmpty: 'Add at least one product to the cart.',
+  cartTooLarge: 'A cart can hold at most 20 products. Send these first.',
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -697,7 +699,9 @@ export const buyerListFilterSchema = z.strictObject({
  * must still be valid, and the listing's own are what is stored.
  */
 export const purchaseRequestInputSchema = z.strictObject({
-  listing_id: uuidSchema.optional(),
+  // B14: a request is always for a product in the marketplace -- it goes to
+  // the farmer who listed it.
+  listing_id: uuidSchema,
   category: categorySchema,
   product_name: productNameSchema,
   quantity: quantitySchema,
@@ -786,3 +790,31 @@ export const orderStatusSchema = z.strictObject({
   note: decisionNote,
 });
 export type OrderStatusChange = z.infer<typeof orderStatusSchema>;
+
+// ---------------------------------------------------------------------------
+// B14 -- THE CART: several requests, to several farmers, sent at once
+// ---------------------------------------------------------------------------
+
+export const CART_MAX_ITEMS = 20;
+
+/** One cart line: a product in the marketplace and what the buyer wants of it. */
+export const cartItemSchema = z.strictObject({
+  listing_id: uuidSchema,
+  quantity: quantitySchema,
+  unit: unitSchema,
+  notes: optionalText(BUYER_LIMITS.notesMax, BUYER_MESSAGES.notesTooLong),
+});
+
+/**
+ * Sending the cart: every line becomes its own purchase request to the farmer
+ * who listed it, in one transaction -- all are sent or none is.
+ */
+export const cartCheckoutSchema = z.strictObject({
+  items: z
+    .array(cartItemSchema, { error: () => BUYER_MESSAGES.listExpected })
+    .min(1, BUYER_MESSAGES.cartEmpty)
+    .max(CART_MAX_ITEMS, BUYER_MESSAGES.cartTooLarge),
+  delivery_location: deliveryLocationSchema,
+  required_by: futureDateSchema.nullable().optional(),
+});
+export type CartCheckout = z.infer<typeof cartCheckoutSchema>;

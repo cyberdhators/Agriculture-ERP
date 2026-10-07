@@ -246,14 +246,21 @@ jobs:
       # The two tests that read docs/api/CONVENTIONS.md are both in the pure
       # suite, so a CONVENTIONS change still meets the drift test and the
       # rule-sentence test on the short path.
+      # T2 (2026-10-07): STAGING IS PRODUCTION. Since 2026-10-06 the one Supabase
+      # project is production (docs/DECISIONS.md, "Staging is production"), and
+      # the database suite creates and deletes accounts and rows. So this step no
+      # longer receives any database secret and always runs the pure suite; the
+      # database helpers also refuse unconditionally (vitest.global-setup.ts,
+      # tests/helpers/principals.ts, scripts/db-reset.mjs). The owner's rule: test
+      # locally, push, fix forward.
+      #
+      # The step is still never conditional and still reports: the pure suite's
+      # config sets passWithNoTests: false and its own guard asserts it runs every
+      # test file that needs no database. What may vary is how a check waits,
+      # never whether it speaks.
       - name: Test
         env:
           SCOPE_DOCS_ONLY: ${{ needs.scope.outputs.docs_only }}
-          DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
-          DIRECT_URL: ${{ secrets.STAGING_DIRECT_URL }}
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.STAGING_SUPABASE_ANON_KEY }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.STAGING_SUPABASE_SERVICE_ROLE_KEY }}
         run: |
           set -euo pipefail
           if [ "${{ github.event_name }}" = "pull_request" ]; then
@@ -264,49 +271,6 @@ jobs:
             changed="$(git diff --name-only HEAD~1 HEAD || echo FULL)"
           fi
           echo "changed files:"; echo "$changed" | sed 's/^/  /'
-
-          # Closes the loop with the scope job: both read
-          # scripts/ci-changed-scope.mjs, and this asserts they agreed. A
-          # contradiction is named here rather than left to the advisory lock.
           printf '%s\n' "$changed" | node scripts/ci-scope-assert.mjs
-
-          # The document set is the module's, not this step's: one decider.
-          if printf '%s\n' "$changed" | node scripts/ci-is-docs-only.mjs; then
-            echo "SHORT PATH: documents only. Running the pure suite (no database)."
-            pnpm test:pure
-          else
-            echo "FULL SUITE: changed files outside docs/ — running everything."
-            started=$(date +%s)
-            pnpm test
-            elapsed=$(( $(date +%s) - started ))
-
-            # ================================================================
-            # THE GATE THAT WAS MISSING, AND THE REASON IT IS A GATE.
-            # ================================================================
-            #
-            # Nothing was comparing elapsed time to anything, and every run printed
-            # its own duration while no one held it against an expectation.
-            #
-            # THE 37.8% DRIFT THIS WAS FIRST WRITTEN FOR DID NOT HAPPEN. Three runs
-            # taken in one morning were read as a ten-day trend; a 53.4-minute run on
-            # the same branch and content followed hours later. The observed range is
-            # 52.4 to 85.2 minutes, about 63% wide, and the band is PROVISIONAL. See
-            # scripts/ci-suite-duration.mjs.
-            #
-            # The gate is still worth having, for the reason the mistake exposed
-            # rather than the one it was built on: nothing was watching, so neither a
-            # real drift nor a 63% spread was visible to anybody.
-            #
-            # The band's upper bound sits BELOW the timeout on purpose, so drift
-            # fires THIS, which says what happened, before it fires the cliff,
-            # which just kills the job. Asserted in tests/ci-suite-duration.test.ts
-            # rather than left to this comment.
-            #
-            # IT FAILS, IT DOES NOT WARN. A warning nobody reads is the whole of
-            # the evidence above.
-            #
-            # It runs after the suite, so a failing suite is red on its own merits
-            # and is never masked by a duration complaint -- and on a failing suite
-            # this never runs at all, which is the right order.
-            node scripts/ci-suite-duration-check.mjs "$elapsed"
-          fi
+          echo "Running the pure suite (no database): the database suite is retired (T2)."
+          pnpm test:pure

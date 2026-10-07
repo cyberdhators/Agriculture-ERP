@@ -33,6 +33,11 @@ export const FARMER_TEST_FAMILY = 'Zztestfamily';
 export const TEST_LOCATION_PREFIX = 'EE-ZZT';
 
 export function assertStaging(): void {
+  // T2 (2026-10-07): the staging project is now production. Refuse whatever the URLs say.
+  throw new Error(
+    'Test principals refuse to run: Since 2026-10-06 the only Supabase project (xmmxbrxmfgodhpwolrvk) is PRODUCTION (docs/DECISIONS.md, "Staging is production"). ' +
+      'This helper creates and DELETES authentication accounts.',
+  );
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
   const db = process.env.DIRECT_URL ?? process.env.DATABASE_URL ?? '';
   if (!url.includes(STAGING_PROJECT_REF) || !db.includes(STAGING_PROJECT_REF)) {

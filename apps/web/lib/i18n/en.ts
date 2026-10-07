@@ -75,16 +75,16 @@ export const en = {
   'register.back': 'Back',
   'register.next': 'Next',
   'register.submit': 'Register',
-  'register.doneTitle': 'Registered: pending verification',
+  'register.doneTitle': 'You are registered',
   'register.doneBody':
-    'Thank you. An officer will check your details and verify your account. Until then your account is pending: you can add produce as a draft, but it goes live once you are verified.',
+    'Your account is ready. You can add your produce now and buyers will see it in the market. An officer may visit later to verify you; verified farmers carry a badge buyers trust.',
   'register.doneNumber': 'Farmer no.',
-  'register.donePending': 'Assigned when your registration is verified.',
+  'register.donePending': 'Keep this number. You sign in with your phone number and password.',
   'register.goToAccount': 'Go to my account',
 
-  // Consent statement (the v1.1-en text: the brand is AgriOne South Sudan, decided 2026-09-15)
+  // Consent statement (the v1.2-en text, 2026-10-07: adds the phone given to a buyer who sends a request)
   'consent.body':
-    'AgriOne South Sudan records your name, phone number, place and the crops you grow, so that an agricultural officer can verify you, map your farm and connect you to markets, inputs and advice. Your details are kept by AgriOne South Sudan and shared only with the officers and partners running this programme. You may ask to see or remove your record at any time. Registering means you agree to this.',
+    'AgriOne South Sudan records your name, phone number, place, farm details and the produce you list, so that buyers can find your produce and you can be connected to markets, inputs and advice. When a buyer sends you a request, your phone number is given to that buyer, and theirs to you, so you can deal directly. Your details are otherwise shared only with the officers and partners running this programme. You may ask to see or remove your record at any time. Registering means you agree to this.',
 
   // Account workspace
   'account.title': 'My account',

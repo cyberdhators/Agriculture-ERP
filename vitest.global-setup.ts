@@ -20,6 +20,14 @@ export const STAGING_TEST_LOCK = 'agri-erp.staging-tests';
 let holder: PrismaClient | undefined;
 
 export async function setup(): Promise<void> {
+  // T2 (2026-10-07): a guard whose condition has been met is replaced, not
+  // removed. The project this suite was written for is now production, and the
+  // suite creates and deletes accounts and rows. It refuses unconditionally;
+  // test locally against a disposable database when one exists.
+  throw new Error(
+    'Database tests are retired: Since 2026-10-06 the only Supabase project (xmmxbrxmfgodhpwolrvk) is PRODUCTION (docs/DECISIONS.md, "Staging is production"). ' +
+      'They create and delete accounts and rows, and there is no other project to point them at.',
+  );
   const missing = missingTestEnv();
   if (missing.length > 0) {
     throw new Error(

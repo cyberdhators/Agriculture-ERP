@@ -15,7 +15,7 @@ import { authUnavailable, forbidden, unauthenticated } from './errors';
  */
 
 export interface Principal {
-  readonly kind: 'user' | 'officer' | 'buyer';
+  readonly kind: 'user' | 'officer' | 'buyer' | 'farmer';
   /** The application row id, not the auth account id. */
   readonly id: string;
   readonly authUserId: string;
@@ -204,6 +204,32 @@ export async function requireRole(
         organizationId: buyer.organization_id,
         verification: buyer.verification_status,
       },
+    };
+  }
+
+  // B14. A farmer with their own account (2026-10-07). Read through
+  // farmer_active, so a removed farmer is refused on their next request. A
+  // merged farmer keeps a row but has been folded into another record, so they
+  // are refused too: the survivor is the record that signs in.
+  const [farmer] = await prisma.$queryRawUnsafe<
+    { id: string; given_name: string; family_name: string }[]
+  >(
+    `SELECT id, given_name, family_name FROM public.farmer_active
+      WHERE auth_user_id = $1::uuid AND merged_into IS NULL LIMIT 1`,
+    authUserId,
+  );
+
+  if (farmer) {
+    if (!allowed.includes('farmer')) throw forbidden();
+    return {
+      principal: {
+        kind: 'farmer',
+        id: farmer.id,
+        authUserId,
+        name: `${farmer.given_name} ${farmer.family_name}`,
+      },
+      role: 'farmer',
+      scope: { kind: 'farmer', farmerId: farmer.id },
     };
   }
 

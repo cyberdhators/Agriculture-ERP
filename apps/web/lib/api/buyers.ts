@@ -134,7 +134,7 @@ export async function notifyOrganization(
   tx: AuditTx,
   organizationId: string,
   notice: BuyerNotice,
-  actor: { actorType: 'admin' | 'supervisor' | 'buyer'; actorId: string },
+  actor: { actorType: 'admin' | 'supervisor' | 'buyer' | 'farmer'; actorId: string },
 ): Promise<void> {
   const { title, body } = BUYER_NOTICES[notice];
   const [row] = await tx.$queryRawUnsafe<{ id: string }[]>(
@@ -162,3 +162,63 @@ export const NOTICE_FOR_STANDING: Partial<Record<BuyerVerificationStatus, BuyerN
   // An individual restored after a suspension or rejection.
   not_required: 'account_restored',
 };
+
+// ---------------------------------------------------------------------------
+// B14 -- THE FARMER IS TOLD, AND THE TWO MAY CONTACT EACH OTHER
+// ---------------------------------------------------------------------------
+
+/** The fixed sentence a farmer is sent when a buyer asks for their produce. */
+export const FARMER_REQUEST_NOTICE = {
+  title: 'A buyer wants your produce',
+  body: "Open your dashboard to see the request and the buyer's phone number.",
+} as const;
+
+/**
+ * Tells the farmer behind a listing that a buyer has sent a request. Inside the
+ * caller's audited transaction, recorded as the buyer's act. The sentence names
+ * nobody; the dashboard shows the buyer's name and phone to the farmer.
+ */
+export async function notifyFarmerOfRequest(
+  tx: AuditTx,
+  listingId: string,
+  actor: { actorType: 'buyer'; actorId: string },
+): Promise<void> {
+  const [row] = await tx.$queryRawUnsafe<{ id: string }[]>(
+    `INSERT INTO public.notification (farmer_id, channel, title, body)
+     SELECT pl.farmer_id, 'in_app', $2, $3 FROM public.produce_listing pl WHERE pl.id = $1::uuid
+     RETURNING id`,
+    listingId,
+    FARMER_REQUEST_NOTICE.title,
+    FARMER_REQUEST_NOTICE.body,
+  );
+  if (!row) return;
+  await writeAudit(tx, {
+    entityType: 'notification',
+    entityId: row.id,
+    ...actor,
+    action: 'notification.created',
+    after: { recipient: 'farmer', notice: 'request_received' },
+  });
+}
+
+/**
+ * The farmer's contact phone for a listing, IF the caller's organisation has
+ * sent a request for it (the owner's rule, 2026-10-07: the number is revealed
+ * after the buyer asks). A draft or a cancelled request reveals nothing.
+ */
+export async function contactPhoneIfRequested(
+  db: Db,
+  organizationId: string,
+  listingId: string,
+): Promise<string | null> {
+  const [row] = await db.$queryRawUnsafe<{ contact_phone: string }[]>(
+    `SELECT pl.contact_phone FROM public.produce_listing pl
+      WHERE pl.id = $1::uuid AND EXISTS (
+        SELECT 1 FROM public.purchase_request r
+         WHERE r.listing_id = pl.id AND r.organization_id = $2::uuid AND r.deleted_at IS NULL
+           AND r.status NOT IN ('draft', 'cancelled'))`,
+    listingId,
+    organizationId,
+  );
+  return row?.contact_phone ?? null;
+}

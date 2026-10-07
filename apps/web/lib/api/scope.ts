@@ -41,6 +41,9 @@ export function scopeCondition(
   // this admits a buyer -- requireRole refuses them first -- and this makes the
   // second line of defence fail closed rather than fall through to "everything".
   if (scope.kind === 'buyer') return { sql: 'false', params: [] };
+  // B14. A farmer reads the register only through the farmer routes, which
+  // filter on their own id; through this helper they see nothing.
+  if (scope.kind === 'farmer') return { sql: 'false', params: [] };
 
   // caseload. An officer sees the records THEY registered -- not other
   // officers' records in the same payam. C-3.4 and the note in C-3.
@@ -71,5 +74,17 @@ export function buyerScope(
   auth: Authenticated,
 ): Extract<Authenticated['scope'], { kind: 'buyer' }> {
   if (auth.scope.kind !== 'buyer') throw forbidden();
+  return auth.scope;
+}
+
+/**
+ * B14. The farmer's scope, or a 403. Every farmer route calls this first, so
+ * the farmer a query filters on always comes from the session, never from the
+ * request: a farmer cannot name another farmer anywhere.
+ */
+export function farmerScope(
+  auth: Authenticated,
+): Extract<Authenticated['scope'], { kind: 'farmer' }> {
+  if (auth.scope.kind !== 'farmer') throw forbidden();
   return auth.scope;
 }

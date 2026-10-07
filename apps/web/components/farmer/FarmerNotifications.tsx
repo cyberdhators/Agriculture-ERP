@@ -1,7 +1,9 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+
 import { EmptyState } from '@/components/ui';
-import { useFarmerSession } from '@/lib/farmer-session';
+import { farmerApi, useFarmerSession } from '@/lib/farmer-session';
 import { formatDate } from '@/lib/format';
 import { t, type Language } from '@/lib/i18n';
 
@@ -10,20 +12,39 @@ import styles from './farmer.module.css';
 
 interface NotificationRow {
   id: string;
-  channel: string;
   title: string;
   body: string;
   read_at: string | null;
   created_at: string;
 }
 
-// Notifications will come from the notification API (deliverable (n))
-// once it is wired. Until then, empty state.
-
+/**
+ * The farmer's in-app notices (B14): GET /api/farmer/notifications. Opening
+ * the page marks what it shows as read.
+ */
 export function FarmerNotifications() {
   const { language } = useFarmerSession();
 
-  const notifications: readonly NotificationRow[] = [];
+  const [notifications, setNotifications] = useState<readonly NotificationRow[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    farmerApi<NotificationRow[]>('/api/farmer/notifications')
+      .then((rows) => {
+        if (cancelled) return;
+        setNotifications(rows);
+        for (const n of rows.filter((r) => !r.read_at)) {
+          void farmerApi(`/api/farmer/notifications/${n.id}`, {
+            method: 'PATCH',
+            body: JSON.stringify({}),
+          }).catch(() => undefined);
+        }
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <>

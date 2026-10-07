@@ -74,6 +74,8 @@ export const MANIFEST_TABLES = [
   'purchase_request',
   'purchase_order',
   'delivery_update',
+  // B14 (2026-10-07): the farmer's registration answers, with the migration that creates it.
+  'farmer_profile',
   'audit_event',
 ] as const;
 

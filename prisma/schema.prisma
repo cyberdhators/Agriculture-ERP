@@ -448,6 +448,8 @@ enum AuditActorType {
   system
   /// B13. Added with ALTER TYPE ... ADD VALUE; existing rows are untouched.
   buyer
+  /// B14. A farmer acting on their own record, listings and buyer requests.
+  farmer
 
   @@map("audit_actor_type")
 }
@@ -515,6 +517,8 @@ model Farmer {
   verificationStatus VerificationStatus @default(pending) @map("verification_status")
   mergedInto         String?            @map("merged_into") @db.Uuid
   consentId          String             @map("consent_id") @db.Uuid
+  /// B14 (2026-10-07). The farmer's own sign-in account; null until one exists.
+  authUserId         String?            @unique(map: "farmer_auth_user_id_key") @map("auth_user_id") @db.Uuid
   duplicateFlag      Boolean            @default(false) @map("duplicate_flag")
   duplicateMatches   String[]           @default([]) @map("duplicate_matches") @db.Uuid
   /// The escalation clock (C-6.7): set at registration, reset on resubmission, otherwise immutable (trigger).
@@ -546,6 +550,8 @@ model Farmer {
   notifications      Notification[]
   /// B13. Internal only: a buyer is never given this relation (C-14B.8).
   purchaseOrders     PurchaseOrder[]
+  /// B14. The fields of CORWADO's registration form, one row per farmer.
+  profile            FarmerProfile?
 
   @@index([payamId, verificationStatus, deletedAt], map: "farmer_payam_status_idx")
   @@index([countyId], map: "farmer_county_id_idx")
@@ -1391,4 +1397,49 @@ model DeliveryUpdate {
 
   @@index([orderId, occurredAt(sort: Desc)], map: "delivery_update_order_idx")
   @@map("delivery_update")
+}
+
+/// B14 (2026-10-07). The fields of CORWADO's farmer registration form, sections
+/// B-F and H. Enumerated answers are TEXT under CHECK constraints in the
+/// migration; the allowed values are FARMER_PROFILE_* in packages/shared.
+model FarmerProfile {
+  farmerId               String    @id @map("farmer_id") @db.Uuid
+  dateOfBirth            DateTime? @map("date_of_birth") @db.Date
+  ageEstimated           Boolean   @default(false) @map("age_estimated")
+  idType                 String?   @map("id_type")
+  idNumber               String?   @map("id_number")
+  educationLevel         String?   @map("education_level")
+  altPhone               String?   @map("alt_phone")
+  phoneType              String?   @map("phone_type")
+  hasWhatsapp            Boolean?  @map("has_whatsapp")
+  preferredChannel       String?   @map("preferred_channel")
+  nextOfKinName          String?   @map("next_of_kin_name")
+  nextOfKinRelationship  String?   @map("next_of_kin_relationship")
+  nextOfKinPhone         String?   @map("next_of_kin_phone")
+  nextOfKinLocation      String?   @map("next_of_kin_location")
+  heardVia               String?   @map("heard_via")
+  village                String?
+  landmark               String?
+  primaryCrops           String[]  @default([]) @map("primary_crops")
+  otherCrops             String?   @map("other_crops")
+  landSize               Decimal?  @map("land_size") @db.Decimal(10, 2)
+  landUnit               String?   @map("land_unit")
+  landMeasured           Boolean?  @map("land_measured")
+  landTenure             String?   @map("land_tenure")
+  yearsFarming           Int?      @map("years_farming") @db.SmallInt
+  groupMember            Boolean?  @map("group_member")
+  groupName              String?   @map("group_name")
+  groupRole              String?   @map("group_role")
+  groupYears             Int?      @map("group_years") @db.SmallInt
+  householdSize          Int?      @map("household_size") @db.SmallInt
+  householdAdults        Int?      @map("household_adults") @db.SmallInt
+  householdChildren      Int?      @map("household_children") @db.SmallInt
+  farmWorkers            Int?      @map("farm_workers") @db.SmallInt
+  servicesWanted         String[]  @default([]) @map("services_wanted")
+  createdAt              DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt              DateTime  @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  farmer Farmer @relation(fields: [farmerId], references: [id], map: "farmer_profile_farmer_id_fkey")
+
+  @@map("farmer_profile")
 }

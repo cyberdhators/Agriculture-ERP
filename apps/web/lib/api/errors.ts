@@ -149,6 +149,9 @@ export const RULE_MESSAGES = {
   order_not_cancellable: 'Only a pending order can be cancelled. Contact CORWADO about this order.',
   request_other_organization: 'That purchase request belongs to a different buyer organisation.',
   order_exceeds_listing: 'The order is for more than the listing has available.',
+  // B14 (farmer accounts). About an account or a record, never a person.
+  farmer_phone_registered: 'That phone number already has a farmer account. Sign in instead.',
+  request_already_answered: 'This request has already been answered.',
 } as const;
 
 export type RuleKey = keyof typeof RULE_MESSAGES;

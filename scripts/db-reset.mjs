@@ -54,6 +54,13 @@ if (STAGING_PROJECT_REF === PLACEHOLDER) {
   );
 }
 
+// T2 (2026-10-07): the one project is production. `migrate reset` drops every
+// table. Refuse unconditionally; there is nothing it may safely be pointed at.
+console.error(
+  'db:reset refuses to run: Since 2026-10-06 the only Supabase project (xmmxbrxmfgodhpwolrvk) is PRODUCTION (docs/DECISIONS.md, "Staging is production"). It would drop every table.',
+);
+process.exit(1);
+
 const loaded = loadEnvLocal();
 if (!loaded.ok) {
   refuse(

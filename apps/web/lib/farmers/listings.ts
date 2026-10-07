@@ -99,9 +99,14 @@ export const STATUS_LABELS: Record<ListingStatus, string> = {
   sold: 'Sold',
 };
 
-/** A farmer may publish (move a listing to `listed`) only once verified. */
+/**
+ * Who may publish (move a listing to `listed`). B14, 2026-10-07: farmers enrol
+ * themselves and sell straight away -- CORWADO has no staff to verify first, so
+ * verification is shown to buyers rather than required. Only a farmer whose
+ * registration was REJECTED is held back.
+ */
 export function canPublishListings(farmer: Pick<Farmer, 'verification_status'>): boolean {
-  return farmer.verification_status === 'verified';
+  return farmer.verification_status !== 'rejected';
 }
 
 export function formatSsp(amount: number): string {

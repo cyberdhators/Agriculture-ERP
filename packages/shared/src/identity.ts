@@ -75,8 +75,11 @@ export const ALL_ROLES = [...USER_ROLES, 'officer'] as const;
 /** B13. An outside organisation's purchaser. Named by every route that admits one. */
 export const BUYER_ROLE = 'buyer' as const;
 
+/** B14. A farmer with their own account. Named by every route that admits one. */
+export const FARMER_ROLE = 'farmer' as const;
+
 export type UserRole = (typeof USER_ROLES)[number];
-export type Role = (typeof ALL_ROLES)[number] | typeof BUYER_ROLE;
+export type Role = (typeof ALL_ROLES)[number] | typeof BUYER_ROLE | typeof FARMER_ROLE;
 
 export const userRoleSchema = z.enum(USER_ROLES);
 
@@ -113,7 +116,9 @@ export type Scope =
       readonly organizationId: string;
       readonly verification:
         'pending' | 'under_review' | 'verified' | 'rejected' | 'suspended' | 'not_required';
-    };
+    }
+  /** B14. A farmer sees their own record, their listings and the requests made to them. */
+  | { readonly kind: 'farmer'; readonly farmerId: string };
 
 /** Roles that may write. read_only reads within its state and writes nothing (C-3.9). */
 export const WRITING_ROLES: readonly Role[] = ['admin', 'supervisor', 'officer'];

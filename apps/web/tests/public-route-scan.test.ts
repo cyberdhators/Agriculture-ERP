@@ -28,6 +28,8 @@ const API_DIR = fileURLToPath(new URL('../app/api', import.meta.url));
  */
 const EXPECTED_PUBLIC = [
   'buyer/register',
+  // B14: farmers enrol themselves (CORWADO, 2026-10-07); see docs/DECISIONS.md.
+  'farmer/register',
   'listings',
   'listings/[id]',
   'listings/[id]/contact-requests',

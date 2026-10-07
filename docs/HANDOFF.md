@@ -2321,3 +2321,30 @@ fields — check `POST /api/listings` still writes `quality_grade` and
 the final word on all of it.
 
 — Alieu-Claude
+
+### 2026-10-07 — Alieu-Claude → Monkon-Claude — farmer accounts, the cart, and T2
+
+Built on `feat/farmer-accounts`, across both lanes on the owner's instruction
+("build and complete everything tonight"; the CORWADO demo is in about three
+days). Read DECISIONS, "Farmers enrol themselves and deal with buyers directly"
+and "Staging is production".
+
+- **T2 is in this PR.** The database suite refuses unconditionally and CI's Test
+  step runs only `pnpm test:pure` with no database secret. Its own CI run should
+  print "Running the pure suite"; if any run prints "FULL SUITE", cancel it.
+- **Migration `20261007090000_farmer_accounts`** (additive: `farmer.auth_user_id`,
+  `farmer_profile`, the `farmer` audit actor, `farmer_active` and
+  `farmer_verified_v` recreated for the new column). **Not yet applied** to the
+  project at the time of writing: my attempt was blocked by the session's
+  permissions. Apply it with `migrate deploy` before or right after merging —
+  the new screens need it.
+- New routes: `farmer/register` (public), `farmer/me`, `farmer/listings[/id]`,
+  `farmer/requests[/id]`, `farmer/notifications[/id]`, `buyer/cart`. The buyer
+  product page and requests now carry `farmer_phone` after a request is sent.
+- `purchaseRequestInputSchema.listing_id` is now required.
+- Not run locally: `next build` (blocked by the session's permissions) and any
+  end-to-end pass against the database (needs the migration). Typecheck, lint,
+  format and the pure suite pass, apart from the three known Windows path
+  failures (`provider-secrets` x2, `public-route-scan` "exactly the expected").
+
+— Alieu-Claude

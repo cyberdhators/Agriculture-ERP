@@ -318,6 +318,8 @@ character.
 | `order_not_cancellable`            | Only a pending order can be cancelled. Contact CORWADO about this order.                                                      |
 | `request_other_organization`       | That purchase request belongs to a different buyer organisation.                                                              |
 | `order_exceeds_listing`            | The order is for more than the listing has available.                                                                         |
+| `farmer_phone_registered`          | That phone number already has a farmer account. Sign in instead.                                                              |
+| `request_already_answered`         | This request has already been answered.                                                                                       |
 
 **A route names a rule; it never writes a sentence.** `conflict()` and
 `unprocessable()` take a key from this registry, not a string. That is how the
@@ -567,6 +569,31 @@ These are also exact.
 | Supplier filter: not verified           | Choose verified to see only verified suppliers.                                                 |
 | Order cancellation: no reason           | Say why the order is being cancelled, in up to 300 characters.                                  |
 | Buyer list status filter: unknown       | Choose a status from the list.                                                                  |
+| Farmer ID type: not on the list         | Choose the kind of identity document.                                                           |
+| Farmer ID number: wrong length          | An identity number is 3 to 40 characters.                                                       |
+| Farmer date of birth: malformed         | Give the date of birth as YYYY-MM-DD, or leave it out and give the year.                        |
+| Farmer profile answer: not on list      | Choose an answer from the list.                                                                 |
+| Next of kin: name missing               | Give the name of a next of kin or another person to contact.                                    |
+| Next of kin: relationship missing       | Say how that person is related to you.                                                          |
+| Next of kin phone: not a mobile         | Give the next of kin phone as a South Sudan mobile number.                                      |
+| Village: missing                        | Give your village or boma.                                                                      |
+| Farmer profile text: too long           | This answer is too long.                                                                        |
+| Crops grown: none chosen                | Choose at least one crop you grow.                                                              |
+| Land size: not above zero               | Give the land under cultivation as a number greater than zero.                                  |
+| Land tenure: missing                    | Choose how you hold the land.                                                                   |
+| Years farming: out of range             | Give a number of years from 0 to 100.                                                           |
+| Group membership: no answer             | Say whether you belong to a cooperative or group.                                               |
+| Household count: out of range           | Give a whole number from 0 to 200.                                                              |
+| Services wanted: none chosen            | Choose at least one service you want.                                                           |
+| Farmer listing: trading name            | A farm or stall name is 2 to 120 characters.                                                    |
+| Farmer listing: title                   | A title is 2 to 200 characters.                                                                 |
+| Farmer listing: status not on list      | Choose draft, listed, withdrawn or sold.                                                        |
+| Farmer listing: minimum over quantity   | The minimum order cannot be more than the quantity.                                             |
+| Farmer answer: not accept or decline    | Choose accept or decline.                                                                       |
+| Farmer phone change: same number        | That is already your phone number.                                                              |
+| Farmer password: under six characters   | Choose 6 or more characters you will remember.                                                  |
+| Cart: no products                       | Add at least one product to the cart.                                                           |
+| Cart: over twenty products              | A cart can hold at most 20 products. Send these first.                                          |
 
 The key beside each reason is the field name, per section 4.1. An unrecognised
 field named `nickname` therefore produces `{ "nickname": "This field is not

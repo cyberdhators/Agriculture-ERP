@@ -77,6 +77,7 @@ export {
 export {
   ALL_ROLES,
   BUYER_ROLE,
+  FARMER_ROLE,
   IDENTITY_MESSAGES,
   OFFICER_AUTH_DOMAIN,
   USER_ROLES,
@@ -312,6 +313,10 @@ export {
   PURCHASE_ORDER_STATUSES,
   PURCHASE_REQUEST_STATUSES,
   REQUEST_DECISION_TRANSITIONS,
+  CART_MAX_ITEMS,
+  cartCheckoutSchema,
+  cartItemSchema,
+  type CartCheckout,
   buyerCancelOrderSchema,
   buyerCapabilities,
   buyerEmailSchema,
@@ -351,3 +356,7 @@ export {
   type PurchaseRequestStatus,
   type RequestDecision,
 } from './buyer';
+
+// B14 (2026-10-07): farmer accounts, the registration-form profile, farmer-owned
+// listings and farmers' answers to buyers. Appended, never reordered.
+export * from './farmer-account';
