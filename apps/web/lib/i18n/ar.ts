@@ -23,6 +23,8 @@ export const ar: Partial<Record<TKey, string>> = {
   'spread.point3': 'محصولك، معروض للمشترين في الولاية',
   'spread.point4': 'المشترون يتصلون بك مباشرة، بدون وسيط',
 
+  'shell.joinLine2': 'مزارع أو مشترٍ',
+  'shell.buyerCart': 'سلة المشتري',
   'login.title': 'تسجيل الدخول',
   'login.phoneLabel': 'رقم الهاتف',
   'login.phoneHint': 'الرقم الذي سجلت به.',
@@ -206,8 +208,9 @@ export const ar: Partial<Record<TKey, string>> = {
   'weather.pageTitle': 'الطقس',
   'weather.pageLead': 'توقعات الطقس لمنطقتك.',
 
-  'contact.button': 'التواصل مع البائع',
-  'contact.how': 'اترك بياناتك. مسؤول الإرشاد يتصل بكما للتعريف.',
+  'contact.button': 'شراء: أضف إلى السلة',
+  'contact.how': 'يسجّل المشترون الدخول لإضافة هذا المنتج إلى السلة وإرسال طلب إلى المزارع الذي يرد مباشرة.',
+  'contact.registerBuyer': 'مشترٍ جديد؟ سجّل مجاناً.',
   'contact.title': 'التواصل مع البائع',
   'contact.lead': 'أنت تسأل عن',
   'contact.name': 'اسمك',

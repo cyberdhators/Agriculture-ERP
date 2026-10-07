@@ -68,7 +68,7 @@ export function ShopMasthead({ subnav, hideStrip }: { subnav?: ReactNode; hideSt
           </div>
 
           <Link
-            href={farmer ? '/farmer/account' : '/farmer/login'}
+            href={farmer ? '/farmer/account' : '/join'}
             className={styles.shopAcct}
             dir="auto"
           >
@@ -76,13 +76,22 @@ export function ShopMasthead({ subnav, hideStrip }: { subnav?: ReactNode; hideSt
               {farmer ? t('shell.greeting', language) : t('login.title', language)}
               {farmer ? ` ${farmer.given_name}` : ''}
             </span>
-            <span className={styles.shopAcctLine2}>{t('account.title', language)}</span>
+            <span className={styles.shopAcctLine2}>
+              {farmer ? t('account.title', language) : t('shell.joinLine2', language)}
+            </span>
           </Link>
 
-          <Link href="/farmer/account/listings" className={styles.shopCart}>
-            <span className={styles.shopCartBadge}>{listingCount}</span>
-            <span className={styles.shopCartLabel}>{t('account.tabListings', language)}</span>
-          </Link>
+          {farmer ? (
+            <Link href="/farmer/account/listings" className={styles.shopCart}>
+              <span className={styles.shopCartBadge}>{listingCount}</span>
+              <span className={styles.shopCartLabel}>{t('account.tabListings', language)}</span>
+            </Link>
+          ) : (
+            // A visitor's cart is a buyer's: signing in as a buyer is required.
+            <Link href="/buyer/cart" className={styles.shopCart}>
+              <span className={styles.shopCartLabel}>{t('shell.buyerCart', language)}</span>
+            </Link>
+          )}
         </div>
       </div>
 

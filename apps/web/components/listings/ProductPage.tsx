@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRef, useState, type ReactNode } from 'react';
 
-import { Button, Stamp } from '@/components/ui';
+import { Button, ButtonLink, Stamp } from '@/components/ui';
 import { IconChevronLeft, IconChevronRight } from '@/components/ui/icons';
 import type { ProduceListing } from '@/lib/fixtures/farmers';
 import type { SellerInfo } from '@/lib/listings/api-client';
@@ -20,7 +20,6 @@ import { VERIFICATION_KEY, verificationStamp } from '@/lib/farmers/verification'
 import { formatDate } from '@/lib/format';
 import { t, type Language } from '@/lib/i18n';
 
-import { ContactRequestForm } from './ContactRequestForm';
 import { Photo } from './Photo';
 import styles from './listings.module.css';
 
@@ -37,8 +36,10 @@ function initials(seller: Pick<ProduceListing, 'trading_name'>): string {
  * lines, call and SMS, and the seller card. Below, the full-width description,
  * a details table with mono values, and any "more from this seller" or
  * "similar" rows. A sticky price-and-call bar appears on narrow screens.
- * "Contact seller" is a contact request the farmer's officer passes on — the
- * farmer's number is never on the page (scope, "The marketplace amendment").
+ * B14: "Buy" sends a visitor to the BUYER's product page, which needs a buyer
+ * sign-in (the owner: "buyer should be signed in before sending request or
+ * adding to cart"). There the product goes into the cart and the request goes
+ * to the farmer directly. The farmer's number is never on this public page.
  */
 export function ProductPage({
   listing,
@@ -75,7 +76,6 @@ export function ProductPage({
   const thumbRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const current = sources[Math.min(index, sources.length - 1)] ?? null;
   const unit = (u: ProduceListing['unit']) => t(UNIT_KEY[u], lang);
-  const [contactOpen, setContactOpen] = useState(false);
 
   function step(delta: number, focus = false) {
     setIndex((i) => {
@@ -208,10 +208,13 @@ export function ProductPage({
 
           {contact ? (
             <div className={styles.contact}>
-              <Button variant="primary" onClick={() => setContactOpen(true)}>
+              <ButtonLink variant="primary" href={`/buyer/marketplace/${listing.id}`}>
                 {t('contact.button', lang)}
-              </Button>
-              <p className="small muted">{t('contact.how', lang)}</p>
+              </ButtonLink>
+              <p className="small muted">
+                {t('contact.how', lang)}{' '}
+                <Link href="/buyer/register">{t('contact.registerBuyer', lang)}</Link>
+              </p>
             </div>
           ) : null}
 
@@ -295,20 +298,12 @@ export function ProductPage({
             {formatSsp(listing.price_ssp)}{' '}
             <span className="small">/ {unit(listing.price_per)}</span>
           </span>
-          <Button variant="primary" onClick={() => setContactOpen(true)}>
+          <ButtonLink variant="primary" href={`/buyer/marketplace/${listing.id}`}>
             {t('contact.button', lang)}
-          </Button>
+          </ButtonLink>
         </div>
       ) : null}
 
-      {contact ? (
-        <ContactRequestForm
-          listing={listing}
-          lang={lang}
-          open={contactOpen}
-          onClose={() => setContactOpen(false)}
-        />
-      ) : null}
     </>
   );
 }

@@ -473,6 +473,16 @@ export function FarmerRegister() {
       </div>
 
       <h1 className={styles.h1}>{t('register.title', language)}</h1>
+      {step === 0 ? (
+        <p className="small muted">
+          {language === 'ar'
+            ? 'هذا الحساب للمزارعين الذين يبيعون منتجاتهم. هل تريد الشراء؟ '
+            : 'This account is for farmers selling their produce. Want to buy instead? '}
+          <a href="/buyer/register">
+            {language === 'ar' ? 'سجّل كمشترٍ' : 'Register as a buyer'}
+          </a>
+        </p>
+      ) : null}
 
       {failure ? (
         <Notice kind="error" title={failure}>
