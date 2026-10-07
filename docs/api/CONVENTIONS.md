@@ -320,6 +320,7 @@ character.
 | `order_exceeds_listing`            | The order is for more than the listing has available.                                                                         |
 | `farmer_phone_registered`          | That phone number already has a farmer account. Sign in instead.                                                              |
 | `request_already_answered`         | This request has already been answered.                                                                                       |
+| `request_answered_by_farmer`       | Only the farmer can accept or decline a purchase request.                                                                     |
 
 **A route names a rule; it never writes a sentence.** `conflict()` and
 `unprocessable()` take a key from this registry, not a string. That is how the

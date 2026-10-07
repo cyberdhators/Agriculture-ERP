@@ -26,6 +26,9 @@ const NOTICE: Partial<Record<PurchaseRequestStatus, BuyerNotice>> = {
   fulfilled: 'request_fulfilled',
 };
 
+/** B14: always true. Kept as a named switch so the refusal reads as a decision, not dead code. */
+const REQUESTS_ANSWERED_BY_FARMER = true as boolean;
+
 export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   PATCH: {
     roles: ['admin'],
@@ -33,6 +36,10 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
     handler: async ({ auth, body, params }) => {
       const id = params.id ?? '';
       if (!UUID_PATTERN.test(id)) throw notFound();
+      // B14 (the owner, 2026-10-07): "purchase requests are accepted by the
+      // farmer, not CORWADO". The farmer answers on PATCH /api/farmer/requests/:id;
+      // an administrator may read requests but never decide one.
+      if (REQUESTS_ANSWERED_BY_FARMER) throw unprocessable('request_answered_by_farmer');
       const actor = { actorType: 'admin' as const, actorId: auth.principal.id };
 
       const row = await audited(prisma, async (tx) => {

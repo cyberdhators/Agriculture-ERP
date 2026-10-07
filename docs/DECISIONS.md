@@ -3508,3 +3508,14 @@ unconditionally; `pnpm test` is the pure suite (the old command is kept as
 `test:db-retired`); CI's Test step receives no database secret and always runs
 `pnpm test:pure`. When a disposable database exists again, the guards are the
 place to point it.
+
+## Only the farmer answers a purchase request (2026-10-07) — amends point 7 above
+
+The owner: "purchase requests are accepted by the farmer, not CORWADO". The
+administrator's decision route (`PATCH /api/admin/purchase-requests/:id`) now
+refuses every call (`request_answered_by_farmer`), and the administrator's
+"Buyer requests" page is read-only: it shows what buyers asked for and how each
+farmer answered, with no Decide buttons and no Orders tab. The buyer's
+notification on an answer now says the farmer accepted or declined, and points
+to the farmer's number on the request — it used to say CORWADO accepted and
+would arrange an order.
