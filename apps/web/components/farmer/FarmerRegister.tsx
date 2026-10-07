@@ -478,9 +478,7 @@ export function FarmerRegister() {
           {language === 'ar'
             ? 'هذا الحساب للمزارعين الذين يبيعون منتجاتهم. هل تريد الشراء؟ '
             : 'This account is for farmers selling their produce. Want to buy instead? '}
-          <a href="/buyer/register">
-            {language === 'ar' ? 'سجّل كمشترٍ' : 'Register as a buyer'}
-          </a>
+          <a href="/buyer/register">{language === 'ar' ? 'سجّل كمشترٍ' : 'Register as a buyer'}</a>
         </p>
       ) : null}
 

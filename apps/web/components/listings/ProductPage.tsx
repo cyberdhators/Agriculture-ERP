@@ -303,7 +303,6 @@ export function ProductPage({
           </ButtonLink>
         </div>
       ) : null}
-
     </>
   );
 }
