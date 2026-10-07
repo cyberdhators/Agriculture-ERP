@@ -29,12 +29,15 @@ export function MarketDetail({
   role,
   lang,
   backHref,
+  contact = true,
 }: {
   id: string;
   mode: MarketMode;
   role: Role;
   lang: Language;
   backHref: string;
+  /** B14: false for a signed-in farmer -- farmers sell; the Buy button is a buyer's. */
+  contact?: boolean;
 }) {
   const { overrides, reasons, withdraw } = useMarketModeration();
   const [listing, setListing] = useState<ProduceListing | null>(null);
@@ -171,6 +174,7 @@ export function MarketDetail({
         lang={lang}
         breadcrumb={breadcrumb}
         sellerListingsHref={backHref}
+        contact={contact}
         moderate={
           canModerate ? (
             <section id="moderate" className={styles.moderation}>

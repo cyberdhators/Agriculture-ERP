@@ -74,8 +74,10 @@ export function LoginForm({ next }: { next: string }) {
         <div>
           <h1 className={styles.title}>Sign in</h1>
           <p className={styles.hint}>
-            Staff and buyers sign in with the email on their account. Extension officers sign in
-            with their phone number. Staff accounts are issued by an administrator.
+            Buyers and staff sign in with the email on their account. Extension officers sign in
+            with their phone number. Farmers sign in on the{' '}
+            <a href="/farmer/login">farmer sign-in</a> page. Staff accounts are issued by an
+            administrator.
           </p>
         </div>
 
@@ -117,8 +119,8 @@ export function LoginForm({ next }: { next: string }) {
           </Button>
         </form>
         <p className={styles.hint}>
-          Buying produce for an organisation?{' '}
-          <a href={BUYER_REGISTER_PATH}>Apply for a buyer account</a>.
+          New buyer? <a href={BUYER_REGISTER_PATH}>Register as a buyer</a>. Selling produce?{' '}
+          <a href="/farmer/register">Register as a farmer</a>.
         </p>
       </Card>
     </main>

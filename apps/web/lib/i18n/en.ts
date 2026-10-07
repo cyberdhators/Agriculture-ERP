@@ -32,6 +32,8 @@ export const en = {
 
   // Login
   'login.title': 'Sign in',
+  'shell.joinLine2': 'Farmer or buyer',
+  'shell.buyerCart': 'Buyer cart',
   'login.phoneLabel': 'Phone number',
   'login.phoneHint': 'The number you registered with.',
   'login.passwordLabel': 'Password',
@@ -218,9 +220,10 @@ export const en = {
   'weather.noForecast': 'No forecast for the coming days yet.',
 
   // Buyer contact request (deliverable (g))
-  'contact.button': 'Contact seller',
+  'contact.button': 'Buy: add to cart',
   'contact.how':
-    'Leave your details. The farmer’s extension officer calls you both to introduce you.',
+    'Buyers sign in to add this to their cart and send a request to the farmer, who answers directly.',
+  'contact.registerBuyer': 'New buyer? Register free.',
   'contact.title': 'Contact the seller',
   'contact.lead': 'You are asking about',
   'contact.name': 'Your name',

@@ -23,5 +23,14 @@ export function MarketPage() {
 export function MarketDetailPage({ id }: { id: string }) {
   const { farmer, language } = useFarmerSession();
   if (!farmer) return <StaffMarketDetail id={id} />;
-  return <MarketDetail id={id} mode="public" role="read_only" lang={language} backHref="/market" />;
+  return (
+    <MarketDetail
+      id={id}
+      mode="public"
+      role="read_only"
+      lang={language}
+      backHref="/market"
+      contact={false}
+    />
+  );
 }

@@ -15,7 +15,7 @@ import {
 import { BUYER_HOME_PATH, HOME_PATH, LOGIN_PATH } from '@/lib/auth/paths';
 import { BuyerApiError, getProfile, listNotifications, type BuyerProfile } from '@/lib/buyer/api';
 import { VERIFICATION_LABELS, VERIFICATION_STAMPS } from '@/lib/buyer/labels';
-import { useCart } from '@/lib/buyer/cart';
+import { setCartOwner, useCart } from '@/lib/buyer/cart';
 import { supabaseBrowser } from '@/lib/supabase/browser';
 
 import { Wordmark } from '../brand/Wordmark';
@@ -93,7 +93,10 @@ export function BuyerShell({ children }: { children: ReactNode }) {
 
   const refresh = useCallback(async () => {
     try {
-      setProfile(await getProfile());
+      const loaded = await getProfile();
+      // The cart is this buyer's, not this browser's (B14).
+      setCartOwner(loaded.person.id);
+      setProfile(loaded);
       setFailure(null);
     } catch (error) {
       if (error instanceof BuyerApiError && error.status === 401) {
@@ -130,6 +133,7 @@ export function BuyerShell({ children }: { children: ReactNode }) {
   }, [pathname, refreshUnread]);
 
   const signOut = useCallback(async () => {
+    setCartOwner(null);
     await supabaseBrowser().auth.signOut();
     window.location.assign(LOGIN_PATH);
   }, []);

@@ -31,3 +31,38 @@
   display: grid;
   gap: var(--s-4);
 }
+
+/* B14: the "join" chooser -- farmer or buyer, side by side. */
+.join {
+  width: min(880px, 100%);
+  display: grid;
+  gap: var(--s-5);
+}
+
+.joinGrid {
+  display: grid;
+  gap: var(--s-4);
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.joinCard {
+  display: grid;
+  gap: var(--s-3);
+  align-content: start;
+}
+
+.joinList {
+  margin: 0;
+  padding-inline-start: var(--s-5);
+  color: var(--muted);
+  font-size: var(--text-small);
+  display: grid;
+  gap: var(--s-1);
+}
+
+.joinActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+  margin-top: var(--s-2);
+}
