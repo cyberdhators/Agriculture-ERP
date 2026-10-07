@@ -75,9 +75,9 @@ export const en = {
   'register.back': 'Back',
   'register.next': 'Next',
   'register.submit': 'Register',
-  'register.doneTitle': 'You are registered',
+  'register.doneTitle': 'Registered: waiting for verification',
   'register.doneBody':
-    'Your account is ready. You can add your produce now and buyers will see it in the market. An officer may visit later to verify you; verified farmers carry a badge buyers trust.',
+    'Your account is created. CORWADO will check your details and verify you. Until then you can prepare your produce as drafts; they go live in the market once you are verified.',
   'register.doneNumber': 'Farmer no.',
   'register.donePending': 'Keep this number. You sign in with your phone number and password.',
   'register.goToAccount': 'Go to my account',
@@ -112,7 +112,7 @@ export const en = {
   'account.rejected': 'Not verified',
   'account.whatPendingTitle': 'What "pending" means',
   'account.whatPendingBody':
-    'An officer has not yet checked your account. You can add listings as drafts now; each draft goes live once you are verified. This usually takes a few days.',
+    'CORWADO has not yet verified your account. You can prepare listings as drafts now; buyers see them once you are verified.',
   'account.whatRejectedBody':
     'An officer could not verify your account. Contact your local AgriOne extension officer, or change your details and ask to be checked again.',
   'account.kpiLive': 'Live listings',
@@ -350,7 +350,7 @@ export const en = {
   'listingForm.markSold': 'Mark as sold',
   'listingForm.relist': 'List again',
   'listingForm.preview': 'Preview',
-  'listingForm.pendingReason': 'Your listing goes live once an officer has verified you.',
+  'listingForm.pendingReason': 'Your listing goes live once CORWADO has verified you.',
   'listingForm.pendingSavedDraft': 'Saved as a draft. It goes live once you are verified.',
   'listingForm.saved': 'Saved.',
   'listingForm.notFound': 'That listing is not yours or does not exist.',

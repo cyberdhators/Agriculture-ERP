@@ -52,7 +52,12 @@ export const MARKET_FROM = `FROM public.produce_listing_active pl
   JOIN public.county c ON c.id = pm.county_id
   JOIN public.state s ON s.id = pl.state_id`;
 
-export const MARKET_BASE_WHERE = `pl.status = 'listed'`;
+/**
+ * B14 (the owner, 2026-10-07): "farmers need to be approved and verified before
+ * they can post anything". A listing is in the market only while it is listed
+ * AND its farmer is verified; a farmer who is not (or no longer) verified -- e.g. merged into another record -- is out.
+ */
+export const MARKET_BASE_WHERE = `pl.status = 'listed' AND f.verification_status = 'verified'`;
 
 export interface MarketRow {
   id: string;

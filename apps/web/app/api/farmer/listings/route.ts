@@ -9,7 +9,7 @@ import {
   presentOwnListing,
   type OwnListingRow,
 } from '../../../../lib/api/farmer-accounts';
-import { conflict } from '../../../../lib/api/errors';
+import { conflict, unprocessable } from '../../../../lib/api/errors';
 import { created, defineRoutes, ok } from '../../../../lib/api/route';
 import { farmerScope } from '../../../../lib/api/scope';
 import { prisma } from '../../../../lib/db';
@@ -49,6 +49,11 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       const { farmerId } = farmerScope(auth);
       const farmer = await loadSelf(prisma, farmerId);
       const id = body.id ?? randomUUID();
+      // B14: a farmer must be verified before anything they post goes live.
+      // Drafts are kept for them, invisible to buyers, until then.
+      if (body.status !== 'draft' && farmer.verification_status !== 'verified') {
+        throw unprocessable('farmer_not_verified');
+      }
 
       const [existing] = await prisma.$queryRawUnsafe<{ farmer_id: string }[]>(
         'SELECT farmer_id FROM public.produce_listing WHERE id = $1::uuid',

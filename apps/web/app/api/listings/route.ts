@@ -175,9 +175,11 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       if (farmerId) {
         params.push(farmerId);
         where.push(`pl.farmer_id = $${params.length}::uuid`);
-      } else {
-        where.push("pl.status = 'listed'");
       }
+      // B14: the public sees only what is in the market -- listed, from a
+      // verified farmer -- whether or not it filters by farmer. A farmer reads
+      // their own drafts through /api/farmer/listings.
+      where.push("pl.status = 'listed'", "f.verification_status = 'verified'");
 
       const category = url.searchParams.get('category');
       if (category) {
