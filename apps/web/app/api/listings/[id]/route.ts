@@ -158,6 +158,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
          JOIN public.farmer f ON f.id = pl.farmer_id AND f.deleted_at IS NULL
          JOIN public.payam pm ON pm.id = f.payam_id
          WHERE pl.id = $1::uuid AND pl.deleted_at IS NULL
+           AND pl.status = 'listed' AND f.verification_status = 'verified'
          LIMIT 1`,
         id,
       );

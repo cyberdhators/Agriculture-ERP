@@ -7,7 +7,7 @@ import {
   presentOwnListing,
   type OwnListingRow,
 } from '../../../../../lib/api/farmer-accounts';
-import { ApiFailure } from '../../../../../lib/api/errors';
+import { ApiFailure, unprocessable } from '../../../../../lib/api/errors';
 import { defineRoutes, ok } from '../../../../../lib/api/route';
 import { farmerScope } from '../../../../../lib/api/scope';
 import { prisma } from '../../../../../lib/db';
@@ -47,6 +47,14 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       const id = params.id ?? '';
       const row = await audited(prisma, async (tx) => {
         const current = await loadOwnListing(tx, farmerId, id, true);
+        // B14: only a verified farmer may put a listing live.
+        if (body.status === 'listed' && current.status !== 'listed') {
+          const [self] = await tx.$queryRawUnsafe<{ verification_status: string }[]>(
+            'SELECT verification_status::text AS verification_status FROM public.farmer WHERE id = $1::uuid',
+            farmerId,
+          );
+          if (self?.verification_status !== 'verified') throw unprocessable('farmer_not_verified');
+        }
         const quantity = body.quantity ?? Number(current.quantity);
         const minOrder =
           body.min_order_quantity !== undefined

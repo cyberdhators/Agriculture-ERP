@@ -66,9 +66,9 @@ export const ar: Partial<Record<TKey, string>> = {
   'register.back': 'رجوع',
   'register.next': 'التالي',
   'register.submit': 'تسجيل',
-  'register.doneTitle': 'تم تسجيلك',
+  'register.doneTitle': 'تم التسجيل: في انتظار التحقق',
   'register.doneBody':
-    'حسابك جاهز. يمكنك إضافة منتجاتك الآن وسيراها المشترون في السوق. قد يزورك مسؤول لاحقاً للتحقق منك؛ المزارعون الموثقون يحملون شارة يثق بها المشترون.',
+    'تم إنشاء حسابك. ستتحقق كوروادو من بياناتك. حتى ذلك الحين يمكنك تجهيز منتجاتك كمسودات؛ تظهر في السوق بمجرد التحقق منك.',
   'register.doneNumber': 'رقم المزارع',
   'register.donePending': 'احتفظ بهذا الرقم. تسجّل الدخول برقم هاتفك وكلمة المرور.',
   'register.goToAccount': 'الذهاب إلى حسابي',
@@ -101,7 +101,7 @@ export const ar: Partial<Record<TKey, string>> = {
   'account.rejected': 'غير مُتحقق منه',
   'account.whatPendingTitle': 'ماذا يعني "معلق"',
   'account.whatPendingBody':
-    'لم يتحقق مسؤول من حسابك بعد. يمكنك إضافة إعلانات كمسودات الآن؛ كل مسودة تصبح مباشرة بمجرد التحقق منك. يستغرق هذا عادة بضعة أيام.',
+    'لم تتحقق كوروادو من حسابك بعد. يمكنك تجهيز إعلاناتك كمسودات الآن؛ يراها المشترون بمجرد التحقق منك.',
   'account.whatRejectedBody':
     'لم يتمكن المسؤول من التحقق من حسابك. تواصل مع مسؤول الإرشاد الزراعي المحلي، أو عدّل بياناتك واطلب إعادة الفحص.',
   'account.kpiLive': 'إعلانات مباشرة',
@@ -329,7 +329,7 @@ export const ar: Partial<Record<TKey, string>> = {
   'listingForm.markSold': 'وضع علامة مباع',
   'listingForm.relist': 'إعادة العرض',
   'listingForm.preview': 'معاينة',
-  'listingForm.pendingReason': 'إعلانك يصبح مباشراً بمجرد تحقق المسؤول منك.',
+  'listingForm.pendingReason': 'يصبح إعلانك مباشراً بمجرد أن تتحقق كوروادو منك.',
   'listingForm.pendingSavedDraft': 'حُفظ كمسودة. يصبح مباشراً بمجرد التحقق منك.',
   'listingForm.saved': 'تم الحفظ.',
   'listingForm.notFound': 'هذا الإعلان ليس لك أو غير موجود.',

@@ -3519,3 +3519,21 @@ farmer answered, with no Decide buttons and no Orders tab. The buyer's
 notification on an answer now says the farmer accepted or declined, and points
 to the farmer's number on the request — it used to say CORWADO accepted and
 would arrange an order.
+
+## Farmers are verified before anything they post goes live (2026-10-07) — amends "Farmers enrol themselves" points 2 and 4
+
+The owner: "farmers need to be approved and verified before they can post
+anything". Registration stays self-service; publishing does not.
+
+- `POST /api/farmer/listings` refuses any status but `draft`, and
+  `PATCH /api/farmer/listings/:id` refuses a move to `listed`, unless the
+  farmer is `verified` (new rule `farmer_not_verified`). Drafts are kept, so a
+  farmer can prepare produce while waiting.
+- The buyer marketplace, the cart and the public marketplace (list and detail)
+  show a listing only while it is `listed` **and** its farmer is `verified`. A
+  farmer later rejected drops out of the market at once. The public
+  `?farmer_id=` filter no longer returns drafts.
+- Who verifies: an administrator or supervisor, from the existing review queue
+  (`/farmers/review`, `POST /api/farmers/:id/verify`). No officer is needed and
+  there is no other prerequisite. The farmer's screens now say CORWADO
+  verifies, not an officer.

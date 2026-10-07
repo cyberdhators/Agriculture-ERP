@@ -100,13 +100,13 @@ export const STATUS_LABELS: Record<ListingStatus, string> = {
 };
 
 /**
- * Who may publish (move a listing to `listed`). B14, 2026-10-07: farmers enrol
- * themselves and sell straight away -- CORWADO has no staff to verify first, so
- * verification is shown to buyers rather than required. Only a farmer whose
- * registration was REJECTED is held back.
+ * Who may publish (move a listing to `listed`): a VERIFIED farmer only. The
+ * owner, 2026-10-07: "farmers need to be approved and verified before they can
+ * post anything". Until then a farmer may save drafts; the server enforces the
+ * same rule (farmer_not_verified) and the marketplace shows nothing else.
  */
 export function canPublishListings(farmer: Pick<Farmer, 'verification_status'>): boolean {
-  return farmer.verification_status !== 'rejected';
+  return farmer.verification_status === 'verified';
 }
 
 export function formatSsp(amount: number): string {
