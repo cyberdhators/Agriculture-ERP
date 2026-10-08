@@ -3569,6 +3569,70 @@ response returns.** Seventh instance in this stretch of a check narrower than th
 checked; this one reached a merged record, which is why it is corrected here in full
 rather than quietly.
 
+## FARM MAPPING — WHAT B7 ALREADY DOES AND WHAT BRANCH 1 ADDS (2026-10-09)
+
+B7's `farm_boundary` is the farm-boundary data layer. Branch 1 **extends** it; it does not
+replace it. OBSERVED from the schema and the `20260905150000_create_farm_and_boundary` and
+`20260908090000_sync_client_ids_captured_at_updated_at` migrations:
+
+**Already present (do not rebuild):** `geography(Polygon,4326)` boundary and `centroid`
+(SRID fixed by the type); `area_ha` via `ST_Area(geography)` in app code; `point_count`
+with `CHECK ≥ 4`; `gps_accuracy_m` + `accuracy_flag` with a CHECK matching
+`ACCURACY_THRESHOLDS`; `ST_IsValid` CHECK (invalid refused, not repaired); GIST on boundary
+and centroid; `is_current` versioning; client-supplied id (server default dropped, C-9.1);
+staff-only exposure (C-7.8); soft removal (C-7.9).
+
+**Genuinely additive (confirmed absent):**
+
+- A **device-claimed capture time on the boundary** with recorded skew. `captured_at` was
+  added to `farmer` and `farm` by the sync migration but **not** to `farm_boundary`.
+- **`capture_method`** and a **count of fixes discarded** for poor accuracy — neither
+  exists (`point_count` is kept vertices only).
+- **Area bounds**: only `area_ha >= 0` exists. An **upper bound and a data-derived lower
+  bound** are additive, and must carry their derivation.
+- **A trigger deriving area from geometry.** Today the app computes `area_ha` and inserts
+  it; there is no DB trigger, so stored area _can_ drift from the stored boundary. The
+  trigger is the one structural addition that closes that.
+
+**Units, OBSERVED read-only against the live DB (no row touched):** on a ~100 m square,
+`ST_Area(boundary::geography)` = 9935.59 → **square metres**; `ST_Area(geometry,4326)` =
+8.1e-7 → square degrees (meaningless). PostGIS 3.3.7. So the trigger must cast to
+`geography`; `area_ha` is that / 10000.
+
+**The weather centroid (item 6) is additive and not current.** The weather route serves
+county-level `weather_location` points, not farm centroids; the farm `centroid` is
+staff-only (C-7.8) and does not leave on the weather route today. A rounded-centroid
+weather path would be new design, not a change to existing behaviour.
+
+## STANDING UP THE DISPOSABLE TEST PROJECT — CHECKLIST (2026-10-09)
+
+Branch 1's database tests are a gate that must be able to run, and T2 left nothing for
+them to run against. Before branch 1, a disposable project is its own branch. What it
+requires:
+
+1. **What T2 changed, to reverse for the disposable target (not for production):**
+   `vitest.global-setup.ts` (unconditional throw at `setup()`); `tests/helpers/principals.ts`
+   `assertStaging()` (unconditional throw at the top, dead guard below it);
+   `scripts/db-reset.mjs` (unconditional `refuse()` before `.env.local` is read);
+   `package.json` (`test` → pure suite; old command `test:db-retired`);
+   `.github/workflows/ci.yml` (the `test` step runs `pnpm test:pure`, the five `STAGING_*`
+   secrets removed from its `env:`).
+2. **Re-pointing, not un-retiring:** the guards must not simply be deleted — they must
+   admit the disposable project **by name** and nothing else. That needs
+   `scripts/non-production-projects.mjs` (`NON_PRODUCTION_PROJECT_REFS`), which is **not on
+   main** — it is still on the unmerged #108. So landing (or re-creating) that closed
+   allowlist is a prerequisite, and the disposable project's reference is the one committed
+   literal added to it, frozen, as a `project_ref` string.
+3. **Secrets/env the owner sets by hand** (never a session): `DATABASE_URL`, `DIRECT_URL`
+   (the disposable project's transaction pooler and direct URIs), `NEXT_PUBLIC_SUPABASE_URL`,
+   `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` — each from the disposable
+   project's own Supabase dashboard. In CI they are the `STAGING_*` repository secrets
+   re-pointed at the disposable project; locally they are an untracked `.env.local`.
+4. **What cannot be prepared before the project exists:** applying the migrations to it,
+   confirming PostGIS/PROJ there, and running the database suite green — all wait on the
+   project. The test _code_ can be written now against the schema; it simply cannot be run
+   until the target exists, which is why the disposable project is branch 0.
+
 ## NOTHING IN THIS REPOSITORY IS ENFORCED (2026-10-01)
 
 > **No gate in this repository is enforced, because nothing enforces any check.**

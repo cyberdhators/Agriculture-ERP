@@ -3537,3 +3537,54 @@ anything". Registration stays self-service; publishing does not.
   (`/farmers/review`, `POST /api/farmers/:id/verify`). No officer is needed and
   there is no other prerequisite. The farmer's screens now say CORWADO
   verifies, not an officer.
+
+---
+
+## The owner's record — a data-layer brief written against unread signed scope (2026-10-09)
+
+Recorded as the owner's, in his words:
+
+> "I wrote a brief for a new `farm_plot` table without opening the signed scope. C-7 is
+> farm boundary mapping and B7 delivered it. My item 9a asserted the scope 'carries a
+> single land-area field, not a boundary' — false, and asserted as a finding for you to
+> act on. Fourth instance of designing against a signed document without reading it
+> (C-11.7, C-16.7, the marketplace amendment, C-7). The remedy is the read-first check,
+> not better instinct on my part."
+
+**OBSERVED.** C-7 (`docs/scope-and-acceptance.md`) is "farm boundary mapping," and B7
+delivered `farm_boundary`: `geography(Polygon,4326)`, `centroid`, `area_ha` (C-7.3),
+`point_count ≥ 4` (C-7.2), `gps_accuracy_m` + `accuracy_flag` (C-7.4), `is_current`
+versioning (C-7.5), officer `mapped_by` (C-7.6), `ST_IsValid` CHECK, GIST on boundary and
+centroid, and staff-only exposure (C-7.8). The brief's `farm_plot` "at minimum" list was
+~80% that table. The read-first check — open the signed scope before specifying a table —
+is the only thing that catches this; it is the fourth instance of the same omission.
+
+## The owner's record — "full staging suite green" asserted from memory (2026-10-09)
+
+Recorded as the owner's, in his words:
+
+> "Every brief I have written gated on 'the full staging suite green.' T2 retired the
+> database suite and there is no non-production database. The gate has been unmeetable,
+> because I asserted the repository's state from memory instead of asking for it."
+
+**OBSERVED on main:** `vitest.global-setup.ts`, `assertStaging()` and `scripts/db-reset.mjs`
+each throw/refuse unconditionally, and `pnpm test` is the pure suite (`test:db-retired` is
+the old command). The one project is production. A gate of "staging suite green" names a
+thing that no longer exists; the fix is to ask the repository its state, not recall it.
+
+## Farm mapping — extend `farm_boundary`, do not build a second table (2026-10-09)
+
+Owner's decision, settling branch 1's shape so it does not reopen:
+
+- **`area_ha` stays** (not m²). A trigger deriving area from geometry closes the
+  stored-figure-drifts-from-geometry risk whatever the unit; changing a shipped column's
+  unit is churn. Feddans/acres remain presentation-only conversions.
+- **`is_current` versioning stays; no soft delete added.** A boundary that changes between
+  or within seasons versions, which B7 already does (C-7.5).
+- **`farm_id` scoping stays; not re-scoped to `farmer_id`.** A boundary belongs to a farm;
+  authorization reaches the caseload through the farm in one join.
+- **Idempotency follows the existing client-generated-UUID pattern (C-9.1/C-5.12)** — the
+  boundary id's server default was already dropped; no second mechanism.
+
+What is genuinely additive is recorded in `docs/PROJECT-STATE.md` ("Farm mapping — what
+B7 already does and what branch 1 adds").
