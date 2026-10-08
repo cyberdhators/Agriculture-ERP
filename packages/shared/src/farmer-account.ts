@@ -298,6 +298,14 @@ export const farmerSelfRegisterSchema = z
   });
 export type FarmerSelfRegister = z.infer<typeof farmerSelfRegisterSchema>;
 
+/**
+ * Staff set a farmer's sign-in password (2026-10-08): the only reset a farmer
+ * has until SMS is live -- the farmer phones CORWADO or their officer, who sets
+ * a new one and tells them. Also creates the sign-in for a farmer an officer
+ * registered, who had none.
+ */
+export const farmerPasswordSetSchema = z.strictObject({ password: farmerPasswordSchema });
+
 /** A phone change on the farmer's own account. The password is checked by sign-in, client-side. */
 export const farmerPhoneChangeSchema = z.strictObject({ phone: phoneSchema });
 

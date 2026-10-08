@@ -76,6 +76,7 @@ import screens from '../screens.module.css';
 import styles from './farmers.module.css';
 import { Boundary } from './Boundary';
 import { DuplicateWarning } from './DuplicateWarning';
+import { FarmerSignInCard } from './FarmerSignInCard';
 
 const TODAY_YEAR = 2026;
 
@@ -458,6 +459,13 @@ export function FarmerDossier({ id }: { id: string }) {
             <Button variant="danger" onClick={() => setAction('remove')}>
               Remove farmer
             </Button>
+          ) : null}
+          {live &&
+          hydrated &&
+          (role === 'admin' || role === 'supervisor' || role === 'officer') &&
+          !removed &&
+          status !== 'merged' ? (
+            <FarmerSignInCard farmerId={farmer.id} phone={formatPhone(farmer.phone)} />
           ) : null}
           {canReassign ? (
             <Card padded>
