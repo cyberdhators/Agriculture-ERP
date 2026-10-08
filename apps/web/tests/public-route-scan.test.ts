@@ -28,6 +28,9 @@ const API_DIR = fileURLToPath(new URL('../app/api', import.meta.url));
  */
 const EXPECTED_PUBLIC = [
   'buyer/register',
+  // 2026-10-08: the hourly weather fetch, called by pg_cron. Public only in that a
+  // scheduler has no session: it answers 401 without the CRON_SECRET bearer.
+  'cron/weather',
   // B14: farmers enrol themselves (CORWADO, 2026-10-07); see docs/DECISIONS.md.
   'farmer/register',
   'listings',
