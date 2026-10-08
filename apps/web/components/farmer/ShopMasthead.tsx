@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useState, type ReactNode } from 'react';
 
 import { Wordmark } from '@/components/brand/Wordmark';
@@ -28,6 +28,10 @@ export function ShopMasthead({ subnav, hideStrip }: { subnav?: ReactNode; hideSt
   const { farmer, language, setLanguage, listingsFor } = useFarmerSession();
   const router = useRouter();
   const [query, setQuery] = useState('');
+  // The search belongs to the marketplace only (the owner, 2026-10-08): on the
+  // farmer's own dashboard pages it is noise. /market and /market/<id> keep it.
+  const pathname = usePathname() ?? '';
+  const showSearch = pathname === '/market' || pathname.startsWith('/market/');
   const listingCount = farmer ? listingsFor(farmer.id).length : 0;
 
   function onSearch(event: React.FormEvent) {
@@ -41,26 +45,30 @@ export function ShopMasthead({ subnav, hideStrip }: { subnav?: ReactNode; hideSt
       <div className={styles.shopBar}>
         <Wordmark href={farmer ? '/farmer/account' : '/market'} size={22} onBand />
 
-        <form role="search" className={styles.shopSearch} onSubmit={onSearch}>
-          <span className={styles.shopSearchScope} aria-hidden>
-            {t('market.allCategories', language)}
-          </span>
-          <input
-            type="search"
-            className={styles.shopSearchField}
-            placeholder={t('market.search', language)}
-            aria-label={t('market.search', language)}
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-          />
-          <button
-            type="submit"
-            className={styles.shopSearchBtn}
-            aria-label={t('market.search', language)}
-          >
-            <IconSearch />
-          </button>
-        </form>
+        {showSearch ? (
+          <form role="search" className={styles.shopSearch} onSubmit={onSearch}>
+            <span className={styles.shopSearchScope} aria-hidden>
+              {t('market.allCategories', language)}
+            </span>
+            <input
+              type="search"
+              className={styles.shopSearchField}
+              placeholder={t('market.search', language)}
+              aria-label={t('market.search', language)}
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+            />
+            <button
+              type="submit"
+              className={styles.shopSearchBtn}
+              aria-label={t('market.search', language)}
+            >
+              <IconSearch />
+            </button>
+          </form>
+        ) : (
+          <div style={{ flex: 1 }} aria-hidden />
+        )}
 
         <div className={styles.shopTools}>
           <div className={styles.shopLang}>
