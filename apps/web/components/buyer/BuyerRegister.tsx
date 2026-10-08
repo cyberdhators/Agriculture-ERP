@@ -72,6 +72,24 @@ export function BuyerRegister() {
       });
       window.location.assign(error ? LOGIN_PATH : BUYER_HOME_PATH);
     } catch (e) {
+      // No answer (network drop or the 45-second limit): the account may have
+      // been saved anyway. Signing in with what was just typed settles it --
+      // if it works, the buyer is registered and goes straight in.
+      if (e instanceof BuyerApiError && e.status === 0) {
+        const { error } = await supabaseBrowser().auth.signInWithPassword({
+          email: parsed.data.email,
+          password: parsed.data.password,
+        });
+        if (!error) {
+          window.location.assign(BUYER_HOME_PATH);
+          return;
+        }
+        setFailure(
+          'The server took too long to answer and your account was not confirmed. Please try again in a moment.',
+        );
+        setBusy(false);
+        return;
+      }
       if (e instanceof BuyerApiError) {
         setErrors(e.fields);
         setFailure(
