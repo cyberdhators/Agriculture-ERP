@@ -160,6 +160,30 @@ Run the rules against your own staged diff before committing — above all when 
 diff is about the rules. Both leaks caught before pushing on 1 October were caught
 this way, and neither would have been caught by the gate they were inside.
 
+**Gates — a gate that compares two sources that can drift apart cannot be quietly
+wrong about both at once; a gate that asserts a single fact can be quietly wrong
+the moment the fact stops being true.** The principle every instance below sits
+under; moved here from `docs/PROJECT-STATE.md` (2026-10-01) because the law belongs
+in the file parsed every session, and the evidence stays there.
+
+> **A gate that compares two sources which can drift apart cannot be quietly
+> wrong about both at once. A gate that asserts a single fact can be quietly
+> wrong the moment the fact stops being true.**
+
+Ask of any gate being written:
+
+1. **Does it compare two things that can move independently, or does it assert
+   one thing?**
+2. **If it asserts one thing: what makes it fail when that thing stops being
+   true?** If the answer is "someone would notice", it is not a gate.
+
+A gate that compares needs no vigilance: the two sources drift and it goes red by
+itself. A single-fact gate needs a person to remember, and the record of this
+project is that nobody does. When a guard already exists for a question, answer it
+with the guard, not with a fresh query: a hand-written query competing with an
+existing gate will eventually disagree with it, and only one of the two has been
+reviewed.
+
 **Gates — every "it passed" that came from comparing an empty set.**
 
 - 2026-09-17 and 2026-09-20 — `prisma migrate status` reported staging healthy
@@ -197,6 +221,16 @@ is only as real as the branch it lands on.
 Two of the three are inside gates built to catch this class, and the third is a
 tool we trusted to be one. A reader meeting a single instance will not see the
 fourth coming, which is why the list is the point and not the law alone.
+
+And the same class in other forms — each a gate that answered a nearby question
+instead of the one asked:
+
+- `git cherry` compares patch-ids, so squash-merged work reads as local-only. A
+  tool that answers a nearby question still answers a different one.
+- A gate whose timeout failure looks like its assertion failure teaches people to
+  disbelieve its real findings. Read once, assert in memory.
+- A gate that can never be green will be ignored. Print what cannot be fixed;
+  fail only on what can.
 
 **Gates — what may vary is how a check waits, never whether it speaks.** A path
 filter changes whether the check exists; a group name changes only who it queues
