@@ -1,5 +1,9 @@
 import { PrismaClient } from '@prisma/client';
 import { missingTestEnv } from './tests/helpers/db';
+import {
+  NON_PRODUCTION_PROJECT_REFS,
+  namesNotAllowed,
+} from './scripts/non-production-projects.mjs';
 
 /**
  * B5.5 — one run at a time against staging, wherever it starts.
@@ -20,14 +24,30 @@ export const STAGING_TEST_LOCK = 'agri-erp.staging-tests';
 let holder: PrismaClient | undefined;
 
 export async function setup(): Promise<void> {
-  // T2 (2026-10-07): a guard whose condition has been met is replaced, not
-  // removed. The project this suite was written for is now production, and the
-  // suite creates and deletes accounts and rows. It refuses unconditionally;
-  // test locally against a disposable database when one exists.
-  throw new Error(
-    'Database tests are retired: Since 2026-10-06 the only Supabase project (xmmxbrxmfgodhpwolrvk) is PRODUCTION (docs/DECISIONS.md, "Staging is production"). ' +
-      'They create and delete accounts and rows, and there is no other project to point them at.',
-  );
+  // Re-pointed at the closed allowlist (scripts/non-production-projects.mjs).
+  // The list is empty today, so the database suite refuses to start exactly as
+  // T2's unconditional throw made it (docs/DECISIONS.md, "Staging is
+  // production"); when a disposable project's reference is added there, the
+  // suite runs against it with no edit here. Nothing is un-retired.
+  if (NON_PRODUCTION_PROJECT_REFS.length === 0) {
+    throw new Error(
+      'Database tests refuse to start: the non-production allowlist in ' +
+        'scripts/non-production-projects.mjs is empty, so no database is known to be safe. ' +
+        'The suite creates and DELETES accounts and rows. Add the reference of a disposable ' +
+        'project (never the one production project, xmmxbrxmfgodhpwolrvk) to run it.',
+    );
+  }
+  const offending = namesNotAllowed({
+    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+    database: process.env.DIRECT_URL ?? process.env.DATABASE_URL,
+  });
+  if (offending.length > 0) {
+    throw new Error(
+      `Database tests refuse to start: ${offending.join(' and ')} name no project on the ` +
+        'non-production allowlist in scripts/non-production-projects.mjs. The suite creates ' +
+        'and DELETES accounts and rows, so it runs only against a classified non-production project.',
+    );
+  }
   const missing = missingTestEnv();
   if (missing.length > 0) {
     throw new Error(

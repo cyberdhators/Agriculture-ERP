@@ -3607,31 +3607,54 @@ weather path would be new design, not a change to existing behaviour.
 ## STANDING UP THE DISPOSABLE TEST PROJECT — CHECKLIST (2026-10-09)
 
 Branch 1's database tests are a gate that must be able to run, and T2 left nothing for
-them to run against. Before branch 1, a disposable project is its own branch. What it
-requires:
+them to run against. The disposable project is its own branch (branch 0,
+`chore/disposable-test-project`), and branch 1 is gated on it.
 
-1. **What T2 changed, to reverse for the disposable target (not for production):**
-   `vitest.global-setup.ts` (unconditional throw at `setup()`); `tests/helpers/principals.ts`
-   `assertStaging()` (unconditional throw at the top, dead guard below it);
-   `scripts/db-reset.mjs` (unconditional `refuse()` before `.env.local` is read);
-   `package.json` (`test` → pure suite; old command `test:db-retired`);
-   `.github/workflows/ci.yml` (the `test` step runs `pnpm test:pure`, the five `STAGING_*`
-   secrets removed from its `env:`).
-2. **Re-pointing, not un-retiring:** the guards must not simply be deleted — they must
-   admit the disposable project **by name** and nothing else. That needs
-   `scripts/non-production-projects.mjs` (`NON_PRODUCTION_PROJECT_REFS`), which is **not on
-   main** — it is still on the unmerged #108. So landing (or re-creating) that closed
-   allowlist is a prerequisite, and the disposable project's reference is the one committed
-   literal added to it, frozen, as a `project_ref` string.
-3. **Secrets/env the owner sets by hand** (never a session): `DATABASE_URL`, `DIRECT_URL`
-   (the disposable project's transaction pooler and direct URIs), `NEXT_PUBLIC_SUPABASE_URL`,
-   `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` — each from the disposable
-   project's own Supabase dashboard. In CI they are the `STAGING_*` repository secrets
-   re-pointed at the disposable project; locally they are an untracked `.env.local`.
-4. **What cannot be prepared before the project exists:** applying the migrations to it,
-   confirming PostGIS/PROJ there, and running the database suite green — all wait on the
-   project. The test _code_ can be written now against the schema; it simply cannot be run
-   until the target exists, which is why the disposable project is branch 0.
+**What branch 0 already did (the preparable parts, DONE):**
+
+- Re-created the closed allowlist `scripts/non-production-projects.mjs`
+  (`NON_PRODUCTION_PROJECT_REFS`), **empty**, with its `.d.mts` types. It had been on the
+  unmerged #108 only; it is re-created from current `main`, not rebased.
+- Re-pointed all three T2 guards at the allowlist instead of throwing unconditionally —
+  `vitest.global-setup.ts`, `assertStaging()` in `tests/helpers/principals.ts`, and
+  `scripts/db-reset.mjs`. With the list empty they refuse every target exactly as T2's
+  throws did; add a reference and all three admit it with no further edit. Nothing is
+  un-retired.
+- Added the allowlist's pure test (`tests/non-production-allowlist.test.ts`) and declared it
+  in both completeness guards. `pnpm test` is green (808).
+
+See `docs/DECISIONS.md`, "The disposable test project — branch 0", for why the list is
+empty and why the former staging reference must never be added to it.
+
+**What the owner must do, in order, to make the database suite runnable** (the owner sets
+every credential by his own hand; a session never holds them):
+
+1. **Create a NEW Supabase project** in CORWADO's account — separate from production, not a
+   rename of it. Note its **project reference** (the subdomain in its URLs). _From:_ the new
+   project's dashboard → Settings → General → Reference ID.
+2. **Enable PostGIS** on it: `create extension if not exists postgis with schema extensions;`.
+   _From:_ the new project's SQL editor. Branch 1's migrations expect PostGIS in `extensions`.
+3. **Add the reference to the allowlist** — one committed line in
+   `scripts/non-production-projects.mjs`, `NON_PRODUCTION_PROJECT_REFS`, as a frozen string
+   literal. This is the single line that flips every guard from refuse to admit. _From:_ step
+   1's reference. (Never the production reference `xmmxbrxmfgodhpwolrvk`.)
+4. **Set the five connection values** — locally an untracked `.env.local`; in CI the
+   `STAGING_*` repository secrets re-pointed at the new project. Each _from:_ the new
+   project's dashboard:
+   - `DATABASE_URL` — transaction pooler URI (Settings → Database → Connection pooling, 6543)
+   - `DIRECT_URL` — direct/session URI (5432)
+   - `NEXT_PUBLIC_SUPABASE_URL` — Settings → API → Project URL
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY` — Settings → API → anon public key
+   - `SUPABASE_SERVICE_ROLE_KEY` — Settings → API → service_role key
+5. **Re-point CI's test step** from `pnpm test:pure` back to the database command and restore
+   the five `STAGING_*` secrets in its `env:`. _From:_ `.github/workflows/ci.yml`.
+6. **Apply migrations** to the new project: `pnpm db:reset` (now admits an allowlisted
+   target) or `pnpm prisma migrate deploy`. _From:_ `prisma/migrations`.
+7. **Run the database suite green** against it: `pnpm test:db-retired` (the retained DB
+   command). Confirms PostGIS/PROJ and the suite before branch 1 relies on it.
+
+Steps 1, 2, 4 are the owner's by hand; steps 3, 5 are repo changes the owner authorizes;
+steps 6, 7 can only run once the project exists — which is why they are not done here.
 
 ## NOTHING IN THIS REPOSITORY IS ENFORCED (2026-10-01)
 

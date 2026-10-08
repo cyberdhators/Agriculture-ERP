@@ -3588,3 +3588,42 @@ Owner's decision, settling branch 1's shape so it does not reopen:
 
 What is genuinely additive is recorded in `docs/PROJECT-STATE.md` ("Farm mapping — what
 B7 already does and what branch 1 adds").
+
+## The disposable test project — branch 0: re-point the retired guards at a closed allowlist (2026-10-09)
+
+Branch `chore/disposable-test-project`. T2 retired the three destructive guards
+(`vitest.global-setup.ts`, `assertStaging()` in `tests/helpers/principals.ts`, and
+`scripts/db-reset.mjs`) with **unconditional throws**, because the one Supabase project
+is production and there was nothing safe to point them at. Branch 0 replaces each throw
+with a check against one closed allowlist, `scripts/non-production-projects.mjs`.
+
+These are the settled choices, so the branch does not reopen them:
+
+- **The allowlist starts EMPTY, and that is the whole safety.** An empty list refuses
+  every target: `db:reset` refuses, the test principals refuse, the database suite refuses
+  to start — identical, observably, to T2's throws. Nothing is un-retired. The point of
+  the move is that when a disposable project exists, its reference is added in **one
+  deliberate line** and all three guards admit it with no edit to any of them.
+- **The former staging reference is production and must never be listed.** The one project,
+  `xmmxbrxmfgodhpwolrvk`, was named `agri-staging` and the guards once compared against that
+  literal; since 2026-10-06 it IS production. Recovering #108's allowlist verbatim would have
+  put production on the list of databases that may be destroyed — the exact inversion of the
+  guard. A test (`never names the one production project`) now fails if anyone "fixes" the
+  empty list by pasting the only reference they can find. The disposable project is a NEW,
+  SEPARATE project; its reference — not this one — is what a future line adds.
+- **The acceptance direction is proved on a pure matcher, not on the list.** A guard that
+  refuses everything passes every refusal test (memory: "test guards in both directions").
+  But no real reference can be named to accept — no disposable project exists, and no
+  production reference may be written. So `connectionNamesListedProject(value, refs)` is
+  exported and exercised with a HYPOTHETICAL list in both directions; the guards call only
+  the zero-argument wrappers over the frozen committed constant, so the policy stays
+  committed while the matching logic is proved both ways. This is a test-only refinement of
+  #108's parameterless functions, not the runtime-valued allowlist #108's header forbids.
+- **#108 is recovered, not merged.** #108 (`fix/guard-allowlist`) carried this allowlist but
+  was cut before T2 and before #116, and also carried rewiring now superseded; its content is
+  re-created here on a branch from current `main` rather than rebased. #108's disposition is
+  the owner's to rule (open-PR triage), not decided here.
+
+Status: NOT a migration, NOT secret-touching. `pnpm test` green (808); typecheck, lint,
+format clean. What the owner must do by hand to make the database suite runnable is listed
+in `docs/PROJECT-STATE.md` ("Standing up the disposable test project — the owner's steps").
