@@ -211,10 +211,31 @@ export function FarmerSessionProvider({
 
   const register = useCallback<FarmerSessionValue['register']>(
     async (input) => {
-      const created = await farmerApi<{ farmer_number: string }>('/api/farmer/register', {
-        method: 'POST',
-        body: JSON.stringify(input),
-      });
+      let created: { farmer_number: string };
+      try {
+        created = await farmerApi<{ farmer_number: string }>('/api/farmer/register', {
+          method: 'POST',
+          body: JSON.stringify(input),
+          // At most 45 seconds (2026-10-08): the account was sometimes saved
+          // while the answer never reached the browser.
+          signal: AbortSignal.timeout(45_000),
+        });
+      } catch (error) {
+        // No answer: the account may exist anyway. Signing in settles it.
+        if (error instanceof FarmerApiError && error.status === 0) {
+          const outcome = await signIn(input.phone, input.password);
+          if (outcome.ok) {
+            const me = await farmerApi<{ farmer_number: string }>('/api/farmer/me');
+            return { farmer_number: me.farmer_number };
+          }
+          throw new FarmerApiError(
+            0,
+            'network',
+            'The server took too long to answer and your registration was not confirmed. Please try again in a moment.',
+          );
+        }
+        throw error;
+      }
       await signIn(input.phone, input.password);
       return created;
     },

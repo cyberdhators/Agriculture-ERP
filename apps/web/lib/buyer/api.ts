@@ -280,10 +280,17 @@ export interface Locations {
 // THE BUYER'S CALLS
 // ---------------------------------------------------------------------------
 
+/**
+ * Registration waits at most 45 seconds (2026-10-08). On the live site the
+ * account was sometimes saved while the answer never reached the browser, which
+ * then waited and reported "server could not be reached". A bounded wait plus
+ * the form's sign-in check (BuyerRegister) turns that into a normal arrival.
+ */
+export const REGISTER_TIMEOUT_MS = 45_000;
 export const registerBuyer = (body: BuyerRegistration) =>
   one<{ id: string; organization_id: string; account_type: string; verification_status: string }>(
     '/api/buyer/register',
-    json('POST', body),
+    { ...json('POST', body), signal: AbortSignal.timeout(REGISTER_TIMEOUT_MS) },
   );
 
 export const getProfile = () => one<BuyerProfile>('/api/buyer/profile');
