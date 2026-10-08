@@ -55,6 +55,7 @@ const PURE_PATTERNS = [
   /^tests\/conventions-rules\.test\.ts$/,
   /^tests\/database-suite-complete\.test\.ts$/,
   /^tests\/gitleaksignore-reasons\.test\.ts$/,
+  /^tests\/non-production-allowlist\.test\.ts$/,
   /^tests\/pure-suite-complete\.test\.ts$/,
   /^tests\/withdrawn-claims\.test\.ts$/,
   /^apps\/web\/.*\.test\.ts$/,
