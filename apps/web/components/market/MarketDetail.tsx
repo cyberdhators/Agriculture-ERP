@@ -117,12 +117,16 @@ export function MarketDetail({
   const more = moreFromSeller(allRows, seller.id, currentListing.id);
   const similar = similarRows(allRows, currentListing.category, currentListing.id);
 
-  function confirm() {
+  async function confirm() {
     if (reason.trim().length < 3) {
       setError(t('market.withdrawReasonError', lang));
       return;
     }
-    withdraw(currentListing, reason.trim());
+    const refused = await withdraw(currentListing, reason.trim());
+    if (refused) {
+      setError(refused);
+      return;
+    }
     setOpen(false);
   }
 
@@ -206,7 +210,7 @@ export function MarketDetail({
             <Button variant="secondary" onClick={() => setOpen(false)}>
               {t('listingForm.cancel', lang)}
             </Button>
-            <Button variant="danger" onClick={confirm}>
+            <Button variant="danger" onClick={() => void confirm()}>
               {t('market.withdraw', lang)}
             </Button>
           </>

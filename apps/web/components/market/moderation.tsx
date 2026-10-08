@@ -13,14 +13,17 @@ import {
 import type { ProduceListing } from '@/lib/fixtures/farmers';
 
 /**
- * Staff moderation state for the marketplace: listings withdrawn with a
- * reason by an admin or supervisor. Held for the browser session so the
- * browse and the product page agree; the API write lands with B12.
+ * Staff moderation for the marketplace: an admin or supervisor withdraws a
+ * listing with a reason. Since 2026-10-08 the withdrawal is written to the
+ * server (POST /api/listings/:id/withdraw) and the farmer is told; until then it
+ * changed only this browser tab. The local copy below just keeps the browse and
+ * product page in step until they reload.
  */
 interface ModerationState {
   overrides: ReadonlyMap<string, ProduceListing>;
   reasons: ReadonlyMap<string, string>;
-  withdraw: (listing: ProduceListing, reason: string) => void;
+  /** Resolves to null on success, or the server's reason it was refused. */
+  withdraw: (listing: ProduceListing, reason: string) => Promise<string | null>;
   hydrated: boolean;
 }
 
@@ -51,7 +54,26 @@ export function MarketModerationProvider({ children }: { children: ReactNode }) 
     setHydrated(true);
   }, []);
 
-  const withdraw = useCallback((listing: ProduceListing, reason: string) => {
+  const withdraw = useCallback(async (listing: ProduceListing, reason: string) => {
+    try {
+      const res = await fetch(`/api/listings/${listing.id}/withdraw`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ reason }),
+      });
+      if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as {
+          error?: { message?: string; fields?: Record<string, string> };
+        };
+        return (
+          body.error?.fields?.reason ??
+          body.error?.message ??
+          `The listing was not withdrawn (${res.status}).`
+        );
+      }
+    } catch {
+      return 'The server could not be reached. The listing was not withdrawn.';
+    }
     const next: ProduceListing = {
       ...listing,
       status: 'withdrawn',
@@ -76,6 +98,7 @@ export function MarketModerationProvider({ children }: { children: ReactNode }) 
       });
       return map;
     });
+    return null;
   }, []);
 
   const value = useMemo(
@@ -88,7 +111,7 @@ export function MarketModerationProvider({ children }: { children: ReactNode }) 
 const NONE: ModerationState = {
   overrides: new Map(),
   reasons: new Map(),
-  withdraw: () => undefined,
+  withdraw: async () => 'Not available here.',
   hydrated: true,
 };
 
