@@ -3651,3 +3651,32 @@ boundary; this rules that versioning does not touch verification).
 The view itself is a task, dated as a GitHub issue (surfacing, to a supervisor,
 that the current boundary post-dates their verification). This record is the
 ruling; the issue is the build.
+
+## The hard delete I instructed, and the staleness I decided from (2026-10-01)
+
+**Both mine.** Two separate errors in one instruction about three farmer rows.
+
+> I instructed a hard delete of three farmer rows, against the Deletion law. The
+> session refused and asked for written authorisation rather than complying. The
+> instruction was wrong and was withdrawn.
+
+> I decided from a four-day-old finding without re-asking, and the finding had
+> itself come from a query that did not filter `deleted_at`. A decision inherits
+> the staleness of the finding it rests on.
+
+**Standing decision: the three rows stay soft-deleted.** `CE-JUB-014276`,
+`TEST-0001` and `AUDIT-001` were soft-deleted on 2026-09-20. No hard delete is
+authorised, and this is not to be revisited.
+
+**Why the instruction was wrong.** `CLAUDE.md` section 4: _"Soft delete only.
+Never hard-delete a record."_ The rows are already invisible to every `_active`
+view, list, count, export and report, and `refuseHandMadeStagingRows` in
+`vitest.global-setup.ts` reads `deleted_at IS NULL`, so it passes on zero of them.
+There was nothing the delete would have achieved that soft deletion had not
+already achieved, and a law would have been broken to achieve it.
+
+**Why the finding was stale.** The session reported "three hand-made rows
+present" four days earlier, from a hand-written `count(*)` over `public.farmer`
+with no `deleted_at` filter. The guard that owns this question filters it. The
+query and the guard disagreed, and the query was the one nobody had reviewed —
+which is now a law in `CLAUDE.md` under Gates.
