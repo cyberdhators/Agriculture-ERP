@@ -44,8 +44,22 @@ function adminClient(): SupabaseClient {
   }
   return createClient(url, key, {
     auth: { autoRefreshToken: false, persistSession: false },
+    global: { fetch: adminFetchWithDeadline },
   });
 }
+
+/**
+ * Every administrative call to Supabase (creating an account, setting a
+ * password, storage grants) gives up after this long (2026-10-08). Without it, a
+ * call that never answered left the route waiting with no reply at all: on the
+ * live site 4 of 10 buyer registrations went silent for 40-60 seconds and the
+ * browser reported "server could not be reached", while a normal call takes
+ * under 1.5 seconds. A timed-out call throws, and every caller already turns a
+ * throw into a clear refusal (registration: 409/500 with its compensation).
+ */
+export const ADMIN_CALL_DEADLINE_MS = 15_000;
+const adminFetchWithDeadline: typeof fetch = (input, init) =>
+  fetch(input, { ...init, signal: init?.signal ?? AbortSignal.timeout(ADMIN_CALL_DEADLINE_MS) });
 
 /**
  * Creates an authentication account and returns its id.
@@ -55,12 +69,35 @@ function adminClient(): SupabaseClient {
  * confirmed at creation because an administrator created it: there is no
  * self-signup to confirm, per C-3.1.
  */
+/**
+ * The authentication service did not answer (timed out or unreachable), as
+ * opposed to refusing. A caller turns this into 503 "try again" -- never into
+ * "that account already exists", which is what a refusal means.
+ */
+export class AuthUnavailableError extends Error {
+  constructor() {
+    super('The authentication service did not answer.');
+    this.name = 'AuthUnavailableError';
+  }
+}
+
 export async function createAuthAccount(identifier: string, password: string): Promise<string> {
-  const { data, error } = await adminClient().auth.admin.createUser({
-    email: identifier,
-    password,
-    email_confirm: true,
-  });
+  let result: Awaited<ReturnType<ReturnType<typeof adminClient>['auth']['admin']['createUser']>>;
+  try {
+    result = await adminClient().auth.admin.createUser({
+      email: identifier,
+      password,
+      email_confirm: true,
+    });
+  } catch {
+    throw new AuthUnavailableError();
+  }
+  const { data, error } = result;
+  // supabase-js reports a failed or aborted fetch as a retryable error with
+  // status 0 (or none): that is "no answer", not "refused".
+  if (error && (!error.status || error.name === 'AuthRetryableFetchError')) {
+    throw new AuthUnavailableError();
+  }
   if (error || !data.user) {
     throw new Error(
       `Could not create the authentication account: ${error?.message ?? 'no user returned'}`,

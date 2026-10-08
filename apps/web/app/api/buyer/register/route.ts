@@ -1,10 +1,14 @@
 import { buyerRegistrationSchema, initialStanding } from '@agri-erp/shared';
 
 import { audited, writeAudit, writeAuditOutcome } from '../../../../lib/api/audit';
-import { conflict, unprocessable } from '../../../../lib/api/errors';
+import { authUnavailable, conflict, unprocessable } from '../../../../lib/api/errors';
 import { created, defineRoutes } from '../../../../lib/api/route';
 import { prisma } from '../../../../lib/db';
-import { createAuthAccount, deleteAuthAccount } from '../../../../lib/supabase/admin';
+import {
+  AuthUnavailableError,
+  createAuthAccount,
+  deleteAuthAccount,
+} from '../../../../lib/supabase/admin';
 
 /**
  * POST /api/buyer/register -- a buyer organisation applies for an account.
@@ -75,7 +79,8 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       let authUserId: string;
       try {
         authUserId = await createAuthAccount(body.email, body.password);
-      } catch {
+      } catch (failure) {
+        if (failure instanceof AuthUnavailableError) throw authUnavailable();
         throw conflict('account_already_exists');
       }
 

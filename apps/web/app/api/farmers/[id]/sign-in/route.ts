@@ -1,12 +1,13 @@
 import { farmerAuthIdentifier, farmerPasswordSetSchema } from '@agri-erp/shared';
 
 import { audited, writeAudit } from '../../../../../lib/api/audit';
-import { conflict } from '../../../../../lib/api/errors';
+import { authUnavailable, conflict } from '../../../../../lib/api/errors';
 import { loadVisible } from '../../../../../lib/api/farmers';
 import { defineRoutes, ok } from '../../../../../lib/api/route';
 import { requireWriter } from '../../../../../lib/api/scope';
 import { prisma } from '../../../../../lib/db';
 import {
+  AuthUnavailableError,
   createAuthAccount,
   deleteAuthAccount,
   setAuthPassword,
@@ -55,8 +56,9 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       let authUserId: string;
       try {
         authUserId = await createAuthAccount(farmerAuthIdentifier(farmer.phone), body.password);
-      } catch {
+      } catch (failure) {
         // That phone already signs in as another farmer account.
+        if (failure instanceof AuthUnavailableError) throw authUnavailable();
         throw conflict('farmer_phone_registered');
       }
       try {

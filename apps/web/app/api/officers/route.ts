@@ -9,11 +9,15 @@ import {
 } from '@agri-erp/shared';
 
 import { audited, writeAudit, writeAuditOutcome } from '../../../lib/api/audit';
-import { conflict, invalidCursor, unprocessable } from '../../../lib/api/errors';
+import { authUnavailable, conflict, invalidCursor, unprocessable } from '../../../lib/api/errors';
 import { created, defineRoutes, paged } from '../../../lib/api/route';
 import { requireWriter } from '../../../lib/api/scope';
 import { prisma } from '../../../lib/db';
-import { createAuthAccount, deleteAuthAccount } from '../../../lib/supabase/admin';
+import {
+  AuthUnavailableError,
+  createAuthAccount,
+  deleteAuthAccount,
+} from '../../../lib/supabase/admin';
 
 interface OfficerRow {
   id: string;
@@ -131,7 +135,8 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       let authUserId: string;
       try {
         authUserId = await createAuthAccount(officerAuthIdentifier(body.phone), body.password);
-      } catch {
+      } catch (failure) {
+        if (failure instanceof AuthUnavailableError) throw authUnavailable();
         throw conflict('phone_already_registered');
       }
 

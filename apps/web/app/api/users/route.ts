@@ -9,11 +9,15 @@ import {
 
 import { audited, writeAudit, writeAuditOutcome } from '../../../lib/api/audit';
 import { countOrphanAuthAccounts } from '../../../lib/api/orphans';
-import { conflict, invalidCursor, unprocessable } from '../../../lib/api/errors';
+import { authUnavailable, conflict, invalidCursor, unprocessable } from '../../../lib/api/errors';
 import { created, defineRoutes, paged } from '../../../lib/api/route';
 import { requireWriter } from '../../../lib/api/scope';
 import { prisma } from '../../../lib/db';
-import { createAuthAccount, deleteAuthAccount } from '../../../lib/supabase/admin';
+import {
+  AuthUnavailableError,
+  createAuthAccount,
+  deleteAuthAccount,
+} from '../../../lib/supabase/admin';
 
 interface UserRow {
   id: string;
@@ -138,9 +142,10 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       let authUserId: string;
       try {
         authUserId = await createAuthAccount(body.email, body.password);
-      } catch {
+      } catch (failure) {
         // The address is already taken, or Auth refused. Either way the caller
         // gets one sentence and no detail about which accounts exist.
+        if (failure instanceof AuthUnavailableError) throw authUnavailable();
         throw conflict('account_already_exists');
       }
 
