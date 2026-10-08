@@ -5,6 +5,7 @@
 //
 //   pnpm weather:fetch            every active location not fetched in the last hour
 //   pnpm weather:fetch --force    ignore the hour floor (C-16.7)
+//   pnpm weather:fetch --scheduled  the hourly workflow: 45-minute floor, see WEATHER_SCHEDULED_FLOOR_MINUTES
 //
 // PACED. The free plan allows 60 calls a minute and each location costs two
 // (current + forecast). A naive loop over hundreds of locations returns 429
@@ -31,6 +32,7 @@ import {
   openWeatherForecastSchema,
   WEATHER_CALLS_PER_MINUTE_CEILING,
   WEATHER_REFETCH_FLOOR_MINUTES,
+  WEATHER_SCHEDULED_FLOOR_MINUTES,
 } from '../packages/shared/src/weather.ts';
 import { loadEnvLocal } from './load-env.mjs';
 
@@ -42,6 +44,10 @@ if (!key) {
   process.exit(1);
 }
 const force = process.argv.includes('--force');
+// --scheduled: the hourly workflow's run (see WEATHER_SCHEDULED_FLOOR_MINUTES).
+const floorMinutes = process.argv.includes('--scheduled')
+  ? WEATHER_SCHEDULED_FLOOR_MINUTES
+  : WEATHER_REFETCH_FLOOR_MINUTES;
 const BASE = 'https://api.openweathermap.org/data/2.5';
 const PACE_MS = Math.ceil(60_000 / WEATHER_CALLS_PER_MINUTE_CEILING);
 
@@ -78,10 +84,10 @@ try {
   );
 
   for (const loc of locations) {
-    const floor = new Date(Date.now() - WEATHER_REFETCH_FLOOR_MINUTES * 60_000);
+    const floor = new Date(Date.now() - floorMinutes * 60_000);
     if (!force && loc.last_fetched_at && new Date(loc.last_fetched_at) > floor) {
       console.log(
-        `  skip     ${loc.name.padEnd(26)} fetched ${new Date(loc.last_fetched_at).toISOString()} (within the ${WEATHER_REFETCH_FLOOR_MINUTES}-minute floor)`,
+        `  skip     ${loc.name.padEnd(26)} fetched ${new Date(loc.last_fetched_at).toISOString()} (within the ${floorMinutes}-minute floor)`,
       );
       outcomes.skipped += 1;
       continue;
