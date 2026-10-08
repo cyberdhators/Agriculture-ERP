@@ -119,6 +119,9 @@ export function LoginForm({ next }: { next: string }) {
           </Button>
         </form>
         <p className={styles.hint}>
+          <a href="/forgot-password">Forgot your password?</a>
+        </p>
+        <p className={styles.hint}>
           New buyer? <a href={BUYER_REGISTER_PATH}>Register as a buyer</a>. Selling produce?{' '}
           <a href="/farmer/register">Register as a farmer</a>.
         </p>
