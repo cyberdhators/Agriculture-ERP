@@ -56,7 +56,13 @@ jobs:
               exit 1
             fi
           done
-          node scripts/weather-fetch.mjs
+          # The hourly schedule uses the 45-minute floor; a manual run keeps
+          # C-16.7's one-per-hour floor.
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            node scripts/weather-fetch.mjs --scheduled
+          else
+            node scripts/weather-fetch.mjs
+          fi
         env:
           DATABASE_URL: ${{ secrets.WEATHER_DATABASE_URL }}
           DIRECT_URL: ${{ secrets.WEATHER_DIRECT_URL }}

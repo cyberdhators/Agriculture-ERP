@@ -28,6 +28,17 @@ export const WEATHER_STALE_AFTER_HOURS = 26;
 /** A manual refresh cannot fetch the same location twice inside this window (C-16.7). */
 export const WEATHER_REFETCH_FLOOR_MINUTES = 60;
 
+/**
+ * The scheduled hourly run's floor (2026-10-08). GitHub starts a scheduled run
+ * minutes early or late, so with the 60-minute floor two runs 58 minutes apart
+ * skipped every location and the tile moved every other hour. C-16.7's
+ * one-per-hour floor is about a MANUAL refresh and stays at 60; the schedule
+ * fires once an hour by construction, so it may fetch a location again after
+ * 45 minutes. Worst case 32 runs a day: 6 locations x 2 calls = 384 calls,
+ * inside the free plan's 1,000.
+ */
+export const WEATHER_SCHEDULED_FLOOR_MINUTES = 45;
+
 /** The free 5-day / 3-hour product yields at most this many whole days after today. */
 export const WEATHER_FORECAST_DAYS = 5;
 
