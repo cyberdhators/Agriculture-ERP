@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -18,7 +18,9 @@ export const envLocalPath = join(repoRoot, '.env.local');
  * @returns {{ ok: true } | { ok: false, reason: string }}
  */
 export function loadEnvLocal() {
-  if (!existsSync(envLocalPath)) {
+  // A folder at that path (seen on one machine, holding the credentials file)
+  // is treated as absent: the caller's environment, e.g. node --env-file, wins.
+  if (!existsSync(envLocalPath) || !statSync(envLocalPath).isFile()) {
     return { ok: false, reason: 'missing' };
   }
 
