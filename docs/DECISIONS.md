@@ -3627,3 +3627,27 @@ These are the settled choices, so the branch does not reopen them:
 Status: NOT a migration, NOT secret-touching. `pnpm test` green (808); typecheck, lint,
 format clean. What the owner must do by hand to make the database suite runnable is listed
 in `docs/PROJECT-STATE.md` ("Standing up the disposable test project — the owner's steps").
+
+## Verification after a boundary change — a view, not a state transition (2026-10-09)
+
+Owner's ruling, settling how branch 1 behaves when a farm's boundary is re-mapped
+after a supervisor has already verified that farmer or farm.
+
+> **No behaviour change.** Re-mapping a boundary does not reset, re-open, or
+> otherwise transition a verification. The verification stands.
+
+Instead, the fact is **surfaced, not enforced**: a supervisor-facing **view** shows
+that the farm's current boundary post-dates the verification it carries, so a
+supervisor can look again if they judge it matters. It is a view, not a state
+transition — nothing in the record moves on its own.
+
+**Why (owner's framing).** A boundary correction is ordinary and usually benign;
+making every re-map re-open a verification would turn verification into churn and
+would punish fixing data. Whether a particular change matters is the supervisor's
+judgement, and a passive view informs that judgement without forcing a workflow or
+rewriting a signed state. The state machine stays as it is (C-7.5 versions a
+boundary; this rules that versioning does not touch verification).
+
+The view itself is a task, dated as a GitHub issue (surfacing, to a supervisor,
+that the current boundary post-dates their verification). This record is the
+ruling; the issue is the build.
