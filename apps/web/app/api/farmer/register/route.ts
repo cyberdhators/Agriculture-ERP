@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { farmerAuthIdentifier, farmerSelfRegisterSchema } from '@agri-erp/shared';
 
 import { audited, writeAudit, writeAuditOutcome } from '../../../../lib/api/audit';
-import { conflict, unprocessable } from '../../../../lib/api/errors';
+import { authUnavailable, conflict, unprocessable } from '../../../../lib/api/errors';
 import {
   allocateFarmerNumber,
   findDuplicates,
@@ -12,7 +12,11 @@ import {
 import { insertProfile } from '../../../../lib/api/farmer-accounts';
 import { created, defineRoutes } from '../../../../lib/api/route';
 import { prisma } from '../../../../lib/db';
-import { createAuthAccount, deleteAuthAccount } from '../../../../lib/supabase/admin';
+import {
+  AuthUnavailableError,
+  createAuthAccount,
+  deleteAuthAccount,
+} from '../../../../lib/supabase/admin';
 
 /**
  * POST /api/farmer/register -- a farmer enrols themselves. B14 (2026-10-07).
@@ -59,7 +63,8 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       let authUserId: string;
       try {
         authUserId = await createAuthAccount(farmerAuthIdentifier(body.phone), body.password);
-      } catch {
+      } catch (failure) {
+        if (failure instanceof AuthUnavailableError) throw authUnavailable();
         throw conflict('farmer_phone_registered');
       }
 
