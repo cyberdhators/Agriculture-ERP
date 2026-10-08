@@ -57,7 +57,10 @@ export const MARKET_FROM = `FROM public.produce_listing_active pl
  * they can post anything". A listing is in the market only while it is listed
  * AND its farmer is verified; a farmer who is not (or no longer) verified -- e.g. merged into another record -- is out.
  */
-export const MARKET_BASE_WHERE = `pl.status = 'listed' AND f.verification_status = 'verified'`;
+// 2026-10-08: and not past its "available until" date -- an expired listing
+// is out of the market and cannot be requested.
+export const MARKET_BASE_WHERE = `pl.status = 'listed' AND f.verification_status = 'verified'
+  AND (pl.available_until IS NULL OR pl.available_until >= current_date)`;
 
 export interface MarketRow {
   id: string;

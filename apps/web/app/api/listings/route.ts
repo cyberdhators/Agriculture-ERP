@@ -179,7 +179,12 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       // B14: the public sees only what is in the market -- listed, from a
       // verified farmer -- whether or not it filters by farmer. A farmer reads
       // their own drafts through /api/farmer/listings.
-      where.push("pl.status = 'listed'", "f.verification_status = 'verified'");
+      where.push(
+        "pl.status = 'listed'",
+        "f.verification_status = 'verified'",
+        // 2026-10-08: an expired listing is out of the market.
+        '(pl.available_until IS NULL OR pl.available_until >= current_date)',
+      );
 
       const category = url.searchParams.get('category');
       if (category) {

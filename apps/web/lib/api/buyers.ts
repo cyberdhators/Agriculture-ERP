@@ -1,4 +1,9 @@
-import { buyerCapabilities, type BuyerVerificationStatus } from '@agri-erp/shared';
+import {
+  BUYER_MESSAGES,
+  ERROR_CODES,
+  buyerCapabilities,
+  type BuyerVerificationStatus,
+} from '@agri-erp/shared';
 
 import { writeAudit, type AuditTx } from './audit';
 import {
@@ -14,7 +19,7 @@ import {
   type OrderRow,
   type RequestRow,
 } from './buyer-presenters';
-import { forbidden, notFound, unprocessable } from './errors';
+import { ApiFailure, RULE_MESSAGES, forbidden, notFound, unprocessable } from './errors';
 import { type Authenticated } from './require-role';
 import { buyerScope } from './scope';
 
@@ -198,6 +203,107 @@ export async function notifyFarmerOfRequest(
     ...actor,
     action: 'notification.created',
     after: { recipient: 'farmer', notice: 'request_received' },
+  });
+}
+
+/**
+ * What a buyer asks for, checked against the listing it names, on the server
+ * (2026-10-08; until then only the product page checked, and the cart route
+ * accepted anything). Refuses, with a reason beside each line:
+ *   - the same product twice in one cart;
+ *   - more than the farmer listed, or below the minimum order -- compared only
+ *     when the request is in the listing's own unit, since no conversion between
+ *     units is known;
+ *   - a product this organisation already has a request waiting on.
+ * `field(i)` names where a line's reason goes: `items.<i>.quantity` for the
+ * cart, `quantity` for a single request.
+ */
+export async function checkRequestedItems(
+  db: Db,
+  organizationId: string,
+  items: readonly { listing_id: string; quantity: number; unit: string }[],
+  field: (index: number) => string,
+): Promise<void> {
+  const reasons: Record<string, string> = {};
+  const ids = [...new Set(items.map((i) => i.listing_id))];
+  const listings = await db.$queryRawUnsafe<
+    { id: string; quantity: number; unit: string; min_order: number | null }[]
+  >(
+    `SELECT id, quantity::float8 AS quantity, unit::text AS unit,
+            min_order_quantity::float8 AS min_order
+       FROM public.produce_listing WHERE id = ANY($1::uuid[])`,
+    ids,
+  );
+  const open = await db.$queryRawUnsafe<{ listing_id: string }[]>(
+    `SELECT DISTINCT listing_id FROM public.purchase_request
+      WHERE organization_id = $1::uuid AND listing_id = ANY($2::uuid[])
+        AND status IN ('submitted', 'under_review') AND deleted_at IS NULL`,
+    organizationId,
+    ids,
+  );
+  const byId = new Map(listings.map((l) => [l.id, l]));
+  const waiting = new Set(open.map((o) => o.listing_id));
+  const seen = new Set<string>();
+  items.forEach((item, index) => {
+    const at = field(index);
+    if (seen.has(item.listing_id)) {
+      reasons[at] = BUYER_MESSAGES.productTwiceInCart;
+      return;
+    }
+    seen.add(item.listing_id);
+    if (waiting.has(item.listing_id)) {
+      reasons[at] = BUYER_MESSAGES.requestAlreadyOpen;
+      return;
+    }
+    const listing = byId.get(item.listing_id);
+    if (!listing || item.unit !== listing.unit) return;
+    if (item.quantity > listing.quantity) reasons[at] = BUYER_MESSAGES.quantityAboveAvailable;
+    else if (listing.min_order !== null && item.quantity < listing.min_order) {
+      reasons[at] = BUYER_MESSAGES.quantityBelowMinimum;
+    }
+  });
+  if (Object.keys(reasons).length > 0) {
+    throw new ApiFailure(
+      422,
+      ERROR_CODES.unprocessable,
+      RULE_MESSAGES.request_items_refused,
+      reasons,
+    );
+  }
+}
+
+/** The fixed sentence a farmer is sent when a buyer cancels a request (2026-10-08). */
+export const FARMER_CANCEL_NOTICE = {
+  title: 'A buyer cancelled a request',
+  body: 'Open your dashboard to see which one. You no longer need to contact that buyer about it.',
+} as const;
+
+/**
+ * Tells the farmer behind a listing that a buyer cancelled a request they had
+ * sent. Before this the request only changed quietly on the dashboard, so a
+ * farmer could still call a buyer who had withdrawn. Inside the caller's
+ * audited transaction, recorded as the buyer's act.
+ */
+export async function notifyFarmerOfCancel(
+  tx: AuditTx,
+  listingId: string,
+  actor: { actorType: 'buyer'; actorId: string },
+): Promise<void> {
+  const [row] = await tx.$queryRawUnsafe<{ id: string }[]>(
+    `INSERT INTO public.notification (farmer_id, channel, title, body)
+     SELECT pl.farmer_id, 'in_app', $2, $3 FROM public.produce_listing pl WHERE pl.id = $1::uuid
+     RETURNING id`,
+    listingId,
+    FARMER_CANCEL_NOTICE.title,
+    FARMER_CANCEL_NOTICE.body,
+  );
+  if (!row) return;
+  await writeAudit(tx, {
+    entityType: 'notification',
+    entityId: row.id,
+    ...actor,
+    action: 'notification.created',
+    after: { recipient: 'farmer', notice: 'request_cancelled' },
   });
 }
 

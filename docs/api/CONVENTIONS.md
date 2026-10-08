@@ -321,6 +321,7 @@ character.
 | `farmer_phone_registered`          | That phone number already has a farmer account. Sign in instead.                                                              |
 | `request_already_answered`         | This request has already been answered.                                                                                       |
 | `request_answered_by_farmer`       | Only the farmer can accept or decline a purchase request.                                                                     |
+| `request_items_refused`            | Some products cannot be requested as they are. See the reason beside each one.                                                |
 | `farmer_not_verified`              | Your listings go live once your farmer account is verified. You can save drafts until then.                                   |
 
 **A route names a rule; it never writes a sentence.** `conflict()` and
@@ -596,6 +597,10 @@ These are also exact.
 | Farmer password: under six characters   | Choose 6 or more characters you will remember.                                                  |
 | Cart: no products                       | Add at least one product to the cart.                                                           |
 | Cart: over twenty products              | A cart can hold at most 20 products. Send these first.                                          |
+| Request: more than listed               | This is more than the farmer has listed.                                                        |
+| Request: below minimum order            | This is below the farmer's minimum order.                                                       |
+| Cart: same product twice                | This product is in the cart twice. Keep one line.                                               |
+| Request: one already waiting            | You already have a request waiting for the farmer on this product.                              |
 
 The key beside each reason is the field name, per section 4.1. An unrecognised
 field named `nickname` therefore produces `{ "nickname": "This field is not
