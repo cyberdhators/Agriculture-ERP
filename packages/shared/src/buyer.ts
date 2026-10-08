@@ -318,6 +318,11 @@ export const BUYER_MESSAGES = {
   accountTypeUnknown: 'Choose individual or business.',
   cartEmpty: 'Add at least one product to the cart.',
   cartTooLarge: 'A cart can hold at most 20 products. Send these first.',
+  // 2026-10-08: a request checked against the listing it names, on the server.
+  quantityAboveAvailable: 'This is more than the farmer has listed.',
+  quantityBelowMinimum: "This is below the farmer's minimum order.",
+  productTwiceInCart: 'This product is in the cart twice. Keep one line.',
+  requestAlreadyOpen: 'You already have a request waiting for the farmer on this product.',
 } as const;
 
 // ---------------------------------------------------------------------------

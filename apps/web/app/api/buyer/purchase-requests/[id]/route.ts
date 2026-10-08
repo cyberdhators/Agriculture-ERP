@@ -10,6 +10,10 @@ import { audited, writeAudit } from '../../../../../lib/api/audit';
 import {
   buyerActor,
   loadOwnRequest,
+  MARKET_BASE_WHERE,
+  MARKET_FROM,
+  checkRequestedItems,
+  notifyFarmerOfCancel,
   notifyFarmerOfRequest,
   presentRequest,
 } from '../../../../../lib/api/buyers';
@@ -72,6 +76,11 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
             before: { status: current.status },
             after: { status: 'cancelled' },
           });
+          // The farmer saw a sent request, so the farmer is told it is off. A
+          // draft was never sent, so cancelling one tells nobody.
+          if (current.status !== 'draft' && current.listing_id) {
+            await notifyFarmerOfCancel(tx, current.listing_id, buyerActor(auth));
+          }
           return;
         }
 
@@ -115,6 +124,27 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
         if (action === 'submit') {
           if (!buyerCapabilities(scope.verification).request) {
             throw unprocessable('buyer_not_verified');
+          }
+          if (current.listing_id) {
+            // The listing must still be in the market, and the request must
+            // fit it -- the same checks the cart makes (2026-10-08).
+            const [still] = await tx.$queryRawUnsafe<{ id: string }[]>(
+              `SELECT pl.id ${MARKET_FROM} WHERE ${MARKET_BASE_WHERE} AND pl.id = $1::uuid`,
+              current.listing_id,
+            );
+            if (!still) throw unprocessable('listing_not_available');
+            await checkRequestedItems(
+              tx,
+              scope.organizationId,
+              [
+                {
+                  listing_id: current.listing_id,
+                  quantity: fields.quantity ?? Number(current.quantity),
+                  unit: fields.unit ?? current.unit,
+                },
+              ],
+              () => 'quantity',
+            );
           }
           await tx.$executeRawUnsafe(
             `UPDATE public.purchase_request

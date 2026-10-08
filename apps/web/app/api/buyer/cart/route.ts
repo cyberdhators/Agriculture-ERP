@@ -7,6 +7,7 @@ import {
   REQUEST_COLUMNS,
   REQUEST_FROM,
   buyerActor,
+  checkRequestedItems,
   notifyFarmerOfRequest,
   presentRequest,
   requireVerified,
@@ -42,6 +43,13 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
         listingIds,
       );
       if (listings.length !== listingIds.length) throw unprocessable('listing_not_available');
+      // Quantity, minimum order, duplicates and requests already waiting.
+      await checkRequestedItems(
+        prisma,
+        scope.organizationId,
+        body.items,
+        (i) => `items.${i}.quantity`,
+      );
       const byId = new Map(listings.map((l) => [l.id, l]));
 
       const ids = await audited(prisma, async (tx) => {

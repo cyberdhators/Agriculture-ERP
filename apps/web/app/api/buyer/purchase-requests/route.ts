@@ -25,6 +25,7 @@ import {
   presentRequest,
   requireBrowse,
   requireVerified,
+  checkRequestedItems,
   type RequestRow,
 } from '../../../../lib/api/buyers';
 import { ApiFailure, invalidCursor, unprocessable } from '../../../../lib/api/errors';
@@ -126,6 +127,14 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
           body.listing_id,
         );
         if (!listing) throw unprocessable('listing_not_available');
+        if (body.submit) {
+          await checkRequestedItems(
+            prisma,
+            scope.organizationId,
+            [{ listing_id: body.listing_id, quantity: body.quantity, unit: body.unit }],
+            () => 'quantity',
+          );
+        }
         category = listing.category;
         productName = listing.product_name;
       }

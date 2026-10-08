@@ -159,6 +159,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
          JOIN public.payam pm ON pm.id = f.payam_id
          WHERE pl.id = $1::uuid AND pl.deleted_at IS NULL
            AND pl.status = 'listed' AND f.verification_status = 'verified'
+           AND (pl.available_until IS NULL OR pl.available_until >= current_date)
          LIMIT 1`,
         id,
       );

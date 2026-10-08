@@ -153,6 +153,8 @@ export const RULE_MESSAGES = {
   farmer_phone_registered: 'That phone number already has a farmer account. Sign in instead.',
   request_already_answered: 'This request has already been answered.',
   request_answered_by_farmer: 'Only the farmer can accept or decline a purchase request.',
+  request_items_refused:
+    'Some products cannot be requested as they are. See the reason beside each one.',
   farmer_not_verified:
     'Your listings go live once your farmer account is verified. You can save drafts until then.',
 } as const;

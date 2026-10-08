@@ -50,6 +50,17 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
           farmerId,
           body.phone,
         );
+        // The listings that carried the old number now carry the new one, so a
+        // buyer who sends a request is given a number that works. A listing the
+        // farmer deliberately gave another number keeps it. (2026-10-08)
+        const moved = await tx.$queryRawUnsafe<{ id: string }[]>(
+          `UPDATE public.produce_listing SET contact_phone = $3, updated_at = now()
+            WHERE farmer_id = $1::uuid AND contact_phone = $2 AND deleted_at IS NULL
+            RETURNING id`,
+          farmerId,
+          current.phone,
+          body.phone,
+        );
         await writeAudit(tx, {
           entityType: 'farmer',
           entityId: farmerId,
@@ -57,7 +68,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
           actorId: farmerId,
           action: 'farmer.updated',
           // Which field changed, never its value: a phone never enters the log.
-          after: { changed: ['phone'] },
+          after: { changed: ['phone'], listings_updated: moved.length },
         });
       });
       return ok(await loadSelf(prisma, farmerId));
