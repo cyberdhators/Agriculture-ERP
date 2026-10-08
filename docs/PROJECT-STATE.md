@@ -39,6 +39,15 @@ at, what `.mcp.json` attaches to, what `scripts/db-reset.mjs` accepts, and what
 every migration has been applied to. The reference is not a secret; the
 connection strings containing it are.
 
+**T2 SUPERSEDES THE FOUR PARAGRAPHS BELOW (recorded 2026-10-09, effective
+2026-10-06).** `docs/DECISIONS.md` ("Staging is production") is authoritative:
+the account's one Supabase project, `xmmxbrxmfgodhpwolrvk` — the same one these
+paragraphs call "not this one" and promise to replace at B11 — IS production as
+of 2026-10-06. So, reading below: a production project exists, and it is this
+one; `pnpm db:reset` is NOT safe and now refuses (its guard is re-pointed at the
+closed allowlist on branch 0); and "production is empty" can no longer be
+assumed. The paragraphs are kept as the pre-T2 record, annotated not rewritten.
+
 **There is no production project yet.** It is created new at B11 — deliberately
 not this one, which has held developer credentials on a laptop and carries a
 throwaway `_smoke` table in its migration history. Reasoning in
