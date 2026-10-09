@@ -44,9 +44,7 @@ export const en = {
   'login.locked':
     'Five sign-ins have failed, so this number is locked for now. Your extension officer can reset your password.',
   'login.forgotTitle': 'Forgot your password?',
-  'login.forgotBody':
-    'Use the recovery code you were given when you registered, or ask your extension officer.',
-  'login.useRecoveryCode': 'Use my recovery code',
+  'login.forgotBody': 'Your extension officer or CORWADO can reset it for you.',
   'login.newHere': 'New here?',
   'login.register': 'Register',
 

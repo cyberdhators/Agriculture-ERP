@@ -3651,3 +3651,20 @@ boundary; this rules that versioning does not touch verification).
 The view itself is a task, dated as a GitHub issue (surfacing, to a supervisor,
 that the current boundary post-dates their verification). This record is the
 ruling; the issue is the build.
+
+## Password reset: buyers by email, farmers by their officer or an administrator (2026-10-09)
+
+The owner: "buyers reset by email, farmers reset by extension officer and
+admin". Recovery codes (built and tested live the same day) are removed from
+every screen and route: no code at registration, no /recover page, no
+"new recovery code" card.
+
+- **Buyers (and email-signed-in staff):** "Forgot your password?" on /login
+  sends a reset link (Supabase Auth through Resend SMTP, domain
+  agrionesouthsudan.com verified); the link opens /reset-password.
+- **Farmers:** no email, so the extension officer (own caseload), a supervisor
+  (own state) or an administrator sets a new password on the farmer's page
+  (POST /api/farmers/:id/sign-in). The farmer sign-in page says so.
+
+The `account_recovery` table (migration 20261009090000) stays, unused: dropping
+a table is a change the owner decides, and it holds only hashes of test codes.

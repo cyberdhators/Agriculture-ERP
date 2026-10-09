@@ -116,9 +116,6 @@ export const FARMER_ACCOUNT_MESSAGES = {
   answerUnknown: 'Choose accept or decline.',
   phoneChangesNothing: 'That is already your phone number.',
   passwordTooShort: 'Choose 6 or more characters you will remember.',
-  recoveryIdentifierRequired: 'Enter the phone number or email address you sign in with.',
-  recoveryCodeInvalid: 'Enter the recovery code you were given, for example KX7P-29QD-M4HB.',
-  recoveryPasswordRequired: 'Enter the new password.',
   withdrawReasonInvalid: 'Give the reason the farmer will see, 3 to 300 characters.',
 } as const;
 
@@ -309,47 +306,6 @@ export type FarmerSelfRegister = z.infer<typeof farmerSelfRegisterSchema>;
  * registered, who had none.
  */
 export const farmerPasswordSetSchema = z.strictObject({ password: farmerPasswordSchema });
-
-/**
- * RECOVERY CODES (2026-10-09). A farmer or buyer is shown a one-time code at
- * registration; with it they set a new password without email, SMS or staff.
- * Twelve characters from an alphabet with no look-alikes (no 0/O, 1/I/L),
- * written in three groups of four. Typing is forgiving: case, spaces and dashes
- * are ignored.
- */
-export const RECOVERY_CODE_ALPHABET = '23456789ABCDEFGHJKMNPQRSTUVWXYZ';
-export const RECOVERY_CODE_LENGTH = 12;
-
-/** Uppercase, letters and digits only: "kx7p 29qd-m4hb" -> "KX7P29QDM4HB". */
-export function normaliseRecoveryCode(input: string): string {
-  return input.toUpperCase().replace(/[^A-Z0-9]/g, '');
-}
-
-/** "KX7P29QDM4HB" -> "KX7P-29QD-M4HB", for showing to a person. */
-export function formatRecoveryCode(code: string): string {
-  return normaliseRecoveryCode(code).replace(/(.{4})(?=.)/g, '$1-');
-}
-
-/**
- * POST /api/account/recover. The password's own rule (six characters for a
- * farmer, twelve for a buyer) is applied by the route once it knows which.
- */
-export const accountRecoverSchema = z.strictObject({
-  identifier: z
-    .string({ error: () => M.recoveryIdentifierRequired })
-    .trim()
-    .min(3, M.recoveryIdentifierRequired)
-    .max(200, M.recoveryIdentifierRequired),
-  recovery_code: z
-    .string({ error: () => M.recoveryCodeInvalid })
-    .transform(normaliseRecoveryCode)
-    .refine((v) => v.length === RECOVERY_CODE_LENGTH, M.recoveryCodeInvalid),
-  new_password: z
-    .string({ error: () => M.recoveryPasswordRequired })
-    .min(1, M.recoveryPasswordRequired)
-    .max(72, M.textTooLong),
-});
-export type AccountRecover = z.infer<typeof accountRecoverSchema>;
 
 /**
  * Staff take a listing off the market (2026-10-08): an administrator, or a

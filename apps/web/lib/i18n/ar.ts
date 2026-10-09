@@ -36,8 +36,7 @@ export const ar: Partial<Record<TKey, string>> = {
   'login.locked':
     'فشل تسجيل الدخول خمس مرات، لذا تم قفل هذا الرقم مؤقتاً. مسؤول الإرشاد يمكنه إعادة تعيين كلمة مرورك.',
   'login.forgotTitle': 'نسيت كلمة المرور؟',
-  'login.forgotBody': 'استخدم رمز الاسترداد الذي حصلت عليه عند التسجيل، أو اطلب من مسؤول الإرشاد.',
-  'login.useRecoveryCode': 'استخدم رمز الاسترداد',
+  'login.forgotBody': 'مسؤول الإرشاد أو كوروادو يمكنه إعادة تعيينها لك.',
   'login.newHere': 'جديد هنا؟',
   'login.register': 'تسجيل',
 
