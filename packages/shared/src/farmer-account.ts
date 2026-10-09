@@ -119,6 +119,7 @@ export const FARMER_ACCOUNT_MESSAGES = {
   recoveryIdentifierRequired: 'Enter the phone number or email address you sign in with.',
   recoveryCodeInvalid: 'Enter the recovery code you were given, for example KX7P-29QD-M4HB.',
   recoveryPasswordRequired: 'Enter the new password.',
+  withdrawReasonInvalid: 'Give the reason the farmer will see, 3 to 300 characters.',
 } as const;
 
 const M = FARMER_ACCOUNT_MESSAGES;
@@ -349,6 +350,18 @@ export const accountRecoverSchema = z.strictObject({
     .max(72, M.textTooLong),
 });
 export type AccountRecover = z.infer<typeof accountRecoverSchema>;
+
+/**
+ * Staff take a listing off the market (2026-10-08): an administrator, or a
+ * supervisor in the listing's state. The reason is sent to the farmer.
+ */
+export const listingWithdrawSchema = z.strictObject({
+  reason: z
+    .string({ error: () => M.withdrawReasonInvalid })
+    .trim()
+    .min(3, M.withdrawReasonInvalid)
+    .max(300, M.withdrawReasonInvalid),
+});
 
 /** A phone change on the farmer's own account. The password is checked by sign-in, client-side. */
 export const farmerPhoneChangeSchema = z.strictObject({ phone: phoneSchema });

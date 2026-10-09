@@ -599,6 +599,7 @@ These are also exact.
 | Recovery: no phone or email             | Enter the phone number or email address you sign in with.                                       |
 | Recovery: code malformed                | Enter the recovery code you were given, for example KX7P-29QD-M4HB.                             |
 | Recovery: no new password               | Enter the new password.                                                                         |
+| Listing withdrawal: reason missing      | Give the reason the farmer will see, 3 to 300 characters.                                       |
 | Cart: no products                       | Add at least one product to the cart.                                                           |
 | Cart: over twenty products              | A cart can hold at most 20 products. Send these first.                                          |
 | Request: more than listed               | This is more than the farmer has listed.                                                        |
