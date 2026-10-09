@@ -6,7 +6,6 @@ import { buyerRegistrationSchema, zodErrorToApiError } from '@agri-erp/shared';
 
 import { BUYER_HOME_PATH, LOGIN_PATH } from '@/lib/auth/paths';
 import { BuyerApiError, registerBuyer } from '@/lib/buyer/api';
-import { RecoveryCodeShown } from '@/components/auth/RecoveryCode';
 import { supabaseBrowser } from '@/lib/supabase/browser';
 
 import { Wordmark } from '../brand/Wordmark';
@@ -45,7 +44,6 @@ export function BuyerRegister() {
   const individual = accountType === 'individual';
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [failure, setFailure] = useState<string | null>(null);
-  const [showCode, setShowCode] = useState<{ code: string; next: string } | null>(null);
   const [busy, setBusy] = useState(false);
 
   const setP = (key: keyof typeof person) => (value: string) =>
@@ -67,19 +65,12 @@ export function BuyerRegister() {
     setErrors({});
     setBusy(true);
     try {
-      const made = await registerBuyer(parsed.data);
+      await registerBuyer(parsed.data);
       const { error } = await supabaseBrowser().auth.signInWithPassword({
         email: parsed.data.email,
         password: parsed.data.password,
       });
-      const next = error ? LOGIN_PATH : BUYER_HOME_PATH;
-      // Show the recovery code once before moving on (2026-10-09).
-      if (made.recovery_code) {
-        setShowCode({ code: made.recovery_code, next });
-        setBusy(false);
-        return;
-      }
-      window.location.assign(next);
+      window.location.assign(error ? LOGIN_PATH : BUYER_HOME_PATH);
     } catch (e) {
       // No answer (network drop or the 45-second limit): the account may have
       // been saved anyway. Signing in with what was just typed settles it --
@@ -112,28 +103,6 @@ export function BuyerRegister() {
       setBusy(false);
     }
   };
-
-  if (showCode) {
-    return (
-      <main className={styles.registerWrap}>
-        <div className={styles.registerInner}>
-          <Wordmark size={28} tagline />
-          <PageHeader
-            title="Your buyer account is ready"
-            subtitle="One last thing: save your recovery code. With it you can set a new password if you ever forget yours."
-          />
-          <Card padded>
-            <RecoveryCodeShown code={showCode.code} />
-            <div style={{ marginTop: 'var(--s-4)' }}>
-              <Button variant="primary" onClick={() => window.location.assign(showCode.next)}>
-                I have written it down — continue
-              </Button>
-            </div>
-          </Card>
-        </div>
-      </main>
-    );
-  }
 
   return (
     <main className={styles.registerWrap}>

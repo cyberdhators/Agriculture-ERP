@@ -293,8 +293,6 @@ export const registerBuyer = (body: BuyerRegistration) =>
     organization_id: string;
     account_type: string;
     verification_status: string;
-    /** Shown once (2026-10-09). */
-    recovery_code?: string;
   }>('/api/buyer/register', {
     ...json('POST', body),
     signal: AbortSignal.timeout(REGISTER_TIMEOUT_MS),

@@ -97,8 +97,8 @@ export function ForgotPassword() {
         )}
 
         <p className={styles.hint}>
-          Have your recovery code? <a href="/recover">Use it instead</a>. Farmers: use your recovery
-          code or call your extension officer. <a href="/login">Back to sign in</a>
+          Farmers: your password is reset by your extension officer or CORWADO -- call them.{' '}
+          <a href="/login">Back to sign in</a>
         </p>
       </Card>
     </main>

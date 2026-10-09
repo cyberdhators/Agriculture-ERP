@@ -119,8 +119,8 @@ export function LoginForm({ next }: { next: string }) {
           </Button>
         </form>
         <p className={styles.hint}>
-          Forgot your password? <a href="/recover">Use your recovery code</a> or{' '}
-          <a href="/forgot-password">reset it by email</a>.
+          Forgot your password? <a href="/forgot-password">Reset it by email</a>. Farmers: your
+          extension officer or CORWADO resets it.
         </p>
         <p className={styles.hint}>
           New buyer? <a href={BUYER_REGISTER_PATH}>Register as a buyer</a>. Selling produce?{' '}
