@@ -106,7 +106,12 @@ export function Shell({ children }: { children: ReactNode }) {
         )}
 
         <div className={styles.main}>
-          <TopBar pathname={pathname} role={role} onOpenMenu={() => setDrawerOpen(true)} />
+          <TopBar
+            pathname={pathname}
+            role={role}
+            onOpenMenu={() => setDrawerOpen(true)}
+            accountNotLoaded={Boolean(authError) && !me}
+          />
 
           <main id="main" className={styles.content} tabIndex={-1}>
             {children}

@@ -130,7 +130,26 @@ export function PreviewProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let on = true;
-    fetch('/api/me')
+    // 2026-10-09: retried before giving up. A 503 or no answer is the server
+    // having a slow moment, not a refusal; 401/403 are answers and are final.
+    const RETRY_DELAYS_MS = [0, 2_000, 5_000];
+    const fetchMe = async (): Promise<Response> => {
+      let last: unknown;
+      for (const delay of RETRY_DELAYS_MS) {
+        if (delay) await new Promise((r) => setTimeout(r, delay));
+        if (!on) break;
+        try {
+          const res = await fetch('/api/me', { cache: 'no-store' });
+          if (res.status < 500) return res;
+          last = res;
+        } catch (error) {
+          last = error;
+        }
+      }
+      if (last instanceof Response) return last;
+      throw last;
+    };
+    fetchMe()
       .then(async (res) => {
         const body = (await res.json().catch(() => ({}))) as {
           data?: Me;
