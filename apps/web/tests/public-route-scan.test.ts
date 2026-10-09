@@ -27,6 +27,9 @@ const API_DIR = fileURLToPath(new URL('../app/api', import.meta.url));
  * limiter, an address-exists answer) written in the route's own header.
  */
 const EXPECTED_PUBLIC = [
+  // 2026-10-09: a farmer or buyer who forgot their password resets it with a
+  // recovery code. Every failure is the same answer; five wrong tries lock it.
+  'account/recover',
   'buyer/register',
   // 2026-10-08: the hourly weather fetch, called by pg_cron. Public only in that a
   // scheduler has no session: it answers 401 without the CRON_SECRET bearer.

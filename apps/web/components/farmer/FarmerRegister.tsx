@@ -26,6 +26,7 @@ import {
 import { maxBirthYear, validateFarmer, type FarmerFormValues } from '@/lib/farmers/schema';
 import { COUNTIES, PAYAMS, STATES } from '@/lib/fixtures/p1';
 import { FarmerApiError, useFarmerSession } from '@/lib/farmer-session';
+import { RecoveryCodeShown } from '@/components/auth/RecoveryCode';
 import { t, type Language } from '@/lib/i18n';
 
 import styles from './farmer.module.css';
@@ -265,7 +266,7 @@ export function FarmerRegister() {
   const [serverErrors, setServerErrors] = useState<Record<string, string>>({});
   const [failure, setFailure] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [done, setDone] = useState<{ number: string } | null>(null);
+  const [done, setDone] = useState<{ number: string; code?: string } | null>(null);
 
   const counties = useMemo(
     () => COUNTIES.filter((c) => c.stateId === values.state_id),
@@ -381,7 +382,7 @@ export function FarmerRegister() {
         },
         ...farmBody(),
       });
-      setDone({ number: created.farmer_number });
+      setDone({ number: created.farmer_number, code: created.recovery_code });
     } catch (error) {
       if (error instanceof FarmerApiError) {
         setServerErrors(error.fields);
@@ -405,6 +406,10 @@ export function FarmerRegister() {
           <span className={`${styles.receiptNumberValue} mono`}>{done.number}</span>
           <span className={styles.receiptNote}>{t('register.donePending', language)}</span>
         </div>
+
+        {done.code ? (
+          <RecoveryCodeShown code={done.code} language={language === 'ar' ? 'ar' : 'en'} />
+        ) : null}
 
         <div className={styles.actions}>
           <Button

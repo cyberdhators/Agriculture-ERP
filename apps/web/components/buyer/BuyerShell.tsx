@@ -134,8 +134,14 @@ export function BuyerShell({ children }: { children: ReactNode }) {
 
   const signOut = useCallback(async () => {
     setCartOwner(null);
-    await supabaseBrowser().auth.signOut();
-    window.location.assign(LOGIN_PATH);
+    try {
+      // 'local': end the session on this device even when the network is down;
+      // the server-side token simply expires.
+      await supabaseBrowser().auth.signOut({ scope: 'local' });
+    } finally {
+      // Always leave the buyer pages, even if the call failed.
+      window.location.assign(LOGIN_PATH);
+    }
   }, []);
 
   const value = useMemo(
@@ -250,6 +256,17 @@ export function BuyerShell({ children }: { children: ReactNode }) {
                   {VERIFICATION_LABELS[profile.verification.status]}
                 </Stamp>
               ) : null}
+              {/* Always visible (2026-10-08): the rail's sign-out sits at the
+                  bottom of a menu that is folded away on a phone. */}
+              <button
+                type="button"
+                className={shell.signOut}
+                style={{ marginBlockStart: 0, color: 'inherit', borderColor: 'currentColor' }}
+                onClick={() => void signOut()}
+              >
+                <IconSignOut size={16} />
+                <span>Sign out</span>
+              </button>
             </div>
           </header>
 

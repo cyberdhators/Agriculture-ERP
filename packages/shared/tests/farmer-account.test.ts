@@ -4,6 +4,10 @@ import {
   BUYER_MESSAGES,
   CART_MAX_ITEMS,
   FARMER_ACCOUNT_MESSAGES,
+  RECOVERY_CODE_ALPHABET,
+  accountRecoverSchema,
+  formatRecoveryCode,
+  normaliseRecoveryCode,
   cartCheckoutSchema,
   farmerAuthIdentifier,
   farmerListingPatchSchema,
@@ -186,5 +190,41 @@ describe('the cart', () => {
     expect(
       fieldsOf(cartCheckoutSchema.safeParse({ items, delivery_location: 'Juba' })),
     ).toMatchObject({ items: BUYER_MESSAGES.cartTooLarge });
+  });
+});
+
+describe('recovery codes (2026-10-09)', () => {
+  it('forgives case, spaces and dashes when typed', () => {
+    expect(normaliseRecoveryCode(' kx7p 29qd-m4hb ')).toBe('KX7P29QDM4HB');
+  });
+
+  it('is shown in three groups of four', () => {
+    expect(formatRecoveryCode('KX7P29QDM4HB')).toBe('KX7P-29QD-M4HB');
+  });
+
+  it('uses no look-alike characters (0/O, 1/I/L)', () => {
+    expect(RECOVERY_CODE_ALPHABET).not.toMatch(/[01OIL]/);
+  });
+
+  it('accepts a well-formed recovery request and normalises the code', () => {
+    const r = accountRecoverSchema.safeParse({
+      identifier: '+211921000101',
+      recovery_code: 'kx7p-29qd-m4hb',
+      new_password: 'new-pass-1',
+    });
+    expect(r.success).toBe(true);
+    expect(r.data?.recovery_code).toBe('KX7P29QDM4HB');
+  });
+
+  it('refuses a code of the wrong length', () => {
+    expect(
+      fieldsOf(
+        accountRecoverSchema.safeParse({
+          identifier: 'buyer@example.invalid',
+          recovery_code: 'KX7P-29QD',
+          new_password: 'whatever-123',
+        }),
+      ),
+    ).toMatchObject({ recovery_code: FARMER_ACCOUNT_MESSAGES.recoveryCodeInvalid });
   });
 });

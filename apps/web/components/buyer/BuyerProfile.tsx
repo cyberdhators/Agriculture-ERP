@@ -17,6 +17,7 @@ import {
   VERIFICATION_STAMPS,
 } from '@/lib/buyer/labels';
 
+import { NewRecoveryCode } from '../auth/RecoveryCode';
 import { Button, Card, CardBody, CardHeader, Field, Input, Notice, PageHeader, Stamp } from '../ui';
 import { useToast } from '../ui/feedback';
 import { useBuyer } from './BuyerShell';
@@ -209,6 +210,13 @@ export function BuyerProfile() {
           </Button>
         </div>
       </form>
+
+      <Card>
+        <CardHeader title="Recovery code" />
+        <CardBody>
+          <NewRecoveryCode />
+        </CardBody>
+      </Card>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { buyerRegistrationSchema, initialStanding } from '@agri-erp/shared';
 
 import { audited, writeAudit, writeAuditOutcome } from '../../../../lib/api/audit';
+import { issueRecoveryCode } from '../../../../lib/api/recovery';
 import { authUnavailable, conflict, unprocessable } from '../../../../lib/api/errors';
 import { created, defineRoutes } from '../../../../lib/api/route';
 import { prisma } from '../../../../lib/db';
@@ -156,11 +157,14 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
               verification_status: standing,
             },
           });
-          return { buyerId: buyer!.id, organizationId: organization!.id };
+          // The first recovery code (2026-10-09), shown once after registering.
+          const recoveryCode = await issueRecoveryCode(tx, authUserId);
+          return { buyerId: buyer!.id, organizationId: organization!.id, recoveryCode };
         });
 
         return created({
           id: result.buyerId,
+          recovery_code: result.recoveryCode,
           organization_id: result.organizationId,
           account_type: body.account_type,
           verification_status: standing,

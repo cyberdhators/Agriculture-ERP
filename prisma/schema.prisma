@@ -1443,3 +1443,16 @@ model FarmerProfile {
 
   @@map("farmer_profile")
 }
+
+/// 2026-10-09: one-time recovery codes for farmer and buyer sign-in accounts.
+/// Only a salted scrypt hash is stored. See migration 20261009090000.
+model AccountRecovery {
+  authUserId     String    @id(map: "account_recovery_pkey") @map("auth_user_id") @db.Uuid
+  codeHash       String    @map("code_hash")
+  failedAttempts Int       @default(0) @map("failed_attempts") @db.SmallInt
+  lockedUntil    DateTime? @map("locked_until") @db.Timestamptz(6)
+  issuedAt       DateTime  @default(now()) @map("issued_at") @db.Timestamptz(6)
+  usedAt         DateTime? @map("used_at") @db.Timestamptz(6)
+
+  @@map("account_recovery")
+}

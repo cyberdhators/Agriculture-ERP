@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 
 import { parseSouthSudanMobile } from '@agri-erp/shared';
 
+import { NewRecoveryCode } from '@/components/auth/RecoveryCode';
 import { Button, Field, Notice, PasswordInput, PrefixedInput } from '@/components/ui';
 import { validatePassword } from '@/lib/farmers/schema';
 import { useFarmerSession } from '@/lib/farmer-session';
@@ -231,6 +232,11 @@ export function FarmerSecurity() {
               </form>
             ) : null}
           </div>
+        </section>
+
+        <section className={styles.settingCard}>
+          <h2>{language === 'ar' ? 'رمز الاسترداد' : 'Recovery code'}</h2>
+          <NewRecoveryCode language={language === 'ar' ? 'ar' : 'en'} />
         </section>
 
         <section className={styles.settingCard}>

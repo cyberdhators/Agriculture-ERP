@@ -117,7 +117,10 @@ interface FarmerSessionValue {
     password: string,
   ) => Promise<{ ok: true } | { ok: false; reason: AuthFailure }>;
   /** Registers, then signs in. Throws FarmerApiError with field reasons on refusal. */
-  register: (input: FarmerRegistration) => Promise<{ farmer_number: string }>;
+  /** recovery_code is shown once; absent if the answer was lost and recovered by sign-in. */
+  register: (
+    input: FarmerRegistration,
+  ) => Promise<{ farmer_number: string; recovery_code?: string }>;
   signOut: () => Promise<void>;
   changePassword: (current: string, next: string) => Promise<boolean>;
   changePhone: (password: string, phone: string) => Promise<boolean>;
@@ -211,15 +214,18 @@ export function FarmerSessionProvider({
 
   const register = useCallback<FarmerSessionValue['register']>(
     async (input) => {
-      let created: { farmer_number: string };
+      let created: { farmer_number: string; recovery_code?: string };
       try {
-        created = await farmerApi<{ farmer_number: string }>('/api/farmer/register', {
-          method: 'POST',
-          body: JSON.stringify(input),
-          // At most 45 seconds (2026-10-08): the account was sometimes saved
-          // while the answer never reached the browser.
-          signal: AbortSignal.timeout(45_000),
-        });
+        created = await farmerApi<{ farmer_number: string; recovery_code?: string }>(
+          '/api/farmer/register',
+          {
+            method: 'POST',
+            body: JSON.stringify(input),
+            // At most 45 seconds (2026-10-08): the account was sometimes saved
+            // while the answer never reached the browser.
+            signal: AbortSignal.timeout(45_000),
+          },
+        );
       } catch (error) {
         // No answer: the account may exist anyway. Signing in settles it.
         if (error instanceof FarmerApiError && error.status === 0) {

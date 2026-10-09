@@ -155,6 +155,8 @@ export const RULE_MESSAGES = {
   request_answered_by_farmer: 'Only the farmer can accept or decline a purchase request.',
   request_items_refused:
     'Some products cannot be requested as they are. See the reason beside each one.',
+  recovery_failed:
+    'That recovery code does not match this account, or recovery is locked for an hour after five wrong tries.',
   farmer_not_verified:
     'Your listings go live once your farmer account is verified. You can save drafts until then.',
 } as const;

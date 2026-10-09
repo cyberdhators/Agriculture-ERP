@@ -76,6 +76,8 @@ export const MANIFEST_TABLES = [
   'delivery_update',
   // B14 (2026-10-07): the farmer's registration answers, with the migration that creates it.
   'farmer_profile',
+  // 2026-10-09: recovery-code hashes, with the migration that creates the table.
+  'account_recovery',
   'audit_event',
 ] as const;
 

@@ -44,7 +44,9 @@ export const en = {
   'login.locked':
     'Five sign-ins have failed, so this number is locked for now. Your extension officer can reset your password.',
   'login.forgotTitle': 'Forgot your password?',
-  'login.forgotBody': 'Your extension officer can reset it for you.',
+  'login.forgotBody':
+    'Use the recovery code you were given when you registered, or ask your extension officer.',
+  'login.useRecoveryCode': 'Use my recovery code',
   'login.newHere': 'New here?',
   'login.register': 'Register',
 
