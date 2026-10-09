@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { farmerAuthIdentifier, farmerSelfRegisterSchema } from '@agri-erp/shared';
 
 import { audited, writeAudit, writeAuditOutcome } from '../../../../lib/api/audit';
+import { issueRecoveryCode } from '../../../../lib/api/recovery';
 import { authUnavailable, conflict, unprocessable } from '../../../../lib/api/errors';
 import {
   allocateFarmerNumber,
@@ -71,7 +72,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       const farmerId = randomUUID();
       const consentId = randomUUID();
       try {
-        const farmerNumber = await audited(prisma, async (tx) => {
+        const { number: farmerNumber, recoveryCode } = await audited(prisma, async (tx) => {
           const number = await allocateFarmerNumber(tx, payam.county_id);
           await tx.$executeRawUnsafe(
             `INSERT INTO public.farmer
@@ -149,12 +150,15 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
               granted: true,
             },
           });
-          return number;
+          // The first recovery code (2026-10-09), shown once on the done screen.
+          const code = await issueRecoveryCode(tx, authUserId);
+          return { number, recoveryCode: code };
         });
 
         return created({
           id: farmerId,
           farmer_number: farmerNumber,
+          recovery_code: recoveryCode,
           verification_status: 'pending',
         });
       } catch (failure) {

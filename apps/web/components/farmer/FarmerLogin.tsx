@@ -108,7 +108,8 @@ export function FarmerLogin() {
 
       <p className={styles.helpRow}>
         <span className={styles.helpTitle}>{t('login.forgotTitle', language)}</span>{' '}
-        {t('login.forgotBody', language)}
+        {t('login.forgotBody', language)}{' '}
+        <Link href="/recover">{t('login.useRecoveryCode', language)}</Link>
       </p>
 
       <p className={styles.linkRow}>

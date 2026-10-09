@@ -322,6 +322,7 @@ character.
 | `request_already_answered`         | This request has already been answered.                                                                                       |
 | `request_answered_by_farmer`       | Only the farmer can accept or decline a purchase request.                                                                     |
 | `request_items_refused`            | Some products cannot be requested as they are. See the reason beside each one.                                                |
+| `recovery_failed`                  | That recovery code does not match this account, or recovery is locked for an hour after five wrong tries.                     |
 | `farmer_not_verified`              | Your listings go live once your farmer account is verified. You can save drafts until then.                                   |
 
 **A route names a rule; it never writes a sentence.** `conflict()` and
@@ -595,6 +596,9 @@ These are also exact.
 | Farmer answer: not accept or decline    | Choose accept or decline.                                                                       |
 | Farmer phone change: same number        | That is already your phone number.                                                              |
 | Farmer password: under six characters   | Choose 6 or more characters you will remember.                                                  |
+| Recovery: no phone or email             | Enter the phone number or email address you sign in with.                                       |
+| Recovery: code malformed                | Enter the recovery code you were given, for example KX7P-29QD-M4HB.                             |
+| Recovery: no new password               | Enter the new password.                                                                         |
 | Cart: no products                       | Add at least one product to the cart.                                                           |
 | Cart: over twenty products              | A cart can hold at most 20 products. Send these first.                                          |
 | Request: more than listed               | This is more than the farmer has listed.                                                        |

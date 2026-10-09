@@ -43,7 +43,9 @@ const source = (file: string) => readFileSync(file, 'utf8');
 const admitsBuyer = (file: string) => /BUYER_ROLE|'buyer'\s*\]/.test(source(file));
 
 /** Outside app/api/buyer: the two reference reads a signed-in buyer needs. */
-const BUYER_OUTSIDE_ITS_TREE = ['locations', 'me'];
+// 2026-10-09: account/recovery-code -- a signed-in farmer or buyer gets a new
+// recovery code; it touches only the caller's own sign-in account.
+const BUYER_OUTSIDE_ITS_TREE = ['account/recovery-code', 'locations', 'me'];
 
 describe('buyer routes are counted, not trusted', () => {
   it('finds the buyer routes at all, so this cannot pass by checking nothing', () => {
