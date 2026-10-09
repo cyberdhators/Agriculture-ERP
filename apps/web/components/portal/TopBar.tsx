@@ -40,9 +40,15 @@ export interface TopBarProps {
   pathname: string;
   role: Role;
   onOpenMenu: () => void;
+  /**
+   * 2026-10-09: the account could not be loaded. The role then is only the
+   * safe default, so the chip says the account is not loaded and offers a
+   * reload, instead of telling an administrator they are read-only.
+   */
+  accountNotLoaded?: boolean;
 }
 
-export function TopBar({ pathname, role, onOpenMenu }: TopBarProps) {
+export function TopBar({ pathname, role, onOpenMenu, accountNotLoaded }: TopBarProps) {
   return (
     <header className={styles.topbar}>
       <button
@@ -69,9 +75,21 @@ export function TopBar({ pathname, role, onOpenMenu }: TopBarProps) {
       </div>
 
       <div className={styles.topbarSide}>
-        <span className={styles.scopeChip} title="What the server lets this account see">
-          {SCOPE_NOTE[role]}
-        </span>
+        {accountNotLoaded ? (
+          <button
+            type="button"
+            className={styles.scopeChip}
+            title="The server did not answer in time. Reload to try again."
+            onClick={() => window.location.reload()}
+            style={{ cursor: 'pointer' }}
+          >
+            Account not loaded · Reload
+          </button>
+        ) : (
+          <span className={styles.scopeChip} title="What the server lets this account see">
+            {SCOPE_NOTE[role]}
+          </span>
+        )}
       </div>
     </header>
   );
