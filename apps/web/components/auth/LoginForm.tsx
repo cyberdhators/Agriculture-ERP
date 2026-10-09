@@ -18,7 +18,15 @@ import styles from './auth.module.css';
  * browser and the routes' requireRole reads it from then on. The error never
  * says which of the two was wrong.
  */
-export function LoginForm({ next }: { next: string }) {
+export function LoginForm({
+  next,
+  audience = 'buyer',
+}: {
+  next: string;
+  /** 2026-10-09: /login is the buyer sign-in; /admin/login is the staff sign-in. */
+  audience?: 'buyer' | 'staff';
+}) {
+  const staff = audience === 'staff';
   const router = useRouter();
   const [login, setLogin] = useState('');
   const [password, setPassword] = useState('');
@@ -72,13 +80,18 @@ export function LoginForm({ next }: { next: string }) {
           <Wordmark size={28} tagline />
         </div>
         <div>
-          <h1 className={styles.title}>Sign in</h1>
-          <p className={styles.hint}>
-            Buyers and staff sign in with the email on their account. Extension officers sign in
-            with their phone number. Farmers sign in on the{' '}
-            <a href="/farmer/login">farmer sign-in</a> page. Staff accounts are issued by an
-            administrator.
-          </p>
+          <h1 className={styles.title}>{staff ? 'Staff sign in' : 'Buyer sign in'}</h1>
+          {staff ? (
+            <p className={styles.hint}>
+              For CORWADO staff and extension officers. Staff sign in with their email address;
+              extension officers with their phone number. Accounts are issued by an administrator.
+            </p>
+          ) : (
+            <p className={styles.hint}>
+              Sign in with the email address of your buyer account. Farmers sign in on the{' '}
+              <a href="/farmer/login">farmer sign-in</a> page.
+            </p>
+          )}
         </div>
 
         {error ? (
@@ -118,14 +131,22 @@ export function LoginForm({ next }: { next: string }) {
             {busy ? 'Signing in…' : 'Sign in'}
           </Button>
         </form>
-        <p className={styles.hint}>
-          Forgot your password? <a href="/forgot-password">Reset it by email</a>. Farmers: your
-          extension officer or CORWADO resets it.
-        </p>
-        <p className={styles.hint}>
-          New buyer? <a href={BUYER_REGISTER_PATH}>Register as a buyer</a>. Selling produce?{' '}
-          <a href="/farmer/register">Register as a farmer</a>.
-        </p>
+        {staff ? (
+          <p className={styles.hint}>
+            Forgot your password? Staff: <a href="/forgot-password">reset it by email</a>. Extension
+            officers: ask an administrator.
+          </p>
+        ) : (
+          <>
+            <p className={styles.hint}>
+              Forgot your password? <a href="/forgot-password">Reset it by email</a>.
+            </p>
+            <p className={styles.hint}>
+              New buyer? <a href={BUYER_REGISTER_PATH}>Register as a buyer</a>. Selling produce?{' '}
+              <a href="/farmer/register">Register as a farmer</a>.
+            </p>
+          </>
+        )}
       </Card>
     </main>
   );

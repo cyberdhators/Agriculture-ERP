@@ -69,8 +69,8 @@ export function JoinChooser({ next }: { next: string }) {
         </div>
 
         <p className={styles.hint}>
-          CORWADO staff and extension officers: <a href="/login">sign in here</a>. Staff accounts
-          are issued by an administrator.
+          CORWADO staff and extension officers: <a href="/admin/login">sign in here</a>. Staff
+          accounts are issued by an administrator.
         </p>
       </div>
     </main>

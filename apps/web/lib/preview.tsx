@@ -170,7 +170,7 @@ export function PreviewProvider({ children }: { children: ReactNode }) {
 
   const signOut = useCallback(async () => {
     await supabaseBrowser().auth.signOut();
-    window.location.assign('/login');
+    window.location.assign('/admin/login');
   }, []);
 
   // The live reads. Only once /api/me has answered with a principal: this

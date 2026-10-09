@@ -1,7 +1,14 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
-import { HOME_PATH, isPortalPath, LOGIN_PATH } from '@/lib/auth/paths';
+import {
+  BUYER_HOME_PATH,
+  HOME_PATH,
+  isPortalPath,
+  LOGIN_PATH,
+  loginPathFor,
+  STAFF_LOGIN_PATH,
+} from '@/lib/auth/paths';
 
 /**
  * Two jobs, on portal paths and the login page only.
@@ -49,15 +56,18 @@ export async function middleware(request: NextRequest) {
 
   if (!user && isPortalPath(pathname)) {
     const to = request.nextUrl.clone();
-    to.pathname = LOGIN_PATH;
+    to.pathname = loginPathFor(pathname);
     to.search = '';
     to.searchParams.set('next', `${pathname}${search}`);
     return NextResponse.redirect(to);
   }
 
-  if (user && pathname === LOGIN_PATH) {
+  // Already signed in: a sign-in page sends you on. The buyer sign-in goes to
+  // the buyer side; the staff sign-in to the portal. Each side sends anyone
+  // who does not belong there to the other.
+  if (user && (pathname === LOGIN_PATH || pathname === STAFF_LOGIN_PATH)) {
     const to = request.nextUrl.clone();
-    to.pathname = HOME_PATH;
+    to.pathname = pathname === LOGIN_PATH ? BUYER_HOME_PATH : HOME_PATH;
     to.search = '';
     return NextResponse.redirect(to);
   }
