@@ -43,7 +43,11 @@ const mjs = fileURLToPath(new URL('../scripts/non-production-projects.mjs', impo
 /** References that are not, and will not be, real projects. */
 const HYPOTHETICAL = 'aaaaaaaaaaaaaaaaaaaa';
 const UNLISTED = 'zzzzzzzzzzzzzzzzzzzz';
-const uri = (ref: string) => `postgresql://role:secret@db.${ref}.example.invalid:5432/postgres`;
+// No user:password part: only the project reference matters to these checks,
+// and a credential-shaped fixture is itself a secret-scan finding (CLAUDE.md:
+// "a fixture that describes a secret finding is written in the idiom the
+// scanner hunts"). It turned main's verify job red from #138 on (2026-10-09).
+const uri = (ref: string) => `postgresql://db.${ref}.example.invalid:5432/postgres`;
 
 describe('the non-production allowlist', () => {
   it('is empty today — the safe state, refusing every target including production', () => {
