@@ -29,7 +29,14 @@ export const MARKET_PREFIXES = ['/market', '/farmer'] as const;
 /** Read at build time, like every NEXT_PUBLIC_ variable: change it, then redeploy. */
 export const MARKET_OPEN = process.env.NEXT_PUBLIC_MARKET_OPEN !== '0';
 
+/** The buyer sign-in. */
 export const LOGIN_PATH = '/login';
+/**
+ * The staff sign-in (2026-10-09, the owner: "put admin login to admin/login"):
+ * administrators, supervisors, read-only staff and extension officers. It sits
+ * under /admin but is not gated, or nobody could reach it to sign in.
+ */
+export const STAFF_LOGIN_PATH = '/admin/login';
 export const HOME_PATH = '/dashboard';
 
 /**
@@ -48,10 +55,15 @@ const under = (pathname: string, prefixes: readonly string[]): boolean =>
 export const isBuyerPath = (pathname: string): boolean => under(pathname, [BUYER_PREFIX]);
 
 export function isPortalPath(pathname: string, marketOpen: boolean = MARKET_OPEN): boolean {
+  if (pathname === STAFF_LOGIN_PATH) return false;
   if (under(pathname, PORTAL_PREFIXES)) return true;
   if (isBuyerPath(pathname)) return !under(pathname, [BUYER_REGISTER_PATH]);
   return !marketOpen && under(pathname, MARKET_PREFIXES);
 }
+
+/** Which sign-in a signed-out visitor to `pathname` is sent to. */
+export const loginPathFor = (pathname: string): string =>
+  isBuyerPath(pathname) ? LOGIN_PATH : STAFF_LOGIN_PATH;
 
 /**
  * Where a signed-in principal belongs after sign-in. A buyer is sent to the
