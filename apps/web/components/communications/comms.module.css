@@ -97,6 +97,31 @@
   color: var(--muted);
 }
 
+.counterOver {
+  font-size: var(--text-small);
+  color: var(--danger);
+  font-weight: 600;
+}
+
+/* The SMS farmer picker: filters above, the selection bar, then the list. */
+.pickerBlock {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+  margin-block-start: var(--s-4);
+}
+
+.filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--s-3) var(--s-4);
+  align-items: end;
+}
+
+.filters > :first-child {
+  grid-column: 1 / -1;
+}
+
 .previewBody {
   white-space: pre-wrap;
   background: var(--paper);

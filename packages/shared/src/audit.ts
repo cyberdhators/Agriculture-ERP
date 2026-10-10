@@ -101,6 +101,11 @@ export const AUDIT_ACTIONS = [
   'purchase_order.created',
   'purchase_order.status_changed',
   'purchase_order.cancelled',
+  // 2026-10-10: an administrator's SMS to farmers or officers through Bird.
+  // The CHECK in migration 20261010120000 is generated from this list. The
+  // send route reads that CHECK before sending, so the code is safe to deploy
+  // ahead of the migration: it refuses SMS until the key is accepted.
+  'communication.sms_sent',
 ] as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];

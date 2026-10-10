@@ -273,6 +273,14 @@ export {
   type CommunicationResult,
   type RecipientType,
   type SendCommunication,
+  // SMS to farmers through Bird, 2026-10-10. Appended.
+  communicationFarmerFilterSchema,
+  smsLength,
+  type CommunicationFarmer,
+  type CommunicationFarmerFilter,
+  type CommunicationFarmerIds,
+  type SmsEncoding,
+  type SmsLength,
 } from './communications';
 
 export {

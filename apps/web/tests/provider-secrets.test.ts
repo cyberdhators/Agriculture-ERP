@@ -97,3 +97,43 @@ describe('the email provider key stays on the server', () => {
     expect(readers.map(rel)).toEqual(['lib/email/resend.ts']);
   });
 });
+
+describe('the SMS provider key stays on the server', () => {
+  // Paths are compared with forward slashes so the test reads the same on
+  // every machine.
+  const relPosix = (f: string) => rel(f).replace(/\\/g, '/');
+
+  it('every Bird setting is READ in exactly one module', () => {
+    for (const name of ['BIRD_API_KEY', 'BIRD_API_BASE_URL', 'BIRD_SMS_SENDER_ID']) {
+      const readers = files
+        .filter((f) => !relPosix(f).startsWith('tests/') && !/\.test\.ts$/.test(f))
+        .filter((f) => new RegExp(`process\\.env\\.${name}\\b`).test(read(f)));
+      expect(readers.map(relPosix), name).toEqual(['lib/sms/bird.ts']);
+    }
+  });
+
+  it('no component or client module imports the SMS client', () => {
+    const importers = files
+      .filter((f) => /^(components\/|app\/\(portal\))/.test(relPosix(f)))
+      .filter((f) => /lib\/sms\/bird/.test(read(f)));
+    expect(importers.map(relPosix)).toEqual([]);
+  });
+
+  it('the SMS client refuses to load in a browser, and never logs', () => {
+    const source = read(join(WEB, 'lib/sms/bird.ts'));
+    expect(source).toMatch(/typeof window !== 'undefined'/);
+    expect(source).not.toMatch(/console\.(log|info|debug|warn|error)/);
+  });
+
+  it('the farmer picker never selects or returns a phone number', () => {
+    const route = read(join(WEB, 'app/api/admin/communications/farmers/route.ts'));
+    // The phone is MATCHED (inside a WHERE) and tested for reachability, but
+    // never named in a select list or a response object.
+    const selectLists = [...route.matchAll(/SELECT ([\s\S]*?)(\$\{from\}|FROM )/g)].map(
+      (m) => m[1] ?? '',
+    );
+    expect(selectLists.length).toBeGreaterThanOrEqual(3);
+    for (const list of selectLists) expect(list).not.toMatch(/phone/i);
+    expect(route).not.toMatch(/\bphone:/);
+  });
+});
