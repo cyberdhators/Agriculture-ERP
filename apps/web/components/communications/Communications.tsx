@@ -6,6 +6,7 @@ import {
   CHANNEL_RECIPIENTS,
   COMMUNICATION_LIMITS,
   sendCommunicationSchema,
+  smsLength,
   type CommunicationChannel,
   type CommunicationResult,
   type RecipientType,
@@ -18,6 +19,7 @@ import { usePreview } from '@/lib/preview';
 
 import { Button, Checkbox, Dialog, Field, Input, Notice, PageHeader, Textarea } from '../ui';
 import { LoadingState, Pagination, UnavailableState } from '../ui/data';
+import { FarmerPicker } from './FarmerPicker';
 import styles from './comms.module.css';
 
 /**
@@ -28,8 +30,16 @@ import styles from './comms.module.css';
  * and each is reported as itself: a send, a 503 `email_not_configured` when
  * the deployment has no key or sender, and a 503 `email_unavailable` when the
  * provider cannot be reached. Nothing here mocks a response, and there is no
- * code path that can report a delivery that did not happen. SMS remains
- * unbuilt and says so on its own tab.
+ * code path that can report a delivery that did not happen.
+ *
+ * SMS SENDS FOR REAL, THROUGH BIRD, since 2026-10-10. The sender is the
+ * alphanumeric sender ID set up in CORWADO's Bird account and configured on
+ * the server (`BIRD_SMS_SENDER_ID`); this screen never chooses or sees it.
+ * Farmers are chosen in `FarmerPicker` — search, filters and "select all
+ * matching" — and the composer counts characters and billed SMS parts as the
+ * message is typed, with the same arithmetic the server validates with. The
+ * outcomes mirror email's: 503 `sms_not_configured`, 503 `sms_unavailable`,
+ * or counts of what Bird accepted and refused.
  *
  * WHY EMAIL LISTS ONLY STAFF. Neither the farmer nor the officer table has an
  * email column. An officer's `officer.<digits>@officers.invalid` identifier is
@@ -102,7 +112,8 @@ export function Communications() {
    * downloads the register to populate a dropdown.
    */
   useEffect(() => {
-    if (!isAdmin || !LIVE_ADMIN) return;
+    // Farmers have their own picker, with search and filters, below.
+    if (!isAdmin || !LIVE_ADMIN || recipientType === 'farmer') return;
     let live = true;
     setLoading(true);
     const page = { cursor: cursor ?? undefined, limit: 25 };
@@ -151,6 +162,9 @@ export function Communications() {
       live = false;
     };
   }, [recipientType, cursor, isAdmin]);
+
+  // The billed length of an SMS, from the same function the schema uses.
+  const sms = useMemo(() => smsLength(body.trim()), [body]);
 
   const valid = useMemo(
     () =>
@@ -239,14 +253,6 @@ export function Communications() {
         ))}
       </div>
 
-      {channel === 'sms' ? (
-        <UnavailableState title="SMS is not implemented">
-          Bird is the decided provider and its settings are present in <code>.env.example</code>,
-          but no SMS library or send route exists. SMS is billed per message and per segment, so a
-          send will not be offered until the cost of one can be shown before it is made.
-        </UnavailableState>
-      ) : null}
-
       <div className={styles.panel}>
         <Field
           label="Recipient type"
@@ -272,11 +278,11 @@ export function Communications() {
           )}
         </Field>
 
-        {selected.size > 0 ? (
+        {recipientType !== 'farmer' && selected.size > 0 ? (
           <div className={styles.selectedBar}>
             <span>
               <strong>{selected.size}</strong> {selected.size === 1 ? 'recipient' : 'recipients'}{' '}
-              selected on this page
+              selected
             </span>
             <Button variant="ghost" size="small" onClick={() => setSelected(new Set())}>
               Clear selection
@@ -286,10 +292,14 @@ export function Communications() {
 
         {!LIVE_ADMIN ? (
           <UnavailableState title="No live directory of recipients">
-            Recipient lists are read from the live staff and officer routes. This deployment is
-            running on preview data, so no real person can be selected.
+            Recipient lists are read from the live staff, officer and farmer routes. This deployment
+            is running on preview data, so no real person can be selected.
           </UnavailableState>
-        ) : listError ? (
+        ) : recipientType === 'farmer' ? (
+          <FarmerPicker selected={selected} onChange={setSelected} />
+        ) : null}
+
+        {!LIVE_ADMIN || recipientType === 'farmer' ? null : listError ? (
           <UnavailableState title="Recipients unavailable">{listError}</UnavailableState>
         ) : loading ? (
           <LoadingState rows={4} label="Loading recipients" />
@@ -362,7 +372,14 @@ export function Communications() {
           </Field>
         ) : null}
 
-        <Field label="Message" hint={`${body.length} / ${COMMUNICATION_LIMITS.bodyMax} characters`}>
+        <Field
+          label="Message"
+          hint={
+            channel === 'sms'
+              ? `${sms.units} characters · ${sms.segments} of ${COMMUNICATION_LIMITS.smsSegmentsMax} SMS parts (${sms.encoding === 'gsm7' ? 'plain text, 160 per part, 153 once split' : 'Unicode, 70 per part, 67 once split'}). Each part is billed per recipient.`
+              : `${body.length} / ${COMMUNICATION_LIMITS.bodyMax} characters`
+          }
+        >
           {(ids) => (
             <Textarea
               {...ids}
@@ -438,7 +455,22 @@ export function Communications() {
               <dt>Subject</dt>
               <dd>{subject}</dd>
             </>
-          ) : null}
+          ) : (
+            <>
+              <dt>Sender</dt>
+              <dd>The sender ID registered in CORWADO&apos;s Bird account</dd>
+              <dt>Length</dt>
+              <dd>
+                {sms.units} characters, {sms.segments} SMS {sms.segments === 1 ? 'part' : 'parts'}{' '}
+                per recipient
+              </dd>
+              <dt>Billed parts</dt>
+              <dd>
+                Up to {selected.size * sms.segments} ({selected.size} × {sms.segments}). Farmers
+                with no consent or no South Sudan number are skipped and not billed.
+              </dd>
+            </>
+          )}
         </dl>
         <p className="label">Message</p>
         <div className={styles.previewBody}>{body}</div>

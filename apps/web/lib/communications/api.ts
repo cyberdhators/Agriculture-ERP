@@ -1,5 +1,7 @@
 import {
   sendCommunicationSchema,
+  type CommunicationFarmer,
+  type CommunicationFarmerIds,
   type CommunicationResult,
   type SendCommunication,
 } from '@agri-erp/shared';
@@ -88,6 +90,80 @@ export async function sendCommunication(input: SendCommunication): Promise<Commu
     method: 'POST',
     body: JSON.stringify(parsed),
   });
+}
+
+/** The SMS farmer picker's filters. Every one optional; empty strings are dropped. */
+export interface FarmerPickerFilter {
+  q?: string;
+  state?: string;
+  county?: string;
+  payam?: string;
+  verification_status?: string;
+}
+
+export interface FarmerPickerPage {
+  rows: CommunicationFarmer[];
+  cursor: string | null;
+  hasMore: boolean;
+  /** Every farmer matching the filter, across all pages. */
+  total: number;
+  /** How many of those an SMS can actually reach. */
+  reachable: number;
+}
+
+const pickerQuery = (filter: FarmerPickerFilter, extra: Record<string, string>): string => {
+  const qs = new URLSearchParams();
+  for (const [key, value] of Object.entries({ ...filter, ...extra })) {
+    if (typeof value === 'string' && value.trim() !== '') qs.set(key, value.trim());
+  }
+  return qs.toString();
+};
+
+/**
+ * One page of farmers for the SMS picker. `GET /api/admin/communications/farmers`.
+ * The rows carry ids, names and places — never a phone number.
+ */
+export async function listPickerFarmers(
+  filter: FarmerPickerFilter,
+  page: { cursor?: string | null; limit?: number } = {},
+): Promise<FarmerPickerPage> {
+  const query = pickerQuery(filter, {
+    ...(page.cursor ? { cursor: page.cursor } : {}),
+    ...(page.limit ? { limit: String(page.limit) } : {}),
+  });
+  const response = await fetch(`/api/admin/communications/farmers?${query}`, {
+    headers: { accept: 'application/json' },
+  });
+  if (response.status === 404) throw new ServiceNotConnectedError('The farmer list for SMS');
+  const body = (await response.json().catch(() => ({}))) as {
+    data?: CommunicationFarmer[];
+    page?: { cursor: string | null; hasMore: boolean; total?: number; reachable?: number };
+    error?: { code: string; message: string };
+  };
+  if (!response.ok || !body.data) {
+    throw new CommunicationApiError(
+      response.status,
+      body.error?.code ?? 'unknown',
+      body.error?.message ?? 'Could not load the farmers.',
+    );
+  }
+  return {
+    rows: body.data,
+    cursor: body.page?.cursor ?? null,
+    hasMore: body.page?.hasMore ?? false,
+    total: body.page?.total ?? body.data.length,
+    reachable: body.page?.reachable ?? body.data.filter((r) => r.reachable).length,
+  };
+}
+
+/** Every reachable farmer id matching the filter, up to one message's cap. */
+export async function selectAllPickerFarmers(
+  filter: FarmerPickerFilter,
+): Promise<CommunicationFarmerIds> {
+  return request<CommunicationFarmerIds>(
+    `/api/admin/communications/farmers?${pickerQuery(filter, { select: 'ids' })}`,
+    { method: 'GET' },
+  );
 }
 
 /**

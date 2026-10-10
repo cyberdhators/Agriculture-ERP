@@ -14,7 +14,7 @@ first.
 | Resend integration                        | **IMPLEMENTED**, over the REST API with `fetch` — no SDK, no new dependency.                                                        |
 | `RESEND_API_KEY` / `EMAIL_FROM`           | **NOT SET.** Both are in `.env.example`; until they are set the route answers 503 `email_not_configured` and sends nothing.         |
 | `GET /api/admin/communications` (history) | **NOT IMPLEMENTED.** No communications table exists; building one from audit rows would be a different thing wearing the same name. |
-| SMS                                       | **NOT IMPLEMENTED.** See section 3.                                                                                                 |
+| SMS                                       | **IMPLEMENTED 2026-10-10** to farmers and officers through Bird. See section 3.                                                     |
 
 Nothing reports a delivery that did not happen: a missing key is 503, an
 unreachable provider is 503, a refusal is counted as a refusal.
@@ -133,22 +133,44 @@ CONVENTIONS §6. Returns the same result shape as the send.
 
 ---
 
-## 3. SMS — a larger unit, not a variation
+## 3. SMS — IMPLEMENTED 2026-10-10
 
-Bird is the decided provider (`BIRD_API_KEY`, `BIRD_API_BASE_URL`,
-`BIRD_SMS_SENDER_ID` are in `.env.example`; nothing is written). Before an SMS
-send is offered the screen needs:
+Bird, called from `apps/web/lib/sms/bird.ts` (server-only, `fetch`, no SDK)
+exactly as `scripts/bird-sms-verify.mjs` calls it: `POST {BIRD_API_BASE_URL}/v1/sms/messages`
+with `to`, `from` = `BIRD_SMS_SENDER_ID`, `text` and category `service`. One
+request per recipient number, eight at a time, ten-second deadline each.
 
-- **cost visible before sending.** SMS bills per message and per segment, and
-  an administrator selecting a payam is committing real money.
-- **encoding and segment count visible.** A non-Latin script occupies fewer
-  characters per segment, so one message may be charged as two or three — the
-  open Arabi Juba script question in the scope document bears directly on this.
-- a delivery result that distinguishes accepted from delivered.
+**Recipients.** `recipient_type` `farmer` or `officer`, sent as record ids. The
+route reads the phone from `farmer_active` (consent granted and not withdrawn)
+or `officer_active` (status active). Only `+211` followed by nine digits is
+messaged. Two records sharing one number receive one message.
 
-Until those exist the SMS tab shows an explicit unavailable state and offers no
-send. That is deliberate: an SMS send with no cost shown is a bill nobody
-approved.
+**Picker.** `GET /api/admin/communications/farmers`, administrator only:
+`q` (name, farmer number, or at least four phone digits), `state`, `county`,
+`payam`, `verification_status`, cursor paging with `page.total` and
+`page.reachable`, and `select=ids` for every reachable match up to 500. It never
+returns a phone number.
+
+**Length.** `smsLength` in `packages/shared` counts GSM-7 or UCS-2 units and
+segments; the schema refuses more than three segments (459 plain characters,
+201 Unicode). The composer shows characters, parts and encoding as the message
+is typed, and the confirmation shows recipients × parts.
+
+**Errors.** 503 `sms_not_configured` when a Bird setting is missing or malformed
+(or the key's region and the host disagree), or when the database has not yet
+accepted the `communication.sms_sent` audit key — nothing is sent in either
+case. 503 `sms_unavailable` on a network failure, deadline, 429, 5xx, 401 or
+403; the message says how many had already been accepted. A per-number refusal
+is counted in `failed`. 422 `channel_unsupported` for any other pairing.
+
+**Audit.** `communication.sms_sent`: actor, recipient type, requested,
+accepted, unreachable, failed, the sorted recipient ids and their SHA-256, the
+sender ID, encoding and segments. Never the body, never a number. An outage
+writes `communication.send_failed` with the same facts and message counts.
+
+**Still open.** The money cost is not shown, only parts: Bird's per-part price
+for each network is an owner input, not a constant in code. Delivery receipts
+(accepted versus delivered) are not read back.
 
 ---
 

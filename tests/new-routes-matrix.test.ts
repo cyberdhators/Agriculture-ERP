@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import * as communications from '../apps/web/app/api/admin/communications/route';
+import * as smsFarmers from '../apps/web/app/api/admin/communications/farmers/route';
 import * as adminQueue from '../apps/web/app/api/admin/product-reports/route';
 import * as adminDetail from '../apps/web/app/api/admin/product-reports/[id]/route';
 import * as unreadCount from '../apps/web/app/api/admin/product-reports/unread-count/route';
@@ -66,6 +67,22 @@ const ADMIN_ROUTES = [
       subject: 'Zztest subject',
       body: 'Zztest body',
     }),
+  },
+  {
+    name: 'POST /api/admin/communications (SMS to farmers)',
+    mod: communications,
+    method: 'POST' as const,
+    body: () => ({
+      channel: 'sms',
+      recipient_type: 'farmer',
+      recipient_ids: [randomUUID()],
+      body: 'Zztest body',
+    }),
+  },
+  {
+    name: 'GET /api/admin/communications/farmers',
+    mod: smsFarmers,
+    method: 'GET' as const,
   },
   { name: 'GET /api/admin/product-reports', mod: adminQueue, method: 'GET' as const },
   {
@@ -135,6 +152,12 @@ describe('the administrator may', () => {
 
   it('read the unread count', async () => {
     expect((await call(unreadCount, 'GET', { as: admin })).status).toBe(200);
+  });
+
+  it('read the SMS farmer picker, which carries no phone number', async () => {
+    const result = await call(smsFarmers, 'GET', { as: admin });
+    expect(result.status).toBe(200);
+    expect(result.text).not.toMatch(/"phone"/);
   });
 
   it('is not refused the detail route — an unknown id is 404, not 403', async () => {

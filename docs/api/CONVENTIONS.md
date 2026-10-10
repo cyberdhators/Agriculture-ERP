@@ -421,6 +421,7 @@ change.
 | `purchase_order.created`                  |
 | `purchase_order.status_changed`           |
 | `purchase_order.cancelled`                |
+| `communication.sms_sent`                  |
 
 `before` and `after` hold **changed fields only**, never whole rows, and never a
 password, token, authentication identifier, national id, phone, email, given
@@ -611,6 +612,20 @@ These are also exact.
 | Request: below minimum order            | This is below the farmer's minimum order.                                                       |
 | Cart: same product twice                | This product is in the cart twice. Keep one line.                                               |
 | Request: one already waiting            | You already have a request waiting for the farmer on this product.                              |
+| Message: channel not email or SMS       | Choose email or SMS.                                                                            |
+| Message: recipient type not on channel  | That kind of recipient cannot be reached on this channel.                                       |
+| Message: no recipients                  | Choose at least one recipient.                                                                  |
+| Message: over 500 recipients            | A single message reaches at most 500 recipients.                                                |
+| Message: recipient not a record id      | A recipient is identified by its record id.                                                     |
+| Message: email with no subject          | Enter a subject.                                                                                |
+| Message: subject over 200 characters    | A subject has at most 200 characters.                                                           |
+| Message: body missing or blank          | Enter a message.                                                                                |
+| Message: body over 5000 characters      | A message has at most 5000 characters.                                                          |
+| Message: SMS with a subject             | An SMS has no subject.                                                                          |
+| Message: SMS over three parts           | An SMS can be at most 3 parts: 459 plain characters, or 201 with Arabic or special ones.        |
+| SMS farmer picker: search over 100      | A search can be at most 100 characters.                                                         |
+| SMS farmer picker: unknown location     | Choose a location from the list.                                                                |
+| SMS farmer picker: select not `ids`     | Choose ids, or leave the selection mode out.                                                    |
 
 The key beside each reason is the field name, per section 4.1. An unrecognised
 field named `nickname` therefore produces `{ "nickname": "This field is not
