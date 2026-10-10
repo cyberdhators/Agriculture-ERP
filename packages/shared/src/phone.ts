@@ -76,6 +76,22 @@ export function parseSouthSudanMobile(raw: string): PhoneParseResult {
 }
 
 /**
+ * Builds E.164 from the national part that a `+211`-prefixed input collects.
+ *
+ * A form that shows a fixed `+211` prefix gathers only the national digits, and
+ * the temptation is to write `` `+211${typed}` `` at the point of submit. That is
+ * the defect: a user who types the trunk 0 (`0920…`) then gets `+2110920…`,
+ * which is invalid. This strips a stray trunk 0 and the usual separators first,
+ * so the arithmetic lives here and not in every form. The server still
+ * re-validates through `phoneSchema`; this only keeps the client from building a
+ * number that cannot pass.
+ */
+export function southSudanNationalToE164(nationalPart: string): string {
+  const digits = nationalPart.replace(/[\s-]/g, '').replace(/^0/, '');
+  return `+${COUNTRY_CODE}${digits}`;
+}
+
+/**
  * A South Sudan mobile number, normalised to E.164 on success.
  */
 export const phoneSchema = z
