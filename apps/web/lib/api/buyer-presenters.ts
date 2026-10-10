@@ -142,11 +142,15 @@ export const REQUEST_COLUMNS = `r.id, r.listing_id, r.category::text AS category
   pl.title AS listing_title,
   -- B14: the farmer's number, once the request has been sent (not a draft,
   -- not cancelled). Buyer and farmer deal directly (CORWADO, 2026-10-07).
-  CASE WHEN r.status NOT IN ('draft', 'cancelled') THEN pl.contact_phone END AS farmer_phone`;
+  CASE WHEN r.status NOT IN ('draft', 'cancelled') THEN pl.contact_phone END AS farmer_phone,
+  -- 2026-10-10 (CORWADO): and the farmer's name, under the same condition.
+  CASE WHEN r.status NOT IN ('draft', 'cancelled') AND fmr.id IS NOT NULL
+       THEN fmr.given_name || ' ' || fmr.family_name END AS farmer_name`;
 
 export const REQUEST_FROM = `FROM public.purchase_request r
   JOIN public.buyer b ON b.id = r.created_by
-  LEFT JOIN public.produce_listing pl ON pl.id = r.listing_id`;
+  LEFT JOIN public.produce_listing pl ON pl.id = r.listing_id
+  LEFT JOIN public.farmer fmr ON fmr.id = pl.farmer_id`;
 
 export interface RequestRow {
   id: string;
@@ -167,6 +171,7 @@ export interface RequestRow {
   created_by_name: string;
   listing_title: string | null;
   farmer_phone: string | null;
+  farmer_name: string | null;
 }
 
 export function presentRequest(row: RequestRow) {
@@ -187,6 +192,7 @@ export function presentRequest(row: RequestRow) {
     decided_at: row.decided_at?.toISOString() ?? null,
     created_by_name: row.created_by_name,
     farmer_phone: row.farmer_phone,
+    farmer_name: row.farmer_name ?? null,
     created_at: row.created_at.toISOString(),
     updated_at: row.updated_at.toISOString(),
   };

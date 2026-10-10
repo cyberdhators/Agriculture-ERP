@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { PHONE_MESSAGES, phoneSchema } from '../src/index';
+import { PHONE_MESSAGES, parseSouthSudanMobile, phoneSchema } from '../src/index';
 
 /**
  * Every phone number in this file is FABRICATED. None of them belongs to a
@@ -98,8 +98,20 @@ describe('a mobile number that should be refused', () => {
     expect(refused('+254712345678')).toBe(PHONE_MESSAGES.wrongCountry);
   });
 
-  it('refuses a number with no country code at all', () => {
-    expect(refused('912345678')).toBe(PHONE_MESSAGES.wrongCountry);
+  it('takes nine digits starting 9 as the national number (CORWADO, 2026-10-10)', () => {
+    expect(parseSouthSudanMobile('912345678')).toEqual({ ok: true, value: '+211912345678' });
+    expect(parseSouthSudanMobile('922 222 305')).toEqual({ ok: true, value: '+211922222305' });
+  });
+
+  it('drops the local 0 typed after a +211 the box already shows', () => {
+    expect(parseSouthSudanMobile('+2110912345678')).toEqual({ ok: true, value: '+211912345678' });
+    expect(parseSouthSudanMobile('2110922222305')).toEqual({ ok: true, value: '+211922222305' });
+  });
+
+  it('still refuses bare digits that are not a South Sudan national number', () => {
+    expect(refused('812345678')).toBe(PHONE_MESSAGES.wrongCountry);
+    expect(refused('12345678')).toBe(PHONE_MESSAGES.wrongCountry);
+    expect(refused('9123456789')).toBe(PHONE_MESSAGES.wrongCountry);
   });
 
   it('refuses a number written with brackets', () => {

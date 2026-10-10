@@ -5,6 +5,7 @@ import {
   type BuyerVerificationStatus,
 } from '@agri-erp/shared';
 
+import { FARMER_CANCEL_NOTICE, FARMER_REQUEST_NOTICE } from '../farmer-notices';
 import { writeAudit, type AuditTx } from './audit';
 import {
   BUYER_NOTICES,
@@ -172,11 +173,11 @@ export const NOTICE_FOR_STANDING: Partial<Record<BuyerVerificationStatus, BuyerN
 // B14 -- THE FARMER IS TOLD, AND THE TWO MAY CONTACT EACH OTHER
 // ---------------------------------------------------------------------------
 
-/** The fixed sentence a farmer is sent when a buyer asks for their produce. */
-export const FARMER_REQUEST_NOTICE = {
-  title: 'A buyer wants your produce',
-  body: "Open your dashboard to see the request and the buyer's phone number.",
-} as const;
+/**
+ * The fixed sentence a farmer is sent when a buyer asks for their produce. The
+ * text lives in lib/farmer-notices.ts with where tapping it goes (2026-10-10).
+ */
+export { FARMER_REQUEST_NOTICE };
 
 /**
  * Tells the farmer behind a listing that a buyer has sent a request. Inside the
@@ -273,10 +274,7 @@ export async function checkRequestedItems(
 }
 
 /** The fixed sentence a farmer is sent when a buyer cancels a request (2026-10-08). */
-export const FARMER_CANCEL_NOTICE = {
-  title: 'A buyer cancelled a request',
-  body: 'Open your dashboard to see which one. You no longer need to contact that buyer about it.',
-} as const;
+export { FARMER_CANCEL_NOTICE };
 
 /**
  * Tells the farmer behind a listing that a buyer cancelled a request they had

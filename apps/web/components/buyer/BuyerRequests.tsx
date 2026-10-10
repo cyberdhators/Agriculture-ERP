@@ -93,6 +93,11 @@ export function BuyerRequests() {
                 render: (r) => formatQuantity(r.quantity, r.unit),
               },
               {
+                key: 'farmerName',
+                header: 'Farmer',
+                render: (r) => <span dir="auto">{r.farmer_name ?? '—'}</span>,
+              },
+              {
                 key: 'farmer',
                 header: "Farmer's phone",
                 nowrap: true,

@@ -61,8 +61,16 @@ export function parseSouthSudanMobile(raw: string): PhoneParseResult {
     national = compact.slice(COUNTRY_CODE.length);
   } else if (compact.startsWith('0')) {
     national = compact.slice(1);
+  } else if (compact.startsWith('9') && compact.length === NATIONAL_DIGITS) {
+    // 2026-10-10, CORWADO's review: every phone box shows +211 in front, so
+    // nine digits starting 9 typed after it are the national number.
+    national = compact;
   } else {
     return { ok: false, message: PHONE_MESSAGES.wrongCountry };
+  }
+  // The leading 0 of the local form, typed after a +211 the box already shows.
+  if (national.length === NATIONAL_DIGITS + 1 && national.startsWith('0')) {
+    national = national.slice(1);
   }
 
   if (national.length < NATIONAL_DIGITS) {

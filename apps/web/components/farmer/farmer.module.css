@@ -2211,3 +2211,60 @@
 .notiTitle {
   font-weight: 600;
 }
+
+/* 2026-10-10 (CORWADO): the bell, with a red count of unread notices. */
+.shopBell {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid transparent;
+  border-radius: var(--az-radius);
+  color: var(--band-ink);
+}
+
+.shopBell:hover {
+  border-color: color-mix(in srgb, var(--band-ink) 45%, transparent);
+  color: var(--band-ink);
+}
+
+.shopBell .bellBadge {
+  position: absolute;
+  top: 2px;
+  right: 0;
+}
+
+.bellBadge {
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  margin-inline-start: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--danger);
+  color: #fff;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.notiLink {
+  display: grid;
+  gap: 2px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.notiLink:hover .notiTitle {
+  text-decoration: underline;
+}
+
+/* The requests section, reached from a notice: clear of the sticky masthead. */
+.anchor {
+  scroll-margin-top: 96px;
+}

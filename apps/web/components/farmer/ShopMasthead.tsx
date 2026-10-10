@@ -7,6 +7,7 @@ import { useState, type ReactNode } from 'react';
 import { Wordmark } from '@/components/brand/Wordmark';
 import { IconSearch } from '@/components/ui/icons';
 import { useFarmerSession } from '@/lib/farmer-session';
+import { useUnreadNotifications } from '@/lib/farmer-unread';
 import { CATEGORY_KEY } from '@/lib/farmers/listings';
 import { LISTING_CATEGORIES } from '@/lib/fixtures/farmers';
 import { t } from '@/lib/i18n';
@@ -26,6 +27,7 @@ import styles from './farmer.module.css';
  */
 export function ShopMasthead({ subnav, hideStrip }: { subnav?: ReactNode; hideStrip?: boolean }) {
   const { farmer, language, setLanguage, listingsFor } = useFarmerSession();
+  const unread = useUnreadNotifications(Boolean(farmer));
   const router = useRouter();
   const [query, setQuery] = useState('');
   // The search belongs to the marketplace only (the owner, 2026-10-08): on the
@@ -84,6 +86,34 @@ export function ShopMasthead({ subnav, hideStrip }: { subnav?: ReactNode; hideSt
               {farmer ? t('account.title', language) : t('shell.joinLine2', language)}
             </span>
           </Link>
+
+          {farmer ? (
+            <Link
+              href="/farmer/account/notifications"
+              className={styles.shopBell}
+              aria-label={
+                unread > 0
+                  ? `${t('notifications.title', language)} (${unread})`
+                  : t('notifications.title', language)
+              }
+            >
+              <svg
+                viewBox="0 0 24 24"
+                width="22"
+                height="22"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                aria-hidden
+              >
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+              </svg>
+              {unread > 0 ? (
+                <span className={styles.bellBadge}>{unread > 99 ? '99+' : unread}</span>
+              ) : null}
+            </Link>
+          ) : null}
 
           {farmer ? (
             <Link href="/farmer/account/listings" className={styles.shopCart}>

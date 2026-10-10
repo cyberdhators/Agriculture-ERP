@@ -5,6 +5,7 @@ import { notFound, unprocessable } from '../../../../../lib/api/errors';
 import { defineRoutes, ok } from '../../../../../lib/api/route';
 import { requireWriter } from '../../../../../lib/api/scope';
 import { prisma } from '../../../../../lib/db';
+import { LISTING_WITHDRAWN_NOTICE_TITLE } from '../../../../../lib/farmer-notices';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -25,7 +26,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
  * also kept in the audit log. Existing requests on the listing are untouched:
  * buyer and farmer may still settle what they had agreed.
  */
-const NOTICE_TITLE = 'CORWADO took one of your listings off the market';
+const NOTICE_TITLE = LISTING_WITHDRAWN_NOTICE_TITLE;
 
 export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   POST: {

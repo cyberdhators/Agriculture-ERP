@@ -250,7 +250,9 @@ export function FarmerOverview() {
             </Notice>
           ) : null}
 
-          <FarmerRequests />
+          <div id="requests" className={styles.anchor}>
+            <FarmerRequests />
+          </div>
 
           <div className={styles.blockHead}>
             <h2>{t('account.recent', language)}</h2>
