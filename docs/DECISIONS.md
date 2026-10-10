@@ -3668,3 +3668,30 @@ every screen and route: no code at registration, no /recover page, no
 
 The `account_recovery` table (migration 20261009090000) stays, unused: dropping
 a table is a change the owner decides, and it holds only hashes of test codes.
+
+## Farmers and extension officers work offline through a PWA, Android only (2026-10-10)
+
+The owner: "i need implementation, let's start with farmers and extension
+officers" and "no iphone, only android". The web app becomes an installable
+Progressive Web App that works without signal and synchronises when it returns,
+instead of (for now) the separate Flutter officer app in CLAUDE.md §3. That
+row is not changed here: whether the PWA replaces the Flutter app for good is
+the owner's and CORWADO's call; this records what is being built.
+
+- **Two new libraries, approved by the owner with the plan:** Serwist
+  (`@serwist/next`, `serwist`) for the service worker, Dexie for the on-phone
+  database (IndexedDB).
+- **Step 1 (this change): installable and opens offline.** Manifest, icons,
+  `/open` (sends each role home; offline, the last home used), `/offline`, a
+  no-signal strip and an "Install AgriOne" button. The service worker keeps
+  the app's own files only: **every `/api/` call and every request to Supabase
+  is network-only**, so no account's data is ever kept in a cache another
+  account on the phone could see.
+- **Next steps, each its own change:** (2) an outbox + sync engine on the C-9
+  contract already in `packages/shared/src/sync.ts` — client-generated ids,
+  one record per request, removed only on acknowledgement, a reason kept on
+  failure; (3) farmers offline — their listings and buyer requests on the
+  phone, post/edit produce and accept/decline queued; (4) officers offline —
+  caseload on the phone, register farmers, visits with photos, GPS mapping.
+- Android Chrome is the target: Background Sync is available there; nothing
+  is built for iPhone.

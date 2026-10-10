@@ -1,12 +1,26 @@
 import { withSentryConfig } from '@sentry/nextjs';
+import withSerwistInit from '@serwist/next';
 import type { NextConfig } from 'next';
+
+/**
+ * PWA (2026-10-10): the service worker is compiled from sw/sw.ts to
+ * public/sw.js at build time and registered on every page. Off in
+ * development, where a cached app would hide every change being made.
+ */
+const withSerwist = withSerwistInit({
+  swSrc: 'sw/sw.ts',
+  swDest: 'public/sw.js',
+  disable: process.env.NODE_ENV === 'development',
+  cacheOnNavigation: true,
+  reloadOnOnline: false,
+});
 
 const nextConfig: NextConfig = {
   // packages/shared ships TypeScript source, so Next must compile it.
   transpilePackages: ['@agri-erp/shared'],
 };
 
-export default withSentryConfig(nextConfig, {
+export default withSentryConfig(withSerwist(nextConfig), {
   // No source maps are uploaded in B1.5. That needs a build-time auth token
   // and CI wiring, which this unit does not touch. The cost is that
   // client-side stack traces stay minified. Recorded in docs/PROJECT-STATE.md.

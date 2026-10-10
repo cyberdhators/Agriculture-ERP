@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from 'next';
 import { Fraunces, Instrument_Sans, JetBrains_Mono, Open_Sans } from 'next/font/google';
 import type { ReactNode } from 'react';
 
+import { PwaStatus } from '@/components/pwa/PwaStatus';
+
 import './globals.css';
 
 /**
@@ -48,11 +50,18 @@ export const metadata: Metadata = {
   },
   description:
     'AgriOne South Sudan: Digital Agriculture & Agribusiness Ecosystem. Farmers, farms, produce and the marketplace that joins them.',
+  // PWA (2026-10-10): installable on Android, with its own icon and name.
+  // Android only (the owner): no iPhone-specific settings.
+  applicationName: 'AgriOne',
+  icons: {
+    icon: [{ url: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' }],
+  },
 };
 
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
+  themeColor: '#0f2e1c',
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
@@ -61,7 +70,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       lang="en"
       className={`${fraunces.variable} ${instrument.variable} ${jetbrains.variable} ${openSans.variable}`}
     >
-      <body>{children}</body>
+      <body>
+        {children}
+        <PwaStatus />
+      </body>
     </html>
   );
 }
