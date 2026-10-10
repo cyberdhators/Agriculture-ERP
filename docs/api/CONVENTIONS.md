@@ -29,10 +29,10 @@ boundary.
 > credentials that were never wrong; a 503 says try again. The service's own
 > 400, 401, 403 and 404 mean the token is not a session and remain `401`.
 
-| Client                       | Credential                             |
-| ---------------------------- | -------------------------------------- |
-| Web portal                   | Supabase Auth session cookie           |
-| Officer mobile app (Flutter) | `Authorization: Bearer <access token>` |
+| Client                               | Credential                             |
+| ------------------------------------ | -------------------------------------- |
+| Web app, including the installed PWA | Supabase Auth session cookie           |
+| Scripts and any other client         | `Authorization: Bearer <access token>` |
 
 Both resolve to the same Supabase Auth user. **Every route accepts either.** A
 route must never require one form specifically.
@@ -751,7 +751,6 @@ ignored.
 > person has already been told the country: nine digits starting 9 after it are
 > the national number, and `0912…` after it is the local form whose 0 is
 > dropped. Bare digits of any other length or first digit are still refused.
-> The Flutter officer app's Dart check must follow (section 8).
 
 > Every phone number in this document is fabricated.
 
@@ -794,20 +793,16 @@ string and route parameter is validated server-side by a Zod schema in
 `packages/shared` before it reaches any database call — regardless of what any
 client did or claims to have done.
 
-The Flutter officer app implements its own field checks in Dart, so that an
-officer with no signal gets immediate feedback instead of discovering a bad
-phone number on upload hours later. Those checks are a **convenience, never a
-guarantee**. They are not the same code and cannot be: Dart cannot import
-TypeScript.
+The officer and farmer app is the web app installed as a PWA (DECISIONS,
+2026-10-10, final), so its forms check fields with the **same** schemas from
+`packages/shared` before sending — including with no signal, where a change is
+checked on the phone and queued. A client check is still a **convenience,
+never a guarantee**: the server validates every request again, and where they
+ever disagree **the server wins** and the client shows the server's message.
 
-Where the two disagree, **the server wins**, and the client shows the server's
-message rather than its own.
-
-> **This alignment is a manual, ongoing obligation.** Nothing enforces that the
-> Dart rules and the Zod rules agree. When a rule in `packages/shared` changes,
-> the corresponding Dart check must be changed deliberately, in the same unit of
-> work. The phone rules are the first case: `phoneSchema` in `packages/shared`
-> and the Dart phone check must accept and reject exactly the same strings.
+(Until 2026-10-10 this section required a separate Flutter app's Dart checks to
+be kept in step with these schemas by hand. There is no Flutter app, so there
+is no second copy of the rules to keep aligned.)
 
 ### 8.1 Unknown fields are rejected
 

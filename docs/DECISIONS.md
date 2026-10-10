@@ -3695,3 +3695,14 @@ the owner's and CORWADO's call; this records what is being built.
   caseload on the phone, register farmers, visits with photos, GPS mapping.
 - Android Chrome is the target: Background Sync is available there; nothing
   is built for iPhone.
+
+**Final (2026-10-10, the owner): "pwa is the final".** The PWA replaces the
+Flutter officer app for good; no Flutter app will be built. CLAUDE.md §3's
+row now names the PWA. What followed from it:
+
+- There is no second client with its own copy of the rules. The rule in
+  CONVENTIONS §8 that a Dart check must be kept in step with every Zod rule
+  is withdrawn: the phone and the portal run the same `packages/shared` code.
+- The `apps/mobile` placeholder is removed.
+- Bearer-token access stays (CONVENTIONS §1): every route still accepts
+  either credential, for scripts and for any future client.

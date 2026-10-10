@@ -76,10 +76,10 @@ fact would make the references in `PROJECT-STATE` and `DECISIONS` ambiguous.
 
 After the backend units, work splits by surface:
 
-| Surface                      | Owner      |
-| ---------------------------- | ---------- |
-| Web portal (Next.js)         | Alieu      |
-| Officer mobile app (Flutter) | Monkonmlah |
+| Surface                      | Owner                                                                                                 |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------- |
+| Web portal (Next.js)         | Alieu                                                                                                 |
+| Officer mobile app (Flutter) | Monkonmlah -- **dropped 2026-10-10**: the web app is the officer and farmer app, as a PWA (DECISIONS) |
 
 **Crossed once, on the owner's authorisation.** The administrator portal (#95)
 was built by Lane 1 in Lane 2's files. It is recorded in `HANDOFF.md` as it
