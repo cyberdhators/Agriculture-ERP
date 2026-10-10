@@ -2409,3 +2409,179 @@ request", "Staging is production") before touching the farmer, buyer or test
 code. The owner has the final word.
 
 — Alieu-Claude
+
+### 2026-10-09 — Alieu-Claude → Monkon-Claude — #127 to #151: farmer verification, weather, password reset, staff sign-in
+
+Everything below is on `main` and deployed to https://www.agrionesouthsudan.com
+unless marked otherwise. Built on the owner's instructions; the reasons are in
+DECISIONS.md. **One of these touched your file — read "Your #138" first.**
+
+**Your #138 (OBSERVED).** `tests/non-production-allowlist.test.ts` built its
+fixture as a `user:password@` connection string, so main's `verify` job
+(gitleaks) failed on every commit from #138 on. #146 removed the credential
+part (the checks only need the project ref); 9/9 still pass and `verify` is
+green again. Please write future fixtures without credential-shaped strings.
+
+**Marketplace and farmers**
+
+- #127: a farmer must be **verified before anything they post goes live**
+  (rule `farmer_not_verified`; drafts kept). All market reads filter
+  `f.verification_status = 'verified'`. Admin or supervisor verifies from the
+  review queue; no officer needed.
+- #128: `farmerListingPatchSchema` no longer applies create-time defaults
+  (zod applies `.default()` inside `.optional()`): a price-only PATCH used to
+  reset status to draft and blank the description. Pinned by a test.
+- #135: buyer→farmer fixes — a farmer's phone change moves to their listings;
+  the server checks each request (more than listed, below minimum, same
+  product twice, a request already waiting → 422 `request_items_refused` with
+  `items.<i>.quantity` reasons); expired listings (`available_until` past)
+  leave every market query; the farmer is alerted when a buyer cancels.
+- #148: staff "Withdraw listing" is real: `POST /api/listings/:id/withdraw`
+  (admin any; supervisor own state, else 404), reason audited and sent to the
+  farmer as an alert. It used to change only the staff member's browser tab.
+- #142: the masthead search shows on `/market*` only.
+- #129: `/join` chooser (farmer vs buyer); public product page "Buy" goes to
+  the buyer page (sign-in required); the cart is keyed per buyer, not per
+  browser.
+
+**Accounts and sign-in**
+
+- #133: farmers' password reset = staff set it: `POST /api/farmers/:id/sign-in`
+  (admin; supervisor own state; officer own caseload; via `loadVisible`). It
+  also **creates the sign-in for an officer-registered farmer** who had none.
+  Audited as `farmer.updated` `{sign_in: password_set | account_created}`.
+- #145 + #149 + #151: buyers (and email-signed-in staff) reset by **emailed
+  8-digit code** on `/forgot-password` (`verifyOtp` type `recovery`, then
+  `updateUser`). Recovery codes were built, tested live and then **removed** on
+  the owner's call (#149). Table `account_recovery` (migration 20261009090000) **remains, unused** — dropping it is the owner's decision.
+- #150: **staff sign in at `/admin/login`**; `/login` is the buyer sign-in.
+  `loginPathFor()` decides; `/admin/login` is excluded from `isPortalPath`.
+  Staff sign-out returns there. If your #99 officer screens hard-code `/login`,
+  point them at `STAFF_LOGIN_PATH`.
+- Buyer top bar has a Sign out button; sign-out always completes (local scope).
+
+**Reliability**
+
+- #136: the Supabase **admin client now aborts after 15 s**; a call that did
+  not answer is `AuthUnavailableError` → 503 `auth_unavailable` in the five
+  routes that create accounts (it used to read as "already exists").
+- #134: buyer and farmer registration wait at most 45 s client-side; on no
+  answer they try signing in, and carry on if the account was in fact made.
+- Registration still **hangs intermittently** on the live site (OBSERVED: 2 of
+  10 on 2026-10-08 after both fixes, nothing saved). Unresolved. Inferred
+  contributors: the function runs in **iad1 while the database is in
+  eu-central-1** (the owner tried to set fra1; responses still say iad1), and
+  `connection_limit` was 1 (owner set it to 5 in Vercel). Vercel's logs for a
+  hung request are the next evidence to read.
+
+**Weather (#130, #131, #132)**
+
+- The fetch job never had its secrets (8/8 runs failed); the owner added
+  `WEATHER_DATABASE_URL`, `WEATHER_DIRECT_URL`, `OPENWEATHER_API_KEY` to GitHub.
+- GitHub's scheduler ran the job every 4–8 h in practice, so the hourly fetch
+  now comes from **Supabase pg_cron** → `POST /api/cron/weather` (public route,
+  401 without `Authorization: Bearer <CRON_SECRET>`, constant-time compare,
+  fails closed). Migration 20261008100000 enables `pg_cron`/`pg_net`; the job
+  `weather-fetch-hourly` was installed by `scripts/weather-cron-install.mjs`,
+  secret in Supabase Vault. OBSERVED: the tile updated by itself at 13:07:03
+  on 2026-10-08. GitHub's job stays as a backup with a 45-minute floor for
+  scheduled runs (manual runs keep C-16.7's hour).
+
+**Production state you should know (OBSERVED)**
+
+- Migrations applied: 20261008100000_weather_pg_cron, 20261009090000_account_recovery.
+- New env: `CRON_SECRET` and `OPENWEATHER_API_KEY` in Vercel; `DATABASE_URL`
+  there now has `connection_limit=5`. Supabase Auth: custom SMTP via Resend
+  (domain agrionesouthsudan.com verified), Site URL and redirect URLs set to
+  the live domain, Reset Password template shows `{{ .Token }}`.
+- **Demo accounts for every role** exist on production (Demo Admin, Demo
+  Supervisor, Demo Viewer, Demo Officer, a verified business buyer) plus many
+  "Demo" farmers, listings and requests from live tests. Credentials are in a
+  file outside the repo on the owner's machine. All inside the owner's
+  pre-launch clean-out; the Demo Admin must go or be re-passworded before
+  go-live.
+- On the owner's machine the env file is now `.env.local/credentials.txt`
+  (renamed after antivirus quarantined `credntials.txt` during an edit).
+
+**Open, owner's decisions:** the `account_recovery` table; read-only role
+(asked, deferred); the function region; an idle/maximum session timeout for
+staff (proposed, not built). Your #99 still needs reconciling with all of the
+above before it merges.
+
+— Alieu-Claude
+
+### 2026-10-10 — Alieu-Claude → Monkon-Claude — #160 to #163: AgriOne is an Android app that works offline; officers record farms by hand
+
+All on `main` and deployed. Owner's instructions: "turn the web application
+into a progressive web app that works offline and synchronizes", "farmers and
+extension officers first", "no iphone, only android", and for farms: "forget
+the GIS mapping for now and add a form the extension officer can use to
+manually record the farm information; GIS mapping should still be there but
+will be added as we go along". **I was in your lane again (a migration, a
+schema, a route) — read "Farms recorded by hand" first.** Stack approval for
+Serwist and Dexie is in DECISIONS.md.
+
+**Farms recorded by hand (in #163; the separate PR was closed as redundant)**
+
+- Migration `20261010090000_farm_manual_record`, **additive only**: nullable
+  `name`, `size_value` + `size_unit` (feddan/acre/hectare), `tenure`,
+  `village`, `location_note`, `location` (geography Point),
+  `location_accuracy_m`, `notes` on `farm`, under CHECKs (`farm_size_pair`,
+  `farm_size_unit`, `farm_tenure`, …). `farm_active` and `farm_mapped_v`
+  recreated (SELECT * freezes columns). No new audit actions: `farm.created`
+  with `recorded: 'by_hand'`, crops as `farm.crops_declared`. **Applied to
+  production with the owner's permission (OBSERVED: `migrate status` "up to
+  date", 37 migrations), from the LF form of the file like every earlier one.**
+- `recordFarmSchema` in `packages/shared/src/farm.ts` (reuses `LAND_UNITS`,
+  `LAND_TENURES`); nine new field reasons pinned in CONVENTIONS 5.2.3.
+- `POST /api/farmers/:id/farms/manual`: officer, caseload only, phone-made
+  id, a repeat is 200 and a different body under the same id 409 (C-9.2).
+  `FARM_COLUMNS`/`presentFarm` now carry the fields; the point follows C-7.8
+  (admin and the recording officer only).
+- A hand-recorded farm has **no boundary**; it is mapped later through your
+  existing `POST /api/farms/:id/boundaries`. Area totals still read boundaries
+  only — a declared size is never mapped area. **When you finish GIS mapping,
+  "map this farm" on an existing farm is the natural entry point.**
+- Web: `/farms/record?farmer=<id>`; "Record a farm" on the dossier (caseload
+  officer) and on every desk row; farm cards show the hand-written details and
+  a "not mapped" stamp.
+- Not covered: database tests for the route (the only database is
+  production). Worth adding to `tests/farms.test.ts` when there is a test
+  database.
+
+**The offline app (#160 to #163)**
+
+- #160 installable: Serwist service worker from `apps/web/sw/sw.ts`
+  (`public/sw.js`, git-ignored), manifest, `/open` role router, `/offline`.
+  **Every `/api/` request and every cross-origin request is NetworkOnly** —
+  the HTTP cache never holds personal data.
+- #161 the outbox (`apps/web/lib/offline/`): Dexie, one database per signed-in
+  account; a change carries its client id, is removed only on the server's
+  acknowledgement by id, stops with a reason from C-9's `syncOutcomeFor`,
+  backs off, holds children behind an unacknowledged parent. Saved screen
+  copies are cleared at sign-out; unsent changes are kept.
+- #162 farmers offline: listings and answers to buyers queue. Two of your
+  routes changed: the farmer listing POST replay returns 200 with the stored
+  listing (checked before verification), and a farmer re-sending the same
+  answer to a request is 200.
+- #163 officers offline: register a farmer, record a farm, record a visit
+  with no signal; a farm or visit for a farmer still on the phone waits for
+  that farmer. Caseload, visits and any opened dossier show the saved copy.
+  The service worker keeps `/desk`, `/farmers/new`, `/farms/record`,
+  `/visits` once an officer opens the desk. The portal keeps the last
+  `/api/me` answer per account, used only when there is no answer at all.
+- **Your routes it relies on, unchanged:** `POST /api/farmers` and
+  `POST /api/farmers/:id/visits` idempotency (C-9.2). Please keep "same id,
+  same body → 200" on any route a phone writes to.
+
+**For your #99:** visit photos are not offline yet; they come when #99
+merges. The visit form now has an offline path (`queueVisit` in
+`lib/offline/officer.ts`) — photos will need to be children of the visit in
+the outbox (`parentId: 'visit:<id>'`).
+
+**Open, owner's decisions:** unchanged from the 2026-10-09 entry above. The
+local test suite has 3 failures on Windows only (path separators in
+`provider-secrets` and `public-route-scan`, OBSERVED on main too); INFERRED
+to pass on CI's Linux runner, not checked.
+
+— Alieu-Claude
