@@ -57,3 +57,18 @@ const serwist = new Serwist({
 });
 
 serwist.addEventListeners();
+
+/**
+ * Android's Background Sync (PWA step 2): when signal returns, wake any open
+ * AgriOne window and tell it to send its outbox. The sending itself stays in
+ * the page, where the signed-in account and its outbox are known.
+ */
+self.addEventListener('sync', (event: Event) => {
+  const e = event as Event & { tag?: string; waitUntil(p: Promise<unknown>): void };
+  if (e.tag !== 'agrione-outbox') return;
+  e.waitUntil(
+    self.clients
+      .matchAll({ type: 'window', includeUncontrolled: true })
+      .then((windows) => windows.forEach((w) => w.postMessage({ type: 'agrione-sync' }))),
+  );
+});
