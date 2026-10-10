@@ -30,9 +30,12 @@ export default function OpenApp() {
         return;
       }
       try {
-        const farmer = await fetch('/api/farmer/me', { cache: 'no-store' });
+        // Connected to a network with no internet behind it: give up after a
+        // few seconds and open the last home, as with no signal at all.
+        const signal = AbortSignal.timeout(8000);
+        const farmer = await fetch('/api/farmer/me', { cache: 'no-store', signal });
         if (farmer.ok) return go('/farmer/account');
-        const me = await fetch('/api/me', { cache: 'no-store' });
+        const me = await fetch('/api/me', { cache: 'no-store', signal });
         if (me.ok) {
           const body = (await me.json().catch(() => ({}))) as { data?: { role?: string } };
           const role = body.data?.role;

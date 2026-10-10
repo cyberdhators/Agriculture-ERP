@@ -27,6 +27,7 @@ import {
   type PendingRegistration,
 } from '@/lib/offline/officer';
 import { subscribeOutbox } from '@/lib/offline/outbox';
+import { keepPagesOffline, OFFICER_PAGES } from '@/lib/pwa/keep';
 import { BuyerRequests } from './BuyerRequests';
 import { FARMERS, farmerPayamName, officerById, type Farmer } from '@/lib/fixtures/farmers';
 import { formatDate, formatPhone } from '@/lib/format';
@@ -78,10 +79,7 @@ export function OfficerDesk() {
   // PWA: ask the service worker to keep the field pages (register, record a
   // farm, visits), so they open with no signal even if never opened here.
   useEffect(() => {
-    if (typeof navigator === 'undefined' || !navigator.onLine) return;
-    void navigator.serviceWorker?.ready
-      .then((reg) => reg.active?.postMessage({ type: 'agrione-keep-field-pages' }))
-      .catch(() => undefined);
+    keepPagesOffline('/desk', OFFICER_PAGES);
   }, []);
 
   // PWA: the registrations still on this phone; when one is sent, reload.

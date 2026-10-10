@@ -1745,16 +1745,29 @@
     height: 40px;
   }
 
+  /*
+   * 2026-10-10 (owner: "the English button is overlaying the AgriOne logo"):
+   * end-aligned and wider than its column, the row overflowed LEFT over the
+   * logo once a farmer was signed in. It now fills its column and never
+   * leaves it; anything that still does not fit scrolls inside the column.
+   */
   .shopTools {
     grid-column: 2;
     grid-row: 1;
-    justify-self: end;
+    justify-self: stretch;
+    min-width: 0;
     display: flex;
     align-items: center;
-    gap: var(--s-3);
+    justify-content: flex-end;
+    gap: var(--s-2);
     flex-wrap: nowrap;
     overflow-x: auto;
     scrollbar-width: none;
+  }
+
+  /* A signed-in farmer has Account in the bottom bar; the header drops it. */
+  .shopAcctSignedIn {
+    display: none;
   }
 
   .shopTools::-webkit-scrollbar {
