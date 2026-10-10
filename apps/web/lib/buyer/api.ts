@@ -188,6 +188,8 @@ export interface PurchaseRequest {
   organization?: { id: string; name: string };
   /** B14: the farmer's phone, once the request has been sent. */
   farmer_phone?: string | null;
+  /** 2026-10-10: the farmer's name, under the same condition. */
+  farmer_name?: string | null;
 }
 
 export interface TimelineEntry {

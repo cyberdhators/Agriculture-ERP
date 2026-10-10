@@ -44,9 +44,14 @@ describe('the derived authentication identifier', () => {
   it('refuses to derive an identifier from a number the rest of the system rejects', () => {
     // Otherwise a code path that skipped validation could mint an identifier
     // for a malformed number, and two officers could collide.
-    for (const bad of ['912345678', '+254712345678', 'not a number', '']) {
+    for (const bad of ['812345678', '+254712345678', 'not a number', '']) {
       expect(() => officerAuthIdentifier(bad), `should have thrown for ${bad}`).toThrow();
     }
+  });
+
+  it('gives the same identifier for every written form of one number', () => {
+    // 2026-10-10: 912345678 is now the national number, the same as 0912345678.
+    expect(officerAuthIdentifier('912345678')).toBe(officerAuthIdentifier('0912345678'));
   });
 
   it('is stable across calls', () => {

@@ -1,9 +1,12 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
 import { EmptyState } from '@/components/ui';
+import { noticeHref } from '@/lib/farmer-notices';
 import { farmerApi, FarmerApiError, useFarmerSession } from '@/lib/farmer-session';
+import { notificationsChanged } from '@/lib/farmer-unread';
 import { loadWithSnapshot } from '@/lib/offline/snapshot';
 import { formatDate } from '@/lib/format';
 import { t, type Language } from '@/lib/i18n';
@@ -42,12 +45,16 @@ export function FarmerNotifications() {
         setNotifications(rows);
         // Marked read only when they came from the server just now.
         if (!got.fresh) return;
-        for (const n of rows.filter((r) => !r.read_at)) {
-          void farmerApi(`/api/farmer/notifications/${n.id}`, {
-            method: 'PATCH',
-            body: JSON.stringify({}),
-          }).catch(() => undefined);
-        }
+        const unread = rows.filter((r) => !r.read_at);
+        if (unread.length === 0) return;
+        void Promise.all(
+          unread.map((n) =>
+            farmerApi(`/api/farmer/notifications/${n.id}`, {
+              method: 'PATCH',
+              body: JSON.stringify({}),
+            }).catch(() => undefined),
+          ),
+        ).then(notificationsChanged);
       })
       .catch(() => undefined);
     return () => {
@@ -82,12 +89,28 @@ function NotificationCard({
   language: Language;
 }) {
   const unread = !notification.read_at;
+  // 2026-10-10 (CORWADO): a notice about a request opens the request.
+  const href = noticeHref(notification.title);
+  const content = (
+    <>
+      <div className={styles.notiTitle}>{notification.title}</div>
+      <p className="small">{notification.body}</p>
+      <span className="small muted">
+        {formatDate(notification.created_at, language)}
+        {href ? ` · ${language === 'ar' ? 'افتح' : 'Open'} →` : ''}
+      </span>
+    </>
+  );
 
   return (
     <li className={`${styles.notiItem} ${unread ? styles.notiUnread : ''}`}>
-      <div className={styles.notiTitle}>{notification.title}</div>
-      <p className="small">{notification.body}</p>
-      <span className="small muted">{formatDate(notification.created_at, language)}</span>
+      {href ? (
+        <Link href={href} className={styles.notiLink}>
+          {content}
+        </Link>
+      ) : (
+        content
+      )}
     </li>
   );
 }

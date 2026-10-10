@@ -7,6 +7,7 @@ import { useEffect, type ReactNode } from 'react';
 import { Wordmark } from '@/components/brand/Wordmark';
 import { Skeleton } from '@/components/ui';
 import { useFarmerSession } from '@/lib/farmer-session';
+import { useUnreadNotifications } from '@/lib/farmer-unread';
 import { t, type TKey } from '@/lib/i18n';
 
 import { ShopMasthead } from './ShopMasthead';
@@ -390,6 +391,7 @@ function isActive(pathname: string, href: string, exact?: boolean): boolean {
 
 export function AccountShell({ children }: { children: ReactNode }) {
   const { hydrated, language, farmer } = useFarmerSession();
+  const unread = useUnreadNotifications(Boolean(farmer));
   const pathname = usePathname();
   const router = useRouter();
 
@@ -421,6 +423,9 @@ export function AccountShell({ children }: { children: ReactNode }) {
                       {item.glyph}
                     </span>
                     <span>{t(item.key, language)}</span>
+                    {item.href === '/farmer/account/notifications' && unread > 0 ? (
+                      <span className={styles.bellBadge}>{unread > 99 ? '99+' : unread}</span>
+                    ) : null}
                   </Link>
                 );
               })}

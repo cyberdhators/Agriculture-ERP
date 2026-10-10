@@ -146,7 +146,7 @@ export function BuyerRequestDetail({ id }: { id: string }) {
       {request.farmer_phone ? (
         <Card>
           <CardHeader
-            title="Contact the farmer"
+            title={request.farmer_name ? `Contact ${request.farmer_name}` : 'Contact the farmer'}
             subtitle="Agree the price, quality and handover directly with the farmer."
           />
           <CardBody>

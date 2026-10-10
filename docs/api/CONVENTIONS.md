@@ -738,14 +738,20 @@ date is present.
 immediately. A local-format number is never stored and never returned.
 
 Accepted written forms, all normalising to `+211912345678`: `+211912345678`,
-`211912345678`, `0912345678`, and any of those written with spaces or hyphens
-between the digits. Surrounding whitespace is ignored.
+`211912345678`, `0912345678`, `912345678`, `+2110912345678`, and any of those
+written with spaces or hyphens between the digits. Surrounding whitespace is
+ignored.
 
-> **Nine bare digits with no country marker are refused**, so `912345678` is an
-> error rather than a number. Such a string is either a local number missing its
-> leading zero or an international one missing its country code, and accepting it
-> would mean guessing which — so the officer is asked to write it in full
-> instead.
+> **Nine bare digits starting with 9 are the national number** (changed
+> 2026-10-10 on CORWADO's review of the live system: "All registration is
+> supposed to take the default +211 as it is and allow for the subsequent number
+> to either start with 09… or 922…"). The rule this replaces refused `912345678`
+> to avoid guessing between a local number missing its 0 and a foreign one
+> missing its code. Every phone box now shows +211 in front of it, so the
+> person has already been told the country: nine digits starting 9 after it are
+> the national number, and `0912…` after it is the local form whose 0 is
+> dropped. Bare digits of any other length or first digit are still refused.
+> The Flutter officer app's Dart check must follow (section 8).
 
 > Every phone number in this document is fabricated.
 
