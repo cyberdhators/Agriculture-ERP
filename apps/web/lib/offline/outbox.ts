@@ -45,6 +45,24 @@ export function currentAccount(): string | null {
   return account;
 }
 
+/**
+ * The signed-in account, read from the saved session if the engine has not
+ * been told yet -- a screen can load before OfflineSync starts. Works offline:
+ * the session is read from this phone, not asked of the server.
+ */
+export async function ensureAccount(): Promise<string | null> {
+  if (account) return account;
+  try {
+    const { supabaseBrowser } = await import('@/lib/supabase/browser');
+    const { data } = await supabaseBrowser().auth.getSession();
+    const id = data.session?.user.id ?? null;
+    if (id) setAccount(id);
+    return id;
+  } catch {
+    return null;
+  }
+}
+
 export interface NewChange {
   id: string;
   label: string;
@@ -60,6 +78,7 @@ export interface NewChange {
  * signal it is sent straight away. Returns false only if no account is active.
  */
 export async function enqueue(change: NewChange): Promise<boolean> {
+  await ensureAccount();
   if (!account) return false;
   const db = dbFor(account);
   const existing = await db.outbox.where('id').equals(change.id).first();
@@ -186,15 +205,12 @@ export async function syncNow(): Promise<void> {
           await db.outbox.delete(next.seq!);
           await db.acked.put({ id: next.id, ackedAt: Date.now() });
           // Its children may go now.
-          await db.outbox
-            .where('parentId')
-            .equals(next.id)
-            .modify({
-              status: 'pending',
-              nextAttemptAt: 0,
-              outcome: undefined,
-              message: undefined,
-            });
+          await db.outbox.where('parentId').equals(next.id).modify({
+            status: 'pending',
+            nextAttemptAt: 0,
+            outcome: undefined,
+            message: undefined,
+          });
         });
         changed();
         continue;
@@ -253,6 +269,7 @@ export async function summary(): Promise<OutboxSummary> {
 
 /** The changes of one kind still on the phone (for screens to show "waiting to sync"). */
 export async function queuedOf(kind: string): Promise<OutboxRecord[]> {
+  await ensureAccount();
   if (!account) return [];
   return (await dbFor(account).outbox.toArray()).filter((r) => r.kind === kind);
 }

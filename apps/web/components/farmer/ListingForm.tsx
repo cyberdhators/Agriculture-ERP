@@ -186,7 +186,13 @@ export function ListingForm({ listingId }: { listingId?: string }) {
     try {
       const saved = await saveListing(listing);
       if (status === 'draft' && !verified) setSaved('draft');
-      router.push(`/farmer/account/listings/${saved.id}`);
+      // PWA: saved on the phone (no signal) -> back to My listings, which is kept
+      // for offline use; a new product page may not be.
+      router.push(
+        (saved as { pending?: boolean }).pending
+          ? '/farmer/account/listings'
+          : `/farmer/account/listings/${saved.id}`,
+      );
     } catch (error) {
       setSaveError(error instanceof Error ? error.message : 'The listing could not be saved.');
     }

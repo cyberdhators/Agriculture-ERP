@@ -5,6 +5,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { Button, ButtonLink, Notice } from '@/components/ui';
 import { FarmerApiError, farmerApi, useFarmerSession } from '@/lib/farmer-session';
 import { formatDate, formatPhone } from '@/lib/format';
+import { enqueue, queuedOf, subscribeOutbox } from '@/lib/offline/outbox';
+import { loadWithSnapshot, saveSnapshot } from '@/lib/offline/snapshot';
 
 import styles from './farmer.module.css';
 
@@ -43,6 +45,8 @@ const W = {
     cancelled: 'Cancelled by the buyer',
     converted: 'Agreed',
     lead: 'Call or message the buyer to agree the price and the handover.',
+    waiting: 'waiting to send',
+    savedCopy: 'No signal. Showing the list saved on this phone at',
   },
   ar: {
     title: 'طلبات المشترين',
@@ -60,6 +64,8 @@ const W = {
     cancelled: 'ألغاه المشتري',
     converted: 'تم الاتفاق',
     lead: 'اتصل بالمشتري أو راسله للاتفاق على السعر والتسليم.',
+    waiting: 'في انتظار الإرسال',
+    savedCopy: 'لا توجد إشارة. القائمة المحفوظة على هذا الهاتف في',
   },
 } as const;
 
@@ -80,10 +86,35 @@ export function FarmerRequests({ limit }: { limit?: number }) {
   const [requests, setRequests] = useState<IncomingRequest[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  /** PWA: answers saved on this phone, not yet sent. */
+  const [pending, setPending] = useState<ReadonlySet<string>>(new Set());
+  /** PWA: when the list shown was saved, if it came from this phone. */
+  const [savedAt, setSavedAt] = useState<number | null>(null);
 
   const load = useCallback(async () => {
     try {
-      setRequests(await farmerApi<IncomingRequest[]>('/api/farmer/requests'));
+      // PWA (2026-10-10): with no signal, the list saved on this phone.
+      const got = await loadWithSnapshot(
+        'farmer.requests',
+        () => farmerApi<IncomingRequest[]>('/api/farmer/requests'),
+        (e) => e instanceof FarmerApiError && e.status === 0,
+      );
+      const queued = await queuedOf('request-answer');
+      const answers = new Map(
+        queued.map((q) => [
+          q.id.replace(/^answer:/, ''),
+          (q.body as { answer?: string } | undefined)?.answer === 'accept'
+            ? 'accepted'
+            : 'rejected',
+        ]),
+      );
+      setPending(new Set(answers.keys()));
+      setSavedAt(got && !got.fresh ? got.savedAt : null);
+      setRequests(
+        (got?.data ?? []).map((r) =>
+          answers.has(r.id) ? { ...r, status: answers.get(r.id)! } : r,
+        ),
+      );
     } catch (e) {
       setError(e instanceof FarmerApiError ? e.message : String(e));
       setRequests([]);
@@ -92,18 +123,53 @@ export function FarmerRequests({ limit }: { limit?: number }) {
 
   useEffect(() => {
     void load();
+    // When the outbox sends an answer, reload to show the server's state.
+    let before = -1;
+    const off = subscribeOutbox(() => {
+      void queuedOf('request-answer').then((q) => {
+        if (before >= 0 && q.length < before) void load();
+        before = q.length;
+      });
+    });
+    return off;
   }, [load]);
 
   async function answer(id: string, value: 'accept' | 'decline') {
     setBusy(id);
     setError(null);
+    // PWA (2026-10-10): with no signal the answer is saved on this phone and
+    // sent later. The same answer sent twice is accepted by the server.
+    const queue = async () => {
+      const r = (requests ?? []).find((x) => x.id === id);
+      await enqueue({
+        id: `answer:${id}`,
+        kind: 'request-answer',
+        label: `${value === 'accept' ? 'Accept' : 'Decline'}: ${r?.buyer.name ?? 'buyer'} -- ${r?.product_name ?? ''}`,
+        method: 'PATCH',
+        path: `/api/farmer/requests/${id}`,
+        body: { answer: value },
+      });
+      const status = value === 'accept' ? 'accepted' : 'rejected';
+      setPending((p) => new Set(p).add(id));
+      setRequests((list) => (list ?? []).map((x) => (x.id === id ? { ...x, status } : x)));
+    };
     try {
+      if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        await queue();
+        return;
+      }
       const updated = await farmerApi<IncomingRequest>(`/api/farmer/requests/${id}`, {
         method: 'PATCH',
         body: JSON.stringify({ answer: value }),
       });
-      setRequests((list) => (list ?? []).map((r) => (r.id === id ? updated : r)));
+      const next = (requests ?? []).map((r) => (r.id === id ? updated : r));
+      setRequests(next);
+      await saveSnapshot('farmer.requests', next);
     } catch (e) {
+      if (e instanceof FarmerApiError && e.status === 0) {
+        await queue();
+        return;
+      }
       setError(e instanceof FarmerApiError ? e.message : String(e));
     } finally {
       setBusy(null);
@@ -121,6 +187,12 @@ export function FarmerRequests({ limit }: { limit?: number }) {
           {fresh > 0 ? `${fresh} ${w.submitted}` : (requests?.length ?? '…')}
         </span>
       </div>
+      {savedAt ? (
+        <p className="small muted">
+          {w.savedCopy}{' '}
+          {new Date(savedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+        </p>
+      ) : null}
       {error ? <Notice kind="error" title={error} /> : null}
       {requests && requests.length === 0 ? <p className="small muted">{w.empty}</p> : null}
       {shown.length > 0 ? (
@@ -150,6 +222,7 @@ export function FarmerRequests({ limit }: { limit?: number }) {
                   <div className="small muted">
                     {r.submitted_at ? formatDate(r.submitted_at, language) : ''} ·{' '}
                     <strong>{w[r.status as keyof typeof w] ?? r.status}</strong>
+                    {pending.has(r.id) ? <em> · {w.waiting}</em> : null}
                   </div>
                   <div
                     style={{

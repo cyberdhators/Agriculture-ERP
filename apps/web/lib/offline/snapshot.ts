@@ -1,7 +1,7 @@
 'use client';
 
 import { dbFor } from './db';
-import { currentAccount } from './outbox';
+import { ensureAccount } from './outbox';
 
 /**
  * A SCREEN'S LAST COPY (2026-10-10, PWA step 2), so it can be shown offline.
@@ -20,14 +20,20 @@ export interface Snapshot<T> {
 export async function loadWithSnapshot<T>(
   key: string,
   load: () => Promise<T>,
+  /**
+   * Which failures may fall back to the saved copy. Default: all. A screen
+   * passes "no signal only", so that a real answer -- signed out, not allowed
+   * -- is never papered over by an old copy.
+   */
+  useSavedWhen: (failure: unknown) => boolean = () => true,
 ): Promise<Snapshot<T> | null> {
-  const account = currentAccount();
+  const account = await ensureAccount();
   try {
     const data = await load();
     if (account) await dbFor(account).cache.put({ key, data, savedAt: Date.now() });
     return { data, savedAt: Date.now(), fresh: true };
   } catch (failure) {
-    if (!account) throw failure;
+    if (!account || !useSavedWhen(failure)) throw failure;
     const kept = await dbFor(account).cache.get(key);
     if (!kept) throw failure;
     return { data: kept.data as T, savedAt: kept.savedAt, fresh: false };
@@ -36,12 +42,12 @@ export async function loadWithSnapshot<T>(
 
 /** Replace a saved copy (after an offline change, so the screen shows it at once). */
 export async function saveSnapshot<T>(key: string, data: T): Promise<void> {
-  const account = currentAccount();
+  const account = await ensureAccount();
   if (account) await dbFor(account).cache.put({ key, data, savedAt: Date.now() });
 }
 
 export async function readSnapshot<T>(key: string): Promise<Snapshot<T> | null> {
-  const account = currentAccount();
+  const account = await ensureAccount();
   if (!account) return null;
   const kept = await dbFor(account).cache.get(key);
   return kept ? { data: kept.data as T, savedAt: kept.savedAt, fresh: false } : null;
