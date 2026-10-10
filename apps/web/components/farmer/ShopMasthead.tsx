@@ -120,7 +120,11 @@ export function ShopMasthead({ subnav, hideStrip }: { subnav?: ReactNode; hideSt
           ) : null}
 
           {farmer ? (
-            <Link href="/farmer/account/listings" className={styles.shopCart}>
+            <Link
+              href="/farmer/account/listings"
+              className={styles.shopCart}
+              aria-label={`${t('account.tabListings', language)} (${listingCount})`}
+            >
               <span className={styles.shopCartBadge}>{listingCount}</span>
               <span className={styles.shopCartLabel}>{t('account.tabListings', language)}</span>
             </Link>
