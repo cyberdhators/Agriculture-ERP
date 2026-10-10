@@ -1770,6 +1770,23 @@
     display: none;
   }
 
+  /* Nothing in the row is squeezed: the bell stayed a dot at 320px. */
+  .shopTools > * {
+    flex-shrink: 0;
+  }
+}
+
+/* The narrowest phones: "My listings" keeps its count and drops its words
+   (only where there is a count -- a visitor's "Buyer cart" keeps its words). */
+@media (max-width: 360px) {
+  .shopCartBadge + .shopCartLabel {
+    display: none;
+  }
+
+  .shopTools {
+    gap: var(--s-1);
+  }
+
   .shopTools::-webkit-scrollbar {
     display: none;
   }
