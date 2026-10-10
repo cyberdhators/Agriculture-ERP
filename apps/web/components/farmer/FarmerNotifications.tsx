@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react';
 
 import { EmptyState } from '@/components/ui';
-import { farmerApi, useFarmerSession } from '@/lib/farmer-session';
+import { farmerApi, FarmerApiError, useFarmerSession } from '@/lib/farmer-session';
+import { loadWithSnapshot } from '@/lib/offline/snapshot';
 import { formatDate } from '@/lib/format';
 import { t, type Language } from '@/lib/i18n';
 
@@ -29,10 +30,18 @@ export function FarmerNotifications() {
 
   useEffect(() => {
     let cancelled = false;
-    farmerApi<NotificationRow[]>('/api/farmer/notifications')
-      .then((rows) => {
-        if (cancelled) return;
+    // PWA (2026-10-10): with no signal, the alerts saved on this phone.
+    loadWithSnapshot(
+      'farmer.notifications',
+      () => farmerApi<NotificationRow[]>('/api/farmer/notifications'),
+      (e) => e instanceof FarmerApiError && e.status === 0,
+    )
+      .then((got) => {
+        if (cancelled || !got) return;
+        const rows = got.data;
         setNotifications(rows);
+        // Marked read only when they came from the server just now.
+        if (!got.fresh) return;
         for (const n of rows.filter((r) => !r.read_at)) {
           void farmerApi(`/api/farmer/notifications/${n.id}`, {
             method: 'PATCH',

@@ -5,6 +5,7 @@ import { FARMER_ROLE, farmerListingSchema } from '@agri-erp/shared';
 import { audited, writeAudit } from '../../../../lib/api/audit';
 import {
   OWN_LISTING_COLUMNS,
+  loadOwnListing,
   loadSelf,
   presentOwnListing,
   type OwnListingRow,
@@ -49,17 +50,24 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       const { farmerId } = farmerScope(auth);
       const farmer = await loadSelf(prisma, farmerId);
       const id = body.id ?? randomUUID();
+      const [existing] = await prisma.$queryRawUnsafe<{ farmer_id: string }[]>(
+        'SELECT farmer_id FROM public.produce_listing WHERE id = $1::uuid',
+        id,
+      );
+      if (existing) {
+        // PWA (2026-10-10): the same listing sent again -- the phone's retry
+        // after a lost answer -- is the same listing (C-9 idempotent upload).
+        // Its current state is returned; nothing is written twice. An id that
+        // belongs to another farmer is still a conflict.
+        if (existing.farmer_id !== farmerId) throw conflict('farmer_already_exists');
+        return ok(presentOwnListing(await loadOwnListing(prisma, farmerId, id)));
+      }
+
       // B14: a farmer must be verified before anything they post goes live.
       // Drafts are kept for them, invisible to buyers, until then.
       if (body.status !== 'draft' && farmer.verification_status !== 'verified') {
         throw unprocessable('farmer_not_verified');
       }
-
-      const [existing] = await prisma.$queryRawUnsafe<{ farmer_id: string }[]>(
-        'SELECT farmer_id FROM public.produce_listing WHERE id = $1::uuid',
-        id,
-      );
-      if (existing) throw conflict('farmer_already_exists');
 
       const row = await audited(prisma, async (tx) => {
         const [inserted] = await tx.$queryRawUnsafe<OwnListingRow[]>(

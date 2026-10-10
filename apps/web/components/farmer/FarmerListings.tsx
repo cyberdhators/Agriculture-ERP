@@ -18,7 +18,7 @@ type Filter = 'all' | ListingStatus;
 const FILTERS: readonly Filter[] = ['all', 'listed', 'draft', 'sold', 'withdrawn'];
 
 export function FarmerListings() {
-  const { farmer, language, listingsFor, refresh } = useFarmerSession();
+  const { farmer, language, listingsFor, refresh, isPending } = useFarmerSession();
   const [filter, setFilter] = useState<Filter>('all');
   const [loading, setLoading] = useState(true);
 
@@ -84,9 +84,17 @@ export function FarmerListings() {
                   href={`/farmer/account/listings/${listing.id}`}
                   showStatus
                   actions={
-                    <Link href={`/farmer/account/listings/${listing.id}/edit`} className="small">
-                      {t('listings.edit', language)}
-                    </Link>
+                    <>
+                      <Link href={`/farmer/account/listings/${listing.id}/edit`} className="small">
+                        {t('listings.edit', language)}
+                      </Link>
+                      {isPending(listing.id) ? (
+                        <span className="small muted">
+                          {' '}
+                          · {language === 'ar' ? 'في انتظار الإرسال' : 'Waiting to send'}
+                        </span>
+                      ) : null}
+                    </>
                   }
                 />
               ))}

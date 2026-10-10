@@ -15,6 +15,8 @@ import { farmerAuthIdentifier } from '@agri-erp/shared';
 
 import { DEFAULT_LANGUAGE, LANG_COOKIE, LANG_STORAGE, isLanguage, type Language } from '@/lib/i18n';
 import type { Farmer, ProduceListing } from '@/lib/fixtures/farmers';
+import { enqueue, queuedOf, subscribeOutbox } from '@/lib/offline/outbox';
+import { loadWithSnapshot, readSnapshot, saveSnapshot } from '@/lib/offline/snapshot';
 import { supabaseBrowser } from '@/lib/supabase/browser';
 
 /**
@@ -127,6 +129,10 @@ interface FarmerSessionValue {
   /** Creates or updates one of the farmer's own listings on the server. */
   saveListing: (listing: ProduceListing) => Promise<ProduceListing>;
   newListingId: () => string;
+  /** PWA (2026-10-10): saved on this phone, not yet on the server. */
+  isPending: (listingId: string) => boolean;
+  /** The farmer's details came from this phone (no signal), saved at this time. */
+  offlineSince: number | null;
 }
 
 const FarmerSessionContext = createContext<FarmerSessionValue | null>(null);
@@ -145,19 +151,78 @@ export function FarmerSessionProvider({
   const [language, setLanguageState] = useState<Language>(initialLanguage);
   const [farmer, setFarmer] = useState<MeResponse | null>(null);
   const [listings, setListings] = useState<ProduceListing[]>([]);
+  /** Ids of listings the server has (from the last answer or saved copy). */
+  const [serverIds, setServerIds] = useState<ReadonlySet<string>>(new Set());
+  const [pending, setPending] = useState<ReadonlySet<string>>(new Set());
+  const [offlineSince, setOfflineSince] = useState<number | null>(null);
+
+  /**
+   * PWA (2026-10-10): the server's listings, with this phone's unsent changes
+   * laid over them -- an offline new listing is added, an offline edit
+   * replaces the server copy -- so the farmer sees what they did at once.
+   */
+  const withPending = useCallback(async (fromServer: ProduceListing[], farmerId: string) => {
+    const queued = await queuedOf('listing');
+    const byId = new Map(fromServer.map((l) => [l.id, l]));
+    const ids = new Set<string>();
+    for (const q of queued) {
+      const body = (q.body ?? {}) as Partial<ProduceListing>;
+      const id = q.id.replace(/^listing:/, '');
+      ids.add(id);
+      const base = byId.get(id);
+      const now = new Date(q.createdAt).toISOString();
+      byId.set(id, {
+        ...(base ?? ({ created_at: now, photo_storage_paths: [] } as unknown as ProduceListing)),
+        ...body,
+        id,
+        farmer_id: farmerId,
+        updated_at: now,
+      } as ProduceListing);
+    }
+    setPending(ids);
+    return [...byId.values()];
+  }, []);
 
   const load = useCallback(async () => {
+    // Only "no signal" falls back to this phone's copy: signed out or not a
+    // farmer is a real answer, never papered over by an old copy.
+    const noSignal = (e: unknown) => e instanceof FarmerApiError && e.status === 0;
     try {
-      const me = await farmerApi<MeResponse>('/api/farmer/me');
-      setFarmer(me);
-      setListings(await farmerApi<ProduceListing[]>('/api/farmer/listings'));
+      const me = await loadWithSnapshot(
+        'farmer.me',
+        () => farmerApi<MeResponse>('/api/farmer/me'),
+        noSignal,
+      );
+      if (!me) throw new Error('no farmer');
+      setFarmer(me.data);
+      setOfflineSince(me.fresh ? null : me.savedAt);
+      const mine = await loadWithSnapshot(
+        'farmer.listings',
+        () => farmerApi<ProduceListing[]>('/api/farmer/listings'),
+        noSignal,
+      ).catch(() => readSnapshot<ProduceListing[]>('farmer.listings'));
+      const fromServer = mine?.data ?? [];
+      setServerIds(new Set(fromServer.map((l) => l.id)));
+      setListings(await withPending(fromServer, me.data.id));
     } catch {
       // 401: nobody signed in. 403: signed in, but not as a farmer (staff or
       // a buyer browsing the market). Either way there is no farmer here.
       setFarmer(null);
       setListings([]);
+      setOfflineSince(null);
     }
-  }, []);
+  }, [withPending]);
+
+  // When the outbox sends a listing, reload so the screen shows the server's copy.
+  useEffect(() => {
+    let before = -1;
+    return subscribeOutbox(() => {
+      void queuedOf('listing').then((q) => {
+        if (before >= 0 && q.length < before) void load();
+        before = q.length;
+      });
+    });
+  }, [load]);
 
   useEffect(() => {
     const storedLang = (() => {
@@ -298,22 +363,61 @@ export function FarmerSessionProvider({
 
   const saveListing = useCallback<FarmerSessionValue['saveListing']>(
     async (listing) => {
-      const exists = listings.some((l) => l.id === listing.id);
+      // The server knows it only once a create has been acknowledged. A listing
+      // made offline and edited again before it was sent is still a create.
+      const onServer = serverIds.has(listing.id);
       const body = Object.fromEntries(
         Object.entries(listing).filter(([k, v]) => !SERVER_OWNED.has(k) && v !== undefined),
       );
-      if (exists) delete (body as Record<string, unknown>).id;
-      const saved = await farmerApi<ProduceListing>(
-        exists ? `/api/farmer/listings/${listing.id}` : '/api/farmer/listings',
-        { method: exists ? 'PATCH' : 'POST', body: JSON.stringify(body) },
-      );
-      setListings((list) =>
-        exists ? list.map((l) => (l.id === saved.id ? saved : l)) : [saved, ...list],
-      );
-      return saved;
+      if (onServer) delete (body as Record<string, unknown>).id;
+      const path = onServer ? `/api/farmer/listings/${listing.id}` : '/api/farmer/listings';
+      const method = onServer ? 'PATCH' : 'POST';
+
+      const queue = async () => {
+        await enqueue({
+          id: `listing:${listing.id}`,
+          kind: 'listing',
+          label: `${onServer ? 'Edit' : 'Post'}: ${listing.title}`,
+          method,
+          path,
+          body,
+        });
+        const local = { ...listing, updated_at: new Date().toISOString() };
+        setPending((p) => new Set(p).add(listing.id));
+        setListings((list) =>
+          list.some((l) => l.id === listing.id)
+            ? list.map((l) => (l.id === listing.id ? local : l))
+            : [local, ...list],
+        );
+        // Marked so the caller knows it is on the phone, not yet on the server.
+        return Object.assign(local, { pending: true as const });
+      };
+
+      // No signal: save on the phone; the outbox sends it later.
+      if (typeof navigator !== 'undefined' && !navigator.onLine) return queue();
+      try {
+        const saved = await farmerApi<ProduceListing>(path, { method, body: JSON.stringify(body) });
+        setServerIds((ids) => new Set(ids).add(saved.id));
+        setListings((list) =>
+          list.some((l) => l.id === saved.id)
+            ? list.map((l) => (l.id === saved.id ? saved : l))
+            : [saved, ...list],
+        );
+        const copy = await readSnapshot<ProduceListing[]>('farmer.listings');
+        const rest = (copy?.data ?? []).filter((l) => l.id !== saved.id);
+        await saveSnapshot('farmer.listings', [saved, ...rest]);
+        return saved;
+      } catch (error) {
+        // The signal dropped mid-save: keep it on the phone. A real refusal
+        // (invalid, not allowed) is shown to the farmer as before.
+        if (error instanceof FarmerApiError && error.status === 0) return queue();
+        throw error;
+      }
     },
-    [listings],
+    [serverIds],
   );
+
+  const isPending = useCallback((id: string) => pending.has(id), [pending]);
 
   const newListingId = useCallback(
     () =>
@@ -339,6 +443,8 @@ export function FarmerSessionProvider({
       listingById,
       saveListing,
       newListingId,
+      isPending,
+      offlineSince,
     }),
     [
       hydrated,
@@ -355,6 +461,8 @@ export function FarmerSessionProvider({
       listingById,
       saveListing,
       newListingId,
+      isPending,
+      offlineSince,
     ],
   );
 

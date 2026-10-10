@@ -45,6 +45,10 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
           id,
         );
         if (!current) throw notFound();
+        // PWA (2026-10-10): the same answer sent again -- a retry after a lost
+        // answer -- changes nothing and is not an error (C-9 idempotent
+        // upload). A DIFFERENT answer to a request already answered is.
+        if (current.status === status) return;
         if (current.status !== 'submitted' && current.status !== 'under_review') {
           throw unprocessable('request_already_answered');
         }
