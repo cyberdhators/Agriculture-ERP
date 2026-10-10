@@ -120,6 +120,8 @@ export interface FarmerListParams {
   registered_from?: string;
   registered_to?: string;
   duplicate_flag?: 'true' | 'false';
+  /** 2026-10-10: name, farmer number or phone digits, searched by the route. */
+  q?: string;
   /** C-9.9: rows whose server moment of last change is after this. Already in
    *  `farmerFilterSchema`; it was simply never surfaced on this client type. */
   updated_since?: string;

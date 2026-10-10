@@ -82,6 +82,22 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
         add((i) => `f.created_at <= $${i}::timestamptz`, filter.registered_to);
       if (filter.duplicate_flag)
         add((i) => `f.duplicate_flag = $${i}`, filter.duplicate_flag === 'true');
+      // 2026-10-10: free-text search, inside the caller's scope like every
+      // other filter. LIKE wildcards in the text are matched literally.
+      if (filter.q) {
+        const like = `%${filter.q.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
+        const digits = filter.q.replace(/\D/g, '');
+        params.push(like);
+        const i = params.length;
+        let phone = '';
+        if (digits.length >= 3) {
+          params.push(`%${digits}%`);
+          phone = ` OR f.phone LIKE $${params.length}`;
+        }
+        where.push(
+          `((f.given_name || ' ' || f.family_name) ILIKE $${i} OR f.farmer_number ILIKE $${i}${phone})`,
+        );
+      }
       // C-9.9: the download filter, on the server's moment of last change.
       if (filter.updated_since)
         add((i) => `f.updated_at > $${i}::timestamptz`, filter.updated_since);

@@ -463,3 +463,20 @@ table {
 .print-only {
   display: none;
 }
+
+/* Print only a farmer's audit trail (2026-10-10): the dossier marks the body
+   for the length of the print. */
+@media print {
+  body.print-audit-only * {
+    visibility: hidden;
+  }
+  body.print-audit-only #audit-trail,
+  body.print-audit-only #audit-trail * {
+    visibility: visible;
+  }
+  body.print-audit-only #audit-trail {
+    position: absolute;
+    inset: 0 0 auto 0;
+    width: 100%;
+  }
+}

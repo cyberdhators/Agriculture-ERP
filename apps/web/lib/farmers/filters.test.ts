@@ -51,14 +51,16 @@ describe('what the register sends', () => {
     expect('state' in params).toBe(false);
   });
 
-  it('sends no free text under any key, because no such filter exists', () => {
-    const params = toListParams(withFilters({ county: 'CE-JUB', sex: 'f' })) as Record<
+  it('sends free text only as q, the one search key the route defines (2026-10-10)', () => {
+    const params = toListParams(withFilters({ county: 'CE-JUB', q: '  Akol ' })) as Record<
       string,
       unknown
     >;
-    for (const key of ['q', 'search', 'name', 'phone', 'farmer_number']) {
+    expect(params.q).toBe('Akol');
+    for (const key of ['search', 'name', 'phone', 'farmer_number']) {
       expect(params[key], `the register tried to send ${key}`).toBeUndefined();
     }
+    expect('q' in toListParams(withFilters({ q: '   ' }))).toBe(false);
   });
 
   it('drops a status that is not one the route knows', () => {
@@ -153,10 +155,16 @@ describe('active, cleared and read back', () => {
   });
 
   it('reads filters back out of the URL and ignores anything else', () => {
-    const query: Record<string, string> = { status: 'verified', county: 'CE-JUB', q: 'ignored' };
+    const query: Record<string, string> = {
+      status: 'verified',
+      county: 'CE-JUB',
+      q: 'Akol',
+      search: 'ignored',
+    };
     const filters = fromQuery((key) => query[key] ?? '');
     expect(filters.status).toBe('verified');
     expect(filters.county).toBe('CE-JUB');
-    expect(Object.keys(filters)).not.toContain('q');
+    expect(filters.q).toBe('Akol');
+    expect(Object.keys(filters)).not.toContain('search');
   });
 });
