@@ -10,6 +10,8 @@ import {
 } from '@agri-erp/shared';
 
 import { Button, Checkbox, Dialog, Field, Input, Notice, Select, Textarea } from '@/components/ui';
+import { isNoSignal, offlineNow } from '@/lib/offline/net';
+import { queueVisit } from '@/lib/offline/officer';
 import { createVisit, LIVE_VISITS, VisitApiError, type Visit } from '@/lib/visits/api';
 import { FARMER_OPTIONS, VISIT_TOPIC_LABELS, type FarmerOption } from '@/lib/visits/fixtures';
 import type { VisitNames } from '@/lib/visits/names';
@@ -80,6 +82,8 @@ export function RecordVisitForm({
   const [formError, setFormError] = useState<string | undefined>();
   const [busy, setBusy] = useState(false);
   const [receipt, setReceipt] = useState<Visit | null>(null);
+  /** PWA: the visit was saved on this phone, not yet sent. */
+  const [keptOffline, setKeptOffline] = useState(false);
 
   const set = <K extends keyof Values>(key: K, value: Values[K]) =>
     setValues((v) => ({ ...v, [key]: value }));
@@ -134,36 +138,58 @@ export function RecordVisitForm({
     const { body, farmer } = validated;
     setBusy(true);
     setFormError(undefined);
+    // A visit as this phone knows it: the receipt for a visit kept offline,
+    // and the preview build's stand-in.
+    const localVisit = (): Visit => {
+      const now = new Date().toISOString();
+      return {
+        id: body.id,
+        farmer_id: farmer.id,
+        officer_id: 'you',
+        payam_id: farmer.payam_id,
+        county_id: farmer.county_id,
+        state_id: farmer.state_id,
+        visited_at: body.visited_at,
+        received_at: now,
+        observation: body.observation ?? null,
+        advice: body.advice,
+        topics: body.topics,
+        duration_minutes: body.duration_minutes ?? null,
+        attendee_count: body.attendee_count ?? null,
+        follow_up_of: body.follow_up_of ?? null,
+        created_at: now,
+        updated_at: now,
+        attachments: [],
+        position: body.position,
+        gps_accuracy_m: body.gps_accuracy_m,
+      };
+    };
+    // PWA (2026-10-10): with no signal, or if it drops mid-send, the visit is
+    // saved on this phone and the outbox sends it later (after its farmer, if
+    // that farmer was registered on this phone too).
+    const keepOnPhone = async () => {
+      await queueVisit(farmer.id, farmer.name, body);
+      setKeptOffline(true);
+      setReceipt(localVisit());
+    };
     try {
       let visit: Visit;
       if (LIVE_VISITS) {
+        if (offlineNow()) {
+          await keepOnPhone();
+          return;
+        }
         visit = await createVisit(farmer.id, body);
       } else {
-        const now = new Date().toISOString();
-        visit = {
-          id: body.id,
-          farmer_id: farmer.id,
-          officer_id: 'you',
-          payam_id: farmer.payam_id,
-          county_id: farmer.county_id,
-          state_id: farmer.state_id,
-          visited_at: body.visited_at,
-          received_at: now,
-          observation: body.observation ?? null,
-          advice: body.advice,
-          topics: body.topics,
-          duration_minutes: body.duration_minutes ?? null,
-          attendee_count: body.attendee_count ?? null,
-          follow_up_of: body.follow_up_of ?? null,
-          created_at: now,
-          updated_at: now,
-          attachments: [],
-          position: body.position,
-          gps_accuracy_m: body.gps_accuracy_m,
-        };
+        visit = localVisit();
       }
+      setKeptOffline(false);
       setReceipt(visit);
     } catch (err) {
+      if (LIVE_VISITS && isNoSignal(err)) {
+        await keepOnPhone();
+        return;
+      }
       setFormError(
         err instanceof VisitApiError
           ? err.message
@@ -185,14 +211,23 @@ export function RecordVisitForm({
       <Dialog
         open
         onClose={done}
-        title="Visit recorded"
+        title={keptOffline ? 'Visit saved on this phone' : 'Visit recorded'}
         footer={
           <Button variant="primary" type="button" onClick={done}>
             Back to visits
           </Button>
         }
       >
-        <Notice kind="success" title={`Recorded for ${farmer?.name ?? receipt.farmer_id}`}>
+        <Notice
+          kind={keptOffline ? 'info' : 'success'}
+          title={`${keptOffline ? 'Saved' : 'Recorded'} for ${farmer?.name ?? receipt.farmer_id}`}
+        >
+          {keptOffline ? (
+            <p className="small">
+              No signal. The visit is kept on this phone and sent automatically when there is
+              signal.
+            </p>
+          ) : null}
           <ul className="small">
             <li>{new Date(receipt.visited_at).toLocaleString('en-GB')}</li>
             <li>{receipt.topics.map((t) => VISIT_TOPIC_LABELS[t]).join(', ')}</li>

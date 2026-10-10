@@ -143,6 +143,8 @@ export interface Farm {
    */
   /** False for a farm recorded by hand and not mapped yet. Absent reads as mapped. */
   mapped?: boolean;
+  /** PWA: recorded on this phone, waiting to send. */
+  pending?: boolean;
   name?: string | null;
   size?: { value: number; unit: string } | null;
   tenure?: string | null;

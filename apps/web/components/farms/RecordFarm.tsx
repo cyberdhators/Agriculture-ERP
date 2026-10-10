@@ -1,5 +1,6 @@
 'use client';
 
+import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 import {
@@ -15,6 +16,8 @@ import { getFarmer } from '@/lib/farmers/api';
 import { FarmApiError, recordFarm } from '@/lib/farms/api';
 import type { Farmer } from '@/lib/fixtures/farmers';
 import { CROP_LABELS } from '@/lib/format';
+import { isNoSignal, offlineNow } from '@/lib/offline/net';
+import { farmerOnPhone, queueFarm } from '@/lib/offline/officer';
 import { usePreview } from '@/lib/preview';
 
 import {
@@ -98,7 +101,8 @@ const empty = (): Values => ({
  * Officer only, and only for a farmer in their caseload: the route refuses
  * anyone else. Validated with the same schema the route uses.
  */
-export function RecordFarm({ farmerId }: { farmerId: string }) {
+export function RecordFarm() {
+  const farmerId = useSearchParams().get('farmer') ?? '';
   const { role, hydrated } = usePreview();
   const [farmer, setFarmer] = useState<Farmer | null | undefined>(undefined);
   const [values, setValues] = useState<Values>(empty);
@@ -106,13 +110,34 @@ export function RecordFarm({ farmerId }: { farmerId: string }) {
   const [locating, setLocating] = useState(false);
   const [errors, setErrors] = useState<Errors>({});
   const [busy, setBusy] = useState(false);
-  const [saved, setSaved] = useState<{ name: string } | null>(null);
+  const [saved, setSaved] = useState<{ name: string; pending?: boolean } | null>(null);
+  /** PWA: who the farmer is when only this phone knows (no signal, or still waiting to send). */
+  const [onPhone, setOnPhone] = useState<{ name: string; waiting: boolean } | null>(null);
 
   useEffect(() => {
     let on = true;
     getFarmer(farmerId)
       .then((f) => on && setFarmer(f))
-      .catch(() => on && setFarmer(null));
+      .catch(async (e: unknown) => {
+        // PWA (2026-10-10): with no signal, or for a farmer registered on this
+        // phone and not sent yet, the phone's own copy says who it is.
+        const kept = isNoSignal(e) || offlineNow() ? await farmerOnPhone(farmerId) : null;
+        if (!on) return;
+        if (kept) {
+          setOnPhone({ name: kept.name, waiting: kept.waiting });
+          setFarmer(kept.farmer ?? undefined);
+          return;
+        }
+        // A farmer registered on this phone is unknown to the server until it
+        // is sent: a 404 then is "not yet", not "not yours".
+        const waiting = await farmerOnPhone(farmerId);
+        if (!on) return;
+        if (waiting?.waiting) {
+          setOnPhone({ name: waiting.name, waiting: true });
+          return;
+        }
+        setFarmer(null);
+      });
     return () => {
       on = false;
     };
@@ -186,10 +211,25 @@ export function RecordFarm({ farmerId }: { farmerId: string }) {
     }
     setErrors({});
     setBusy(true);
+    // PWA (2026-10-10): with no signal, or if it drops mid-send, the farm is
+    // saved on this phone and sent later (after the farmer, if they are still
+    // waiting to send). The same id sent twice is the same farm (C-9.2).
+    const keepOnPhone = async () => {
+      await queueFarm(farmerId, who, body);
+      setSaved({ name: values.name.trim() || 'The farm', pending: true });
+    };
     try {
+      if (offlineNow() || onPhone?.waiting) {
+        await keepOnPhone();
+        return;
+      }
       await recordFarm(farmerId, body);
       setSaved({ name: values.name.trim() || 'The farm' });
     } catch (err) {
+      if (isNoSignal(err)) {
+        await keepOnPhone();
+        return;
+      }
       setErrors({
         form:
           err instanceof FarmApiError
@@ -202,7 +242,9 @@ export function RecordFarm({ farmerId }: { farmerId: string }) {
   }
 
   const back = `/farmers/${encodeURIComponent(farmerId)}`;
-  const who = farmer ? `${farmer.given_name} ${farmer.family_name}` : 'the farmer';
+  const who = farmer
+    ? `${farmer.given_name} ${farmer.family_name}`
+    : (onPhone?.name ?? 'the farmer');
 
   if (hydrated && role !== 'officer') {
     return (
@@ -220,10 +262,11 @@ export function RecordFarm({ farmerId }: { farmerId: string }) {
       <>
         <PageHeader eyebrow="Farms" title="Record a farm" />
         <div className={styles.recorded}>
-          <p className="label">Recorded</p>
+          <p className="label">{saved.pending ? 'Saved on this phone' : 'Recorded'}</p>
           <p>
-            {saved.name} was recorded for {who}. It is not mapped yet; the size shown is what the
-            farmer declared.
+            {saved.pending
+              ? `${saved.name} for ${who} is saved on this phone and will be sent automatically when there is signal.`
+              : `${saved.name} was recorded for ${who}. It is not mapped yet; the size shown is what the farmer declared.`}
           </p>
           <div className={screens.formActions}>
             <Button
@@ -257,6 +300,15 @@ export function RecordFarm({ farmerId }: { farmerId: string }) {
           </ButtonLink>
         }
       />
+
+      {onPhone?.waiting ? (
+        <Notice kind="info" title="This farmer is waiting to send">
+          <p className="small">
+            {onPhone.name} was registered on this phone and has not reached the server yet. The farm
+            is saved on this phone and sent right after the farmer.
+          </p>
+        </Notice>
+      ) : null}
 
       {farmer === null ? (
         <Notice kind="error" title="Farmer not found">

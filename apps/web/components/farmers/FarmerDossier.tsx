@@ -344,6 +344,21 @@ export function FarmerDossier({ id }: { id: string }) {
         }
       />
 
+      {data.savedAt ? (
+        <Notice kind="info" title="No signal: showing the copy saved on this phone">
+          <p className="small">
+            Saved{' '}
+            {new Date(data.savedAt).toLocaleString('en-GB', {
+              day: 'numeric',
+              month: 'short',
+              hour: '2-digit',
+              minute: '2-digit',
+            })}
+            . Anything you record now is kept on the phone and sent when there is signal.
+          </p>
+        </Notice>
+      ) : null}
+
       <div className={styles.dossierGrid}>
         <aside className={styles.dossierSummary}>
           <Card padded>
@@ -591,7 +606,7 @@ export function FarmerDossier({ id }: { id: string }) {
                 GIS mapping is finished; mapping it later adds the boundary. */}
             {isCaseloadOfficer && !removed ? (
               <p style={{ marginBottom: 'var(--s-4)' }}>
-                <ButtonLink href={`/farmers/${farmer.id}/farms/new`} variant="secondary">
+                <ButtonLink href={`/farms/record?farmer=${farmer.id}`} variant="secondary">
                   Record a farm
                 </ButtonLink>
               </p>
@@ -638,7 +653,9 @@ export function FarmerDossier({ id }: { id: string }) {
                         <Mini
                           label="Trace"
                           value={
-                            farm.mapped === false ? (
+                            farm.pending ? (
+                              <Stamp kind="pending">waiting to send</Stamp>
+                            ) : farm.mapped === false ? (
                               <Stamp kind="pending">not mapped</Stamp>
                             ) : (
                               <Stamp

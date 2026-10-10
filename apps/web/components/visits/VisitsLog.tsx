@@ -1,9 +1,13 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { Button, Dialog, EmptyState, Field, KpiStrip, Notice, Textarea } from '@/components/ui';
 import { IconImage, IconPlus } from '@/components/ui/icons';
+import { isNoSignal } from '@/lib/offline/net';
+import { VISIT_KIND } from '@/lib/offline/officer';
+import { queuedOf, subscribeOutbox } from '@/lib/offline/outbox';
+import { loadWithSnapshot } from '@/lib/offline/snapshot';
 import { usePreview } from '@/lib/preview';
 import { correctVisit, listVisits, LIVE_VISITS, removeVisit, type Visit } from '@/lib/visits/api';
 import { VISITS_FIXTURE, VISIT_TOPIC_LABELS } from '@/lib/visits/fixtures';
@@ -39,6 +43,8 @@ export function VisitsLog() {
   const { farmer: farmerName, officer: officerName, payam: payamName } = names;
   const [visits, setVisits] = useState<readonly Visit[]>(LIVE_VISITS ? [] : VISITS_FIXTURE);
   const [loading, setLoading] = useState(LIVE_VISITS);
+  const [reloadKey, setReloadKey] = useState(0);
+  const waitingRef = useRef<ReadonlySet<string>>(new Set());
   const [error, setError] = useState<string | undefined>();
   const [cursor, setCursor] = useState<string | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -48,22 +54,37 @@ export function VisitsLog() {
   const [detail, setDetail] = useState<Visit | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [recorded, setRecorded] = useState<string | undefined>();
+  const [recordedKept, setRecordedKept] = useState(false);
   const [correcting, setCorrecting] = useState<Visit | null>(null);
   const [removing, setRemoving] = useState<Visit | null>(null);
   const [busy, setBusy] = useState(false);
   const [advice, setAdvice] = useState('');
   const [observation, setObservation] = useState('');
   const [actionError, setActionError] = useState<string | undefined>();
+  /** PWA: visits recorded on this phone, not sent yet (their ids). */
+  const [waiting, setWaiting] = useState<ReadonlySet<string>>(new Set());
+  /** PWA: when the list shown was saved, if it is this phone's copy. */
+  const [savedAt, setSavedAt] = useState<number | null>(null);
 
   useEffect(() => {
     if (!LIVE_VISITS) return;
     let live = true;
     setLoading(true);
-    listVisits()
-      .then((page) => {
-        if (!live) return;
-        setVisits(page.visits);
-        setCursor(page.hasMore ? page.cursor : null);
+    // PWA (2026-10-10): with no signal, the first page saved on this phone.
+    loadWithSnapshot('officer.visits', () => listVisits(), isNoSignal)
+      .then((got) => {
+        if (!live || !got) return;
+        const page = got.data;
+        setVisits((shown) => {
+          // Keep visits recorded on this phone that the server does not have yet.
+          const sent = new Set(page.visits.map((v) => v.id));
+          return [
+            ...shown.filter((v) => waitingRef.current.has(v.id) && !sent.has(v.id)),
+            ...page.visits,
+          ];
+        });
+        setCursor(got.fresh && page.hasMore ? page.cursor : null);
+        setSavedAt(got.fresh ? null : got.savedAt);
         setError(undefined);
       })
       .catch((err: unknown) => {
@@ -72,6 +93,25 @@ export function VisitsLog() {
       .finally(() => live && setLoading(false));
     return () => {
       live = false;
+    };
+  }, [reloadKey]);
+
+  // PWA: which visits are still on this phone; when one is sent, reload.
+  useEffect(() => {
+    if (!LIVE_VISITS) return;
+    let before = -1;
+    const check = () =>
+      void queuedOf(VISIT_KIND).then((q) => {
+        const ids = new Set(q.map((x) => x.id.replace(/^visit:/, '')));
+        waitingRef.current = ids;
+        setWaiting(ids);
+        if (before >= 0 && q.length < before) setReloadKey((k) => k + 1);
+        before = q.length;
+      });
+    check();
+    const off = subscribeOutbox(check);
+    return () => {
+      off();
     };
   }, []);
 
@@ -124,7 +164,15 @@ export function VisitsLog() {
 
   function onRecorded(visit: Visit) {
     setVisits((list) => [visit, ...list]);
-    setRecorded(farmerName(visit.farmer_id));
+    void queuedOf(VISIT_KIND).then((q) => {
+      const kept = q.some((x) => x.id === `visit:${visit.id}`);
+      if (kept) {
+        waitingRef.current = new Set([...waitingRef.current, visit.id]);
+        setWaiting(waitingRef.current);
+      }
+      setRecordedKept(kept);
+      setRecorded(farmerName(visit.farmer_id));
+    });
   }
 
   return (
@@ -147,7 +195,14 @@ export function VisitsLog() {
         </Notice>
       ) : null}
       {recorded ? (
-        <Notice kind="success" title={`Visit recorded for ${recorded}`}>
+        <Notice
+          kind={recordedKept ? 'info' : 'success'}
+          title={
+            recordedKept
+              ? `Visit for ${recorded} saved on this phone, waiting to send`
+              : `Visit recorded for ${recorded}`
+          }
+        >
           <p className="small">It now sits at the top of the log.</p>
         </Notice>
       ) : null}
@@ -203,6 +258,16 @@ export function VisitsLog() {
         </div>
       </div>
 
+      {savedAt ? (
+        <Notice kind="info" title="No signal: showing the list saved on this phone">
+          <p className="small">
+            Saved {fmtDate(new Date(savedAt).toISOString())}{' '}
+            {fmtTime(new Date(savedAt).toISOString())}. Visits you record now are kept on the phone
+            and sent when there is signal.
+          </p>
+        </Notice>
+      ) : null}
+
       {loading ? <p className={styles.muted}>Loading visits…</p> : null}
 
       {!loading && shown.length === 0 ? (
@@ -255,6 +320,9 @@ export function VisitsLog() {
                     <span className={styles.when}>
                       <span>{fmtDate(v.visited_at)}</span>
                       <span className={styles.whenSub}>{fmtTime(v.visited_at)}</span>
+                      {waiting.has(v.id) ? (
+                        <span className={styles.whenSub}>Waiting to send</span>
+                      ) : null}
                     </span>
                   </td>
                   <td className={styles.strong} dir="auto">

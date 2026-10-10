@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from 'react';
 
-import { LIVE_FARMERS, listFarmers } from '@/lib/farmers/api';
+import { LIVE_FARMERS } from '@/lib/farmers/api';
+import { loadCaseload, pendingRegistrations } from '@/lib/offline/officer';
 import { farmerPayamName, officerById } from '@/lib/fixtures/farmers';
 
 import { LIVE_VISITS } from './api';
@@ -39,21 +40,34 @@ export function useVisitNames(): VisitNames {
   useEffect(() => {
     if (!live) return;
     let on = true;
-    listFarmers({ limit: 200 })
-      .then((r) => {
+    // PWA (2026-10-10): with no signal, the caseload saved on this phone, plus
+    // farmers registered on this phone that are waiting to send.
+    Promise.all([loadCaseload(), pendingRegistrations()])
+      .then(([r, waiting]) => {
         if (!on) return;
+        const known = new Set(r.farmers.map((f) => f.id));
         setFarmers(
-          r.farmers
-            .filter((f) => f.merged_into === null)
-            .map((f) => ({
-              id: f.id,
-              name: `${f.given_name} ${f.family_name}`,
-              payam_id: f.payam_id,
-              // The route derives county from the farmer row; the form never sends it.
-              county_id: '',
-              state_id: f.state_id,
-            }))
-            .sort((a, b) => a.name.localeCompare(b.name)),
+          [
+            ...r.farmers
+              .filter((f) => f.merged_into === null)
+              .map((f) => ({
+                id: f.id,
+                name: `${f.given_name} ${f.family_name}`,
+                payam_id: f.payam_id,
+                // The route derives county from the farmer row; the form never sends it.
+                county_id: '',
+                state_id: f.state_id,
+              })),
+            ...waiting
+              .filter((w) => !known.has(w.id))
+              .map((w) => ({
+                id: w.id,
+                name: `${w.name} (waiting to send)`,
+                payam_id: w.payam_id,
+                county_id: '',
+                state_id: w.payam_id.split('-')[0] ?? '',
+              })),
+          ].sort((a, b) => a.name.localeCompare(b.name)),
         );
         setError(undefined);
       })

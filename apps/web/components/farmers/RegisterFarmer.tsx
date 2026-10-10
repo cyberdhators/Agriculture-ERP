@@ -3,6 +3,8 @@
 import { useMemo, useRef, useState, type ReactNode } from 'react';
 
 import { LIVE_FARMERS, createFarmer } from '@/lib/farmers/api';
+import { isNoSignal, offlineNow } from '@/lib/offline/net';
+import { queueRegistration } from '@/lib/offline/officer';
 import { eligibleOfficers, useOfficers } from '@/lib/farmers/caseload';
 import { CROP_LABELS, LANGUAGE_LABELS } from '@/lib/format';
 import { canRegister } from '@/lib/farmers/presentation';
@@ -94,7 +96,7 @@ export function RegisterFarmer() {
   const [values, setValues] = useState<FarmerFormValues>(EMPTY);
   const [errors, setErrors] = useState<FarmerErrors>({});
   const [touched, setTouched] = useState<Partial<Record<keyof FarmerFormValues, boolean>>>({});
-  const [saved, setSaved] = useState<{ name: string } | null>(null);
+  const [saved, setSaved] = useState<{ name: string; pending?: boolean } | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | undefined>();
   const [serverDupes, setServerDupes] = useState(0);
@@ -194,26 +196,42 @@ export function RegisterFarmer() {
     }
 
     setSubmitting(true);
+    const body = {
+      id: crypto.randomUUID(),
+      given_name: v.given_name,
+      family_name: v.family_name,
+      sex: v.sex,
+      year_of_birth: v.year_of_birth,
+      phone: v.phone,
+      national_id: v.national_id,
+      payam_id: v.payam_id,
+      ...(isAdmin ? { registered_by: officerId } : {}),
+      consent: {
+        text_version: CONSENT_VERSION[v.consent_language],
+        language: v.consent_language,
+        granted: v.consent_granted,
+      },
+    };
+    // PWA (2026-10-10): with no signal, or if it drops mid-send, the
+    // registration is saved on this phone and the outbox sends it later. The
+    // server treats a repeat of the same id as the same registration (C-9.2).
+    const keepOnPhone = async () => {
+      await queueRegistration(body);
+      setSaved({ name: `${v.given_name} ${v.family_name}`, pending: true });
+    };
     try {
-      const res = await createFarmer({
-        id: crypto.randomUUID(),
-        given_name: v.given_name,
-        family_name: v.family_name,
-        sex: v.sex,
-        year_of_birth: v.year_of_birth,
-        phone: v.phone,
-        national_id: v.national_id,
-        payam_id: v.payam_id,
-        ...(isAdmin ? { registered_by: officerId } : {}),
-        consent: {
-          text_version: CONSENT_VERSION[v.consent_language],
-          language: v.consent_language,
-          granted: v.consent_granted,
-        },
-      });
+      if (offlineNow()) {
+        await keepOnPhone();
+        return;
+      }
+      const res = await createFarmer(body);
       setServerDupes(res.duplicates.length);
       setSaved({ name: `${v.given_name} ${v.family_name}` });
     } catch (err) {
+      if (isNoSignal(err)) {
+        await keepOnPhone();
+        return;
+      }
       setSubmitError(err instanceof Error ? err.message : 'Could not register the farmer.');
       requestAnimationFrame(() => summaryRef.current?.focus());
     } finally {
@@ -258,15 +276,23 @@ export function RegisterFarmer() {
       <>
         <PageHeader eyebrow="Farmers" title="Register a farmer" />
         <div className={styles.recorded}>
-          <p className="label">{LIVE_FARMERS ? 'Registered' : 'Recorded (preview, no server)'}</p>
+          <p className="label">
+            {saved.pending
+              ? 'Saved on this phone'
+              : LIVE_FARMERS
+                ? 'Registered'
+                : 'Recorded (preview, no server)'}
+          </p>
           <p>
-            {LIVE_FARMERS
-              ? `${saved.name} was registered as pending and sent to the review queue.${
-                  serverDupes > 0
-                    ? ` ${serverDupes} possible duplicate${serverDupes > 1 ? 's were' : ' was'} flagged for a reviewer.`
-                    : ''
-                }`
-              : `${saved.name} would be created as pending and sent to the review queue. Nothing was written; this preview build has no backend.`}
+            {saved.pending
+              ? `${saved.name} is saved on this phone and will be sent automatically when there is signal. The farmer number is given once it reaches the server.`
+              : LIVE_FARMERS
+                ? `${saved.name} was registered as pending and sent to the review queue.${
+                    serverDupes > 0
+                      ? ` ${serverDupes} possible duplicate${serverDupes > 1 ? 's were' : ' was'} flagged for a reviewer.`
+                      : ''
+                  }`
+                : `${saved.name} would be created as pending and sent to the review queue. Nothing was written; this preview build has no backend.`}
           </p>
           <div className={screens.formActions}>
             <Button variant="primary" onClick={reset}>
