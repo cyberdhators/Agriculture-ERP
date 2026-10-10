@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Fraunces, Instrument_Sans, JetBrains_Mono, Open_Sans } from 'next/font/google';
 import type { ReactNode } from 'react';
 
+import { OfflineSync } from '@/components/pwa/OfflineSync';
 import { PwaStatus } from '@/components/pwa/PwaStatus';
 
 import './globals.css';
@@ -73,6 +74,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body>
         {children}
         <PwaStatus />
+        <OfflineSync />
       </body>
     </html>
   );
