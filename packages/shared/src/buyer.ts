@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 import { IDENTITY_MESSAGES, passwordSchema } from './identity';
 import { locationCodeSchema } from './location';
+import { parseSouthSudanMobile } from './phone';
 
 /**
  * BUYER ACCOUNTS AND PROCUREMENT. Unit B13, criteria C-14B.1 to C-14B.22.
@@ -354,8 +355,15 @@ export const buyerEmailSchema = z
  */
 export const buyerPhoneSchema = z
   .string({ error: () => BUYER_MESSAGES.buyerPhoneInvalid })
-  .transform((raw) => raw.replace(/[\s-]/g, ''))
-  .transform((compact) => (/^0\d{9}$/.test(compact) ? `+211${compact.slice(1)}` : compact))
+  // A South Sudan number (local `0…`, `211…` or `+211…`) is normalised by the
+  // ONE normaliser in ./phone; anything else is a non-SS international buyer
+  // number, compacted and accepted as generic E.164. The South Sudan arithmetic
+  // (trunk-0 strip, +211) lives in phone.ts only — the drift gate in
+  // tests/phone-single-normaliser.test.ts fails if a second copy appears.
+  .transform((raw) => {
+    const ss = parseSouthSudanMobile(raw);
+    return ss.ok ? ss.value : raw.replace(/[\s-]/g, '');
+  })
   .refine((e164) => /^\+[1-9]\d{7,14}$/.test(e164), BUYER_MESSAGES.buyerPhoneInvalid);
 
 const optionalText = (max: number, tooLong: string) =>
