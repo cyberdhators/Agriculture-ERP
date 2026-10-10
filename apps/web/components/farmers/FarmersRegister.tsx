@@ -144,6 +144,16 @@ export function FarmersRegister() {
   const previewRows = useMemo(() => {
     if (LIVE_FARMERS) return [];
     let pool = scopeFarmers(FARMERS, role);
+    if (filters.q.trim()) {
+      const needle = filters.q.trim().toLowerCase();
+      const digits = needle.replace(/\D/g, '');
+      pool = pool.filter(
+        (f) =>
+          `${f.given_name} ${f.family_name}`.toLowerCase().includes(needle) ||
+          f.farmer_number.toLowerCase().includes(needle) ||
+          (digits.length >= 3 && f.phone.includes(digits)),
+      );
+    }
     if (filters.status) pool = pool.filter((f) => f.verification_status === filters.status);
     if (filters.payam) pool = pool.filter((f) => f.payam_id === filters.payam);
     if (filters.county) pool = pool.filter((f) => f.payam_id.startsWith(`${filters.county}-`));
@@ -267,8 +277,8 @@ export function FarmersRegister() {
        * rather than imply it is the whole register.
        *
        * Everything here describes the QUERY. None of it can carry personal
-       * data, because none of the filters are personal: there is no name,
-       * phone or national-ID filter to echo.
+       * data beyond the search text the operator typed (2026-10-10), which
+       * is printed so the sheet says what it was narrowed to.
        */}
       <div className="print-only">
         <p>{SCOPE_BAND[role] ?? 'Scope'}</p>
@@ -315,6 +325,24 @@ export function FarmersRegister() {
       {/* ---- Filters ---------------------------------------------------- */}
       <div className={`${styles.filterBarWrap} no-print`}>
         <div className={styles.filterGrid}>
+          <Field label="Search" hint="Farmer name, farmer number or phone">
+            {(ids) => (
+              <Input
+                {...ids}
+                type="search"
+                dir="auto"
+                maxLength={100}
+                value={draft.q}
+                onChange={(e) => setDraft({ ...draft, q: e.target.value })}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    apply();
+                  }
+                }}
+              />
+            )}
+          </Field>
           <Field label="State" hint="Narrows the lists below">
             {(ids) => (
               <Select

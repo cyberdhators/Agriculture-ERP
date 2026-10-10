@@ -37,6 +37,7 @@ const SEX_LABEL: Record<string, string> = { f: 'Female', m: 'Male' };
 export function printContext(filters: RegisterFilters, names: PlaceNames = {}): PrintContext {
   const lines: string[] = [];
   lines.push(`View: ${statusLabel(filters.status)}`);
+  if (filters.q.trim()) lines.push(`Search: ${filters.q.trim()}`);
   if (filters.state) lines.push(`State: ${names.state?.(filters.state) ?? filters.state}`);
   if (filters.county) lines.push(`County: ${names.county?.(filters.county) ?? filters.county}`);
   if (filters.payam) lines.push(`Payam: ${names.payam?.(filters.payam) ?? filters.payam}`);

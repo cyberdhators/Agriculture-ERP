@@ -7,13 +7,12 @@ import type { FarmerListParams } from './api';
  *
  * `farmerFilterSchema` in packages/shared is the contract. It takes a
  * verification status, a county, a payam, a sex, a registration window, an
- * updated-since moment and a duplicate flag. It takes NO free text — no name,
- * no phone, no farmer number — and it takes NO state.
+ * updated-since moment, a duplicate flag and -- since 2026-10-10 -- `q`, a
+ * search over name, farmer number and phone that the ROUTE runs (CORWADO's
+ * review: "add a filter by farmer name"). It takes NO state.
  *
- * Both absences shape the screen:
- *
- *   - There is no search box on the register, because a box that filtered only
- *     the rows already downloaded would answer "no such farmer" for a farmer
+ *   - The search box sends `q` to the route. It never filters only the rows
+ *     already downloaded, which would answer "no such farmer" for a farmer
  *     who is simply on page four.
  *   - State is offered as a way to NARROW THE COUNTY AND PAYAM LISTS, never as
  *     a filter of its own. Choosing a state alone changes no query, so it
@@ -28,6 +27,8 @@ import type { FarmerListParams } from './api';
 
 /** The keys this screen keeps in the URL. `state` is a picker aid, not a filter. */
 export interface RegisterFilters {
+  /** Name, farmer number or phone digits; searched by the route. */
+  q: string;
   status: string;
   state: string;
   county: string;
@@ -40,6 +41,7 @@ export interface RegisterFilters {
 }
 
 export const EMPTY_FILTERS: RegisterFilters = {
+  q: '',
   status: '',
   state: '',
   county: '',
@@ -90,6 +92,8 @@ const endOfDay = (date: string): string => `${date}T23:59:59.999Z`;
  */
 export function toListParams(filters: RegisterFilters, cursor?: string): FarmerListParams {
   const params: FarmerListParams = {};
+  const q = filters.q.trim();
+  if (q) params.q = q.slice(0, 100);
   if (isStatus(filters.status)) params.verification_status = filters.status;
   if (filters.county) params.county = filters.county;
   if (filters.payam) params.payam = filters.payam;
@@ -143,6 +147,7 @@ const STATUS_LABEL: Record<string, string> = {
  */
 export function activeChips(filters: RegisterFilters, names: ChipNames = {}): FilterChip[] {
   const chips: FilterChip[] = [];
+  if (filters.q.trim()) chips.push({ key: 'q', label: `Search: ${filters.q.trim()}` });
   if (filters.county) {
     chips.push({
       key: 'county',

@@ -119,6 +119,8 @@ const W: Record<'en' | 'ar', Record<string, string>> = {
     channel: 'Best way to reach you',
     heard: 'How did you hear about AgriOne?',
     services: 'What would you like help with?',
+    selectAll: 'Select all',
+    clearAll: 'Clear all',
     yes: 'Yes',
     no: 'No',
     choose: 'Choose…',
@@ -179,6 +181,8 @@ const W: Record<'en' | 'ar', Record<string, string>> = {
     channel: 'أفضل طريقة للتواصل معك',
     heard: 'كيف سمعت عن أجري ون؟',
     services: 'ما المساعدة التي تريدها؟',
+    selectAll: 'تحديد الكل',
+    clearAll: 'إلغاء الكل',
     yes: 'نعم',
     no: 'لا',
     choose: 'اختر…',
@@ -778,6 +782,24 @@ export function FarmerRegister() {
           {choose(w.heard!, farm.heard_via, HEARD_VIA, (v) => setF('heard_via', v))}
           <fieldset className={styles.stack} style={{ border: 0, padding: 0, margin: 0 }}>
             <legend className="small">{w.services}</legend>
+            {/* 2026-10-10 (CORWADO): all at once instead of one by one. */}
+            <div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="small"
+                onClick={() =>
+                  setF(
+                    'services_wanted',
+                    farm.services_wanted.length === SERVICES_WANTED.length
+                      ? []
+                      : [...SERVICES_WANTED],
+                  )
+                }
+              >
+                {farm.services_wanted.length === SERVICES_WANTED.length ? w.clearAll : w.selectAll}
+              </Button>
+            </div>
             <div className={styles.choiceRow} style={{ flexWrap: 'wrap' }}>
               {SERVICES_WANTED.map((s) => (
                 <Checkbox

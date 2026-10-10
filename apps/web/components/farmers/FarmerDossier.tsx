@@ -127,6 +127,22 @@ function nationalIdRow(farmer: Farmer): { term: string; value: ReactNode } | nul
 type ActionKind =
   'verify' | 'merge' | 'reject' | 'reassign' | 'correct' | 'resubmit' | 'remove' | null;
 
+/**
+ * Print only the audit trail (2026-10-10, CORWADO's review: the audit trail
+ * had no print of its own). The body is marked for the duration of the print,
+ * and the print stylesheet in globals.css then shows only #audit-trail.
+ */
+function printAuditTrail() {
+  const body = document.body;
+  body.classList.add('print-audit-only');
+  const done = () => {
+    body.classList.remove('print-audit-only');
+    window.removeEventListener('afterprint', done);
+  };
+  window.addEventListener('afterprint', done);
+  window.print();
+}
+
 export function FarmerDossier({ id }: { id: string }) {
   const { role, hydrated, me } = usePreview();
   const data = useDossier(id, role);
@@ -874,51 +890,70 @@ export function FarmerDossier({ id }: { id: string }) {
               </>
             )}
 
-            <p className="label" style={{ margin: 'var(--s-5) 0 var(--s-2)' }}>
-              Audit trail
-            </p>
-            {audit === null ? (
-              <p className="muted">
-                {live && role !== 'admin'
-                  ? 'The audit trail is read by an administrator.'
-                  : 'The audit trail is not switched on for this deployment (NEXT_PUBLIC_USE_LIVE_ADMIN).'}
-              </p>
-            ) : data.errors.audit ? (
-              <Notice kind="error" title="Could not load the audit trail">
-                <p className="small">{data.errors.audit}</p>
-              </Notice>
-            ) : audit.length === 0 ? (
-              <p className="muted">No audit entries for this record.</p>
-            ) : (
-              <div className={screens.tableWrap}>
-                <table className={styles.plainTable}>
-                  <thead>
-                    <tr>
-                      <th scope="col">When</th>
-                      <th scope="col">Action</th>
-                      <th scope="col">Actor</th>
-                      <th scope="col">Device</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {audit.map((a) => (
-                      <tr key={a.id}>
-                        <td className="mono small">{formatDate(a.occurred_at)}</td>
-                        <td>{titleCase(a.action.replace(/_/g, ' '))}</td>
-                        <td className="small">
-                          {a.actor_id
-                            ? (officerById(a.actor_id)?.name ??
-                              userById(a.actor_id)?.name ??
-                              a.actor_id.slice(0, 8))
-                            : 'System'}
-                        </td>
-                        <td className="mono small">{a.device_id ?? '—'}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+            <div id="audit-trail">
+              <div className={`${styles.auditHead} no-print`}>
+                <p className="label" style={{ margin: 'var(--s-5) 0 var(--s-2)' }}>
+                  Audit trail
+                </p>
+                {audit && audit.length > 0 ? (
+                  <Button variant="ghost" size="small" onClick={printAuditTrail}>
+                    <IconPrint size={16} />
+                    Print audit trail
+                  </Button>
+                ) : null}
               </div>
-            )}
+              {/* What the printed sheet says it is (2026-10-10, CORWADO). */}
+              <div className="print-only">
+                <p>
+                  <strong>
+                    Audit trail · {farmer.given_name} {farmer.family_name} · {farmer.farmer_number}
+                  </strong>
+                </p>
+                <p>Printed {new Date().toLocaleString('en-GB')}</p>
+              </div>
+              {audit === null ? (
+                <p className="muted">
+                  {live && role !== 'admin'
+                    ? 'The audit trail is read by an administrator.'
+                    : 'The audit trail is not switched on for this deployment (NEXT_PUBLIC_USE_LIVE_ADMIN).'}
+                </p>
+              ) : data.errors.audit ? (
+                <Notice kind="error" title="Could not load the audit trail">
+                  <p className="small">{data.errors.audit}</p>
+                </Notice>
+              ) : audit.length === 0 ? (
+                <p className="muted">No audit entries for this record.</p>
+              ) : (
+                <div className={screens.tableWrap}>
+                  <table className={styles.plainTable}>
+                    <thead>
+                      <tr>
+                        <th scope="col">When</th>
+                        <th scope="col">Action</th>
+                        <th scope="col">Actor</th>
+                        <th scope="col">Device</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {audit.map((a) => (
+                        <tr key={a.id}>
+                          <td className="mono small">{formatDate(a.occurred_at)}</td>
+                          <td>{titleCase(a.action.replace(/_/g, ' '))}</td>
+                          <td className="small">
+                            {a.actor_id
+                              ? (officerById(a.actor_id)?.name ??
+                                userById(a.actor_id)?.name ??
+                                a.actor_id.slice(0, 8))
+                              : 'System'}
+                          </td>
+                          <td className="mono small">{a.device_id ?? '—'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
           </Section>
         </div>
       </div>

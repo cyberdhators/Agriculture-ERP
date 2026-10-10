@@ -175,6 +175,11 @@ export const farmerFilterSchema = z
     duplicate_flag: z
       .enum(['true', 'false'], { error: () => FARMER_MESSAGES.filterDuplicateInvalid })
       .optional(),
+    /**
+     * 2026-10-10 (CORWADO's review: "add a filter by farmer name"): part of a
+     * name, a farmer number, or three or more digits of a phone number.
+     */
+    q: z.string().trim().min(1).max(100).optional(),
     limit: z.string().optional(),
     cursor: z.string().optional(),
   })

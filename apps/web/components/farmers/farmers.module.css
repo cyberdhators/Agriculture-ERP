@@ -911,3 +911,10 @@
     gap: var(--s-3);
   }
 }
+
+.auditHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+}
