@@ -20,7 +20,13 @@ import {
   statusStamp,
   PREVIEW_OFFICER_ID,
 } from '@/lib/farmers/presentation';
-import { LIVE_FARMERS, listFarmers } from '@/lib/farmers/api';
+import { LIVE_FARMERS } from '@/lib/farmers/api';
+import {
+  loadCaseload,
+  pendingRegistrations,
+  type PendingRegistration,
+} from '@/lib/offline/officer';
+import { subscribeOutbox } from '@/lib/offline/outbox';
 import { BuyerRequests } from './BuyerRequests';
 import { FARMERS, farmerPayamName, officerById, type Farmer } from '@/lib/fixtures/farmers';
 import { formatDate, formatPhone } from '@/lib/format';
@@ -49,17 +55,49 @@ export function OfficerDesk() {
   const [loadError, setLoadError] = useState<string | undefined>();
   const [q, setQ] = useState('');
   const [slip, setSlip] = useState<Farmer | null>(null);
+  /** PWA: farmers registered on this phone, not sent yet. */
+  const [waiting, setWaiting] = useState<PendingRegistration[]>([]);
+  /** PWA: when the caseload shown was saved, if it is this phone's copy. */
+  const [savedAt, setSavedAt] = useState<number | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     if (!LIVE_FARMERS) return;
     let on = true;
-    listFarmers({ limit: 200 })
-      .then((r) => on && (setLive(r.farmers), setLoadError(undefined)))
+    // PWA (2026-10-10): with no signal, the caseload saved on this phone.
+    loadCaseload()
+      .then((r) => on && (setLive(r.farmers), setSavedAt(r.savedAt), setLoadError(undefined)))
       .catch(
         (e) => on && setLoadError(e instanceof Error ? e.message : 'Could not load your caseload.'),
       );
     return () => {
       on = false;
+    };
+  }, [reloadKey]);
+
+  // PWA: ask the service worker to keep the field pages (register, record a
+  // farm, visits), so they open with no signal even if never opened here.
+  useEffect(() => {
+    if (typeof navigator === 'undefined' || !navigator.onLine) return;
+    void navigator.serviceWorker?.ready
+      .then((reg) => reg.active?.postMessage({ type: 'agrione-keep-field-pages' }))
+      .catch(() => undefined);
+  }, []);
+
+  // PWA: the registrations still on this phone; when one is sent, reload.
+  useEffect(() => {
+    if (!LIVE_FARMERS) return;
+    let before = -1;
+    const check = () =>
+      void pendingRegistrations().then((list) => {
+        setWaiting(list);
+        if (before >= 0 && list.length < before) setReloadKey((k) => k + 1);
+        before = list.length;
+      });
+    check();
+    const off = subscribeOutbox(check);
+    return () => {
+      off();
     };
   }, []);
 
@@ -108,6 +146,47 @@ export function OfficerDesk() {
           }
         />
 
+        {savedAt ? (
+          <Notice kind="info" title="No signal: showing your caseload saved on this phone">
+            <p className="small">
+              Saved {formatDate(new Date(savedAt).toISOString())}. Farmers, farms and visits you
+              record now are kept on the phone and sent when there is signal.
+            </p>
+          </Notice>
+        ) : null}
+
+        {waiting.length > 0 ? (
+          <Card padded>
+            <p className="label">Registered on this phone, waiting to send ({waiting.length})</p>
+            <ul className={styles.list}>
+              {waiting.map((w) => (
+                <li key={w.id} className={styles.row}>
+                  <div className={styles.rowMain}>
+                    <span className={styles.rowName} dir="auto">
+                      {w.name}
+                    </span>
+                    <span className={styles.rowMeta}>
+                      <span className="mono">{formatPhone(w.phone)}</span> ·{' '}
+                      {farmerPayamName(w.payam_id)}
+                      {w.problem ? ` · Not sent: ${w.problem}` : ''}
+                    </span>
+                  </div>
+                  <Stamp kind={w.problem ? 'rejected' : 'pending'}>
+                    {w.problem ? 'Stopped' : 'Waiting to send'}
+                  </Stamp>
+                  <ButtonLink
+                    href={`/farms/record?farmer=${w.id}`}
+                    variant="secondary"
+                    size="small"
+                  >
+                    Record a farm
+                  </ButtonLink>
+                </li>
+              ))}
+            </ul>
+          </Card>
+        ) : null}
+
         {loadError ? (
           <Notice kind="error" title="Could not load your caseload">
             <p className="small">{loadError}</p>
@@ -154,9 +233,9 @@ export function OfficerDesk() {
                 <li key={f.id}>
                   <Card padded className={styles.row}>
                     <div className={styles.rowMain}>
-                      <span className={styles.rowName} dir="auto">
+                      <a href={`/farmers/${f.id}`} className={styles.rowName} dir="auto">
                         {f.given_name} {f.family_name}
-                      </span>
+                      </a>
                       <span className={styles.rowMeta}>
                         <span className="mono">{f.farmer_number}</span> ·{' '}
                         {farmerPayamName(f.payam_id)} ·{' '}
@@ -164,6 +243,13 @@ export function OfficerDesk() {
                       </span>
                     </div>
                     <Stamp kind={statusStamp(f)}>{STATUS_LABEL[s] ?? s}</Stamp>
+                    <ButtonLink
+                      href={`/farms/record?farmer=${f.id}`}
+                      variant="secondary"
+                      size="small"
+                    >
+                      Record a farm
+                    </ButtonLink>
                     <Button variant="secondary" size="small" onClick={() => setSlip(f)}>
                       Slip
                     </Button>

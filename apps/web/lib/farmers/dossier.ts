@@ -18,6 +18,9 @@ import {
   type Farmer,
   type VerificationEvent,
 } from '@/lib/fixtures/farmers';
+import { isNoSignal } from '@/lib/offline/net';
+import { farmerOnPhone, pendingFarmsFor } from '@/lib/offline/officer';
+import { loadWithSnapshot } from '@/lib/offline/snapshot';
 import { listFarmerVisits, LIVE_VISITS, type Visit } from '@/lib/visits/api';
 
 /**
@@ -45,6 +48,8 @@ export interface DossierData {
   memberships: CooperativeMember[] | null;
   live: boolean;
   loading: boolean;
+  /** PWA: set when what is shown is this phone's saved copy (no signal); when it was saved. */
+  savedAt: number | null;
   errors: Partial<Record<'farmer' | 'farms' | 'visits' | 'audit', string>>;
 }
 
@@ -57,6 +62,7 @@ export function useDossier(id: string, role: string): DossierData {
   const [visits, setVisits] = useState<Visit[] | null>(null);
   const [audit, setAudit] = useState<AuditEvent[] | null>(null);
   const [loading, setLoading] = useState(live);
+  const [savedAt, setSavedAt] = useState<number | null>(null);
   const [errors, setErrors] = useState<DossierData['errors']>({});
 
   useEffect(() => {
@@ -64,13 +70,27 @@ export function useDossier(id: string, role: string): DossierData {
     let on = true;
     setLoading(true);
     setErrors({});
+    setSavedAt(null);
     const fail = (key: keyof DossierData['errors'], e: unknown, fallback: string) =>
       on && setErrors((prev) => ({ ...prev, [key]: msg(e, fallback) }));
 
-    getFarmer(id)
-      .then((f) => on && setFarmer(f))
-      .catch((e) => {
+    // PWA (2026-10-10): each section falls back to the copy saved on this
+    // phone when there is no signal, and only then; a real refusal still shows.
+    const older = (at: number) => on && setSavedAt((prev) => Math.min(prev ?? at, at));
+    loadWithSnapshot(`dossier.farmer.${id}`, () => getFarmer(id), isNoSignal)
+      .then((got) => {
+        if (!on || !got) return;
+        setFarmer(got.data);
+        if (!got.fresh) older(got.savedAt);
+      })
+      .catch(async (e) => {
+        const kept = isNoSignal(e) ? await farmerOnPhone(id) : null;
         if (!on) return;
+        if (kept?.farmer) {
+          setFarmer(kept.farmer);
+          older(Date.now());
+          return;
+        }
         setFarmer(null);
         // 404 is the honest answer for out-of-scope (C-5.8); no error banner for it.
         if (!(e instanceof Error && 'status' in e && e.status === 404))
@@ -79,13 +99,29 @@ export function useDossier(id: string, role: string): DossierData {
       .finally(() => on && setLoading(false));
 
     if (LIVE_FARMS)
-      listFarmerFarms(id)
-        .then((r) => on && setFarms(r))
+      Promise.all([
+        loadWithSnapshot(`dossier.farms.${id}`, () => listFarmerFarms(id), isNoSignal),
+        pendingFarmsFor(id),
+      ])
+        .then(([got, waiting]) => {
+          if (!on) return;
+          const sent = new Set((got?.data ?? []).map((f) => f.farm.id));
+          setFarms([...waiting.filter((w) => !sent.has(w.farm.id)), ...(got?.data ?? [])]);
+          if (got && !got.fresh) older(got.savedAt);
+        })
         .catch((e) => fail('farms', e, 'Could not load farms.'));
 
     if (LIVE_VISITS)
-      listFarmerVisits(id, { limit: 50 })
-        .then((r) => on && setVisits(r.visits))
+      loadWithSnapshot(
+        `dossier.visits.${id}`,
+        async () => (await listFarmerVisits(id, { limit: 50 })).visits,
+        isNoSignal,
+      )
+        .then((got) => {
+          if (!on || !got) return;
+          setVisits(got.data);
+          if (!got.fresh) older(got.savedAt);
+        })
         .catch((e) => fail('visits', e, 'Could not load visits.'));
 
     if (LIVE_ADMIN && role === 'admin')
@@ -115,6 +151,7 @@ export function useDossier(id: string, role: string): DossierData {
       memberships: f ? membershipsForFarmer(f.id) : null,
       live: false,
       loading: false,
+      savedAt: null,
       errors: {},
     };
   }
@@ -129,6 +166,7 @@ export function useDossier(id: string, role: string): DossierData {
     memberships: null,
     live: true,
     loading,
+    savedAt,
     errors,
   };
 }

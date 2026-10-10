@@ -1,5 +1,7 @@
 'use client';
 
+import { offlineNow } from '@/lib/offline/net';
+import { readSnapshot, saveSnapshot } from '@/lib/offline/snapshot';
 import {
   createContext,
   useCallback,
@@ -136,6 +138,8 @@ export function PreviewProvider({ children }: { children: ReactNode }) {
     const fetchMe = async (): Promise<Response> => {
       let last: unknown;
       for (const delay of RETRY_DELAYS_MS) {
+        // PWA: with the phone offline there is no one to retry.
+        if (offlineNow()) throw new TypeError('offline');
         if (delay) await new Promise((r) => setTimeout(r, delay));
         if (!on) break;
         try {
@@ -172,12 +176,26 @@ export function PreviewProvider({ children }: { children: ReactNode }) {
           setMe(principal);
           setRoleState(principal.role);
           setAuthError(undefined);
+          void saveSnapshot('portal.me', body.data).catch(() => undefined);
         } else {
           setAuthError(body.error?.message ?? `Could not load your account (${res.status}).`);
         }
       })
-      .catch(() => {
-        if (on) setAuthError('Could not reach the server.');
+      .catch(async () => {
+        // PWA (2026-10-10): no answer at all -- no signal. The last answer
+        // this account had on this phone says who is signed in, so the field
+        // screens still work; the server still checks every request it gets.
+        // A real answer (401, 403) is never replaced by the saved one.
+        const kept = await readSnapshot<Me>('portal.me').catch(() => null);
+        if (!on) return;
+        if (kept) {
+          const principal = { ...kept.data, role: asRole(kept.data.role) };
+          setMe(principal);
+          setRoleState(principal.role);
+          setAuthError(undefined);
+          return;
+        }
+        setAuthError('Could not reach the server.');
       })
       .finally(() => {
         if (on) setHydrated(true);

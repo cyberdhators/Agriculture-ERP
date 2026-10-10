@@ -185,6 +185,7 @@ export {
   geoJsonPolygonSchema,
   geojsonFilterSchema,
   gradeAccuracy,
+  recordFarmSchema,
   seasonSchema,
   type AccuracyFlag,
   type AddBoundary,
@@ -193,6 +194,8 @@ export {
   type FarmFilter,
   type GeoJsonPolygon,
   type GeojsonFilter,
+  type RecordFarm,
+  type RecordFarmInput,
 } from './farm';
 export {
   ATTACHMENT_CONTENT_TYPES,

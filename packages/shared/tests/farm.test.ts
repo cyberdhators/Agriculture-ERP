@@ -5,6 +5,7 @@ import {
   createFarmSchema,
   declareCropsSchema,
   gradeAccuracy,
+  recordFarmSchema,
   seasonSchema,
   zodErrorToApiError,
 } from '../src/index';
@@ -101,5 +102,52 @@ describe('the registration body (C-7.1, C-7.2 structure)', () => {
     expect(declareCropsSchema.safeParse({ season: '2026-main', crops: ['banana'] }).success).toBe(
       false,
     );
+  });
+});
+
+describe('a farm recorded by hand (2026-10-10)', () => {
+  const base = { id: '7b0e8a52-0f3c-4c8e-9a51-2d6f4b1c9e10', season: '2026-main' };
+
+  it('needs only the id and the season; blanks become null', () => {
+    const r = recordFarmSchema.parse({ ...base, name: '  ', village: '' });
+    expect(r.name).toBeNull();
+    expect(r.village).toBeNull();
+    expect(r.crops).toEqual([]);
+  });
+
+  it('takes the size in the farmer’s unit, and the two go together', () => {
+    expect(recordFarmSchema.parse({ ...base, size_value: 3.5, size_unit: 'feddan' })).toMatchObject(
+      { size_value: 3.5, size_unit: 'feddan' },
+    );
+    const noUnit = recordFarmSchema.safeParse({ ...base, size_value: 3 });
+    expect(noUnit.success).toBe(false);
+    expect(noUnit.error?.issues[0]?.message).toBe(FARM_MESSAGES.sizeUnitRequired);
+    const noValue = recordFarmSchema.safeParse({ ...base, size_unit: 'acre' });
+    expect(noValue.error?.issues[0]?.message).toBe(FARM_MESSAGES.sizeValueRequired);
+    expect(recordFarmSchema.safeParse({ ...base, size_value: 0, size_unit: 'acre' }).success).toBe(
+      false,
+    );
+  });
+
+  it('refuses a unit, tenure or crop outside the lists, and a crop twice', () => {
+    expect(recordFarmSchema.safeParse({ ...base, size_value: 1, size_unit: 'mile' }).success).toBe(
+      false,
+    );
+    expect(recordFarmSchema.safeParse({ ...base, tenure: 'borrowed' }).success).toBe(false);
+    expect(recordFarmSchema.safeParse({ ...base, crops: ['rice'] }).success).toBe(false);
+    expect(recordFarmSchema.safeParse({ ...base, crops: ['maize', 'maize'] }).success).toBe(false);
+  });
+
+  it('takes one point, in range, and refuses a boundary or unknown keys', () => {
+    expect(
+      recordFarmSchema.safeParse({
+        ...base,
+        location: { latitude: 4.85, longitude: 31.6, accuracy_m: 8 },
+      }).success,
+    ).toBe(true);
+    expect(
+      recordFarmSchema.safeParse({ ...base, location: { latitude: 95, longitude: 31.6 } }).success,
+    ).toBe(false);
+    expect(recordFarmSchema.safeParse({ ...base, boundary: square }).success).toBe(false);
   });
 });

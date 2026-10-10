@@ -6,7 +6,7 @@
 // current boundary on it. Geometry is present only for the reader entitled to
 // it (C-7.8); a farm the caller may not see the shape of renders as unmapped.
 
-import type { Crop } from '@agri-erp/shared';
+import type { Crop, RecordFarmInput } from '@agri-erp/shared';
 
 import type { AccuracyFlag, Farm, Ring } from '@/lib/fixtures/farmers';
 
@@ -53,6 +53,13 @@ interface FarmDto {
   updated_at: string;
   boundaries: BoundaryDto[];
   crops: { season: string; crop: Crop }[];
+  name?: string | null;
+  size?: { value: number; unit: string } | null;
+  tenure?: string | null;
+  village?: string | null;
+  location_note?: string | null;
+  notes?: string | null;
+  location?: { latitude: number; longitude: number; accuracy_m: number | null };
 }
 
 /** A farm with the crops declared on it, the two things the dossier shows together. */
@@ -92,6 +99,14 @@ export function toFarm(row: FarmDto): FarmWithCrops {
     mapped_by: current?.mapped_by ?? row.created_by,
     mapped_at: current?.mapped_at ?? row.created_at,
     season: current?.season ?? row.season,
+    mapped: row.boundaries.length > 0,
+    name: row.name ?? null,
+    size: row.size ?? null,
+    tenure: row.tenure ?? null,
+    village: row.village ?? null,
+    location_note: row.location_note ?? null,
+    notes: row.notes ?? null,
+    ...(row.location ? { location: row.location } : {}),
   };
   const crops = [...new Set(row.crops.map((c) => c.crop))];
   return { farm, crops };
@@ -102,8 +117,11 @@ interface Envelope<T> {
   error?: { code: string; message: string; rule?: string };
 }
 
-async function request<T>(path: string): Promise<Envelope<T>> {
-  const res = await fetch(path, { headers: { 'content-type': 'application/json' } });
+async function request<T>(path: string, init?: RequestInit): Promise<Envelope<T>> {
+  const res = await fetch(path, {
+    ...init,
+    headers: { 'content-type': 'application/json', ...init?.headers },
+  });
   const body = (await res.json().catch(() => ({}))) as Envelope<T>;
   if (!res.ok) {
     const err = body.error;
@@ -121,6 +139,18 @@ async function request<T>(path: string): Promise<Envelope<T>> {
 export async function listFarmerFarms(farmerId: string): Promise<FarmWithCrops[]> {
   const body = await request<FarmDto[]>(`/api/farmers/${encodeURIComponent(farmerId)}/farms`);
   return (body.data ?? []).map(toFarm);
+}
+
+/**
+ * POST /api/farmers/:id/farms/manual — a farm recorded by hand (2026-10-10).
+ * The id is made on the phone, so sending it again is safe (C-9.2).
+ */
+export async function recordFarm(farmerId: string, body: RecordFarmInput): Promise<FarmWithCrops> {
+  const res = await request<FarmDto>(`/api/farmers/${encodeURIComponent(farmerId)}/farms/manual`, {
+    method: 'POST',
+    body: JSON.stringify(body),
+  });
+  return toFarm(res.data!);
 }
 
 /**
