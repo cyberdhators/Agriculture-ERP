@@ -1,6 +1,7 @@
 /// <reference lib="webworker" />
 import { defaultCache } from '@serwist/next/worker';
 import {
+  ExpirationPlugin,
   NetworkFirst,
   NetworkOnly,
   Serwist,
@@ -46,45 +47,82 @@ const neverCached = [
 ];
 
 /**
- * THE FIELD PAGES (PWA step 4). An extension officer must be able to open
- * these with no signal even if they never opened them on this phone: the
- * window asks for them to be kept (`agrione-keep-field-pages`) once an
- * officer is signed in. Each is one address whatever follows the `?` --
- * /farms/record?farmer=<id> is the same page for every farmer, so it is kept
- * once and opens for all of them. The pages are the app's shell, not data:
- * what an officer sees on them comes from the per-account store.
+ * THE APP'S PAGES, KEPT FOR OFFLINE (2026-10-10, fixed after "the offline
+ * feature is not working": the installed app would not open a page offline).
+ *
+ * Found by damage, in the live sw.js: no page was stored ahead of time --
+ * not even /offline, so the fallback had nothing to show -- and the default
+ * rule for pages never matched a real page visit (it tests the REQUEST's
+ * Content-Type, which a navigation does not send), so visited pages fell into
+ * the catch-all "others" store: 24 hours, 32 entries shared with everything.
+ *
+ * Now every page visit (never /api/) is network-first into its own store,
+ * kept 30 days, with a short wait before falling back so a weak signal does
+ * not leave the screen blank. A page's address is one page whatever follows
+ * the `?` (/farms/record?farmer=<id> is the same page for every farmer). A
+ * redirect -- to a sign-in page -- is never stored under the address that
+ * redirected. And the window asks for its account's pages to be stored as
+ * soon as someone signs in (`agrione-keep-pages`), so they open offline even
+ * if they were never visited on this phone. The pages are the app's shell, not
+ * data: what anyone sees on them comes from the per-account store.
  */
-const FIELD_PAGES = ['/desk', '/farmers/new', '/farms/record', '/visits'];
-const FIELD_CACHE = 'agrione-field-pages';
+const PAGES_CACHE = 'agrione-pages';
+const PAGE_MAX_AGE_S = 30 * 24 * 60 * 60;
 
-const fieldPages = {
+const onlyRealPages = {
+  cacheWillUpdate: async ({ response }: { response: Response }) =>
+    response.status === 200 && !response.redirected ? response : null,
+};
+
+const pages = {
   matcher: ({ request, url, sameOrigin }: { request: Request; url: URL; sameOrigin: boolean }) =>
-    sameOrigin && request.mode === 'navigate' && FIELD_PAGES.includes(url.pathname),
+    sameOrigin && request.mode === 'navigate' && !url.pathname.startsWith('/api/'),
   handler: new NetworkFirst({
-    cacheName: FIELD_CACHE,
+    cacheName: PAGES_CACHE,
     matchOptions: { ignoreSearch: true },
-    networkTimeoutSeconds: 8,
+    networkTimeoutSeconds: 6,
+    plugins: [
+      onlyRealPages,
+      new ExpirationPlugin({ maxEntries: 80, maxAgeSeconds: PAGE_MAX_AGE_S }),
+    ],
   }),
 };
 
-async function keepFieldPages(): Promise<void> {
-  const cache = await caches.open(FIELD_CACHE);
+/** The officer's field pages, for a window that still sends the old message. */
+const FIELD_PAGES = ['/open', '/desk', '/farmers/new', '/farms/record', '/visits'];
+
+/** Our own page addresses only: a path, never another site, never /api/. */
+const isPagePath = (p: unknown): p is string =>
+  typeof p === 'string' &&
+  p.length < 200 &&
+  p.startsWith('/') &&
+  !p.startsWith('//') &&
+  !p.startsWith('/api/');
+
+async function keepPages(paths: readonly string[]): Promise<void> {
+  const cache = await caches.open(PAGES_CACHE);
   await Promise.all(
-    FIELD_PAGES.map(async (path) => {
-      try {
-        const res = await fetch(path, { credentials: 'same-origin', cache: 'no-store' });
-        // A redirect (to sign-in) is not the page: keep nothing under its name.
-        if (res.ok && !res.redirected) await cache.put(path, res);
-      } catch {
-        // No signal: the next request tries again.
-      }
-    }),
+    paths
+      .filter(isPagePath)
+      .slice(0, 40)
+      .map(async (path) => {
+        try {
+          const res = await fetch(path, { credentials: 'same-origin', cache: 'no-store' });
+          const kept = await onlyRealPages.cacheWillUpdate({ response: res });
+          if (kept) await cache.put(path, kept);
+        } catch {
+          // No signal: the next sign-in or visit tries again.
+        }
+      }),
   );
 }
 
 self.addEventListener('message', (event: ExtendableMessageEvent) => {
-  if ((event.data as { type?: string } | null)?.type === 'agrione-keep-field-pages') {
-    event.waitUntil(keepFieldPages());
+  const data = event.data as { type?: string; paths?: unknown } | null;
+  if (data?.type === 'agrione-keep-pages' && Array.isArray(data.paths)) {
+    event.waitUntil(keepPages(data.paths));
+  } else if (data?.type === 'agrione-keep-field-pages') {
+    event.waitUntil(keepPages(FIELD_PAGES));
   }
 });
 
@@ -94,7 +132,7 @@ const serwist = new Serwist({
   clientsClaim: true,
   navigationPreload: true,
   // The never-cached rules come first: the first matching rule wins.
-  runtimeCaching: [...neverCached, fieldPages, ...defaultCache],
+  runtimeCaching: [...neverCached, pages, ...defaultCache],
   fallbacks: {
     entries: [
       {

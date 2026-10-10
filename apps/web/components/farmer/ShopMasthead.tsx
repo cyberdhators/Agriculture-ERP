@@ -77,7 +77,11 @@ export function ShopMasthead({ subnav, hideStrip }: { subnav?: ReactNode; hideSt
             <LanguageButtons value={language} onChange={setLanguage} />
           </div>
 
-          <Link href={farmer ? '/farmer/account' : '/join'} className={styles.shopAcct} dir="auto">
+          <Link
+            href={farmer ? '/farmer/account' : '/join'}
+            className={farmer ? `${styles.shopAcct} ${styles.shopAcctSignedIn}` : styles.shopAcct}
+            dir="auto"
+          >
             <span className={styles.shopAcctLine1}>
               {farmer ? t('shell.greeting', language) : t('login.title', language)}
               {farmer ? ` ${farmer.given_name}` : ''}

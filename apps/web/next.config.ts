@@ -13,6 +13,15 @@ const withSerwist = withSerwistInit({
   disable: process.env.NODE_ENV === 'development',
   cacheOnNavigation: true,
   reloadOnOnline: false,
+  // Stored at install, so the installed app opens with no signal even on
+  // its first offline start: the home router and the offline page. Both are
+  // public pages (no sign-in redirect), so the install cannot fail on them.
+  // The revision changes with every deployment, so a new build's copies
+  // replace the old ones.
+  additionalPrecacheEntries: ['/open', '/offline'].map((url) => ({
+    url,
+    revision: process.env.VERCEL_GIT_COMMIT_SHA ?? String(Date.now()),
+  })),
 });
 
 const nextConfig: NextConfig = {

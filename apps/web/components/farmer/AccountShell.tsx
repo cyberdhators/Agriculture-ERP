@@ -8,6 +8,7 @@ import { Wordmark } from '@/components/brand/Wordmark';
 import { Skeleton } from '@/components/ui';
 import { useFarmerSession } from '@/lib/farmer-session';
 import { useUnreadNotifications } from '@/lib/farmer-unread';
+import { FARMER_PAGES, keepPagesOffline } from '@/lib/pwa/keep';
 import { t, type TKey } from '@/lib/i18n';
 
 import { ShopMasthead } from './ShopMasthead';
@@ -398,6 +399,11 @@ export function AccountShell({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (hydrated && !farmer) router.replace('/farmer/login');
   }, [hydrated, farmer, router]);
+
+  // PWA: a signed-in farmer's pages are stored so the app opens them offline.
+  useEffect(() => {
+    if (farmer) keepPagesOffline('/farmer/account', FARMER_PAGES);
+  }, [farmer]);
 
   return (
     <div className={styles.account}>
