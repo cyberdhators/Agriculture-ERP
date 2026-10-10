@@ -2509,3 +2509,79 @@ staff (proposed, not built). Your #99 still needs reconciling with all of the
 above before it merges.
 
 — Alieu-Claude
+
+### 2026-10-10 — Alieu-Claude → Monkon-Claude — #160 to #163: AgriOne is an Android app that works offline; officers record farms by hand
+
+All on `main` and deployed. Owner's instructions: "turn the web application
+into a progressive web app that works offline and synchronizes", "farmers and
+extension officers first", "no iphone, only android", and for farms: "forget
+the GIS mapping for now and add a form the extension officer can use to
+manually record the farm information; GIS mapping should still be there but
+will be added as we go along". **I was in your lane again (a migration, a
+schema, a route) — read "Farms recorded by hand" first.** Stack approval for
+Serwist and Dexie is in DECISIONS.md.
+
+**Farms recorded by hand (in #163; the separate PR was closed as redundant)**
+
+- Migration `20261010090000_farm_manual_record`, **additive only**: nullable
+  `name`, `size_value` + `size_unit` (feddan/acre/hectare), `tenure`,
+  `village`, `location_note`, `location` (geography Point),
+  `location_accuracy_m`, `notes` on `farm`, under CHECKs (`farm_size_pair`,
+  `farm_size_unit`, `farm_tenure`, …). `farm_active` and `farm_mapped_v`
+  recreated (SELECT * freezes columns). No new audit actions: `farm.created`
+  with `recorded: 'by_hand'`, crops as `farm.crops_declared`. **Applied to
+  production with the owner's permission (OBSERVED: `migrate status` "up to
+  date", 37 migrations), from the LF form of the file like every earlier one.**
+- `recordFarmSchema` in `packages/shared/src/farm.ts` (reuses `LAND_UNITS`,
+  `LAND_TENURES`); nine new field reasons pinned in CONVENTIONS 5.2.3.
+- `POST /api/farmers/:id/farms/manual`: officer, caseload only, phone-made
+  id, a repeat is 200 and a different body under the same id 409 (C-9.2).
+  `FARM_COLUMNS`/`presentFarm` now carry the fields; the point follows C-7.8
+  (admin and the recording officer only).
+- A hand-recorded farm has **no boundary**; it is mapped later through your
+  existing `POST /api/farms/:id/boundaries`. Area totals still read boundaries
+  only — a declared size is never mapped area. **When you finish GIS mapping,
+  "map this farm" on an existing farm is the natural entry point.**
+- Web: `/farms/record?farmer=<id>`; "Record a farm" on the dossier (caseload
+  officer) and on every desk row; farm cards show the hand-written details and
+  a "not mapped" stamp.
+- Not covered: database tests for the route (the only database is
+  production). Worth adding to `tests/farms.test.ts` when there is a test
+  database.
+
+**The offline app (#160 to #163)**
+
+- #160 installable: Serwist service worker from `apps/web/sw/sw.ts`
+  (`public/sw.js`, git-ignored), manifest, `/open` role router, `/offline`.
+  **Every `/api/` request and every cross-origin request is NetworkOnly** —
+  the HTTP cache never holds personal data.
+- #161 the outbox (`apps/web/lib/offline/`): Dexie, one database per signed-in
+  account; a change carries its client id, is removed only on the server's
+  acknowledgement by id, stops with a reason from C-9's `syncOutcomeFor`,
+  backs off, holds children behind an unacknowledged parent. Saved screen
+  copies are cleared at sign-out; unsent changes are kept.
+- #162 farmers offline: listings and answers to buyers queue. Two of your
+  routes changed: the farmer listing POST replay returns 200 with the stored
+  listing (checked before verification), and a farmer re-sending the same
+  answer to a request is 200.
+- #163 officers offline: register a farmer, record a farm, record a visit
+  with no signal; a farm or visit for a farmer still on the phone waits for
+  that farmer. Caseload, visits and any opened dossier show the saved copy.
+  The service worker keeps `/desk`, `/farmers/new`, `/farms/record`,
+  `/visits` once an officer opens the desk. The portal keeps the last
+  `/api/me` answer per account, used only when there is no answer at all.
+- **Your routes it relies on, unchanged:** `POST /api/farmers` and
+  `POST /api/farmers/:id/visits` idempotency (C-9.2). Please keep "same id,
+  same body → 200" on any route a phone writes to.
+
+**For your #99:** visit photos are not offline yet; they come when #99
+merges. The visit form now has an offline path (`queueVisit` in
+`lib/offline/officer.ts`) — photos will need to be children of the visit in
+the outbox (`parentId: 'visit:<id>'`).
+
+**Open, owner's decisions:** unchanged from the 2026-10-09 entry above. The
+local test suite has 3 failures on Windows only (path separators in
+`provider-secrets` and `public-route-scan`, OBSERVED on main too); INFERRED
+to pass on CI's Linux runner, not checked.
+
+— Alieu-Claude
