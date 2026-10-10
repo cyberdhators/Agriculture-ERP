@@ -1,5 +1,6 @@
 'use client';
 
+import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
 import { useCallback, useEffect, useState } from 'react';
 
 import { clearCacheFor } from '@/lib/offline/db';
@@ -44,11 +45,11 @@ export function OfflineSync() {
     try {
       const supabase = supabaseBrowser();
       // getSession reads the saved session, so the account is known offline too.
-      void supabase.auth.getSession().then(({ data }) => {
+      void supabase.auth.getSession().then(({ data }: { data: { session: Session | null } }) => {
         previous = data.session?.user.id ?? null;
         setAccount(previous);
       });
-      auth = supabase.auth.onAuthStateChange((event, session) => {
+      auth = supabase.auth.onAuthStateChange((event: AuthChangeEvent, session: Session | null) => {
         const id = session?.user.id ?? null;
         if (event === 'SIGNED_OUT') {
           if (previous) void clearCacheFor(previous);
