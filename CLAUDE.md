@@ -84,7 +84,7 @@ Decided. Do not substitute, add or upgrade any of these without asking.
 
 | Layer | Choice |
 | --- | --- |
-| Officer mobile app | Flutter (Android), local store SQLite via Drift |
+| Officer and farmer app | The web app as a PWA on Android: Serwist service worker, on-phone store in IndexedDB via Dexie. Replaced Flutter (owner, 2026-10-10) |
 | Web portal | Next.js on Vercel |
 | Database | Supabase Postgres with PostGIS |
 | Schema and migrations | Prisma. PostGIS geometry columns via raw SQL migrations |

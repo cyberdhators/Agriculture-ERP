@@ -73,9 +73,10 @@ find locally.
 
 ## What is in here
 
-`apps/web` is the Next.js portal, `apps/mobile` is a placeholder for the Flutter
-app, and `packages/shared` holds the Zod schemas and the Sentry scrubber that
-both surfaces validate against. Everything else:
+`apps/web` is the Next.js app -- the staff portal, and for farmers and
+extension officers an installable Android PWA that works offline (it replaced
+the planned Flutter app, 2026-10-10) -- and `packages/shared` holds the Zod
+schemas and the Sentry scrubber that the app and the API validate against. Everything else:
 
 | File                                                            | What it is for                                                           |
 | --------------------------------------------------------------- | ------------------------------------------------------------------------ |
@@ -102,7 +103,6 @@ both surfaces validate against. Everything else:
 | `apps/web/package.json`, `apps/web/tsconfig.json`               | Web app dependencies and TypeScript settings.                            |
 | `apps/web/next.config.ts`                                       | Next config, wrapped for Sentry.                                         |
 | `packages/shared/package.json`, `packages/shared/tsconfig.json` | Shared package settings.                                                 |
-| `apps/mobile/.gitkeep`                                          | Placeholder. The Flutter app is not built yet.                           |
 
 Two API routes under `/api/_dev/` exist only to prove things work and are
 **deleted in B3**. They are unauthenticated, which every other route is

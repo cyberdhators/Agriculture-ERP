@@ -7,9 +7,8 @@ import { z } from 'zod';
  * several written forms and normalised to E.164 (+211XXXXXXXXX), which is the
  * only form stored or returned. See docs/api/CONVENTIONS.md section 7.
  *
- * The Flutter officer app implements its own phone check in Dart for offline
- * feedback. It is a convenience, not a guarantee, and keeping it aligned with
- * this file is a manual obligation -- see CONVENTIONS.md section 8.
+ * The same function checks the number on the phone (the PWA, offline too) and
+ * on the server, so the two cannot disagree.
  */
 
 const COUNTRY_CODE = '211';
@@ -30,8 +29,8 @@ export type PhoneParseResult =
 /**
  * Parses one written phone number into E.164, or explains why it cannot be.
  *
- * Exported so the failure reasons can be tested directly, and so a future Dart
- * port has a single readable definition to mirror.
+ * Exported so the failure reasons can be tested directly and so the screens
+ * can check a number before sending it.
  */
 export function parseSouthSudanMobile(raw: string): PhoneParseResult {
   const trimmed = raw.trim();
