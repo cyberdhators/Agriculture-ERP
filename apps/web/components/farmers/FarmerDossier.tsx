@@ -42,6 +42,7 @@ import { eligibleOfficers, useOfficers } from '@/lib/farmers/caseload';
 import { LIVE_REASSIGN, reassignFarmer } from '@/lib/farmers/reassign';
 import { MERGE_CONSEQUENCE, MERGE_CONSTRAINT, MERGE_IRREVERSIBLE } from '@/lib/farmers/recovery';
 import { totalArea } from '@/lib/farms/api';
+import { TENURE_LABELS, UNIT_LABELS } from '@/components/farms/RecordFarm';
 import {
   coopById,
   farmerById,
@@ -50,6 +51,7 @@ import {
   STATE_NAMES,
   syncForEntity,
   userById,
+  type Farm,
   type Farmer,
 } from '@/lib/fixtures/farmers';
 import { usePreview } from '@/lib/preview';
@@ -583,16 +585,25 @@ export function FarmerDossier({ id }: { id: string }) {
           <Section
             no="03"
             title="Farms"
-            count={`${farms.length} · ${totalArea(farms).toFixed(2)} ha`}
+            count={`${farms.length} · ${totalArea(farms).toFixed(2)} ha mapped`}
           >
+            {/* 2026-10-10: the caseload officer records a farm by hand until
+                GIS mapping is finished; mapping it later adds the boundary. */}
+            {isCaseloadOfficer && !removed ? (
+              <p style={{ marginBottom: 'var(--s-4)' }}>
+                <ButtonLink href={`/farmers/${farmer.id}/farms/new`} variant="secondary">
+                  Record a farm
+                </ButtonLink>
+              </p>
+            ) : null}
             {data.errors.farms ? (
               <Notice kind="error" title="Could not load farms">
                 <p className="small">{data.errors.farms}</p>
               </Notice>
             ) : farms.length === 0 ? (
               <EmptyState
-                title="No farms mapped"
-                body="No plot has been walked for this farmer yet. A farm is added from the officer app in the field."
+                title="No farms recorded"
+                body="No farm has been recorded or mapped for this farmer yet. The caseload officer records one from this page."
               />
             ) : (
               <div>
@@ -600,6 +611,7 @@ export function FarmerDossier({ id }: { id: string }) {
                   <div key={farm.id} className={styles.farmCard}>
                     <Boundary farm={farm} size={360} showArea={false} />
                     <div className={styles.farmFacts}>
+                      <HandRecorded farm={farm} />
                       <div className={styles.farmFactsGrid}>
                         {/*
                          * C-7.8: absent means the route did not send it, not
@@ -626,22 +638,26 @@ export function FarmerDossier({ id }: { id: string }) {
                         <Mini
                           label="Trace"
                           value={
-                            <Stamp
-                              kind={
-                                farm.accuracy_flag === 'good'
-                                  ? 'verified'
-                                  : farm.accuracy_flag === 'poor'
-                                    ? 'pending'
-                                    : 'rejected'
-                              }
-                            >
-                              {farm.accuracy_flag}
-                            </Stamp>
+                            farm.mapped === false ? (
+                              <Stamp kind="pending">not mapped</Stamp>
+                            ) : (
+                              <Stamp
+                                kind={
+                                  farm.accuracy_flag === 'good'
+                                    ? 'verified'
+                                    : farm.accuracy_flag === 'poor'
+                                      ? 'pending'
+                                      : 'rejected'
+                                }
+                              >
+                                {farm.accuracy_flag}
+                              </Stamp>
+                            )
                           }
                         />
                         <Mini label="Season" value={farm.season} mono />
                         <Mini
-                          label="Mapped"
+                          label={farm.mapped === false ? 'Recorded' : 'Mapped'}
                           value={`${officerById(farm.mapped_by)?.name ?? 'Officer'} · ${formatDate(farm.mapped_at)}`}
                         />
                       </div>
@@ -1283,4 +1299,46 @@ function Mini({ label, value, mono }: { label: string; value: ReactNode; mono?: 
 
 function titleCase(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+/**
+ * What the officer wrote down for a farm recorded by hand (2026-10-10). The
+ * size is the farmer's declaration, labelled as such, never mixed with mapped
+ * area. Nothing renders for a farm that was only mapped.
+ */
+function HandRecorded({ farm }: { farm: Farm }) {
+  const has =
+    farm.name || farm.size || farm.tenure || farm.village || farm.location_note || farm.notes;
+  if (!has && !farm.location) return null;
+  const items: { term: string; value: ReactNode }[] = [];
+  if (farm.name) items.push({ term: 'Farm', value: <span dir="auto">{farm.name}</span> });
+  if (farm.size) {
+    items.push({
+      term: 'Size (declared)',
+      value: `${farm.size.value} ${UNIT_LABELS[farm.size.unit as keyof typeof UNIT_LABELS] ?? farm.size.unit}`,
+    });
+  }
+  if (farm.tenure) {
+    items.push({
+      term: 'Land held',
+      value: TENURE_LABELS[farm.tenure as keyof typeof TENURE_LABELS] ?? farm.tenure,
+    });
+  }
+  if (farm.village) items.push({ term: 'Village', value: <span dir="auto">{farm.village}</span> });
+  if (farm.location_note) {
+    items.push({ term: 'Directions', value: <span dir="auto">{farm.location_note}</span> });
+  }
+  if (farm.location) {
+    items.push({
+      term: 'Position',
+      value: (
+        <span className="mono">
+          {farm.location.latitude.toFixed(5)}, {farm.location.longitude.toFixed(5)}
+          {farm.location.accuracy_m === null ? '' : ` · ±${farm.location.accuracy_m} m`}
+        </span>
+      ),
+    });
+  }
+  if (farm.notes) items.push({ term: 'Notes', value: <span dir="auto">{farm.notes}</span> });
+  return <DefinitionList items={items} />;
 }

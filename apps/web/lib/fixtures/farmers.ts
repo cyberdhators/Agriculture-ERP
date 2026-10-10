@@ -135,6 +135,21 @@ export interface Farm {
   mapped_by: string;
   mapped_at: string;
   season: string;
+  /**
+   * Recorded by hand (2026-10-10): what the officer wrote down. Absent on a
+   * farm created by mapping. `size` is the farmer's declaration in their unit,
+   * never mapped area; `location` is one point, shown only to whoever may see
+   * geometry (C-7.8).
+   */
+  /** False for a farm recorded by hand and not mapped yet. Absent reads as mapped. */
+  mapped?: boolean;
+  name?: string | null;
+  size?: { value: number; unit: string } | null;
+  tenure?: string | null;
+  village?: string | null;
+  location_note?: string | null;
+  notes?: string | null;
+  location?: { latitude: number; longitude: number; accuracy_m: number | null };
 }
 
 export interface CropDeclaration {

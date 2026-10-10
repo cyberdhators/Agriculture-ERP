@@ -645,6 +645,17 @@ model Farm {
   updatedAt DateTime  @default(now()) @map("updated_at") @db.Timestamptz(6)
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
   deletedBy String?   @map("deleted_by") @db.Uuid
+  /// 2026-10-10: a farm recorded by hand (migration 20261010090000). The size
+  /// is what the farmer declared, never mapped area; CHECKs in the migration.
+  name              String?
+  sizeValue         Decimal? @map("size_value") @db.Decimal(10, 2)
+  sizeUnit          String?  @map("size_unit")
+  tenure            String?
+  village           String?
+  locationNote      String?  @map("location_note")
+  location          Unsupported("extensions.geography(Point, 4326)")?
+  locationAccuracyM Decimal? @map("location_accuracy_m") @db.Decimal(7, 1)
+  notes             String?
 
   farmer     Farmer            @relation(fields: [farmerId], references: [id], map: "farm_farmer_id_fkey")
   payam      Payam             @relation(fields: [payamId, stateId], references: [id, stateId], map: "farm_payam_state_consistent_fkey")

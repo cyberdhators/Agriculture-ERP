@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { CROPS } from './learning';
+import { LAND_TENURES, LAND_UNITS } from './farmer-account';
 
 /**
  * Farms and boundaries (C-7). The thresholds, the season list and the
@@ -44,6 +45,15 @@ export const FARM_MESSAGES = {
   cropsDuplicate: 'Each crop once per season.',
   cropsNotList: 'Send the crops as a list.',
   filterSeasonInvalid: 'Give the season as a year and a name: 2026-main or 2026-second.',
+  nameTooLong: 'Keep the farm name to 120 characters.',
+  sizeInvalid: 'Give the size as a number greater than zero.',
+  sizeUnitRequired: 'Choose the unit the size is in: feddan, acre or hectare.',
+  sizeValueRequired: 'Give the size, or clear the unit.',
+  tenureUnknown: 'Choose how the land is held: owned, rented, communal or other.',
+  villageTooLong: 'Keep the village to 120 characters.',
+  locationNoteTooLong: 'Keep the directions to 500 characters.',
+  notesTooLong: 'Keep the notes to 2000 characters.',
+  locationShape: 'Give the location as latitude and longitude.',
 } as const;
 
 export const seasonSchema = z
@@ -150,3 +160,90 @@ export type CreateFarm = z.infer<typeof createFarmSchema>;
 export type AddBoundary = z.infer<typeof addBoundarySchema>;
 export type DeclareCrops = z.infer<typeof declareCropsSchema>;
 export type GeojsonFilter = z.infer<typeof geojsonFilterSchema>;
+
+/**
+ * A FARM RECORDED BY HAND (2026-10-10, the owner: "forget the GIS mapping for
+ * now and add a form the extension officer can use to manually record the farm
+ * information"). No boundary: the farm can be mapped later through
+ * addBoundarySchema, and only a boundary ever counts as mapped area. The size
+ * is what the farmer declared, in the unit they gave. The point, when given, is
+ * the phone's position standing at the farm. The crops are declared for the
+ * season in the same request (C-7.7). The id is the phone's (C-9.1).
+ */
+const optionalText = (max: number, message: string) =>
+  z
+    .string()
+    .trim()
+    .max(max, message)
+    .transform((v) => (v === '' ? null : v))
+    .nullable()
+    .optional();
+
+export const recordFarmSchema = z
+  .strictObject({
+    id: uuid(FARM_MESSAGES.idNotUuid),
+    season: seasonSchema,
+    name: optionalText(120, FARM_MESSAGES.nameTooLong),
+    size_value: z
+      .number({ error: () => FARM_MESSAGES.sizeInvalid })
+      .gt(0, FARM_MESSAGES.sizeInvalid)
+      .max(99_999_999, FARM_MESSAGES.sizeInvalid)
+      .nullable()
+      .optional(),
+    size_unit: z
+      .enum(LAND_UNITS, { error: () => FARM_MESSAGES.sizeUnitRequired })
+      .nullable()
+      .optional(),
+    tenure: z
+      .enum(LAND_TENURES, { error: () => FARM_MESSAGES.tenureUnknown })
+      .nullable()
+      .optional(),
+    village: optionalText(120, FARM_MESSAGES.villageTooLong),
+    location_note: optionalText(500, FARM_MESSAGES.locationNoteTooLong),
+    location: z
+      .strictObject(
+        {
+          latitude: z
+            .number({ error: () => FARM_MESSAGES.locationShape })
+            .min(-90)
+            .max(90),
+          longitude: z
+            .number({ error: () => FARM_MESSAGES.locationShape })
+            .min(-180)
+            .max(180),
+          accuracy_m: accuracySchema.nullable().optional(),
+        },
+        { error: () => FARM_MESSAGES.locationShape },
+      )
+      .nullable()
+      .optional(),
+    crops: z
+      .array(cropSchema, { error: () => FARM_MESSAGES.cropsNotList })
+      .refine((list) => new Set(list).size === list.length, {
+        message: FARM_MESSAGES.cropsDuplicate,
+      })
+      .default([]),
+    notes: optionalText(2000, FARM_MESSAGES.notesTooLong),
+    captured_at: capturedAtSchema,
+  })
+  .superRefine((v, ctx) => {
+    const hasValue = v.size_value !== null && v.size_value !== undefined;
+    const hasUnit = v.size_unit !== null && v.size_unit !== undefined;
+    if (hasValue && !hasUnit) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['size_unit'],
+        message: FARM_MESSAGES.sizeUnitRequired,
+      });
+    }
+    if (hasUnit && !hasValue) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['size_value'],
+        message: FARM_MESSAGES.sizeValueRequired,
+      });
+    }
+  });
+
+export type RecordFarm = z.infer<typeof recordFarmSchema>;
+export type RecordFarmInput = z.input<typeof recordFarmSchema>;

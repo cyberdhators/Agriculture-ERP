@@ -487,6 +487,15 @@ These are also exact.
 | Crop: not on the list                   | Choose a crop from the list: sorghum, groundnut, sesame, maize or cowpea.                       |
 | Crops: repeated                         | Each crop once per season.                                                                      |
 | Crops: not a list                       | Send the crops as a list.                                                                       |
+| Farm name: too long                     | Keep the farm name to 120 characters.                                                           |
+| Farm size: not above zero               | Give the size as a number greater than zero.                                                    |
+| Farm size: unit missing                 | Choose the unit the size is in: feddan, acre or hectare.                                        |
+| Farm size: value missing                | Give the size, or clear the unit.                                                               |
+| Farm tenure: not on the list            | Choose how the land is held: owned, rented, communal or other.                                  |
+| Farm village: too long                  | Keep the village to 120 characters.                                                             |
+| Farm directions: too long               | Keep the directions to 500 characters.                                                          |
+| Farm notes: too long                    | Keep the notes to 2000 characters.                                                              |
+| Farm position: not a point              | Give the location as latitude and longitude.                                                    |
 | Visit: no identifier                    | A visit must carry its identifier.                                                              |
 | Visit: identifier malformed             | The visit identifier is not in the expected form.                                               |
 | Advice: missing or blank                | Write the advice you gave. A visit with no advice is not a visit.                               |
