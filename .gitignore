@@ -28,3 +28,8 @@ coverage/
 .DS_Store
 .local/
 .vercel
+
+# PWA (2026-10-10): generated at build time from apps/web/sw/sw.ts
+apps/web/public/sw.js
+apps/web/public/sw.js.map
+apps/web/public/swe-worker-*.js
