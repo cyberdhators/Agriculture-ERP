@@ -2427,3 +2427,45 @@
   font-size: var(--text-small);
   color: var(--muted);
 }
+
+/* AgriOne AI photos (2026-10-17) */
+.aiThumb {
+  display: block;
+  max-width: 180px;
+  max-height: 180px;
+  border-radius: var(--radius-control);
+  margin-block-end: var(--s-2);
+  object-fit: cover;
+}
+
+.aiPreview {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  margin-block-end: var(--s-2);
+}
+
+.aiPreview .aiThumb {
+  max-width: 96px;
+  max-height: 96px;
+  margin: 0;
+}
+
+.aiPhoto {
+  flex: 0 0 auto;
+  width: var(--touch);
+  min-height: var(--touch);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-control);
+  background: var(--card);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.aiPhoto:disabled {
+  opacity: 0.55;
+  cursor: default;
+}

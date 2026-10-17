@@ -15,6 +15,38 @@ import styles from './farmer.module.css';
 interface Turn {
   role: 'user' | 'assistant';
   content: string;
+  /** A small copy of a photo the farmer sent, for this phone's screen only. */
+  thumb?: string;
+}
+
+/** A photo ready to send: the shrunk JPEG for the model, a thumbnail for the screen. */
+interface Photo {
+  data: string;
+  thumb: string;
+}
+
+/**
+ * Shrink a photo on the phone before it is sent (2026-10-17): about 1024
+ * pixels on the long side as JPEG, so it uploads on a weak signal and fits
+ * the request limit. A second, smaller pass if the first is still too big.
+ */
+async function shrinkPhoto(file: File): Promise<Photo> {
+  const bitmap = await createImageBitmap(file);
+  const draw = (max: number, quality: number) => {
+    const scale = Math.min(1, max / Math.max(bitmap.width, bitmap.height));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+    canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+    canvas.getContext('2d')!.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    return canvas.toDataURL('image/jpeg', quality);
+  };
+  let full = draw(1024, 0.75);
+  if (full.length > ASSISTANT_LIMITS.imageMaxChars) full = draw(768, 0.6);
+  const thumb = draw(240, 0.6);
+  bitmap.close();
+  const data = full.slice(full.indexOf(',') + 1);
+  if (data.length > ASSISTANT_LIMITS.imageMaxChars) throw new Error('too large');
+  return { data, thumb };
 }
 
 /** Kept on this phone, per account, and cleared at sign-out with the other saved screens. */
@@ -36,6 +68,8 @@ export function FarmerAssistant() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [offline, setOffline] = useState(false);
+  const [photo, setPhoto] = useState<Photo | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
 
@@ -60,18 +94,43 @@ export function FarmerAssistant() {
     endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
   }, [turns]);
 
-  async function ask(question: string) {
+  async function pickPhoto(file: File | undefined) {
+    if (!file) return;
+    setError(null);
+    try {
+      setPhoto(await shrinkPhoto(file));
+    } catch {
+      setError(t('ai.photoFailed', language));
+    }
+  }
+
+  async function ask(question: string, withPhoto: Photo | null = photo) {
     const text = question.trim();
-    if (!text || busy) return;
+    if ((!text && !withPhoto) || busy) return;
     if (offlineNow()) {
       setOffline(true);
       return;
     }
-    // The server takes the most recent turns, ending with this question.
-    const history: Turn[] = [...turns, { role: 'user', content: text }];
+    // The server takes the most recent turns, ending with this question. Only
+    // this question carries its photo; earlier photos are not sent again.
+    const asked: Turn = withPhoto
+      ? { role: 'user', content: text, thumb: withPhoto.thumb }
+      : { role: 'user', content: text };
+    const history: Turn[] = [...turns, asked];
     const sent = history.slice(-ASSISTANT_LIMITS.historyMax);
     const startAt = sent.findIndex((x) => x.role === 'user');
-    const body = { messages: sent.slice(Math.max(startAt, 0)), language };
+    const wire = sent
+      .slice(Math.max(startAt, 0))
+      .map((x, i, all) =>
+        i === all.length - 1 && withPhoto
+          ? {
+              role: x.role,
+              content: text,
+              image: { media_type: 'image/jpeg', data: withPhoto.data },
+            }
+          : { role: x.role, content: x.content || (x.thumb ? t('ai.photoEarlier', language) : '') },
+      );
+    const body = { messages: wire, language };
     const parsed = assistantRequestSchema.safeParse(body);
     if (!parsed.success) {
       setError(parsed.error.issues[0]?.message ?? t('ai.failed', language));
@@ -80,6 +139,7 @@ export function FarmerAssistant() {
 
     setError(null);
     setDraft('');
+    setPhoto(null);
     setBusy(true);
     setTurns([...history, { role: 'assistant', content: '' }]);
     const controller = new AbortController();
@@ -112,6 +172,7 @@ export function FarmerAssistant() {
       // Keep the question so it can be sent again; drop the empty answer.
       setTurns(turns);
       setDraft(text);
+      setPhoto(withPhoto);
       setError(
         offlineNow()
           ? t('ai.offline', language)
@@ -130,6 +191,7 @@ export function FarmerAssistant() {
   function newChat() {
     abortRef.current?.abort();
     setTurns([]);
+    setPhoto(null);
     setError(null);
     void saveSnapshot(SAVED, []).catch(() => undefined);
   }
@@ -162,7 +224,7 @@ export function FarmerAssistant() {
                 key={key}
                 type="button"
                 className={styles.aiChip}
-                onClick={() => void ask(t(key, language))}
+                onClick={() => void ask(t(key, language), null)}
                 disabled={busy || offline}
                 dir="auto"
               >
@@ -176,6 +238,13 @@ export function FarmerAssistant() {
               <span className={styles.aiWho}>
                 {turn.role === 'user' ? t('ai.you', language) : t('ai.name', language)}
               </span>
+              {turn.thumb ? (
+                <img
+                  className={styles.aiThumb}
+                  src={turn.thumb}
+                  alt={t('ai.photoSent', language)}
+                />
+              ) : null}
               <div className={styles.aiText}>
                 {turn.content || (busy && i === turns.length - 1 ? t('ai.sending', language) : '')}
               </div>
@@ -191,6 +260,20 @@ export function FarmerAssistant() {
         </p>
       ) : null}
 
+      {photo ? (
+        <div className={styles.aiPreview}>
+          <img className={styles.aiThumb} src={photo.thumb} alt={t('ai.photoSent', language)} />
+          <button
+            type="button"
+            className={styles.aiNew}
+            onClick={() => setPhoto(null)}
+            disabled={busy}
+          >
+            {t('ai.removePhoto', language)}
+          </button>
+        </div>
+      ) : null}
+
       <form
         className={styles.aiForm}
         onSubmit={(e) => {
@@ -198,6 +281,38 @@ export function FarmerAssistant() {
           void ask(draft);
         }}
       >
+        {/* Android offers the camera and the gallery for this input. */}
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          hidden
+          onChange={(e) => {
+            void pickPhoto(e.target.files?.[0]);
+            e.target.value = '';
+          }}
+        />
+        <button
+          type="button"
+          className={styles.aiPhoto}
+          onClick={() => fileRef.current?.click()}
+          disabled={busy || offline}
+          aria-label={t('ai.photo', language)}
+          title={t('ai.photo', language)}
+        >
+          <svg
+            viewBox="0 0 24 24"
+            width="22"
+            height="22"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            aria-hidden
+          >
+            <path d="M4 8h3l2-3h6l2 3h3v11H4z" />
+            <circle cx="12" cy="13" r="3.5" />
+          </svg>
+        </button>
         <textarea
           className={styles.aiInput}
           value={draft}
@@ -215,7 +330,11 @@ export function FarmerAssistant() {
           dir="auto"
           disabled={busy}
         />
-        <button type="submit" className={styles.aiSend} disabled={busy || offline || !draft.trim()}>
+        <button
+          type="submit"
+          className={styles.aiSend}
+          disabled={busy || offline || (!draft.trim() && !photo)}
+        >
           {busy ? t('ai.sending', language) : t('ai.send', language)}
         </button>
       </form>

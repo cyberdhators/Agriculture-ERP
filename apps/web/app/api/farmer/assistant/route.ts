@@ -1,5 +1,10 @@
 import Anthropic from '@anthropic-ai/sdk';
-import { ASSISTANT_LIMITS, FARMER_ROLE, assistantRequestSchema } from '@agri-erp/shared';
+import {
+  ASSISTANT_LIMITS,
+  FARMER_ROLE,
+  assistantRequestSchema,
+  type AssistantRequest,
+} from '@agri-erp/shared';
 
 import { ApiFailure } from '../../../../lib/api/errors';
 import { defineRoutes, streamed } from '../../../../lib/api/route';
@@ -101,7 +106,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
         // Chat: low effort answers quickly and cheaply (Haiku 5.5 defaults to medium).
         output_config: { effort: 'low' },
         system: systemPrompt(farmer, language),
-        messages: body.messages,
+        messages: (body.messages as Turn[]).map((turn) => toClaude(turn, language)),
       });
 
       // Wait for the provider to accept the request, so that a refusal of the
@@ -153,6 +158,34 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
     },
   },
 });
+
+/** No words with a photo: the farmer is asking what it shows. */
+const PHOTO_ONLY = {
+  en: 'What is wrong here, and what should I do?',
+  ar: 'ما المشكلة هنا، وماذا أفعل؟',
+} as const;
+
+type Turn = AssistantRequest['messages'][number];
+
+/**
+ * One turn as Claude takes it. A photo goes first and its question after it
+ * (2026-10-17); the photo is passed through for this answer only and never
+ * stored.
+ */
+function toClaude(turn: Turn, language: 'en' | 'ar'): Anthropic.MessageParam {
+  if (turn.role === 'assistant') return { role: 'assistant', content: turn.content };
+  if (!turn.image) return { role: 'user', content: turn.content };
+  return {
+    role: 'user',
+    content: [
+      {
+        type: 'image',
+        source: { type: 'base64', media_type: turn.image.media_type, data: turn.image.data },
+      },
+      { type: 'text', text: turn.content || PHOTO_ONLY[language] },
+    ],
+  };
+}
 
 /** What helps the assistant answer this farmer: place, crops, land. Never contact details. */
 async function loadContext(farmerId: string): Promise<FarmerContext> {

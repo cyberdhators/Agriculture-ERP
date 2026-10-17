@@ -59,7 +59,9 @@ in the client's original application document that does not appear in
 and inventory, mobile money and payments, loans, savings, shares, insurance,
 credit scoring, credit bureau integration, USSD, IVR, voice advisories,
 government database integration, blockchain, IoT, satellite imagery analysis,
-AI disease detection, e-learning courses, certificates and quizzes, helpdesk
+AI disease detection (except: farmers may send a photo to AgriOne AI, which
+names possible causes and refers them to their extension officer -- the
+owner's decision, 2026-10-17, see DECISIONS.md), e-learning courses, certificates and quizzes, helpdesk
 ticketing, predictive analytics, advanced analytics, and any custom module that
 has not been approved.
 

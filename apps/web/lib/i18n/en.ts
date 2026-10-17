@@ -203,6 +203,11 @@ export const en = {
   'ai.suggest2': 'How do I keep weevils out of stored maize?',
   'ai.suggest3': 'My groundnut leaves have brown spots. What is it?',
   'ai.suggest4': 'How do I get a better price for my produce?',
+  'ai.photo': 'Add a photo',
+  'ai.photoSent': 'Photo',
+  'ai.removePhoto': 'Remove photo',
+  'ai.photoFailed': 'That photo could not be used. Try another one.',
+  'ai.photoEarlier': '(I sent a photo)',
   'account.officer': 'Your extension officer',
   'account.officerLead':
     'The person who registered you and visits your farm. Call them about your record, your listings or a buyer.',
