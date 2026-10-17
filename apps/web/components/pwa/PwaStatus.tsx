@@ -6,7 +6,9 @@ import { useEffect, useState } from 'react';
  * PWA STATUS (2026-10-10, PWA step 1), on every page:
  *
  *   - a thin strip when the phone has no signal, so nobody mistakes an old
- *     saved page for the latest one;
+ *     saved page for the latest one. Its ✕ (2026-10-17, the owner) hides it
+ *     for this stretch without signal only: the next time the signal drops,
+ *     it shows again, so a new outage is never silent;
  *   - an "Install AgriOne" button when the phone offers to install the app
  *     (Android Chrome's beforeinstallprompt). Dismissed once, it stays hidden
  *     on this phone.
@@ -20,12 +22,20 @@ const DISMISSED_KEY = 'agrione.pwa.installDismissed';
 
 export function PwaStatus() {
   const [online, setOnline] = useState(true);
+  /** The farmer closed the no-signal strip; cleared whenever the signal changes. */
+  const [stripHidden, setStripHidden] = useState(false);
   const [installable, setInstallable] = useState<InstallPrompt | null>(null);
 
   useEffect(() => {
     setOnline(navigator.onLine);
-    const up = () => setOnline(true);
-    const down = () => setOnline(false);
+    const up = () => {
+      setOnline(true);
+      setStripHidden(false);
+    };
+    const down = () => {
+      setOnline(false);
+      setStripHidden(false);
+    };
     window.addEventListener('online', up);
     window.addEventListener('offline', down);
 
@@ -61,7 +71,7 @@ export function PwaStatus() {
 
   return (
     <>
-      {online ? null : (
+      {online || stripHidden ? null : (
         <div
           role="status"
           style={{
@@ -69,14 +79,41 @@ export function PwaStatus() {
             insetInline: 0,
             bottom: 0,
             zIndex: 1000,
-            padding: '0.5rem 1rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            padding: '0.5rem 0.5rem 0.5rem 1rem',
             background: '#7a4b00',
             color: '#fff',
             fontSize: '0.875rem',
-            textAlign: 'center',
           }}
         >
-          No signal. You are seeing pages saved on this phone; they may be out of date.
+          <span style={{ flex: 1, textAlign: 'center' }}>
+            No signal. You are seeing pages saved on this phone; they may be out of date.
+          </span>
+          <button
+            type="button"
+            onClick={() => setStripHidden(true)}
+            aria-label="Hide this message"
+            title="Hide this message"
+            style={{
+              flex: '0 0 auto',
+              width: 44,
+              height: 44,
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: 'none',
+              border: 0,
+              borderRadius: 6,
+              color: 'inherit',
+              fontSize: '1.25rem',
+              lineHeight: 1,
+              cursor: 'pointer',
+            }}
+          >
+            ✕
+          </button>
         </div>
       )}
       {installable && online ? (
