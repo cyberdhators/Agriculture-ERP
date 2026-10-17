@@ -70,8 +70,9 @@ stop and ask. Do not build it.
 - Farmer-facing mobile application. The Inception Report states farmers are
   reached by SMS in this phase and excludes a farmer-installed app. The
   interface designs show one. Awaiting client decision.
-- "Ask AI" farmer advisory. Appears in the designs and data model, appears in no
-  scope document. Awaiting client decision.
+- ~~"Ask AI" farmer advisory.~~ **Lifted 2026-10-17 by the owner, in writing:**
+  built as AgriOne AI (Claude Haiku 5.5) in place of the learning library on the
+  farmer's dashboard. See `docs/DECISIONS.md`.
 - WhatsApp integration, deliverable (o). Contracted, but blocked: conditional on
   Meta business verification of the client's account. Do not start until I say
   verification has been granted.
@@ -99,6 +100,7 @@ Decided. Do not substitute, add or upgrade any of these without asking.
 | SMS | Bird |
 | Email | Resend |
 | Weather | OpenWeather |
+| AI assistant (AgriOne AI) | Anthropic Claude Haiku 5.5 via `@anthropic-ai/sdk` (owner, 2026-10-17) |
 
 All third-party service accounts are held in CORWADO's name. Never create an
 account under our own.

@@ -556,6 +556,7 @@ model Farmer {
   @@index([payamId, verificationStatus, deletedAt], map: "farmer_payam_status_idx")
   @@index([countyId], map: "farmer_county_id_idx")
   @@map("farmer")
+  assistantUsage AssistantUsage[]
 }
 
 /// A record of an event. Never soft-deleted, never removed (data-model-extension §1.3).
@@ -1466,4 +1467,19 @@ model AccountRecovery {
   usedAt         DateTime? @map("used_at") @db.Timestamptz(6)
 
   @@map("account_recovery")
+}
+
+/// 2026-10-17: questions each farmer asked the assistant per day (UTC), for the
+/// daily cap. A count only -- the conversation stays on the farmer's phone.
+/// Migration 20261017090000.
+model AssistantUsage {
+  farmerId  String   @map("farmer_id") @db.Uuid
+  day       DateTime @db.Date
+  questions Int      @default(0)
+  updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  farmer Farmer @relation(fields: [farmerId], references: [id], map: "assistant_usage_farmer_id_fkey")
+
+  @@id([farmerId, day], map: "assistant_usage_pkey")
+  @@map("assistant_usage")
 }

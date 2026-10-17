@@ -83,7 +83,19 @@ export type RouteResult =
        */
       readonly page: { cursor: string | null; hasMore: boolean } & Record<string, unknown>;
     }
-  | { readonly kind: 'empty'; readonly status: number; readonly headers?: Record<string, string> };
+  | { readonly kind: 'empty'; readonly status: number; readonly headers?: Record<string, string> }
+  /**
+   * 2026-10-17: a body written as it is produced (the farmer's assistant
+   * streams its answer). Plain text, never the JSON envelope: by the time the
+   * first byte is sent, the status is fixed at 200, so every refusal --
+   * validation, role, a daily cap, configuration -- must be decided before
+   * the stream is returned, and arrives as the usual JSON error instead.
+   */
+  | {
+      readonly kind: 'stream';
+      readonly body: ReadableStream<Uint8Array>;
+      readonly headers?: Record<string, string>;
+    };
 
 /**
  * A single object. `{ data: ... }`, plus any `extra` top-level siblings a
@@ -140,6 +152,12 @@ export const paged = (
   page,
 });
 
+/** A streamed plain-text body. Decide every refusal before returning this. */
+export const streamed = (
+  body: ReadableStream<Uint8Array>,
+  headers?: Record<string, string>,
+): RouteResult => (headers ? { kind: 'stream', body, headers } : { kind: 'stream', body });
+
 /** A body-less response, such as 304. */
 export const empty = (status: number, headers?: Record<string, string>): RouteResult =>
   headers ? { kind: 'empty', status, headers } : { kind: 'empty', status };
@@ -195,6 +213,16 @@ function respond(result: RouteResult, correlationId: string): NextResponse {
     ...(('headers' in result && result.headers) || {}),
   };
   if (result.kind === 'empty') return new NextResponse(null, { status: result.status, headers });
+  if (result.kind === 'stream') {
+    return new NextResponse(result.body, {
+      status: 200,
+      headers: {
+        'content-type': 'text/plain; charset=utf-8',
+        'cache-control': 'no-store',
+        ...headers,
+      },
+    });
+  }
   if (result.kind === 'page') {
     return NextResponse.json({ data: result.data, page: result.page }, { status: 200, headers });
   }

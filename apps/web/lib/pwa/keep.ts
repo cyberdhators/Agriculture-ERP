@@ -19,7 +19,7 @@ export const FARMER_PAGES = [
   '/farmer/account/farm',
   '/farmer/account/prices',
   '/farmer/account/weather',
-  '/farmer/account/learn',
+  '/farmer/account/ai',
   '/farmer/account/services',
   '/farmer/account/settings',
   '/farmer/account/language',
