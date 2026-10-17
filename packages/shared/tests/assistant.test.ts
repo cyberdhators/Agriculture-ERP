@@ -52,3 +52,48 @@ describe('AgriOne AI request (2026-10-17)', () => {
     );
   });
 });
+
+describe('AgriOne AI photos (2026-10-17)', () => {
+  const photo = { media_type: 'image/jpeg' as const, data: 'aGVsbG8=' };
+
+  it('takes a photo on the newest question, with or without words', () => {
+    expect(
+      assistantRequestSchema.safeParse({ messages: [{ role: 'user', content: '', image: photo }] })
+        .success,
+    ).toBe(true);
+    expect(
+      assistantRequestSchema.safeParse({
+        messages: [{ role: 'user', content: 'What is this?', image: photo }],
+      }).success,
+    ).toBe(true);
+  });
+
+  it('never takes a photo again on an earlier question', () => {
+    const r = assistantRequestSchema.safeParse({
+      messages: [
+        { role: 'user', content: 'x', image: photo },
+        { role: 'assistant', content: 'y' },
+        { role: 'user', content: 'z' },
+      ],
+    });
+    expect(r.error?.issues[0]?.message).toBe(ASSISTANT_MESSAGES.imageOnlyLast);
+  });
+
+  it('refuses other formats, broken data and a photo that is too large', () => {
+    const bad = (image: unknown) =>
+      assistantRequestSchema.safeParse({ messages: [{ role: 'user', content: 'x', image }] })
+        .success;
+    expect(bad({ media_type: 'image/gif', data: 'aGVsbG8=' })).toBe(false);
+    expect(bad({ media_type: 'image/jpeg', data: 'not base64!' })).toBe(false);
+    expect(
+      bad({ media_type: 'image/jpeg', data: 'A'.repeat(ASSISTANT_LIMITS.imageMaxChars + 4) }),
+    ).toBe(false);
+    expect(bad({ media_type: 'image/jpeg', data: 'aGVsbG8=', url: 'https://x' })).toBe(false);
+  });
+
+  it('still refuses a question with neither words nor a photo', () => {
+    expect(
+      assistantRequestSchema.safeParse({ messages: [{ role: 'user', content: '  ' }] }).success,
+    ).toBe(false);
+  });
+});

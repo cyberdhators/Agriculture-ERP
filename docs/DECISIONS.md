@@ -3730,3 +3730,24 @@ credits") and named it ("name the Agrione AI").
   library"). It is a contracted deliverable and stays managed by staff; the
   farmer's old Learn address now opens AgriOne AI.
 - **Offline:** asking needs signal; earlier answers stay readable offline.
+
+## AgriOne AI takes photos (2026-10-17)
+
+The owner, asked whether farmers should send photos to AgriOne AI and told it
+falls under "AI disease detection" on the not-in-scope list: "build it". So
+this is an owner's exception to that line, recorded in CLAUDE.md §2. CORWADO
+did not sign for it; the owner may want to tell them.
+
+- One photo per question, on the newest question only; earlier photos are
+  never sent again. JPEG, PNG or WebP, at most ~450 KB (`ASSISTANT_LIMITS`).
+- Shrunk on the phone to about 1024 pixels before sending, so it uploads on a
+  weak signal; a 240-pixel thumbnail stays in the conversation on the phone.
+- Never stored on the server; passed to Claude for that one answer.
+- The prompt: describe what is visible, give the likely causes as
+  possibilities never a diagnosis, say when the photo is unclear, never
+  comment on people, and always end with the extension officer to confirm.
+  No doses, as before. Counts as one of the 30 daily questions.
+- OBSERVED with Claude Haiku 5.5 on a market photo of maize: it described the
+  scene, noticed it was a display rather than a field, claimed no problem it
+  could not see, asked for a closer daylight photo, and referred to the
+  extension officer, in English and Arabic. About 1,400 input tokens a photo.
