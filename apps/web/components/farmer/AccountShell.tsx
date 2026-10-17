@@ -152,8 +152,9 @@ const NAV_GROUPS: readonly NavGroup[] = [
     label: 'nav.learnAndServices',
     items: [
       {
-        href: '/farmer/account/learn',
-        key: 'account.tabLearn',
+        // 2026-10-17: AgriOne AI in place of the learning library.
+        href: '/farmer/account/ai',
+        key: 'account.tabAi',
         glyph: (
           <svg
             viewBox="0 0 24 24"
@@ -163,8 +164,8 @@ const NAV_GROUPS: readonly NavGroup[] = [
             stroke="currentColor"
             strokeWidth="1.8"
           >
-            <path d="M4 5h6a3 3 0 0 1 3 3v11a2 2 0 0 0-2-2H4z" />
-            <path d="M20 5h-6a3 3 0 0 0-3 3v11a2 2 0 0 1 2-2h7z" />
+            <path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z" />
+            <path d="M8.5 11h7M8.5 14.5h4.5" />
           </svg>
         ),
       },
@@ -349,8 +350,8 @@ const BOTTOM: ReadonlyArray<{ href: string; key: TKey; exact?: boolean; glyph: R
     ),
   },
   {
-    href: '/farmer/account/learn',
-    key: 'account.tabLearn',
+    href: '/farmer/account/ai',
+    key: 'account.tabAi',
     glyph: (
       <svg
         viewBox="0 0 24 24"
@@ -360,7 +361,8 @@ const BOTTOM: ReadonlyArray<{ href: string; key: TKey; exact?: boolean; glyph: R
         stroke="currentColor"
         strokeWidth="1.8"
       >
-        <path d="M4 5h6a3 3 0 0 1 3 3v11a2 2 0 0 0-2-2H4zM20 5h-6a3 3 0 0 0-3 3v11a2 2 0 0 1 2-2h7z" />
+        <path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z" />
+        <path d="M8.5 11h7M8.5 14.5h4.5" />
       </svg>
     ),
   },

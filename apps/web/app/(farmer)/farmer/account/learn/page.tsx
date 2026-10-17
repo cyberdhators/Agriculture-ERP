@@ -1,9 +1,10 @@
-import type { Metadata } from 'next';
+import { redirect } from 'next/navigation';
 
-import { FarmerLearn } from '@/components/farmer/FarmerLearn';
-
-export const metadata: Metadata = { title: 'Learning materials' };
-
+/**
+ * The learning library left the farmer's dashboard on 2026-10-17 (the owner:
+ * AgriOne AI replaces it). Old links, bookmarks and saved pages land on the
+ * assistant. The library itself is still managed by staff.
+ */
 export default function FarmerLearnPage() {
-  return <FarmerLearn />;
+  redirect('/farmer/account/ai');
 }

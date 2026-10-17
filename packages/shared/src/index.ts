@@ -371,3 +371,7 @@ export {
 // B14 (2026-10-07): farmer accounts, the registration-form profile, farmer-owned
 // listings and farmers' answers to buyers. Appended, never reordered.
 export * from './farmer-account';
+
+// 2026-10-17: the farmer's assistant (Claude Haiku 5.5) in place of the
+// learning library on the farmer's dashboard. Appended, never reordered.
+export * from './assistant';

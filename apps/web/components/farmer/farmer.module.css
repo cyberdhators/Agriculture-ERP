@@ -2298,3 +2298,132 @@
 .anchor {
   scroll-margin-top: 96px;
 }
+
+/* ---- AgriOne AI (2026-10-17): the farmer's chat ---------------------- */
+
+.aiThread {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  margin-block: var(--s-4);
+  min-height: 160px;
+}
+
+.aiUser,
+.aiBot {
+  max-width: 88%;
+  padding: var(--s-3) var(--s-4);
+  border-radius: var(--radius-card);
+  line-height: 1.5;
+}
+
+.aiUser {
+  align-self: flex-end;
+  background: var(--green-tint);
+  border: 1px solid var(--line);
+}
+
+.aiBot {
+  align-self: flex-start;
+  background: var(--card);
+  border: 1px solid var(--line);
+}
+
+.aiWho {
+  display: block;
+  font-size: var(--text-small);
+  font-weight: 700;
+  color: var(--muted);
+  margin-block-end: 2px;
+}
+
+.aiText {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.aiSuggest {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+}
+
+.aiChip {
+  min-height: var(--touch);
+  padding: var(--s-2) var(--s-3);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-pill);
+  background: var(--card);
+  color: var(--ink);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.aiChip:hover:not(:disabled) {
+  border-color: var(--green);
+}
+
+.aiForm {
+  display: flex;
+  gap: var(--s-2);
+  align-items: flex-end;
+}
+
+.aiInput {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: var(--touch);
+  padding: var(--s-2) var(--s-3);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-control);
+  background: var(--card);
+  color: var(--ink);
+  font: inherit;
+  resize: vertical;
+}
+
+.aiSend,
+.aiNew {
+  min-height: var(--touch);
+  padding: 0 var(--s-4);
+  border-radius: var(--radius-control);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.aiSend {
+  border: 0;
+  background: var(--green);
+  color: #fff;
+}
+
+.aiSend:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.aiNew {
+  border: 1px solid var(--line-strong);
+  background: var(--card);
+  color: var(--ink);
+}
+
+.aiNotice {
+  padding: var(--s-2) var(--s-3);
+  border-radius: var(--radius-control);
+  background: var(--pending-tint);
+  color: var(--ink);
+}
+
+.aiError {
+  color: var(--danger);
+  margin-block: var(--s-2);
+}
+
+.aiDisclaimer {
+  margin-block-start: var(--s-2);
+  font-size: var(--text-small);
+  color: var(--muted);
+}

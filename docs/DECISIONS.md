@@ -3706,3 +3706,27 @@ row now names the PWA. What followed from it:
 - The `apps/mobile` placeholder is removed.
 - Bearer-token access stays (CONVENTIONS §1): every route still accepts
   either credential, for scripts and for any future client.
+
+## AgriOne AI replaces the learning library on the farmer's dashboard (2026-10-17)
+
+The owner, in writing: "i need to add a chatbot to replace the learning area
+in the farmers dashboard", then, asked, approved it over the CLAUDE.md hold on
+"Ask AI" ("Yes, approved"), chose Claude ("use haiku 5.5, i have claude api
+credits") and named it ("name the Agrione AI").
+
+- **Provider and model:** Anthropic, Claude Haiku 5.5 (`claude-haiku-5-5`),
+  through the official SDK `@anthropic-ai/sdk` (a new dependency, approved with
+  the provider). Effort `low` for chat. Key: `ANTHROPIC_API_KEY`, server-only.
+- **Careful mode (owner's choice):** farming, livestock, markets and AgriOne
+  only; says when unsure; never exact pesticide, herbicide or veterinary
+  doses; the extension officer for anything serious; no invented prices
+  (points to Market prices). In the farmer's language (English or Arabic).
+- **Privacy:** the conversation stays on the farmer's phone (per account,
+  cleared at sign-out). The server stores no question or answer -- only a
+  count of questions per farmer per day (`assistant_usage`, migration 20261017090000) for a daily cap of 30, so a loop or a shared phone cannot
+  run up the bill. Context sent with a question: first name, payam, county,
+  state, crops and land size -- never phone, ID or contact details.
+- **Learning library:** removed from the farmer's dashboard only ("Remove the
+  library"). It is a contracted deliverable and stays managed by staff; the
+  farmer's old Learn address now opens AgriOne AI.
+- **Offline:** asking needs signal; earlier answers stay readable offline.

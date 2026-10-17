@@ -137,3 +137,26 @@ describe('the SMS provider key stays on the server', () => {
     expect(route).not.toMatch(/\bphone:/);
   });
 });
+
+describe('the AI provider key stays on the server (AgriOne AI, 2026-10-17)', () => {
+  const relPosix = (f: string) => rel(f).replace(/\\/g, '/');
+
+  it('ANTHROPIC_API_KEY is READ in exactly one module', () => {
+    const readers = files
+      .filter((f) => !relPosix(f).startsWith('tests/') && !/\.test\.ts$/.test(f))
+      .filter((f) => /process\.env\.ANTHROPIC_API_KEY\b/.test(read(f)));
+    expect(readers.map(relPosix)).toEqual(['lib/assistant/claude.ts']);
+  });
+
+  it('no component or client module imports the Claude client', () => {
+    const importers = files
+      .filter((f) => /^(components\/|app\/\((portal|farmer)\))/.test(relPosix(f)))
+      .filter((f) => /lib\/assistant\/claude/.test(read(f)));
+    expect(importers.map(relPosix)).toEqual([]);
+  });
+
+  it('the Claude client refuses to load in a browser', () => {
+    const source = read(join(WEB, 'lib/assistant/claude.ts'));
+    expect(source).toMatch(/typeof window !== 'undefined'/);
+  });
+});
