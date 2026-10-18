@@ -9,6 +9,7 @@ import {
   DIRECTORY_LIMITS,
   FINANCIAL_PROVIDER_CLASSES,
   directoryEntryInputSchema,
+  southSudanNationalToE164,
   todayIso,
   type DirectoryEntryInput,
 } from '@agri-erp/shared';
@@ -89,8 +90,8 @@ function fromRow(row: DirectoryEntryRow | null): FormState {
 
 /** Form strings -> the request body shape. Unknown until the schema says so. */
 function toBody(form: FormState): unknown {
-  const phone = form.phone.trim() === '' ? '' : `+211${form.phone.trim()}`;
-  const altPhone = form.alt_phone.trim() === '' ? null : `+211${form.alt_phone.trim()}`;
+  const phone = form.phone.trim() === '' ? '' : southSudanNationalToE164(form.phone);
+  const altPhone = form.alt_phone.trim() === '' ? null : southSudanNationalToE164(form.alt_phone);
   const hasLat = form.latitude.trim() !== '';
   const hasLng = form.longitude.trim() !== '';
   return {

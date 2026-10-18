@@ -6,7 +6,13 @@
  * docs/api/CONVENTIONS.md section 8.
  */
 
-export { PHONE_MESSAGES, parseSouthSudanMobile, phoneSchema, type PhoneParseResult } from './phone';
+export {
+  PHONE_MESSAGES,
+  parseSouthSudanMobile,
+  phoneSchema,
+  southSudanNationalToE164,
+  type PhoneParseResult,
+} from './phone';
 
 export {
   DEFAULT_LIMIT,

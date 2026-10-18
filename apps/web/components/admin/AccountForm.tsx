@@ -7,6 +7,7 @@ import {
   createUserSchema,
   patchOfficerSchema,
   patchUserSchema,
+  southSudanNationalToE164,
   USER_ROLES,
 } from '@agri-erp/shared';
 
@@ -133,7 +134,9 @@ export function AccountForm({
       } else {
         payload = {
           name: values.name,
-          phone: values.phone.startsWith('+') ? values.phone : `+211${values.phone.trim()}`,
+          phone: values.phone.startsWith('+')
+            ? values.phone
+            : southSudanNationalToE164(values.phone),
           password: values.password,
           payam_id: values.payam_id,
         };
@@ -181,7 +184,9 @@ export function AccountForm({
           onSavedOfficer({
             id: officer?.id ?? crypto.randomUUID(),
             name: values.name,
-            phone: values.phone.startsWith('+') ? values.phone : `+211${values.phone.trim()}`,
+            phone: values.phone.startsWith('+')
+              ? values.phone
+              : southSudanNationalToE164(values.phone),
             payam_id: values.payam_id,
             state_id: officer?.state_id ?? values.payam_id.slice(0, 2),
             status: editing ? values.status : 'active',
