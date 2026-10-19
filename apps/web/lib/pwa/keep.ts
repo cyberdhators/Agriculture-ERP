@@ -24,6 +24,11 @@ export const FARMER_PAGES = [
   '/farmer/account/about',
   '/farmer/account/buy',
   '/farmer/account/services',
+  // 2026-10-22: independent advice. Case pages carry an id, so are not kept.
+  '/advice',
+  '/farmer/account/advice/requests',
+  '/farmer/account/advice/offer',
+  '/farmer/account/advice/work',
   '/farmer/account/settings',
   '/farmer/account/language',
   '/farmer/account/verification',

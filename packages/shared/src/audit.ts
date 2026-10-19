@@ -131,6 +131,14 @@ export const AUDIT_ACTIONS = [
   // 2026-10-21: "Contact CORWADO". Ids and the topic only, never message text.
   'support_message.created',
   'support_message.done',
+  // 2026-10-22: independent advice. Ids and statuses only in the audit row,
+  // never a question, a message or a feedback comment. The database CHECK for
+  // these comes in one combined migration (see 20261022090000_advice_requests).
+  'advice_provider.saved',
+  'advice_case.created',
+  'advice_case.status_changed',
+  'advice_case.closed',
+  'advice_case.feedback',
 ] as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];

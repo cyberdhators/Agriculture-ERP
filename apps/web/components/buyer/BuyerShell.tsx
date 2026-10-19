@@ -87,6 +87,11 @@ const NAV: ReadonlyArray<{
   { href: '/buyer/buying-requests', label: 'Buying requests', icon: IconReports },
   // 2026-10-20: in-app messaging about posts.
   { href: '/buyer/messages', label: 'Messages', icon: IconChat },
+  // 2026-10-22: independent advice -- find a provider and ask, or offer it.
+  // My Advisory Work is reached from Offer advice once a profile exists.
+  { href: '/buyer/advice', label: 'Find advice', icon: IconSearch },
+  { href: '/buyer/advice/requests', label: 'My advice requests', icon: IconChat },
+  { href: '/buyer/advice/offer', label: 'Offer advice', icon: IconStaff },
   { href: '/buyer/notifications', label: 'Notifications', icon: IconMail },
   { href: '/buyer/profile', label: 'Profile', icon: IconStaff },
   // 2026-10-19: one account buys and sells (CORWADO).

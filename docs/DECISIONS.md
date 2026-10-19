@@ -4114,3 +4114,54 @@ participation must not depend on CORWADO approval").
   were reworded for the accounts that can still meet them.
 - **New refusal:** a cart line for the buyer's own listing ("This is your own
   product."), now possible because every farmer can buy.
+
+## Advice: find a provider and ask (2026-10-22)
+
+CORWADO's 16 October specification, "Independent Advice and Knowledge
+Services", "Independent knowledge providers" and "Support and advisory
+outcomes". Part 1 of the advice work; the approved-adviser pathway is later.
+
+- **Who offers advice:** any signed-in farmer or buyer account, by publishing
+  an advice profile (Offer advice): name, kind (independent adviser,
+  institute, research or training body, advisory organisation, other), what
+  they advise on (the shared ADVICE_TOPICS list, which Advice & Learning will
+  use too), languages, states covered (none = anywhere), remote or in person,
+  availability, free/paid terms in words, and any commercial interest ("I sell
+  seed"). One profile per account. **No CORWADO approval to publish**; the
+  directory and the profile page say that being listed is not an endorsement,
+  and that nobody has to buy anything to get advice. Payments are out of scope:
+  terms are text only. A deleted or suspended account's profile leaves the
+  directory and takes no requests.
+- **Who asks:** any signed-in farmer or buyer account, choosing the provider
+  from the public directory (search; filters by topic, language, location,
+  remote/in person). Nothing is assigned or ranked. A request is a topic, the
+  question, how to be reached (in the app, phone, SMS) and a "share selected
+  details" box that is **unticked by default**; ticked, the provider sees the
+  requester's general place, and their phone only if they asked to be called
+  or texted -- a call or SMS cannot be chosen without the tick. Not your own
+  profile; ten requests a day per account; idempotent on a phone-made id.
+- **Private to two people:** a case is readable by its requester and the
+  provider's account only (404 to anyone else). Staff have no read path, as
+  with messaging. Each case gets its own conversation -- the in-app messaging
+  table, `post_kind` 'advice_case', owned by the provider, started by the
+  requester -- whose first message is the question, so replies, unread badges,
+  the offline outbox and "close conversation" all come for free. Only the
+  advice route can create one; POST /api/conversations still refuses it.
+- **Outcomes:** open -> in progress (the provider takes it up) -> closed with
+  an outcome. The requester closes as resolved, closed unresolved or
+  cancelled; the provider as referred or closed unresolved. Once closed, the
+  requester may rate it 1 to 5 with an optional comment, once. The screens say
+  that a response is not guaranteed and that advice is not evidence of a
+  better yield or income. "Report a concern" is words for now (no help page).
+- **Audit:** `advice_provider.saved`, `advice_case.created`,
+  `advice_case.status_changed`, `advice_case.closed`, `advice_case.feedback`
+  -- ids, statuses, the rating and changed field NAMES only, never a question,
+  a message or a comment. **The database CHECK for these keys is not in this
+  branch's migration** (`20261022090000_advice_requests`): three branches
+  change it at once and one combined CHECK migration is to be written when
+  they meet. Until then `audit-check-matches-migrations` fails here by design,
+  and the advice routes cannot write in a database without that migration.
+- **OPEN:** whether messages may still be sent once a case is closed (today
+  they may; either side can close the conversation); referral to another
+  provider is an outcome only, with no hand-over of the case; notifications
+  for new requests and status changes (the unread badge is the notice for now).

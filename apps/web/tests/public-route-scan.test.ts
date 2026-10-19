@@ -27,6 +27,11 @@ const API_DIR = fileURLToPath(new URL('../app/api', import.meta.url));
  * limiter, an address-exists answer) written in the route's own header.
  */
 const EXPECTED_PUBLIC = [
+  // 2026-10-22: the public directory of advice providers and one provider's
+  // profile. Read-only; published profiles of live accounts only, through a
+  // whitelist (lib/api/advice.ts presentProvider): no phone, no account id.
+  'advice/providers',
+  'advice/providers/[id]',
   // 2026-10-19: phone verification at farmer sign-up -- the farmer has no
   // account yet. Sends are limited per phone and system-wide in
   // lib/api/phone-verification.ts (a counter in the database, not a request

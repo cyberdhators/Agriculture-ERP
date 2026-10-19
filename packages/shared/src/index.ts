@@ -393,3 +393,6 @@ export * from './messaging';
 export * from './moderation';
 // 2026-10-21: "Contact CORWADO" -- the help-page message form.
 export * from './support';
+export * from './advice-topics';
+// 2026-10-22: independent advice -- find a provider and ask (part 1).
+export * from './advice';
