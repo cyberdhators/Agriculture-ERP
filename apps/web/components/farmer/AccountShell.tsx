@@ -8,6 +8,7 @@ import { Wordmark } from '@/components/brand/Wordmark';
 import { Skeleton } from '@/components/ui';
 import { useFarmerSession } from '@/lib/farmer-session';
 import { useUnreadNotifications } from '@/lib/farmer-unread';
+import { useUnreadMessages } from '@/lib/messages/client';
 import { FARMER_PAGES, keepPagesOffline } from '@/lib/pwa/keep';
 import { t, type TKey } from '@/lib/i18n';
 
@@ -245,6 +246,23 @@ const NAV_GROUPS: readonly NavGroup[] = [
   {
     items: [
       {
+        // 2026-10-20: in-app messaging about posts.
+        href: '/farmer/account/messages',
+        key: 'msg.title',
+        glyph: (
+          <svg
+            viewBox="0 0 24 24"
+            width="20"
+            height="20"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+          >
+            <path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-4.9A8 8 0 1 1 21 12Z" />
+          </svg>
+        ),
+      },
+      {
         href: '/farmer/account/notifications',
         key: 'notifications.title',
         glyph: (
@@ -450,6 +468,7 @@ function isActive(pathname: string, href: string, exact?: boolean): boolean {
 export function AccountShell({ children }: { children: ReactNode }) {
   const { hydrated, language, farmer } = useFarmerSession();
   const unread = useUnreadNotifications(Boolean(farmer));
+  const unreadMessages = useUnreadMessages(Boolean(farmer));
   const pathname = usePathname();
   const router = useRouter();
 
@@ -486,6 +505,11 @@ export function AccountShell({ children }: { children: ReactNode }) {
                       {item.glyph}
                     </span>
                     <span>{t(item.key, language)}</span>
+                    {item.href === '/farmer/account/messages' && unreadMessages > 0 ? (
+                      <span className={styles.bellBadge}>
+                        {unreadMessages > 99 ? '99+' : unreadMessages}
+                      </span>
+                    ) : null}
                     {item.href === '/farmer/account/notifications' && unread > 0 ? (
                       <span className={styles.bellBadge}>{unread > 99 ? '99+' : unread}</span>
                     ) : null}

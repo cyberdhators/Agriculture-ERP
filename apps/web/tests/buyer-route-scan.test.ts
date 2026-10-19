@@ -49,6 +49,13 @@ const admitsBuyer = (file: string) => /BUYER_ROLE|'buyer'\s*\]/.test(source(file
  */
 const BUYER_OUTSIDE_ITS_TREE = [
   'account/profile',
+  // IN-APP MESSAGING (2026-10-20): conversations belong to sign-ins, and every
+  // read is filtered to the caller's own (lib/api/messaging.ts).
+  'conversations',
+  'conversations/[id]',
+  'conversations/[id]/block',
+  'conversations/[id]/messages',
+  'conversations/unread',
   'locations',
   'me',
   // LISTINGS LANE (2026-10-19): a buyer posts and manages public buying

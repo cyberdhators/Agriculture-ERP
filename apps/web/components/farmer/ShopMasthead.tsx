@@ -8,6 +8,7 @@ import { Wordmark } from '@/components/brand/Wordmark';
 import { IconSearch } from '@/components/ui/icons';
 import { useFarmerSession } from '@/lib/farmer-session';
 import { useUnreadNotifications } from '@/lib/farmer-unread';
+import { useUnreadMessages } from '@/lib/messages/client';
 import { CATEGORY_KEY } from '@/lib/farmers/listings';
 import { LISTING_CATEGORIES } from '@/lib/fixtures/farmers';
 import { t } from '@/lib/i18n';
@@ -28,6 +29,7 @@ import styles from './farmer.module.css';
 export function ShopMasthead({ subnav, hideStrip }: { subnav?: ReactNode; hideStrip?: boolean }) {
   const { farmer, language, setLanguage, listingsFor } = useFarmerSession();
   const unread = useUnreadNotifications(Boolean(farmer));
+  const unreadMessages = useUnreadMessages(Boolean(farmer));
   const router = useRouter();
   const [query, setQuery] = useState('');
   // The search belongs to the marketplace only (the owner, 2026-10-08): on the
@@ -90,6 +92,35 @@ export function ShopMasthead({ subnav, hideStrip }: { subnav?: ReactNode; hideSt
               {farmer ? t('account.title', language) : t('shell.joinLine2', language)}
             </span>
           </Link>
+
+          {farmer ? (
+            <Link
+              href="/farmer/account/messages"
+              className={styles.shopBell}
+              aria-label={
+                unreadMessages > 0
+                  ? `${t('msg.title', language)} (${unreadMessages})`
+                  : t('msg.title', language)
+              }
+            >
+              <svg
+                viewBox="0 0 24 24"
+                width="22"
+                height="22"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                aria-hidden
+              >
+                <path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-4.9A8 8 0 1 1 21 12Z" />
+              </svg>
+              {unreadMessages > 0 ? (
+                <span className={styles.bellBadge}>
+                  {unreadMessages > 99 ? '99+' : unreadMessages}
+                </span>
+              ) : null}
+            </Link>
+          ) : null}
 
           {farmer ? (
             <Link

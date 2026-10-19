@@ -1664,3 +1664,46 @@ model AccountActivity {
   @@id([principalKind, principalId], map: "account_activity_pkey")
   @@map("account_activity")
 }
+
+/// 2026-10-20: in-app messaging -- a conversation about one post between its
+/// owner and one other account. Participants are sign-ins. Migration
+/// 20261020090000. Read and written with raw SQL.
+model Conversation {
+  id                   String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  postKind             String    @map("post_kind")
+  postId               String    @map("post_id") @db.Uuid
+  postTitle            String    @map("post_title")
+  ownerAuthUserId      String    @map("owner_auth_user_id") @db.Uuid
+  ownerName            String    @map("owner_name")
+  starterAuthUserId    String    @map("starter_auth_user_id") @db.Uuid
+  starterName          String    @map("starter_name")
+  lastMessageAt        DateTime  @default(now()) @map("last_message_at") @db.Timestamptz(6)
+  lastSenderAuthUserId String?   @map("last_sender_auth_user_id") @db.Uuid
+  ownerReadAt          DateTime? @map("owner_read_at") @db.Timestamptz(6)
+  starterReadAt        DateTime? @map("starter_read_at") @db.Timestamptz(6)
+  blockedAt            DateTime? @map("blocked_at") @db.Timestamptz(6)
+  blockedBy            String?   @map("blocked_by") @db.Uuid
+  createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  messages Message[]
+
+  @@unique([postKind, postId, starterAuthUserId], map: "conversation_one_per_post_and_starter")
+  @@index([ownerAuthUserId, lastMessageAt(sort: Desc)], map: "conversation_owner_idx")
+  @@index([starterAuthUserId, lastMessageAt(sort: Desc)], map: "conversation_starter_idx")
+  @@map("conversation")
+}
+
+/// A message's id is made on the phone, so an offline send is stored once.
+model Message {
+  id               String    @id @db.Uuid
+  conversationId   String    @map("conversation_id") @db.Uuid
+  senderAuthUserId String    @map("sender_auth_user_id") @db.Uuid
+  body             String
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  deletedAt        DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], map: "message_conversation_id_fkey")
+
+  @@index([conversationId, createdAt], map: "message_conversation_created_idx")
+  @@map("message")
+}

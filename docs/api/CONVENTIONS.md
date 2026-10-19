@@ -339,6 +339,11 @@ character.
 | `reauth_failed`                    | That password was not accepted. Nothing was changed.                                                                          |
 | `reauth_code_required`             | Enter the six-digit code from your authenticator app to confirm.                                                              |
 | `reauth_code_invalid`              | That authenticator code was not accepted. Nothing was changed.                                                                |
+| `conversation_own_post`            | This is your own post. Messages about it come to your inbox.                                                                  |
+| `conversation_owner_unreachable`   | The person who posted this cannot receive messages yet. Ask CORWADO to put you in touch.                                      |
+| `conversation_limit_reached`       | You have started 20 new conversations today. You can start more tomorrow.                                                     |
+| `conversation_blocked`             | This conversation has been closed. No more messages can be sent in it.                                                        |
+| `message_already_exists`           | A message with that identifier has already been sent with different text. Send it again as a new message.                     |
 
 **A route names a rule; it never writes a sentence.** `conflict()` and
 `unprocessable()` take a key from this registry, not a string. That is how the
@@ -445,6 +450,9 @@ change.
 | `superadmin.revoked`                      |
 | `staff.sessions_revoked`                  |
 | `staff.sessions_revoke_failed`            |
+| `conversation.started`                    |
+| `message.sent`                            |
+| `conversation.blocked`                    |
 
 `before` and `after` hold **changed fields only**, never whole rows, and never a
 password, token, authentication identifier, national id, phone, email, given
@@ -664,6 +672,10 @@ These are also exact.
 | Listing edit: quantity below sold       | The quantity cannot be less than what you have already sold.                                    |
 | Market post: yes/no not a choice        | Choose yes or no.                                                                               |
 | Buying requests: poster filter          | Choose farmer or buyer.                                                                         |
+| Message: kind of post                   | Choose a listing, a buying request or a service.                                                |
+| Message: body missing or blank          | Write a message.                                                                                |
+| Message: over 2000 characters           | A message has at most 2000 characters.                                                          |
+| Conversation: `after` not a time        | Give the time as an ISO date and time.                                                          |
 
 The key beside each reason is the field name, per section 4.1. An unrecognised
 field named `nickname` therefore produces `{ "nickname": "This field is not

@@ -3912,3 +3912,44 @@ NOT applied by the session that wrote them.
 - **Retention: OPEN DECISION.** Nothing expires access-log rows and the trigger
   forbids deleting them. CORWADO should set a period (e.g. 12 or 24 months);
   enforcing it would need a deliberate, logged purge mechanism.
+
+## In-app messaging (2026-10-20)
+
+CORWADO's 16 October specification: "protect private contacts through in-app
+messaging and deliberate public contact choices". The owner decided, 2026-10-19:
+
+- **Who can start a chat: about a post.** Any signed-in farmer or buyer account
+  can message the owner of a produce listing, a buying request or a service
+  that is on the market, from that post. Nobody can message a person cold. One
+  conversation per post per other person; asking again reopens it.
+- **Phone numbers: only if the seller chooses.** Messaging is the default way
+  to reach someone. The "Show my phone number" choice per post, and consent
+  text v1.3, are the second pull request; until it lands, the existing
+  contact buttons behave as before.
+
+Built (migration `20261020090000_messaging`, additive):
+
+- Conversations belong to **sign-ins**, not farmer or buyer records, so an
+  account that buys and sells has one inbox (#178).
+- **Staff cannot read chats.** The routes admit farmer and buyer only; there is
+  no staff read path. Problems reach staff through reports. INFERRED to be
+  what the specification's privacy line asks; CORWADO has not said whether
+  moderators should ever see a reported conversation -- OPEN.
+- **No message text outside the conversation.** Audit rows
+  (`conversation.started`, `message.sent`, `conversation.blocked`) carry ids
+  only; no notification is written -- the Messages badge is the notice. The
+  read mark (a time on the conversation) is not audited: it changes on every
+  visit and records no one's data.
+- **Names:** the post's market name for its owner; "Given F." (and a buyer's
+  organisation) for the person who writes. Never a phone, never a full name.
+- **Limits:** 2,000 characters a message; 20 new conversations per account
+  per day (replies are not limited).
+- **Offline:** replies go through the phone's outbox with an id made on the
+  phone, so a resend is stored once. Starting a conversation needs signal
+  (the answer, and any refusal, has to be read at once). Reading needs signal.
+- **Delivery is polling**, every 5 seconds while a chat is open and every
+  minute for the badge -- no realtime connection, which keeps database load
+  and cost flat. Size: a message is well under 1 KB.
+- **Close conversation:** either person can; no more messages either way, what
+  was said stays. No unblock yet.
+- **Retention: OPEN DECISION.** Messages are kept until CORWADO sets a period.

@@ -703,6 +703,36 @@ export const en = {
   'svc.editTitle': 'Edit service',
   'svc.formLead':
     'It appears on the public market. Your phone is shown only to signed-in farmers and buyers who ask for it.',
+  // 2026-10-20: in-app messaging.
+  'msg.title': 'Messages',
+  'msg.lead':
+    'Conversations about listings, buying requests and services. Your phone number stays private.',
+  'msg.empty': 'No messages yet',
+  'msg.emptyBody':
+    'Tap “Message” on a listing, a buying request or a service to start a conversation.',
+  'msg.you': 'You',
+  'msg.aboutListing': 'Listing',
+  'msg.aboutRequest': 'Buying request',
+  'msg.aboutService': 'Service',
+  'msg.back': 'All messages',
+  'msg.placeholder': 'Write a message',
+  'msg.send': 'Send',
+  'msg.waiting': 'Waiting for signal',
+  'msg.blocked': 'This conversation is closed. No more messages can be sent in it.',
+  'msg.block': 'Close conversation',
+  'msg.blockConfirm':
+    'Close this conversation? Neither of you will be able to send more messages in it.',
+  'msg.offlineRead': 'No signal. Messages will load when you are back online.',
+  'msg.notFound': 'This conversation could not be found.',
+  'msg.button': 'Message',
+  'msg.compose': 'Message about this',
+  'msg.composeLead': 'Ask a question or make an offer. Your phone number is not shared.',
+  'msg.signIn': 'Sign in to send a message',
+  'msg.sent': 'Message sent.',
+  'msg.open': 'Open the conversation',
+  'msg.cancel': 'Cancel',
+  'msg.needsSignal': 'Starting a conversation needs signal. Try again when you are online.',
+  'msg.privacy': 'Stay safe: never pay before you have seen the goods.',
 } as const;
 
 export type TKey = keyof typeof en;

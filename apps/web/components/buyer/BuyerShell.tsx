@@ -16,6 +16,7 @@ import { BUYER_HOME_PATH, HOME_PATH, LOGIN_PATH } from '@/lib/auth/paths';
 import { BuyerApiError, getProfile, listNotifications, type BuyerProfile } from '@/lib/buyer/api';
 import { VERIFICATION_LABELS, VERIFICATION_STAMPS } from '@/lib/buyer/labels';
 import { setCartOwner, useCart } from '@/lib/buyer/cart';
+import { useUnreadMessages } from '@/lib/messages/client';
 import { supabaseBrowser } from '@/lib/supabase/browser';
 
 import { Wordmark } from '../brand/Wordmark';
@@ -24,6 +25,7 @@ import { Stamp } from '../ui';
 import { LoadingState } from '../ui/data';
 import { ToastProvider } from '../ui/feedback';
 import {
+  IconChat,
   IconDashboard,
   IconEdit,
   IconMail,
@@ -82,6 +84,8 @@ const NAV: ReadonlyArray<{
   // LISTINGS LANE (2026-10-19): public buying requests ("I need X"), not the
   // requests above, which go to one listing.
   { href: '/buyer/buying-requests', label: 'Buying requests', icon: IconReports },
+  // 2026-10-20: in-app messaging about posts.
+  { href: '/buyer/messages', label: 'Messages', icon: IconChat },
   { href: '/buyer/notifications', label: 'Notifications', icon: IconMail },
   { href: '/buyer/profile', label: 'Profile', icon: IconStaff },
   // 2026-10-19: one account buys and sells (CORWADO).
@@ -96,6 +100,7 @@ export function BuyerShell({ children }: { children: ReactNode }) {
   const [unread, setUnread] = useState<number | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const cart = useCart();
+  const unreadMessages = useUnreadMessages(profile !== null);
 
   const refresh = useCallback(async () => {
     try {
@@ -198,6 +203,11 @@ export function BuyerShell({ children }: { children: ReactNode }) {
                           {cart.length}
                         </span>
                       ) : null}
+                      {item.href === '/buyer/messages' && unreadMessages > 0 ? (
+                        <span className={shell.badge} aria-label={`${unreadMessages} unread`}>
+                          {unreadMessages}
+                        </span>
+                      ) : null}
                       {item.href === '/buyer/notifications' && unread !== null && unread > 0 ? (
                         <span className={shell.badge} aria-label={`${unread} unread`}>
                           {unread}
@@ -251,6 +261,12 @@ export function BuyerShell({ children }: { children: ReactNode }) {
               </span>
             </div>
             <div className={`${shell.topbarSide} ${styles.topActions}`}>
+              <Link href="/buyer/messages" aria-label="Messages">
+                <IconChat size={18} />
+                {unreadMessages > 0 ? (
+                  <span className={styles.unreadDot}>{unreadMessages}</span>
+                ) : null}
+              </Link>
               <Link href="/buyer/notifications" aria-label="Notifications">
                 <IconMail size={18} />
                 {unread !== null && unread > 0 ? (

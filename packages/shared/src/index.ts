@@ -387,3 +387,5 @@ export * from './market-posts';
 // STAFF PERMISSIONS LANE (2026-10-19): staff permission presets, Super Admin
 // delegation and access logs. Appended, never reordered.
 export * from './staff-permissions';
+// 2026-10-20: in-app messaging about a post.
+export * from './messaging';

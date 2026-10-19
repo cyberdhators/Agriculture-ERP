@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { LISTING_CATEGORIES } from '@agri-erp/shared';
 
+import { MessageButton } from '@/components/messages/MessageButton';
 import { Badge, EmptyState, Input, Notice } from '@/components/ui';
 import { CATEGORY_KEY } from '@/lib/farmers/listings';
 import type { ListingCategory } from '@/lib/fixtures/farmers';
@@ -223,6 +224,7 @@ export function MarketRequestDetail({ id, lang }: { id: string; lang: Language }
         </p>
       ) : null}
       <p className="small muted">{t('requests.notInquiry', lang)}</p>
+      <MessageButton postKind="buying_request" postId={row.id} language={lang} />
       <ContactReveal kind="buying-requests" id={row.id} lang={lang} />
       <ReportPost kind="buying-requests" id={row.id} lang={lang} />
     </div>

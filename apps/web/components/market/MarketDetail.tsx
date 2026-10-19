@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { ListingCard } from '@/components/listings/ListingCard';
 import { ProductPage } from '@/components/listings/ProductPage';
+import { MessageButton } from '@/components/messages/MessageButton';
 import { Button, Dialog, Field, Notice, Textarea } from '@/components/ui';
 import { CATEGORY_KEY } from '@/lib/farmers/listings';
 import { t, type Language } from '@/lib/i18n';
@@ -188,7 +189,10 @@ export function MarketDetail({
                 {t('market.withdraw', lang)}
               </Button>
             </section>
-          ) : undefined
+          ) : (
+            // 2026-10-20: ask the seller, without either side's phone.
+            <MessageButton postKind="listing" postId={currentListing.id} language={lang} />
+          )
         }
         related={
           <>

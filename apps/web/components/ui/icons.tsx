@@ -74,6 +74,12 @@ export const IconPhone = (p: IconProps) => (
   </Icon>
 );
 
+export const IconChat = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-4.9A8 8 0 1 1 21 12Z" />
+  </Icon>
+);
+
 export const IconMail = (p: IconProps) => (
   <Icon {...p}>
     <rect x="3" y="5" width="18" height="14" rx="2" />

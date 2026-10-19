@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { SERVICE_TYPES } from '@agri-erp/shared';
 
 import { VerifiedFarmerBadge } from '@/components/listings/VerifiedFarmerBadge';
+import { MessageButton } from '@/components/messages/MessageButton';
 import { Badge, EmptyState, Input, Notice } from '@/components/ui';
 import { formatDate } from '@/lib/format';
 import { t, type Language } from '@/lib/i18n';
@@ -205,6 +206,7 @@ export function MarketServiceDetail({ id, lang }: { id: string; lang: Language }
           <dd dir="auto">{row.trading_name}</dd>
         </div>
       </dl>
+      <MessageButton postKind="service" postId={row.id} language={lang} />
       <ContactReveal kind="services" id={row.id} lang={lang} />
       <ReportPost kind="services" id={row.id} lang={lang} />
     </div>
