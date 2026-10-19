@@ -50,7 +50,7 @@ export function BuyerCart() {
         <PageHeader title="Cart" />
         <EmptyState
           title="Your cart is empty"
-          body="Add products from the marketplace, then send them to the farmers together."
+          body="Add products from the marketplace, then send them to the sellers together."
           actions={<Link href="/buyer/marketplace">Go to the marketplace</Link>}
         />
       </div>
@@ -85,7 +85,7 @@ export function BuyerCart() {
       toast.show({
         kind: 'success',
         title: `${sent.length} request${sent.length === 1 ? '' : 's'} sent`,
-        body: 'Each farmer has been alerted. Their phone numbers are on your requests.',
+        body: 'Each seller has been alerted. Their phone numbers are on your requests.',
       });
       router.push('/buyer/purchase-requests');
     } catch (error) {

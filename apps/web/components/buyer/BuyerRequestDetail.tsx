@@ -191,7 +191,7 @@ export function BuyerRequestDetail({ id }: { id: string }) {
                 value: request.submitted_at ? formatDate(request.submitted_at) : 'Not yet sent',
               },
               {
-                term: 'Farmer answered',
+                term: 'Seller answered',
                 value: request.decided_at ? formatDate(request.decided_at) : 'Not yet',
               },
             ]}
@@ -204,7 +204,7 @@ export function BuyerRequestDetail({ id }: { id: string }) {
         onCancel={() => setConfirmCancel(false)}
         onConfirm={() => void act('cancel')}
         title="Cancel this request?"
-        consequence="The farmer will no longer see it as open. A cancelled request cannot be sent again; add the product to your cart again if you change your mind."
+        consequence="The seller will no longer see it as open. A cancelled request cannot be sent again; add the product to your cart again if you change your mind."
         confirmLabel="Cancel request"
         destructive
         busy={busy}

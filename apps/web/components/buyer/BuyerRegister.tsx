@@ -109,12 +109,13 @@ export function BuyerRegister() {
       <div className={styles.registerInner}>
         <Wordmark size={28} tagline />
         <PageHeader
-          title="Create a buyer account"
-          subtitle="Buy produce from South Sudan's verified farmers. Individual buyers can start straight away; business accounts are reviewed by CORWADO before requests can be sent."
+          title="Create an account with email"
+          subtitle="One account to buy, sell, offer services and get advice. Individuals start straight away; business accounts are reviewed by CORWADO before requests can be sent."
         />
         <p className="small">
-          Are you a farmer selling produce? <a href="/farmer/register">Register as a farmer</a>{' '}
-          instead. Already a buyer? <a href="/login?next=/buyer/marketplace">Sign in</a>.
+          Have a South Sudan mobile number?{' '}
+          <a href="/farmer/register">Create your account with your phone</a> instead. Already have
+          an account? <a href="/login?next=/buyer/marketplace">Sign in</a>.
         </p>
         <Card padded>
           <form className={styles.form} onSubmit={submit} noValidate aria-label="Buyer application">
