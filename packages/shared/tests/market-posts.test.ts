@@ -217,3 +217,21 @@ describe('a service listing', () => {
     });
   });
 });
+
+describe('the phone on a post (2026-10-20)', () => {
+  it('is off unless the poster ticks it, so messaging is the default', () => {
+    expect(buyingRequestSchema.parse(request).show_phone).toBe(false);
+    expect(serviceListingSchema.parse(service).show_phone).toBe(false);
+    expect(buyingRequestSchema.parse({ ...request, show_phone: true }).show_phone).toBe(true);
+  });
+
+  it('is a yes or no, nothing else', () => {
+    expect(buyingRequestSchema.safeParse({ ...request, show_phone: 'yes' }).success).toBe(false);
+  });
+
+  it('an edit that does not mention it leaves it as it is', () => {
+    expect(serviceListingPatchSchema.parse({ title: 'Tractor hire' })).not.toHaveProperty(
+      'show_phone',
+    );
+  });
+});

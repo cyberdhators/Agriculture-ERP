@@ -28,6 +28,7 @@ import {
   PageHeader,
   Stamp,
 } from '../ui';
+import { MessageButton } from '../messages/MessageButton';
 import { LoadingState } from '../ui/data';
 import { ConfirmationDialog, useToast } from '../ui/feedback';
 import { useBuyer } from './BuyerShell';
@@ -161,6 +162,17 @@ export function BuyerRequestDetail({ id }: { id: string }) {
                 WhatsApp
               </ButtonLink>
             </div>
+          </CardBody>
+        </Card>
+      ) : request.listing_id && status !== 'draft' && status !== 'cancelled' ? (
+        // 2026-10-20: the farmer keeps their phone private on this listing.
+        <Card>
+          <CardHeader
+            title={request.farmer_name ? `Contact ${request.farmer_name}` : 'Contact the farmer'}
+            subtitle="This farmer prefers messages. Agree the price, quality and handover in a conversation."
+          />
+          <CardBody>
+            <MessageButton postKind="listing" postId={request.listing_id} />
           </CardBody>
         </Card>
       ) : null}

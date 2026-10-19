@@ -126,9 +126,9 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
           `INSERT INTO public.service_listing
              (id, farmer_id, trading_name, service_type, title, description, location,
               payam_id, state_id, available_from, available_until, availability_note,
-              price_ssp, price_unit, negotiable, contact_phone, status)
+              price_ssp, price_unit, negotiable, contact_phone, status, show_phone)
            VALUES ($1::uuid, $2::uuid, $3, $4, $5, $6, $7, $8, $9, $10::date, $11::date,
-                   $12, $13, $14, $15, $16, $17)`,
+                   $12, $13, $14, $15, $16, $17, $18)`,
           id,
           farmerId,
           body.trading_name,
@@ -146,6 +146,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
           body.negotiable,
           body.contact_phone ?? farmer.phone,
           body.status,
+          body.show_phone,
         );
         await writeAudit(tx, {
           entityType: 'service_listing',

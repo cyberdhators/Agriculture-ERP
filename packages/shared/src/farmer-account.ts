@@ -388,6 +388,8 @@ const listingFields = {
   harvest_season: optionalText(60),
   pickup_notes: optionalText(500),
   contact_phone: phoneSchema.optional(),
+  // 2026-10-20: the phone goes to a buyer who asks only if the farmer chooses.
+  show_phone: z.boolean({ error: () => M.choiceUnknown }).default(false),
   quality_grade: z
     .enum(LISTING_GRADES, { error: () => BUYER_MESSAGES.gradeUnknown })
     .nullable()

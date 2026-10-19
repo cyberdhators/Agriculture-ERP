@@ -96,11 +96,11 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
              (id, farmer_id, trading_name, title, category, product_name, description, quantity,
               unit, price_ssp, price_per, negotiable, delivery_available, available_from,
               available_until, harvest_season, pickup_notes, contact_phone, status, payam_id,
-              state_id, quality_grade, min_order_quantity)
+              state_id, quality_grade, min_order_quantity, show_phone)
            VALUES ($1::uuid, $2::uuid, $3, $4, $5::public.listing_category, $6, $7, $8,
                    $9::public.listing_unit, $10, $11::public.listing_unit, $12, $13, $14::date,
                    $15::date, $16, $17, $18, $19::public.listing_status, $20, $21,
-                   $22::public.listing_grade, $23)
+                   $22::public.listing_grade, $23, $24)
            RETURNING ${OWN_LISTING_COLUMNS}`,
           id,
           farmerId,
@@ -125,6 +125,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
           farmer.state_id,
           body.quality_grade ?? null,
           body.min_order_quantity ?? null,
+          body.show_phone,
         );
         await writeAudit(tx, {
           entityType: 'produce_listing',

@@ -10,7 +10,7 @@ import { COUNTIES, PAYAMS, STATES } from '@/lib/fixtures/p1';
 import { t } from '@/lib/i18n';
 
 /** The consent text version the farmer sign-up records (FarmerRegister). */
-const CONSENT_VERSION = 'v1.2-en';
+const CONSENT_VERSION = 'v1.3-en';
 
 /**
  * START SELLING WITH THE SAME ACCOUNT (2026-10-19; CORWADO: "one account, many

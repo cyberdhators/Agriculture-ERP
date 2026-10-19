@@ -132,10 +132,10 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
           `INSERT INTO public.buying_request
              (id, poster_type, farmer_id, buyer_id, display_name, category, product_name,
               quantity, unit, state_id, location, needed_by, price_ssp, price_per, negotiable,
-              delivery_terms, description, contact_phone, status)
+              delivery_terms, description, contact_phone, status, show_phone)
            VALUES ($1::uuid, $2, $3::uuid, $4::uuid, $5, $6::public.listing_category, $7,
                    $8, $9::public.listing_unit, $10, $11, $12::date, $13,
-                   $14::public.listing_unit, $15, $16, $17, $18, $19)`,
+                   $14::public.listing_unit, $15, $16, $17, $18, $19, $20)`,
           id,
           poster.type,
           poster.type === 'farmer' ? poster.id : null,
@@ -155,6 +155,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
           body.description ?? null,
           phone,
           body.status,
+          body.show_phone,
         );
         await writeAudit(tx, {
           entityType: 'buying_request',

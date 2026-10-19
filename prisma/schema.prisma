@@ -1048,6 +1048,8 @@ model ProduceListing {
   /// LISTINGS LANE (2026-10-19). Sold so far; what is left is quantity - quantitySold.
   quantitySold       Decimal         @default(0) @map("quantity_sold") @db.Decimal(12, 2)
   status             ListingStatus   @default(draft)
+  /// 2026-10-20: the phone goes to a buyer only if the farmer chooses (migration 20261020120000).
+  showPhone          Boolean         @default(false) @map("show_phone")
   payamId            String          @map("payam_id")
   stateId            String          @map("state_id")
   createdAt          DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
@@ -1547,6 +1549,7 @@ model BuyingRequest {
   deliveryTerms String?   @map("delivery_terms")
   description   String?
   contactPhone  String    @map("contact_phone")
+  showPhone     Boolean   @default(false) @map("show_phone")
   status        String    @default("draft")
   createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt     DateTime  @default(now()) @map("updated_at") @db.Timestamptz(6)
@@ -1574,6 +1577,7 @@ model ServiceListing {
   priceUnit        String?   @map("price_unit")
   negotiable       Boolean   @default(false)
   contactPhone     String    @map("contact_phone")
+  showPhone        Boolean   @default(false) @map("show_phone")
   status           String    @default("draft")
   createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt        DateTime  @default(now()) @map("updated_at") @db.Timestamptz(6)

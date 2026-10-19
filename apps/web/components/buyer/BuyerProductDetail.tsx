@@ -189,7 +189,9 @@ export function BuyerProductDetail({ id }: { id: string }) {
                 </div>
               ) : (
                 <p className={styles.muted}>
-                  The farmer&apos;s phone number is shown here once you send them a request.
+                  {listing.phone_on_request === false
+                    ? 'This farmer prefers messages. Use the Message button below.'
+                    : 'The farmer’s phone number is shown here once you send them a request.'}
                 </p>
               )}
               <MessageButton postKind="listing" postId={listing.id} />

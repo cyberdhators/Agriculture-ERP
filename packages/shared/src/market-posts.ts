@@ -302,6 +302,8 @@ const buyingRequestShape = {
   delivery_terms: optionalText(500),
   description: optionalText(1000),
   contact_phone: phoneSchema.optional(),
+  // 2026-10-20: the phone is shown only if the poster chooses; off unless ticked.
+  show_phone: flag.default(false),
 };
 
 const priceNeedsUnit = (
@@ -388,6 +390,8 @@ const serviceShape = {
     .optional(),
   negotiable: flag.default(false),
   contact_phone: phoneSchema.optional(),
+  // 2026-10-20: the phone is shown only if the poster chooses; off unless ticked.
+  show_phone: flag.default(false),
 };
 
 export const serviceListingSchema = z

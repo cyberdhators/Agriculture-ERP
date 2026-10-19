@@ -41,7 +41,7 @@ export const MARKET_COLUMNS = `pl.id, pl.title, pl.category::text AS category, p
        ELSE to_char(pl.available_until, 'YYYY-MM-DD') END AS available_until,
   pl.harvest_season, pl.quality_grade::text AS quality_grade,
   pl.min_order_quantity::text AS min_order_quantity, pl.trading_name,
-  pl.updated_at, f.verification_status::text AS supplier_verification,
+  pl.updated_at, f.verification_status::text AS supplier_verification, pl.show_phone,
   pm.name AS payam_name, c.id AS county_id, c.name AS county_name,
   s.id AS state_id, s.name AS state_name`;
 
@@ -89,6 +89,7 @@ export interface MarketRow {
   trading_name: string;
   updated_at: Date;
   supplier_verification: string;
+  show_phone: boolean;
   payam_name: string;
   county_id: string;
   county_name: string;
@@ -120,6 +121,9 @@ export function presentMarketListing(row: MarketRow) {
       trading_name: row.trading_name,
       verified: row.supplier_verification === 'verified',
     },
+    // 2026-10-20: whether the farmer gives their phone to a buyer who sends a
+    // request (a yes/no, never the number).
+    phone_on_request: row.show_phone,
     location: {
       payam: row.payam_name,
       county_id: row.county_id,
@@ -149,7 +153,9 @@ export const REQUEST_COLUMNS = `r.id, r.listing_id, r.category::text AS category
   pl.title AS listing_title,
   -- B14: the farmer's number, once the request has been sent (not a draft,
   -- not cancelled). Buyer and farmer deal directly (CORWADO, 2026-10-07).
-  CASE WHEN r.status NOT IN ('draft', 'cancelled') THEN pl.contact_phone END AS farmer_phone,
+  -- 2026-10-20: and only if the farmer chose to show it on the listing.
+  CASE WHEN r.status NOT IN ('draft', 'cancelled') AND pl.show_phone
+       THEN pl.contact_phone END AS farmer_phone,
   -- 2026-10-10 (CORWADO): and the farmer's name, under the same condition.
   CASE WHEN r.status NOT IN ('draft', 'cancelled') AND fmr.id IS NOT NULL
        THEN fmr.given_name || ' ' || fmr.family_name END AS farmer_name`;

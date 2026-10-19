@@ -42,6 +42,7 @@ interface Values {
   price_unit: string;
   negotiable: boolean;
   contact_phone: string;
+  show_phone: boolean;
 }
 
 const fromService = (s: ServiceListing): Values => ({
@@ -57,6 +58,7 @@ const fromService = (s: ServiceListing): Values => ({
   price_unit: s.price_unit ?? '',
   negotiable: s.negotiable,
   contact_phone: (s.contact_phone ?? '').replace(/^\+211/, ''),
+  show_phone: s.show_phone ?? false,
 });
 
 /**
@@ -93,6 +95,7 @@ export function ServiceForm({
     price_unit: '',
     negotiable: false,
     contact_phone: '',
+    show_phone: false,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [failure, setFailure] = useState<string | null>(null);
@@ -130,6 +133,7 @@ export function ServiceForm({
       price_unit: values.price_ssp === '' ? null : values.price_unit || null,
       negotiable: values.negotiable,
     };
+    out.show_phone = values.show_phone;
     if (values.contact_phone.trim() !== '') out.contact_phone = values.contact_phone;
     if (status) out.status = status;
     return out;
@@ -357,6 +361,14 @@ export function ServiceForm({
             />
           )}
         </Field>
+        <div>
+          <Checkbox
+            label={t('posts.showPhone', lang)}
+            checked={values.show_phone}
+            onChange={(e) => set('show_phone', e.target.checked)}
+          />
+          <p className="small muted">{t('posts.showPhoneHint', lang)}</p>
+        </div>
       </div>
 
       <div className={styles.formActions}>

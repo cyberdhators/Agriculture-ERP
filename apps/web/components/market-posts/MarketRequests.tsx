@@ -225,7 +225,7 @@ export function MarketRequestDetail({ id, lang }: { id: string; lang: Language }
       ) : null}
       <p className="small muted">{t('requests.notInquiry', lang)}</p>
       <MessageButton postKind="buying_request" postId={row.id} language={lang} />
-      <ContactReveal kind="buying-requests" id={row.id} lang={lang} />
+      {row.phone_shared ? <ContactReveal kind="buying-requests" id={row.id} lang={lang} /> : null}
       <ReportPost kind="buying-requests" id={row.id} lang={lang} />
     </div>
   );

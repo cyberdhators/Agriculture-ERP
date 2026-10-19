@@ -163,6 +163,8 @@ export interface MarketListing {
   supplier: { trading_name: string; verified: boolean };
   location: { payam: string; county_id: string; county: string; state_id: string; state: string };
   updated_at: string;
+  /** 2026-10-20: whether the farmer gives their phone to a buyer who asks. */
+  phone_on_request?: boolean;
   /** B14: the farmer's phone, given only once this buyer has sent a request for it. */
   farmer_phone?: string | null;
 }

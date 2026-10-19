@@ -3953,3 +3953,38 @@ Built (migration `20261020090000_messaging`, additive):
 - **Close conversation:** either person can; no more messages either way, what
   was said stays. No unblock yet.
 - **Retention: OPEN DECISION.** Messages are kept until CORWADO sets a period.
+
+## Phone numbers only if the poster chooses; consent text v1.3 (2026-10-20)
+
+The owner, 2026-10-19: "Only if the seller chooses". The second half of
+"In-app messaging" above.
+
+- **One choice per post:** "Show my phone number" on a buying request or a
+  service; "Give my phone number to buyers who send a request" on a produce
+  listing. **Off unless ticked** for anything posted from now on; the poster
+  can change it on any post.
+- **Existing posts keep their phone (true).** Deals already under way were
+  promised the number under consent text v1.2; switching them off silently
+  would break that. INFERRED to be what the owner wants -- they can ask for
+  existing posts to be switched off, which is one UPDATE and their decision.
+- **Where it is enforced (the server, not the screen):** the contact routes
+  of buying requests and services return no number when the poster said no;
+  a buyer's product page and their sent purchase requests carry the farmer's
+  number only when the listing allows it. Public pages carry a yes/no
+  (`phone_shared`, `phone_on_request`), never the number. Staff screens read
+  the same purchase-request columns, so the procurement view also shows no
+  number for such a listing.
+- **Unchanged:** a buyer who sends a purchase request still gives their own
+  phone to the farmer -- sending it is the deliberate choice -- and v1.3 says
+  so. The visitor contact form (a visitor leaves a phone for an officer) is
+  unchanged.
+- **Consent text v1.3** (English and Arabic; farmer sign-up and "Start
+  selling"): people reach you through messages in the app; your number is on
+  a post only if you choose; your number goes to the seller when you send a
+  buyer request; messages are seen only by the two people in them. The
+  officer-assisted registration still records v1.0, the text officers read
+  out; bringing it to v1.3 is CORWADO's call -- OPEN.
+
+Migration `20261020120000_post_show_phone` (additive): a `show_phone` column on
+`produce_listing`, `buying_request` and `service_listing`; the three `_active`
+views recreated so they carry it.

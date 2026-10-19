@@ -152,7 +152,7 @@ export const BUYING_REQUEST_COLUMNS = `br.id, br.poster_type, br.display_name,
   br.unit::text AS unit, br.state_id, s.name AS state_name, br.location,
   to_char(br.needed_by, 'YYYY-MM-DD') AS needed_by,
   br.price_ssp::text AS price_ssp, br.price_per::text AS price_per, br.negotiable,
-  br.delivery_terms, br.description, br.status, br.created_at, br.updated_at,
+  br.delivery_terms, br.description, br.status, br.created_at, br.updated_at, br.show_phone,
   (COALESCE(f.verification_status::text, '') = 'verified'
     OR COALESCE(o.verification_status::text, '') = 'verified') AS poster_verified`;
 
@@ -189,6 +189,7 @@ export interface BuyingRequestRow {
   status: string;
   created_at: Date;
   updated_at: Date;
+  show_phone: boolean;
   poster_verified: boolean;
 }
 
@@ -211,6 +212,8 @@ export const presentBuyingRequest = (row: BuyingRequestRow) => ({
   negotiable: row.negotiable,
   delivery_terms: row.delivery_terms,
   description: row.description,
+  // 2026-10-20: whether the poster offers their phone (a yes/no, never the number).
+  phone_shared: row.show_phone,
   status: row.status,
   created_at: toIso(row.created_at),
   updated_at: toIso(row.updated_at),
@@ -222,6 +225,7 @@ export const OWN_BUYING_REQUEST_COLUMNS = `${BUYING_REQUEST_COLUMNS}, br.contact
 export const presentOwnBuyingRequest = (row: BuyingRequestRow & { contact_phone: string }) => ({
   ...presentBuyingRequest(row),
   contact_phone: row.contact_phone,
+  show_phone: row.show_phone,
 });
 
 export async function loadOwnBuyingRequest(db: Db, poster: Poster, id: string, lock = false) {
@@ -255,7 +259,7 @@ export const SERVICE_COLUMNS = `sl.id, sl.trading_name, sl.service_type, sl.titl
   CASE WHEN sl.available_until IS NULL THEN NULL
        ELSE to_char(sl.available_until, 'YYYY-MM-DD') END AS available_until,
   sl.availability_note, sl.price_ssp::text AS price_ssp, sl.price_unit, sl.negotiable,
-  sl.status, sl.created_at, sl.updated_at,
+  sl.status, sl.created_at, sl.updated_at, sl.show_phone,
   (f.verification_status::text = 'verified') AS farmer_verified`;
 
 export const SERVICE_FROM = `FROM public.service_listing_active sl
@@ -286,6 +290,7 @@ export interface ServiceRow {
   status: string;
   created_at: Date;
   updated_at: Date;
+  show_phone: boolean;
   farmer_verified: boolean;
 }
 
@@ -307,6 +312,7 @@ export const presentService = (row: ServiceRow) => ({
   price_ssp: row.price_ssp === null ? null : Number(row.price_ssp),
   price_unit: row.price_unit,
   negotiable: row.negotiable,
+  phone_shared: row.show_phone,
   status: row.status,
   created_at: toIso(row.created_at),
   updated_at: toIso(row.updated_at),
@@ -317,6 +323,7 @@ export const OWN_SERVICE_COLUMNS = `${SERVICE_COLUMNS}, sl.contact_phone`;
 export const presentOwnService = (row: ServiceRow & { contact_phone: string }) => ({
   ...presentService(row),
   contact_phone: row.contact_phone,
+  show_phone: row.show_phone,
 });
 
 export async function loadOwnService(db: Db, farmerId: string, id: string, lock = false) {
