@@ -39,7 +39,7 @@ describe('what the printed register says about itself', () => {
       { county: () => 'Juba', payam: () => 'Munuki' },
     );
     expect(context.lines).toEqual([
-      'View: Pending verification',
+      'View: Not verified',
       'County: Juba',
       'Payam: Munuki',
       'Sex: Female',

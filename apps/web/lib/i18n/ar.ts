@@ -98,7 +98,7 @@ export const ar: Partial<Record<TKey, string>> = {
   'account.tileLanguageSub': 'لغة حسابك',
   'account.tileVerification': 'التحقق',
   'account.tileVerificationSub': 'الحالة وما تعنيه',
-  'account.pending': 'معلق',
+  'account.pending': 'لم يتم التوثيق بعد',
   'account.verified': 'مُتحقق منه',
   'account.rejected': 'غير مُتحقق منه',
   'account.whatPendingTitle': 'لم يتم التوثيق بعد',

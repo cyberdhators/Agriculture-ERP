@@ -287,12 +287,12 @@ export function RegisterFarmer() {
             {saved.pending
               ? `${saved.name} is saved on this phone and will be sent automatically when there is signal. The farmer number is given once it reaches the server.`
               : LIVE_FARMERS
-                ? `${saved.name} was registered as pending and sent to the review queue.${
+                ? `${saved.name} was registered. They can buy and sell now; verifying them is in Verify farmers.${
                     serverDupes > 0
                       ? ` ${serverDupes} possible duplicate${serverDupes > 1 ? 's were' : ' was'} flagged for a reviewer.`
                       : ''
                   }`
-                : `${saved.name} would be created as pending and sent to the review queue. Nothing was written; this preview build has no backend.`}
+                : `${saved.name} would be registered and listed in Verify farmers. Nothing was written; this preview build has no backend.`}
           </p>
           <div className={screens.formActions}>
             <Button variant="primary" onClick={reset}>

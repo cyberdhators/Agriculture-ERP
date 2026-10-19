@@ -53,13 +53,14 @@ describe('who sees which destination', () => {
     expect(offered).toEqual(['admin', 'supervisor']);
   });
 
-  it('the map is offered to administrators and supervisors, and to nobody else', () => {
-    // GET /api/farms/geojson is the only route serving boundary coordinates
-    // across farms, and it refuses an officer and a read-only user outright.
+  it('the map is offered to nobody while GIS mapping is unfinished (owner, 2026-10-19)', () => {
+    // Hidden from the menu, not removed: /farms and GET /api/farms/geojson
+    // stay, and when the entry returns it is admin and supervisor only --
+    // the route refuses an officer and a read-only user outright.
     const offered = ROLES.filter((role) =>
       navFor(role).some((s) => s.items.some((i) => i.href === '/farms')),
     );
-    expect(offered).toEqual(['admin', 'supervisor']);
+    expect(offered).toEqual([]);
   });
 
   it('an officer is offered no staff-account screen, and every other role is', () => {
@@ -184,7 +185,7 @@ describe('breadcrumbs', () => {
   });
 
   it('titles the page from the last crumb', () => {
-    expect(pageTitleFor('/farmers/review')).toBe('Review queue');
+    expect(pageTitleFor('/farmers/review')).toBe('Verify farmers');
     expect(pageTitleFor('/dashboard')).toBe('Dashboard');
     expect(pageTitleFor('/')).toBe('Dashboard');
   });

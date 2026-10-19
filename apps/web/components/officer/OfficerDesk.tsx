@@ -36,7 +36,7 @@ import styles from './officer.module.css';
 
 const TODAY_YEAR = 2026;
 const STATUS_LABEL: Record<string, string> = {
-  pending: 'Pending verification',
+  pending: 'Not verified',
   verified: 'Verified',
   rejected: 'Rejected',
   merged: 'Merged',
@@ -196,7 +196,7 @@ export function OfficerDesk() {
             label="Your caseload"
             items={[
               { label: 'Registered', value: kpis.registered },
-              { label: 'Pending verification', value: kpis.pending, accent: kpis.pending > 0 },
+              { label: 'Not verified', value: kpis.pending, accent: kpis.pending > 0 },
               { label: 'Verified', value: kpis.verified },
             ]}
           />

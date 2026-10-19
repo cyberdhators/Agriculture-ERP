@@ -131,7 +131,7 @@ export function ReviewQueue() {
   if (!canReview(role)) {
     return (
       <>
-        <PageHeader eyebrow="Farmers · Verification" title="Review queue" />
+        <PageHeader eyebrow="Farmers · Verification" title="Verify farmers" />
         <EmptyState
           error
           title="Only a supervisor or administrator reviews farmers"
@@ -214,8 +214,8 @@ export function ReviewQueue() {
     <>
       <PageHeader
         eyebrow="Farmers · Verification"
-        title="Review queue"
-        subtitle={`Pending farmers, oldest wait first. A wait past ${ESCALATE_AFTER_DAYS} days is escalated and sits at the top.`}
+        title="Verify farmers"
+        subtitle={`Farmers not yet verified, oldest first. They can already buy and sell; verifying adds the Verified badge and counts them in reach figures. Past ${ESCALATE_AFTER_DAYS} days a farmer is escalated to the top.`}
         actions={
           <ButtonLink href="/farmers" variant="secondary">
             Back to register

@@ -39,7 +39,7 @@ import styles from './comms.module.css';
  */
 
 const STATUS_LABEL: Record<string, string> = {
-  pending: 'Pending',
+  pending: 'Not verified',
   verified: 'Verified',
   rejected: 'Rejected',
 };

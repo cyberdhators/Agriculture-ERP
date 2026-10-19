@@ -109,7 +109,7 @@ export const en = {
   'account.tileLanguageSub': 'The language of your account',
   'account.tileVerification': 'Your verification',
   'account.tileVerificationSub': 'Status and what it means',
-  'account.pending': 'Pending',
+  'account.pending': 'Not verified yet',
   'account.verified': 'Verified',
   'account.rejected': 'Not verified',
   'account.whatPendingTitle': 'Not verified yet',
