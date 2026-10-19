@@ -4068,3 +4068,25 @@ existed).
 - **Not built:** restoring a self-deleted account (still by hand); a notice
   to the account saying why (it cannot sign in to read one) -- an SMS on
   suspension is possible later with Bird, OPEN.
+
+## Contact CORWADO (2026-10-21)
+
+The owner's choice: "A help page with FAQs and a short message form; staff see
+messages in a list and mark them done. No tickets, assignment or SLAs."
+Helpdesk ticketing stays out of scope (CLAUDE.md section 2); this is a form,
+not a helpdesk.
+
+- **Who:** anyone, at `/help` (public; linked from the farmer account menu and
+  the buyer menu). A signed-in farmer or buyer is recognised from the session;
+  anyone else is a visitor and must leave a phone or an email. A signed-in
+  sender who leaves no phone is answered on their own record's phone.
+- **Staff:** administrators (and `support.handle`) see the messages at
+  Reports and support → Support messages, newest first, new or done, and mark
+  one done. Done is terminal. No replies, assignment, threads or deadlines.
+- **Brake:** five messages a day per sender, counted in the database -- per
+  sign-in, or per a one-way hash of the connection for a visitor. For
+  visitors that is a courtesy, not a control: the header is spoofable, the
+  same exposure as product reports.
+- **Audit:** `support_message.created` and `support_message.done`, ids, sender
+  kind and topic only, never the text, name, phone or email (migration
+  `20261021100000`).

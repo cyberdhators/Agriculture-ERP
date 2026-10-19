@@ -56,6 +56,11 @@ const EXPECTED_PUBLIC = [
   'services',
   'services/[id]',
   'services/[id]/reports',
+  // 2026-10-21: "Contact CORWADO" from the help page -- a visitor who cannot
+  // sign in is who most needs it. Five a day per sender, counted in the
+  // database; for visitors per a spoofable connection digest, so a courtesy,
+  // not a control (the exposure is written in the route's header).
+  'support',
   'weather/forecast',
 ];
 

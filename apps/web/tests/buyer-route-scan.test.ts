@@ -70,6 +70,9 @@ const BUYER_OUTSIDE_ITS_TREE = [
   'buying-requests/[id]/contact',
   'buying-requests/mine',
   'services/[id]/contact',
+  // 2026-10-21: "Contact CORWADO" is public; it names the buyer role only to
+  // recognise a signed-in sender, and reads nothing but that sender's own phone.
+  'support',
 ];
 
 describe('buyer routes are counted, not trusted', () => {

@@ -743,6 +743,43 @@ export const en = {
   'posts.phonePrivate': 'This person prefers messages. Use the Message button.',
   // 2026-10-21: a suspended (or deleted) account trying to sign in.
   'login.suspended': 'This account is suspended or closed. Contact CORWADO for help.',
+  // 2026-10-21: "Contact CORWADO" -- the help page.
+  'help.title': 'Help',
+  'help.lead': 'Answers to common questions, and a short form to write to CORWADO.',
+  'help.faqTitle': 'Common questions',
+  'help.q1': 'How do I sign in?',
+  'help.a1':
+    'Farmers sign in with their phone number and password. Buyers sign in with their email address and password. If you forgot your password, your extension officer or CORWADO can reset it for you.',
+  'help.q2': 'How do I post produce or a service?',
+  'help.a2':
+    'Sign in, open your account and tap Post. Your listing goes live as soon as you publish it. Services and buying requests are posted the same way.',
+  'help.q3': 'How do messages work, and who sees my phone number?',
+  'help.a3':
+    'Tap Message on a listing, a buying request or a service to talk inside AgriOne. Your phone number is shown only if you choose to show it on a post, and then only to signed-in farmers and buyers.',
+  'help.q4': 'How do I delete my account?',
+  'help.a4':
+    'Farmers: open Login & security. Buyers: open Profile. Choose Delete my account, enter your password and tick the box. Your posts are withdrawn and your account is hidden; CORWADO keeps the record for its audit.',
+  'help.q5': 'What is the Verified badge?',
+  'help.a5':
+    'When an extension officer or CORWADO has checked your details, your listings show a Verified badge. You can buy and sell before that.',
+  'help.formTitle': 'Write to CORWADO',
+  'help.formLead':
+    'Tell us what happened. If you are not signed in, leave a phone number or an email so we can reply.',
+  'help.name': 'Your name',
+  'help.phone': 'Phone number (optional)',
+  'help.email': 'Email (optional)',
+  'help.topic': 'Topic',
+  'help.topicAccount': 'My account',
+  'help.topicMarketplace': 'The marketplace',
+  'help.topicMessages': 'Messages',
+  'help.topicTechnical': 'Something is not working',
+  'help.topicOther': 'Something else',
+  'help.body': 'Your message',
+  'help.send': 'Send',
+  'help.sending': 'Sending…',
+  'help.sent': 'Sent. CORWADO will contact you.',
+  'help.sendAnother': 'Send another message',
+  'help.failed': 'The message was not sent. Please try again.',
 } as const;
 
 export type TKey = keyof typeof en;

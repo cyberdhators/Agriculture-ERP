@@ -191,6 +191,10 @@ export const RULE_MESSAGES = {
   // MODERATION (2026-10-21). About an account's standing, never a person.
   account_already_suspended: 'This account is already suspended.',
   account_not_suspended: 'This account is not suspended. There is nothing to restore.',
+  // 2026-10-21: "Contact CORWADO". About the sender's contact or count, never a person.
+  support_contact_required: 'Give a phone number or an email address so CORWADO can reply.',
+  support_limit_reached:
+    'You have sent 5 messages today. CORWADO will answer those first; you can send more tomorrow.',
 } as const;
 
 export type RuleKey = keyof typeof RULE_MESSAGES;
