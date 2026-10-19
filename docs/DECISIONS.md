@@ -3953,3 +3953,32 @@ Built (migration `20261020090000_messaging`, additive):
 - **Close conversation:** either person can; no more messages either way, what
   was said stays. No unblock yet.
 - **Retention: OPEN DECISION.** Messages are kept until CORWADO sets a period.
+
+## Delete my account: hide now, keep for audit (2026-10-20)
+
+CORWADO's 16 October specification asks for account deletion. The owner,
+2026-10-20: hide now, keep for audit (the soft-delete law), not erase.
+
+- **Who:** a farmer or buyer account, for itself only, from Login & security
+  (farmer) or Profile (buyer), with its own password and a tick box. The
+  password is checked like Super Admin delegation (a throwaway sign-in; never
+  kept); a wrong one is logged in the access log. Staff accounts cannot use it.
+- **What happens, in one transaction:** live listings, buying requests and
+  services are withdrawn; every conversation is closed and the account's name
+  in it becomes "Former member" (what was said stays for the other person);
+  the farmer and buyer records are soft-deleted, so they leave every list,
+  count, export, report and the market. Then the sign-in is disabled
+  (banned), ending sessions on other phones. If Supabase does not answer, the
+  records are still deleted and every route refuses the account; the answer
+  says the ban did not happen.
+- **Audit:** `farmer.soft_deleted` and the new `buyer.soft_deleted`
+  (migration `20261020150000`, CHECK 88 → 89), each carrying how many posts
+  were withdrawn and conversations closed -- one row per record, not one per
+  post, which is a deliberate reading of "every update is audited" for a
+  single act; the posts' own rows show `withdrawn`.
+- **Not touched:** purchase requests and orders already in progress (the other
+  side keeps its record of them); the "who you are" answers (unreachable once
+  the posts are gone).
+- **Coming back:** the phone and sign-in stay with the deleted record, so the
+  same phone cannot sign up again; restoring an account is CORWADO's, by hand,
+  for now -- OPEN whether to build a restore for staff.
