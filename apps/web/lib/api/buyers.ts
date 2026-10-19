@@ -228,13 +228,19 @@ export async function checkRequestedItems(
   const reasons: Record<string, string> = {};
   const ids = [...new Set(items.map((i) => i.listing_id))];
   const listings = await db.$queryRawUnsafe<
-    { id: string; quantity: number; unit: string; min_order: number | null }[]
+    { id: string; quantity: number; unit: string; min_order: number | null; own: boolean }[]
   >(
     // LISTINGS LANE (2026-10-19): what is left, not what was first offered.
-    `SELECT id, (quantity - quantity_sold)::float8 AS quantity, unit::text AS unit,
-            min_order_quantity::float8 AS min_order
-       FROM public.produce_listing WHERE id = ANY($1::uuid[])`,
+    // 2026-10-21: and whether the seller is this organisation's own account --
+    // one sign-in buys and sells (#178), and a farmer may not buy from themselves.
+    `SELECT pl.id, (pl.quantity - pl.quantity_sold)::float8 AS quantity, pl.unit::text AS unit,
+            pl.min_order_quantity::float8 AS min_order,
+            EXISTS (SELECT 1 FROM public.farmer f JOIN public.buyer b
+                      ON b.auth_user_id = f.auth_user_id
+                     WHERE f.id = pl.farmer_id AND b.organization_id = $2::uuid) AS own
+       FROM public.produce_listing pl WHERE pl.id = ANY($1::uuid[])`,
     ids,
+    organizationId,
   );
   const open = await db.$queryRawUnsafe<{ listing_id: string }[]>(
     `SELECT DISTINCT listing_id FROM public.purchase_request
@@ -258,6 +264,10 @@ export async function checkRequestedItems(
       return;
     }
     const listing = byId.get(item.listing_id);
+    if (listing?.own) {
+      reasons[at] = BUYER_MESSAGES.ownProduct;
+      return;
+    }
     if (!listing || item.unit !== listing.unit) return;
     if (item.quantity > listing.quantity) reasons[at] = BUYER_MESSAGES.quantityAboveAvailable;
     else if (listing.min_order !== null && item.quantity < listing.min_order) {

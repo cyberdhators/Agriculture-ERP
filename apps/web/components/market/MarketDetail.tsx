@@ -13,6 +13,7 @@ import { fetchListing, toListing } from '@/lib/listings/api-client';
 import type { ProduceListing } from '@/lib/fixtures/farmers';
 import type { Role } from '@/lib/preview';
 
+import { BuyBox } from './BuyBox';
 import { useMarketModeration } from './moderation';
 import {
   liveCount,
@@ -180,6 +181,8 @@ export function MarketDetail({
         breadcrumb={breadcrumb}
         sellerListingsHref={backHref}
         contact={contact}
+        // 2026-10-21: Buy for every account -- the cart is on the buyer side.
+        actions={<BuyBox listingId={currentListing.id} lang={lang} />}
         moderate={
           canModerate ? (
             <section id="moderate" className={styles.moderation}>
