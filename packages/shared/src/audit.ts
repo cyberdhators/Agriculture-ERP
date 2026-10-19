@@ -128,6 +128,9 @@ export const AUDIT_ACTIONS = [
   // 2026-10-21: staff suspend and restore a farmer or buyer account.
   'account.suspended',
   'account.restored',
+  // 2026-10-21: "Contact CORWADO". Ids and the topic only, never message text.
+  'support_message.created',
+  'support_message.done',
 ] as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];

@@ -28,6 +28,7 @@ import {
   IconChat,
   IconDashboard,
   IconEdit,
+  IconInfo,
   IconMail,
   IconMenu,
   IconReports,
@@ -91,6 +92,8 @@ const NAV: ReadonlyArray<{
   // 2026-10-19: one account buys and sells (CORWADO).
   { href: '/buyer/sell', label: 'Sell produce', icon: IconDashboard },
   { href: '/buyer/about', label: 'About you', icon: IconStaff },
+  // 2026-10-21: "Contact CORWADO" -- FAQs and a message form (public page).
+  { href: '/help', label: 'Help', icon: IconInfo },
 ];
 
 export function BuyerShell({ children }: { children: ReactNode }) {

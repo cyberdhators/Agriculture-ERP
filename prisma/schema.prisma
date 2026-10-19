@@ -356,6 +356,8 @@ model User {
   purchaseOrdersCreated      PurchaseOrder[]     @relation("PurchaseOrderCreatedBy")
   purchaseOrdersDeleted      PurchaseOrder[]     @relation("PurchaseOrderDeletedBy")
   deliveryUpdatesRecorded    DeliveryUpdate[]    @relation("DeliveryUpdateRecordedByUser")
+  // 2026-10-21: "Contact CORWADO" messages a staff member marked done.
+  supportMessagesHandled     SupportMessage[]    @relation("SupportMessageHandledBy")
 
   @@index([role], map: "user_role_idx")
   @@index([scopeStateId], map: "user_scope_state_id_idx")
@@ -1723,4 +1725,30 @@ model Message {
 
   @@index([conversationId, createdAt], map: "message_conversation_created_idx")
   @@map("message")
+}
+
+/// 2026-10-21: "Contact CORWADO" -- a message from the help page. Staff mark it
+/// done; there are no tickets, replies or assignment. Migration
+/// 20261021100000. Read and written with raw SQL.
+model SupportMessage {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  fromAuthUserId String?   @map("from_auth_user_id") @db.Uuid
+  fromKind       String    @map("from_kind")
+  name           String
+  phone          String?
+  email          String?
+  topic          String
+  body           String
+  status         String    @default("new")
+  /// One-way hash of the connection, to count a visitor's messages per day.
+  sourceDigest   String?   @map("source_digest")
+  handledBy      String?   @map("handled_by") @db.Uuid
+  handledAt      DateTime? @map("handled_at") @db.Timestamptz(6)
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  deletedAt      DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  handler User? @relation("SupportMessageHandledBy", fields: [handledBy], references: [id], map: "support_message_handled_by_fkey")
+
+  @@index([status, createdAt(sort: Desc)], map: "support_message_status_created_idx")
+  @@map("support_message")
 }

@@ -87,12 +87,13 @@ describe('who sees which destination', () => {
     }
   });
 
-  it('offers communications, product reports and buyer review to administrators alone', () => {
+  it('offers communications, product reports, support messages and buyer review to administrators alone', () => {
     // Every route behind these is administrator-only on the server. This
     // asserts the nav agrees with them, not that the nav is the control.
     for (const href of [
       '/communications',
       '/product-reports',
+      '/admin/support',
       '/admin/buyers',
       '/admin/procurement',
     ]) {

@@ -346,6 +346,8 @@ character.
 | `message_already_exists`           | A message with that identifier has already been sent with different text. Send it again as a new message.                     |
 | `account_already_suspended`        | This account is already suspended.                                                                                            |
 | `account_not_suspended`            | This account is not suspended. There is nothing to restore.                                                                   |
+| `support_contact_required`         | Give a phone number or an email address so CORWADO can reply.                                                                 |
+| `support_limit_reached`            | You have sent 5 messages today. CORWADO will answer those first; you can send more tomorrow.                                  |
 
 **A route names a rule; it never writes a sentence.** `conflict()` and
 `unprocessable()` take a key from this registry, not a string. That is how the
@@ -458,6 +460,8 @@ change.
 | `buyer.soft_deleted`                      |
 | `account.suspended`                       |
 | `account.restored`                        |
+| `support_message.created`                 |
+| `support_message.done`                    |
 
 `before` and `after` hold **changed fields only**, never whole rows, and never a
 password, token, authentication identifier, national id, phone, email, given
@@ -683,6 +687,11 @@ These are also exact.
 | Conversation: `after` not a time        | Give the time as an ISO date and time.                                                          |
 | Delete account: no password             | Enter your password to confirm.                                                                 |
 | Delete account: not confirmed           | Tick the box to confirm you want to delete your account.                                        |
+| Contact CORWADO: name                   | Give your name, 2 to 120 characters.                                                            |
+| Contact CORWADO: topic not on list      | Choose account, marketplace, messages, technical or other.                                      |
+| Contact CORWADO: message length         | Write your message, 10 to 2000 characters.                                                      |
+| Support list: status not on list        | Choose new or done.                                                                             |
+| Support message: status other than done | A message can only be marked done.                                                              |
 
 The key beside each reason is the field name, per section 4.1. An unrecognised
 field named `nickname` therefore produces `{ "nickname": "This field is not

@@ -203,6 +203,16 @@ export const NAV_SECTIONS: readonly NavSection[] = [
           'GET /api/admin/product-reports is administrator-only, and so are the detail and the ' +
           'unread count the queue reads beside it.',
       },
+      {
+        // 2026-10-21: "Contact CORWADO" messages from the help page.
+        href: '/admin/support',
+        label: 'Support messages',
+        icon: 'mail',
+        roles: ['admin'],
+        because:
+          'GET /api/admin/support and PATCH /api/admin/support/:id are administrator-only and ' +
+          'then require support.handle, which every administrator holds.',
+      },
     ],
   },
   {
@@ -334,6 +344,7 @@ const SEGMENT_LABELS: Record<string, string> = {
   farms: 'Farms & maps',
   communications: 'Communications',
   'product-reports': 'Product reports',
+  support: 'Support messages',
   visits: 'Visits',
   reports: 'Reports',
   directories: 'Directories',
