@@ -1,0 +1,228 @@
+/* In-app messaging (2026-10-20): the inbox, one conversation, and the
+   "Message" box on a post. Phone first: one column, thumb-sized controls. */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 760px;
+  min-width: 0;
+}
+
+.head h1 {
+  margin: 0;
+}
+
+.lead {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: var(--text-small);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 36px 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--card);
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.row:hover {
+  border-color: var(--line-strong);
+}
+
+.rowUnread {
+  border-color: var(--green);
+}
+
+.rowUnread .rowName,
+.rowUnread .rowPreview {
+  font-weight: 700;
+}
+
+.rowTop {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+.rowName {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rowTime,
+.rowAbout,
+.meta {
+  color: var(--muted);
+  font-size: var(--text-small);
+}
+
+.rowTime {
+  flex: none;
+}
+
+.rowAbout {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rowPreview {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--text-small);
+}
+
+.dot {
+  position: absolute;
+  top: 50%;
+  inset-inline-end: 14px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--danger);
+}
+
+.back {
+  align-self: flex-start;
+  color: var(--green);
+  font-size: var(--text-small);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.chatHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+
+.chatHead > div {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.chatName {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.safety {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--text-small);
+}
+
+.thread {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 12px 0;
+  list-style: none;
+  border-top: 1px solid var(--line);
+}
+
+.mine,
+.theirs {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-width: 85%;
+}
+
+.mine {
+  align-self: flex-end;
+  align-items: flex-end;
+}
+
+.theirs {
+  align-self: flex-start;
+  align-items: flex-start;
+}
+
+.bubble {
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 14px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.mine .bubble {
+  background: var(--green);
+  color: #fff;
+  border-end-end-radius: 4px;
+}
+
+.theirs .bubble {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-end-start-radius: 4px;
+}
+
+.compose {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 8px 0;
+  background: var(--paper);
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-control);
+  background: var(--card);
+  color: var(--ink);
+  font: inherit;
+  resize: vertical;
+}
+
+.box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--card);
+}
+
+.box h2 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}

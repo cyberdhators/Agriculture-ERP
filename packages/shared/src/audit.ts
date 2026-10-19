@@ -119,6 +119,10 @@ export const AUDIT_ACTIONS = [
   'superadmin.revoked',
   'staff.sessions_revoked',
   'staff.sessions_revoke_failed',
+  // 2026-10-20: in-app messaging. Ids only in the audit row, never message text.
+  'conversation.started',
+  'message.sent',
+  'conversation.blocked',
 ] as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];

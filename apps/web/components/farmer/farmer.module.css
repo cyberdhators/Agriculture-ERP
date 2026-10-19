@@ -1818,6 +1818,12 @@
     padding: 2px var(--s-1);
   }
 
+  /* 2026-10-20: the messages icon joined the bell; both narrow a little. */
+  .shopBell {
+    width: 34px;
+    height: 34px;
+  }
+
   .shopStrip {
     padding-inline: var(--s-4);
   }

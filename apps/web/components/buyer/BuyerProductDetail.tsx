@@ -32,6 +32,7 @@ import {
   Select,
   Stamp,
 } from '../ui';
+import { MessageButton } from '../messages/MessageButton';
 import { LoadingState } from '../ui/data';
 import styles from './buyer.module.css';
 
@@ -191,6 +192,7 @@ export function BuyerProductDetail({ id }: { id: string }) {
                   The farmer&apos;s phone number is shown here once you send them a request.
                 </p>
               )}
+              <MessageButton postKind="listing" postId={listing.id} />
             </CardBody>
           </Card>
         </div>

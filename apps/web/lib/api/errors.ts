@@ -179,6 +179,15 @@ export const RULE_MESSAGES = {
   reauth_failed: 'That password was not accepted. Nothing was changed.',
   reauth_code_required: 'Enter the six-digit code from your authenticator app to confirm.',
   reauth_code_invalid: 'That authenticator code was not accepted. Nothing was changed.',
+  // IN-APP MESSAGING (2026-10-20). About a post or a conversation, never a person.
+  conversation_own_post: 'This is your own post. Messages about it come to your inbox.',
+  conversation_owner_unreachable:
+    'The person who posted this cannot receive messages yet. Ask CORWADO to put you in touch.',
+  conversation_limit_reached:
+    'You have started 20 new conversations today. You can start more tomorrow.',
+  conversation_blocked: 'This conversation has been closed. No more messages can be sent in it.',
+  message_already_exists:
+    'A message with that identifier has already been sent with different text. Send it again as a new message.',
 } as const;
 
 export type RuleKey = keyof typeof RULE_MESSAGES;

@@ -16,6 +16,7 @@ export const FARMER_PAGES = [
   '/farmer/account/listings',
   '/farmer/account/listings/new',
   '/farmer/account/notifications',
+  '/farmer/account/messages',
   '/farmer/account/farm',
   '/farmer/account/prices',
   '/farmer/account/weather',
