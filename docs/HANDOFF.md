@@ -2637,3 +2637,86 @@ and no database was touched.
 
 **Decided.** See DECISIONS.md: the legacy-admin rule, Super Admin only for
 `admin` accounts, MFA verification only (no enrolment), retention open.
+
+### 2026-10-19 — Alieu-Claude → Monkon-Claude — #171 to #185: SMS, AgriOne AI, CORWADO's 16 October specification (one account, listings without approval, staff permissions), the ten-tab admin menu
+
+All on `main` and deployed. The two lane entries above (listings, staff
+permissions) were written by delegated agents; this entry covers the rest and
+the integration. **Read "Your lane" first: role resolution, the audit CHECK and
+six production migrations changed.**
+
+**Your lane (OBSERVED unless marked)**
+
+- **requireRole now resolves buyer and farmer together** (#178). One sign-in
+  may hold both records; a route meets the account by the first of its own
+  `roles` the account holds (`accountSideFor` in `lib/api/account-role.ts`,
+  pure and tested). Single-sided accounts behave exactly as before. Any new
+  route that admits both `farmer` and `buyer` should put the one it prefers
+  first.
+- **Farmer creation is one function**, `lib/api/self-farmer.ts`
+  (`placeInPayam`, `createSelfFarmer`), shared by `POST /api/farmer/register`
+  and `POST /api/buyer/selling`. Sign-up behaviour is unchanged.
+- **The audit CHECK has 85 keys.** The last CHECK migration is
+  `20261019110100_audit_action_staff_permissions`; at integration it was
+  rebuilt so it keeps `account.profile_updated` (the staff lane had written it
+  before the accounts lane landed, and would have dropped it). **Any new CHECK
+  migration must start from that list.**
+- **Six migrations applied to production on 2026-10-19, by the owner, in
+  order**, all additive: `20261019090000_phone_verification`,
+  `20261019090100_account_profile`, `20261019100000_listing_lifecycle`,
+  `20261019101000_buying_request_service_listing`,
+  `20261019110000_staff_permissions_and_access_log`,
+  `20261019110100_audit_action_staff_permissions`. Earlier this cycle:
+  `20261010120000_audit_action_communication_sms_sent` (#171) and
+  `20261017090000_farmer_assistant_usage` (#174). `migrate status` clean after
+  each. All applied from LF copies of the files, like every earlier one.
+- **Process slip, recorded:** #178 was merged before its migrations were
+  applied, and farmer sign-up failed until they were (minutes). Since then the
+  commands go to the owner before the merge link.
+
+**What shipped**
+
+- **#171 SMS to farmers** through Bird with CORWADO's sender (admin
+  Communications: picker with search, filters, select-all; consent and +211
+  only; one message per number; audited without numbers or text). Bird
+  settings are in Vercel; a zero-send check returned "0 sent" (OBSERVED). Only
+  MTN delivery is proven; Zain and Digitel are not.
+- **#172/#173 PWA fixes:** pages really open offline (own page store, 30 days;
+  `/open` and `/offline` precached; account pages stored at sign-in), OBSERVED
+  with the network cut for page and service worker. Phone header no longer
+  covers the logo.
+- **#174/#175 AgriOne AI** in place of the farmer's learning library: Claude
+  Haiku 5.5, streamed, careful mode, English/Arabic, photos (an owner's
+  exception to "AI disease detection", in CLAUDE.md §2). Conversation stays on
+  the phone; `assistant_usage` caps 30 questions/farmer/day. Key
+  `ANTHROPIC_API_KEY` (Vercel). The library itself is still staff-managed.
+- **#177** an X on the no-signal strip. **#179** a formatting slip that had
+  failed CI's verify job since #175.
+- **#178 one account** (CORWADO's spec): a farmer taps Buy, a buyer taps Sell
+  produce, no second sign-up; SMS code at farmer sign-up (6 digits, 10 min, 5
+  tries, per-phone and system-wide caps; `FARMER_PHONE_VERIFICATION=off` is the
+  switch); optional "who you are, what you do"; wording "Create account",
+  "Member no.", "sellers".
+- **#180 listings** (lane entry above): no verification gate, lifecycle with
+  stock, public buying requests, service listings, reports on them.
+- **#181 staff permissions** (lane entry above): presets, Super Admin with
+  re-authentication, access logs. The owner made the first Super Admin.
+- **#182** the admin menu is CORWADO's ten tabs (Settings joins when its page
+  exists). **#183** "Pending" reads "Not verified" -- verification is an
+  optional badge and the reach-figure rule; Farms & maps hidden from the menu
+  until GIS mapping is finished (route and data untouched). **#185** "Help a
+  farmer register" is officer-only on screen (the API still admits admin); the
+  join page has a Staff sign in button, because the installed app has no
+  address bar.
+
+**Owner's decisions still open:** plain admins' powers once a Super Admin
+exists (they keep them today); access-log retention (forever today); the
+single-member model, so a trader can sell without joining the farmer register
+(with CORWADO -- it changes farmer counts); CORWADO's missing infographic no. 6
+(organisations and team access); the Supabase plan (messaging is next).
+
+**Next in the web lane:** in-app messaging, then public profiles and account
+deletion, admin moderation and support, advice, analytics exports,
+organisations.
+
+— Alieu-Claude
