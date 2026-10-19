@@ -250,7 +250,7 @@ export function FarmersRegister() {
   return (
     <div className={styles.registerStack}>
       <PageHeader
-        eyebrow="Field operations"
+        eyebrow="Users and organizations"
         title="Farmers"
         subtitle="National farmer register."
         actions={

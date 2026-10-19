@@ -3,6 +3,7 @@
 import { usePathname } from 'next/navigation';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 
+import { myAccess } from '@/lib/admin/staff-access-api';
 import { usePreview } from '@/lib/preview';
 
 import { Wordmark } from '../brand/Wordmark';
@@ -34,6 +35,23 @@ const COLLAPSE_KEY = 'agrione.rail.collapsed';
 export function Shell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { role, me, authError, signOut } = usePreview();
+  // 2026-10-19: an administrator who holds Super Admin is labelled so. The
+  // permission is read from the server (GET /api/admin/staff-access/me); the
+  // label is only a name, never a grant.
+  const [superAdmin, setSuperAdmin] = useState(false);
+  useEffect(() => {
+    if (role !== 'admin' || !me) {
+      setSuperAdmin(false);
+      return;
+    }
+    let on = true;
+    myAccess()
+      .then((a) => on && setSuperAdmin(a.is_super_admin))
+      .catch(() => undefined);
+    return () => {
+      on = false;
+    };
+  }, [role, me]);
   const [collapsed, setCollapsed] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
@@ -92,6 +110,7 @@ export function Shell({ children }: { children: ReactNode }) {
           open={drawerOpen}
           onToggleCollapsed={toggleCollapsed}
           onSignOut={() => void signOut()}
+          roleLabel={superAdmin ? 'Super Admin' : undefined}
         />
 
         {drawerOpen ? (

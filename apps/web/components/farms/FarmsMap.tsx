@@ -154,7 +154,7 @@ export function FarmsMap() {
   return (
     <div className={styles.stack}>
       <PageHeader
-        eyebrow="Field operations"
+        eyebrow="Users and organizations"
         title="Farms &amp; maps"
         subtitle="Where each farm is and what boundary an officer recorded. Read and, where a record is wrong, remove it."
       />
