@@ -8,7 +8,7 @@ import {
 } from '@agri-erp/shared';
 
 import { audited, writeAudit } from '../../../lib/api/audit';
-import { ApiFailure, unprocessable } from '../../../lib/api/errors';
+import { ApiFailure, internalError, unprocessable } from '../../../lib/api/errors';
 import { requireRole, type Authenticated } from '../../../lib/api/require-role';
 import { created, defineRoutes } from '../../../lib/api/route';
 import { prisma } from '../../../lib/db';
@@ -99,7 +99,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
           body.body,
           digest,
         );
-        if (!inserted) throw new ApiFailure(500, 'empty', 'The message could not be recorded.');
+        if (!inserted) throw internalError();
 
         await writeAudit(tx, {
           entityType: 'support_message',
