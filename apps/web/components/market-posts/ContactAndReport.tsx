@@ -30,6 +30,7 @@ export function ContactReveal({ kind, id, lang }: { kind: PostKind; id: string; 
     | { kind: 'idle' }
     | { kind: 'busy' }
     | { kind: 'shown'; name: string; phone: string }
+    | { kind: 'private' }
     | { kind: 'signin' }
     | { kind: 'failed'; message: string }
   >({ kind: 'idle' });
@@ -38,7 +39,12 @@ export function ContactReveal({ kind, id, lang }: { kind: PostKind; id: string; 
     setState({ kind: 'busy' });
     try {
       const c = await getContact(kind, id);
-      setState({ kind: 'shown', name: c.display_name, phone: c.contact_phone });
+      // 2026-10-20: the poster may have turned their phone off since the page loaded.
+      setState(
+        c.contact_phone
+          ? { kind: 'shown', name: c.display_name, phone: c.contact_phone }
+          : { kind: 'private' },
+      );
     } catch (e) {
       if (e instanceof MarketPostError && (e.status === 401 || e.status === 403)) {
         setState({ kind: 'signin' });
@@ -63,6 +69,8 @@ export function ContactReveal({ kind, id, lang }: { kind: PostKind; id: string; 
             <a href={`sms:${state.phone}`}>{t('posts.sms', lang)}</a>
           </div>
         </>
+      ) : state.kind === 'private' ? (
+        <p className="small muted">{t('posts.phonePrivate', lang)}</p>
       ) : (
         <Button onClick={() => void reveal()} disabled={state.kind === 'busy'}>
           {t('posts.showContact', lang)}

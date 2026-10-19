@@ -310,6 +310,7 @@ export async function notifyFarmerOfCancel(
  * The farmer's contact phone for a listing, IF the caller's organisation has
  * sent a request for it (the owner's rule, 2026-10-07: the number is revealed
  * after the buyer asks). A draft or a cancelled request reveals nothing.
+ * 2026-10-20: and only if the farmer chose to show it on the listing.
  */
 export async function contactPhoneIfRequested(
   db: Db,
@@ -318,7 +319,7 @@ export async function contactPhoneIfRequested(
 ): Promise<string | null> {
   const [row] = await db.$queryRawUnsafe<{ contact_phone: string }[]>(
     `SELECT pl.contact_phone FROM public.produce_listing pl
-      WHERE pl.id = $1::uuid AND EXISTS (
+      WHERE pl.id = $1::uuid AND pl.show_phone AND EXISTS (
         SELECT 1 FROM public.purchase_request r
          WHERE r.listing_id = pl.id AND r.organization_id = $2::uuid AND r.deleted_at IS NULL
            AND r.status NOT IN ('draft', 'cancelled'))`,

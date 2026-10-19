@@ -85,9 +85,10 @@ export const en = {
   'register.donePending': 'Keep this number. You sign in with your phone number and password.',
   'register.goToAccount': 'Go to my account',
 
-  // Consent statement (the v1.2-en text, 2026-10-07: adds the phone given to a buyer who sends a request)
+  // Consent statement (the v1.3-en text, 2026-10-20: messages in the app; the phone on a post only if
+  // the poster chooses; the sender's phone to the seller of a buyer request)
   'consent.body':
-    'AgriOne South Sudan records your name, phone number, place, farm details and the produce you list, so that buyers can find your produce and you can be connected to markets, inputs and advice. When a buyer sends you a request, your phone number is given to that buyer, and theirs to you, so you can deal directly. Your details are otherwise shared only with the officers and partners running this programme. You may ask to see or remove your record at any time. Registering means you agree to this.',
+    'AgriOne South Sudan records your name, phone number, place, farm details and what you post, so that buyers and sellers can find you and you can be connected to markets, inputs and advice. People reach you through messages in the app. Your phone number is shown on something you post only if you choose, and when you send a buyer request to a seller, your phone number is given to that seller. Your messages are seen only by you and the person you write to. Your details are otherwise shared only with the officers and partners running this programme. You may ask to see or remove your record at any time. Registering means you agree to this.',
 
   // Account workspace
   'account.title': 'My account',
@@ -733,6 +734,13 @@ export const en = {
   'msg.cancel': 'Cancel',
   'msg.needsSignal': 'Starting a conversation needs signal. Try again when you are online.',
   'msg.privacy': 'Stay safe: never pay before you have seen the goods.',
+  // 2026-10-20: phone numbers only if the poster chooses.
+  'posts.showPhone': 'Show my phone number on this post',
+  'posts.showPhoneHint':
+    'Only signed-in farmers and buyers can see it. Leave it off and people reach you by message.',
+  'listingForm.showPhone': 'Give my phone number to buyers who send a request',
+  'listingForm.showPhoneHint': 'Leave it off and buyers reach you by message in the app.',
+  'posts.phonePrivate': 'This person prefers messages. Use the Message button.',
 } as const;
 
 export type TKey = keyof typeof en;

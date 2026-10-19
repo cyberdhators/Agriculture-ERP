@@ -14,19 +14,27 @@ import { prisma } from '../../../../../lib/db';
  * GET /api/services/:id/contact -- the provider's phone, for a signed-in
  * farmer or buyer who wants to hire the service. LISTINGS LANE (2026-10-19).
  * Never public. Only for a service on the market; anything else is 404.
+ *
+ * 2026-10-20: the number only if the poster chose to show it; otherwise
+ * contact_phone is null and the screen offers in-app messaging instead.
  */
 export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   GET: {
     roles: [FARMER_ROLE, BUYER_ROLE],
     handler: async ({ auth, params }) => {
       marketPoster(auth);
-      const [row] = await prisma.$queryRawUnsafe<{ trading_name: string; contact_phone: string }[]>(
-        `SELECT sl.trading_name, sl.contact_phone ${SERVICE_FROM}
+      const [row] = await prisma.$queryRawUnsafe<
+        { trading_name: string; contact_phone: string; show_phone: boolean }[]
+      >(
+        `SELECT sl.trading_name, sl.contact_phone, sl.show_phone ${SERVICE_FROM}
           WHERE sl.id = $1::uuid AND ${SERVICE_MARKET_WHERE}`,
         checkId(params.id),
       );
       if (!row) throw notFound();
-      return ok({ display_name: row.trading_name, contact_phone: row.contact_phone });
+      return ok({
+        display_name: row.trading_name,
+        contact_phone: row.show_phone ? row.contact_phone : null,
+      });
     },
   },
 });

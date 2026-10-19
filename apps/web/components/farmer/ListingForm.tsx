@@ -594,6 +594,14 @@ export function ListingForm({ listingId }: { listingId?: string }) {
               </Field>
               <div className={styles.checkRow}>
                 <Checkbox
+                  label={t('listingForm.showPhone', language)}
+                  checked={values.show_phone}
+                  onChange={(e) => set('show_phone', e.target.checked)}
+                />
+              </div>
+              <p className="small muted">{t('listingForm.showPhoneHint', language)}</p>
+              <div className={styles.checkRow}>
+                <Checkbox
                   label={t('listingForm.delivery', language)}
                   checked={values.delivery_available}
                   onChange={(e) => set('delivery_available', e.target.checked)}

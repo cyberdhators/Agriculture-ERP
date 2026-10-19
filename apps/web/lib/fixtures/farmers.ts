@@ -1544,6 +1544,8 @@ export interface ProduceListing {
   harvest_season: string | null;
   pickup_notes: string | null;
   contact_phone: string;
+  /** 2026-10-20: the phone goes to a buyer who asks only if this is on. */
+  show_phone?: boolean;
   delivery_available: boolean;
   status: ListingStatus;
   /** LISTINGS LANE (2026-10-19): sold so far; what is left is quantity - quantity_sold. */

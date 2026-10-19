@@ -40,8 +40,8 @@ const MAX_YEAR = maxBirthYear(REFERENCE);
  * now agrees to this text, and the version is recorded with the consent.
  */
 const CONSENT_VERSION: Record<'en' | 'ar', string> = {
-  en: 'v1.2-en',
-  ar: 'v1.2-ar',
+  en: 'v1.3-en',
+  ar: 'v1.3-ar',
 };
 
 function digits(value: string): string {

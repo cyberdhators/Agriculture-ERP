@@ -222,6 +222,7 @@ export interface ListingFormValues {
   harvest_season: string;
   pickup_notes: string;
   contact_phone: string;
+  show_phone: boolean;
   delivery_available: boolean;
 }
 
@@ -244,6 +245,7 @@ export function emptyListingValues(contactPhone: string, today: string): Listing
     harvest_season: '',
     pickup_notes: '',
     contact_phone: contactPhone,
+    show_phone: false,
     delivery_available: false,
   };
 }
@@ -265,6 +267,7 @@ export function listingToValues(listing: ProduceListing): ListingFormValues {
     harvest_season: listing.harvest_season ?? '',
     pickup_notes: listing.pickup_notes ?? '',
     contact_phone: listing.contact_phone.replace(/^\+211/, ''),
+    show_phone: listing.show_phone ?? false,
     delivery_available: listing.delivery_available,
   };
 }
@@ -343,6 +346,7 @@ export function validateListing(
       harvest_season: input.harvest_season.trim() === '' ? null : input.harvest_season.trim(),
       pickup_notes: input.pickup_notes.trim() === '' ? null : input.pickup_notes.trim(),
       contact_phone: phone.ok ? phone.value : input.contact_phone,
+      show_phone: input.show_phone,
       delivery_available: input.delivery_available,
     },
   };

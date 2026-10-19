@@ -46,6 +46,7 @@ interface Values {
   delivery_terms: string;
   description: string;
   contact_phone: string;
+  show_phone: boolean;
 }
 
 const EMPTY: Values = {
@@ -63,6 +64,7 @@ const EMPTY: Values = {
   delivery_terms: '',
   description: '',
   contact_phone: '',
+  show_phone: false,
 };
 
 const fromRequest = (r: BuyingRequest): Values => ({
@@ -80,6 +82,7 @@ const fromRequest = (r: BuyingRequest): Values => ({
   delivery_terms: r.delivery_terms ?? '',
   description: r.description ?? '',
   contact_phone: (r.contact_phone ?? '').replace(/^\+211/, ''),
+  show_phone: r.show_phone ?? false,
 });
 
 /**
@@ -154,6 +157,7 @@ export function BuyingRequestForm({
       delivery_terms: values.delivery_terms,
       description: values.description,
     };
+    out.show_phone = values.show_phone;
     if (values.contact_phone.trim() !== '') out.contact_phone = values.contact_phone;
     if (status) out.status = status;
     return out;
@@ -399,6 +403,14 @@ export function BuyingRequestForm({
             />
           )}
         </Field>
+        <div>
+          <Checkbox
+            label={t('posts.showPhone', lang)}
+            checked={values.show_phone}
+            onChange={(e) => set('show_phone', e.target.checked)}
+          />
+          <p className="small muted">{t('posts.showPhoneHint', lang)}</p>
+        </div>
       </div>
 
       <div className={styles.formActions}>

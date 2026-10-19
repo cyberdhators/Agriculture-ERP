@@ -114,7 +114,7 @@ export const OWN_LISTING_COLUMNS = `id, farmer_id, trading_name, title,
   negotiable, delivery_available,
   to_char(available_from, 'YYYY-MM-DD') AS available_from,
   CASE WHEN available_until IS NULL THEN NULL ELSE to_char(available_until, 'YYYY-MM-DD') END AS available_until,
-  harvest_season, pickup_notes, contact_phone, photo_storage_paths,
+  harvest_season, pickup_notes, contact_phone, show_phone, photo_storage_paths,
   quality_grade::text AS quality_grade, min_order_quantity::text AS min_order_quantity,
   quantity_sold::text AS quantity_sold,
   status::text AS status, created_at, updated_at`;
@@ -138,6 +138,7 @@ export interface OwnListingRow {
   harvest_season: string | null;
   pickup_notes: string | null;
   contact_phone: string;
+  show_phone: boolean;
   photo_storage_paths: string[];
   quality_grade: string | null;
   min_order_quantity: string | null;

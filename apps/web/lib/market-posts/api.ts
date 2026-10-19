@@ -95,11 +95,14 @@ export interface BuyingRequest {
   negotiable: boolean;
   delivery_terms: string | null;
   description: string | null;
+  /** 2026-10-20: whether the poster offers their phone (never the number). */
+  phone_shared: boolean;
   status: string;
   created_at: string;
   updated_at: string;
   /** The owner's own copy only. */
   contact_phone?: string;
+  show_phone?: boolean;
 }
 
 export const listBuyingRequests = (filter: {
@@ -137,10 +140,12 @@ export interface ServiceListing {
   price_ssp: number | null;
   price_unit: string | null;
   negotiable: boolean;
+  phone_shared: boolean;
   status: string;
   created_at: string;
   updated_at: string;
   contact_phone?: string;
+  show_phone?: boolean;
 }
 
 export const listServices = (filter: { q?: string; service_type?: string; state_id?: string }) =>
@@ -161,7 +166,7 @@ export type PostKind = 'buying-requests' | 'services';
 
 /** The poster's phone, for a signed-in farmer or buyer. 401/403 means sign in first. */
 export const getContact = (kind: PostKind, id: string) =>
-  one<{ display_name: string; contact_phone: string }>(
+  one<{ display_name: string; contact_phone: string | null }>(
     `/api/${kind}/${encodeURIComponent(id)}/contact`,
   );
 
