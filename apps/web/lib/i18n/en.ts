@@ -185,6 +185,9 @@ export const en = {
   'account.tileLearnSub': 'Guides, audio and video from the programme',
   // AgriOne AI (2026-10-17): the assistant in place of the learning library.
   'account.tabAi': 'AgriOne AI',
+  // ACCOUNTS LANE (2026-10-19): one account buys and sells.
+  'account.tileBuy': 'Buy',
+  'account.tileBuySub': 'Inputs and produce, with this same account',
   'account.tileAi': 'AgriOne AI',
   'account.tileAiSub': 'Ask any farming question, any time',
   'ai.title': 'AgriOne AI',

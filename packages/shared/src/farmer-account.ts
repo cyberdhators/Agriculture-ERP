@@ -286,6 +286,15 @@ export const farmerSelfRegisterSchema = z
     confirm_password: z.string({ error: () => BUYER_MESSAGES.passwordsDiffer }),
     payam_id: locationCodeSchema,
     consent: consentInputSchema,
+    /**
+     * 2026-10-19: the phone-code verification that proves this phone, when
+     * the deployment verifies phones (POST /api/auth/phone-code). The server
+     * decides whether it is required.
+     */
+    verification_id: z
+      .string()
+      .regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
+      .optional(),
     ...farmerProfileFields,
   })
   .superRefine((value, ctx) => {
@@ -298,6 +307,25 @@ export const farmerSelfRegisterSchema = z
     }
   });
 export type FarmerSelfRegister = z.infer<typeof farmerSelfRegisterSchema>;
+
+/**
+ * A buyer starts selling on the same account (2026-10-19, "one account, many
+ * activities"): POST /api/buyer/selling. The farmer details of sign-up without
+ * a password -- the account already has one. The phone defaults to the buyer
+ * account's own when that is a South Sudan mobile; a buyer whose number is
+ * foreign gives the farm's.
+ */
+export const farmerStartSellingSchema = z.strictObject({
+  given_name: givenNameSchema,
+  family_name: familyNameSchema,
+  sex: sexSchema,
+  year_of_birth: yearOfBirthSchema,
+  phone: phoneSchema.optional(),
+  payam_id: locationCodeSchema,
+  consent: consentInputSchema,
+  ...farmerProfileFields,
+});
+export type FarmerStartSelling = z.infer<typeof farmerStartSellingSchema>;
 
 /**
  * Staff set a farmer's sign-in password (2026-10-08): the only reset a farmer

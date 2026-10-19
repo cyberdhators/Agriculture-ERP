@@ -149,6 +149,14 @@ export const RULE_MESSAGES = {
   order_not_cancellable: 'Only a pending order can be cancelled. Contact CORWADO about this order.',
   request_other_organization: 'That purchase request belongs to a different buyer organisation.',
   order_exceeds_listing: 'The order is for more than the listing has available.',
+  // ACCOUNTS LANE (2026-10-19): one account buys and sells.
+  farmer_account_exists: 'This account already sells as a farmer.',
+  farmer_phone_required:
+    'Give the South Sudan mobile number for your farm. Your buyer account has none.',
+  phone_code_expired: 'That code has expired or was replaced. Ask for a new code.',
+  phone_code_too_many_tries: 'Too many wrong tries. Ask for a new code.',
+  phone_code_wrong: 'That code is not right. Check the SMS and try again.',
+  phone_not_verified: 'Confirm your phone number with the SMS code first.',
   // B14 (farmer accounts). About an account or a record, never a person.
   farmer_phone_registered: 'That phone number already has a farmer account. Sign in instead.',
   request_already_answered: 'This request has already been answered.',

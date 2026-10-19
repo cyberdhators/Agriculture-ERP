@@ -1,3 +1,4 @@
+import { accountSideFor } from './account-role';
 import { type Role, type Scope } from '@agri-erp/shared';
 import { createServerClient } from '@supabase/ssr';
 import { createClient } from '@supabase/supabase-js';
@@ -188,25 +189,6 @@ export async function requireRole(
     authUserId,
   );
 
-  if (buyer) {
-    if (!allowed.includes('buyer')) throw forbidden();
-    return {
-      principal: {
-        kind: 'buyer',
-        id: buyer.id,
-        authUserId,
-        name: `${buyer.given_name} ${buyer.family_name}`,
-      },
-      role: 'buyer',
-      scope: {
-        kind: 'buyer',
-        buyerId: buyer.id,
-        organizationId: buyer.organization_id,
-        verification: buyer.verification_status,
-      },
-    };
-  }
-
   // B14. A farmer with their own account (2026-10-07). Read through
   // farmer_active, so a removed farmer is refused on their next request. A
   // merged farmer keeps a row but has been folded into another record, so they
@@ -219,18 +201,46 @@ export async function requireRole(
     authUserId,
   );
 
-  if (farmer) {
-    if (!allowed.includes('farmer')) throw forbidden();
-    return {
-      principal: {
-        kind: 'farmer',
-        id: farmer.id,
-        authUserId,
-        name: `${farmer.given_name} ${farmer.family_name}`,
-      },
-      role: 'farmer',
-      scope: { kind: 'farmer', farmerId: farmer.id },
-    };
+  /*
+   * ONE ACCOUNT, BUYING AND SELLING (2026-10-19, CORWADO's specification and
+   * the owner's decision, reversing "option A"). One sign-in may carry both a
+   * buyer and a farmer record. Each route still names who it serves: a buyer
+   * route answers the account as its buyer, a farmer route as its farmer, and
+   * a route that admits both takes the first of its own `roles` the account
+   * holds. An account with neither of a route's roles is refused, as before.
+   */
+  if (buyer || farmer) {
+    const side = accountSideFor(allowed, { buyer: Boolean(buyer), farmer: Boolean(farmer) });
+    if (side === 'buyer' && buyer) {
+      return {
+        principal: {
+          kind: 'buyer',
+          id: buyer.id,
+          authUserId,
+          name: `${buyer.given_name} ${buyer.family_name}`,
+        },
+        role: 'buyer',
+        scope: {
+          kind: 'buyer',
+          buyerId: buyer.id,
+          organizationId: buyer.organization_id,
+          verification: buyer.verification_status,
+        },
+      };
+    }
+    if (side === 'farmer' && farmer) {
+      return {
+        principal: {
+          kind: 'farmer',
+          id: farmer.id,
+          authUserId,
+          name: `${farmer.given_name} ${farmer.family_name}`,
+        },
+        role: 'farmer',
+        scope: { kind: 'farmer', farmerId: farmer.id },
+      };
+    }
+    throw forbidden();
   }
 
   // A valid auth account with no application row: the residue of a creation

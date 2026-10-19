@@ -25,7 +25,7 @@ import {
 } from '@/components/ui';
 import { maxBirthYear, validateFarmer, type FarmerFormValues } from '@/lib/farmers/schema';
 import { COUNTIES, PAYAMS, STATES } from '@/lib/fixtures/p1';
-import { FarmerApiError, useFarmerSession } from '@/lib/farmer-session';
+import { farmerApi, FarmerApiError, useFarmerSession } from '@/lib/farmer-session';
 import { t, type Language } from '@/lib/i18n';
 
 import styles from './farmer.module.css';
@@ -270,6 +270,10 @@ export function FarmerRegister() {
   const [failure, setFailure] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState<{ number: string } | null>(null);
+  /** 2026-10-19: the SMS code step, once a code has been sent. */
+  const [codeFor, setCodeFor] = useState<{ id: string; phone: string } | null>(null);
+  const [code, setCode] = useState('');
+  const [codeError, setCodeError] = useState<string | null>(null);
 
   const counties = useMemo(
     () => COUNTIES.filter((c) => c.stateId === values.state_id),
@@ -354,6 +358,28 @@ export function FarmerRegister() {
     return out;
   }
 
+  /**
+   * 2026-10-19: prove the phone with an SMS code before the account is made
+   * (CORWADO: "Contact verification activates the account automatically").
+   * When this deployment does not verify phones, the server says so and the
+   * sign-up goes ahead as before.
+   */
+  async function sendCode(phone: string): Promise<boolean> {
+    setCodeError(null);
+    const sent = await farmerApi<{ required: boolean; verification_id?: string }>(
+      '/api/auth/phone-code',
+      {
+        method: 'POST',
+        body: JSON.stringify({ phone }),
+        headers: { 'accept-language': language === 'ar' ? 'ar' : 'en' },
+      },
+    );
+    if (!sent.required || !sent.verification_id) return false;
+    setCodeFor({ id: sent.verification_id, phone });
+    setCode('');
+    return true;
+  }
+
   async function submit() {
     const result = validateFarmer({ ...values, consent_language: language }, REFERENCE, {
       requirePassword: true,
@@ -368,24 +394,9 @@ export function FarmerRegister() {
     setFailure(null);
     setServerErrors({});
     try {
-      const created = await register({
-        given_name: result.values.given_name,
-        family_name: result.values.family_name,
-        sex: result.values.sex,
-        year_of_birth: Number(result.values.year_of_birth),
-        phone: result.values.phone,
-        password: result.values.password ?? '',
-        confirm_password: result.values.password ?? '',
-        payam_id: result.values.payam_id,
-        village: village.trim(),
-        consent: {
-          text_version: CONSENT_VERSION[language === 'ar' ? 'ar' : 'en'],
-          language: language === 'ar' ? 'ar' : 'en',
-          granted: true,
-        },
-        ...farmBody(),
-      });
-      setDone({ number: created.farmer_number });
+      // A code is asked for once; after it is verified the sign-up goes on.
+      if (!codeFor && (await sendCode(result.values.phone))) return;
+      await finish(result.values, codeFor?.id);
     } catch (error) {
       if (error instanceof FarmerApiError) {
         setServerErrors(error.fields);
@@ -396,6 +407,57 @@ export function FarmerRegister() {
     } finally {
       setBusy(false);
     }
+  }
+
+  async function confirmCode() {
+    if (!codeFor) return;
+    setBusy(true);
+    setCodeError(null);
+    try {
+      await farmerApi('/api/auth/phone-code/verify', {
+        method: 'POST',
+        body: JSON.stringify({ verification_id: codeFor.id, code: code.trim() }),
+      });
+      const result = validateFarmer({ ...values, consent_language: language }, REFERENCE, {
+        requirePassword: true,
+      });
+      if (!result.ok) {
+        setCodeFor(null);
+        setErrors(result.errors);
+        return;
+      }
+      await finish(result.values, codeFor.id);
+    } catch (error) {
+      if (error instanceof FarmerApiError) setCodeError(error.message);
+      else setCodeError(w.failed ?? null);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function finish(
+    valid: Extract<ReturnType<typeof validateFarmer>, { ok: true }>['values'],
+    verificationId: string | undefined,
+  ) {
+    const created = await register({
+      given_name: valid.given_name,
+      family_name: valid.family_name,
+      sex: valid.sex,
+      year_of_birth: Number(valid.year_of_birth),
+      phone: valid.phone,
+      password: valid.password ?? '',
+      confirm_password: valid.password ?? '',
+      payam_id: valid.payam_id,
+      village: village.trim(),
+      consent: {
+        text_version: CONSENT_VERSION[language === 'ar' ? 'ar' : 'en'],
+        language: language === 'ar' ? 'ar' : 'en',
+        granted: true,
+      },
+      ...farmBody(),
+      ...(verificationId ? { verification_id: verificationId } : {}),
+    });
+    setDone({ number: created.farmer_number });
   }
 
   if (done) {
@@ -480,8 +542,8 @@ export function FarmerRegister() {
       {step === 0 ? (
         <p className="small muted">
           {language === 'ar'
-            ? 'هذا الحساب للمزارعين الذين يبيعون منتجاتهم. هل تريد الشراء؟ '
-            : 'This account is for farmers selling their produce. Want to buy instead? '}
+            ? 'بعد التسجيل يمكنك أيضاً الشراء بنفس الحساب. لا تريد البيع؟ '
+            : 'After signing up you can also buy with this same account. Only buying? '}
           <a href="/buyer/register">{language === 'ar' ? 'سجّل كمشترٍ' : 'Register as a buyer'}</a>
         </p>
       ) : null}
@@ -836,7 +898,67 @@ export function FarmerRegister() {
         </div>
       ) : null}
 
-      <div className={styles.actions}>
+      {codeFor ? (
+        <div className={styles.stack}>
+          <p className={styles.progressLabel}>
+            {language === 'ar' ? 'أكّد رقم هاتفك' : 'Confirm your phone number'}
+          </p>
+          <p className="small">
+            {language === 'ar'
+              ? `أرسلنا رمزاً من 6 أرقام إلى ${codeFor.phone}. اكتبه هنا.`
+              : `We sent a 6-digit code to ${codeFor.phone}. Type it here.`}
+          </p>
+          <Field label={language === 'ar' ? 'الرمز' : 'Code'} error={codeError ?? undefined}>
+            {(ids) => (
+              <Input
+                {...ids}
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                maxLength={6}
+                className="mono"
+                value={code}
+                onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
+              />
+            )}
+          </Field>
+          <Button
+            variant="primary"
+            className={styles.blockButton}
+            onClick={() => void confirmCode()}
+            disabled={busy || code.length !== 6}
+          >
+            {busy ? '…' : language === 'ar' ? 'تأكيد والتسجيل' : 'Confirm and register'}
+          </Button>
+          <button
+            type="button"
+            className={styles.textLink}
+            disabled={busy}
+            onClick={() => {
+              setBusy(true);
+              void sendCode(codeFor.phone)
+                .catch((e: unknown) =>
+                  setCodeError(e instanceof Error ? e.message : (w.failed ?? null)),
+                )
+                .finally(() => setBusy(false));
+            }}
+          >
+            {language === 'ar' ? 'أرسل الرمز مرة أخرى' : 'Send the code again'}
+          </button>
+          <button
+            type="button"
+            className={styles.textLink}
+            disabled={busy}
+            onClick={() => {
+              setCodeFor(null);
+              setStep(1);
+            }}
+          >
+            {language === 'ar' ? 'غيّر الرقم' : 'Change the number'}
+          </button>
+        </div>
+      ) : null}
+
+      <div className={styles.actions} hidden={Boolean(codeFor)}>
         {step < LAST_STEP ? (
           <Button variant="primary" className={styles.blockButton} onClick={next}>
             {t('register.next', language)}

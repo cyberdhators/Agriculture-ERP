@@ -173,6 +173,8 @@ export const ar: Partial<Record<TKey, string>> = {
   'account.tileLearn': 'مواد تعليمية',
   'account.tileLearnSub': 'أدلة وصوتيات وفيديوهات من البرنامج',
   'account.tabAi': 'أجري ون AI',
+  'account.tileBuy': 'شراء',
+  'account.tileBuySub': 'مدخلات ومنتجات، بنفس الحساب',
   'account.tileAi': 'أجري ون AI',
   'account.tileAiSub': 'اسأل أي سؤال زراعي في أي وقت',
   'ai.title': 'أجري ون AI',

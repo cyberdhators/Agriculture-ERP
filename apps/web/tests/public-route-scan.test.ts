@@ -27,6 +27,12 @@ const API_DIR = fileURLToPath(new URL('../app/api', import.meta.url));
  * limiter, an address-exists answer) written in the route's own header.
  */
 const EXPECTED_PUBLIC = [
+  // 2026-10-19: phone verification at farmer sign-up -- the farmer has no
+  // account yet. Sends are limited per phone and system-wide in
+  // lib/api/phone-verification.ts (a counter in the database, not a request
+  // limiter), so a public SMS route cannot run up the bill.
+  'auth/phone-code',
+  'auth/phone-code/verify',
   'buyer/register',
   // 2026-10-08: the hourly weather fetch, called by pg_cron. Public only in that a
   // scheduler has no session: it answers 401 without the CRON_SECRET bearer.

@@ -1483,3 +1483,21 @@ model AssistantUsage {
   @@id([farmerId, day], map: "assistant_usage_pkey")
   @@map("assistant_usage")
 }
+
+/// 2026-10-19: SMS codes for phone verification at farmer sign-up. Holds a
+/// code's hash, never the code. Migration 20261019090000.
+model PhoneVerification {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  phone      String
+  purpose    String
+  codeHash   String    @map("code_hash")
+  attempts   Int       @default(0) @db.SmallInt
+  expiresAt  DateTime  @map("expires_at") @db.Timestamptz(6)
+  verifiedAt DateTime? @map("verified_at") @db.Timestamptz(6)
+  consumedAt DateTime? @map("consumed_at") @db.Timestamptz(6)
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([phone, createdAt(sort: Desc)], map: "phone_verification_phone_created_idx")
+  @@index([createdAt(sort: Desc)], map: "phone_verification_created_idx")
+  @@map("phone_verification")
+}

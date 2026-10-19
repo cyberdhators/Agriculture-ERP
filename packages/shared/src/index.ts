@@ -375,3 +375,6 @@ export * from './farmer-account';
 // 2026-10-17: the farmer's assistant (Claude Haiku 5.5) in place of the
 // learning library on the farmer's dashboard. Appended, never reordered.
 export * from './assistant';
+
+// ACCOUNTS LANE (2026-10-19): phone verification by SMS code at farmer sign-up.
+export * from './phone-verification';
