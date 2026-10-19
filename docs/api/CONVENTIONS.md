@@ -356,6 +356,8 @@ character.
 | `advice_case_closed`               | This request is closed. It can no longer be changed.                                                                          |
 | `advice_feedback_not_closed`       | Feedback can be given once the request is closed.                                                                             |
 | `advice_feedback_already_given`    | Feedback has already been given on this request.                                                                              |
+| `learning_resource_locked`         | A guide in review or published can be changed only by someone who can publish. Ask them to return it to draft first.          |
+| `guide_file_unavailable`           | This guide's file cannot be opened just now. Try again later.                                                                 |
 
 **A route names a rule; it never writes a sentence.** `conflict()` and
 `unprocessable()` take a key from this registry, not a string. That is how the
@@ -424,6 +426,9 @@ change.
 | `learning_resource.updated`               |
 | `learning_resource.published`             |
 | `learning_resource.soft_deleted`          |
+| `learning_resource.submitted`             |
+| `learning_resource.returned`              |
+| `learning_resource.unpublished`           |
 | `weather_location.created`                |
 | `weather_location.updated`                |
 | `weather_location.soft_deleted`           |
@@ -730,6 +735,18 @@ These are also exact.
 | Advice feedback: rating not 1–5         | Give a rating from 1 to 5 stars.                                                                |
 | Advice feedback: comment too long       | A comment can be at most 1000 characters.                                                       |
 | Advice request change: extra field      | This field is not used for that change.                                                         |
+| Guide: no topic                         | Choose at least one topic.                                                                      |
+| Guide: topic not on list                | Choose topics from the list.                                                                    |
+| Guide: more than four topics            | Choose at most 4 topics.                                                                        |
+| Guide: Arabic title over 200            | An Arabic title has at most 200 characters.                                                     |
+| Guide: Arabic summary over 2000         | An Arabic summary has at most 2000 characters.                                                  |
+| Guide move: not on list                 | Choose submit, return, publish or unpublish.                                                    |
+| Guide move: return without a note       | Say what needs to change, in at least 5 characters.                                             |
+| Guide move: note over 1000              | Keep the note under 1000 characters.                                                            |
+| Guide move: note on another move        | Only a guide sent back to draft carries a note.                                                 |
+| Public guides: topic filter             | Choose a topic from the list, or leave it out.                                                  |
+| Public guides: language filter          | Choose English or Arabic, or leave it out.                                                      |
+| Public guides: search over 100          | A search has at most 100 characters.                                                            |
 
 The key beside each reason is the field name, per section 4.1. An unrecognised
 field named `nickname` therefore produces `{ "nickname": "This field is not

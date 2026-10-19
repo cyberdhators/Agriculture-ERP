@@ -210,6 +210,25 @@ const NAV_GROUPS: readonly NavGroup[] = [
         ),
       },
       {
+        // 2026-10-22: Advice & Learning's published guides, the public page
+        // (/learn), beside AgriOne AI -- not in place of it.
+        href: '/learn',
+        key: 'account.tabGuides',
+        glyph: (
+          <svg
+            viewBox="0 0 24 24"
+            width="20"
+            height="20"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+          >
+            <path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2V5z" />
+            <path d="M4 19a2 2 0 0 1 2-2h13M8 7h7M8 10.5h5" />
+          </svg>
+        ),
+      },
+      {
         href: '/farmer/account/services',
         key: 'services.title',
         glyph: (

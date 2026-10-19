@@ -72,6 +72,28 @@ export {
   type LearningResourceInput,
   type LearningTopic,
   type ResourceFormat,
+  // 2026-10-22: Advice & Learning, draft -> review -> publish.
+  ADVICE_TOPIC_FOR_LEARNING_TOPIC,
+  LEARNING_ACTIONS,
+  LEARNING_ACTION_NEEDS_PUBLISH,
+  LEARNING_NOTE_MAX,
+  LEARNING_NOTE_MIN,
+  LEARNING_READ_LINK_SECONDS,
+  LEARNING_RESOURCE_BUCKET,
+  LEARNING_SEARCH_MAX,
+  LEARNING_STATUSES,
+  LEARNING_TOPICS_MAX,
+  LEARNING_TOPIC_FOR_ADVICE_TOPIC,
+  LEARNING_TRANSITIONS,
+  LEARNING_WORKFLOW_MESSAGES,
+  learningEditNeedsPublish,
+  learningTransition,
+  learningTransitionSchema,
+  publicGuideFilterSchema,
+  type LearningAction,
+  type LearningStatus,
+  type LearningTransitionInput,
+  type PublicGuideFilter,
 } from './learning';
 
 export {

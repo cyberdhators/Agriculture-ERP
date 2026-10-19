@@ -62,6 +62,12 @@ export const AUDIT_ACTIONS = [
   'learning_resource.updated',
   'learning_resource.published',
   'learning_resource.soft_deleted',
+  // 2026-10-22: Advice & Learning's draft -> review -> publish moves. Publish
+  // reuses the key above. NO CHECK MIGRATION ON THIS BRANCH: the combined one
+  // is written when the three branches that add keys land.
+  'learning_resource.submitted',
+  'learning_resource.returned',
+  'learning_resource.unpublished',
   // C-16: a weather location is a managed record. A forecast fetch is NOT audited
   // (C-16.11) -- it is a scheduled read of a third party, not an action on a record.
   'weather_location.created',

@@ -23,8 +23,13 @@ export const PORTAL_PREFIXES = [
   '/design',
 ] as const;
 
-/** Public unless the deployment closes them (NEXT_PUBLIC_MARKET_OPEN=0). */
-export const MARKET_PREFIXES = ['/market', '/farmer'] as const;
+/**
+ * Public unless the deployment closes them (NEXT_PUBLIC_MARKET_OPEN=0).
+ * 2026-10-22: `/learn`, Advice & Learning's published guides, follows the
+ * marketplace's rule ("Public visitors can browse published listings and
+ * advice").
+ */
+export const MARKET_PREFIXES = ['/market', '/farmer', '/learn'] as const;
 
 /** Read at build time, like every NEXT_PUBLIC_ variable: change it, then redeploy. */
 export const MARKET_OPEN = process.env.NEXT_PUBLIC_MARKET_OPEN !== '0';

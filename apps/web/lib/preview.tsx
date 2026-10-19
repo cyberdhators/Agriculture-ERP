@@ -25,11 +25,14 @@ import {
   type DirectoryEntryRow,
   type LearningResourceRow,
 } from './fixtures/p1';
+import { learningTransition, type LearningAction } from '@agri-erp/shared';
+
 import {
   LIVE_LIBRARY,
   listLearningResources,
   removeLearningResource,
   saveLearningResource,
+  transitionLearningResource,
 } from './library/api';
 import { BUYER_HOME_PATH, PORTAL_PREFIXES } from './auth/paths';
 import { supabaseBrowser } from './supabase/browser';
@@ -98,6 +101,8 @@ interface PreviewState {
   removeEntry: (id: string, reason: string) => Promise<void>;
   saveResource: (row: LearningResourceRow) => Promise<void>;
   removeResource: (id: string, reason: string) => Promise<void>;
+  /** 2026-10-22: one move through Advice & Learning's workflow. */
+  transitionResource: (id: string, action: LearningAction, note?: string) => Promise<void>;
   /** The live reads: loading until both lists have answered; error if one could not. */
   catalog: { loading: boolean; error?: string };
   /** True once client state has been read, so SSR and first paint agree. */
@@ -303,6 +308,40 @@ export function PreviewProvider({ children }: { children: ReactNode }) {
     setResources((list) => list.map((r) => (r.id === id ? { ...r, deleted_at: now } : r)));
   }, []);
 
+  const transitionResource = useCallback(
+    async (id: string, action: LearningAction, note?: string) => {
+      // Live: the route decides, and its row replaces ours. Off: the same rule
+      // (learningTransition, packages/shared) applied to the preview's row, so
+      // the preview never offers a move the route would refuse.
+      let saved: LearningResourceRow;
+      if (LIVE_LIBRARY) {
+        saved = await transitionLearningResource(id, action, note);
+      } else {
+        const row = resourcesRef.current.find((r) => r.id === id);
+        const next = row ? learningTransition(row.status, action) : null;
+        if (!row || !next) {
+          throw new Error('That decision is not available for this record in its current state.');
+        }
+        const now = new Date().toISOString();
+        saved = {
+          ...row,
+          status: next,
+          published: next === 'published',
+          ...(action === 'submit'
+            ? { submitted_at: now, submitted_by_name: 'You', review_note: null }
+            : { reviewed_at: now, reviewed_by_name: 'You' }),
+          ...(action === 'return' ? { review_note: note ?? null } : {}),
+          ...(action === 'publish'
+            ? { published_at: now, published_by_name: 'You', review_note: null }
+            : {}),
+        };
+      }
+      const moved = saved;
+      setResources((list) => list.map((r) => (r.id === moved.id ? moved : r)));
+    },
+    [],
+  );
+
   const value = useMemo<PreviewState>(
     () => ({
       role,
@@ -315,6 +354,7 @@ export function PreviewProvider({ children }: { children: ReactNode }) {
       removeEntry,
       saveResource,
       removeResource,
+      transitionResource,
       catalog,
       hydrated,
     }),
@@ -329,6 +369,7 @@ export function PreviewProvider({ children }: { children: ReactNode }) {
       removeEntry,
       saveResource,
       removeResource,
+      transitionResource,
       catalog,
       hydrated,
     ],

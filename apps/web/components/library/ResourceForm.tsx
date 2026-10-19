@@ -5,22 +5,26 @@ import { useRouter } from 'next/navigation';
 import { useRef, useState, type ChangeEvent, type FormEvent } from 'react';
 
 import {
+  ADVICE_TOPICS,
+  ADVICE_TOPIC_FOR_LEARNING_TOPIC,
   CROPS,
   LANGUAGES,
   LEARNING_LIMITS,
-  LEARNING_TOPICS,
+  LEARNING_TOPICS_MAX,
+  LEARNING_TOPIC_FOR_ADVICE_TOPIC,
   RESOURCE_FORMATS,
   learningResourceInputSchema,
+  type AdviceTopic,
   type LearningResourceInput,
   type ResourceFormat,
 } from '@agri-erp/shared';
 
 import type { LearningResourceRow } from '@/lib/fixtures/p1';
 import {
+  ADVICE_TOPIC_LABELS,
   CROP_LABELS,
   FORMAT_LABELS,
   LANGUAGE_LABELS,
-  TOPIC_LABELS,
   formatBytes,
 } from '@/lib/format';
 import { LIVE_LIBRARY } from '@/lib/library/api';
@@ -46,6 +50,11 @@ import { FormatIcon } from './resource-presentation';
 /**
  * Add or edit a learning resource. Administrators only.
  *
+ * 2026-10-22, Advice & Learning: the card carries the shared advice topics and
+ * an Arabic title and summary beside the English ones. It no longer carries
+ * "published": a new card is a draft, and it goes public only through review
+ * (Submit, then Publish, on the resource's page).
+ *
  * The file goes to Supabase Storage; the form only records where it landed
  * (storage_path) and how big it is (byte_size). In this preview "Choose file"
  * reads the name and size of a local file to fill those two fields, and
@@ -55,41 +64,44 @@ import { FormatIcon } from './resource-presentation';
 
 interface FormState {
   title: string;
-  topic: string;
+  title_ar: string;
+  topics: AdviceTopic[];
   crop: string;
   language: string;
   format: string;
   storage_path: string;
   byte_size: string;
   description: string;
-  published: boolean;
+  description_ar: string;
 }
 
 function fromRow(row: LearningResourceRow | null): FormState {
   return {
     title: row?.title ?? '',
-    topic: row?.topic ?? 'crop_production',
+    title_ar: row?.title_ar ?? '',
+    topics: row?.topics ?? ['crops'],
     crop: row?.crop ?? '',
     language: row?.language ?? 'en',
     format: row?.format ?? 'pdf',
     storage_path: row?.storage_path ?? '',
     byte_size: row ? String(row.byte_size) : '',
     description: row?.description ?? '',
-    published: row?.published ?? false,
+    description_ar: row?.description_ar ?? '',
   };
 }
 
 function toBody(form: FormState): unknown {
   return {
     title: form.title,
-    topic: form.topic,
+    title_ar: form.title_ar,
+    topics: form.topics,
     crop: form.crop === '' ? null : form.crop,
     language: form.language,
     format: form.format,
     storage_path: form.storage_path,
     byte_size: form.byte_size.trim() === '' ? undefined : Number(form.byte_size),
     description: form.description,
-    published: form.published,
+    description_ar: form.description_ar,
   };
 }
 
@@ -162,17 +174,37 @@ export function ResourceForm({ existing }: { existing: LearningResourceRow | nul
     }
     setErrors({});
     const value = result.data;
+    const topics = value.topics ?? (existing?.topics as AdviceTopic[] | undefined) ?? ['other'];
+    const firstTopic = topics[0] ?? 'other';
     const row: LearningResourceRow = {
+      ...(existing ?? {
+        status: 'draft',
+        submitted_at: null,
+        submitted_by_name: null,
+        reviewed_at: null,
+        reviewed_by_name: null,
+        review_note: null,
+        published_at: null,
+        published_by_name: null,
+      }),
       id: existing?.id ?? newId(),
       title: value.title,
-      topic: value.topic,
+      title_ar: value.title_ar ?? null,
+      topics,
+      // The library's own shelf: kept while it still matches the first topic;
+      // the route applies the same rule (lib/api/learning.ts, topicsFor).
+      topic:
+        existing && ADVICE_TOPIC_FOR_LEARNING_TOPIC[existing.topic] === firstTopic
+          ? existing.topic
+          : LEARNING_TOPIC_FOR_ADVICE_TOPIC[firstTopic],
       crop: value.crop ?? null,
       language: value.language,
       format: value.format,
       storage_path: value.storage_path,
       byte_size: value.byte_size,
       description: value.description ?? null,
-      published: value.published,
+      description_ar: value.description_ar ?? null,
+      published: existing?.published ?? false,
       uploaded_by: existing?.uploaded_by ?? null,
       uploaded_at: existing?.uploaded_at ?? new Date().toISOString(),
       deleted_at: null,
@@ -229,10 +261,16 @@ export function ResourceForm({ existing }: { existing: LearningResourceRow | nul
           className="no-print"
         >
           {LIVE_LIBRARY
-            ? `Recorded with who made the change and when. ${saved.published ? 'Officers see it on their next sync. ' : 'Unpublished: only administrators see it until it is published. '}`
+            ? `Recorded with who made the change and when. ${existing?.status === 'published' ? 'The published guide shows the change now. ' : 'Open it to submit it for review when it is ready. '}`
             : `Validated with the shared schema and written to this session’s preview store only. In the live portal this is a ${existing ? 'PATCH' : 'POST'} to /api/learning-resources. `}
           <Link
-            href={`/library?resource=${existing?.id ?? ''}${saved.published ? '' : '&drafts=1'}`}
+            href={
+              existing
+                ? `/library?resource=${existing.id}${
+                    existing.status !== 'published' ? `&status=${existing.status}` : ''
+                  }`
+                : '/library?status=draft'
+            }
           >
             View the resource
           </Link>
@@ -377,21 +415,40 @@ export function ResourceForm({ existing }: { existing: LearningResourceRow | nul
                     )}
                   </Field>
                 </div>
-                <Field label="Topic" error={errors['topic']}>
-                  {(ids) => (
-                    <Select
-                      {...ids}
-                      value={form.topic}
-                      onChange={(event) => update('topic', event.target.value)}
-                    >
-                      {LEARNING_TOPICS.map((t) => (
-                        <option key={t} value={t}>
-                          {TOPIC_LABELS[t]}
-                        </option>
+                <div className={styles.span2}>
+                  <fieldset
+                    style={{ border: 0, padding: 0, margin: 0 }}
+                    aria-describedby="topics-hint"
+                  >
+                    <legend style={{ fontWeight: 700 }}>Topics</legend>
+                    <p id="topics-hint" className="small muted">
+                      One to {LEARNING_TOPICS_MAX}. Farmers filter guides, advisers and advice
+                      requests by the same topics.
+                    </p>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--s-3)' }}>
+                      {ADVICE_TOPICS.map((t) => (
+                        <Checkbox
+                          key={t}
+                          label={ADVICE_TOPIC_LABELS[t]}
+                          checked={form.topics.includes(t)}
+                          onChange={(event) =>
+                            update(
+                              'topics',
+                              event.target.checked
+                                ? [...form.topics, t]
+                                : form.topics.filter((x) => x !== t),
+                            )
+                          }
+                        />
                       ))}
-                    </Select>
-                  )}
-                </Field>
+                    </div>
+                    {errors['topics'] || errors['topics.0'] ? (
+                      <p className="small" role="alert" style={{ color: 'var(--danger, #b42318)' }}>
+                        {errors['topics'] ?? errors['topics.0']}
+                      </p>
+                    ) : null}
+                  </fieldset>
+                </div>
                 <Field label="Crop" optional error={errors['crop']}>
                   {(ids) => (
                     <Select
@@ -409,7 +466,25 @@ export function ResourceForm({ existing }: { existing: LearningResourceRow | nul
                   )}
                 </Field>
                 <div className={styles.span2}>
-                  <Field label="Description" optional error={errors['description']}>
+                  <Field
+                    label="Arabic title"
+                    optional
+                    error={errors['title_ar']}
+                    hint="Shown to readers who use the app in Arabic. Leave empty and they see the English title."
+                  >
+                    {(ids) => (
+                      <Input
+                        {...ids}
+                        value={form.title_ar}
+                        onChange={(event) => update('title_ar', event.target.value)}
+                        dir="rtl"
+                        lang="ar"
+                      />
+                    )}
+                  </Field>
+                </div>
+                <div className={styles.span2}>
+                  <Field label="Summary (English)" optional error={errors['description']}>
                     {(ids) => (
                       <Textarea
                         {...ids}
@@ -421,11 +496,17 @@ export function ResourceForm({ existing }: { existing: LearningResourceRow | nul
                   </Field>
                 </div>
                 <div className={styles.span2}>
-                  <Checkbox
-                    label="Published, visible to officers"
-                    checked={form.published}
-                    onChange={(event) => update('published', event.target.checked)}
-                  />
+                  <Field label="Summary (Arabic)" optional error={errors['description_ar']}>
+                    {(ids) => (
+                      <Textarea
+                        {...ids}
+                        value={form.description_ar}
+                        onChange={(event) => update('description_ar', event.target.value)}
+                        dir="rtl"
+                        lang="ar"
+                      />
+                    )}
+                  </Field>
                 </div>
               </div>
             </section>
@@ -439,7 +520,9 @@ export function ResourceForm({ existing }: { existing: LearningResourceRow | nul
                 Cancel
               </Button>
               <span className="small muted">
-                Unpublished resources are seen by administrators only.
+                {existing && existing.status !== 'draft'
+                  ? 'Saving keeps the guide where it is in review.'
+                  : 'Saved as a draft: only administrators see it until it is published.'}
               </span>
             </div>
           </Card>

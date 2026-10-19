@@ -6,6 +6,7 @@ import {
   removeLearningResource,
   saveLearningResource,
   toInput,
+  transitionLearningResource,
   toRow,
   type LearningResourceApi,
 } from './api';
@@ -37,6 +38,17 @@ const api: LearningResourceApi = {
   description: null,
   published: true,
   uploaded_at: '2026-09-01T00:00:00.000Z',
+  status: 'published',
+  topics: ['crops'],
+  title_ar: 'تباعد الذرة الرفيعة',
+  description_ar: null,
+  submitted_at: null,
+  submitted_by_name: null,
+  reviewed_at: null,
+  reviewed_by_name: null,
+  review_note: null,
+  published_at: null,
+  published_by_name: null,
 };
 
 describe('toRow / toInput', () => {
@@ -47,7 +59,11 @@ describe('toRow / toInput', () => {
     const input = toInput(row) as Record<string, unknown>;
     expect(input).not.toHaveProperty('id');
     expect(input).not.toHaveProperty('uploaded_at');
-    expect(input['published']).toBe(true);
+    // 2026-10-22: going public is the publish move, never a field of the card.
+    expect(input).not.toHaveProperty('published');
+    expect(input).not.toHaveProperty('status');
+    expect(input['topics']).toEqual(['crops']);
+    expect(input['title_ar']).toBe('تباعد الذرة الرفيعة');
   });
 });
 
@@ -75,16 +91,19 @@ describe('listLearningResources', () => {
 });
 
 describe('saveLearningResource', () => {
-  it('POSTs a new resource; PATCHes an existing one; a publish flip is a PATCH', async () => {
+  it('POSTs a new resource; PATCHes an existing one', async () => {
     const fn = mockFetchSeq([
       { status: 201, body: { data: { ...api, id: 'server-id' } } },
-      { status: 200, body: { data: { ...api, published: false } } },
+      { status: 200, body: { data: { ...api, title: 'Sorghum row spacing' } } },
     ]);
     const created = await saveLearningResource({ ...toRow(api), id: 'tmp' }, false);
     expect(created.id).toBe('server-id');
     expect((fn.mock.calls[0]![1] as RequestInit).method).toBe('POST');
-    const flipped = await saveLearningResource({ ...toRow(api), published: false }, true);
-    expect(flipped.published).toBe(false);
+    const edited = await saveLearningResource(
+      { ...toRow(api), title: 'Sorghum row spacing' },
+      true,
+    );
+    expect(edited.title).toBe('Sorghum row spacing');
     expect(fn.mock.calls[1]![0]).toBe('/api/learning-resources/r-1');
     expect((fn.mock.calls[1]![1] as RequestInit).method).toBe('PATCH');
   });
@@ -114,5 +133,44 @@ describe('removeLearningResource', () => {
     await removeLearningResource('r-1');
     expect(fn.mock.calls[0]![0]).toBe('/api/learning-resources/r-1');
     expect((fn.mock.calls[0]![1] as RequestInit).method).toBe('DELETE');
+  });
+});
+
+describe('transitionLearningResource (2026-10-22)', () => {
+  it('POSTs the move to the transition route, with the note only when given', async () => {
+    const fn = mockFetchSeq([
+      { status: 200, body: { data: { ...api, status: 'in_review', published: false } } },
+      { status: 200, body: { data: { ...api, status: 'draft', review_note: 'Add the Arabic.' } } },
+    ]);
+    const submitted = await transitionLearningResource('r-1', 'submit');
+    expect(submitted.status).toBe('in_review');
+    expect(fn.mock.calls[0]![0]).toBe('/api/learning-resources/r-1/transition');
+    expect(JSON.parse((fn.mock.calls[0]![1] as RequestInit).body as string)).toEqual({
+      action: 'submit',
+    });
+    const returned = await transitionLearningResource('r-1', 'return', 'Add the Arabic.');
+    expect(returned.review_note).toBe('Add the Arabic.');
+    expect(JSON.parse((fn.mock.calls[1]![1] as RequestInit).body as string)).toEqual({
+      action: 'return',
+      note: 'Add the Arabic.',
+    });
+  });
+
+  it('surfaces a refused move as its status and code', async () => {
+    mockFetchSeq([
+      {
+        status: 422,
+        body: {
+          error: {
+            code: 'unprocessable',
+            message: 'That decision is not available for this record in its current state.',
+          },
+        },
+      },
+    ]);
+    await expect(transitionLearningResource('r-1', 'publish')).rejects.toMatchObject({
+      status: 422,
+      code: 'unprocessable',
+    });
   });
 });

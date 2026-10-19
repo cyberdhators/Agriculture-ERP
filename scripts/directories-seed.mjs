@@ -125,12 +125,29 @@ for (const e of entries) {
     create: { id: rowId, lastVerifiedAt: VERIFIED, ...rest },
   });
 }
+// 2026-10-22: the workflow's status must match `published` (a CHECK in
+// migration 20261022100000), and every card is filed under an advice topic.
+const ADVICE_TOPIC = {
+  crop_production: 'crops',
+  livestock: 'livestock',
+  pest_disease: 'pests_diseases',
+  post_harvest: 'post_harvest',
+  marketing: 'marketing_prices',
+  cooperative: 'finance_business',
+  climate: 'climate_weather',
+  other: 'other',
+};
 for (const r of resources) {
   const { id: rowId, ...rest } = r;
   await prisma.learningResource.upsert({
     where: { id: rowId },
     update: {},
-    create: { id: rowId, ...rest },
+    create: {
+      id: rowId,
+      status: rest.published ? 'published' : 'draft',
+      topics: [ADVICE_TOPIC[rest.topic] ?? 'other'],
+      ...rest,
+    },
   });
 }
 

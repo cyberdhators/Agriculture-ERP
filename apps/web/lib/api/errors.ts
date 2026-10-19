@@ -205,6 +205,10 @@ export const RULE_MESSAGES = {
   advice_case_closed: 'This request is closed. It can no longer be changed.',
   advice_feedback_not_closed: 'Feedback can be given once the request is closed.',
   advice_feedback_already_given: 'Feedback has already been given on this request.',
+  // ADVICE & LEARNING (2026-10-22). About a guide's state, never a person.
+  learning_resource_locked:
+    'A guide in review or published can be changed only by someone who can publish. Ask them to return it to draft first.',
+  guide_file_unavailable: "This guide's file cannot be opened just now. Try again later.",
 } as const;
 
 export type RuleKey = keyof typeof RULE_MESSAGES;
