@@ -3771,9 +3771,9 @@ build plan and, with it, these decisions ("use 2 agents, go"):
 - **Phone verification by SMS code at farmer sign-up:** 6 digits, 10 minutes,
   5 tries, 3 codes per phone per 30 minutes, a minute between sends, at most
   200 codes an hour system-wide, through Bird (about 0.20 EUR a code from
-  CORWADO's credit). On whenever Bird is configured; `FARMER_PHONE_VERIFICATION
-  =off` switches it off, so sign-up never depends on an SMS a network does not
-  deliver (only MTN delivery is OBSERVED so far).
+  CORWADO's credit). On whenever Bird is configured; setting
+  `FARMER_PHONE_VERIFICATION=off` switches it off, so sign-up never depends
+  on an SMS a network does not deliver (only MTN delivery is OBSERVED so far).
 - **Defaults accepted, to be revisited with CORWADO:** listings valid 30 days
   by default; existing separate farmer and buyer accounts stay as they are.
 - **Built in parallel lanes:** accounts (this entry), listings (statuses,
