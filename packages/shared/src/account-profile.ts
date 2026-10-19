@@ -75,3 +75,23 @@ export const accountProfileSchema = z
   });
 
 export type AccountProfile = z.infer<typeof accountProfileSchema>;
+
+// ---------------------------------------------------------------------------
+// DELETE MY ACCOUNT (2026-10-20). The owner: hide now, keep for audit.
+// ---------------------------------------------------------------------------
+
+// Each pinned in docs/api/CONVENTIONS.md §5.2.3
+export const ACCOUNT_DELETION_MESSAGES = {
+  passwordRequired: 'Enter your password to confirm.',
+  confirmRequired: 'Tick the box to confirm you want to delete your account.',
+} as const;
+
+/** The account's own password, and an explicit yes. Nothing else. */
+export const deleteAccountSchema = z.strictObject({
+  password: z
+    .string({ error: () => ACCOUNT_DELETION_MESSAGES.passwordRequired })
+    .min(1, ACCOUNT_DELETION_MESSAGES.passwordRequired)
+    .max(200, ACCOUNT_DELETION_MESSAGES.passwordRequired),
+  confirm: z.literal(true, { error: () => ACCOUNT_DELETION_MESSAGES.confirmRequired }),
+});
+export type DeleteAccountInput = z.infer<typeof deleteAccountSchema>;

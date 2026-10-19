@@ -49,6 +49,8 @@ const admitsBuyer = (file: string) => /BUYER_ROLE|'buyer'\s*\]/.test(source(file
  */
 const BUYER_OUTSIDE_ITS_TREE = [
   'account/profile',
+  // 2026-10-20: an account deletes itself (its own records only).
+  'account/delete',
   // IN-APP MESSAGING (2026-10-20): conversations belong to sign-ins, and every
   // read is filtered to the caller's own (lib/api/messaging.ts).
   'conversations',

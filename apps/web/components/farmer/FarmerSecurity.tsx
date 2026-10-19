@@ -11,6 +11,8 @@ import { useFarmerSession } from '@/lib/farmer-session';
 import { t } from '@/lib/i18n';
 import { formatPhone } from '@/lib/format';
 
+import { DeleteAccount } from '@/components/account/DeleteAccount';
+
 import { PageHead } from './AccountShell';
 import styles from './farmer.module.css';
 
@@ -240,6 +242,11 @@ export function FarmerSecurity() {
               {t('account.signOut', language)}
             </Button>
           </div>
+        </section>
+
+        {/* 2026-10-20: the account deletes itself (hide now, keep for audit). */}
+        <section className={styles.settingCard}>
+          <DeleteAccount language={language === 'ar' ? 'ar' : 'en'} />
         </section>
       </div>
     </>

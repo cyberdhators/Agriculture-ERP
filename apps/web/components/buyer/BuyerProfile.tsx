@@ -18,6 +18,7 @@ import {
 } from '@/lib/buyer/labels';
 
 import { Button, Card, CardBody, CardHeader, Field, Input, Notice, PageHeader, Stamp } from '../ui';
+import { DeleteAccount } from '../account/DeleteAccount';
 import { useToast } from '../ui/feedback';
 import { useBuyer } from './BuyerShell';
 import { ProcurementFields, toOrganizationBody, type OrgForm } from './ProcurementFields';
@@ -209,6 +210,13 @@ export function BuyerProfile() {
           </Button>
         </div>
       </form>
+
+      {/* 2026-10-20: the account deletes itself (hide now, keep for audit). */}
+      <Card>
+        <CardBody>
+          <DeleteAccount />
+        </CardBody>
+      </Card>
     </div>
   );
 }
