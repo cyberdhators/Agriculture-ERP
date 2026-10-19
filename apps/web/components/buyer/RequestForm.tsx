@@ -100,9 +100,9 @@ export function RequestForm({ listing }: { listing?: MarketListing }) {
   return (
     <form className={styles.form} onSubmit={onSubmit} noValidate aria-label="Purchase request">
       {!canSend ? (
-        <Notice kind="info" title="Drafts only, for now">
-          Requests can be sent once CORWADO has verified your organisation. Save a draft and send it
-          from the request page when your account is verified.
+        <Notice kind="info" title="Drafts only">
+          This account cannot send requests. Contact CORWADO about your account; you can still save
+          a draft.
         </Notice>
       ) : null}
       {failure ? (

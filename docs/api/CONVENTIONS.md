@@ -311,7 +311,7 @@ character.
 | `reassign_officer_not_found`       | No active officer with that identifier works in this farmer's payam. Choose one who does.                                     |
 | `reassign_same_officer`            | This farmer is already with that officer. Nothing to change.                                                                  |
 | `resource_file_already_registered` | A learning resource is already registered for that file.                                                                      |
-| `buyer_not_verified`               | Purchase requests open once CORWADO has verified your buyer account. You can save a draft until then.                         |
+| `buyer_not_verified`               | This buyer account cannot send purchase requests. Contact CORWADO about it. You can still save a draft.                       |
 | `county_not_found`                 | That county could not be found in that state.                                                                                 |
 | `listing_not_available`            | That product is no longer available in the marketplace.                                                                       |
 | `request_not_editable`             | Only a draft request can be changed. Cancel it and send a new one instead.                                                    |
@@ -652,6 +652,7 @@ These are also exact.
 | Request: below minimum order            | This is below the farmer's minimum order.                                                       |
 | Cart: same product twice                | This product is in the cart twice. Keep one line.                                               |
 | Request: one already waiting            | You already have a request waiting for the farmer on this product.                              |
+| Cart: own product                       | This is your own product. Remove it from the cart.                                              |
 | Message: channel not email or SMS       | Choose email or SMS.                                                                            |
 | Message: recipient type not on channel  | That kind of recipient cannot be reached on this channel.                                       |
 | Message: no recipients                  | Choose at least one recipient.                                                                  |

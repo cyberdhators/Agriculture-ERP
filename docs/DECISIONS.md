@@ -4090,3 +4090,27 @@ not a helpdesk.
 - **Audit:** `support_message.created` and `support_message.done`, ids, sender
   kind and topic only, never the text, name, phone or email (migration
   `20261021100000`).
+
+## Buy from any product page; organisations buy without waiting for verification (2026-10-21) — replaces B13's "a new organisation can look but not buy"
+
+The owner, 2026-10-21, after "add to cart is not in every (seller/buyer)
+account": Add to cart for every signed-in account, and remove the buyer
+organisation verification gate (CORWADO's 16 October specification: "ordinary
+participation must not depend on CORWADO approval").
+
+- **Buy on the market's product page** (`/market/<id>`), which is where
+  profiles, messages and farmers land: an account that already buys goes to
+  the buyer product page, where the one cart is; a farmer who has never bought
+  has their buying side switched on first (`POST /api/farmer/buying`, which is
+  idempotent) and goes there too; a visitor is sent to sign in or create an
+  account; staff see nothing.
+- **A cart with products from several sellers** is unchanged: sent in one
+  transaction, it becomes one purchase request per product, each to the farmer
+  who listed it, each answered by that farmer independently.
+- **Organisations:** `buyerCapabilities` now lets `pending` and
+  `under_review` organisations send requests; verification is a badge, as for
+  farmers since #180. `rejected` and `suspended` still cannot. The screens'
+  "wait for approval" sentences and the `buyer_not_verified` rule sentence
+  were reworded for the accounts that can still meet them.
+- **New refusal:** a cart line for the buyer's own listing ("This is your own
+  product."), now possible because every farmer can buy.

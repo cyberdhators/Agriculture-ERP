@@ -156,14 +156,15 @@ describe('individual buyers need no review (owner, 2026-10-06)', () => {
     expect(parsed.account_type).toBe('business');
   });
 
-  it('an individual starts able to request; a business starts pending', () => {
+  it('an individual and a business both start able to request (2026-10-21)', () => {
     expect(initialStanding('individual')).toBe('not_required');
     expect(buyerCapabilities(initialStanding('individual'))).toEqual({
       browse: true,
       request: true,
     });
     expect(initialStanding('business')).toBe('pending');
-    expect(buyerCapabilities(initialStanding('business')).request).toBe(false);
+    // Pending verification is a badge, not a gate: the owner, 2026-10-21.
+    expect(buyerCapabilities(initialStanding('business')).request).toBe(true);
   });
 
   it('an individual is never put under review or verified; a business is never exempted', () => {
@@ -295,9 +296,9 @@ describe('the marketplace filter', () => {
 });
 
 describe('standing decides what a buyer may do', () => {
-  it('a new account can browse but not request', () => {
-    expect(buyerCapabilities('pending')).toEqual({ browse: true, request: false });
-    expect(buyerCapabilities('under_review')).toEqual({ browse: true, request: false });
+  it('a new or under-review account can browse and request (2026-10-21)', () => {
+    expect(buyerCapabilities('pending')).toEqual({ browse: true, request: true });
+    expect(buyerCapabilities('under_review')).toEqual({ browse: true, request: true });
   });
 
   it('a verified business, or an individual, can request', () => {

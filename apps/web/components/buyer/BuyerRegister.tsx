@@ -134,7 +134,7 @@ export function BuyerRegister() {
                     [
                       'business',
                       'A business or organisation',
-                      'Reviewed by CORWADO before you can send requests.',
+                      'Buy straight away. CORWADO may check it later and add a Verified badge.',
                     ],
                   ] as const
                 ).map(([value, label, hint]) => (

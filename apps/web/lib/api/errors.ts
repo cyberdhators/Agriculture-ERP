@@ -141,7 +141,7 @@ export const RULE_MESSAGES = {
   resource_file_already_registered: 'A learning resource is already registered for that file.',
   // B13 (C-14B). About an organisation's standing or a record's state, never a person.
   buyer_not_verified:
-    'Purchase requests open once CORWADO has verified your buyer account. You can save a draft until then.',
+    'This buyer account cannot send purchase requests. Contact CORWADO about it. You can still save a draft.',
   county_not_found: 'That county could not be found in that state.',
   listing_not_available: 'That product is no longer available in the marketplace.',
   request_not_editable:

@@ -113,9 +113,8 @@ export function BuyerCart() {
         </Notice>
       ) : null}
       {!canSend ? (
-        <Notice kind="info" title="Your account must be approved first">
-          Business accounts are reviewed before they can send requests. You can keep products in the
-          cart meanwhile.
+        <Notice kind="info" title="This account cannot send requests">
+          Contact CORWADO about your account. You can keep products in the cart meanwhile.
         </Notice>
       ) : null}
 

@@ -146,10 +146,16 @@ export interface BuyerCapabilities {
 }
 
 /**
- * THE ONE PLACE standing becomes permission. A new account can look but not
- * buy; a verified one can do both; a rejected or suspended one can read its
- * own history and profile and nothing else. Read by the routes, which enforce
- * it, and by the screens, which only explain it.
+ * THE ONE PLACE standing becomes permission. A rejected or suspended account
+ * can read its own history and profile and nothing else; every other account
+ * can browse and buy. Read by the routes, which enforce it, and by the
+ * screens, which only explain it.
+ *
+ * 2026-10-21 (the owner, following CORWADO's 16 October specification:
+ * "ordinary participation must not depend on CORWADO approval"): a new or
+ * under-review organisation may send purchase requests at once, as farmers may
+ * list since #180. Verification is a badge, not a gate. Until then a new
+ * organisation could look but not buy.
  */
 export function buyerCapabilities(status: BuyerVerificationStatus): BuyerCapabilities {
   switch (status) {
@@ -158,7 +164,7 @@ export function buyerCapabilities(status: BuyerVerificationStatus): BuyerCapabil
       return { browse: true, request: true };
     case 'pending':
     case 'under_review':
-      return { browse: true, request: false };
+      return { browse: true, request: true };
     case 'rejected':
     case 'suspended':
       return { browse: false, request: false };
@@ -323,6 +329,8 @@ export const BUYER_MESSAGES = {
   quantityBelowMinimum: "This is below the farmer's minimum order.",
   productTwiceInCart: 'This product is in the cart twice. Keep one line.',
   requestAlreadyOpen: 'You already have a request waiting for the farmer on this product.',
+  // 2026-10-21: every farmer can buy now, so the cart can meet their own listing.
+  ownProduct: 'This is your own product. Remove it from the cart.',
 } as const;
 
 // ---------------------------------------------------------------------------

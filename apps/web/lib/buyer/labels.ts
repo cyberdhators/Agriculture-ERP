@@ -103,9 +103,9 @@ export const VERIFICATION_STAMPS: Record<BuyerVerificationStatus, StampKind> = {
  */
 export const VERIFICATION_MESSAGES: Record<BuyerVerificationStatus, string> = {
   pending:
-    'Your buyer account is waiting for review. You can browse the marketplace and prepare draft requests; sending them opens once CORWADO verifies your organisation.',
+    'You can browse and send purchase requests now. CORWADO may check your organisation later and add a Verified badge.',
   under_review:
-    'Your buyer account is currently under review. You can browse the marketplace and prepare draft requests in the meantime.',
+    'Your organisation is currently under review for a Verified badge. You can browse and send purchase requests meanwhile.',
   verified: 'Your buyer account is verified. You can send purchase requests.',
   rejected:
     'Your buyer account was not approved. Your history remains readable; the marketplace is closed to this account. Contact CORWADO if you think this is a mistake.',
