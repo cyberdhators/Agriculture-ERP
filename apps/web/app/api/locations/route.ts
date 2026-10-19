@@ -1,4 +1,4 @@
-import { ALL_ROLES, BUYER_ROLE } from '@agri-erp/shared';
+import { ALL_ROLES, BUYER_ROLE, FARMER_ROLE } from '@agri-erp/shared';
 
 import { defineRoutes, empty, ok } from '../../../lib/api/route';
 import { prisma } from '../../../lib/db';
@@ -21,7 +21,9 @@ import { prisma } from '../../../lib/db';
  */
 export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   GET: {
-    roles: [...ALL_ROLES, BUYER_ROLE],
+    // LISTINGS LANE (2026-10-19): a farmer too, to choose the state a buying
+    // request is for. The hierarchy is place names, nothing personal.
+    roles: [...ALL_ROLES, BUYER_ROLE, FARMER_ROLE],
     handler: async ({ request }) => {
       const [bundle] = await prisma.$queryRawUnsafe<{ version: string }[]>(
         'SELECT version FROM public.location_bundle WHERE id = 1',

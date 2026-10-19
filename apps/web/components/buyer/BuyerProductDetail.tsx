@@ -105,7 +105,7 @@ export function BuyerProductDetail({ id }: { id: string }) {
         <Card>
           <CardHeader
             title="Buy from this farmer"
-            subtitle="Add it to your cart. You can add products from other farmers and send them all together."
+            subtitle="Add it to your cart. You can add products from other sellers and send them all together."
           />
           <CardBody>
             <AddToCart listing={listing} />
@@ -161,10 +161,11 @@ export function BuyerProductDetail({ id }: { id: string }) {
                   },
                   {
                     term: 'Standing',
+                    // LISTINGS LANE (2026-10-19): a badge when verified, nothing otherwise.
                     value: listing.supplier.verified ? (
                       <Stamp kind="verified">Verified farmer</Stamp>
                     ) : (
-                      <Stamp kind="pending">Not yet verified</Stamp>
+                      '—'
                     ),
                   },
                   {

@@ -31,7 +31,6 @@ export interface MarketFilters {
   priceMin: string;
   priceMax: string;
   availability: Availability;
-  verifiedOnly: boolean;
   deliveryOnly: boolean;
   status: ListingStatus;
 }
@@ -44,7 +43,6 @@ export const DEFAULT_FILTERS: MarketFilters = {
   priceMin: '',
   priceMax: '',
   availability: 'any',
-  verifiedOnly: true,
   deliveryOnly: false,
   status: 'listed',
 };
@@ -58,7 +56,6 @@ export function filtersActive(f: MarketFilters): boolean {
     f.priceMin !== '' ||
     f.priceMax !== '' ||
     f.availability !== 'any' ||
-    !f.verifiedOnly ||
     f.deliveryOnly
   );
 }
@@ -93,7 +90,7 @@ export function applyFilters(
     if (f.unit && listing.unit !== f.unit) return false;
     if (min !== null && listing.price_ssp < min) return false;
     if (max !== null && listing.price_ssp > max) return false;
-    if (f.verifiedOnly && seller.verification_status !== 'verified') return false;
+    // LISTINGS LANE (2026-10-19): verification is a badge, never a filter.
     if (f.deliveryOnly && !listing.delivery_available) return false;
     if (q !== '') {
       const hay = `${listing.title} ${listing.product_name} ${listing.category}`.toLowerCase();

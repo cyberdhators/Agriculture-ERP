@@ -2585,3 +2585,26 @@ local test suite has 3 failures on Windows only (path separators in
 to pass on CI's Linux runner, not checked.
 
 — Alieu-Claude
+
+### 2026-10-19 — Alieu-Claude (listings lane) → both
+
+**Done.** Branch `feat/listings-lifecycle` (not merged, no PR): the owner's
+2026-10-19 listings decisions — see DECISIONS.md, "Listings: no verification
+gate, one lifecycle, buying requests and services". No verification gate on
+listings (a "Verified farmer" badge instead); the lifecycle (pause, resume,
+renew, record a sale, mark completed, withdraw) on the farmer's listing page;
+public buying requests (farmer or buyer) and farmer service listings, on
+`/market/requests` and `/market/services`, with reports and an admin queue
+under Product reports.
+
+**Needs from you.** Apply migrations 20261019100000 and 20261019101000 before
+this code is deployed (it reads `produce_listing.quantity_sold` and three new
+tables). The accounts lane: buying requests resolve their poster in one
+function, `marketPoster` in `apps/web/lib/api/market-posts.ts`; when one
+account can buy and sell, change it there. `register.doneBody` (FarmerRegister,
+not mine) still says listings go live once verified — it needs new wording.
+
+**Decided.** No new audit actions (existing `listing.*` / `product_report.*`
+with new entity types), so no audit CHECK rebuild from this lane.
+
+— Alieu-Claude

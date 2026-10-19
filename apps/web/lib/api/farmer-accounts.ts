@@ -116,6 +116,7 @@ export const OWN_LISTING_COLUMNS = `id, farmer_id, trading_name, title,
   CASE WHEN available_until IS NULL THEN NULL ELSE to_char(available_until, 'YYYY-MM-DD') END AS available_until,
   harvest_season, pickup_notes, contact_phone, photo_storage_paths,
   quality_grade::text AS quality_grade, min_order_quantity::text AS min_order_quantity,
+  quantity_sold::text AS quantity_sold,
   status::text AS status, created_at, updated_at`;
 
 export interface OwnListingRow {
@@ -140,6 +141,8 @@ export interface OwnListingRow {
   photo_storage_paths: string[];
   quality_grade: string | null;
   min_order_quantity: string | null;
+  /** LISTINGS LANE (2026-10-19): sold so far; what is left is quantity - quantity_sold. */
+  quantity_sold: string;
   status: string;
   created_at: Date;
   updated_at: Date;
@@ -151,6 +154,7 @@ export const presentOwnListing = (row: OwnListingRow) => ({
   quantity: Number(row.quantity),
   price_ssp: Number(row.price_ssp),
   min_order_quantity: row.min_order_quantity === null ? null : Number(row.min_order_quantity),
+  quantity_sold: Number(row.quantity_sold),
   created_at: toIso(row.created_at),
   updated_at: toIso(row.updated_at),
 });

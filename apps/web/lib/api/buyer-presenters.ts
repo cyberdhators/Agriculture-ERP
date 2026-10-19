@@ -33,7 +33,7 @@ import { encodeCursor } from '@agri-erp/shared';
  * farmer_id, contact_phone, pickup_notes, photo_storage_paths.
  */
 export const MARKET_COLUMNS = `pl.id, pl.title, pl.category::text AS category, pl.product_name,
-  pl.description, pl.quantity::text AS quantity, pl.unit::text AS unit,
+  pl.description, (pl.quantity - pl.quantity_sold)::text AS quantity, pl.unit::text AS unit,
   pl.price_ssp::text AS price_ssp, pl.price_per::text AS price_per, pl.negotiable,
   pl.delivery_available,
   to_char(pl.available_from, 'YYYY-MM-DD') AS available_from,
@@ -53,13 +53,20 @@ export const MARKET_FROM = `FROM public.produce_listing_active pl
   JOIN public.state s ON s.id = pl.state_id`;
 
 /**
- * B14 (the owner, 2026-10-07): "farmers need to be approved and verified before
- * they can post anything". A listing is in the market only while it is listed
- * AND its farmer is verified; a farmer who is not (or no longer) verified -- e.g. merged into another record -- is out.
+ * A listing is in the market while it is listed and its farmer's record is
+ * live (farmer_active, in MARKET_FROM).
+ *
+ * LISTINGS LANE (2026-10-19): the owner dropped #127 -- a farmer no longer
+ * needs staff verification before their listings go live. B14's rule (the
+ * owner, 2026-10-07: "farmers need to be approved and verified before they can
+ * post anything") is replaced, not silently removed: verification is now a
+ * badge (`supplier.verified`), shown and never filtered on. Paused, withdrawn
+ * and completed listings are not `listed`, so they are out.
  */
 // 2026-10-08: and not past its "available until" date -- an expired listing
-// is out of the market and cannot be requested.
-export const MARKET_BASE_WHERE = `pl.status = 'listed' AND f.verification_status = 'verified'
+// is out of the market and cannot be requested. LISTINGS LANE: and something
+// is left of it.
+export const MARKET_BASE_WHERE = `pl.status = 'listed' AND pl.quantity > pl.quantity_sold
   AND (pl.available_until IS NULL OR pl.available_until >= current_date)`;
 
 export interface MarketRow {

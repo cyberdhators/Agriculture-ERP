@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useMemo, useRef, useState, type DragEvent } from 'react';
+import { useEffect, useRef, useState, type DragEvent } from 'react';
 
 import { Photo } from '@/components/listings/Photo';
 import {
@@ -28,7 +28,6 @@ import { useFarmerSession } from '@/lib/farmer-session';
 import {
   CATEGORY_KEY,
   UNIT_KEY,
-  canPublishListings,
   emptyListingValues,
   listingToValues,
   validateListing,
@@ -47,10 +46,12 @@ const TODAY = new Date().toISOString().slice(0, 10);
  * New and edit listing, one desktop form on two columns: the photo panel on
  * the left (drop or choose up to five, reorder, the first is the cover), the
  * fields on the right in three ruled sections mirroring B12 point 5 field for
- * field, and a sticky action bar: Save draft / List it, or for a live listing
- * Save changes / Mark as sold / Withdraw. "List it" is disabled with the exact
- * reason until the farmer is verified. Chosen photos are previewed from local
- * object URLs; the upload itself lands with the storage route.
+ * field, and a sticky action bar: Save draft / Publish, or for a listing that
+ * has been published, Save changes. LISTINGS LANE (2026-10-19): no
+ * verification is needed to publish, and pausing, renewing, recording a sale,
+ * completing and withdrawing live on the listing's own page -- an edit is an
+ * event, not a status. Chosen photos are previewed from local object URLs; the
+ * upload itself lands with the storage route.
  */
 export function ListingForm({ listingId }: { listingId?: string }) {
   const { farmer, language, listingById, listingsFor, saveListing, newListingId } =
@@ -74,7 +75,6 @@ export function ListingForm({ listingId }: { listingId?: string }) {
   const [errors, setErrors] = useState<ListingErrors>({});
   const [photos, setPhotos] = useState<string[]>(() => own?.photo_storage_paths ?? []);
   const [dragging, setDragging] = useState(false);
-  const [saved, setSaved] = useState<'draft' | null>(null);
   const seeded = useRef(Boolean(own));
   const fileInput = useRef<HTMLInputElement>(null);
 
@@ -93,8 +93,6 @@ export function ListingForm({ listingId }: { listingId?: string }) {
       photosRef.current.filter((p) => p.startsWith('blob:')).forEach((p) => URL.revokeObjectURL(p));
     };
   }, []);
-
-  const verified = useMemo(() => (farmer ? canPublishListings(farmer) : false), [farmer]);
 
   if (!farmer) return null;
   if (isEdit && !own) {
@@ -185,7 +183,6 @@ export function ListingForm({ listingId }: { listingId?: string }) {
     setSaveError(null);
     try {
       const saved = await saveListing(listing);
-      if (status === 'draft' && !verified) setSaved('draft');
       // PWA: saved on the phone (no signal) -> back to My listings, which is kept
       // for offline use; a new product page may not be.
       router.push(
@@ -230,11 +227,6 @@ export function ListingForm({ listingId }: { listingId?: string }) {
       {saveError ? (
         <Notice kind="error">
           <p className="small">{saveError}</p>
-        </Notice>
-      ) : null}
-      {saved === 'draft' ? (
-        <Notice kind="success">
-          <p className="small">{t('listingForm.pendingSavedDraft', language)}</p>
         </Notice>
       ) : null}
 
@@ -432,7 +424,15 @@ export function ListingForm({ listingId }: { listingId?: string }) {
           <section className={styles.fieldSection}>
             <h2>{t('listingForm.sectionPrice', language)}</h2>
             <div className={styles.fieldGrid}>
-              <Field label={t('listingForm.quantity', language)} error={err('quantity')}>
+              <Field
+                label={t('listingForm.quantity', language)}
+                hint={
+                  own?.quantity_sold
+                    ? `${t('listingForm.alreadySold', language)} ${own.quantity_sold}`
+                    : undefined
+                }
+                error={err('quantity')}
+              >
                 {(ids) => (
                   <Input
                     {...ids}
@@ -521,6 +521,7 @@ export function ListingForm({ listingId }: { listingId?: string }) {
               </Field>
               <Field
                 label={t('listingForm.availableUntil', language)}
+                hint={t('listingForm.untilDefault', language)}
                 optional
                 error={err('available_until')}
               >
@@ -606,45 +607,24 @@ export function ListingForm({ listingId }: { listingId?: string }) {
               {t('listingForm.cancel', language)}
             </Link>
             <span className="spacer" style={{ flex: 1 }} />
-            {!verified ? (
-              <span className={styles.actionNote}>{t('listingForm.pendingReason', language)}</span>
-            ) : null}
 
             {status === 'draft' ? (
               <>
                 <Button variant="secondary" onClick={() => persist('draft')}>
                   {t('listingForm.saveDraft', language)}
                 </Button>
-                <Button variant="primary" disabled={!verified} onClick={() => persist('listed')}>
-                  {t('listingForm.list', language)}
-                </Button>
-              </>
-            ) : null}
-
-            {status === 'listed' ? (
-              <>
-                <Button variant="danger" onClick={() => persist('withdrawn')}>
-                  {t('listingForm.withdraw', language)}
-                </Button>
-                <Button variant="secondary" onClick={() => persist('sold')}>
-                  {t('listingForm.markSold', language)}
-                </Button>
                 <Button variant="primary" onClick={() => persist('listed')}>
-                  {t('listingForm.save', language)}
+                  {t('lifecycle.publish', language)}
                 </Button>
               </>
-            ) : null}
-
-            {status === 'withdrawn' || status === 'sold' ? (
+            ) : (
               <>
-                <Button variant="secondary" onClick={() => persist(status)}>
+                <span className={styles.actionNote}>{t('listingForm.statusOnPage', language)}</span>
+                <Button variant="primary" onClick={() => persist(status)}>
                   {t('listingForm.save', language)}
                 </Button>
-                <Button variant="primary" disabled={!verified} onClick={() => persist('listed')}>
-                  {t('listingForm.relist', language)}
-                </Button>
               </>
-            ) : null}
+            )}
           </div>
         </div>
       </div>

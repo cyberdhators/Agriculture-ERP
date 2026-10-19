@@ -18,6 +18,7 @@ import {
   PHONE_MESSAGES,
   FARMER_ACCOUNT_MESSAGES,
   COMMUNICATION_MESSAGES,
+  MARKET_POST_MESSAGES,
 } from '../src/index';
 
 /**
@@ -160,6 +161,8 @@ describe('the documented field reasons match the ones the code actually sends', 
     ...Object.values(BUYER_MESSAGES),
     ...Object.values(FARMER_ACCOUNT_MESSAGES),
     ...Object.values(COMMUNICATION_MESSAGES),
+    // LISTINGS LANE (2026-10-19)
+    ...Object.values(MARKET_POST_MESSAGES),
     ERROR_MESSAGES.unknownField,
     ERROR_MESSAGES.bodyNotExpectedForm,
   ];
