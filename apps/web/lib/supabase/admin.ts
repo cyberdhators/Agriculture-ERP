@@ -165,6 +165,50 @@ export async function setAuthPassword(authUserId: string, password: string): Pro
 }
 
 /**
+ * STAFF PERMISSIONS LANE (2026-10-19). Ends EVERY session of one account --
+ * every device, every refresh token -- without banning it. A Super Admin
+ * action, audited by the caller with its outcome.
+ *
+ * WHY THREE CALLS. supabase-js's admin API has no "sign out user by id": its
+ * `admin.signOut` takes one of the user's own access tokens, and with scope
+ * `global` ends all of that user's sessions (DOCUMENTED). The server holds no
+ * token of the user's, so it mints one: an admin-generated magic link (nothing
+ * is sent -- `generateLink` returns the token instead of mailing it,
+ * DOCUMENTED), redeemed at once with `verifyOtp`, then `signOut(token,
+ * 'global')`, which ends the minted session together with every other.
+ *
+ * NOT EXERCISED against a live project by the session that wrote it -- there
+ * is only production. INFERRED from the documented behaviour of each call.
+ * Side effect: the account's `last_sign_in_at` in Supabase moves to now.
+ * Throws on any failure, so the caller records `staff.sessions_revoke_failed`.
+ */
+export async function revokeAllSessions(authUserId: string): Promise<void> {
+  const admin = adminClient();
+  const { data: found, error: findError } = await admin.auth.admin.getUserById(authUserId);
+  if (findError || !found.user?.email) {
+    throw new Error('Could not revoke sessions: the account could not be read.');
+  }
+  const { data: link, error: linkError } = await admin.auth.admin.generateLink({
+    type: 'magiclink',
+    email: found.user.email,
+  });
+  const tokenHash = link?.properties?.hashed_token;
+  if (linkError || !tokenHash) {
+    throw new Error('Could not revoke sessions: no one-time token was issued.');
+  }
+  const { data: minted, error: verifyError } = await admin.auth.verifyOtp({
+    type: 'magiclink',
+    token_hash: tokenHash,
+  });
+  const accessToken = minted?.session?.access_token;
+  if (verifyError || !accessToken || minted.user?.id !== authUserId) {
+    throw new Error('Could not revoke sessions: the one-time token was not accepted.');
+  }
+  const { error: signOutError } = await admin.auth.admin.signOut(accessToken, 'global');
+  if (signOutError) throw new Error('Could not revoke sessions: sign-out was refused.');
+}
+
+/**
  * Authentication accounts with no application row — the residue of a creation
  * that failed after the account was made and could not be undone.
  *

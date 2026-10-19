@@ -323,6 +323,16 @@ character.
 | `request_answered_by_farmer`       | Only the farmer can accept or decline a purchase request.                                                                     |
 | `request_items_refused`            | Some products cannot be requested as they are. See the reason beside each one.                                                |
 | `farmer_not_verified`              | Your listings go live once your farmer account is verified. You can save drafts until then.                                   |
+| `preset_already_held`              | That staff member already holds this preset. Revoke it first to change its scope.                                             |
+| `grant_not_active`                 | That permission has already been revoked.                                                                                     |
+| `cannot_change_own_permissions`    | You cannot change your own permissions.                                                                                       |
+| `super_admin_through_delegation`   | Super Admin is granted and revoked through Super Admin delegation, which asks for your password.                              |
+| `super_admin_requires_admin`       | Super Admin can only be given to an administrator account.                                                                    |
+| `already_super_admin`              | That account is already a Super Admin.                                                                                        |
+| `last_super_admin`                 | This is the only active Super Admin. Appoint another Super Admin before revoking or removing this one.                        |
+| `reauth_failed`                    | That password was not accepted. Nothing was changed.                                                                          |
+| `reauth_code_required`             | Enter the six-digit code from your authenticator app to confirm.                                                              |
+| `reauth_code_invalid`              | That authenticator code was not accepted. Nothing was changed.                                                                |
 
 **A route names a rule; it never writes a sentence.** `conflict()` and
 `unprocessable()` take a key from this registry, not a string. That is how the
@@ -422,6 +432,12 @@ change.
 | `purchase_order.status_changed`           |
 | `purchase_order.cancelled`                |
 | `communication.sms_sent`                  |
+| `staff.permission_granted`                |
+| `staff.permission_revoked`                |
+| `superadmin.granted`                      |
+| `superadmin.revoked`                      |
+| `staff.sessions_revoked`                  |
+| `staff.sessions_revoke_failed`            |
 
 `before` and `after` hold **changed fields only**, never whole rows, and never a
 password, token, authentication identifier, national id, phone, email, given

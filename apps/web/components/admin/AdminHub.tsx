@@ -81,6 +81,18 @@ const CARDS = [
     title: 'Audit trail',
     body: 'Who created, changed or deactivated what, across the whole system. Append-only.',
   },
+  {
+    href: '/admin/staff-access',
+    glyph: 'verify' as const,
+    title: 'Staff permissions',
+    body: 'Give staff presets such as Analyst or Support, by state or nationally; appoint Super Admins.',
+  },
+  {
+    href: '/admin/access-logs',
+    glyph: 'audit' as const,
+    title: 'Access logs',
+    body: 'When each account was created, signed in or came back to an open session. Append-only.',
+  },
 ];
 
 /*

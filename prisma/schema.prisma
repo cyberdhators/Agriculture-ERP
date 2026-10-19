@@ -1483,3 +1483,65 @@ model AssistantUsage {
   @@id([farmerId, day], map: "assistant_usage_pkey")
   @@map("assistant_usage")
 }
+
+// STAFF PERMISSIONS LANE (2026-10-19). Migration 20261019110000. Read and
+// written with raw SQL like every table here. The foreign keys to `user` and
+// `state` are in the migration and deliberately not restated as relations, so
+// the User and State models stay untouched (scripts/schema-check.mjs lists
+// them). Partial indexes (one active grant per preset) live in the migration.
+
+/// One preset given to one staff account. Revocation is the soft delete.
+model StaffPermissionGrant {
+  id           String    @id(map: "staff_permission_grant_pkey") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId       String    @map("user_id") @db.Uuid
+  preset       String
+  scopeKind    String    @map("scope_kind")
+  reason       String
+  grantedBy    String    @map("granted_by") @db.Uuid
+  grantedAt    DateTime  @default(now()) @map("granted_at") @db.Timestamptz(6)
+  revokedAt    DateTime? @map("revoked_at") @db.Timestamptz(6)
+  revokedBy    String?   @map("revoked_by") @db.Uuid
+  revokeReason String?   @map("revoke_reason")
+
+  states StaffPermissionGrantState[]
+
+  @@map("staff_permission_grant")
+}
+
+/// The states a `states`-scoped grant covers. Written once with the grant.
+model StaffPermissionGrantState {
+  grantId String @map("grant_id") @db.Uuid
+  stateId String @map("state_id")
+
+  grant StaffPermissionGrant @relation(fields: [grantId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "staff_permission_grant_state_grant_id_fkey")
+
+  @@id([grantId, stateId], map: "staff_permission_grant_state_pkey")
+  @@map("staff_permission_grant_state")
+}
+
+/// Append-only access events per account. No IP address, no user agent.
+model AccessLog {
+  id            String   @id(map: "access_log_pkey") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  principalKind String   @map("principal_kind")
+  principalId   String   @map("principal_id") @db.Uuid
+  event         String
+  occurredAt    DateTime @default(now()) @map("occurred_at") @db.Timestamptz(6)
+  deviceLabel   String?  @map("device_label")
+
+  @@index([occurredAt(sort: Desc), id(sort: Desc)], map: "access_log_occurred_idx")
+  @@index([principalKind, principalId, occurredAt(sort: Desc)], map: "access_log_principal_idx")
+  @@index([event, occurredAt(sort: Desc)], map: "access_log_event_idx")
+  @@map("access_log")
+}
+
+/// One row per account: first and last sign-in, last activity.
+model AccountActivity {
+  principalKind String    @map("principal_kind")
+  principalId   String    @map("principal_id") @db.Uuid
+  firstSignInAt DateTime? @map("first_sign_in_at") @db.Timestamptz(6)
+  lastSignInAt  DateTime? @map("last_sign_in_at") @db.Timestamptz(6)
+  lastSeenAt    DateTime  @default(now()) @map("last_seen_at") @db.Timestamptz(6)
+
+  @@id([principalKind, principalId], map: "account_activity_pkey")
+  @@map("account_activity")
+}

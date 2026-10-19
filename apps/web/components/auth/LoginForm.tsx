@@ -1,5 +1,6 @@
 'use client';
 
+import { SIGN_IN_ANNOUNCE_HEADER } from '@agri-erp/shared';
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 
@@ -61,7 +62,9 @@ export function LoginForm({
       // goes to the buyer side, staff to where they were going. If the answer
       // does not come, staff routing is the default and the portal's own
       // check sends a buyer on (lib/preview.tsx).
-      const role = await fetch('/api/me')
+      // The one header: tells the access log this visit IS a sign-in (staff
+      // permissions lane, 2026-10-19). It changes nothing about the answer.
+      const role = await fetch('/api/me', { headers: { [SIGN_IN_ANNOUNCE_HEADER]: '1' } })
         .then(async (res) => ((await res.json()) as { data?: { role?: string } }).data?.role)
         .catch(() => undefined);
       router.replace(homeFor(role, next));

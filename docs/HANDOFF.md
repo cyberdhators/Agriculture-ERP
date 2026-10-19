@@ -2585,3 +2585,32 @@ local test suite has 3 failures on Windows only (path separators in
 to pass on CI's Linux runner, not checked.
 
 — Alieu-Claude
+
+### 2026-10-19 — Alieu-Claude (staff permissions lane) → both — staff permissions, Super Admin, access logs
+
+**Done.** On `feat/staff-permissions` (pushed, no PR): permission presets and
+grants per staff account (platform or states), `requirePermission` in
+`apps/web/lib/api/permissions.ts`, Super Admin delegation with server-side
+re-authentication and a bootstrap, last-Super-Admin protection, "sign out
+everywhere", and per-account access logs with an admin search page. New routes
+under `/api/admin/staff-access/**` and `/api/admin/access-logs`; screens
+`/admin/staff-access` and `/admin/access-logs`. Full record in DECISIONS.md,
+same date.
+
+**Shared files touched (minimal).** `prisma/schema.prisma` (four models
+appended); `packages/shared/src/index.ts` (one export appended);
+`packages/shared/src/audit.ts` (six keys); `docs/api/CONVENTIONS.md` §5.2.1 and
+§5.2.2 rows; `apps/web/lib/api/errors.ts` (ten rule keys);
+`apps/web/lib/supabase/admin.ts` (`revokeAllSessions`);
+`scripts/schema-check.mjs` (four FK names). Hooks into existing code: one
+best-effort `recordVisit` call in GET /api/me and GET /api/farmer/me; the
+last-Super-Admin guard in DELETE/PATCH /api/users/[id]; one header on the
+sign-in screen's /api/me call; nav, hub card and audit label entries.
+
+**Needs from you.** Apply 20261019110000 then 20261019110100 when integrating
+(the CHECK rebuild must stay the LAST CHECK migration and carry every other
+lane's keys -- the audit-check test names any dropped). Nothing was applied
+and no database was touched.
+
+**Decided.** See DECISIONS.md: the legacy-admin rule, Super Admin only for
+`admin` accounts, MFA verification only (no enrolment), retention open.

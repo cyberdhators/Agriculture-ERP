@@ -106,6 +106,17 @@ export const AUDIT_ACTIONS = [
   // send route reads that CHECK before sending, so the code is safe to deploy
   // ahead of the migration: it refuses SMS until the key is accepted.
   'communication.sms_sent',
+  // STAFF PERMISSIONS LANE (2026-10-19): permission presets, Super Admin
+  // delegation and session revocation. The CHECK in migration 20261019110100
+  // is generated from this list. Revoking sessions is an HTTP call to Supabase
+  // with no transaction, so it records its OUTCOME, success or failure, as
+  // auth.disabled / auth.disable_failed do.
+  'staff.permission_granted',
+  'staff.permission_revoked',
+  'superadmin.granted',
+  'superadmin.revoked',
+  'staff.sessions_revoked',
+  'staff.sessions_revoke_failed',
 ] as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];

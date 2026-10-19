@@ -375,3 +375,7 @@ export * from './farmer-account';
 // 2026-10-17: the farmer's assistant (Claude Haiku 5.5) in place of the
 // learning library on the farmer's dashboard. Appended, never reordered.
 export * from './assistant';
+
+// STAFF PERMISSIONS LANE (2026-10-19): staff permission presets, Super Admin
+// delegation and access logs. Appended, never reordered.
+export * from './staff-permissions';
