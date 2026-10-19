@@ -1519,6 +1519,7 @@ model AccountProfile {
   updatedAt   DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
 
   @@map("account_profile")
+}
 
 // LISTINGS LANE (2026-10-19) -- buying requests, service listings and their
 // reports. Migration 20261019101000. Read and written with raw SQL like every

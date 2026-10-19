@@ -231,8 +231,8 @@ export function BuyerMarketplace() {
           title={filtered ? 'Nothing matches these filters' : 'Nothing is listed right now'}
           body={
             filtered
-              ? 'Widen or clear the filters to see more of what farmers have listed.'
-              : 'Farmers list their produce here as it becomes available. Check back soon.'
+              ? 'Widen or clear the filters to see more of what sellers have listed.'
+              : 'Sellers list their produce and inputs here as they become available. Check back soon.'
           }
         />
       ) : (

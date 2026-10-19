@@ -105,7 +105,7 @@ export function BuyerProductDetail({ id }: { id: string }) {
         <Card>
           <CardHeader
             title="Buy from this farmer"
-            subtitle="Add it to your cart. You can add products from other farmers and send them all together."
+            subtitle="Add it to your cart. You can add products from other sellers and send them all together."
           />
           <CardBody>
             <AddToCart listing={listing} />

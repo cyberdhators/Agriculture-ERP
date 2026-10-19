@@ -409,7 +409,8 @@ export const ar: Partial<Record<TKey, string>> = {
   'error.contactPhone': 'أدخل رقم هاتف محمول في جنوب السودان.',
 
   'market.title': 'السوق',
-  'market.lead': 'منتجات معروضة من مزارعين مُتحقق منهم: السعر والكمية والبايام ومن تتصل به.',
+  'market.lead':
+    'منتجات ومدخلات معروضة على أجري ون: السعر والكمية والبايام ومن تتصل به. شارة "موثَّق" تميّز البائعين الذين تحققت منهم كوروادو.',
   'market.filters': 'التصفية',
   'market.category': 'الفئة',
   'market.allCategories': 'جميع الفئات',
@@ -455,9 +456,9 @@ export const ar: Partial<Record<TKey, string>> = {
   'market.featured': 'جديد هذا الأسبوع',
   'market.withdraw': 'سحب الإعلان',
   'market.withdrawTitle': 'سحب هذا الإعلان',
-  'market.withdrawBody': 'يُزال الإعلان من السوق ويرى المزارع سببك عليه.',
+  'market.withdrawBody': 'يُزال الإعلان من السوق ويرى البائع سببك عليه.',
   'market.withdrawReason': 'السبب',
-  'market.withdrawReasonError': 'اذكر سببًا: يُسجَّل ويُعرض على المزارع.',
+  'market.withdrawReasonError': 'اذكر سببًا: يُسجَّل ويُعرض على البائع.',
   'market.withdrawn': 'تم سحبه من السوق.',
   'market.withdrawnBy': 'سحبه الموظفون',
   'market.sortQuantity': 'الكمية، الأكثر أولاً',
@@ -480,7 +481,8 @@ export const ar: Partial<Record<TKey, string>> = {
   'market.moreFromSeller': 'المزيد من هذا البائع',
   'market.similar': 'مشابه في',
   'market.listingNo': 'إعلان رقم',
-  'market.trust': 'بائعون مُتحقق منهم · صور في كل إعلان · تواصل بالاتصال أو الرسائل',
+  'market.trust':
+    'شارات توثيق للبائعين المُتحقق منهم · صور في كل إعلان · تواصل بالاتصال أو الرسائل',
 
   'nav.myFarm': 'مزرعتي',
   'nav.market': 'السوق',

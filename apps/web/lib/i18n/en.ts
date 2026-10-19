@@ -435,7 +435,7 @@ export const en = {
   // Marketplace
   'market.title': 'Marketplace',
   'market.lead':
-    'Produce offered by verified farmers: the price, the quantity, the payam and who to call.',
+    'Produce and inputs offered on AgriOne: the price, the quantity, the payam and who to call. A Verified badge marks sellers CORWADO has checked.',
   'market.filters': 'Filters',
   'market.category': 'Category',
   'market.allCategories': 'All categories',
@@ -473,9 +473,9 @@ export const en = {
   'market.withdraw': 'Withdraw listing',
   'market.withdrawTitle': 'Withdraw this listing',
   'market.withdrawBody':
-    'The listing leaves the marketplace and the farmer sees your reason on it.',
+    'The listing leaves the marketplace and the seller sees your reason on it.',
   'market.withdrawReason': 'Reason',
-  'market.withdrawReasonError': 'Give a reason: it is recorded and shown to the farmer.',
+  'market.withdrawReasonError': 'Give a reason: it is recorded and shown to the seller.',
   'market.withdrawn': 'Withdrawn from the marketplace.',
   'market.withdrawnBy': 'Withdrawn by staff',
   'market.search': 'Search produce, livestock, inputs…',
@@ -488,7 +488,8 @@ export const en = {
   'market.priceRange': 'Price range',
   'market.deliveryAvailable': 'Delivery available',
   'market.featured': 'Fresh this week',
-  'market.trust': 'Verified sellers · Photos on every listing · Contact by call or SMS',
+  'market.trust':
+    'Verified badges on checked sellers · Photos on every listing · Contact by call or SMS',
   'market.emptyFiltered': 'No listings match; clear a filter or try another payam.',
   'market.page': 'Page',
   'market.of': 'of',
@@ -500,7 +501,7 @@ export const en = {
   'market.moderate': 'Moderate',
   'market.moderateListing': 'Moderate listing',
   'market.moderateNote':
-    'Withdraw this listing from the marketplace. The farmer sees your reason on it.',
+    'Withdraw this listing from the marketplace. The seller sees your reason on it.',
   'market.breadcrumb': 'Marketplace',
   'market.memberSince': 'Member since',
   'market.viewSellerListings': "View seller's listings",
