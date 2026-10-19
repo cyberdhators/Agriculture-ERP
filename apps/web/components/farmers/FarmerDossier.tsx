@@ -73,6 +73,7 @@ import {
   SyncChip,
   Textarea,
 } from '../ui';
+import { AccountSanction } from '../admin/AccountSanction';
 import { IconPrint } from '../ui/icons';
 import screens from '../screens.module.css';
 import styles from './farmers.module.css';
@@ -518,6 +519,10 @@ export function FarmerDossier({ id }: { id: string }) {
                 </p>
               ) : null}
             </Card>
+          ) : null}
+          {/* 2026-10-21: suspend or restore the farmer's account; the box hides itself without "Moderate content and listings". */}
+          {live && isAdmin && !removed && status !== 'merged' ? (
+            <AccountSanction kind="farmer" id={farmer.id} />
           ) : null}
 
           {showActions ? (

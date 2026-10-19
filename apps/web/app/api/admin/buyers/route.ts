@@ -23,6 +23,9 @@ import { adminAuthEmails } from '../../../../lib/supabase/admin';
  * Oldest first within a status, so the organisation that has waited longest
  * is reviewed first. An administrator sees the applicant's contact details,
  * because verifying an organisation means contacting it; nobody else does.
+ *
+ * 2026-10-21: the contact carries its buyer id and whether that account is
+ * suspended, for the Suspend/Restore button on the row.
  */
 interface OrgRow {
   id: string;
@@ -43,6 +46,8 @@ interface OrgRow {
   contact_name: string | null;
   contact_phone: string | null;
   contact_auth_user_id: string | null;
+  contact_buyer_id: string | null;
+  contact_suspended: boolean | null;
   open_requests: number;
 }
 
@@ -90,13 +95,14 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
                 o.description, o.verification_status::text AS verification_status,
                 o.verification_note, o.verified_at, o.created_at,
                 c.given_name || ' ' || c.family_name AS contact_name, c.phone AS contact_phone,
-                c.auth_user_id AS contact_auth_user_id,
+                c.auth_user_id AS contact_auth_user_id, c.id AS contact_buyer_id,
+                c.suspended_at IS NOT NULL AS contact_suspended,
                 (SELECT count(*)::int FROM public.purchase_request r
                   WHERE r.organization_id = o.id AND r.deleted_at IS NULL
                     AND r.status IN ('submitted','under_review')) AS open_requests
            FROM public.buyer_organization o
            LEFT JOIN LATERAL (
-             SELECT b.given_name, b.family_name, b.phone, b.auth_user_id
+             SELECT b.id, b.given_name, b.family_name, b.phone, b.auth_user_id, b.suspended_at
                FROM public.buyer_active b WHERE b.organization_id = o.id
               ORDER BY b.created_at ASC LIMIT 1
            ) c ON true
@@ -132,6 +138,8 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
             name: r.contact_name,
             phone: r.contact_phone,
             email: r.contact_auth_user_id ? (emails.get(r.contact_auth_user_id) ?? null) : null,
+            buyer_id: r.contact_buyer_id,
+            suspended: r.contact_suspended === true,
           },
           open_requests: r.open_requests,
         })),
