@@ -3988,3 +3988,25 @@ The owner, 2026-10-19: "Only if the seller chooses". The second half of
 Migration `20261020120000_post_show_phone` (additive): a `show_phone` column on
 `produce_listing`, `buying_request` and `service_listing`; the three `_active`
 views recreated so they carry it.
+
+## Public profiles, reached through a post (2026-10-20)
+
+CORWADO's 16 October specification asks for public profiles. The owner,
+2026-10-20: a profile shows the name, place, badge and posts.
+
+- **The address is a post, not an account:** `/market/profile/<kind>/<post
+id>`, from "See profile" beside the poster's name on a listing, a buying
+  request or a service. No farmer, buyer or sign-in id is printed or accepted,
+  and a post that is not on the market leads nowhere (404), so a draft or a
+  removed account cannot be found through one. No migration: nothing new is
+  stored.
+- **What it shows, a whitelist** (`GET /api/profiles/:kind/:id`, public,
+  read-only): the post's market name; payam and state for a farmer, the
+  organisation's state for a buyer; the Verified badge; the month they joined;
+  "who you are, what you do" if answered; their listings, buying requests and
+  services on the market now, through the same public presenters the market
+  uses. Never a phone or a legal name. One account that buys and sells shows
+  both sides' posts.
+- **Name:** the name on the post that led there. A farmer may trade under
+  different names on different listings; the profile does not merge or
+  reveal them beyond the posts themselves, which are public anyway.

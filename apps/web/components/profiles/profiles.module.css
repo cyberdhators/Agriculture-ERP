@@ -1,0 +1,100 @@
+/* A poster's public profile (2026-10-20). Phone first, one column. */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 760px;
+  min-width: 0;
+}
+
+.head {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.head h1 {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.eyebrow {
+  color: var(--muted);
+  font-size: var(--text-small);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.facts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  color: var(--muted);
+  font-size: var(--text-small);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chips li {
+  padding: 3px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--card);
+  font-size: var(--text-small);
+}
+
+.section h2 {
+  margin: 0 0 8px;
+  font-size: 1.1rem;
+}
+
+.posts {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.post {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--card);
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.post:hover {
+  border-color: var(--line-strong);
+}
+
+.postTitle {
+  font-weight: 600;
+}
+
+.postLine {
+  color: var(--muted);
+  font-size: var(--text-small);
+}
+
+.profileLink {
+  color: var(--green);
+  font-size: var(--text-small);
+  font-weight: 600;
+  text-decoration: none;
+}
