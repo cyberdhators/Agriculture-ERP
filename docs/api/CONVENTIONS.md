@@ -344,6 +344,8 @@ character.
 | `conversation_limit_reached`       | You have started 20 new conversations today. You can start more tomorrow.                                                     |
 | `conversation_blocked`             | This conversation has been closed. No more messages can be sent in it.                                                        |
 | `message_already_exists`           | A message with that identifier has already been sent with different text. Send it again as a new message.                     |
+| `account_already_suspended`        | This account is already suspended.                                                                                            |
+| `account_not_suspended`            | This account is not suspended. There is nothing to restore.                                                                   |
 
 **A route names a rule; it never writes a sentence.** `conflict()` and
 `unprocessable()` take a key from this registry, not a string. That is how the
@@ -454,6 +456,8 @@ change.
 | `message.sent`                            |
 | `conversation.blocked`                    |
 | `buyer.soft_deleted`                      |
+| `account.suspended`                       |
+| `account.restored`                        |
 
 `before` and `after` hold **changed fields only**, never whole rows, and never a
 password, token, authentication identifier, national id, phone, email, given

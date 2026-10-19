@@ -360,6 +360,9 @@ model User {
   @@index([role], map: "user_role_idx")
   @@index([scopeStateId], map: "user_scope_state_id_idx")
   @@map("user")
+  /// 2026-10-21: accounts this staff member suspended.
+  farmersSuspended Farmer[] @relation("FarmerSuspendedBy")
+  buyersSuspended  Buyer[]  @relation("BuyerSuspendedBy")
 }
 
 enum UserRole {
@@ -529,6 +532,11 @@ model Farmer {
   createdAt          DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt          DateTime           @default(now()) @map("updated_at") @db.Timestamptz(6)
   deletedAt          DateTime?          @map("deleted_at") @db.Timestamptz(6)
+  /// 2026-10-21: suspended by staff (migration 20261021090000).
+  suspendedAt     DateTime? @map("suspended_at") @db.Timestamptz(6)
+  suspendedReason String?   @map("suspended_reason")
+  suspendedBy     String?   @map("suspended_by") @db.Uuid
+  suspender       User?     @relation("FarmerSuspendedBy", fields: [suspendedBy], references: [id], map: "farmer_suspended_by_fkey")
   deletedBy          String?            @map("deleted_by") @db.Uuid
 
   payam        Payam    @relation(fields: [payamId, stateId], references: [id, stateId], map: "farmer_payam_state_consistent_fkey")
@@ -1317,6 +1325,11 @@ model Buyer {
   createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt      DateTime  @default(now()) @map("updated_at") @db.Timestamptz(6)
   deletedAt      DateTime? @map("deleted_at") @db.Timestamptz(6)
+  /// 2026-10-21: suspended by staff (migration 20261021090000).
+  suspendedAt     DateTime? @map("suspended_at") @db.Timestamptz(6)
+  suspendedReason String?   @map("suspended_reason")
+  suspendedBy     String?   @map("suspended_by") @db.Uuid
+  suspender       User?     @relation("BuyerSuspendedBy", fields: [suspendedBy], references: [id], map: "buyer_suspended_by_fkey")
   deletedBy      String?   @map("deleted_by") @db.Uuid
 
   organization     BuyerOrganization @relation(fields: [organizationId], references: [id], map: "buyer_organization_id_fkey")

@@ -389,3 +389,5 @@ export * from './market-posts';
 export * from './staff-permissions';
 // 2026-10-20: in-app messaging about a post.
 export * from './messaging';
+// 2026-10-21: staff suspend and restore an account.
+export * from './moderation';

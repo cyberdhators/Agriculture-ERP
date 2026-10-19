@@ -185,7 +185,7 @@ export async function requireRole(
             o.verification_status::text AS verification_status
        FROM public.buyer_active b
        JOIN public.buyer_organization_active o ON o.id = b.organization_id
-      WHERE b.auth_user_id = $1::uuid LIMIT 1`,
+      WHERE b.auth_user_id = $1::uuid AND b.suspended_at IS NULL LIMIT 1`,
     authUserId,
   );
 
@@ -193,11 +193,13 @@ export async function requireRole(
   // farmer_active, so a removed farmer is refused on their next request. A
   // merged farmer keeps a row but has been folded into another record, so they
   // are refused too: the survivor is the record that signs in.
+  // 2026-10-21: and a record staff have suspended is refused on its next
+  // request, whatever its session (the sign-in is banned as well).
   const [farmer] = await prisma.$queryRawUnsafe<
     { id: string; given_name: string; family_name: string }[]
   >(
     `SELECT id, given_name, family_name FROM public.farmer_active
-      WHERE auth_user_id = $1::uuid AND merged_into IS NULL LIMIT 1`,
+      WHERE auth_user_id = $1::uuid AND merged_into IS NULL AND suspended_at IS NULL LIMIT 1`,
     authUserId,
   );
 

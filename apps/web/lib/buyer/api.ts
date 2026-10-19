@@ -271,7 +271,14 @@ export interface AdminBuyerOrganization {
   verification_note: string | null;
   verified_at: string | null;
   created_at: string;
-  contact: { name: string | null; phone: string | null; email: string | null };
+  contact: {
+    name: string | null;
+    phone: string | null;
+    email: string | null;
+    /** 2026-10-21: the first contact's buyer record, and whether its account is suspended. */
+    buyer_id: string | null;
+    suspended: boolean;
+  };
   open_requests: number;
 }
 

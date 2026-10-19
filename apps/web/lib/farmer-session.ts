@@ -53,7 +53,7 @@ function writeCookie(name: string, value: string): void {
 export type FarmerRegistration = Record<string, unknown> & { phone: string; password: string };
 
 /** Why a sign-in or a password/phone change did not go through. */
-export type AuthFailure = 'wrong' | 'locked' | 'unavailable';
+export type AuthFailure = 'wrong' | 'locked' | 'suspended' | 'unavailable';
 
 /** The farmer as GET /api/farmer/me returns them, in the shape the screens read. */
 type MeResponse = Farmer & {
@@ -272,6 +272,8 @@ export function FarmerSessionProvider({
         });
         if (error) {
           if (error.status === 429) return { ok: false, reason: 'locked' };
+          // 2026-10-21: staff suspended the account, or it was deleted.
+          if (error.code === 'user_banned') return { ok: false, reason: 'suspended' };
           const refused = error.status !== undefined && [400, 401, 403, 404].includes(error.status);
           return { ok: false, reason: refused ? 'wrong' : 'unavailable' };
         }

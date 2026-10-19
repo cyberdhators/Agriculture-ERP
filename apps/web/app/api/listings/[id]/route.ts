@@ -159,6 +159,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
         `SELECT ${BROWSE_COLUMNS}
          FROM public.produce_listing pl
          JOIN public.farmer f ON f.id = pl.farmer_id AND f.deleted_at IS NULL
+           AND f.suspended_at IS NULL
          JOIN public.payam pm ON pm.id = f.payam_id
          WHERE pl.id = $1::uuid AND pl.deleted_at IS NULL
            AND pl.status = 'listed'

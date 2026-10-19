@@ -125,6 +125,9 @@ export const AUDIT_ACTIONS = [
   'conversation.blocked',
   // 2026-10-20: an account deletes itself; the buyer record is soft-deleted.
   'buyer.soft_deleted',
+  // 2026-10-21: staff suspend and restore a farmer or buyer account.
+  'account.suspended',
+  'account.restored',
 ] as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];

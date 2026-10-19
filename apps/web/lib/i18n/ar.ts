@@ -699,4 +699,6 @@ export const ar: Partial<Record<TKey, string>> = {
   'listingForm.showPhone': 'أعطِ رقم هاتفي للمشترين الذين يرسلون طلباً',
   'listingForm.showPhoneHint': 'اتركه مغلقاً ليتواصل معك المشترون بالرسائل داخل التطبيق.',
   'posts.phonePrivate': 'يفضّل هذا الشخص الرسائل. استخدم زر المراسلة.',
+  // 2026-10-21: a suspended (or deleted) account trying to sign in.
+  'login.suspended': 'هذا الحساب موقوف أو مغلق. تواصل مع كوروادو للمساعدة.',
 };
