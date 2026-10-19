@@ -43,7 +43,20 @@ const source = (file: string) => readFileSync(file, 'utf8');
 const admitsBuyer = (file: string) => /BUYER_ROLE|'buyer'\s*\]/.test(source(file));
 
 /** Outside app/api/buyer: the two reference reads a signed-in buyer needs. */
-const BUYER_OUTSIDE_ITS_TREE = ['locations', 'me'];
+const BUYER_OUTSIDE_ITS_TREE = [
+  'locations',
+  'me',
+  // LISTINGS LANE (2026-10-19): a buyer posts and manages public buying
+  // requests (as a farmer can), and reads the phone a poster published for
+  // contact on a buying request or a service. Each scopes to the session's
+  // own account (marketPoster) or to what is on the public market; none
+  // returns a farmer's legal name, id or record.
+  'buying-requests',
+  'buying-requests/[id]',
+  'buying-requests/[id]/contact',
+  'buying-requests/mine',
+  'services/[id]/contact',
+];
 
 describe('buyer routes are counted, not trusted', () => {
   it('finds the buyer routes at all, so this cannot pass by checking nothing', () => {

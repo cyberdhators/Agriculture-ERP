@@ -136,7 +136,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
           }[]
         >(
           `SELECT pl.farmer_id, pl.category::text AS category, pl.product_name,
-                  pl.quantity::text AS quantity, pl.unit::text AS unit
+                  (pl.quantity - pl.quantity_sold)::text AS quantity, pl.unit::text AS unit
              FROM public.produce_listing pl
              JOIN public.farmer_active f ON f.id = pl.farmer_id
             WHERE ${MARKET_BASE_WHERE} AND pl.deleted_at IS NULL AND pl.id = $1::uuid

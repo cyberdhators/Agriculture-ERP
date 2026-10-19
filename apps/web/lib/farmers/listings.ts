@@ -15,16 +15,17 @@ import {
  * Everything the farmer flow and the marketplace share about a product
  * listing: how a status reads, how a price is written ("SSP 35,000 / 100 kg
  * bag"), which photo is the cover, and the one client-side validation that
- * mirrors B12 point 5 field-for-field. The one rule enforced here: a listing
- * can only be `listed` when the farmer is verified. Draft is always allowed; a
- * pending farmer sees the exact reason. Colour backs the word; the word
- * carries the meaning.
+ * mirrors B12 point 5 field-for-field. Since 2026-10-19 (LISTINGS LANE) no
+ * verification is needed to publish; verification is a badge. Colour backs the
+ * word; the word carries the meaning.
  */
 
 const STATUS_STAMP: Record<ListingStatus, StampKind> = {
   draft: 'neutral',
   listed: 'verified',
+  paused: 'pending',
   withdrawn: 'merged',
+  completed: 'info',
   sold: 'info',
 };
 
@@ -35,8 +36,11 @@ export function listingStamp(status: ListingStatus): StampKind {
 export const STATUS_KEY: Record<ListingStatus, TKey> = {
   draft: 'status.draft',
   listed: 'status.listed',
+  paused: 'status.paused',
   withdrawn: 'status.withdrawn',
-  sold: 'status.sold',
+  completed: 'status.completed',
+  // The legacy word reads as completed (LISTINGS LANE, 2026-10-19).
+  sold: 'status.completed',
 };
 
 export const CATEGORY_KEY: Record<ListingCategory, TKey> = {
@@ -95,18 +99,27 @@ export const UNIT_LABELS: Record<ListingUnit, string> = {
 export const STATUS_LABELS: Record<ListingStatus, string> = {
   draft: 'Draft',
   listed: 'Listed',
+  paused: 'Paused',
   withdrawn: 'Withdrawn',
-  sold: 'Sold',
+  completed: 'Completed',
+  sold: 'Completed',
 };
 
 /**
- * Who may publish (move a listing to `listed`): a VERIFIED farmer only. The
- * owner, 2026-10-07: "farmers need to be approved and verified before they can
- * post anything". Until then a farmer may save drafts; the server enforces the
- * same rule (farmer_not_verified) and the marketplace shows nothing else.
+ * LISTINGS LANE (2026-10-19): the owner dropped #127. A farmer no longer needs
+ * staff verification to publish; the B14 rule ("listed only when verified",
+ * 2026-10-07) is replaced by a "Verified farmer" badge on the market, shown
+ * and never filtered on. See docs/DECISIONS.md.
  */
-export function canPublishListings(farmer: Pick<Farmer, 'verification_status'>): boolean {
+export function isVerifiedFarmer(farmer: Pick<Farmer, 'verification_status'>): boolean {
   return farmer.verification_status === 'verified';
+}
+
+/** What is left of a listing: the quantity less what has been sold. */
+export function remainingQuantity(
+  listing: Pick<ProduceListing, 'quantity' | 'quantity_sold'>,
+): number {
+  return Math.max(0, Math.round((listing.quantity - (listing.quantity_sold ?? 0)) * 100) / 100);
 }
 
 export function formatSsp(amount: number): string {

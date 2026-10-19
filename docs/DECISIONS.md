@@ -3751,3 +3751,68 @@ did not sign for it; the owner may want to tell them.
   scene, noticed it was a display rather than a field, claimed no problem it
   could not see, asked for a closer daylight photo, and referred to the
   extension officer, in English and Arabic. About 1,400 input tokens a photo.
+
+## Listings: no verification gate, one lifecycle, buying requests and services (2026-10-19) — replaces "Farmers are verified before anything they post goes live" (2026-10-07)
+
+The owner, from CORWADO's specification of 16 October 2026. Branch
+`feat/listings-lifecycle`.
+
+1. **#127 dropped.** A farmer's listing goes live without staff verification.
+   The `farmer_not_verified` gate is gone from `POST`/`PATCH
+/api/farmer/listings`, and no market read filters on
+   `f.verification_status = 'verified'` any more (public list and detail, the
+   buyer marketplace, cart, purchase requests, admin orders, summary — all via
+   `MARKET_BASE_WHERE`). Verification is a **"Verified farmer" badge**:
+   `farmer_verified` on `/api/listings`, `supplier.verified` for buyers,
+   `farmer_verified` on services, `poster_verified` on buying requests. Shown
+   only, never filtered on: the market's "verified sellers only" box and the
+   buyer's "Verified farmers only" select are removed (`supplier=verified` is
+   still accepted so an old link does not break, and narrows nothing). The
+   `farmer_not_verified` rule sentence stays in the registry, unused.
+2. **One lifecycle** for produce, buying requests and services: draft, active,
+   paused, expired, withdrawn, completed. An edit is an event, not a status.
+   - Produce keeps its stored words: `listed` is active, the legacy `sold`
+     reads as completed and is written as `completed` from now on.
+     `listing_status` gains `paused` and `completed` (ADD VALUE, nothing
+     renamed). Buying requests and services store the canonical words.
+   - **Expired is computed**, never stored: active with its end date
+     (`available_until`, or `needed_by`) before today. Renew = a new date.
+   - Moves (`canMove`, packages/shared/src/market-posts.ts): draft → active |
+     withdrawn; active → paused | withdrawn | completed; paused → active |
+     withdrawn | completed. **Withdrawn and completed are final** — a listing
+     staff took down can no longer be relisted by its owner. An unchanged
+     status is not a move, so the phone's full-listing saves keep working.
+   - Going live, or renewing, needs an end date from today. **No end date →
+     30 days** (from the later of the start date and today), on create and on
+     publish.
+   - **A sale** (`POST /api/farmer/listings/:id/sales`) adds to the new
+     `quantity_sold`; what is left is `quantity - quantity_sold` and is what the
+     market shows and what requests/orders are checked against. Nothing left,
+     or `close: true`, completes the listing. The total cannot be edited below
+     what is sold. A sale is not idempotent, so it is never queued offline.
+   - Staff withdrawal (`/api/listings/:id/withdraw`) now also takes a paused
+     listing.
+3. **Buying requests** (`buying_request`): "I need X of Y in Z by date", with
+   optional price/negotiable and delivery terms. Posted by any signed-in farmer
+   or buyer; `poster_type` + `farmer_id | buyer_id` come from the session
+   (`marketPoster`, the one place to change when accounts merge). Public list
+   with search and filters (q, category, state, poster); public detail. The
+   poster's phone is never public: `/contact` gives it to a signed-in farmer or
+   buyer. Not `purchase_request`, which is unchanged.
+4. **Service listings** (`service_listing`): tractor hire, transport,
+   processing, storage, other; description, general location, availability,
+   price or negotiable. Farmer-owned for now; same lifecycle, no stock.
+5. **Reports** on both, through the product-report mechanism: same body, same
+   digest-refuses-repeat (not a rate limiter), stored in a new `market_report`
+   table (product_report.listing_id is NOT NULL to produce_listing; widening it
+   would change a constraint). Administrator queue: `/api/admin/market-reports`
+   with the product-report state machine; "remove" is soft.
+6. **No new audit actions**: `listing.created|updated|status_changed` with
+   `entity_type` buying_request / service_listing, `product_report.*` with
+   `entity_type` market_report. So no CHECK rebuild, and nothing to collide
+   with another lane's.
+7. Farmers may now read `/api/locations` (to choose a request's state).
+
+Migrations 20261019100000 (lifecycle) and 20261019101000 (tables) are written,
+NOT applied. **Apply them before deploying this code**: the code reads
+`quantity_sold` and the new tables, and would fail without them.

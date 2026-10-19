@@ -1485,7 +1485,8 @@ export function caseloadCount(officerId: string): number {
  * storage paths captured elsewhere, first is the cover. EVERY ROW HERE IS
  * INVENTED.
  */
-export type ListingStatus = 'draft' | 'listed' | 'withdrawn' | 'sold';
+// LISTINGS LANE (2026-10-19): paused and completed added; `sold` reads as completed.
+export type ListingStatus = 'draft' | 'listed' | 'paused' | 'withdrawn' | 'completed' | 'sold';
 
 export const LISTING_CATEGORIES = [
   'crop',
@@ -1545,6 +1546,8 @@ export interface ProduceListing {
   contact_phone: string;
   delivery_available: boolean;
   status: ListingStatus;
+  /** LISTINGS LANE (2026-10-19): sold so far; what is left is quantity - quantity_sold. */
+  quantity_sold?: number;
   created_at: string;
   updated_at: string;
 }

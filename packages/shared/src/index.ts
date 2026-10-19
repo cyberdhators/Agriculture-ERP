@@ -375,3 +375,7 @@ export * from './farmer-account';
 // 2026-10-17: the farmer's assistant (Claude Haiku 5.5) in place of the
 // learning library on the farmer's dashboard. Appended, never reordered.
 export * from './assistant';
+
+// LISTINGS LANE (2026-10-19): the marketplace lifecycle, buying requests,
+// service listings and their reports. Appended, never reordered.
+export * from './market-posts';

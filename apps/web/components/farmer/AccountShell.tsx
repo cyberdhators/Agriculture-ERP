@@ -129,6 +129,42 @@ const NAV_GROUPS: readonly NavGroup[] = [
           </svg>
         ),
       },
+      // LISTINGS LANE (2026-10-19): buying requests and services.
+      {
+        href: '/farmer/account/buying-requests',
+        key: 'requests.mineTitle',
+        glyph: (
+          <svg
+            viewBox="0 0 24 24"
+            width="20"
+            height="20"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+          >
+            <path d="M4 5h16v10H8l-4 4V5z" />
+            <path d="M8 9h8M8 12h5" />
+          </svg>
+        ),
+      },
+      {
+        href: '/farmer/account/my-services',
+        key: 'svc.mineTitle',
+        glyph: (
+          <svg
+            viewBox="0 0 24 24"
+            width="20"
+            height="20"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+          >
+            <circle cx="7" cy="17" r="3" />
+            <circle cx="18" cy="17" r="2" />
+            <path d="M4 14V8h7l3 4h5v5M10 17h6" />
+          </svg>
+        ),
+      },
       {
         href: '/farmer/account/prices',
         key: 'prices.title',

@@ -161,10 +161,11 @@ export function BuyerProductDetail({ id }: { id: string }) {
                   },
                   {
                     term: 'Standing',
+                    // LISTINGS LANE (2026-10-19): a badge when verified, nothing otherwise.
                     value: listing.supplier.verified ? (
                       <Stamp kind="verified">Verified farmer</Stamp>
                     ) : (
-                      <Stamp kind="pending">Not yet verified</Stamp>
+                      '—'
                     ),
                   },
                   {

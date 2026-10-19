@@ -1,6 +1,13 @@
 import { randomUUID } from 'node:crypto';
 
-import { FARMER_ROLE, farmerListingSchema } from '@agri-erp/shared';
+import {
+  FARMER_ROLE,
+  MARKET_POST_MESSAGES,
+  canonicalStatus,
+  defaultEndDate,
+  farmerListingSchema,
+  listingStoredStatus,
+} from '@agri-erp/shared';
 
 import { audited, writeAudit } from '../../../../lib/api/audit';
 import {
@@ -11,6 +18,7 @@ import {
   type OwnListingRow,
 } from '../../../../lib/api/farmer-accounts';
 import { conflict, unprocessable } from '../../../../lib/api/errors';
+import { invalidField, todayUtc } from '../../../../lib/api/market-posts';
 import { created, defineRoutes, ok } from '../../../../lib/api/route';
 import { farmerScope } from '../../../../lib/api/scope';
 import { prisma } from '../../../../lib/db';
@@ -63,10 +71,23 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
         return ok(presentOwnListing(await loadOwnListing(prisma, farmerId, id)));
       }
 
-      // B14: a farmer must be verified before anything they post goes live.
-      // Drafts are kept for them, invisible to buyers, until then.
-      if (body.status !== 'draft' && farmer.verification_status !== 'verified') {
-        throw unprocessable('farmer_not_verified');
+      // LISTINGS LANE (2026-10-19): no verification gate. The owner dropped
+      // #127 -- a farmer's listing goes live without staff verification; the
+      // market shows a "Verified farmer" badge instead, and never filters by
+      // it. A new listing is a draft or live; every later move is a change.
+      const canonical = canonicalStatus(body.status);
+      if (canonical !== 'draft' && canonical !== 'active') {
+        throw unprocessable('transition_not_allowed');
+      }
+      const status = listingStoredStatus(canonical);
+      // No end date given: thirty days on the market (owner, 2026-10-19).
+      const today = todayUtc();
+      const availableUntil = defaultEndDate(body.available_until, body.available_from, today);
+      if (availableUntil < body.available_from) {
+        throw invalidField('available_until', MARKET_POST_MESSAGES.untilBeforeFrom);
+      }
+      if (status === 'listed' && availableUntil < today) {
+        throw invalidField('available_until', MARKET_POST_MESSAGES.dateInPast);
       }
 
       const row = await audited(prisma, async (tx) => {
@@ -95,11 +116,11 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
           body.negotiable,
           body.delivery_available,
           body.available_from,
-          body.available_until ?? null,
+          availableUntil,
           body.harvest_season ?? null,
           body.pickup_notes ?? null,
           body.contact_phone ?? farmer.phone,
-          body.status,
+          status,
           farmer.payam_id,
           farmer.state_id,
           body.quality_grade ?? null,
@@ -111,7 +132,12 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
           actorType: 'farmer',
           actorId: farmerId,
           action: 'listing.created',
-          after: { title: body.title, category: body.category, status: body.status },
+          after: {
+            title: body.title,
+            category: body.category,
+            status,
+            available_until: availableUntil,
+          },
         });
         return inserted!;
       });

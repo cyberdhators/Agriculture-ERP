@@ -182,7 +182,8 @@ export function FarmerOverview() {
   const listings = listingsFor(farmer.id);
   const live = listings.filter((l) => l.status === 'listed').length;
   const drafts = listings.filter((l) => l.status === 'draft').length;
-  const sold = listings.filter((l) => l.status === 'sold').length;
+  // LISTINGS LANE (2026-10-19): `completed`, and the legacy `sold` it replaces.
+  const sold = listings.filter((l) => l.status === 'sold' || l.status === 'completed').length;
   const farms = farmsForFarmer(farmer.id);
   const recent = listings.slice(0, 3);
   const numberPending = farmer.farmer_number.endsWith('-pending');
@@ -240,8 +241,8 @@ export function FarmerOverview() {
       <div className={styles.overview}>
         <div className={styles.block}>
           {farmer.verification_status === 'pending' ? (
-            <Notice kind="warn" title={t('account.whatPendingTitle', language)}>
-              <p className="small">{t('account.whatPendingBody', language)}</p>
+            <Notice kind="info" title={t('account.whatPendingTitle', language)}>
+              <p className="small">{t('listings.verifyBadgeNote', language)}</p>
             </Notice>
           ) : null}
           {farmer.verification_status === 'rejected' ? (

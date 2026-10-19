@@ -1,6 +1,7 @@
 'use client';
 
 import { PageHead } from '@/components/farmer/AccountShell';
+import { MarketSections } from '@/components/market-posts/MarketSections';
 import { useFarmerSession } from '@/lib/farmer-session';
 import { t } from '@/lib/i18n';
 
@@ -14,6 +15,7 @@ export function MarketPage() {
   if (!farmer) return <StaffMarket />;
   return (
     <>
+      <MarketSections current="produce" lang={language} />
       <PageHead title={t('market.title', language)} lead={t('market.lead', language)} />
       <Market mode="public" role="read_only" lang={language} detailHref={(id) => `/market/${id}`} />
     </>

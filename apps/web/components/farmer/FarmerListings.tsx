@@ -3,19 +3,30 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
+import { lifecycleStage, type LifecycleStage } from '@agri-erp/shared';
+
 import { ListingCard } from '@/components/listings/ListingCard';
 import { ButtonLink, EmptyState, Tabs } from '@/components/ui';
-import type { ListingStatus, ProduceListing } from '@/lib/fixtures/farmers';
+import type { ProduceListing } from '@/lib/fixtures/farmers';
 import { useFarmerSession } from '@/lib/farmer-session';
-import { STATUS_KEY } from '@/lib/farmers/listings';
+import { STAGE_KEY, todayLocal } from '@/lib/market-posts/presentation';
 import { t } from '@/lib/i18n';
 
 import { PageHead } from './AccountShell';
 import listingStyles from '@/components/listings/listings.module.css';
 import styles from './farmer.module.css';
 
-type Filter = 'all' | ListingStatus;
-const FILTERS: readonly Filter[] = ['all', 'listed', 'draft', 'sold', 'withdrawn'];
+// LISTINGS LANE (2026-10-19): the tabs are the lifecycle stages, `expired` included.
+type Filter = 'all' | LifecycleStage;
+const FILTERS: readonly Filter[] = [
+  'all',
+  'active',
+  'draft',
+  'paused',
+  'expired',
+  'completed',
+  'withdrawn',
+];
 
 export function FarmerListings() {
   const { farmer, language, listingsFor, refresh, isPending } = useFarmerSession();
@@ -32,9 +43,11 @@ export function FarmerListings() {
 
   if (!farmer) return null;
 
-  const shown = filter === 'all' ? all : all.filter((l) => l.status === filter);
+  const today = todayLocal();
+  const stageOf = (l: ProduceListing) => lifecycleStage(l.status, l.available_until, today);
+  const shown = filter === 'all' ? all : all.filter((l) => stageOf(l) === filter);
   const count = (f: Filter) =>
-    f === 'all' ? all.length : all.filter((l) => l.status === f).length;
+    f === 'all' ? all.length : all.filter((l) => stageOf(l) === f).length;
 
   return (
     <>
@@ -67,7 +80,7 @@ export function FarmerListings() {
               onChange={setFilter}
               items={FILTERS.filter((f) => f === 'all' || count(f) > 0).map((f) => ({
                 key: f,
-                label: f === 'all' ? t('listings.all', language) : t(STATUS_KEY[f], language),
+                label: f === 'all' ? t('listings.all', language) : t(STAGE_KEY[f], language),
                 count: count(f),
               }))}
             />
@@ -83,6 +96,7 @@ export function FarmerListings() {
                   lang={language}
                   href={`/farmer/account/listings/${listing.id}`}
                   showStatus
+                  stage={stageOf(listing)}
                   actions={
                     <>
                       <Link href={`/farmer/account/listings/${listing.id}/edit`} className="small">

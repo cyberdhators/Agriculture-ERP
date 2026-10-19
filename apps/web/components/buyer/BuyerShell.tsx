@@ -79,6 +79,9 @@ const NAV: ReadonlyArray<{
   // are the whole of buying; orders and deliveries are no longer offered.
   { href: '/buyer/cart', label: 'Cart', icon: IconReports },
   { href: '/buyer/purchase-requests', label: 'My requests', icon: IconEdit },
+  // LISTINGS LANE (2026-10-19): public buying requests ("I need X"), not the
+  // requests above, which go to one listing.
+  { href: '/buyer/buying-requests', label: 'Buying requests', icon: IconReports },
   { href: '/buyer/notifications', label: 'Notifications', icon: IconMail },
   { href: '/buyer/profile', label: 'Profile', icon: IconStaff },
 ];

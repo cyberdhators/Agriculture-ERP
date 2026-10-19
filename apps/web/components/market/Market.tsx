@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { CategoryGlyph } from '@/components/listings/CategoryGlyph';
+import { VerifiedFarmerBadge } from '@/components/listings/VerifiedFarmerBadge';
 import { ListingCard } from '@/components/listings/ListingCard';
 import { Photo } from '@/components/listings/Photo';
 import {
@@ -15,7 +16,6 @@ import {
   Field,
   Input,
   Select,
-  Stamp,
   Textarea,
 } from '@/components/ui';
 import { IconX } from '@/components/ui/icons';
@@ -35,7 +35,6 @@ import {
   formatPrice,
   formatQuantity,
 } from '@/lib/farmers/listings';
-import { VERIFICATION_KEY, verificationStamp } from '@/lib/farmers/verification';
 import { formatDate } from '@/lib/format';
 import { t, type Language } from '@/lib/i18n';
 import type { Role } from '@/lib/preview';
@@ -208,12 +207,6 @@ export function Market({
       label: t('market.deliveryAvailable', lang),
       clear: () => set('deliveryOnly', false),
     });
-  if (!filters.verifiedOnly)
-    applied.push({
-      key: 'verified',
-      label: t('market.includingUnverified', lang),
-      clear: () => set('verifiedOnly', true),
-    });
 
   function clearAll() {
     setFilters(DEFAULT_FILTERS);
@@ -374,11 +367,6 @@ export function Market({
                 checked={filters.deliveryOnly}
                 onChange={(e) => set('deliveryOnly', e.target.checked)}
               />
-              <Checkbox
-                label={t('market.verifiedOnly', lang)}
-                checked={filters.verifiedOnly}
-                onChange={(e) => set('verifiedOnly', e.target.checked)}
-              />
             </div>
           </details>
 
@@ -537,9 +525,10 @@ export function Market({
                       <td className="num">{formatPrice(listing, unitLabel)}</td>
                       <td>
                         <span dir="auto">{listing.trading_name}</span>{' '}
-                        <Stamp kind={verificationStamp(seller.verification_status)}>
-                          {t(VERIFICATION_KEY[seller.verification_status], lang)}
-                        </Stamp>
+                        <VerifiedFarmerBadge
+                          verified={seller.verification_status === 'verified'}
+                          lang={lang}
+                        />
                       </td>
                       <td>{seller.payam_name}</td>
                       <td className="num">{formatDate(listing.updated_at, lang)}</td>
