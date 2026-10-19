@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useRef, useState, type ReactNode } from 'react';
 
+import { ProfileLink } from '@/components/profiles/PublicProfile';
 import { Button, ButtonLink, Stamp } from '@/components/ui';
 import { IconChevronLeft, IconChevronRight } from '@/components/ui/icons';
 import type { ProduceListing } from '@/lib/fixtures/farmers';
@@ -254,6 +255,8 @@ export function ProductPage({
                 {t('market.viewSellerListings', lang)}
               </Link>
             ) : null}
+            {/* 2026-10-20: the seller's public profile. */}
+            <ProfileLink kind="listing" id={listing.id} language={lang} />
           </div>
 
           {actions}

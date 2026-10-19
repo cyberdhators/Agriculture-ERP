@@ -50,6 +50,9 @@ const EXPECTED_PUBLIC = [
   'listings/[id]',
   'listings/[id]/contact-requests',
   'listings/[id]/reports',
+  // 2026-10-20: a poster's public profile, reached through one of their posts on
+  // the market; read-only, a whitelist of market-facing fields (no phone, no ids).
+  'profiles/[kind]/[id]',
   'services',
   'services/[id]',
   'services/[id]/reports',

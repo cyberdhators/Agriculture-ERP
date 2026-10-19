@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { LISTING_CATEGORIES } from '@agri-erp/shared';
 
 import { MessageButton } from '@/components/messages/MessageButton';
+import { ProfileLink } from '@/components/profiles/PublicProfile';
 import { Badge, EmptyState, Input, Notice } from '@/components/ui';
 import { CATEGORY_KEY } from '@/lib/farmers/listings';
 import type { ListingCategory } from '@/lib/fixtures/farmers';
@@ -215,7 +216,9 @@ export function MarketRequestDetail({ id, lang }: { id: string; lang: Language }
         ) : null}
         <div>
           <dt className="small muted">{t('requests.postedBy', lang)}</dt>
-          <dd dir="auto">{row.display_name}</dd>
+          <dd dir="auto">
+            {row.display_name} <ProfileLink kind="buying_request" id={row.id} language={lang} />
+          </dd>
         </div>
       </dl>
       {row.description ? (

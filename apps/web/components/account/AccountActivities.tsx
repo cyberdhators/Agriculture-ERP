@@ -16,7 +16,7 @@ import { Button, Checkbox, Field, Notice, Select } from '@/components/ui';
 
 type Lang = 'en' | 'ar';
 
-const L: Record<Lang, Record<string, string>> = {
+export const ABOUT_LABELS: Record<Lang, Record<string, string>> = {
   en: {
     title: 'Tell us about yourself',
     lead: 'Optional. It helps AgriOne show the right shortcuts. You can still buy, sell, offer services and ask for advice, whatever you choose.',
@@ -88,7 +88,7 @@ const L: Record<Lang, Record<string, string>> = {
  * same whether reached from the farmer side or the buyer side.
  */
 export function AccountActivities({ language, next }: { language: Lang; next?: string }) {
-  const w = L[language];
+  const w = ABOUT_LABELS[language];
   const [kind, setKind] = useState<ProfileKind>('individual');
   const [groupKind, setGroupKind] = useState<GroupKind | ''>('');
   const [activities, setActivities] = useState<Activity[]>([]);
