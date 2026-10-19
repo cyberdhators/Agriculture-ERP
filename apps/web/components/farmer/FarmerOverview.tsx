@@ -43,6 +43,26 @@ const ACCOUNT_TILES: ReadonlyArray<{
     ),
   },
   {
+    // 2026-10-19: one account buys and sells (CORWADO).
+    href: '/farmer/account/buy',
+    title: 'account.tileBuy',
+    sub: 'account.tileBuySub',
+    glyph: (
+      <svg
+        viewBox="0 0 24 24"
+        width="26"
+        height="26"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+      >
+        <circle cx="9" cy="20" r="1.5" />
+        <circle cx="18" cy="20" r="1.5" />
+        <path d="M2 3h3l2.5 12h12L22 7H6" />
+      </svg>
+    ),
+  },
+  {
     href: '/market',
     title: 'shell.marketplace',
     sub: 'account.tileMarketSub',

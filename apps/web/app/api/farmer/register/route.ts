@@ -2,14 +2,13 @@ import { randomUUID } from 'node:crypto';
 
 import { farmerAuthIdentifier, farmerSelfRegisterSchema } from '@agri-erp/shared';
 
-import { audited, writeAudit, writeAuditOutcome } from '../../../../lib/api/audit';
+import { audited, writeAuditOutcome } from '../../../../lib/api/audit';
 import { authUnavailable, conflict, unprocessable } from '../../../../lib/api/errors';
 import {
-  allocateFarmerNumber,
-  findDuplicates,
-  recordDuplicates,
-} from '../../../../lib/api/farmers';
-import { insertProfile } from '../../../../lib/api/farmer-accounts';
+  consumeSignUpVerification,
+  phoneVerificationRequired,
+} from '../../../../lib/api/phone-verification';
+import { createSelfFarmer, placeInPayam } from '../../../../lib/api/self-farmer';
 import { created, defineRoutes } from '../../../../lib/api/route';
 import { prisma } from '../../../../lib/db';
 import {
@@ -48,17 +47,12 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
     handler: async ({ body }) => {
       if (body.consent.granted !== true) throw unprocessable('consent_required');
 
-      const [payam] = await prisma.$queryRawUnsafe<
-        { id: string; county_id: string; state_id: string }[]
-      >('SELECT id, county_id, state_id FROM public.payam_active WHERE id = $1', body.payam_id);
-      if (!payam) throw unprocessable('payam_not_found');
-
-      // An officer for later verification, if the payam has one. Never a test officer.
-      const [officer] = await prisma.$queryRawUnsafe<{ id: string }[]>(
-        `SELECT id FROM public.officer_active
-          WHERE payam_id = $1 AND name NOT LIKE 'zztest%' ORDER BY created_at LIMIT 1`,
-        payam.id,
-      );
+      // The payam is checked before any account exists, so a typo costs the
+      // farmer a 422 and costs the system nothing to undo.
+      const placed = await placeInPayam(body.payam_id);
+      // Checked before the sign-in exists, and again (atomically) when used up.
+      const verifyPhone = phoneVerificationRequired();
+      if (verifyPhone && !body.verification_id) throw unprocessable('phone_not_verified');
 
       let authUserId: string;
       try {
@@ -72,84 +66,16 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       const consentId = randomUUID();
       try {
         const farmerNumber = await audited(prisma, async (tx) => {
-          const number = await allocateFarmerNumber(tx, payam.county_id);
-          await tx.$executeRawUnsafe(
-            `INSERT INTO public.farmer
-               (id, farmer_number, given_name, family_name, sex, year_of_birth, phone, national_id,
-                payam_id, county_id, state_id, registered_by, caseload_officer_id,
-                registration_source, consent_id, auth_user_id)
-             VALUES ($1::uuid, $2, $3, $4, $5::public.sex, $6, $7, $8, $9, $10, $11, NULL,
-                     $12::uuid, 'self', $13::uuid, $14::uuid)`,
+          // 2026-10-19: the phone proved by SMS code, used up with the sign-up.
+          if (verifyPhone) await consumeSignUpVerification(tx, body.verification_id, body.phone);
+          return createSelfFarmer(tx, {
             farmerId,
-            number,
-            body.given_name,
-            body.family_name,
-            body.sex,
-            body.year_of_birth,
-            body.phone,
-            // The farmer record's national id keeps its strict shape (C-5.2);
-            // any other document lives on the profile.
-            body.id_type === 'national_id' &&
-              body.id_number &&
-              /^[0-9A-Z]{6,20}$/.test(body.id_number)
-              ? body.id_number
-              : null,
-            payam.id,
-            payam.county_id,
-            payam.state_id,
-            officer?.id ?? null,
             consentId,
             authUserId,
-          );
-          await tx.$executeRawUnsafe(
-            `INSERT INTO public.consent (id, farmer_id, text_version, language, granted)
-             VALUES ($1::uuid, $2::uuid, $3, $4::public.language, true)`,
-            consentId,
-            farmerId,
-            body.consent.text_version,
-            body.consent.language,
-          );
-          await insertProfile(tx, farmerId, body);
-
-          const matches = await findDuplicates(tx, {
-            id: farmerId,
-            phone: body.phone,
-            given_name: body.given_name,
-            family_name: body.family_name,
-            payam_id: payam.id,
+            placed,
+            body,
+            via: 'sign_up',
           });
-          if (matches.length > 0) await recordDuplicates(tx, farmerId, matches);
-
-          const actor = { actorType: 'farmer', actorId: farmerId } as const;
-          await writeAudit(tx, {
-            entityType: 'farmer',
-            entityId: farmerId,
-            ...actor,
-            action: 'farmer.created',
-            // No name, phone or id number: auditSafe strips them by key, and
-            // they are not passed.
-            after: {
-              farmer_number: number,
-              registration_source: 'self',
-              payam_id: payam.id,
-              county_id: payam.county_id,
-              state_id: payam.state_id,
-              caseload_officer_id: officer?.id ?? null,
-            },
-          });
-          await writeAudit(tx, {
-            entityType: 'consent',
-            entityId: consentId,
-            ...actor,
-            action: 'consent.recorded',
-            after: {
-              farmer_id: farmerId,
-              text_version: body.consent.text_version,
-              language: body.consent.language,
-              granted: true,
-            },
-          });
-          return number;
         });
 
         return created({

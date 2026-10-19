@@ -42,8 +42,12 @@ const files = routeFiles(API_DIR);
 const source = (file: string) => readFileSync(file, 'utf8');
 const admitsBuyer = (file: string) => /BUYER_ROLE|'buyer'\s*\]/.test(source(file));
 
-/** Outside app/api/buyer: the two reference reads a signed-in buyer needs. */
-const BUYER_OUTSIDE_ITS_TREE = ['locations', 'me'];
+/**
+ * Outside app/api/buyer: the two reference reads a signed-in buyer needs, and
+ * (2026-10-19) the account's own "who you are, what you do", shared by the
+ * farmer and buyer sides of one account.
+ */
+const BUYER_OUTSIDE_ITS_TREE = ['account/profile', 'locations', 'me'];
 
 describe('buyer routes are counted, not trusted', () => {
   it('finds the buyer routes at all, so this cannot pass by checking nothing', () => {

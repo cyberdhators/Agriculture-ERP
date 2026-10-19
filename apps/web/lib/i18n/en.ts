@@ -24,18 +24,18 @@ export const en = {
   'language.continue': 'Continue',
 
   // Entry spread (language, sign in, register share it)
-  'spread.statement': 'Grow it. List it. Sell it.',
-  'spread.point1': 'Your record, verified by an extension officer',
-  'spread.point2': 'Your plots, mapped as the officer walked them',
-  'spread.point3': 'Your produce, listed for buyers across the state',
-  'spread.point4': 'Buyers reach you by phone, no middleman',
+  'spread.statement': 'Buy. Sell. Offer services. Get advice.',
+  'spread.point1': 'One account for everything you do in agriculture',
+  'spread.point2': 'Sell produce and inputs, or post what you want to buy',
+  'spread.point3': 'Offer services like transport, tractors or processing',
+  'spread.point4': 'Deal directly with buyers and sellers, no middleman',
 
   // Login
   'login.title': 'Sign in',
-  'shell.joinLine2': 'Farmer or buyer',
-  'shell.buyerCart': 'Buyer cart',
+  'shell.joinLine2': 'Create account',
+  'shell.buyerCart': 'Cart',
   'login.phoneLabel': 'Phone number',
-  'login.phoneHint': 'The number you registered with.',
+  'login.phoneHint': 'The number you created your account with.',
   'login.passwordLabel': 'Password',
   'login.show': 'Show',
   'login.hide': 'Hide',
@@ -46,10 +46,10 @@ export const en = {
   'login.forgotTitle': 'Forgot your password?',
   'login.forgotBody': 'Your extension officer or CORWADO can reset it for you.',
   'login.newHere': 'New here?',
-  'login.register': 'Register',
+  'login.register': 'Create account',
 
   // Register
-  'register.title': 'Register',
+  'register.title': 'Create account',
   'register.step': 'Step',
   'register.of': 'of',
   'register.stepName': 'Your name',
@@ -76,11 +76,11 @@ export const en = {
   'register.agree': 'I agree',
   'register.back': 'Back',
   'register.next': 'Next',
-  'register.submit': 'Register',
-  'register.doneTitle': 'Registered: waiting for verification',
+  'register.submit': 'Create account',
+  'register.doneTitle': 'Your account is ready',
   'register.doneBody':
-    'Your account is created. CORWADO will check your details and verify you. Until then you can prepare your produce as drafts; they go live in the market once you are verified.',
-  'register.doneNumber': 'Farmer no.',
+    'You can buy, sell, offer services and ask for advice now. An extension officer may check your details later and add a Verified badge.',
+  'register.doneNumber': 'Member no.',
   'register.donePending': 'Keep this number. You sign in with your phone number and password.',
   'register.goToAccount': 'Go to my account',
 
@@ -112,9 +112,9 @@ export const en = {
   'account.pending': 'Pending',
   'account.verified': 'Verified',
   'account.rejected': 'Not verified',
-  'account.whatPendingTitle': 'What "pending" means',
+  'account.whatPendingTitle': 'Not verified yet',
   'account.whatPendingBody':
-    'CORWADO has not yet verified your account. You can prepare listings as drafts now; buyers see them once you are verified.',
+    'You can buy and sell now. When an extension officer has checked your details, your listings show a Verified badge.',
   'account.whatRejectedBody':
     'An officer could not verify your account. Contact your local AgriOne extension officer, or change your details and ask to be checked again.',
   'account.kpiLive': 'Live listings',
@@ -176,7 +176,7 @@ export const en = {
   'account.changePhoneNote': 'Enter your password so we know it is you.',
   'account.newPhone': 'New phone number',
   'account.phoneChanged': 'Your phone number has been changed. Sign in with it next time.',
-  'account.farmerNumber': 'Farmer no.',
+  'account.farmerNumber': 'Member no.',
   'account.numberPending': 'Assigned when your registration is verified.',
   'account.back': 'My account',
   'account.signOut': 'Sign out',
@@ -185,6 +185,10 @@ export const en = {
   'account.tileLearnSub': 'Guides, audio and video from the programme',
   // AgriOne AI (2026-10-17): the assistant in place of the learning library.
   'account.tabAi': 'AgriOne AI',
+  // ACCOUNTS LANE (2026-10-19): one account buys and sells.
+  'account.tileBuy': 'Buy',
+  'account.tileBuySub': 'Inputs and produce, with this same account',
+  'account.tabAbout': 'About you',
   'account.tileAi': 'AgriOne AI',
   'account.tileAiSub': 'Ask any farming question, any time',
   'ai.title': 'AgriOne AI',

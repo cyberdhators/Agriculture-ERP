@@ -80,7 +80,7 @@ export function LoginForm({
           <Wordmark size={28} tagline />
         </div>
         <div>
-          <h1 className={styles.title}>{staff ? 'Staff sign in' : 'Buyer sign in'}</h1>
+          <h1 className={styles.title}>{staff ? 'Staff sign in' : 'Sign in with email'}</h1>
           {staff ? (
             <p className={styles.hint}>
               For CORWADO staff and extension officers. Staff sign in with their email address;
@@ -88,8 +88,8 @@ export function LoginForm({
             </p>
           ) : (
             <p className={styles.hint}>
-              Sign in with the email address of your buyer account. Farmers sign in on the{' '}
-              <a href="/farmer/login">farmer sign-in</a> page.
+              Use the email address you created your account with. Created it with a phone number?{' '}
+              <a href="/farmer/login">Sign in with your phone</a>.
             </p>
           )}
         </div>
@@ -142,8 +142,8 @@ export function LoginForm({
               Forgot your password? <a href="/forgot-password">Reset it by email</a>.
             </p>
             <p className={styles.hint}>
-              New buyer? <a href={BUYER_REGISTER_PATH}>Register as a buyer</a>. Selling produce?{' '}
-              <a href="/farmer/register">Register as a farmer</a>.
+              New here? <a href={BUYER_REGISTER_PATH}>Create an account with email</a>, or{' '}
+              <a href="/farmer/register">with your phone number</a>.
             </p>
           </>
         )}

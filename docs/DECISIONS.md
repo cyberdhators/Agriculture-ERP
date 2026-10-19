@@ -3751,3 +3751,31 @@ did not sign for it; the owner may want to tell them.
   scene, noticed it was a display rather than a field, claimed no problem it
   could not see, asked for a closer daylight photo, and referred to the
   extension officer, in English and Arabic. About 1,400 input tokens a photo.
+
+## CORWADO's 16 October specification: independent participation (2026-10-19)
+
+CORWADO's "Developer Handover Specification" (16 October 2026, with eight
+infographics; no. 6, organisational profiles and team access, was missing from
+the package received) asks that "ordinary participation must not depend on
+project staff, agent assignment or CORWADO approval". The owner accepted the
+build plan and, with it, these decisions ("use 2 agents, go"):
+
+- **#127 reversed:** a farmer's listings go live without staff verification.
+  Verification stays, as an optional "Verified farmer" badge.
+- **"Option A" reversed:** one account both buys and sells. A farmer starts
+  buying from their own account (`POST /api/farmer/buying`) and a buyer starts
+  selling from theirs (`POST /api/buyer/selling`), with no second sign-up or
+  password. `requireRole` meets the account as a buyer on buyer routes and as
+  a farmer on farmer routes; a route that admits both takes the first of its
+  own roles the account holds (`accountSideFor`).
+- **Phone verification by SMS code at farmer sign-up:** 6 digits, 10 minutes,
+  5 tries, 3 codes per phone per 30 minutes, a minute between sends, at most
+  200 codes an hour system-wide, through Bird (about 0.20 EUR a code from
+  CORWADO's credit). On whenever Bird is configured; setting
+  `FARMER_PHONE_VERIFICATION=off` switches it off, so sign-up never depends
+  on an SMS a network does not deliver (only MTN delivery is OBSERVED so far).
+- **Defaults accepted, to be revisited with CORWADO:** listings valid 30 days
+  by default; existing separate farmer and buyer accounts stay as they are.
+- **Built in parallel lanes:** accounts (this entry), listings (statuses,
+  public buying requests, services) and staff permissions (Super Admin, roles,
+  access logs), each on its own branch.

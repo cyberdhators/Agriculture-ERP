@@ -106,6 +106,8 @@ export const AUDIT_ACTIONS = [
   // send route reads that CHECK before sending, so the code is safe to deploy
   // ahead of the migration: it refuses SMS until the key is accepted.
   'communication.sms_sent',
+  // ACCOUNTS LANE (2026-10-19): an account's profile kind and activities.
+  'account.profile_updated',
 ] as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];

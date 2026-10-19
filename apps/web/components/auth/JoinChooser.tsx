@@ -27,42 +27,42 @@ export function JoinChooser({ next }: { next: string }) {
           <Wordmark size={28} tagline />
         </div>
         <div>
-          <h1 className={styles.title}>Sign in or register</h1>
+          <h1 className={styles.title}>Sign in or create an account</h1>
           <p className={styles.hint}>
-            Choose the account that fits you. Farmers sell their produce; buyers buy it. The two
-            accounts are separate.
+            One AgriOne account lets you buy, sell, offer services and get advice. Choose how you
+            sign in: with your phone number or with an email address.
           </p>
         </div>
 
         <div className={styles.joinGrid}>
           <Card padded className={styles.joinCard}>
-            <h2>I am a farmer</h2>
-            <p className="small">I want to sell my produce to buyers.</p>
+            <h2>With your phone number</h2>
+            <p className="small">For anyone with a South Sudan mobile number.</p>
             <ul className={styles.joinList}>
-              <li>Register with your phone number and a password.</li>
-              <li>CORWADO verifies you before your produce goes live.</li>
-              <li>Buyers send you requests; you accept or decline and agree the deal directly.</li>
+              <li>Create your account with your phone number and a password.</li>
+              <li>We send a code by SMS to confirm the number.</li>
+              <li>Sell, buy, offer services and ask for advice from the same account.</li>
             </ul>
             <div className={styles.joinActions}>
-              <ButtonLink href="/farmer/register">Register as a farmer</ButtonLink>
+              <ButtonLink href="/farmer/register">Create account</ButtonLink>
               <ButtonLink href="/farmer/login" variant="secondary">
-                Farmer sign in
+                Sign in
               </ButtonLink>
             </div>
           </Card>
 
           <Card padded className={styles.joinCard}>
-            <h2>I am a buyer</h2>
-            <p className="small">I want to buy produce from farmers.</p>
+            <h2>With an email address</h2>
+            <p className="small">For businesses and organisations, or without a +211 number.</p>
             <ul className={styles.joinList}>
-              <li>Register with your email address and a password.</li>
-              <li>Individuals can buy straight away; businesses are reviewed first.</li>
-              <li>Sign in to add products to your cart and send requests to farmers.</li>
+              <li>Create your account with your email address and a password.</li>
+              <li>Individuals start straight away; businesses are reviewed first.</li>
+              <li>Buy now, and start selling from the same account whenever you like.</li>
             </ul>
             <div className={styles.joinActions}>
-              <ButtonLink href="/buyer/register">Register as a buyer</ButtonLink>
+              <ButtonLink href="/buyer/register">Create account</ButtonLink>
               <ButtonLink href={login} variant="secondary">
-                Buyer sign in
+                Sign in
               </ButtonLink>
             </div>
           </Card>

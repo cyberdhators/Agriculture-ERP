@@ -318,6 +318,12 @@ character.
 | `order_not_cancellable`            | Only a pending order can be cancelled. Contact CORWADO about this order.                                                      |
 | `request_other_organization`       | That purchase request belongs to a different buyer organisation.                                                              |
 | `order_exceeds_listing`            | The order is for more than the listing has available.                                                                         |
+| `farmer_account_exists`            | This account already sells as a farmer.                                                                                       |
+| `farmer_phone_required`            | Give the South Sudan mobile number for your farm. Your buyer account has none.                                                |
+| `phone_code_expired`               | That code has expired or was replaced. Ask for a new code.                                                                    |
+| `phone_code_too_many_tries`        | Too many wrong tries. Ask for a new code.                                                                                     |
+| `phone_code_wrong`                 | That code is not right. Check the SMS and try again.                                                                          |
+| `phone_not_verified`               | Confirm your phone number with the SMS code first.                                                                            |
 | `farmer_phone_registered`          | That phone number already has a farmer account. Sign in instead.                                                              |
 | `request_already_answered`         | This request has already been answered.                                                                                       |
 | `request_answered_by_farmer`       | Only the farmer can accept or decline a purchase request.                                                                     |
@@ -422,6 +428,7 @@ change.
 | `purchase_order.status_changed`           |
 | `purchase_order.cancelled`                |
 | `communication.sms_sent`                  |
+| `account.profile_updated`                 |
 
 `before` and `after` hold **changed fields only**, never whole rows, and never a
 password, token, authentication identifier, national id, phone, email, given
