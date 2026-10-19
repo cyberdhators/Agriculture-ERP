@@ -106,8 +106,8 @@ describe('who is offered which action', () => {
     expect(canReview('read_only')).toBe(false);
   });
 
-  it('only an administrator and an officer may register one', () => {
-    expect(canRegister('admin')).toBe(true);
+  it('only an extension officer is offered "help a farmer register" (2026-10-19)', () => {
+    expect(canRegister('admin')).toBe(false);
     expect(canRegister('officer')).toBe(true);
     expect(canRegister('supervisor')).toBe(false);
     expect(canRegister('read_only')).toBe(false);

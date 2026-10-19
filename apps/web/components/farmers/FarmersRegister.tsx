@@ -260,7 +260,7 @@ export function FarmersRegister() {
             </Button>
             {canRegister(role) ? (
               <ButtonLink href="/farmers/new" variant="primary">
-                <IconPlus size={16} /> Register a farmer
+                <IconPlus size={16} /> Help a farmer register
               </ButtonLink>
             ) : null}
           </>

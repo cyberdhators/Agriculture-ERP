@@ -260,11 +260,11 @@ export function RegisterFarmer() {
   if (!canRegister(role)) {
     return (
       <>
-        <PageHeader eyebrow="Farmers" title="Register a farmer" />
+        <PageHeader eyebrow="Farmers" title="Help a farmer register" />
         <EmptyState
           error
-          title="Only an administrator or field officer registers farmers"
-          body={`You are previewing as ${ROLE_LABELS[role]}. Registration writes to a field officer's caseload; the live portal returns 403 for a supervisor or read-only account.`}
+          title="Extension officers help farmers register"
+          body={`You are signed in as ${ROLE_LABELS[role]}. Farmers create their own accounts; an extension officer helps those who cannot, in the field.`}
           actions={<ButtonLink href="/farmers">Back to the register</ButtonLink>}
         />
       </>
@@ -274,7 +274,7 @@ export function RegisterFarmer() {
   if (saved) {
     return (
       <>
-        <PageHeader eyebrow="Farmers" title="Register a farmer" />
+        <PageHeader eyebrow="Farmers" title="Help a farmer register" />
         <div className={styles.recorded}>
           <p className="label">
             {saved.pending
@@ -319,7 +319,7 @@ export function RegisterFarmer() {
     <>
       <PageHeader
         eyebrow="Farmers"
-        title="Register a farmer"
+        title="Help a farmer register"
         subtitle={`New farmers enter as pending. The farmer number ${FARMER_NUMBER_FORMAT} is a placeholder until the numbering rule (C-5) is written.`}
         actions={
           <ButtonLink href="/farmers" variant="secondary">

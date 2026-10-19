@@ -139,6 +139,11 @@ export function LoginForm({
             Forgot your password? Staff: <a href="/forgot-password">reset it by email</a>. Extension
             officers: ask an administrator.
           </p>
+        ) : null}
+        {staff ? (
+          <p className={styles.hint}>
+            Not staff? <a href="/join">Sign in or create an account</a> to buy, sell and get advice.
+          </p>
         ) : (
           <>
             <p className={styles.hint}>

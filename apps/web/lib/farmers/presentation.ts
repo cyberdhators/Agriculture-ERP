@@ -163,7 +163,13 @@ export function canReview(role: Role): boolean {
   return role === 'admin' || role === 'supervisor';
 }
 
-/** Whether the role may register a new farmer. */
+/**
+ * Whether the role may help a farmer register (2026-10-19, the owner: keep it
+ * for officers, remove it from admin). People register themselves; an
+ * extension officer helps the few who cannot -- an optional field service,
+ * never the way in (CORWADO's specification). The API still admits an
+ * administrator; this decides only what the screens offer.
+ */
 export function canRegister(role: Role): boolean {
-  return role === 'admin' || role === 'officer';
+  return role === 'officer';
 }

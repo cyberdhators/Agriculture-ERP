@@ -39,6 +39,7 @@ export const ar: Partial<Record<TKey, string>> = {
   'login.forgotBody': 'مسؤول الإرشاد أو كوروادو يمكنه إعادة تعيينها لك.',
   'login.newHere': 'جديد هنا؟',
   'login.register': 'أنشئ حساباً',
+  'login.otherWays': 'طرق أخرى لتسجيل الدخول (البريد الإلكتروني، الموظفون)',
 
   'register.title': 'أنشئ حساباً',
   'register.step': 'الخطوة',

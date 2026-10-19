@@ -134,12 +134,12 @@ export function OfficerDesk() {
           title="Field desk"
           subtitle={
             officer
-              ? `${officer.name} · ${farmerPayamName(officer.payam_id)}. Register farmers and keep your caseload moving.`
-              : 'Register farmers and keep your caseload moving.'
+              ? `${officer.name} · ${farmerPayamName(officer.payam_id)}. Help farmers register and keep your caseload moving.`
+              : 'Help farmers register and keep your caseload moving.'
           }
           actions={
             <ButtonLink href="/farmers/new" variant="primary">
-              Register a farmer
+              Help a farmer register
             </ButtonLink>
           }
         />
@@ -221,7 +221,7 @@ export function OfficerDesk() {
                 ? 'Try a different name, phone or farmer number.'
                 : 'Register your first farmer and it will appear here, pending a supervisor’s review.'
             }
-            actions={<ButtonLink href="/farmers/new">Register a farmer</ButtonLink>}
+            actions={<ButtonLink href="/farmers/new">Help a farmer register</ButtonLink>}
           />
         ) : (
           <ul className={styles.list}>

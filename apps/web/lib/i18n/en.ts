@@ -47,6 +47,7 @@ export const en = {
   'login.forgotBody': 'Your extension officer or CORWADO can reset it for you.',
   'login.newHere': 'New here?',
   'login.register': 'Create account',
+  'login.otherWays': 'Other ways to sign in (email, staff)',
 
   // Register
   'register.title': 'Create account',
