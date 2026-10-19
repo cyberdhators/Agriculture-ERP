@@ -188,6 +188,7 @@ export const en = {
   // ACCOUNTS LANE (2026-10-19): one account buys and sells.
   'account.tileBuy': 'Buy',
   'account.tileBuySub': 'Inputs and produce, with this same account',
+  'account.tabAbout': 'About you',
   'account.tileAi': 'AgriOne AI',
   'account.tileAiSub': 'Ask any farming question, any time',
   'ai.title': 'AgriOne AI',

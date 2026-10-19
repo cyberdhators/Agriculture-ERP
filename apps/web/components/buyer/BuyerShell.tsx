@@ -83,6 +83,7 @@ const NAV: ReadonlyArray<{
   { href: '/buyer/profile', label: 'Profile', icon: IconStaff },
   // 2026-10-19: one account buys and sells (CORWADO).
   { href: '/buyer/sell', label: 'Sell produce', icon: IconDashboard },
+  { href: '/buyer/about', label: 'About you', icon: IconStaff },
 ];
 
 export function BuyerShell({ children }: { children: ReactNode }) {

@@ -428,6 +428,7 @@ change.
 | `purchase_order.status_changed`           |
 | `purchase_order.cancelled`                |
 | `communication.sms_sent`                  |
+| `account.profile_updated`                 |
 
 `before` and `after` hold **changed fields only**, never whole rows, and never a
 password, token, authentication identifier, national id, phone, email, given

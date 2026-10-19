@@ -226,6 +226,25 @@ const NAV_GROUPS: readonly NavGroup[] = [
         ),
       },
       {
+        // 2026-10-19: who you are, what you do (optional).
+        href: '/farmer/account/about',
+        key: 'account.tabAbout',
+        glyph: (
+          <svg
+            viewBox="0 0 24 24"
+            width="20"
+            height="20"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+          >
+            <circle cx="9" cy="8" r="3.5" />
+            <path d="M2.5 20a6.5 6.5 0 0 1 13 0" />
+            <path d="M16 7h6M16 11h6M18 15h4" />
+          </svg>
+        ),
+      },
+      {
         href: '/farmer/account/settings',
         key: 'account.tabAccount',
         glyph: (

@@ -476,7 +476,7 @@ export function FarmerRegister() {
           <Button
             variant="primary"
             className={styles.blockButton}
-            onClick={() => router.push('/farmer/account')}
+            onClick={() => router.push('/farmer/account/about?next=/farmer/account')}
           >
             {t('register.goToAccount', language)}
           </Button>

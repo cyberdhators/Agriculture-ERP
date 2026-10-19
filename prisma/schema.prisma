@@ -1501,3 +1501,17 @@ model PhoneVerification {
   @@index([createdAt(sort: Desc)], map: "phone_verification_created_idx")
   @@map("phone_verification")
 }
+
+/// 2026-10-19: who an account is and what it does (CORWADO's specification),
+/// optional and editable; never restricts what the account may do.
+/// Migration 20261019090100.
+model AccountProfile {
+  authUserId  String   @id @map("auth_user_id") @db.Uuid
+  profileKind String   @default("individual") @map("profile_kind")
+  groupKind   String?  @map("group_kind")
+  activities  String[] @default([])
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  @@map("account_profile")
+}

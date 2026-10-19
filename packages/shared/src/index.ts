@@ -378,3 +378,4 @@ export * from './assistant';
 
 // ACCOUNTS LANE (2026-10-19): phone verification by SMS code at farmer sign-up.
 export * from './phone-verification';
+export * from './account-profile';
