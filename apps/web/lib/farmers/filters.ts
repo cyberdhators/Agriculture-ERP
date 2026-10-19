@@ -58,7 +58,7 @@ export const FILTER_KEYS = Object.keys(EMPTY_FILTERS) as (keyof RegisterFilters)
 /** Tabs exist only where the route can answer them. */
 export const STATUS_TABS: ReadonlyArray<{ key: string; label: string }> = [
   { key: '', label: 'All farmers' },
-  { key: 'pending', label: 'Pending verification' },
+  { key: 'pending', label: 'Not verified' },
   { key: 'verified', label: 'Verified' },
   { key: 'rejected', label: 'Rejected' },
 ];
@@ -133,7 +133,7 @@ export interface ChipNames {
 
 const SEX_LABEL: Record<string, string> = { f: 'Female', m: 'Male' };
 const STATUS_LABEL: Record<string, string> = {
-  pending: 'Pending verification',
+  pending: 'Not verified',
   verified: 'Verified',
   rejected: 'Rejected',
 };

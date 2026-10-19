@@ -41,7 +41,7 @@ export function statusStamp(farmer: Farmer): StampKind {
 
 export const STATUS_LABEL: Record<'merged' | VerificationStatus, string> = {
   verified: 'Verified',
-  pending: 'Pending',
+  pending: 'Not verified',
   rejected: 'Rejected',
   merged: 'Merged',
 };

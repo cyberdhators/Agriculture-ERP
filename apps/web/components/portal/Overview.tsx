@@ -197,7 +197,7 @@ export function Overview() {
           <CardSkeleton count={3} />
         ) : (
           <div className={styles.exceptionRow}>
-            {/* A. Pending verification — measured, and actionable. */}
+            {/* A. Not yet verified — measured, and actionable (an optional check since 2026-10-19). */}
             {canReview(role) ? (
               <Link
                 href="/farmers/review"
@@ -205,7 +205,7 @@ export function Overview() {
                   data.counts.pending > 0 ? styles.exceptionCardActive : ''
                 }`}
               >
-                <span className={styles.exceptionHead}>Pending verification</span>
+                <span className={styles.exceptionHead}>Not yet verified</span>
                 <p
                   className={`${styles.exceptionNumber} ${
                     data.counts.pending > 0 ? styles.exceptionNumberAlert : ''
@@ -214,13 +214,14 @@ export function Overview() {
                   {data.counts.pending.toLocaleString('en')}
                 </p>
                 <p className={styles.exceptionWhy}>
-                  Registered and consented, but not yet counted in any reach figure.
+                  Already buying and selling. Verifying adds the Verified badge and counts them in
+                  reach figures.
                 </p>
-                <span className={styles.exceptionAction}>Review verification queue →</span>
+                <span className={styles.exceptionAction}>Verify farmers →</span>
               </Link>
             ) : (
               <div className={styles.exceptionCard}>
-                <span className={styles.exceptionHead}>Pending verification</span>
+                <span className={styles.exceptionHead}>Not yet verified</span>
                 <p className={styles.exceptionNumber}>{data.counts.pending.toLocaleString('en')}</p>
                 <p className={styles.exceptionWhy}>
                   Verification is a supervisor&apos;s and an administrator&apos;s decision.
@@ -331,7 +332,7 @@ export function Overview() {
                     header: 'Status',
                     render: (row) => (
                       <Stamp kind={row.escalated ? 'escalated' : 'pending'}>
-                        {row.escalated ? 'Escalated' : 'Pending'}
+                        {row.escalated ? 'Escalated' : 'Not verified'}
                       </Stamp>
                     ),
                   },
@@ -417,9 +418,9 @@ export function Overview() {
                 note="Included in donor reporting."
               />
               <StatCard
-                label="Pending"
+                label="Not verified"
                 value={data.counts.pending}
-                note="Awaiting verification."
+                note="Not yet checked; can still buy and sell."
                 attention={data.counts.pending > 0}
               />
               <StatCard

@@ -94,15 +94,12 @@ export const NAV_SECTIONS: readonly NavSection[] = [
         roles: ALL,
         because: 'GET /api/farmers accepts every role.',
       },
-      {
-        href: '/farms',
-        label: 'Farms & maps',
-        icon: 'map',
-        roles: ['admin', 'supervisor'],
-        because:
-          'GET /api/farms/geojson is admin and supervisor only — it is the one route that ' +
-          'serves boundary coordinates across farms, and the screen cannot render without it.',
-      },
+      /*
+       * FARMS & MAPS IS HIDDEN FROM THIS NAVIGATION (the owner, 2026-10-19:
+       * "keep farm and map invisible") until GIS mapping is finished. Only
+       * the destination is withdrawn: /farms, its routes and its data are
+       * untouched and reachable by URL; restoring the entry is one block.
+       */
       {
         href: '/admin/users#officers',
         label: 'Extension officers',
@@ -346,7 +343,7 @@ const SEGMENT_LABELS: Record<string, string> = {
   design: 'Design system',
   new: 'New',
   edit: 'Edit',
-  review: 'Review queue',
+  review: 'Verify farmers',
 };
 
 const titleCase = (segment: string): string =>

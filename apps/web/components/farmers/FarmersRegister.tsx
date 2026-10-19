@@ -514,7 +514,7 @@ export function FarmersRegister() {
             time, with a reason.
           </span>
           <ButtonLink href="/farmers/review" variant="secondary" size="small">
-            Open the verification queue
+            Verify farmers
           </ButtonLink>
           <Button variant="ghost" size="small" onClick={() => setSelected(new Set())}>
             Clear selection

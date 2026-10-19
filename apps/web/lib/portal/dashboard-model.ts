@@ -57,7 +57,7 @@ export interface DonutSegment {
 
 export const STATUS_LABELS: Record<StatusKey, string> = {
   verified: 'Verified',
-  pending: 'Pending',
+  pending: 'Not verified',
   rejected: 'Rejected',
   merged: 'Merged',
 };
