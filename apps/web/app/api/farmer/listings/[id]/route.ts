@@ -1,4 +1,11 @@
-import { FARMER_ROLE, farmerListingPatchSchema } from '@agri-erp/shared';
+import {
+  FARMER_ROLE,
+  MARKET_POST_MESSAGES,
+  canonicalStatus,
+  defaultEndDate,
+  farmerListingPatchSchema,
+  listingStoredStatus,
+} from '@agri-erp/shared';
 
 import { audited, writeAudit } from '../../../../../lib/api/audit';
 import {
@@ -7,7 +14,8 @@ import {
   presentOwnListing,
   type OwnListingRow,
 } from '../../../../../lib/api/farmer-accounts';
-import { ApiFailure, unprocessable } from '../../../../../lib/api/errors';
+import { ApiFailure } from '../../../../../lib/api/errors';
+import { checkLifecycle, invalidField, todayUtc } from '../../../../../lib/api/market-posts';
 import { defineRoutes, ok } from '../../../../../lib/api/route';
 import { farmerScope } from '../../../../../lib/api/scope';
 import { prisma } from '../../../../../lib/db';
@@ -17,6 +25,14 @@ import { prisma } from '../../../../../lib/db';
  * B14. Another farmer's listing is 404, as is one that never existed: the
  * owner is in the WHERE clause. Withdrawing or marking sold is a status change
  * here; nothing is ever deleted.
+ *
+ * LISTINGS LANE (2026-10-19): the lifecycle. Publish, pause, resume, withdraw
+ * and complete are status changes; renew is a new `available_until`. The moves
+ * are checked here (canMove in packages/shared): withdrawn and completed are
+ * final, so a listing staff took down cannot be switched back on by a stale
+ * edit. No verification gate. Recording a sale is its own route (./sales).
+ * A full-listing save from the phone's outbox still works: an unchanged
+ * status is not a move.
  */
 const CASTS: Record<string, string> = {
   category: '::public.listing_category',
@@ -47,13 +63,38 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       const id = params.id ?? '';
       const row = await audited(prisma, async (tx) => {
         const current = await loadOwnListing(tx, farmerId, id, true);
-        // B14: only a verified farmer may put a listing live.
-        if (body.status === 'listed' && current.status !== 'listed') {
-          const [self] = await tx.$queryRawUnsafe<{ verification_status: string }[]>(
-            'SELECT verification_status::text AS verification_status FROM public.farmer WHERE id = $1::uuid',
-            farmerId,
+        // The legacy `sold` is written as `completed` from now on.
+        if (body.status !== undefined)
+          body.status = listingStoredStatus(canonicalStatus(body.status)) as typeof body.status;
+        // Going live with no end date: thirty days on the market (owner, 2026-10-19).
+        const today = todayUtc();
+        const goesLive = body.status === 'listed' && canonicalStatus(current.status) !== 'active';
+        if (goesLive && (body.available_until ?? current.available_until) == null) {
+          body.available_until = defaultEndDate(
+            null,
+            body.available_from ?? current.available_from,
+            today,
           );
-          if (self?.verification_status !== 'verified') throw unprocessable('farmer_not_verified');
+        }
+        const endChanged =
+          body.available_until !== undefined && body.available_until !== current.available_until;
+        const endDate =
+          body.available_until !== undefined ? body.available_until : current.available_until;
+        checkLifecycle({
+          from: current.status,
+          to: body.status,
+          endField: 'available_until',
+          endDate: endDate ?? null,
+          endChanged,
+          today,
+        });
+        const from = body.available_from ?? current.available_from;
+        if (endDate && endDate < from) {
+          throw invalidField('available_until', MARKET_POST_MESSAGES.untilBeforeFrom);
+        }
+        // What has been sold stays sold: the total cannot drop below it.
+        if (body.quantity !== undefined && body.quantity < Number(current.quantity_sold)) {
+          throw invalidField('quantity', MARKET_POST_MESSAGES.quantityBelowSold);
         }
         const quantity = body.quantity ?? Number(current.quantity);
         const minOrder =
@@ -97,7 +138,10 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
             body.status !== undefined && body.status !== current.status
               ? 'listing.status_changed'
               : 'listing.updated',
-          before: body.status !== undefined ? { status: current.status } : null,
+          before:
+            body.status !== undefined || endChanged
+              ? { status: current.status, available_until: current.available_until }
+              : null,
           after: changed,
         });
         return updated!;

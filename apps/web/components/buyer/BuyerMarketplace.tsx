@@ -91,6 +91,11 @@ export function BuyerMarketplace() {
         title="Marketplace"
         subtitle="Produce listed by registered farmers. Prices are indicative; you agree the final price with the farmer."
       />
+      <p className="small">
+        Also on the market: <Link href="/market/requests">buying requests</Link> and{' '}
+        <Link href="/market/services">services for hire</Link>.{' '}
+        <Link href="/buyer/buying-requests/new">Post what you need</Link>.
+      </p>
 
       <form className={styles.form} onSubmit={apply} role="search" aria-label="Filter products">
         <div className={styles.filters}>
@@ -193,18 +198,8 @@ export function BuyerMarketplace() {
               />
             )}
           </Field>
-          <Field label="Supplier">
-            {(ids) => (
-              <Select
-                {...ids}
-                value={draft.supplier ?? ''}
-                onChange={(e) => set('supplier')(e.target.value)}
-              >
-                <option value="">Any supplier</option>
-                <option value="verified">Verified farmers only</option>
-              </Select>
-            )}
-          </Field>
+          {/* LISTINGS LANE (2026-10-19): no "verified farmers only" filter --
+              verification is a badge, shown and never filtered on. */}
         </div>
         <div className={styles.filterActions}>
           <Button type="submit">Apply filters</Button>
@@ -269,11 +264,7 @@ export function BuyerMarketplace() {
                   </p>
                   <div className={styles.productFoot}>
                     <span dir="auto">{p.supplier.trading_name}</span>
-                    {p.supplier.verified ? (
-                      <Stamp kind="verified">Verified farmer</Stamp>
-                    ) : (
-                      <Stamp kind="pending">Unverified</Stamp>
-                    )}
+                    {p.supplier.verified ? <Stamp kind="verified">Verified farmer</Stamp> : null}
                   </div>
                 </Link>
               </li>

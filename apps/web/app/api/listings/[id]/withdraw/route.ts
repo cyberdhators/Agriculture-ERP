@@ -51,7 +51,11 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
         if (auth.scope.kind === 'state' && listing.state_id !== auth.scope.stateId) {
           throw notFound();
         }
-        if (listing.status !== 'listed') throw unprocessable('transition_not_allowed');
+        // LISTINGS LANE (2026-10-19): a paused listing can be taken down too, so
+        // its owner cannot resume what staff judged should not be on the market.
+        if (listing.status !== 'listed' && listing.status !== 'paused') {
+          throw unprocessable('transition_not_allowed');
+        }
 
         await tx.$executeRawUnsafe(
           `UPDATE public.produce_listing SET status = 'withdrawn', updated_at = now()
@@ -64,7 +68,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
           entityId: id,
           ...actor,
           action: 'listing.status_changed',
-          before: { status: 'listed' },
+          before: { status: listing.status },
           after: { status: 'withdrawn', by: 'staff', reason: body.reason },
         });
 

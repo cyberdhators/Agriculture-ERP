@@ -138,7 +138,17 @@ interface FarmerSessionValue {
 const FarmerSessionContext = createContext<FarmerSessionValue | null>(null);
 
 /** Fields a listing carries that the server owns, never sent back. */
-const SERVER_OWNED = new Set(['farmer_id', 'created_at', 'updated_at', 'photo_storage_paths']);
+const SERVER_OWNED = new Set([
+  'farmer_id',
+  'created_at',
+  'updated_at',
+  'photo_storage_paths',
+  // LISTINGS LANE (2026-10-19): what has been sold changes only through a
+  // recorded sale (POST /api/farmer/listings/:id/sales), never an edit.
+  'quantity_sold',
+  // The phone's own marker for an unsent change, never a field of the listing.
+  'pending',
+]);
 
 export function FarmerSessionProvider({
   initialLanguage = DEFAULT_LANGUAGE,

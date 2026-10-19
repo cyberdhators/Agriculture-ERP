@@ -230,7 +230,8 @@ export async function checkRequestedItems(
   const listings = await db.$queryRawUnsafe<
     { id: string; quantity: number; unit: string; min_order: number | null }[]
   >(
-    `SELECT id, quantity::float8 AS quantity, unit::text AS unit,
+    // LISTINGS LANE (2026-10-19): what is left, not what was first offered.
+    `SELECT id, (quantity - quantity_sold)::float8 AS quantity, unit::text AS unit,
             min_order_quantity::float8 AS min_order
        FROM public.produce_listing WHERE id = ANY($1::uuid[])`,
     ids,

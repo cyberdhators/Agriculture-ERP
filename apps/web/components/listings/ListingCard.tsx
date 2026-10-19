@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 
+import type { LifecycleStage } from '@agri-erp/shared';
+
 import { ButtonLink, Stamp } from '@/components/ui';
 import type { ProduceListing } from '@/lib/fixtures/farmers';
 import type { SellerInfo } from '@/lib/listings/api-client';
@@ -15,10 +17,11 @@ import {
 } from '@/lib/farmers/listings';
 import { formatDate } from '@/lib/format';
 import { t, type Language } from '@/lib/i18n';
-import { verificationStamp, VERIFICATION_KEY } from '@/lib/farmers/verification';
+import { STAGE_KEY, stageStamp } from '@/lib/market-posts/presentation';
 
 import { CategoryGlyph } from './CategoryGlyph';
 import { Photo } from './Photo';
+import { VerifiedFarmerBadge } from './VerifiedFarmerBadge';
 import styles from './listings.module.css';
 
 /** Two initials for the seller disc — never an icon alone. */
@@ -30,8 +33,9 @@ function initials(seller: Pick<ProduceListing, 'trading_name'>): string {
 /**
  * One product card. On the marketplace (a `seller` is given): a 4:3 cover with
  * a category badge and, when not listed, a status stamp; a Fraunces title, the
- * product and quantity, the price as the hero line, the seller with their
- * verification stamp and payam, and a "Contact seller" button revealed on
+ * product and quantity, the price as the hero line, the seller with a
+ * "Verified farmer" badge when they are (LISTINGS LANE: shown, never a filter)
+ * and their payam, and a "Contact seller" button revealed on
  * hover or shown on touch. On the farmer's own list (no seller): the same head
  * with the status stamp and an Edit action in the foot. Staff get a kebab that
  * opens moderation. The whole card links to the product page.
@@ -42,6 +46,7 @@ export function ListingCard({
   lang,
   seller,
   showStatus = false,
+  stage,
   actions,
   onModerate,
 }: {
@@ -50,6 +55,8 @@ export function ListingCard({
   lang: Language;
   seller?: SellerInfo;
   showStatus?: boolean;
+  /** LISTINGS LANE: the lifecycle stage to stamp, `expired` included, instead of the stored status. */
+  stage?: LifecycleStage;
   actions?: ReactNode;
   onModerate?: (listing: ProduceListing) => void;
 }) {
@@ -73,7 +80,9 @@ export function ListingCard({
         </span>
         {stampVisible || onModerate ? (
           <span className={styles.frameTopRight}>
-            {stampVisible ? (
+            {stampVisible && stage ? (
+              <Stamp kind={stageStamp(stage)}>{t(STAGE_KEY[stage], lang)}</Stamp>
+            ) : stampVisible ? (
               <Stamp kind={listingStamp(listing.status)}>
                 {t(STATUS_KEY[listing.status], lang)}
               </Stamp>
@@ -117,9 +126,7 @@ export function ListingCard({
             <span className={styles.cardSellerName} dir="auto">
               {listing.trading_name}
             </span>
-            <Stamp kind={verificationStamp(seller.verification_status)}>
-              {t(VERIFICATION_KEY[seller.verification_status], lang)}
-            </Stamp>
+            <VerifiedFarmerBadge verified={seller.verification_status === 'verified'} lang={lang} />
             <span className={styles.cardSellerPayam}>{seller.payam_name}</span>
           </div>
           <div className={styles.cardContact}>

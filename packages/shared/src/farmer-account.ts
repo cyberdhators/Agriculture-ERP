@@ -110,7 +110,7 @@ export const FARMER_ACCOUNT_MESSAGES = {
   tradingNameInvalid: 'A farm or stall name is 2 to 120 characters.',
   titleInvalid: 'A title is 2 to 200 characters.',
   descriptionTooLong: 'A description can be at most 1000 characters.',
-  listingStatusUnknown: 'Choose draft, listed, withdrawn or sold.',
+  listingStatusUnknown: 'Choose draft, listed, paused, withdrawn, completed or sold.',
   dateInvalid: 'Give the date as YYYY-MM-DD.',
   minOrderTooLarge: 'The minimum order cannot be more than the quantity.',
   answerUnknown: 'Choose accept or decline.',
@@ -354,7 +354,16 @@ export const farmerPhoneChangeSchema = z.strictObject({ phone: phoneSchema });
 // THE FARMER'S OWN LISTINGS -- /api/farmer/listings
 // ---------------------------------------------------------------------------
 
-export const FARMER_LISTING_STATUSES = ['draft', 'listed', 'withdrawn', 'sold'] as const;
+// LISTINGS LANE (2026-10-19): `paused` and `completed` added; `sold` stays
+// accepted and reads as completed (packages/shared/src/market-posts.ts).
+export const FARMER_LISTING_STATUSES = [
+  'draft',
+  'listed',
+  'paused',
+  'withdrawn',
+  'completed',
+  'sold',
+] as const;
 
 const listingFields = {
   trading_name: text(120, M.tradingNameInvalid).refine((v) => v.length >= 2, M.tradingNameInvalid),

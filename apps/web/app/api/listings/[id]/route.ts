@@ -52,7 +52,8 @@ const RETURNING_COLUMNS = `id, farmer_id, trading_name, title,
 
 const BROWSE_COLUMNS = `pl.id, pl.trading_name, pl.title,
   pl.category::text AS category, pl.product_name, pl.description,
-  pl.quantity::text AS quantity, pl.unit::text AS unit,
+  -- LISTINGS LANE (2026-10-19): what is left, not what was first offered.
+  (pl.quantity - pl.quantity_sold)::text AS quantity, pl.unit::text AS unit,
   pl.price_ssp::text AS price_ssp, pl.price_per::text AS price_per,
   pl.negotiable, pl.delivery_available,
   to_char(pl.available_from, 'YYYY-MM-DD') AS available_from,
@@ -116,6 +117,8 @@ const presentBrowse = (row: BrowseRow) => ({
   seller_payam_id: row.seller_payam_id,
   seller_payam_name: row.seller_payam_name,
   seller_created_at: row.seller_created_at,
+  // LISTINGS LANE (2026-10-19): a badge, shown only -- never a filter.
+  farmer_verified: row.seller_verification_status === 'verified',
 });
 
 const VALID_CATEGORIES = [
@@ -158,7 +161,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
          JOIN public.farmer f ON f.id = pl.farmer_id AND f.deleted_at IS NULL
          JOIN public.payam pm ON pm.id = f.payam_id
          WHERE pl.id = $1::uuid AND pl.deleted_at IS NULL
-           AND pl.status = 'listed' AND f.verification_status = 'verified'
+           AND pl.status = 'listed'
            AND (pl.available_until IS NULL OR pl.available_until >= current_date)
          LIMIT 1`,
         id,

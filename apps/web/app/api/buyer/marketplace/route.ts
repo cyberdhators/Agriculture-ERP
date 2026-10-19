@@ -75,7 +75,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       if (filter.state_id) where.push(`pl.state_id = ${add(filter.state_id)}`);
       if (filter.county_id) where.push(`pm.county_id = ${add(filter.county_id)}`);
       if (filter.min_quantity !== undefined)
-        where.push(`pl.quantity >= ${add(filter.min_quantity)}`);
+        where.push(`(pl.quantity - pl.quantity_sold) >= ${add(filter.min_quantity)}`);
       // "Available by" a date: it has started by then, and has not ended before it.
       if (filter.available_by) {
         const p = add(filter.available_by);
@@ -86,7 +86,9 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       if (filter.grade) where.push(`pl.quality_grade = ${add(filter.grade)}::public.listing_grade`);
       if (filter.min_price !== undefined) where.push(`pl.price_ssp >= ${add(filter.min_price)}`);
       if (filter.max_price !== undefined) where.push(`pl.price_ssp <= ${add(filter.max_price)}`);
-      if (filter.supplier === 'verified') where.push(`f.verification_status = 'verified'`);
+      // LISTINGS LANE (2026-10-19): `supplier=verified` is still accepted, so an
+      // old link does not break, and narrows nothing -- the owner: verification
+      // is a badge, "show it only, never filter by it".
 
       if (filter.cursor !== undefined) {
         const cursor = decodeCursor(filter.cursor);

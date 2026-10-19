@@ -1,0 +1,383 @@
+'use client';
+
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+
+import { SERVICE_PRICE_UNITS, SERVICE_TYPES, serviceListingSchema } from '@agri-erp/shared';
+
+import {
+  Button,
+  Checkbox,
+  Field,
+  Input,
+  Notice,
+  PrefixedInput,
+  Select,
+  Textarea,
+} from '@/components/ui';
+import { t, type Language } from '@/lib/i18n';
+import {
+  MarketPostError,
+  createService,
+  myServices,
+  newId,
+  updateService,
+  type ServiceListing,
+} from '@/lib/market-posts/api';
+import { PRICE_UNIT_KEY, SERVICE_TYPE_KEY, todayLocal } from '@/lib/market-posts/presentation';
+
+import styles from './market-posts.module.css';
+
+interface Values {
+  trading_name: string;
+  service_type: string;
+  title: string;
+  description: string;
+  location: string;
+  available_from: string;
+  available_until: string;
+  availability_note: string;
+  price_ssp: string;
+  price_unit: string;
+  negotiable: boolean;
+  contact_phone: string;
+}
+
+const fromService = (s: ServiceListing): Values => ({
+  trading_name: s.trading_name,
+  service_type: s.service_type,
+  title: s.title,
+  description: s.description,
+  location: s.location,
+  available_from: s.available_from,
+  available_until: s.available_until ?? '',
+  availability_note: s.availability_note ?? '',
+  price_ssp: s.price_ssp === null ? '' : String(s.price_ssp),
+  price_unit: s.price_unit ?? '',
+  negotiable: s.negotiable,
+  contact_phone: (s.contact_phone ?? '').replace(/^\+211/, ''),
+});
+
+/**
+ * LISTINGS LANE (2026-10-19). Offer or edit a service: tractor hire,
+ * transport, processing, storage or other -- a type, a description, a general
+ * location, when it is available, and a price or "negotiable". The farmer's
+ * own (the server takes the owner, payam and state from the session). The
+ * same shared schema as the route. Needs signal.
+ */
+export function ServiceForm({
+  lang,
+  id,
+  listHref,
+  defaultName = '',
+  defaultLocation = '',
+}: {
+  lang: Language;
+  id?: string;
+  listHref: string;
+  defaultName?: string;
+  defaultLocation?: string;
+}) {
+  const router = useRouter();
+  const [values, setValues] = useState<Values>({
+    trading_name: defaultName,
+    service_type: '',
+    title: '',
+    description: '',
+    location: defaultLocation,
+    available_from: todayLocal(),
+    available_until: '',
+    availability_note: '',
+    price_ssp: '',
+    price_unit: '',
+    negotiable: false,
+    contact_phone: '',
+  });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [failure, setFailure] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [loading, setLoading] = useState(Boolean(id));
+
+  useEffect(() => {
+    if (!id) return;
+    myServices()
+      .then((mine) => {
+        const found = mine.find((s) => s.id === id);
+        if (found) setValues(fromService(found));
+        else setFailure(t('svc.mineNotFound', lang));
+      })
+      .catch((e: unknown) => setFailure(e instanceof Error ? e.message : String(e)))
+      .finally(() => setLoading(false));
+  }, [id, lang]);
+
+  const set = <K extends keyof Values>(key: K, value: Values[K]) => {
+    setValues((v) => ({ ...v, [key]: value }));
+    setErrors((e) => ({ ...e, [key]: '' }));
+  };
+
+  function body(status?: 'draft' | 'active') {
+    const out: Record<string, unknown> = {
+      trading_name: values.trading_name,
+      service_type: values.service_type,
+      title: values.title,
+      description: values.description,
+      location: values.location,
+      available_from: values.available_from,
+      available_until: values.available_until === '' ? null : values.available_until,
+      availability_note: values.availability_note,
+      price_ssp: values.price_ssp === '' ? null : Number(values.price_ssp),
+      price_unit: values.price_ssp === '' ? null : values.price_unit || null,
+      negotiable: values.negotiable,
+    };
+    if (values.contact_phone.trim() !== '') out.contact_phone = values.contact_phone;
+    if (status) out.status = status;
+    return out;
+  }
+
+  async function submit(status?: 'draft' | 'active') {
+    setFailure(null);
+    const payload = body(status);
+    if (!id) {
+      const check = serviceListingSchema.safeParse(payload);
+      if (!check.success) {
+        const next: Record<string, string> = {};
+        for (const issue of check.error.issues) {
+          const key = String(issue.path[0] ?? '');
+          if (key && !next[key]) next[key] = issue.message;
+        }
+        setErrors(next);
+        return;
+      }
+    }
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      setFailure(t('requests.needsSignal', lang));
+      return;
+    }
+    setBusy(true);
+    try {
+      if (id) await updateService(id, payload);
+      else await createService({ id: newId(), ...payload });
+      router.push(listHref);
+    } catch (e) {
+      if (e instanceof MarketPostError) {
+        setErrors(e.fields);
+        setFailure(e.message);
+      } else setFailure(t('lifecycle.failed', lang));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (loading) return <p className="muted">{t('market.loading', lang)}</p>;
+  const err = (key: keyof Values) => errors[key] || undefined;
+
+  return (
+    <form
+      noValidate
+      onSubmit={(e) => {
+        e.preventDefault();
+        void submit(id ? undefined : 'active');
+      }}
+    >
+      {failure ? (
+        <Notice kind="error">
+          <p className="small">{failure}</p>
+        </Notice>
+      ) : null}
+      <div className={styles.formGrid}>
+        <div className={styles.span2}>
+          <Field
+            label={t('listingForm.tradingName', lang)}
+            hint={t('listingForm.tradingNameHint', lang)}
+            error={err('trading_name')}
+          >
+            {(ids) => (
+              <Input
+                {...ids}
+                dir="auto"
+                maxLength={120}
+                value={values.trading_name}
+                onChange={(e) => set('trading_name', e.target.value)}
+              />
+            )}
+          </Field>
+        </div>
+        <Field label={t('svc.type', lang)} error={err('service_type')}>
+          {(ids) => (
+            <Select
+              {...ids}
+              value={values.service_type}
+              onChange={(e) => set('service_type', e.target.value)}
+            >
+              <option value="">{t('register.select', lang)}</option>
+              {SERVICE_TYPES.map((s) => (
+                <option key={s} value={s}>
+                  {t(SERVICE_TYPE_KEY[s], lang)}
+                </option>
+              ))}
+            </Select>
+          )}
+        </Field>
+        <Field label={t('listingForm.title', lang)} error={err('title')}>
+          {(ids) => (
+            <Input
+              {...ids}
+              dir="auto"
+              maxLength={200}
+              value={values.title}
+              onChange={(e) => set('title', e.target.value)}
+            />
+          )}
+        </Field>
+        <div className={styles.span2}>
+          <Field label={t('listingForm.description', lang)} error={err('description')}>
+            {(ids) => (
+              <Textarea
+                {...ids}
+                rows={4}
+                dir="auto"
+                value={values.description}
+                onChange={(e) => set('description', e.target.value)}
+              />
+            )}
+          </Field>
+        </div>
+        <div className={styles.span2}>
+          <Field
+            label={t('svc.location', lang)}
+            hint={t('svc.locationHint', lang)}
+            error={err('location')}
+          >
+            {(ids) => (
+              <Input
+                {...ids}
+                dir="auto"
+                value={values.location}
+                onChange={(e) => set('location', e.target.value)}
+              />
+            )}
+          </Field>
+        </div>
+        <Field label={t('listingForm.availableFrom', lang)} error={err('available_from')}>
+          {(ids) => (
+            <Input
+              {...ids}
+              type="date"
+              className="mono"
+              value={values.available_from}
+              onChange={(e) => set('available_from', e.target.value)}
+            />
+          )}
+        </Field>
+        <Field
+          label={t('listingForm.availableUntil', lang)}
+          hint={t('listingForm.untilDefault', lang)}
+          optional
+          error={err('available_until')}
+        >
+          {(ids) => (
+            <Input
+              {...ids}
+              type="date"
+              className="mono"
+              min={values.available_from}
+              value={values.available_until}
+              onChange={(e) => set('available_until', e.target.value)}
+            />
+          )}
+        </Field>
+        <div className={styles.span2}>
+          <Field
+            label={t('svc.availability', lang)}
+            hint={t('svc.availabilityHint', lang)}
+            optional
+            error={err('availability_note')}
+          >
+            {(ids) => (
+              <Input
+                {...ids}
+                dir="auto"
+                value={values.availability_note}
+                onChange={(e) => set('availability_note', e.target.value)}
+              />
+            )}
+          </Field>
+        </div>
+        <Field label={t('listingForm.price', lang)} optional error={err('price_ssp')}>
+          {(ids) => (
+            <PrefixedInput
+              {...ids}
+              prefix={t('listings.ssp', lang)}
+              inputMode="numeric"
+              className="mono"
+              value={values.price_ssp}
+              onChange={(e) => set('price_ssp', e.target.value.replace(/[^\d]/g, ''))}
+            />
+          )}
+        </Field>
+        <Field label={t('svc.priceFor', lang)} optional error={err('price_unit')}>
+          {(ids) => (
+            <Select
+              {...ids}
+              value={values.price_unit}
+              disabled={values.price_ssp === ''}
+              onChange={(e) => set('price_unit', e.target.value)}
+            >
+              <option value="">{t('register.select', lang)}</option>
+              {SERVICE_PRICE_UNITS.map((u) => (
+                <option key={u} value={u}>
+                  {t(PRICE_UNIT_KEY[u], lang)}
+                </option>
+              ))}
+            </Select>
+          )}
+        </Field>
+        <div className={styles.span2}>
+          <Checkbox
+            label={t('listingForm.negotiable', lang)}
+            checked={values.negotiable}
+            onChange={(e) => set('negotiable', e.target.checked)}
+          />
+        </div>
+        <Field
+          label={t('listingForm.contactPhone', lang)}
+          hint={t('requests.phoneHint', lang)}
+          optional
+          error={err('contact_phone')}
+        >
+          {(ids) => (
+            <PrefixedInput
+              {...ids}
+              prefix="+211"
+              inputMode="tel"
+              className="mono"
+              value={values.contact_phone}
+              onChange={(e) => set('contact_phone', e.target.value)}
+            />
+          )}
+        </Field>
+      </div>
+
+      <div className={styles.formActions}>
+        <Link href={listHref} className="small">
+          {t('listingForm.cancel', lang)}
+        </Link>
+        {id ? (
+          <Button type="submit" disabled={busy}>
+            {t('listingForm.save', lang)}
+          </Button>
+        ) : (
+          <>
+            <Button variant="secondary" disabled={busy} onClick={() => void submit('draft')}>
+              {t('listingForm.saveDraft', lang)}
+            </Button>
+            <Button type="submit" disabled={busy}>
+              {t('lifecycle.publish', lang)}
+            </Button>
+          </>
+        )}
+      </div>
+    </form>
+  );
+}

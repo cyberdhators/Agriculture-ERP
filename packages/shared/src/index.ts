@@ -379,3 +379,7 @@ export * from './assistant';
 // ACCOUNTS LANE (2026-10-19): phone verification by SMS code at farmer sign-up.
 export * from './phone-verification';
 export * from './account-profile';
+
+// LISTINGS LANE (2026-10-19): the marketplace lifecycle, buying requests,
+// service listings and their reports. Appended, never reordered.
+export * from './market-posts';

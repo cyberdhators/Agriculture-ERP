@@ -33,8 +33,8 @@ export function FarmerVerification() {
           </div>
 
           {farmer.verification_status === 'pending' ? (
-            <Notice kind="warn" title={t('account.whatPendingTitle', language)}>
-              <p className="small">{t('account.whatPendingBody', language)}</p>
+            <Notice kind="info" title={t('account.whatPendingTitle', language)}>
+              <p className="small">{t('listings.verifyBadgeNote', language)}</p>
             </Notice>
           ) : null}
 

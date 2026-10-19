@@ -607,7 +607,7 @@ These are also exact.
 | Services wanted: none chosen            | Choose at least one service you want.                                                           |
 | Farmer listing: trading name            | A farm or stall name is 2 to 120 characters.                                                    |
 | Farmer listing: title                   | A title is 2 to 200 characters.                                                                 |
-| Farmer listing: status not on list      | Choose draft, listed, withdrawn or sold.                                                        |
+| Farmer listing: status not on list      | Choose draft, listed, paused, withdrawn, completed or sold.                                     |
 | Farmer listing: minimum over quantity   | The minimum order cannot be more than the quantity.                                             |
 | Farmer answer: not accept or decline    | Choose accept or decline.                                                                       |
 | Farmer phone change: same number        | That is already your phone number.                                                              |
@@ -633,6 +633,21 @@ These are also exact.
 | SMS farmer picker: search over 100      | A search can be at most 100 characters.                                                         |
 | SMS farmer picker: unknown location     | Choose a location from the list.                                                                |
 | SMS farmer picker: select not `ids`     | Choose ids, or leave the selection mode out.                                                    |
+| Market post: status not on list         | Choose draft, active, paused, withdrawn or completed.                                           |
+| Market post: name for the market        | A name for the market is 2 to 120 characters.                                                   |
+| Market post: location                   | Give a town, payam or village, 2 to 160 characters.                                             |
+| Market post: date already past          | Give a date from today onwards.                                                                 |
+| Market post: end before start           | The end date cannot be before the start date.                                                   |
+| Service: no description                 | Describe the service in a sentence or two.                                                      |
+| Service: type not on list               | Choose tractor hire, transport, processing, storage or other.                                   |
+| Service: price unit not on list         | Choose what the price is for.                                                                   |
+| Market post: no price, not negotiable   | Give a price, or tick negotiable.                                                               |
+| Market post: price with no unit         | Say what the price is for.                                                                      |
+| Listing sale: not above zero            | Give the quantity sold as a number greater than zero.                                           |
+| Listing sale: more than is left         | This is more than the quantity left on the listing.                                             |
+| Listing edit: quantity below sold       | The quantity cannot be less than what you have already sold.                                    |
+| Market post: yes/no not a choice        | Choose yes or no.                                                                               |
+| Buying requests: poster filter          | Choose farmer or buyer.                                                                         |
 
 The key beside each reason is the field name, per section 4.1. An unrecognised
 field named `nickname` therefore produces `{ "nickname": "This field is not

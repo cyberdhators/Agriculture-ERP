@@ -34,6 +34,13 @@ const EXPECTED_PUBLIC = [
   'auth/phone-code',
   'auth/phone-code/verify',
   'buyer/register',
+  // LISTINGS LANE (2026-10-19): buying requests and service listings are on
+  // the public market (read), and may be reported by a visitor, through the
+  // product-report mechanism with its unclosed exposure written in each
+  // route's header. Writes by their owners are signed in.
+  'buying-requests',
+  'buying-requests/[id]',
+  'buying-requests/[id]/reports',
   // 2026-10-08: the hourly weather fetch, called by pg_cron. Public only in that a
   // scheduler has no session: it answers 401 without the CRON_SECRET bearer.
   'cron/weather',
@@ -43,6 +50,9 @@ const EXPECTED_PUBLIC = [
   'listings/[id]',
   'listings/[id]/contact-requests',
   'listings/[id]/reports',
+  'services',
+  'services/[id]',
+  'services/[id]/reports',
   'weather/forecast',
 ];
 

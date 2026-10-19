@@ -1,5 +1,6 @@
 'use client';
 
+import { MarketSections } from '@/components/market-posts/MarketSections';
 import { PageHeader } from '@/components/ui';
 import { SCOPE_STATE } from '@/lib/farmers/presentation';
 import { useFarmerSession } from '@/lib/farmer-session';
@@ -17,6 +18,7 @@ export function StaffMarket() {
   const scopeName = role === 'admin' ? 'All states' : STATE_NAMES[SCOPE_STATE];
   return (
     <>
+      <MarketSections current="produce" lang={language} />
       <PageHeader
         eyebrow={`${t('market.title', language)} · ${scopeName}`}
         title={t('market.title', language)}
