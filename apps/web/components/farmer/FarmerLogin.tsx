@@ -115,6 +115,11 @@ export function FarmerLogin() {
         {t('login.newHere', language)}{' '}
         <Link href="/farmer/register">{t('login.register', language)}</Link>
       </p>
+      {/* 2026-10-19: in the installed app there is no address bar -- the other
+          ways in (email, staff) must be reachable from here. */}
+      <p className={styles.linkRow}>
+        <Link href="/join">{t('login.otherWays', language)}</Link>
+      </p>
     </form>
   );
 }

@@ -66,12 +66,26 @@ export function JoinChooser({ next }: { next: string }) {
               </ButtonLink>
             </div>
           </Card>
-        </div>
 
-        <p className={styles.hint}>
-          CORWADO staff and extension officers: <a href="/admin/login">sign in here</a>. Staff
-          accounts are issued by an administrator.
-        </p>
+          {/*
+           * 2026-10-19 (the owner): the installed app shows no address bar, so
+           * staff cannot type /admin/login -- their way in is a button here,
+           * the page the app opens on when nobody is signed in.
+           */}
+          <Card padded className={styles.joinCard}>
+            <h2>CORWADO staff and extension officers</h2>
+            <p className="small">For accounts issued by an administrator.</p>
+            <ul className={styles.joinList}>
+              <li>Staff sign in with their email address.</li>
+              <li>Extension officers sign in with their phone number.</li>
+            </ul>
+            <div className={styles.joinActions}>
+              <ButtonLink href="/admin/login" variant="secondary">
+                Staff sign in
+              </ButtonLink>
+            </div>
+          </Card>
+        </div>
       </div>
     </main>
   );
