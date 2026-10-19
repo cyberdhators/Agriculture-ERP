@@ -119,17 +119,15 @@ export function FarmerAssistant() {
     const history: Turn[] = [...turns, asked];
     const sent = history.slice(-ASSISTANT_LIMITS.historyMax);
     const startAt = sent.findIndex((x) => x.role === 'user');
-    const wire = sent
-      .slice(Math.max(startAt, 0))
-      .map((x, i, all) =>
-        i === all.length - 1 && withPhoto
-          ? {
-              role: x.role,
-              content: text,
-              image: { media_type: 'image/jpeg', data: withPhoto.data },
-            }
-          : { role: x.role, content: x.content || (x.thumb ? t('ai.photoEarlier', language) : '') },
-      );
+    const wire = sent.slice(Math.max(startAt, 0)).map((x, i, all) =>
+      i === all.length - 1 && withPhoto
+        ? {
+            role: x.role,
+            content: text,
+            image: { media_type: 'image/jpeg', data: withPhoto.data },
+          }
+        : { role: x.role, content: x.content || (x.thumb ? t('ai.photoEarlier', language) : '') },
+    );
     const body = { messages: wire, language };
     const parsed = assistantRequestSchema.safeParse(body);
     if (!parsed.success) {
