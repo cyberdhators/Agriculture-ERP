@@ -2720,3 +2720,65 @@ deletion, admin moderation and support, advice, analytics exports,
 organisations.
 
 — Alieu-Claude
+
+### 2026-10-21 — Alieu-Claude → Monkon-Claude — #186 to #191: messaging, phone choice, profiles, account deletion, suspension
+
+All on `main` and deployed. **Read "Your lane" first: requireRole, the market
+joins and the audit CHECK changed again; four production migrations.**
+
+**Your lane (OBSERVED unless marked)**
+
+- **requireRole refuses a suspended farmer or buyer** (#191): both lookups
+  read `suspended_at IS NULL`, so a suspended account resolves to no role.
+  `apps/web/tests/suspension-scan.test.ts` reads that SQL.
+- **Every market poster join filters `suspended_at IS NULL`** (MARKET_FROM,
+  BUYING_REQUEST_FROM, SERVICE_FROM, the two public listings routes). A new
+  market query that joins a farmer `f` or buyer `b` must carry it; the same
+  scan test fails if one does not.
+- **The audit CHECK has 91 keys.** Last CHECK migration:
+  `20261021090000_account_suspension`. Start any new one from it.
+- **Four production migrations, applied by the owner, in order, from LF
+  copies, `migrate deploy` clean after each:** `20261020090000_messaging`,
+  `20261020120000_post_show_phone`,
+  `20261020150000_audit_action_account_deletion`,
+  `20261021090000_account_suspension`. All additive; the last two recreate
+  views with CREATE OR REPLACE (`farmer_active`, `farmer_verified_v`,
+  `buyer_active`); the phone one recreates the three post `_active` views.
+- **Conversations belong to sign-ins** (`auth_user_id`), not farmer/buyer
+  records. Staff have no read path to them.
+
+**What shipped**
+
+- **#186 in-app messaging:** a conversation is always about a post (listing,
+  buying request, service); inbox with unread badge (farmer header + menu,
+  buyer menu); replies go through the offline outbox with a phone-made id;
+  20 new conversations per account per day; close conversation. Audit rows
+  carry ids only; no message text anywhere but the conversation.
+- **#187 phone by choice + consent v1.3:** `show_phone` on listings, buying
+  requests and services, off for new posts, existing ones kept on; enforced at
+  all four places a phone was handed out. Consent text v1.3 (EN/AR) at farmer
+  sign-up and "Start selling"; officer-assisted registration still v1.0.
+- **#188 public profiles:** `/market/profile/<kind>/<post id>`, reached
+  through a post (no account id in any address), whitelisted fields, no
+  migration.
+- **#190 delete my account:** password + tick box; posts withdrawn,
+  conversations closed as "Former member", records soft-deleted, sign-in
+  banned. `buyer.soft_deleted` added.
+- **#191 suspend/restore:** `content.moderate` holders, reason required; whole
+  account (farmer + buyer); sign-in banned; posts off the market and back as
+  they were on restore. Sign-in screens say "suspended or closed".
+
+**In progress:** "Contact CORWADO" (help page with FAQs, a message form,
+staff list with Mark done; no ticketing -- out of scope), on
+`feat/contact-corwado`, with a migration that will take the CHECK to 93.
+
+**Owner's decisions still open:** message retention; whether moderators may
+ever see a reported conversation; existing posts' phone (kept on); officer
+registration to consent v1.3; restoring self-deleted accounts (by hand
+today); an SMS on suspension. Plus the earlier ones above (admin powers,
+access-log retention, single-member model, infographic no. 6, Supabase plan).
+
+**Next in the web lane:** Contact CORWADO, then advice, analytics exports,
+organisations.
+
+— Alieu-Claude
