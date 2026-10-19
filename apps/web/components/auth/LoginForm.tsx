@@ -52,9 +52,11 @@ export function LoginForm({
         const refused =
           signInError.status !== undefined && [400, 401, 403, 404].includes(signInError.status);
         setError(
-          refused
-            ? 'That email or phone number and password do not match.'
-            : 'The sign-in service could not be reached. Try again in a moment.',
+          signInError.code === 'user_banned'
+            ? 'This account is suspended or closed. Contact CORWADO for help.'
+            : refused
+              ? 'That email or phone number and password do not match.'
+              : 'The sign-in service could not be reached. Try again in a moment.',
         );
         return;
       }

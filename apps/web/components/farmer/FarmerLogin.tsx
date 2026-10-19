@@ -26,7 +26,7 @@ export function FarmerLogin() {
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [phoneError, setPhoneError] = useState<string | undefined>();
-  const [failure, setFailure] = useState<'wrong' | 'locked' | null>(null);
+  const [failure, setFailure] = useState<'wrong' | 'locked' | 'suspended' | null>(null);
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
@@ -38,7 +38,9 @@ export function FarmerLogin() {
     setPhoneError(undefined);
     const result = await signIn(parsed.value, password);
     if (!result.ok) {
-      setFailure(result.reason === 'locked' ? 'locked' : 'wrong');
+      setFailure(
+        result.reason === 'locked' || result.reason === 'suspended' ? result.reason : 'wrong',
+      );
       setPassword('');
       return;
     }
@@ -54,7 +56,16 @@ export function FarmerLogin() {
 
       {failure ? (
         <Notice kind="error">
-          <p className="small">{t(locked ? 'login.locked' : 'login.failed', language)}</p>
+          <p className="small">
+            {t(
+              failure === 'suspended'
+                ? 'login.suspended'
+                : locked
+                  ? 'login.locked'
+                  : 'login.failed',
+              language,
+            )}
+          </p>
         </Notice>
       ) : null}
 

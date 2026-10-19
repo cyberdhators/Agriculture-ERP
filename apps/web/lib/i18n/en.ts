@@ -741,6 +741,8 @@ export const en = {
   'listingForm.showPhone': 'Give my phone number to buyers who send a request',
   'listingForm.showPhoneHint': 'Leave it off and buyers reach you by message in the app.',
   'posts.phonePrivate': 'This person prefers messages. Use the Message button.',
+  // 2026-10-21: a suspended (or deleted) account trying to sign in.
+  'login.suspended': 'This account is suspended or closed. Contact CORWADO for help.',
 } as const;
 
 export type TKey = keyof typeof en;

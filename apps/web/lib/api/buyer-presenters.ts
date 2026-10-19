@@ -47,7 +47,7 @@ export const MARKET_COLUMNS = `pl.id, pl.title, pl.category::text AS category, p
 
 /** Listed, not removed, with a seller who is not removed. */
 export const MARKET_FROM = `FROM public.produce_listing_active pl
-  JOIN public.farmer_active f ON f.id = pl.farmer_id
+  JOIN public.farmer_active f ON f.id = pl.farmer_id AND f.suspended_at IS NULL
   JOIN public.payam pm ON pm.id = pl.payam_id
   JOIN public.county c ON c.id = pm.county_id
   JOIN public.state s ON s.id = pl.state_id`;

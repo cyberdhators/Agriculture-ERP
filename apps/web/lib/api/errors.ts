@@ -188,6 +188,9 @@ export const RULE_MESSAGES = {
   conversation_blocked: 'This conversation has been closed. No more messages can be sent in it.',
   message_already_exists:
     'A message with that identifier has already been sent with different text. Send it again as a new message.',
+  // MODERATION (2026-10-21). About an account's standing, never a person.
+  account_already_suspended: 'This account is already suspended.',
+  account_not_suspended: 'This account is not suspended. There is nothing to restore.',
 } as const;
 
 export type RuleKey = keyof typeof RULE_MESSAGES;

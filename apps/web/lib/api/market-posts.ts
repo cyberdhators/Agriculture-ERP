@@ -159,8 +159,8 @@ export const BUYING_REQUEST_COLUMNS = `br.id, br.poster_type, br.display_name,
 /** The poster must still exist: a removed farmer or buyer takes their requests with them. */
 export const BUYING_REQUEST_FROM = `FROM public.buying_request_active br
   JOIN public.state s ON s.id = br.state_id
-  LEFT JOIN public.farmer_active f ON f.id = br.farmer_id
-  LEFT JOIN public.buyer_active b ON b.id = br.buyer_id
+  LEFT JOIN public.farmer_active f ON f.id = br.farmer_id AND f.suspended_at IS NULL
+  LEFT JOIN public.buyer_active b ON b.id = br.buyer_id AND b.suspended_at IS NULL
   LEFT JOIN public.buyer_organization_active o ON o.id = b.organization_id`;
 
 export const BUYING_REQUEST_POSTER_LIVE = `(f.id IS NOT NULL OR b.id IS NOT NULL)`;
@@ -263,7 +263,7 @@ export const SERVICE_COLUMNS = `sl.id, sl.trading_name, sl.service_type, sl.titl
   (f.verification_status::text = 'verified') AS farmer_verified`;
 
 export const SERVICE_FROM = `FROM public.service_listing_active sl
-  JOIN public.farmer_active f ON f.id = sl.farmer_id
+  JOIN public.farmer_active f ON f.id = sl.farmer_id AND f.suspended_at IS NULL
   JOIN public.payam pm ON pm.id = sl.payam_id
   JOIN public.state s ON s.id = sl.state_id`;
 
