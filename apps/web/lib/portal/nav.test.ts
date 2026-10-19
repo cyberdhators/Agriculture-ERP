@@ -25,15 +25,17 @@ describe('who sees which destination', () => {
 
   it('an administrator sees every section', () => {
     const headings = navFor('admin').map((s) => s.heading);
+    // CORWADO's ten tabs (2026-10-19). Settings joins when its screen exists.
     expect(headings).toEqual([
       'Overview',
-      'Field operations',
-      'People & access',
-      'Buyers & procurement',
+      'Users and organizations',
+      'Marketplace',
+      'Advice and learning',
+      'Reports and support',
       'Communications',
-      'Reporting',
-      'Reference',
-      'Governance',
+      'Analytics and exports',
+      'Staff and permissions',
+      'Access and audit logs',
     ]);
   });
 
@@ -127,7 +129,7 @@ describe('who sees which destination', () => {
 
   it('drops a section rather than showing an empty heading', () => {
     const officer = navFor('officer');
-    expect(officer.map((s) => s.heading)).not.toContain('Governance');
+    expect(officer.map((s) => s.heading)).not.toContain('Access and audit logs');
     expect(officer.every((s) => s.items.length > 0)).toBe(true);
   });
 

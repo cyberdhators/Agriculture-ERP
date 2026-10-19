@@ -202,7 +202,7 @@ export function UserAdmin() {
   return (
     <div className={styles.page}>
       <PageHeader
-        eyebrow="People & access"
+        eyebrow="Staff and permissions"
         title="Staff accounts and extension officers"
         subtitle="Administrative access and account lifecycle, and the field workforce with their payam assignments. Two separate records; an account is not an officer."
       />

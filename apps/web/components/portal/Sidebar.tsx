@@ -66,6 +66,8 @@ export interface SidebarProps {
   open: boolean;
   onToggleCollapsed: () => void;
   onSignOut: () => void;
+  /** 2026-10-19: shown instead of the role's own label, e.g. "Super Admin". */
+  roleLabel?: string;
 }
 
 export function Sidebar({
@@ -76,6 +78,7 @@ export function Sidebar({
   open,
   onToggleCollapsed,
   onSignOut,
+  roleLabel,
 }: SidebarProps) {
   const sections = navFor(role);
   const active = activeHref(pathname, role);
@@ -172,7 +175,7 @@ export function Sidebar({
             <span className={styles.whoName} dir="auto">
               {name}
             </span>
-            <span className={styles.whoRole}>{ROLE_LABELS[role]}</span>
+            <span className={styles.whoRole}>{roleLabel ?? ROLE_LABELS[role]}</span>
           </>
         )}
         <button type="button" className={styles.signOut} onClick={onSignOut}>

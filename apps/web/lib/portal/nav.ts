@@ -58,6 +58,19 @@ const ALL: readonly Role[] = ['admin', 'supervisor', 'read_only', 'officer'];
 /** The three staff roles that hold a state or the nation; an officer holds a caseload. */
 const STAFF: readonly Role[] = ['admin', 'supervisor', 'read_only'];
 
+/*
+ * THE TEN TABS OF CORWADO'S ADMIN PORTAL (2026-10-19; the owner: "reorganize
+ * the menu into the ten tabs"), from the specification of 16 October 2026:
+ * Overview, Users and organizations, Marketplace, Advice and learning,
+ * Reports and support, Communications, Analytics and exports, Staff and
+ * permissions, Access and audit logs, Settings.
+ *
+ * Every screen that was here stays: the farmer register, farms, visits and the
+ * field desk are contracted deliverables (c) and (d), so they move under the
+ * tab they belong to rather than leave. SETTINGS IS NOT LISTED YET -- rule 1
+ * above: no screen exists for it, and a tab with no page behind it is a 404
+ * wearing a label. It is added here when its screen is.
+ */
 export const NAV_SECTIONS: readonly NavSection[] = [
   {
     heading: 'Overview',
@@ -72,7 +85,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
     ],
   },
   {
-    heading: 'Field operations',
+    heading: 'Users and organizations',
     items: [
       {
         href: '/farmers',
@@ -91,21 +104,6 @@ export const NAV_SECTIONS: readonly NavSection[] = [
           'serves boundary coordinates across farms, and the screen cannot render without it.',
       },
       {
-        href: '/visits',
-        label: 'Visits',
-        icon: 'visits',
-        roles: ALL,
-        because: 'GET /api/visits accepts every role.',
-      },
-      {
-        href: '/desk',
-        label: 'Field desk',
-        icon: 'desk',
-        roles: ['officer'],
-        because:
-          'GET /api/sync/caseload is officer-only. Without this an officer has no home in the nav.',
-      },
-      {
         href: '/admin/users#officers',
         label: 'Extension officers',
         icon: 'officer',
@@ -114,23 +112,6 @@ export const NAV_SECTIONS: readonly NavSection[] = [
           'The officers table shares a screen with staff accounts, and that screen also reads ' +
           'GET /api/users, which refuses an officer. GET /api/officers alone would allow all four.',
       },
-    ],
-  },
-  {
-    heading: 'People & access',
-    items: [
-      {
-        href: '/admin/users',
-        label: 'Staff accounts',
-        icon: 'staff',
-        roles: STAFF,
-        because: 'GET /api/users accepts admin, supervisor and read_only. Writes are admin-only.',
-      },
-    ],
-  },
-  {
-    heading: 'Buyers & procurement',
-    items: [
       {
         href: '/admin/buyers',
         label: 'Buyer accounts',
@@ -139,6 +120,22 @@ export const NAV_SECTIONS: readonly NavSection[] = [
         because:
           'GET and PATCH /api/admin/buyers are administrator-only (B13, C-14B.3): only an ' +
           'administrator verifies, rejects or suspends a buyer organisation.',
+      },
+    ],
+  },
+  {
+    heading: 'Marketplace',
+    items: [
+      {
+        // 2026-10-19: the live marketplace, where staff withdraw a listing with
+        // a reason (the moderate panel on each product page).
+        href: '/market',
+        label: 'Live marketplace',
+        icon: 'directory',
+        roles: ['admin', 'supervisor'],
+        because:
+          'POST /api/listings/:id/withdraw accepts admin and supervisor (a supervisor in the ' +
+          "listing's state); the page itself is public.",
       },
       {
         href: '/admin/procurement',
@@ -152,40 +149,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
     ],
   },
   {
-    heading: 'Communications',
-    items: [
-      {
-        href: '/communications',
-        label: 'Communications',
-        icon: 'mail',
-        roles: ['admin'],
-        because:
-          'POST /api/admin/communications is administrator-only. Email reaches staff accounts ' +
-          'only, because no farmer or officer record holds an email address.',
-      },
-    ],
-  },
-  {
-    heading: 'Reporting',
-    items: [
-      {
-        href: '/reports',
-        label: 'Reports',
-        icon: 'reports',
-        roles: ALL,
-        because: 'GET /api/reports/summary accepts every role.',
-      },
-      {
-        href: '/reports#exports',
-        label: 'Exports',
-        icon: 'export',
-        roles: ['admin', 'supervisor'],
-        because: 'GET and POST /api/reports/exports accept admin and supervisor only.',
-      },
-    ],
-  },
-  {
-    heading: 'Reference',
+    heading: 'Advice and learning',
     items: [
       /*
        * DIRECTORIES IS DELIBERATELY ABSENT FROM THIS NAVIGATION.
@@ -204,6 +168,21 @@ export const NAV_SECTIONS: readonly NavSection[] = [
        * removes only the first.
        */
       {
+        href: '/visits',
+        label: 'Visits',
+        icon: 'visits',
+        roles: ALL,
+        because: 'GET /api/visits accepts every role.',
+      },
+      {
+        href: '/desk',
+        label: 'Field desk',
+        icon: 'desk',
+        roles: ['officer'],
+        because:
+          'GET /api/sync/caseload is officer-only. Without this an officer has no home in the nav.',
+      },
+      {
         href: '/library',
         label: 'Learning library',
         icon: 'library',
@@ -213,15 +192,79 @@ export const NAV_SECTIONS: readonly NavSection[] = [
     ],
   },
   {
-    heading: 'Governance',
+    heading: 'Reports and support',
     items: [
       {
-        href: '/admin/audit',
-        label: 'Audit trail',
-        icon: 'audit',
+        // NOT the agricultural "Reports" module, which is deliverable (t).
+        // This is marketplace moderation, and the two are kept apart in name
+        // and in section so nobody has to guess which is which.
+        href: '/product-reports',
+        label: 'Product reports',
+        icon: 'flag',
         roles: ['admin'],
-        because: 'GET /api/audit is admin-only (C-4.8).',
+        because:
+          'GET /api/admin/product-reports is administrator-only, and so are the detail and the ' +
+          'unread count the queue reads beside it.',
       },
+    ],
+  },
+  {
+    heading: 'Communications',
+    items: [
+      {
+        href: '/communications',
+        label: 'Communications',
+        icon: 'mail',
+        roles: ['admin'],
+        because:
+          'POST /api/admin/communications is administrator-only. Email reaches staff accounts ' +
+          'only, because no farmer or officer record holds an email address.',
+      },
+    ],
+  },
+  {
+    heading: 'Analytics and exports',
+    items: [
+      {
+        href: '/reports',
+        label: 'Reports',
+        icon: 'reports',
+        roles: ALL,
+        because: 'GET /api/reports/summary accepts every role.',
+      },
+      {
+        href: '/reports#exports',
+        label: 'Exports',
+        icon: 'export',
+        roles: ['admin', 'supervisor'],
+        because: 'GET and POST /api/reports/exports accept admin and supervisor only.',
+      },
+    ],
+  },
+  {
+    heading: 'Staff and permissions',
+    items: [
+      {
+        href: '/admin/users',
+        label: 'Staff accounts',
+        icon: 'staff',
+        roles: STAFF,
+        because: 'GET /api/users accepts admin, supervisor and read_only. Writes are admin-only.',
+      },
+      {
+        href: '/admin/staff-access',
+        label: 'Staff permissions',
+        icon: 'staff',
+        roles: ['admin'],
+        because:
+          'GET /api/admin/staff-access requires staff.manage, which every administrator holds; ' +
+          'other roles only through the Administrator preset.',
+      },
+    ],
+  },
+  {
+    heading: 'Access and audit logs',
+    items: [
       {
         // 2026-10-19. The route admits all three staff roles and then asks for
         // `audit.view` platform-wide, which an administrator always holds and a
@@ -236,25 +279,11 @@ export const NAV_SECTIONS: readonly NavSection[] = [
           'administrator holds; other roles only through a preset.',
       },
       {
-        href: '/admin/staff-access',
-        label: 'Staff permissions',
-        icon: 'staff',
+        href: '/admin/audit',
+        label: 'Audit trail',
+        icon: 'audit',
         roles: ['admin'],
-        because:
-          'GET /api/admin/staff-access requires staff.manage, which every administrator holds; ' +
-          'other roles only through the Administrator preset.',
-      },
-      {
-        // NOT the agricultural "Reports" module, which is deliverable (t).
-        // This is marketplace moderation, and the two are kept apart in name
-        // and in section so nobody has to guess which is which.
-        href: '/product-reports',
-        label: 'Product reports',
-        icon: 'flag',
-        roles: ['admin'],
-        because:
-          'GET /api/admin/product-reports is administrator-only, and so are the detail and the ' +
-          'unread count the queue reads beside it.',
+        because: 'GET /api/audit is admin-only (C-4.8).',
       },
     ],
   },
