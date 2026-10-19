@@ -33,6 +33,7 @@ import {
   Stamp,
 } from '../ui';
 import { MessageButton } from '../messages/MessageButton';
+import { ProfileLink } from '../profiles/PublicProfile';
 import { LoadingState } from '../ui/data';
 import styles from './buyer.module.css';
 
@@ -193,6 +194,7 @@ export function BuyerProductDetail({ id }: { id: string }) {
                 </p>
               )}
               <MessageButton postKind="listing" postId={listing.id} />
+              <ProfileLink kind="listing" id={listing.id} language="en" />
             </CardBody>
           </Card>
         </div>

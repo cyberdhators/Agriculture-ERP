@@ -7,6 +7,7 @@ import { SERVICE_TYPES } from '@agri-erp/shared';
 
 import { VerifiedFarmerBadge } from '@/components/listings/VerifiedFarmerBadge';
 import { MessageButton } from '@/components/messages/MessageButton';
+import { ProfileLink } from '@/components/profiles/PublicProfile';
 import { Badge, EmptyState, Input, Notice } from '@/components/ui';
 import { formatDate } from '@/lib/format';
 import { t, type Language } from '@/lib/i18n';
@@ -203,7 +204,9 @@ export function MarketServiceDetail({ id, lang }: { id: string; lang: Language }
         </div>
         <div>
           <dt className="small muted">{t('svc.provider', lang)}</dt>
-          <dd dir="auto">{row.trading_name}</dd>
+          <dd dir="auto">
+            {row.trading_name} <ProfileLink kind="service" id={row.id} language={lang} />
+          </dd>
         </div>
       </dl>
       <MessageButton postKind="service" postId={row.id} language={lang} />
