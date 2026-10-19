@@ -59,6 +59,13 @@ const EXPECTED_UNRESTORED_FKS = [
   // key beside it is the same shape as farm_payam_id_fkey above. The gate
   // named it on the first run after migration 23, which is what it is for.
   'weather_location_county_id_fkey',
+  // STAFF PERMISSIONS LANE (2026-10-19, migration 20261019110000). A grant
+  // points at three staff accounts and a state; modelling them as relations
+  // would add four back-relations to User and State for no reader.
+  'staff_permission_grant_granted_by_fkey',
+  'staff_permission_grant_revoked_by_fkey',
+  'staff_permission_grant_state_state_id_fkey',
+  'staff_permission_grant_user_id_fkey',
 ];
 
 /**

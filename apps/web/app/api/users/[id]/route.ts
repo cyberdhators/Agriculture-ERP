@@ -2,6 +2,7 @@ import { patchUserSchema, toIso } from '@agri-erp/shared';
 
 import { audited, writeAudit, writeAuditOutcome } from '../../../../lib/api/audit';
 import { notFound, unprocessable } from '../../../../lib/api/errors';
+import { wouldLoseLastSuperAdmin } from '../../../../lib/api/permissions';
 import { defineRoutes, empty, ok } from '../../../../lib/api/route';
 import { requireWriter } from '../../../../lib/api/scope';
 import { prisma } from '../../../../lib/db';
@@ -101,6 +102,11 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
         if (demoting && !(await otherAdminExists(tx as never, target.id))) {
           throw unprocessable('last_admin_cannot_be_demoted');
         }
+        // Staff permissions lane (2026-10-19): a Super Admin must be an
+        // administrator, so demoting the last one would leave none.
+        if (demoting && (await wouldLoseLastSuperAdmin(tx as never, target.id))) {
+          throw unprocessable('last_super_admin');
+        }
 
         const nextRole = body.role ?? target.role;
         // The database refuses an admin with a state and a supervisor
@@ -182,6 +188,10 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       const deletedAt = await audited(prisma, async (tx) => {
         if (target.role === 'admin' && !(await otherAdminExists(tx as never, target.id))) {
           throw unprocessable('last_admin_cannot_be_removed');
+        }
+        // Staff permissions lane (2026-10-19): the last Super Admin is protected.
+        if (await wouldLoseLastSuperAdmin(tx as never, target.id)) {
+          throw unprocessable('last_super_admin');
         }
         const [row] = await tx.$queryRawUnsafe<{ deleted_at: Date }[]>(
           `UPDATE public."user" SET deleted_at = now(), deleted_by = $2::uuid

@@ -102,6 +102,7 @@ const ENTITY_LABELS: Record<string, string> = {
   purchase_request: 'Purchase request',
   purchase_order: 'Purchase order',
   notification: 'Notification',
+  staff_permission_grant: 'Staff permission',
 };
 
 /**

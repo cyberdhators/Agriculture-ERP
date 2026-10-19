@@ -1,5 +1,6 @@
 import { ALL_ROLES, BUYER_ROLE } from '@agri-erp/shared';
 
+import { recordVisit } from '../../../lib/api/access-log';
 import { defineRoutes, ok } from '../../../lib/api/route';
 
 /**
@@ -15,13 +16,19 @@ import { defineRoutes, ok } from '../../../lib/api/route';
 export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   GET: {
     roles: [...ALL_ROLES, BUYER_ROLE],
-    handler: async ({ auth }) =>
-      ok({
+    handler: async ({ auth, request }) => {
+      // STAFF PERMISSIONS LANE (2026-10-19): the access log. The portal calls
+      // this on load and the sign-in screen straight after a sign-in, so it is
+      // where a sign-in or a return session can be seen. recordVisit never
+      // throws and gives up after two seconds: the answer below is unchanged.
+      await recordVisit(auth, request);
+      return ok({
         id: auth.principal.id,
         kind: auth.principal.kind,
         name: auth.principal.name,
         role: auth.role,
         scope: auth.scope,
-      }),
+      });
+    },
   },
 });
