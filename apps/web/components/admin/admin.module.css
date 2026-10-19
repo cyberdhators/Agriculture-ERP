@@ -382,3 +382,27 @@ a.hubCard:hover {
   font-weight: 600;
   color: var(--ink-2);
 }
+
+/* ---- Staff and permissions (2026-10-19) ------------------------------ */
+.grantList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: var(--s-1, 4px);
+}
+
+.rowActions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--s-2, 8px);
+}
+
+.stateChoices {
+  border: 0;
+  margin: 0 0 var(--s-4, 16px);
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+  gap: var(--s-2, 8px);
+}

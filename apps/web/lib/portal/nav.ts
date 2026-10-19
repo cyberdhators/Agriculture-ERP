@@ -223,6 +223,28 @@ export const NAV_SECTIONS: readonly NavSection[] = [
         because: 'GET /api/audit is admin-only (C-4.8).',
       },
       {
+        // 2026-10-19. The route admits all three staff roles and then asks for
+        // `audit.view` platform-wide, which an administrator always holds and a
+        // supervisor or read-only account holds only through a preset. The nav
+        // offers it to administrators; a granted colleague reaches it by link.
+        href: '/admin/access-logs',
+        label: 'Access logs',
+        icon: 'audit',
+        roles: ['admin'],
+        because:
+          'GET /api/admin/access-logs requires audit.view across the platform, which every ' +
+          'administrator holds; other roles only through a preset.',
+      },
+      {
+        href: '/admin/staff-access',
+        label: 'Staff permissions',
+        icon: 'staff',
+        roles: ['admin'],
+        because:
+          'GET /api/admin/staff-access requires staff.manage, which every administrator holds; ' +
+          'other roles only through the Administrator preset.',
+      },
+      {
         // NOT the agricultural "Reports" module, which is deliverable (t).
         // This is marketplace moderation, and the two are kept apart in name
         // and in section so nobody has to guess which is which.
@@ -280,6 +302,8 @@ const SEGMENT_LABELS: Record<string, string> = {
   buyers: 'Buyer accounts',
   procurement: 'Buyer requests',
   audit: 'Audit trail',
+  'staff-access': 'Staff permissions',
+  'access-logs': 'Access logs',
   farmers: 'Farmers',
   farms: 'Farms & maps',
   communications: 'Communications',

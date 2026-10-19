@@ -3844,3 +3844,71 @@ The owner, from CORWADO's specification of 16 October 2026. Branch
 Migrations 20261019100000 (lifecycle) and 20261019101000 (tables) are written,
 NOT applied. **Apply them before deploying this code**: the code reads
 `quantity_sold` and the new tables, and would fail without them.
+
+## Staff permissions, Super Admin and access logs (2026-10-19)
+
+CORWADO's specification of 16 October 2026, the administration part. Built as
+an ADDITIVE layer: the four staff roles, sign-in and requireRole are unchanged.
+Branch `feat/staff-permissions`; migrations 20261019110000 and 20261019110100,
+NOT applied by the session that wrote them.
+
+- **Presets and keys.** Super Admin (every key), Administrator (`staff.manage`,
+  `settings.manage`, `audit.view`, `reports.view`), Moderator + Editor
+  (`content.moderate`, `content.publish`), Analyst (`reports.view`), Support
+  (`support.handle`). `superadmin.grant` and `exports.identifiable` are in Super
+  Admin only, so platform-wide moderation never implies Super Admin, security
+  changes or sensitive exports (a test asserts it). Each grant is platform-wide
+  or for named states; one person may hold several presets.
+- **The legacy rule.** An existing `admin` holds every key except
+  `superadmin.grant`, platform-wide, with no grant row, so nothing that works
+  today stops working. DECIDED HERE, OPEN TO THE OWNER: this stays true after
+  a Super Admin exists (the brief's "until a Super Admin exists" was read as
+  describing the bootstrap). If administrators should lose the implicit keys
+  once a Super Admin exists, it is one constant in packages/shared.
+- **Enforced in the service.** `requirePermission(auth, key, scope?)`
+  (apps/web/lib/api/permissions.ts) runs in every new route after requireRole;
+  scope omitted means the whole platform. Existing routes were NOT retrofitted.
+- **Super Admin delegation.** Needs the granter's own password, verified on the
+  server by a password sign-in on a throwaway client (no cookie, no session
+  change, the new session signed out at once, nothing logged), plus an explicit
+  confirmation. Only an `admin` account can be a Super Admin.
+- **Bootstrap.** While no Super Admin exists, an administrator may appoint
+  THEMSELVES (only themselves), with the same re-authentication. An advisory
+  lock makes two simultaneous bootstraps queue; the second is refused.
+- **The last active Super Admin** cannot be revoked, removed (DELETE
+  /api/users/[id]) or demoted (PATCH role) -- the one change made to an existing
+  route, inside its transaction, and a no-op until the migration is applied.
+- **MFA (TOTP): partly.** If the granter has a VERIFIED Supabase TOTP factor, a
+  six-digit code is required and verified at the grant step. Enrolment is NOT
+  built: it needs a screen that enrols through the user's own Supabase session,
+  which is the sign-in client this pass was told not to change. Until it is, no
+  account has a factor and the step is password plus confirmation. Open.
+- **Revoke sessions.** supabase-js has no admin "sign out by id"; its admin
+  `signOut` needs one of the user's own tokens. So the server mints one
+  (admin `generateLink` magic link, nothing sent; `verifyOtp`) and calls
+  `signOut(token, 'global')`. Each step is DOCUMENTED by Supabase; the chain is
+  INFERRED and NOT EXERCISED (there is only production). Side effect: the
+  account's Supabase `last_sign_in_at` moves. Audited with its outcome.
+- **Access logs.** `access_log` (append-only by trigger, RLS on, no policies)
+  holds account kind and application id, event, UTC time and at most a
+  platform-family device label -- no IP address, no user agent. Events:
+  `account_created` (database trigger on user, officer, buyer and farmer-with-
+  account inserts, never able to fail the insert; existing accounts back-filled
+  from `created_at`), `first_sign_in`, `sign_in`, `return_session` (an
+  authenticated visit after more than 30 minutes idle,
+  `RETURN_SESSION_INACTIVITY_MS`), `reauth_failed`. Last activity is
+  `account_activity.last_seen_at`. Displayed in Africa/Juba time.
+- **Where visits are seen, and the gaps.** GET /api/me (portal load; the staff
+  and buyer sign-in screen calls it straight after signing in, now with an
+  `x-agri-sign-in: 1` header so the visit is logged as a sign-in) and GET
+  /api/farmer/me (farmers; no announce header, so a farmer's later sign-ins
+  appear as return sessions). Every sign-in is client-side Supabase, so a
+  FAILED sign-in is never seen by a server and is not logged; only a failed
+  re-authentication is. "Last activity" moves only when those routes are
+  called, i.e. on a full page load, not on in-app navigation -- a heartbeat or
+  a hook in the route wrapper would close that; not done, open. The first
+  visit after this ships is logged as `first_sign_in` for accounts that signed
+  in long before: it means the first one the log saw.
+- **Retention: OPEN DECISION.** Nothing expires access-log rows and the trigger
+  forbids deleting them. CORWADO should set a period (e.g. 12 or 24 months);
+  enforcing it would need a deliberate, logged purge mechanism.

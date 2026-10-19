@@ -5,6 +5,7 @@ import {
   farmerPhoneChangeSchema,
 } from '@agri-erp/shared';
 
+import { recordVisit } from '../../../../lib/api/access-log';
 import { audited, writeAudit } from '../../../../lib/api/audit';
 import { ApiFailure, conflict } from '../../../../lib/api/errors';
 import { loadSelf } from '../../../../lib/api/farmer-accounts';
@@ -24,7 +25,14 @@ import { setAuthIdentifier } from '../../../../lib/supabase/admin';
 export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   GET: {
     roles: [FARMER_ROLE],
-    handler: async ({ auth }) => ok(await loadSelf(prisma, farmerScope(auth).farmerId)),
+    handler: async ({ auth, request }) => {
+      // STAFF PERMISSIONS LANE (2026-10-19): the one access-log call in the
+      // farmer routes. Farmers sign in in the browser, so this is the first
+      // place a server sees them. recordVisit never throws and gives up after
+      // two seconds; the response is exactly what it was.
+      await recordVisit(auth, request);
+      return ok(await loadSelf(prisma, farmerScope(auth).farmerId));
+    },
   },
 
   PATCH: {

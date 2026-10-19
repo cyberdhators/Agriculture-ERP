@@ -383,3 +383,7 @@ export * from './account-profile';
 // LISTINGS LANE (2026-10-19): the marketplace lifecycle, buying requests,
 // service listings and their reports. Appended, never reordered.
 export * from './market-posts';
+
+// STAFF PERMISSIONS LANE (2026-10-19): staff permission presets, Super Admin
+// delegation and access logs. Appended, never reordered.
+export * from './staff-permissions';
