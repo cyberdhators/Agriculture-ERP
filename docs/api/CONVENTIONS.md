@@ -453,6 +453,7 @@ change.
 | `conversation.started`                    |
 | `message.sent`                            |
 | `conversation.blocked`                    |
+| `buyer.soft_deleted`                      |
 
 `before` and `after` hold **changed fields only**, never whole rows, and never a
 password, token, authentication identifier, national id, phone, email, given
@@ -676,6 +677,8 @@ These are also exact.
 | Message: body missing or blank          | Write a message.                                                                                |
 | Message: over 2000 characters           | A message has at most 2000 characters.                                                          |
 | Conversation: `after` not a time        | Give the time as an ISO date and time.                                                          |
+| Delete account: no password             | Enter your password to confirm.                                                                 |
+| Delete account: not confirmed           | Tick the box to confirm you want to delete your account.                                        |
 
 The key beside each reason is the field name, per section 4.1. An unrecognised
 field named `nickname` therefore produces `{ "nickname": "This field is not

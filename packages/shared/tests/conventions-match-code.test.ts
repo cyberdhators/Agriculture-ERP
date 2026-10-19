@@ -20,6 +20,7 @@ import {
   COMMUNICATION_MESSAGES,
   MARKET_POST_MESSAGES,
   MESSAGING_MESSAGES,
+  ACCOUNT_DELETION_MESSAGES,
 } from '../src/index';
 
 /**
@@ -166,6 +167,8 @@ describe('the documented field reasons match the ones the code actually sends', 
     ...Object.values(MARKET_POST_MESSAGES),
     // IN-APP MESSAGING (2026-10-20)
     ...Object.values(MESSAGING_MESSAGES),
+    // DELETE MY ACCOUNT (2026-10-20)
+    ...Object.values(ACCOUNT_DELETION_MESSAGES),
     ERROR_MESSAGES.unknownField,
     ERROR_MESSAGES.bodyNotExpectedForm,
   ];
