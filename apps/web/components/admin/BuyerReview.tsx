@@ -24,6 +24,8 @@ import { Button, EmptyState, Field, Notice, PageHeader, Stamp, Tabs, Textarea } 
 import { DataTable, LoadingState, Pagination } from '../ui/data';
 import { ConfirmationDialog, useToast } from '../ui/feedback';
 
+import { AccountSanction } from './AccountSanction';
+
 /**
  * BUYER ACCOUNT REVIEW (B13, C-14B.3). Administrator only, on the server.
  *
@@ -151,6 +153,12 @@ export function BuyerReview() {
                 render: (o) => (
                   <span dir="auto">
                     {o.contact.name ?? '—'}
+                    {o.contact.suspended ? (
+                      <>
+                        {' '}
+                        <Stamp kind="rejected">Suspended</Stamp>
+                      </>
+                    ) : null}
                     <br />
                     <span className="small mono">
                       {[o.contact.email, o.contact.phone].filter(Boolean).join(' · ')}
@@ -195,6 +203,27 @@ export function BuyerReview() {
                           {ACTION_LABELS[to]}
                         </Button>
                       ))}
+                    {/* 2026-10-21: the contact's own account, apart from the organisation's standing. */}
+                    {o.contact.buyer_id ? (
+                      <AccountSanction
+                        kind="buyer"
+                        id={o.contact.buyer_id}
+                        compact
+                        onChange={({ action, signInReached }) => {
+                          const done = action === 'suspend' ? 'suspended' : 'restored';
+                          toast.show(
+                            signInReached
+                              ? { kind: 'success', title: `${o.contact.name ?? o.name}: ${done}` }
+                              : {
+                                  kind: 'warn',
+                                  title: `${o.contact.name ?? o.name}: ${done}, sign-in not updated`,
+                                  body: 'The change did not reach the sign-in service. Try again in a moment.',
+                                },
+                          );
+                          list.reload();
+                        }}
+                      />
+                    ) : null}
                   </div>
                 ),
               },
