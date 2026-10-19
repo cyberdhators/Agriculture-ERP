@@ -4039,3 +4039,32 @@ CORWADO's 16 October specification asks for account deletion. The owner,
 - **Coming back:** the phone and sign-in stay with the deleted record, so the
   same phone cannot sign up again; restoring an account is CORWADO's, by hand,
   for now -- OPEN whether to build a restore for staff.
+
+## Staff suspend and restore an account (2026-10-21)
+
+CORWADO's 16 October specification, "Reports and support". The owner,
+2026-10-20: suspend an account (report queues and taking a post down already
+existed).
+
+- **Who:** administrators holding "Moderate content and listings"
+  (`content.moderate`; the moderator/editor preset and plain administrators
+  today). With a reason of at least five characters, kept in the audit trail.
+  From a farmer's record and from the buyer list.
+- **What a suspension is:** the ACCOUNT's -- one sign-in holding a farmer and
+  a buyer record is suspended (and restored) as a whole. The records carry
+  `suspended_at`, the reason and who did it (migration `20261021090000`); the
+  sign-in is banned, ending sessions on every phone; every request from the
+  account is refused (requireRole); nothing it posted is on the market, nor
+  reachable by messaging or a profile (the market's joins). Its posts keep
+  their own status, so restoring brings them back as they were.
+- **What it is not:** a removal. The farmer stays on the register and, if
+  verified, in reach figures; a buyer's past purchase requests and orders are
+  untouched. A suspended person trying to sign in is told the account is
+  suspended or closed and to contact CORWADO.
+- **Audit:** `account.suspended` and `account.restored`, one row per record
+  (CHECK 89 → 91). Enforced by filters in SQL text, so
+  `apps/web/tests/suspension-scan.test.ts` reads that SQL and fails if a market
+  join or the session lookup loses the filter.
+- **Not built:** restoring a self-deleted account (still by hand); a notice
+  to the account saying why (it cannot sign in to read one) -- an SMS on
+  suspension is possible later with Bird, OPEN.
