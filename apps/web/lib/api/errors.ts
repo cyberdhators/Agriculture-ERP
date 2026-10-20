@@ -217,6 +217,16 @@ export const RULE_MESSAGES = {
   profile_no_photo: 'This profile has no photo. There is nothing to remove.',
   profile_save_first: 'Save your profile as a draft before adding a photo.',
   conversation_owner_no_messages: 'The owner of this post does not take messages in the app.',
+  // APPROVED ADVISERS (2026-10-24). About an application's state, never a person.
+  adviser_profile_required: 'Save your advice profile before applying to be an approved adviser.',
+  adviser_application_open:
+    'You already have an application with CORWADO. Answer or withdraw it before applying again.',
+  adviser_already_approved: 'You are already an approved adviser.',
+  adviser_no_clarification: 'CORWADO has not asked a question about your application.',
+  adviser_nothing_to_withdraw: 'You have no application with CORWADO to withdraw.',
+  adviser_decision_not_allowed:
+    'That decision cannot be made on this application as it stands. Reload it to see where it is.',
+  adviser_own_application: 'You cannot decide on your own application.',
 } as const;
 
 export type RuleKey = keyof typeof RULE_MESSAGES;

@@ -158,6 +158,18 @@ export const AUDIT_ACTIONS = [
   'profile.photo_changed',
   'profile.photo_removed',
   'profile.photo_removed_by_staff',
+  // 2026-10-24: the optional approved-adviser pathway (independent advice,
+  // part 2). The applicant's actions carry ids and statuses only, never the
+  // application's text; a staff decision carries its recorded reason, as an
+  // account suspension does. NOT YET IN THE DATABASE CHECK: one combined CHECK
+  // migration adds them (the owner).
+  'adviser_application.submitted',
+  'adviser_application.replied',
+  'adviser_application.withdrawn',
+  'adviser_application.clarification_requested',
+  'adviser_application.approved',
+  'adviser_application.declined',
+  'adviser_approval.revoked',
 ] as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];

@@ -422,3 +422,5 @@ export * from './advice';
 export * from './analytics';
 // 2026-10-23: public profiles v2 -- drafts, publishing, an optional photo.
 export * from './public-profile';
+// 2026-10-24: independent advice part 2 -- the optional approved-adviser pathway.
+export * from './adviser-approval';

@@ -364,6 +364,13 @@ character.
 | `profile_no_photo`                 | This profile has no photo. There is nothing to remove.                                                                        |
 | `profile_save_first`               | Save your profile as a draft before adding a photo.                                                                           |
 | `conversation_owner_no_messages`   | The owner of this post does not take messages in the app.                                                                     |
+| `adviser_profile_required`         | Save your advice profile before applying to be an approved adviser.                                                           |
+| `adviser_application_open`         | You already have an application with CORWADO. Answer or withdraw it before applying again.                                    |
+| `adviser_already_approved`         | You are already an approved adviser.                                                                                          |
+| `adviser_no_clarification`         | CORWADO has not asked a question about your application.                                                                      |
+| `adviser_nothing_to_withdraw`      | You have no application with CORWADO to withdraw.                                                                             |
+| `adviser_decision_not_allowed`     | That decision cannot be made on this application as it stands. Reload it to see where it is.                                  |
+| `adviser_own_application`          | You cannot decide on your own application.                                                                                    |
 
 **A route names a rule; it never writes a sentence.** `conflict()` and
 `unprocessable()` take a key from this registry, not a string. That is how the
@@ -383,116 +390,123 @@ same list, so a key that is not here is refused at the database. Adding one
 means editing `AUDIT_ACTIONS` in `packages/shared` and this table in the same
 change.
 
-| Action key                                |
-| ----------------------------------------- |
-| `user.created`                            |
-| `user.updated`                            |
-| `user.password_set`                       |
-| `user.soft_deleted`                       |
-| `officer.created`                         |
-| `officer.updated`                         |
-| `officer.status_changed`                  |
-| `officer.password_set`                    |
-| `officer.soft_deleted`                    |
-| `auth.disabled`                           |
-| `auth.disable_failed`                     |
-| `auth.account_orphaned`                   |
-| `location.created`                        |
-| `location.renamed`                        |
-| `location.soft_deleted`                   |
-| `farmer.created`                          |
-| `farmer.updated`                          |
-| `farmer.soft_deleted`                     |
-| `consent.recorded`                        |
-| `farmer.verified`                         |
-| `farmer.rejected`                         |
-| `farmer.merged`                           |
-| `farmer.resubmitted`                      |
-| `farmer.reassigned`                       |
-| `farm.created`                            |
-| `farm.boundary_added`                     |
-| `farm.boundary_superseded`                |
-| `farm.crops_declared`                     |
-| `farm.soft_deleted`                       |
-| `visit.recorded`                          |
-| `visit.corrected`                         |
-| `visit.soft_deleted`                      |
-| `visit.attachment_declared`               |
-| `visit.attachment_arrived`                |
-| `visit.attachment_failed`                 |
-| `visit.attachment_link_issued`            |
-| `farm.repointed`                          |
-| `visit.repointed`                         |
-| `report.exported`                         |
-| `system.restored`                         |
-| `directory_entry.created`                 |
-| `directory_entry.updated`                 |
-| `directory_entry.soft_deleted`            |
-| `learning_resource.created`               |
-| `learning_resource.updated`               |
-| `learning_resource.published`             |
-| `learning_resource.soft_deleted`          |
-| `learning_resource.submitted`             |
-| `learning_resource.returned`              |
-| `learning_resource.unpublished`           |
-| `weather_location.created`                |
-| `weather_location.updated`                |
-| `weather_location.soft_deleted`           |
-| `product_report.created`                  |
-| `product_report.status_changed`           |
-| `product_report.listing_removed`          |
-| `communication.email_sent`                |
-| `communication.send_failed`               |
-| `listing.created`                         |
-| `listing.updated`                         |
-| `listing.status_changed`                  |
-| `listing.soft_deleted`                    |
-| `contact_request.created`                 |
-| `contact_request.handled`                 |
-| `market_price.created`                    |
-| `market_price.soft_deleted`               |
-| `notification.created`                    |
-| `notification.read`                       |
-| `buyer.registered`                        |
-| `buyer.updated`                           |
-| `buyer_organization.updated`              |
-| `buyer_organization.verification_changed` |
-| `purchase_request.created`                |
-| `purchase_request.updated`                |
-| `purchase_request.submitted`              |
-| `purchase_request.cancelled`              |
-| `purchase_request.decided`                |
-| `purchase_order.created`                  |
-| `purchase_order.status_changed`           |
-| `purchase_order.cancelled`                |
-| `communication.sms_sent`                  |
-| `account.profile_updated`                 |
-| `staff.permission_granted`                |
-| `staff.permission_revoked`                |
-| `superadmin.granted`                      |
-| `superadmin.revoked`                      |
-| `staff.sessions_revoked`                  |
-| `staff.sessions_revoke_failed`            |
-| `conversation.started`                    |
-| `message.sent`                            |
-| `conversation.blocked`                    |
-| `buyer.soft_deleted`                      |
-| `account.suspended`                       |
-| `account.restored`                        |
-| `support_message.created`                 |
-| `support_message.done`                    |
-| `advice_provider.saved`                   |
-| `advice_case.created`                     |
-| `advice_case.status_changed`              |
-| `advice_case.closed`                      |
-| `advice_case.feedback`                    |
-| `analytics.exported`                      |
-| `profile.saved`                           |
-| `profile.published`                       |
-| `profile.unpublished`                     |
-| `profile.photo_changed`                   |
-| `profile.photo_removed`                   |
-| `profile.photo_removed_by_staff`          |
+| Action key                                    |
+| --------------------------------------------- |
+| `user.created`                                |
+| `user.updated`                                |
+| `user.password_set`                           |
+| `user.soft_deleted`                           |
+| `officer.created`                             |
+| `officer.updated`                             |
+| `officer.status_changed`                      |
+| `officer.password_set`                        |
+| `officer.soft_deleted`                        |
+| `auth.disabled`                               |
+| `auth.disable_failed`                         |
+| `auth.account_orphaned`                       |
+| `location.created`                            |
+| `location.renamed`                            |
+| `location.soft_deleted`                       |
+| `farmer.created`                              |
+| `farmer.updated`                              |
+| `farmer.soft_deleted`                         |
+| `consent.recorded`                            |
+| `farmer.verified`                             |
+| `farmer.rejected`                             |
+| `farmer.merged`                               |
+| `farmer.resubmitted`                          |
+| `farmer.reassigned`                           |
+| `farm.created`                                |
+| `farm.boundary_added`                         |
+| `farm.boundary_superseded`                    |
+| `farm.crops_declared`                         |
+| `farm.soft_deleted`                           |
+| `visit.recorded`                              |
+| `visit.corrected`                             |
+| `visit.soft_deleted`                          |
+| `visit.attachment_declared`                   |
+| `visit.attachment_arrived`                    |
+| `visit.attachment_failed`                     |
+| `visit.attachment_link_issued`                |
+| `farm.repointed`                              |
+| `visit.repointed`                             |
+| `report.exported`                             |
+| `system.restored`                             |
+| `directory_entry.created`                     |
+| `directory_entry.updated`                     |
+| `directory_entry.soft_deleted`                |
+| `learning_resource.created`                   |
+| `learning_resource.updated`                   |
+| `learning_resource.published`                 |
+| `learning_resource.soft_deleted`              |
+| `learning_resource.submitted`                 |
+| `learning_resource.returned`                  |
+| `learning_resource.unpublished`               |
+| `weather_location.created`                    |
+| `weather_location.updated`                    |
+| `weather_location.soft_deleted`               |
+| `product_report.created`                      |
+| `product_report.status_changed`               |
+| `product_report.listing_removed`              |
+| `communication.email_sent`                    |
+| `communication.send_failed`                   |
+| `listing.created`                             |
+| `listing.updated`                             |
+| `listing.status_changed`                      |
+| `listing.soft_deleted`                        |
+| `contact_request.created`                     |
+| `contact_request.handled`                     |
+| `market_price.created`                        |
+| `market_price.soft_deleted`                   |
+| `notification.created`                        |
+| `notification.read`                           |
+| `buyer.registered`                            |
+| `buyer.updated`                               |
+| `buyer_organization.updated`                  |
+| `buyer_organization.verification_changed`     |
+| `purchase_request.created`                    |
+| `purchase_request.updated`                    |
+| `purchase_request.submitted`                  |
+| `purchase_request.cancelled`                  |
+| `purchase_request.decided`                    |
+| `purchase_order.created`                      |
+| `purchase_order.status_changed`               |
+| `purchase_order.cancelled`                    |
+| `communication.sms_sent`                      |
+| `account.profile_updated`                     |
+| `staff.permission_granted`                    |
+| `staff.permission_revoked`                    |
+| `superadmin.granted`                          |
+| `superadmin.revoked`                          |
+| `staff.sessions_revoked`                      |
+| `staff.sessions_revoke_failed`                |
+| `conversation.started`                        |
+| `message.sent`                                |
+| `conversation.blocked`                        |
+| `buyer.soft_deleted`                          |
+| `account.suspended`                           |
+| `account.restored`                            |
+| `support_message.created`                     |
+| `support_message.done`                        |
+| `advice_provider.saved`                       |
+| `advice_case.created`                         |
+| `advice_case.status_changed`                  |
+| `advice_case.closed`                          |
+| `advice_case.feedback`                        |
+| `analytics.exported`                          |
+| `profile.saved`                               |
+| `profile.published`                           |
+| `profile.unpublished`                         |
+| `profile.photo_changed`                       |
+| `profile.photo_removed`                       |
+| `profile.photo_removed_by_staff`              |
+| `adviser_application.submitted`               |
+| `adviser_application.replied`                 |
+| `adviser_application.withdrawn`               |
+| `adviser_application.clarification_requested` |
+| `adviser_application.approved`                |
+| `adviser_application.declined`                |
+| `adviser_approval.revoked`                    |
 
 `before` and `after` hold **changed fields only**, never whole rows, and never a
 password, token, authentication identifier, national id, phone, email, given
@@ -778,6 +792,16 @@ These are also exact.
 | Profile photo: over 2 MB                | A profile photo can be at most 2 MB.                                                            |
 | Profile photo: size not whole bytes     | Give the photo size as a whole number of bytes.                                                 |
 | Profile photo: upload id malformed      | The upload identifier is not in the expected form.                                              |
+| Advice directory: approved filter       | Use approved=1 to show approved advisers only, or leave it out.                                 |
+| Adviser application: no specialty       | Choose at least one subject you specialise in.                                                  |
+| Adviser application: experience         | Describe your experience in 20 to 2000 characters.                                              |
+| Adviser application: qualifications     | Qualifications can be at most 2000 characters.                                                  |
+| Adviser application: affiliation        | An affiliation can be at most 300 characters.                                                   |
+| Adviser application: not ticked         | Tick the box to confirm this statement.                                                         |
+| Adviser clarification: answer           | Write your answer in 5 to 2000 characters.                                                      |
+| Adviser decision: not on list           | Choose request clarification, approve, decline or revoke.                                       |
+| Adviser decision: reason                | Give a reason of 5 to 1000 characters.                                                          |
+| Adviser queue: status not on list       | Choose submitted, clarification requested, approved, declined, revoked or withdrawn.            |
 
 The key beside each reason is the field name, per section 4.1. An unrecognised
 field named `nickname` therefore produces `{ "nickname": "This field is not
