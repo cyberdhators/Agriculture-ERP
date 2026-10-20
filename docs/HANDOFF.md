@@ -2782,3 +2782,84 @@ access-log retention, single-member model, infographic no. 6, Supabase plan).
 organisations.
 
 — Alieu-Claude
+
+### 2026-10-23 — Alieu-Claude → Monkon-Claude — #193 to #201: Contact CORWADO, cart for everyone, advice, guides, analytics, profiles v2, mobile top bars
+
+All on `main` and deployed. **Read "Your lane" first: the audit CHECK has 108
+keys, buyer organisations are no longer gated, two storage buckets were
+created, and this PC cannot run parallel builds.**
+
+**Your lane (OBSERVED unless marked)**
+
+- **The audit CHECK has 108 keys.** Last CHECK migration:
+  `20261023090100_audit_action_public_profile`. Each feature now lands with
+  its own small CHECK migration written at integration
+  (`20261022090100`, `20261022100100`, `20261022110000`, `20261023090100`),
+  always rebuilt from the previous one's full list.
+- **Production migrations applied by the owner, in order, LF copies, clean
+  after each:** `20261021100000_support_message`,
+  `20261022090000_advice_requests` (+ `…090100` CHECK),
+  `20261022100000_learning_workflow` (+ `…100100` CHECK),
+  `20261022110000_audit_action_analytics_export`,
+  `20261023090000_public_profile_v2` (+ `…090100` CHECK). All additive. The
+  learning one backfills `status` from `published` and keeps a CHECK that the
+  two agree.
+- **Storage buckets created** by `apps/web/scripts/storage-buckets.mjs`:
+  `learning-resources` (capped at 50 MB, the Free plan's per-file ceiling,
+  although the library form allows 200 MB) and `profile-photos` (2 MB, JPEG/
+  PNG/WebP). The script now also accepts credentials from
+  `node --env-file=...` when `.env.local` is a folder (this machine).
+- **`buyerCapabilities`** lets `pending` and `under_review` organisations send
+  purchase requests (#195): verification is a badge, as for farmers since
+  #180. A cart line for the buyer's own listing is refused (`ownProduct`).
+- **Conversations** gained `post_kind = 'advice_case'` (only created by
+  `POST /api/advice/cases`); `POST /api/conversations` still takes posts only
+  and now refuses an owner whose public profile turned messaging off.
+- **Public routes added:** `support`, `advice/providers`, `advice/providers/[id]`,
+  `guides`, `guides/[id]`, `guides/[id]/file`, `profiles/p/[publicId]`,
+  `profiles/p/[publicId]/reports`. Each is in `EXPECTED_PUBLIC` with its reason.
+- **Process, learned the hard way:** this PC has 7.8 GB RAM. Two `next build`s
+  (or a build plus a `next dev`) at once crashed the session three times.
+  Agents now never build locally; the Vercel preview build on push is the
+  build check. Agent worktrees live under `.claude/worktrees/` on C: (the
+  owner's instruction), and their pnpm installs are offline from C:'s store.
+
+**What shipped**
+
+- **#193 Contact CORWADO:** `/help` (FAQs + a message form, EN/AR), staff
+  "Support messages" with Mark done; no ticketing (out of scope).
+- **#194/#195 buy from any product page:** a Buy box on `/market/<id>` for
+  every account (a farmer's buying side is switched on first); organisations
+  buy without waiting for verification.
+- **#196 advice, part 1:** provider profiles (published by their owner, no
+  review), `/advice` directory, private advice requests as cases with a
+  conversation, My Advisory Work, outcomes and feedback.
+- **#197 Advice & Learning:** draft → review → publish on the library, topics,
+  Arabic title/summary, public `/learn`.
+- **#198 analytics:** `/analytics`, 34 defined figures, Excel (numbers +
+  definitions, written without a library), print-to-PDF, exports audited.
+- **#199/#200 public profiles v2:** owner-written profile with optional photo,
+  draft → preview → publish, show-phone (signed-in only) and allow-messaging
+  settings, `/market/p/<publicId>`, Report profile, staff Remove photo.
+  Existing profiles started as drafts.
+- **#201 mobile top bars:** buyer, farmer and staff bars verified with
+  screenshots at 320–412 px; no overlaps, badges on icons, language button
+  contrast fixed.
+
+**In progress:** the optional "approved adviser" pathway (advice part 2) on
+`feat/approved-advisers`.
+
+**Owner's decisions still open:** message retention; moderators and reported
+conversations; existing posts' phone (kept on); officer registration to
+consent v1.3; restoring self-deleted accounts; SMS on suspension; support
+message cap and auto-filled phone; analytics export for read-only analysts;
+whether a second person must approve a guide; whether staff may unpublish a
+reported profile; the Supabase plan (50 MB file ceiling). Plus the earlier
+ones (admin powers, access-log retention, single-member model, CORWADO's
+infographic no. 6 for organisations).
+
+**Next in the web lane:** approved advisers, advice figures in analytics,
+the admin Settings tab, organisations and team access once infographic no. 6
+arrives.
+
+— Alieu-Claude
