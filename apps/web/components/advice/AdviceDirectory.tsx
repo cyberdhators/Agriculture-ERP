@@ -11,7 +11,7 @@ import {
 } from '@agri-erp/shared';
 
 import { SearchSelect } from '@/components/market-posts/bits';
-import { Badge, EmptyState, Input, Notice } from '@/components/ui';
+import { Badge, Checkbox, EmptyState, Input, Notice } from '@/components/ui';
 import { listProviders } from '@/lib/advice/client';
 import { KIND_KEY, LANGUAGE_KEY, MODE_KEY, TERMS_KEY, TOPIC_KEY } from '@/lib/advice/labels';
 import { t, type Language } from '@/lib/i18n';
@@ -39,6 +39,7 @@ export function AdviceDirectory({ lang, base }: { lang: Language; base: string }
   const [language, setLanguage] = useState('');
   const [state, setState] = useState('');
   const [mode, setMode] = useState('');
+  const [approvedOnly, setApprovedOnly] = useState(false);
   const [rows, setRows] = useState<AdviceProviderPublic[] | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
   const [states, setStates] = useState<Map<string, string>>(new Map());
@@ -51,7 +52,14 @@ export function AdviceDirectory({ lang, base }: { lang: Language; base: string }
   useEffect(() => {
     let cancelled = false;
     setRows(null);
-    listProviders({ q: query, topic, language, state_id: state, delivery_mode: mode })
+    listProviders({
+      q: query,
+      topic,
+      language,
+      state_id: state,
+      delivery_mode: mode,
+      approved: approvedOnly ? '1' : '',
+    })
       .then((data) => {
         if (cancelled) return;
         setRows(data);
@@ -71,7 +79,7 @@ export function AdviceDirectory({ lang, base }: { lang: Language; base: string }
     return () => {
       cancelled = true;
     };
-  }, [query, topic, language, state, mode]);
+  }, [query, topic, language, state, mode, approvedOnly]);
 
   const stateOptions = useMemo(
     () => [...states].sort((a, b) => a[1].localeCompare(b[1])),
@@ -121,6 +129,12 @@ export function AdviceDirectory({ lang, base }: { lang: Language; base: string }
           options={ADVICE_DELIVERY_MODES.map((v) => ({ value: v, label: t(MODE_KEY[v], lang) }))}
           anyLabel={t('advice.anyDelivery', lang)}
         />
+        {/* 2026-10-24: approved by CORWADO (the optional pathway). */}
+        <Checkbox
+          label={t('advice.approvedOnly', lang)}
+          checked={approvedOnly}
+          onChange={(e) => setApprovedOnly(e.target.checked)}
+        />
       </div>
       {failure ? (
         <Notice kind="error">
@@ -139,6 +153,9 @@ export function AdviceDirectory({ lang, base }: { lang: Language; base: string }
                 <span className={styles.cardHead}>
                   <Badge tone="leaf">{t(KIND_KEY[p.provider_kind], lang)}</Badge>
                   <Badge tone="sorghum">{t(TERMS_KEY[p.terms], lang)}</Badge>
+                  {p.approved_adviser ? (
+                    <Badge tone="nile">{t('advice.approvedBadge', lang)}</Badge>
+                  ) : null}
                 </span>
                 <span className={styles.cardTitle} dir="auto">
                   {p.display_name}

@@ -28,6 +28,7 @@ import {
 import { t, type Language, type TKey } from '@/lib/i18n';
 import { listStates } from '@/lib/market-posts/api';
 
+import { AdviserApplication } from './AdviserApplication';
 import styles from './advice.module.css';
 
 interface Values {
@@ -371,6 +372,15 @@ export function ProviderForm({
           )}
         </div>
       </form>
+
+      {/* 2026-10-24: the optional approved-adviser pathway. Keyed by the
+          profile so a first save starts the form from the saved lists. */}
+      <AdviserApplication
+        key={profile?.id ?? 'none'}
+        lang={lang}
+        profile={profile}
+        states={states}
+      />
     </div>
   );
 }

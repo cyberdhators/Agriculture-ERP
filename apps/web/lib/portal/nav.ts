@@ -186,6 +186,16 @@ export const NAV_SECTIONS: readonly NavSection[] = [
         roles: ALL,
         because: 'GET /api/learning-resources accepts every role; writing is admin-only.',
       },
+      {
+        // 2026-10-24: the optional approved-adviser pathway.
+        href: '/admin/advisers',
+        label: 'Approved advisers',
+        icon: 'staff',
+        roles: ['admin'],
+        because:
+          'GET /api/admin/advisers and POST /api/admin/advisers/:id/decision are ' +
+          'administrator-only and then require content.moderate.',
+      },
     ],
   },
   {

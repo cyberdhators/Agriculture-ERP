@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 
 import type {
+  AdviserApplicationOwn,
+  AdviserApplicationState,
   AdviceCaseView,
   AdviceProviderOwn,
   AdviceProviderPublic,
@@ -68,6 +70,8 @@ export interface ProviderFilter {
   language?: string;
   state_id?: string;
   delivery_mode?: string;
+  /** '1' for approved advisers only (2026-10-24). */
+  approved?: string;
 }
 
 /** The directory: the first hundred matches is plenty for a person to read. */
@@ -88,6 +92,20 @@ export async function saveMyProvider(body: Record<string, unknown>): Promise<Adv
   adviceProfileChanged(true);
   return saved;
 }
+
+/* ── The optional approved-adviser application (2026-10-24) ─────────── */
+
+export const getMyApplication = () =>
+  call<AdviserApplicationState>('/api/advice/my-provider/application');
+
+export const applyAsAdviser = (body: Record<string, unknown>) =>
+  call<AdviserApplicationOwn>('/api/advice/my-provider/application', send('POST', body));
+
+export const replyToClarification = (reply: string) =>
+  call<AdviserApplicationOwn>('/api/advice/my-provider/application/reply', send('POST', { reply }));
+
+export const withdrawApplication = () =>
+  call<AdviserApplicationOwn>('/api/advice/my-provider/application/withdraw', send('POST', {}));
 
 export const listCases = (role: 'requester' | 'provider') =>
   call<AdviceCaseView[]>(`/api/advice/cases?role=${role}`);
