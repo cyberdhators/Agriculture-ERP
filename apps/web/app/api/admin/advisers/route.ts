@@ -39,9 +39,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
         const cursor = decodeCursor(filter.cursor);
         if (!cursor) throw invalidCursor();
         params.push(cursor.createdAt, cursor.id);
-        where.push(
-          `(a.updated_at, a.id) ${oldestFirst ? '>' : '<'} ($2::timestamptz, $3::uuid)`,
-        );
+        where.push(`(a.updated_at, a.id) ${oldestFirst ? '>' : '<'} ($2::timestamptz, $3::uuid)`);
       }
       const order = oldestFirst ? 'ASC' : 'DESC';
       const rows = await prisma.$queryRawUnsafe<StaffApplicationRow[]>(

@@ -235,16 +235,11 @@ export function AdviserApplication({
 
       {state?.approved ? <Notice kind="success">{t('adviser.approvedNow', lang)}</Notice> : null}
 
-      {current ? (
-        <ApplicationSummary application={current} lang={lang} />
-      ) : null}
+      {current ? <ApplicationSummary application={current} lang={lang} /> : null}
 
       {current?.status === 'clarification_requested' ? (
         <div className={styles.formGrid}>
-          <Field
-            label={t('adviser.yourReply', lang)}
-            error={errors.reply || undefined}
-          >
+          <Field label={t('adviser.yourReply', lang)} error={errors.reply || undefined}>
             {(ids) => (
               <Textarea
                 {...ids}
@@ -367,7 +362,10 @@ export function AdviserApplication({
           {(['accurate_information', 'disclose_interests'] as const).map((key) => (
             <div key={key}>
               <Checkbox
-                label={t(key === 'accurate_information' ? 'adviser.ackAccurate' : 'adviser.ackInterests', lang)}
+                label={t(
+                  key === 'accurate_information' ? 'adviser.ackAccurate' : 'adviser.ackInterests',
+                  lang,
+                )}
                 checked={values[key]}
                 onChange={(e) => set(key, e.target.checked)}
               />

@@ -88,7 +88,7 @@ export const presentProvider = (row: ProviderRow): AdviceProviderPublic => ({
   terms: row.terms,
   fee_note: row.fee_note,
   commercial_interests: row.commercial_interests,
-  // The badge, and the month it was given: never the application or its id.
+  // The badge and the month it was given; nothing about the review behind it.
   approved_adviser: row.approved_at !== null,
   approved_since: row.approved_at ? row.approved_at.toISOString().slice(0, 7) : null,
   updated_at: row.updated_at.toISOString(),

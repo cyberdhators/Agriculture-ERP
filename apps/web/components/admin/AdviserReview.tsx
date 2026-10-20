@@ -10,7 +10,16 @@ import {
   type AdviserDecision,
 } from '@agri-erp/shared';
 
-import { Button, Card, Field, Notice, Stamp, Tabs, Textarea, type StampKind } from '@/components/ui';
+import {
+  Button,
+  Card,
+  Field,
+  Notice,
+  Stamp,
+  Tabs,
+  Textarea,
+  type StampKind,
+} from '@/components/ui';
 import { ConfirmationDialog } from '@/components/ui/feedback';
 import { KIND_KEY, LANGUAGE_KEY, TOPIC_KEY } from '@/lib/advice/labels';
 import { formatDate } from '@/lib/format';
@@ -113,7 +122,11 @@ async function call<T>(path: string, init?: RequestInit): Promise<T> {
   try {
     res = await fetch(path, init);
   } catch {
-    throw { status: 0, message: 'The server could not be reached. Check the connection.', fields: {} };
+    throw {
+      status: 0,
+      message: 'The server could not be reached. Check the connection.',
+      fields: {},
+    };
   }
   const body = (await res.json().catch(() => ({}))) as {
     data?: T;
@@ -170,8 +183,8 @@ export function AdviserReview() {
       <h2>Approved advisers</h2>
       <p className="small muted">
         An optional pathway: an advice provider asks CORWADO to review their experience and
-        qualifications. Approval adds an &quot;Approved adviser&quot; badge to their advice
-        profile. It never changes ordinary access, and it is separate from account suspension.
+        qualifications. Approval adds an &quot;Approved adviser&quot; badge to their advice profile.
+        It never changes ordinary access, and it is separate from account suspension.
       </p>
       <Tabs
         label="Application status"
@@ -272,7 +285,8 @@ function ApplicationCard({
         <p>
           <strong dir="auto">{a.provider.display_name}</strong>{' '}
           <span className="small muted">
-            · {t(KIND_KEY[a.provider.provider_kind as keyof typeof KIND_KEY] ?? 'advice.kind.other')}{' '}
+            ·{' '}
+            {t(KIND_KEY[a.provider.provider_kind as keyof typeof KIND_KEY] ?? 'advice.kind.other')}{' '}
             · {side ? `${side} account` : 'account removed'} · profile {a.provider.status}
           </span>
         </p>
@@ -287,9 +301,7 @@ function ApplicationCard({
           ) : null}
         </p>
         <dl style={{ display: 'grid', gap: 'var(--s-2)', margin: 0 }}>
-          <Fact label="Specialties">
-            {a.specialties.map((v) => t(TOPIC_KEY[v])).join(' · ')}
-          </Fact>
+          <Fact label="Specialties">{a.specialties.map((v) => t(TOPIC_KEY[v])).join(' · ')}</Fact>
           <Fact label="Service area">
             {a.service_area.length ? a.service_area.join(', ') : 'Anywhere'}
           </Fact>
@@ -319,7 +331,9 @@ function ApplicationCard({
               <Button
                 key={d}
                 size="small"
-                variant={DECISION[d].destructive ? 'danger' : d === 'approve' ? 'primary' : 'secondary'}
+                variant={
+                  DECISION[d].destructive ? 'danger' : d === 'approve' ? 'primary' : 'secondary'
+                }
                 onClick={() => {
                   setReason('');
                   setFailure(null);

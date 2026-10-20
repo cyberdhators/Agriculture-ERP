@@ -84,7 +84,10 @@ export async function applicationsOf(
 }
 
 /** The provider's open application (with CORWADO), locked, or null. */
-export async function openApplicationOf(db: Db, providerId: string): Promise<ApplicationRow | null> {
+export async function openApplicationOf(
+  db: Db,
+  providerId: string,
+): Promise<ApplicationRow | null> {
   const [row] = await db.$queryRawUnsafe<ApplicationRow[]>(
     `SELECT ${APPLICATION_COLUMNS} FROM public.adviser_application a
       WHERE a.provider_id = $1::uuid AND a.deleted_at IS NULL

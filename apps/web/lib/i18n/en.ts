@@ -1055,7 +1055,8 @@ export const en = {
   'advice.approvedSince': 'Approved by CORWADO since',
   'advice.approvedOnly': 'Approved advisers only',
   'adviser.title': 'Approved adviser (optional)',
-  'adviser.lead': 'You can ask CORWADO to review your experience and qualifications. If CORWADO approves, your advice profile shows an "Approved adviser" badge. This is optional: your advice profile, your advice requests, buying and selling all work the same whether you apply or not, during the review and after it.',
+  'adviser.lead':
+    'You can ask CORWADO to review your experience and qualifications. If CORWADO approves, your advice profile shows an "Approved adviser" badge. This is optional: your advice profile, your advice requests, buying and selling all work the same whether you apply or not, during the review and after it.',
   'adviser.needProfile': 'Save your advice profile above first. Then you can apply.',
   'adviser.statusLabel': 'Your application',
   'adviser.status.submitted': 'With CORWADO for review',
@@ -1064,19 +1065,23 @@ export const en = {
   'adviser.status.declined': 'Declined',
   'adviser.status.revoked': 'Approval revoked',
   'adviser.status.withdrawn': 'Withdrawn',
-  'adviser.approvedNow': 'You are an approved adviser. The badge shows on your public advice profile.',
+  'adviser.approvedNow':
+    'You are an approved adviser. The badge shows on your public advice profile.',
   'adviser.specialties': 'Subjects you specialise in',
   'adviser.serviceArea': 'States you serve',
   'adviser.serviceAreaHint': 'Tick none to mean anywhere.',
   'adviser.languages': 'Languages you advise in',
   'adviser.experience': 'Your experience',
-  'adviser.experienceHint': 'Years, places, and the farmers or businesses you have worked with. 20 to 2000 characters.',
+  'adviser.experienceHint':
+    'Years, places, and the farmers or businesses you have worked with. 20 to 2000 characters.',
   'adviser.qualifications': 'Qualifications',
-  'adviser.qualificationsHint': 'Degrees, diplomas, certificates or training. CORWADO may ask to see them.',
+  'adviser.qualificationsHint':
+    'Degrees, diplomas, certificates or training. CORWADO may ask to see them.',
   'adviser.affiliation': 'Affiliation',
   'adviser.affiliationHint': 'An organisation, institute or employer you work with, if any.',
   'adviser.ackAccurate': 'I confirm that what I have written here is true and accurate.',
-  'adviser.ackInterests': 'I have disclosed my commercial interests and fees on my advice profile, and I will not make advice depend on buying my products.',
+  'adviser.ackInterests':
+    'I have disclosed my commercial interests and fees on my advice profile, and I will not make advice depend on buying my products.',
   'adviser.apply': 'Apply for review',
   'adviser.applyAgain': 'Apply again',
   'adviser.question': 'CORWADO asks',

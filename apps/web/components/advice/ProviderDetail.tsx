@@ -89,9 +89,7 @@ export function ProviderDetail({
       <div className={styles.cardHead}>
         <Badge tone="leaf">{t(KIND_KEY[row.provider_kind], lang)}</Badge>
         <Badge tone="sorghum">{t(TERMS_KEY[row.terms], lang)}</Badge>
-        {row.approved_adviser ? (
-          <Badge tone="nile">{t('advice.approvedBadge', lang)}</Badge>
-        ) : null}
+        {row.approved_adviser ? <Badge tone="nile">{t('advice.approvedBadge', lang)}</Badge> : null}
       </div>
       <h1 dir="auto">{row.display_name}</h1>
       {row.approved_adviser && row.approved_since ? (
