@@ -295,3 +295,47 @@
   font-family: var(--font-mono);
   font-size: var(--text-label);
 }
+
+/* 2026-10-21: the top bar on a phone. The name is a block so it can be cut
+   short with an ellipsis instead of running under the icons; a personal
+   account shows its first name only; the narrowest phones show Sign out as
+   its icon (it keeps its accessible name through the button's title). */
+.topName {
+  display: block;
+}
+
+.nameShort {
+  display: none;
+}
+
+.topActions a {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 640px) {
+  .nameFull {
+    display: none;
+  }
+
+  .nameShort {
+    display: inline;
+  }
+
+  .topActions {
+    gap: var(--s-2);
+  }
+}
+
+@media (max-width: 420px) {
+  .signOutLabel {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+}

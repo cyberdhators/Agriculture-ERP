@@ -266,8 +266,19 @@ export function BuyerShell({ children }: { children: ReactNode }) {
               <IconMenu size={20} />
             </button>
             <div className={shell.topbarText}>
-              <span className={shell.pageTitle} dir="auto">
-                {profile?.organization.name ?? 'Buyer account'}
+              {/* 2026-10-21 (the owner): on a phone a personal account shows its
+                  first name only, so the name never runs under the icons. */}
+              <span className={`${shell.pageTitle} ${styles.topName}`} dir="auto">
+                <span className={styles.nameFull}>
+                  {profile?.organization.name ?? 'Buyer account'}
+                </span>
+                <span className={styles.nameShort}>
+                  {profile
+                    ? profile.organization.account_type === 'individual'
+                      ? profile.person.given_name
+                      : profile.organization.name
+                    : 'Buyer account'}
+                </span>
               </span>
             </div>
             <div className={`${shell.topbarSide} ${styles.topActions}`}>
@@ -297,7 +308,7 @@ export function BuyerShell({ children }: { children: ReactNode }) {
                 onClick={() => void signOut()}
               >
                 <IconSignOut size={16} />
-                <span>Sign out</span>
+                <span className={styles.signOutLabel}>Sign out</span>
               </button>
             </div>
           </header>
