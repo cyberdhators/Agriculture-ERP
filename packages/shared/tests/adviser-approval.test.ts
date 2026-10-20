@@ -93,7 +93,8 @@ describe('an application', () => {
     for (const key of ['accurate_information', 'disclose_interests'] as const) {
       const off = adviserApplicationSchema.safeParse({ ...valid, [key]: false });
       expect(reasonOf(off, key)).toBe(ADVISER_MESSAGES.acknowledgementRequired);
-      const { [key]: _gone, ...rest } = valid;
+      const rest: Record<string, unknown> = { ...valid };
+      delete rest[key];
       const absent = adviserApplicationSchema.safeParse(rest);
       expect(reasonOf(absent, key)).toBe(ADVISER_MESSAGES.acknowledgementRequired);
     }
