@@ -4,7 +4,7 @@
 // present() shape onto the row the screens already render. A non-administrator
 // is served published cards only; that rule is the route's, not this file's.
 // Gated by NEXT_PUBLIC_USE_LIVE_LIBRARY (off = the fixtures in lib/fixtures/p1).
-import type { LearningResourceInput } from '@agri-erp/shared';
+import type { LearningAction, LearningResourceInput } from '@agri-erp/shared';
 
 import type { LearningResourceRow } from '@/lib/fixtures/p1';
 
@@ -37,6 +37,18 @@ export interface LearningResourceApi {
   description: string | null;
   published: boolean;
   uploaded_at: string;
+  // 2026-10-22: Advice & Learning.
+  status: LearningResourceRow['status'];
+  topics: LearningResourceRow['topics'];
+  title_ar: string | null;
+  description_ar: string | null;
+  submitted_at: string | null;
+  submitted_by_name: string | null;
+  reviewed_at: string | null;
+  reviewed_by_name: string | null;
+  review_note: string | null;
+  published_at: string | null;
+  published_by_name: string | null;
 }
 
 interface Envelope<T> {
@@ -68,18 +80,24 @@ export function toRow(resource: LearningResourceApi): LearningResourceRow {
   return { ...resource, uploaded_by: null, deleted_at: null };
 }
 
-/** The request body the route validates: the input fields only. */
+/**
+ * The request body the route validates: the input fields only. 2026-10-22: the
+ * shared advice topics and the Arabic title and summary; no `published` -- a
+ * guide goes public only through the publish move. The library's own `topic`
+ * is not sent: the route keeps it or derives it from the first advice topic.
+ */
 export function toInput(row: LearningResourceRow): LearningResourceInput {
   return {
     title: row.title,
-    topic: row.topic,
+    topics: row.topics,
+    title_ar: row.title_ar,
     crop: row.crop,
     language: row.language,
     format: row.format,
     storage_path: row.storage_path,
     byte_size: row.byte_size,
     description: row.description,
-    published: row.published,
+    description_ar: row.description_ar,
   };
 }
 
@@ -107,7 +125,7 @@ export async function listLearningResources(): Promise<LearningResourceRow[]> {
   return out;
 }
 
-/** Create or update. A publish flip is a PATCH with `published` changed; the route audits it as its own event. */
+/** Create or update the card. Moving it through the workflow is transitionLearningResource. */
 export async function saveLearningResource(
   row: LearningResourceRow,
   exists: boolean,
@@ -123,4 +141,22 @@ export async function saveLearningResource(
 /** Soft delete. The file stays in storage; the row keeps its history (C-13). */
 export async function removeLearningResource(id: string): Promise<void> {
   await request<null>(`/api/learning-resources/${id}`, { method: 'DELETE' });
+}
+
+/**
+ * 2026-10-22: one move through the workflow -- submit, return (with a note),
+ * publish, unpublish. The route checks the permission the move needs and the
+ * state it starts from, and audits it as its own event.
+ */
+export async function transitionLearningResource(
+  id: string,
+  action: LearningAction,
+  note?: string,
+): Promise<LearningResourceRow> {
+  const body = await request<LearningResourceApi>(`/api/learning-resources/${id}/transition`, {
+    method: 'POST',
+    body: JSON.stringify(note === undefined ? { action } : { action, note }),
+  });
+  if (!body.data) throw new LibraryApiError(500, 'empty', 'No resource in the response');
+  return toRow(body.data);
 }

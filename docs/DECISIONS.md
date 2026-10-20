@@ -4165,3 +4165,58 @@ outcomes". Part 1 of the advice work; the approved-adviser pathway is later.
   they may; either side can close the conversation); referral to another
   provider is an outcome only, with no hand-over of the case; notifications
   for new requests and status changes (the unread badge is the notice for now).
+
+## Advice & Learning: draft, review, publish (2026-10-22)
+
+CORWADO's 16 October specification: "Advice and Learning: Draft, review and
+publication workflow; translations, media, topics and advisory requests.
+Publishing authority is separately assignable." and "Public visitors can
+browse published listings and advice."
+
+- **On the existing library, not beside it.** `learning_resource` (migration 6) gains a status -- draft, in review, published, unpublished -- the shared
+  advice topics (`ADVICE_TOPICS`, one list with advice providers and advice
+  requests), an Arabic title and summary beside the English ones, and who
+  submitted, reviewed and published it and when (migration
+  `20261022100000_learning_workflow`, additive). Guides published before today
+  are `published`, so nothing disappears; unpublished ones are drafts; the old
+  single topic is mapped onto the advice topics. The old `published` flag
+  stays and a CHECK keeps it equal to `status = 'published'`.
+- **Still a library of guides, not courses.** No enrolment, progress, quizzes
+  or certificates (CLAUDE.md section 2).
+- **The moves.** Submit (draft or unpublished -> in review); return to draft,
+  with a note of at least five characters (in review -> draft); publish (in
+  review or unpublished -> published); unpublish (published -> unpublished).
+  A draft cannot be published without passing review. Each move is its own
+  audit row: `learning_resource.submitted`, `.returned`, `.published`
+  (existing key), `.unpublished`. The audit CHECK is not rebuilt on this
+  branch; one combined CHECK migration follows when the branches adding keys
+  land.
+- **Who.** Writing drafts and submitting: an administrator holding "Moderate
+  content and listings" or "Publish content". Returning, publishing and
+  unpublishing: "Publish content" only -- publishing authority is separately
+  assignable. A guide in review or published can be edited or removed only by
+  someone who can publish, so public text never changes without that
+  authority. Today every administrator holds both (the legacy rule).
+- **The card no longer carries `published`.** Going public is the publish
+  move; a field that set it would bypass the authority.
+- **Public.** `/learn` lists published guides with topic, language and search
+  filters, and a guide page, in English or Arabic from the reader's language
+  (Arabic title and summary where translated, English said so where not).
+  Reachable without an account under the marketplace's rule
+  (NEXT_PUBLIC_MARKET_OPEN). Three read-only public routes: `GET /api/guides`,
+  `/api/guides/:id`, `/api/guides/:id/file`, through a whitelist (no storage
+  path, staff names or ids, status or note). The file is served as visit
+  attachments are: a private bucket (`learning-resources`, added to
+  `pnpm storage:buckets`) and a read link that expires in ten minutes.
+- **AgriOne AI is unchanged.** The library left the farmer's dashboard on
+  2026-10-17 in favour of AgriOne AI; that stands. The farmer's account menu
+  gains "Guides", pointing at the public page, beside AgriOne AI -- the
+  client's new requirement, not a reversal. `/farmer/account/learn` still
+  redirects to the assistant.
+- **OPEN:** whether someone may publish their own submission. Allowed for now
+  (both people are recorded: the submitter on the card, the publisher as the
+  actor of the publish row); a "not your own" rule needs a second publisher
+  to exist first.
+- **OPEN:** uploading the file from the portal. The library has never had an
+  upload (the form records a storage path and size); files reach the bucket by
+  hand until it does. "Advisory requests" are another lane's.

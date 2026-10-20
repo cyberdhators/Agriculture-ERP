@@ -9,60 +9,41 @@ import {
 
 import { audited, writeAudit } from '../../../lib/api/audit';
 import { conflict, invalidCursor } from '../../../lib/api/errors';
+import {
+  RESOURCE_COLUMNS,
+  RESOURCE_FROM,
+  loadResource,
+  presentResource,
+  requireContentWriter,
+  topicsFor,
+  type ResourceRow,
+} from '../../../lib/api/learning';
 import { created, defineRoutes, paged } from '../../../lib/api/route';
 import { requireWriter } from '../../../lib/api/scope';
 import { prisma } from '../../../lib/db';
 
 /**
  * The learning resource centre (C-13.6 to C-13.9), deliverable (m). Unit P1.
+ * 2026-10-22: Advice & Learning's draft -> review -> publish workflow on the
+ * same table (lib/api/learning.ts; the moves are /:id/transition).
  *
  * A catalogue of files that live in Supabase Storage: the file is uploaded by
- * the client first, and this registers the card -- title, topic, the
+ * the client first, and this registers the card -- title, topics, the
  * storage_path and byte_size the download needs. There is no upload endpoint
  * here, on purpose.
  *
  * READ SCOPE: every role may read the library; it is not state data. A
- * non-administrator sees published cards only, so a half-prepared resource is
- * never offered to an officer (migration 6).
+ * non-administrator sees published cards only, so a draft is never offered to
+ * an officer (migration 6). The public reads published guides through
+ * /api/guides, which presents far less.
  *
  * SORT: uploaded_at descending, id descending as tiebreak, exactly as the
  * officer and user lists sort by created_at.
  *
- * WRITES are administrator-only.
+ * WRITES: an administrator holding "Moderate content and listings" or
+ * "Publish content" (2026-10-22). A new card is always a DRAFT: going public
+ * is the publish move, which needs publishing authority.
  */
-
-interface ResourceRow {
-  id: string;
-  title: string;
-  topic: string;
-  crop: string | null;
-  language: string;
-  format: string;
-  storage_path: string;
-  byte_size: number;
-  description: string | null;
-  published: boolean;
-  uploaded_at: Date;
-}
-
-const present = (row: ResourceRow) => ({
-  id: row.id,
-  title: row.title,
-  topic: row.topic,
-  crop: row.crop,
-  language: row.language,
-  format: row.format,
-  storage_path: row.storage_path,
-  byte_size: row.byte_size,
-  description: row.description,
-  published: row.published,
-  uploaded_at: toIso(row.uploaded_at),
-});
-
-const SELECT_COLUMNS = `id, title, topic::text AS topic, crop::text AS crop,
-  language::text AS language, format::text AS format, storage_path, byte_size,
-  description, published, uploaded_at`;
-
 export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   GET: {
     roles: ['admin', 'supervisor', 'read_only', 'officer'],
@@ -82,9 +63,10 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       const params: unknown[] = [];
 
       // A non-administrator sees published resources only. The constraint is
-      // the role, not a filter the caller chose.
+      // the role, not a filter the caller chose. `status` and the old
+      // `published` flag cannot disagree (a CHECK, migration 20261022100000).
       if (auth.scope.kind !== 'all') {
-        where.push('published = true');
+        where.push(`r.status = 'published'`);
       }
 
       // Optional filters. Enum values are compared as text so an unknown value
@@ -92,17 +74,28 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       const topic = url.searchParams.get('topic');
       if (topic !== null) {
         params.push(topic);
-        where.push(`topic::text = $${params.length}`);
+        where.push(`r.topic::text = $${params.length}`);
+      }
+      // 2026-10-22: one of the shared advice topics.
+      const adviceTopic = url.searchParams.get('advice_topic');
+      if (adviceTopic !== null) {
+        params.push(adviceTopic);
+        where.push(`$${params.length} = ANY(r.topics)`);
+      }
+      const status = url.searchParams.get('status');
+      if (status !== null) {
+        params.push(status);
+        where.push(`r.status::text = $${params.length}`);
       }
       const crop = url.searchParams.get('crop');
       if (crop !== null) {
         params.push(crop);
-        where.push(`crop::text = $${params.length}`);
+        where.push(`r.crop::text = $${params.length}`);
       }
       const language = url.searchParams.get('language');
       if (language !== null) {
         params.push(language);
-        where.push(`language::text = $${params.length}`);
+        where.push(`r.language::text = $${params.length}`);
       }
 
       if (rawCursor !== null) {
@@ -110,15 +103,15 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
         if (!cursor) throw invalidCursor();
         params.push(cursor.createdAt, cursor.id);
         where.push(
-          `(uploaded_at, id) < ($${params.length - 1}::timestamptz, $${params.length}::uuid)`,
+          `(r.uploaded_at, r.id) < ($${params.length - 1}::timestamptz, $${params.length}::uuid)`,
         );
       }
 
       const rows = await prisma.$queryRawUnsafe<ResourceRow[]>(
-        `SELECT ${SELECT_COLUMNS}
-         FROM public.learning_resource_active
+        `SELECT ${RESOURCE_COLUMNS}
+         ${RESOURCE_FROM}
          ${where.length ? `WHERE ${where.join(' AND ')}` : ''}
-         ORDER BY uploaded_at DESC, id DESC
+         ORDER BY r.uploaded_at DESC, r.id DESC
          LIMIT ${limit + 1}`,
         ...params,
       );
@@ -127,7 +120,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       const page = rows.slice(0, limit);
       const last = page[page.length - 1];
 
-      return paged(page.map(present), {
+      return paged(page.map(presentResource), {
         cursor:
           hasMore && last
             ? encodeCursor({ createdAt: toIso(last.uploaded_at), id: last.id })
@@ -142,6 +135,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
     bodySchema: learningResourceInputSchema,
     handler: async ({ auth, body }) => {
       requireWriter(auth);
+      await requireContentWriter(auth);
 
       // One live resource per stored file (migration 6's partial unique index).
       // Checking first turns the index violation into a 409 the caller can act
@@ -152,26 +146,30 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       );
       if (clash) throw conflict('resource_file_already_registered');
 
+      const { topics, topic } = topicsFor(body, null);
+
       const row = await audited(prisma, async (tx) => {
-        const [inserted] = await tx.$queryRawUnsafe<ResourceRow[]>(
+        const [inserted] = await tx.$queryRawUnsafe<{ id: string }[]>(
           `INSERT INTO public.learning_resource
-             (title, topic, crop, language, format, storage_path, byte_size, description,
-              published, uploaded_by)
-           VALUES ($1, $2::public.learning_topic, $3::public.crop, $4::public.language,
-                   $5::public.resource_format, $6, $7, $8, $9, $10::uuid)
-           RETURNING ${SELECT_COLUMNS}`,
+             (title, topic, topics, crop, language, format, storage_path, byte_size, description,
+              title_ar, description_ar, status, published, uploaded_by)
+           VALUES ($1, $2::public.learning_topic, $3::text[], $4::public.crop, $5::public.language,
+                   $6::public.resource_format, $7, $8, $9, $10, $11, 'draft', false, $12::uuid)
+           RETURNING id`,
           body.title,
-          body.topic,
+          topic,
+          topics,
           body.crop ?? null,
           body.language,
           body.format,
           body.storage_path,
           body.byte_size,
           body.description ?? null,
-          body.published,
+          body.title_ar ?? null,
+          body.description_ar ?? null,
           auth.principal.id,
         );
-        const createdRow = inserted as ResourceRow;
+        const createdRow = await loadResource(tx, (inserted as { id: string }).id);
         await writeAudit(tx, {
           entityType: 'learning_resource',
           entityId: createdRow.id,
@@ -180,16 +178,17 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
           action: 'learning_resource.created',
           after: {
             title: createdRow.title,
-            topic: createdRow.topic,
+            title_ar: createdRow.title_ar,
+            topics: createdRow.topics,
             language: createdRow.language,
             format: createdRow.format,
-            published: createdRow.published,
+            status: createdRow.status,
           },
         });
         return createdRow;
       });
 
-      return created(present(row));
+      return created(presentResource(row));
     },
   },
 });

@@ -46,6 +46,13 @@ const EXPECTED_PUBLIC = [
   'buying-requests',
   'buying-requests/[id]',
   'buying-requests/[id]/reports',
+  // 2026-10-22: Advice & Learning's published guides ("Public visitors can
+  // browse published listings and advice"). Read-only: the list, one guide,
+  // and an expiring read link to its file; published rows only, through a
+  // whitelist (presentGuide in lib/api/learning.ts). Nothing written.
+  'guides',
+  'guides/[id]',
+  'guides/[id]/file',
   // 2026-10-08: the hourly weather fetch, called by pg_cron. Public only in that a
   // scheduler has no session: it answers 401 without the CRON_SECRET bearer.
   'cron/weather',

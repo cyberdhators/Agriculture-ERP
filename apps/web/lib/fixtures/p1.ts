@@ -1,10 +1,13 @@
-import type {
-  Crop,
-  DirectoryEntryType,
-  FinancialProviderClass,
-  Language,
-  LearningTopic,
-  ResourceFormat,
+import {
+  ADVICE_TOPIC_FOR_LEARNING_TOPIC,
+  type AdviceTopic,
+  type Crop,
+  type DirectoryEntryType,
+  type FinancialProviderClass,
+  type Language,
+  type LearningStatus,
+  type LearningTopic,
+  type ResourceFormat,
 } from '@agri-erp/shared';
 
 /**
@@ -101,6 +104,18 @@ export interface LearningResourceRow {
   uploaded_by: string | null;
   uploaded_at: string;
   deleted_at: string | null;
+  // 2026-10-22: Advice & Learning's workflow, translations and shared topics.
+  status: LearningStatus;
+  topics: AdviceTopic[];
+  title_ar: string | null;
+  description_ar: string | null;
+  submitted_at: string | null;
+  submitted_by_name: string | null;
+  reviewed_at: string | null;
+  reviewed_by_name: string | null;
+  review_note: string | null;
+  published_at: string | null;
+  published_by_name: string | null;
 }
 
 const id = (n: number) => `00000000-0000-4000-8000-0000000${String(n).padStart(5, '0')}`;
@@ -303,13 +318,28 @@ function resource(
   > &
     Partial<LearningResourceRow>,
 ): LearningResourceRow {
+  // 2026-10-22: the workflow's columns, filled as migration 20261022100000
+  // backfills them: published -> 'published', otherwise a draft; topics from
+  // the library shelf.
+  const published = fields.published ?? true;
   return {
     id: id(100 + n),
     crop: null,
     description: null,
-    published: true,
+    published,
     uploaded_by: ADMIN_ID,
     deleted_at: null,
+    status: published ? 'published' : 'draft',
+    topics: [ADVICE_TOPIC_FOR_LEARNING_TOPIC[fields.topic]],
+    title_ar: null,
+    description_ar: null,
+    submitted_at: null,
+    submitted_by_name: null,
+    reviewed_at: null,
+    reviewed_by_name: null,
+    review_note: null,
+    published_at: null,
+    published_by_name: null,
     ...fields,
   };
 }
@@ -324,6 +354,9 @@ export const LEARNING_RESOURCES: readonly LearningResourceRow[] = [
     storage_path: 'placeholder/sorghum-planting-guide.pdf',
     byte_size: 1_843_200,
     description: 'Row spacing, seed rate and first weeding for the main season. Twelve pages.',
+    title_ar: 'دليل زراعة الذرة الرفيعة (placeholder)',
+    description_ar: 'المسافة بين الصفوف ومعدل البذر وأول تعشيب للموسم الرئيسي.',
+    topics: ['crops', 'soil_fertiliser'],
     uploaded_at: '2026-08-12T10:04:00Z',
   }),
   resource(2, {
@@ -408,6 +441,9 @@ export const LEARNING_RESOURCES: readonly LearningResourceRow[] = [
     byte_size: 5_242_880,
     description: 'Four minutes. What the July outlook means for planting dates.',
     published: false,
+    status: 'in_review',
+    submitted_at: '2026-09-02T08:00:00Z',
+    submitted_by_name: 'Programme editor (placeholder)',
     uploaded_at: '2026-08-31T07:55:00Z',
   }),
   resource(10, {

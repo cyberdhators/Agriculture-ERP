@@ -20,13 +20,20 @@ describe('isPortalPath', () => {
   });
 
   it('gates the marketplace and the farmer side only when the deployment closes them', () => {
-    for (const p of ['/market', '/market/1', '/farmer', '/farmer/login', '/farmer/account']) {
+    for (const p of [
+      '/market',
+      '/market/1',
+      '/farmer',
+      '/farmer/login',
+      '/farmer/account',
+      '/learn',
+    ]) {
       expect(isPortalPath(p, false)).toBe(true);
     }
   });
 
-  it('leaves the marketplace and the farmer side open by default', () => {
-    for (const p of ['/market', '/market/1', '/farmer', '/farmer/login']) {
+  it('leaves the marketplace, the farmer side and the guides open by default', () => {
+    for (const p of ['/market', '/market/1', '/farmer', '/farmer/login', '/learn', '/learn/1']) {
       expect(isPortalPath(p, true)).toBe(false);
     }
   });

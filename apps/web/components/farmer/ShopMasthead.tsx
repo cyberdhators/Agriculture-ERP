@@ -191,6 +191,10 @@ export function ShopCategoryLinks() {
           {t(CATEGORY_KEY[category], language)}
         </Link>
       ))}
+      {/* 2026-10-22: the public guides, so a visitor without an account finds them. */}
+      <Link href="/learn" className={styles.shopStripLink}>
+        {t('account.tabGuides', language)}
+      </Link>
     </nav>
   );
 }

@@ -93,6 +93,9 @@ export const config = {
     '/market',
     '/farmer/:path*',
     '/farmer',
+    // 2026-10-22: the public guides, gated exactly as the marketplace is.
+    '/learn/:path*',
+    '/learn',
     // B13: the buyer side. /buyer/register stays open (lib/auth/paths.ts).
     '/buyer/:path*',
     '/buyer',

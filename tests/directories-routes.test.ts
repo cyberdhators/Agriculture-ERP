@@ -3,6 +3,9 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import * as directoryItem from '../apps/web/app/api/directory-entries/[id]/route';
 import * as directory from '../apps/web/app/api/directory-entries/route';
 import * as learningItem from '../apps/web/app/api/learning-resources/[id]/route';
+import * as learningMove from '../apps/web/app/api/learning-resources/[id]/transition/route';
+import * as guides from '../apps/web/app/api/guides/route';
+import * as guideItem from '../apps/web/app/api/guides/[id]/route';
 import * as learning from '../apps/web/app/api/learning-resources/route';
 import { makeTestPrisma, requireTestEnv } from './helpers/db';
 import { type TestPrincipal, createPrincipal, sweep } from './helpers/principals';
@@ -200,43 +203,104 @@ run('a removed entry leaves the list and is its own soft_deleted row (C-13.4)', 
   });
 });
 
-run('a learning resource is published, and the flip is its own row (C-13.6)', () => {
-  let resourceId: string;
+run(
+  'a learning resource is published through review, each move its own row (C-13.6; 2026-10-22)',
+  () => {
+    let resourceId: string;
 
-  it('an administrator registers an unpublished card', async () => {
-    const result = await call(learning, 'POST', { as: admin, body: resourceBody() });
-    expect(result.status).toBe(201);
-    expect((result.body.data as { published: boolean }).published).toBe(false);
-    resourceId = (result.body.data as { id: string }).id;
-  });
-
-  it('a non-administrator does not see it while unpublished', async () => {
-    const result = await call(learning, 'GET', { as: officerA });
-    expect(result.status).toBe(200);
-    expect(listIds(result.body)).not.toContain(resourceId);
-  });
-
-  it('flipping published to true is audited as learning_resource.published', async () => {
-    // A full-object PATCH (the schema is not partial): the same card, now
-    // published. A fresh storage_path is harmless -- it cannot clash -- and the
-    // point under test is the false->true flip, not the path.
-    const patched = await call(learningItem, 'PATCH', {
-      as: admin,
-      params: { id: resourceId },
-      body: resourceBody({ published: true }),
+    it('an administrator registers a draft card', async () => {
+      const result = await call(learning, 'POST', { as: admin, body: resourceBody() });
+      expect(result.status).toBe(201);
+      expect(result.body.data).toMatchObject({ status: 'draft', published: false });
+      resourceId = (result.body.data as { id: string }).id;
     });
-    expect(patched.status).toBe(200);
-    expect((patched.body.data as { published: boolean }).published).toBe(true);
 
-    const rows = await auditRows('learning_resource', resourceId);
-    expect(rows.map((r) => r.action)).toContain('learning_resource.published');
-  });
+    it('a non-administrator does not see it while it is a draft, nor does the public', async () => {
+      const result = await call(learning, 'GET', { as: officerA });
+      expect(result.status).toBe(200);
+      expect(listIds(result.body)).not.toContain(resourceId);
+      const open = await call(guides, 'GET', { as: null });
+      expect(listIds(open.body)).not.toContain(resourceId);
+      const one = await call(guideItem, 'GET', { as: null, params: { id: resourceId } });
+      expect(one.status).toBe(404);
+    });
 
-  it('and now a non-administrator sees it', async () => {
-    const result = await call(learning, 'GET', { as: officerA });
-    expect(listIds(result.body)).toContain(resourceId);
-  });
-});
+    it('a draft cannot be published straight away', async () => {
+      const result = await call(learningMove, 'POST', {
+        as: admin,
+        params: { id: resourceId },
+        body: { action: 'publish' },
+      });
+      expect(result.status).toBe(422);
+    });
+
+    it('submit, then publish: two audit rows, and both people recorded', async () => {
+      const submitted = await call(learningMove, 'POST', {
+        as: admin,
+        params: { id: resourceId },
+        body: { action: 'submit' },
+      });
+      expect(submitted.status).toBe(200);
+      expect(submitted.body.data).toMatchObject({ status: 'in_review' });
+
+      const published = await call(learningMove, 'POST', {
+        as: admin,
+        params: { id: resourceId },
+        body: { action: 'publish' },
+      });
+      expect(published.status).toBe(200);
+      expect(published.body.data).toMatchObject({ status: 'published', published: true });
+
+      const rows = await auditRows('learning_resource', resourceId);
+      const actions = rows.map((r) => r.action);
+      expect(actions).toContain('learning_resource.submitted');
+      expect(actions).toContain('learning_resource.published');
+    });
+
+    it('and now a non-administrator sees it, and so does the public, without staff fields', async () => {
+      const result = await call(learning, 'GET', { as: officerA });
+      expect(listIds(result.body)).toContain(resourceId);
+      const one = await call(guideItem, 'GET', { as: null, params: { id: resourceId } });
+      expect(one.status).toBe(200);
+      const data = one.body.data as Record<string, unknown>;
+      for (const key of ['storage_path', 'status', 'review_note', 'published_by_name']) {
+        expect(data).not.toHaveProperty(key);
+      }
+    });
+
+    it('an edit to a published guide by someone who can publish keeps it published', async () => {
+      const patched = await call(learningItem, 'PATCH', {
+        as: admin,
+        params: { id: resourceId },
+        body: resourceBody({
+          title: 'zztest-guide-corrected',
+          topics: ['crops', 'soil_fertiliser'],
+        }),
+      });
+      expect(patched.status).toBe(200);
+      expect(patched.body.data).toMatchObject({
+        status: 'published',
+        topics: ['crops', 'soil_fertiliser'],
+        topic: 'crop_production',
+      });
+      const rows = await auditRows('learning_resource', resourceId);
+      expect(rows.map((r) => r.action)).toContain('learning_resource.updated');
+    });
+
+    it('unpublishing takes it off the public page and is its own row', async () => {
+      const result = await call(learningMove, 'POST', {
+        as: admin,
+        params: { id: resourceId },
+        body: { action: 'unpublish' },
+      });
+      expect(result.status).toBe(200);
+      const one = await call(guideItem, 'GET', { as: null, params: { id: resourceId } });
+      expect(one.status).toBe(404);
+      const rows = await auditRows('learning_resource', resourceId);
+      expect(rows.map((r) => r.action)).toContain('learning_resource.unpublished');
+    });
+  },
+);
 
 run('one live catalogue card per stored file (C-13.7)', () => {
   it('a second registration of the same path is refused with 409', async () => {

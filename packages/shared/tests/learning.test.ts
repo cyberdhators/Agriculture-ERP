@@ -29,9 +29,11 @@ const firstMessage = (input: unknown, field: string): string | undefined => {
 };
 
 describe('a minimal resource', () => {
-  it('accepts a guide and starts it unpublished', () => {
-    const result = schema.parse(guide);
-    expect(result.published).toBe(false);
+  it('accepts a guide, and the card cannot say it is published', () => {
+    // 2026-10-22: a new card is a draft (the route), and going public is the
+    // publish move, so `published` is no longer a field of the card at all.
+    expect(schema.safeParse(guide).success).toBe(true);
+    expect(schema.safeParse({ ...guide, published: true }).success).toBe(false);
   });
 
   it('accepts a resource with no crop, because not every topic has one', () => {

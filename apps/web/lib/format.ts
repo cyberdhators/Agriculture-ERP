@@ -1,8 +1,10 @@
 import type {
+  AdviceTopic,
   Crop,
   DirectoryEntryType,
   FinancialProviderClass,
   Language,
+  LearningStatus,
   LearningTopic,
   ResourceFormat,
 } from '@agri-erp/shared';
@@ -42,6 +44,28 @@ export const TOPIC_LABELS: Record<LearningTopic, string> = {
   cooperative: 'Cooperatives',
   climate: 'Climate',
   other: 'Other',
+};
+
+/** 2026-10-22: the shared advice topics, as staff read them. Farmers read lib/i18n. */
+export const ADVICE_TOPIC_LABELS: Record<AdviceTopic, string> = {
+  crops: 'Crops',
+  livestock: 'Livestock',
+  soil_fertiliser: 'Soil and fertiliser',
+  pests_diseases: 'Pests and diseases',
+  water_irrigation: 'Water and irrigation',
+  post_harvest: 'Post-harvest',
+  marketing_prices: 'Marketing and prices',
+  finance_business: 'Finance and business',
+  climate_weather: 'Climate and weather',
+  other: 'Other',
+};
+
+/** 2026-10-22: Advice & Learning's workflow states. */
+export const LEARNING_STATUS_LABELS: Record<LearningStatus, string> = {
+  draft: 'Draft',
+  in_review: 'In review',
+  published: 'Published',
+  unpublished: 'Unpublished',
 };
 
 export const CROP_LABELS: Record<Crop, string> = {

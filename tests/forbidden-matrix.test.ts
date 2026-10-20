@@ -29,6 +29,7 @@ import * as weather from '../apps/web/app/api/weather/route';
 import * as directoryItem from '../apps/web/app/api/directory-entries/[id]/route';
 import * as directory from '../apps/web/app/api/directory-entries/route';
 import * as learningItem from '../apps/web/app/api/learning-resources/[id]/route';
+import * as learningMove from '../apps/web/app/api/learning-resources/[id]/transition/route';
 import * as learning from '../apps/web/app/api/learning-resources/route';
 import * as locations from '../apps/web/app/api/locations/route';
 import * as me from '../apps/web/app/api/me/route';
@@ -659,6 +660,15 @@ const ROUTES = [
     method: 'DELETE' as const,
     allow: ['admin'],
     params: () => ({ id: DUMMY_ID }),
+  },
+  // 2026-10-22: Advice & Learning's moves. An administrator, then the permission the move needs.
+  {
+    name: 'POST /api/learning-resources/:id/transition',
+    mod: learningMove,
+    method: 'POST' as const,
+    allow: ['admin'],
+    params: () => ({ id: DUMMY_ID }),
+    body: () => ({ action: 'submit' }),
   },
 ];
 
