@@ -15,6 +15,8 @@ export const PORTAL_PREFIXES = [
   '/desk',
   '/visits',
   '/reports',
+  // 2026-10-22: marketplace and account analytics.
+  '/analytics',
   '/admin',
   '/communications',
   '/product-reports',

@@ -4220,3 +4220,44 @@ browse published listings and advice."
 - **OPEN:** uploading the file from the portal. The library has never had an
   upload (the form records a storage path and size); files reach the bucket by
   hand until it does. "Advisory requests" are another lane's.
+
+## Analytics: definitions first, Excel without charts for now (2026-10-22)
+
+The owner, 2026-10-22, on CORWADO's 16 October specification, "Measures and
+exports": build account, activity and marketplace analytics now; advice usage
+and case outcomes later, when advice exists.
+
+- **Definitions first.** Every figure is declared once, as data, in
+  `packages/shared/src/analytics.ts`: what it counts and in which unit
+  (people, accounts, profiles, records, events, phones), its denominator, its
+  table, its window and how a state filter applies. The `/analytics` page, the
+  Excel Definitions sheet and the tests read that one list, and a test holds
+  it equal to the list of queries. Buying requests, purchase requests,
+  messages, contact requests, orders, recorded sales and delivered orders are
+  separate figures and are never added together.
+- **Window:** Juba calendar days, both ends included; the last 30 days by
+  default, at most 366. **Scope:** a supervisor or read-only user sees their
+  state; every caller needs `reports.view` (administrators hold it; others
+  through the Analyst or Administrator preset), and the permission narrows the
+  role, never widens it. Figures whose rows carry no state (phone sign-up
+  codes, support messages, recorded failures) are national only.
+- **Completed trades** are two figures: sales a farmer recorded against a
+  listing (self-reported, read from the `produce_listing` audit rows carrying
+  `sale_quantity`) and purchase orders marked delivered or completed
+  (confirmed). **Verified farmers** read `farmer_verified_v`; rejected and
+  pending are separate figures.
+- **Excel without a dependency:** a small writer of our own
+  (`apps/web/lib/analytics/xlsx.ts`, STORED ZIP entries, inline strings),
+  tested by reading its bytes back. The workbook carries the numbers and the
+  definitions; **editable charts come later**. PDF is the browser's print of
+  a print-styled page (title, window, filters, legend, generation time in
+  Juba, limitations).
+- **Every export is recorded** before the file leaves: an
+  `analytics.exported` audit row with the filters, scope, cut-off, the row
+  count of each sheet and every query as it ran. The reports export table was
+  not reused: its type CHECK admits only `summary` and `farmers`. The new key
+  is NOT in the database CHECK yet -- one combined CHECK migration will add it
+  -- so until then an export is refused rather than unlogged.
+- **Not measurable today:** sync rejections (kept on the phone with their
+  reason code, never sent to the server), failed exports and page loads, and
+  sign-in history from before the access log was switched on.
