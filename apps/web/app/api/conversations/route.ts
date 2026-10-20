@@ -12,6 +12,7 @@ import {
   postOwner,
   presentConversation,
   presentMessage,
+  refusesMessages,
   startedToday,
   type ConversationRow,
 } from '../../../lib/api/messaging';
@@ -36,6 +37,10 @@ import { prisma } from '../../../lib/db';
  * listed here like any other, but is never started here: the schema accepts
  * the three post kinds only, so 'advice_case' is a 400. It is made with its
  * case, by POST /api/advice/cases.
+ *
+ * 2026-10-23 (public profiles v2): an owner who turned "Allow in-app
+ * messaging" off on their profile cannot be sent a NEW conversation
+ * (`conversation_owner_no_messages`); one already started goes on.
  */
 export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   GET: {
@@ -82,6 +87,10 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
           )[0]?.id;
         let conversationId = await findId();
         if (!conversationId) {
+          // 2026-10-23: the owner chose "Allow in-app messaging: off" on their profile.
+          if (post.owner_auth_user_id && (await refusesMessages(tx, post.owner_auth_user_id))) {
+            throw unprocessable('conversation_owner_no_messages');
+          }
           if (await startedToday(tx, sender)) throw unprocessable('conversation_limit_reached');
           const [row] = await tx.$queryRawUnsafe<{ id: string }[]>(
             `INSERT INTO public.conversation

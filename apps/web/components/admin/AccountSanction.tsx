@@ -6,6 +6,7 @@ import type { AccountStanding, SanctionKind } from '@agri-erp/shared';
 
 import { formatDate } from '@/lib/format';
 
+import { ProfileModeration } from './ProfileModeration';
 import { Button, Card, Field, Notice, Stamp, Textarea } from '../ui';
 import { ConfirmationDialog } from '../ui/feedback';
 
@@ -214,6 +215,8 @@ export function AccountSanction({
         {button}
         {warnings}
         {dialog}
+        {/* 2026-10-23: the public profile's photo, removable by moderators. */}
+        <ProfileModeration kind={kind} id={id} compact />
       </div>
     );
   }
@@ -243,6 +246,10 @@ export function AccountSanction({
         {warnings}
       </div>
       {dialog}
+      {/* 2026-10-23: the public profile -- status, photo, Remove photo. */}
+      <div style={{ marginTop: 'var(--s-4)' }}>
+        <ProfileModeration kind={kind} id={id} />
+      </div>
     </Card>
   );
 }

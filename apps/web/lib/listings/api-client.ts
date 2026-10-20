@@ -40,6 +40,8 @@ export interface ApiListing {
   seller_payam_id?: string;
   seller_payam_name?: string;
   seller_created_at?: string;
+  /** 2026-10-23: false when the seller turned in-app messaging off. */
+  messages_allowed?: boolean;
 }
 
 export class ListingApiError extends Error {

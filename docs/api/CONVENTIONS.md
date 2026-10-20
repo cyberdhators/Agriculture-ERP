@@ -358,6 +358,12 @@ character.
 | `advice_feedback_already_given`    | Feedback has already been given on this request.                                                                              |
 | `learning_resource_locked`         | A guide in review or published can be changed only by someone who can publish. Ask them to return it to draft first.          |
 | `guide_file_unavailable`           | This guide's file cannot be opened just now. Try again later.                                                                 |
+| `profile_name_required`            | Save a name for your profile before publishing it.                                                                            |
+| `profile_photo_not_received`       | The photo has not reached the server yet. Try again in a moment.                                                              |
+| `profile_photo_rejected`           | That photo could not be used. Choose a JPEG, PNG or WebP photo under 2 MB and try again.                                      |
+| `profile_no_photo`                 | This profile has no photo. There is nothing to remove.                                                                        |
+| `profile_save_first`               | Save your profile as a draft before adding a photo.                                                                           |
+| `conversation_owner_no_messages`   | The owner of this post does not take messages in the app.                                                                     |
 
 **A route names a rule; it never writes a sentence.** `conflict()` and
 `unprocessable()` take a key from this registry, not a string. That is how the
@@ -481,6 +487,12 @@ change.
 | `advice_case.closed`                      |
 | `advice_case.feedback`                    |
 | `analytics.exported`                      |
+| `profile.saved`                           |
+| `profile.published`                       |
+| `profile.unpublished`                     |
+| `profile.photo_changed`                   |
+| `profile.photo_removed`                   |
+| `profile.photo_removed_by_staff`          |
 
 `before` and `after` hold **changed fields only**, never whole rows, and never a
 password, token, authentication identifier, national id, phone, email, given
@@ -753,6 +765,19 @@ These are also exact.
 | Analytics: window ends before start     | The window ends before it starts.                                                               |
 | Analytics: window over 366 days         | A window can be at most 366 days.                                                               |
 | Analytics: state not a state id         | Choose a state from the list.                                                                   |
+| Public profile: name length             | A name for your public profile is 2 to 120 characters.                                          |
+| Public profile: activity not on list    | Choose what you do from the list.                                                               |
+| Public profile: about too long          | Keep the description to 1000 characters.                                                        |
+| Public profile: state malformed         | Choose your state from the list.                                                                |
+| Public profile: payam malformed         | Choose your payam from the list.                                                                |
+| Public profile: payam without a state   | Choose a state before choosing a payam.                                                         |
+| Public profile: over 10 products        | List at most 10 products.                                                                       |
+| Public profile: over 10 services        | List at most 10 services.                                                                       |
+| Public profile: tag length              | Each one is 1 to 40 characters.                                                                 |
+| Profile photo: type not accepted        | Choose a JPEG, PNG or WebP photo.                                                               |
+| Profile photo: over 2 MB                | A profile photo can be at most 2 MB.                                                            |
+| Profile photo: size not whole bytes     | Give the photo size as a whole number of bytes.                                                 |
+| Profile photo: upload id malformed      | The upload identifier is not in the expected form.                                              |
 
 The key beside each reason is the field name, per section 4.1. An unrecognised
 field named `nickname` therefore produces `{ "nickname": "This field is not

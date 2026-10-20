@@ -23,6 +23,9 @@ const {
   ATTACHMENT_LIMITS,
   LEARNING_LIMITS,
   LEARNING_RESOURCE_BUCKET,
+  PROFILE_PHOTO_BUCKET,
+  PROFILE_PHOTO_CONTENT_TYPES,
+  PROFILE_PHOTO_LIMITS,
   VISIT_ATTACHMENT_BUCKET,
 } = await import('@agri-erp/shared');
 const { ensurePrivateBucket } = await import('../lib/supabase/admin.ts');
@@ -42,3 +45,13 @@ const learning = await ensurePrivateBucket(LEARNING_RESOURCE_BUCKET, {
   allowedMimeTypes: ['application/pdf', 'image/*', 'audio/*', 'video/*'],
 });
 console.log(`storage-buckets: ${LEARNING_RESOURCE_BUCKET} ${learning} (private)`);
+
+// 2026-10-23: public profile photos (public profiles v2). Private too: the
+// public sees a published profile's photo only through a read link that
+// expires, issued by GET /api/profiles/p/:publicId. 2 MB, JPEG/PNG/WebP --
+// the same numbers the upload schema checks before any byte travels.
+const photos = await ensurePrivateBucket(PROFILE_PHOTO_BUCKET, {
+  fileSizeLimit: PROFILE_PHOTO_LIMITS.maxBytes,
+  allowedMimeTypes: [...PROFILE_PHOTO_CONTENT_TYPES],
+});
+console.log(`storage-buckets: ${PROFILE_PHOTO_BUCKET} ${photos} (private)`);

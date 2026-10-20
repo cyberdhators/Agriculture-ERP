@@ -99,6 +99,20 @@ export async function postOwner(db: Db, kind: PostKind, postId: string): Promise
   return row;
 }
 
+/**
+ * 2026-10-23 (public profiles v2): whether the account has turned in-app
+ * messaging off on its profile ("Allow in-app messaging"). No profile is the
+ * default, which is on. Only new conversations are refused; one already
+ * started goes on, and its owner can close it (block).
+ */
+export async function refusesMessages(db: Db, authUserId: string): Promise<boolean> {
+  const [row] = await db.$queryRawUnsafe<{ allow_messages: boolean }[]>(
+    'SELECT allow_messages FROM public.account_profile WHERE auth_user_id = $1::uuid',
+    authUserId,
+  );
+  return row ? !row.allow_messages : false;
+}
+
 /** Conversations this account started today (UTC), for the daily brake. */
 export async function startedToday(db: Db, authUserId: string): Promise<boolean> {
   const [row] = await db.$queryRawUnsafe<{ n: number }[]>(

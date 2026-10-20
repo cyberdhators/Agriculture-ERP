@@ -420,3 +420,5 @@ export * from './advice-topics';
 export * from './advice';
 // 2026-10-22: marketplace and account analytics -- filters, definitions, limits.
 export * from './analytics';
+// 2026-10-23: public profiles v2 -- drafts, publishing, an optional photo.
+export * from './public-profile';

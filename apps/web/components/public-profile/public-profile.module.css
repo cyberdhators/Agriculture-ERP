@@ -1,0 +1,330 @@
+/* Public profiles v2 (2026-10-23): the editor, its preview and the public page.
+   Phone first, one column; the header sits beside the photo from 480px up. */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 760px;
+  min-width: 0;
+}
+
+.head {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.head h1 {
+  margin: 0;
+}
+
+.statusRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+}
+
+/* ---- The profile card (public page and preview) ---------------------- */
+
+.card {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--card);
+}
+
+@media (min-width: 480px) {
+  .card {
+    grid-template-columns: auto 1fr;
+    align-items: start;
+  }
+}
+
+.photo,
+.initials {
+  width: 112px;
+  height: 112px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--line);
+}
+
+.initials {
+  display: grid;
+  place-items: center;
+  color: var(--ink);
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.small .photo,
+.small .initials {
+  width: 72px;
+  height: 72px;
+  font-size: 1.4rem;
+}
+
+.who {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.who h1,
+.who h2 {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.roles {
+  margin: 0;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.facts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 14px;
+  color: var(--muted);
+  font-size: var(--text-small);
+}
+
+.about {
+  margin: 0;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tags li {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--paper, var(--card));
+  font-size: var(--text-small);
+}
+
+.tagRemove {
+  padding: 0 2px;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.tagEntry {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.tagEntry > :first-child {
+  flex: 1;
+  min-width: 0;
+}
+
+.contact {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+}
+
+.phone {
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+/* ---- Posts ------------------------------------------------------------ */
+
+.section h2 {
+  margin: 0 0 8px;
+  font-size: 1.1rem;
+}
+
+.posts {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.post {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--card);
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.post:hover {
+  border-color: var(--leaf, var(--ink));
+}
+
+.postTitle {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.postLine {
+  color: var(--muted);
+  font-size: var(--text-small);
+  overflow-wrap: anywhere;
+}
+
+.chooser {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+}
+
+.choice {
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--ink);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+/* ---- The editor ------------------------------------------------------- */
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.choices legend {
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+.two {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+@media (min-width: 560px) {
+  .two {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.photoRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 16px;
+}
+
+.photoButtons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.switchRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  border-top: 1px solid var(--line);
+}
+
+.switchRow strong {
+  display: block;
+}
+
+.switch {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.switch input {
+  width: 22px;
+  height: 22px;
+  margin: 0;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.note {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: var(--radius-card);
+  background: var(--sorghum-wash, var(--card));
+  border: 1px solid var(--line);
+}
+
+.note p {
+  margin: 0;
+}
+
+.links {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.hiddenInput {
+  display: none;
+}

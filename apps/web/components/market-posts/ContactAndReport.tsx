@@ -7,7 +7,13 @@ import { REPORT_REASONS } from '@agri-erp/shared';
 
 import { Button, Dialog, Field, Notice, Select, Textarea } from '@/components/ui';
 import { t, type Language, type TKey } from '@/lib/i18n';
-import { MarketPostError, getContact, reportPost, type PostKind } from '@/lib/market-posts/api';
+import {
+  MarketPostError,
+  getContact,
+  reportPost,
+  type PostKind,
+  type ReportTarget,
+} from '@/lib/market-posts/api';
 
 import styles from './market-posts.module.css';
 
@@ -93,7 +99,18 @@ export function ContactReveal({ kind, id, lang }: { kind: PostKind; id: string; 
  * service listing: the product-report mechanism, reused. A reason and,
  * optionally, a sentence; nothing about the person reporting is sent or kept.
  */
-export function ReportPost({ kind, id, lang }: { kind: PostKind; id: string; lang: Language }) {
+export function ReportPost({
+  kind,
+  id,
+  lang,
+  label,
+}: {
+  kind: ReportTarget;
+  id: string;
+  lang: Language;
+  /** 2026-10-23: the button's words, e.g. "Report profile". */
+  label?: string;
+}) {
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState('');
   const [description, setDescription] = useState('');
@@ -129,7 +146,7 @@ export function ReportPost({ kind, id, lang }: { kind: PostKind; id: string; lan
   return (
     <>
       <Button variant="ghost" size="small" onClick={() => setOpen(true)}>
-        {t('posts.report', lang)}
+        {label ?? t('posts.report', lang)}
       </Button>
       <Dialog
         open={open}

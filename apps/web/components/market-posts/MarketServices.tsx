@@ -209,7 +209,12 @@ export function MarketServiceDetail({ id, lang }: { id: string; lang: Language }
           </dd>
         </div>
       </dl>
-      <MessageButton postKind="service" postId={row.id} language={lang} />
+      <MessageButton
+        postKind="service"
+        postId={row.id}
+        language={lang}
+        allowed={row.messages_allowed !== false}
+      />
       {row.phone_shared ? <ContactReveal kind="services" id={row.id} lang={lang} /> : null}
       <ReportPost kind="services" id={row.id} lang={lang} />
     </div>

@@ -4261,3 +4261,49 @@ and case outcomes later, when advice exists.
 - **Not measurable today:** sync rejections (kept on the phone with their
   reason code, never sent to the server), failed exports and page loads, and
   sign-in history from before the access log was switched on.
+
+## Public profiles v2: drafts, publishing, photo (2026-10-23)
+
+CORWADO's 16 October specification: "Public profiles remain drafts until
+previewed and deliberately published ... Public visibility does not constitute
+endorsement", drawn in the client's profile infographic (create and publish,
+public view, owner view, staff view). The owner's decisions:
+
+- **One profile per account, a draft until its owner publishes it.** It lives
+  on `account_profile` (one row per sign-in, so the farmer and buyer sides of
+  one account share it). Saving never publishes; Publish is a separate step
+  after a preview, and Unpublish keeps the profile to publish again.
+  **Existing profiles start as drafts** -- the migration makes nothing public.
+- **No staff pre-approval.** Publication is the owner's confirmation, and the
+  screens say a public profile is not an endorsement. Staff moderate
+  afterwards: a visitor can report a profile (the market-report mechanism,
+  target `profile`), and staff with "Moderate content and listings" see the
+  profile's status and photo beside Suspend/Restore and can remove the photo
+  with a reason (`profile.photo_removed_by_staff`). Staff never edit or
+  publish a profile.
+- **Public only while the account is live.** A profile is shown only when it
+  is published AND some farmer or buyer record of its sign-in is not removed
+  or suspended (and none is suspended). Suspension and deletion therefore take
+  it down without touching its row. Its public address is its own
+  `public_id`, never a sign-in id; drafts are the house 404.
+- **The photo is optional.** Without one the profile shows initials. It is
+  shrunk on the phone to 800 px JPEG, uploaded straight to a PRIVATE bucket
+  (`profile-photos`, 2 MB, JPEG/PNG/WebP) on a grant for one path under the
+  public id, checked at confirm against the provider's own size and type, and
+  shown through a read link that expires -- the visit-attachment mechanism.
+  Removing it clears the column (the record stays) and removes the object.
+- **The phone is shown only to signed-in users**, and only when the owner
+  turns "Show phone number publicly" on (off by default) -- never to an
+  anonymous visitor, the line the contact routes already drew.
+- **"Allow in-app messaging"** (on by default). Off: the Message buttons on
+  that owner's posts and profile are hidden and a new conversation is refused
+  (`conversation_owner_no_messages`); one already started goes on. Messages
+  stay about a post: the profile's Message button first asks which post.
+- **The post-based profile (#188) stays.** When the owner has a published
+  profile it hands over to it; otherwise it shows only the market name and
+  posts, as before. Nothing of an unpublished profile leaves the server.
+- **Audit:** `profile.saved` (the NAMES of changed fields, never the text),
+  `profile.published`, `profile.unpublished`, `profile.photo_changed`,
+  `profile.photo_removed`, `profile.photo_removed_by_staff`. They are NOT in
+  the database CHECK yet -- one combined CHECK migration adds them -- so until
+  it lands every profile write is refused rather than unlogged.
