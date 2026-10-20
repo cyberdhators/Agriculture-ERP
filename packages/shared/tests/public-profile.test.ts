@@ -130,7 +130,8 @@ describe('saving a public profile', () => {
     expect(reasons({ ...valid, show_phone: 'yes' }).show_phone).toBe(
       MARKET_POST_MESSAGES.choiceUnknown,
     );
-    const { allow_messages: _omitted, ...rest } = valid;
+    const rest: Record<string, unknown> = { ...valid };
+    delete rest.allow_messages;
     expect(reasons(rest).allow_messages).toBe(MARKET_POST_MESSAGES.choiceUnknown);
   });
 

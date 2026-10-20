@@ -232,12 +232,8 @@ export async function presentOwnProfile(
   row: ProfileRow | undefined,
 ): Promise<PublicProfileOwn> {
   const account = await accountOfSignIn(db, authUserId);
-  let suggested = '';
-  try {
-    suggested = await myName(db, authUserId);
-  } catch {
-    suggested = '';
-  }
+  // A staff-registered farmer may have no name to suggest: then none.
+  const suggested = await myName(db, authUserId).catch(() => '');
   return {
     public_id: row?.public_id ?? null,
     status: row?.status ?? 'draft',
