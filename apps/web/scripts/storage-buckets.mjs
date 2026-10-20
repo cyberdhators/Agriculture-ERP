@@ -13,7 +13,10 @@ import process from 'node:process';
 import { loadEnvLocal } from '../../../scripts/load-env.mjs';
 
 const loaded = loadEnvLocal();
-if (!loaded.ok) {
+// 2026-10-23: or the caller's own environment (`node --env-file=...`), as
+// load-env.mjs allows -- on a machine where .env.local is a folder holding
+// the credentials file, that is the only way to point this script anywhere.
+if (!loaded.ok && !process.env.NEXT_PUBLIC_SUPABASE_URL) {
   console.error('storage-buckets: .env.local does not exist; nothing to point at.');
   process.exit(1);
 }
