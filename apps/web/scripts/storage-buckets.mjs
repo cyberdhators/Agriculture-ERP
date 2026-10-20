@@ -43,8 +43,12 @@ console.log(`storage-buckets: ${VISIT_ATTACHMENT_BUCKET} ${outcome} (private)`);
 // a published guide's file only through GET /api/guides/:id/file, a link that
 // expires. The ceiling and the formats are the library card's own
 // (LEARNING_LIMITS.byteSizeMax; pdf, image, audio, video).
+// 2026-10-23: capped at 50 MB, the project's own per-file ceiling on
+// Supabase's Free plan -- a bucket asked for more is refused outright
+// ("The object exceeded the maximum allowed size"). Raise it with the plan.
+const PROJECT_FILE_CEILING = 50 * 1024 * 1024;
 const learning = await ensurePrivateBucket(LEARNING_RESOURCE_BUCKET, {
-  fileSizeLimit: LEARNING_LIMITS.byteSizeMax,
+  fileSizeLimit: Math.min(LEARNING_LIMITS.byteSizeMax, PROJECT_FILE_CEILING),
   allowedMimeTypes: ['application/pdf', 'image/*', 'audio/*', 'video/*'],
 });
 console.log(`storage-buckets: ${LEARNING_RESOURCE_BUCKET} ${learning} (private)`);
