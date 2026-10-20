@@ -49,6 +49,12 @@ const admitsBuyer = (file: string) => /BUYER_ROLE|'buyer'\s*\]/.test(source(file
  */
 const BUYER_OUTSIDE_ITS_TREE = [
   'account/profile',
+  // INDEPENDENT ADVICE (2026-10-22): a buyer account asks for advice and may
+  // offer it, as a farmer account can. Owned by the sign-in like messaging;
+  // every case read is filtered to its two participants (lib/api/advice.ts).
+  'advice/cases',
+  'advice/cases/[id]',
+  'advice/my-provider',
   // 2026-10-20: an account deletes itself (its own records only).
   'account/delete',
   // IN-APP MESSAGING (2026-10-20): conversations belong to sign-ins, and every

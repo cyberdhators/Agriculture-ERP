@@ -2,6 +2,7 @@ import {
   CONVERSATIONS_PER_DAY,
   shortName,
   type ChatMessage,
+  type ConversationKind,
   type ConversationSummary,
   type PostKind,
 } from '@agri-erp/shared';
@@ -110,7 +111,7 @@ export async function startedToday(db: Db, authUserId: string): Promise<boolean>
 
 export interface ConversationRow {
   id: string;
-  post_kind: PostKind;
+  post_kind: ConversationKind;
   post_id: string;
   post_title: string;
   owner_auth_user_id: string;

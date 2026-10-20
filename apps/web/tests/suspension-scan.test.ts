@@ -47,6 +47,15 @@ describe('the market leaves out suspended accounts', () => {
   }
 });
 
+describe('the advice directory leaves out suspended accounts (2026-10-22)', () => {
+  it('a provider is live only through a farmer or buyer record that is not suspended', () => {
+    const text = read('lib/api/advice.ts');
+    expect(text).toMatch(/FROM public\.farmer_active fa\s+WHERE[^)]*fa\.suspended_at IS NULL/);
+    expect(text).toMatch(/FROM public\.buyer_active ba\s+WHERE[^)]*ba\.suspended_at IS NULL/);
+    expect(text).toMatch(/PROVIDER_PUBLIC_WHERE = [^;]*\$\{PROVIDER_ACCOUNT_LIVE\}/);
+  });
+});
+
 describe('a suspended account cannot use the app', () => {
   it('the session lookup refuses a suspended farmer and a suspended buyer', () => {
     const text = read('lib/api/require-role.ts');

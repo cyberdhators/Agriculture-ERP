@@ -22,6 +22,7 @@ import {
   MESSAGING_MESSAGES,
   ACCOUNT_DELETION_MESSAGES,
   SUPPORT_MESSAGES,
+  ADVICE_MESSAGES,
 } from '../src/index';
 
 /**
@@ -172,6 +173,8 @@ describe('the documented field reasons match the ones the code actually sends', 
     ...Object.values(ACCOUNT_DELETION_MESSAGES),
     // CONTACT CORWADO (2026-10-21)
     ...Object.values(SUPPORT_MESSAGES),
+    // INDEPENDENT ADVICE (2026-10-22)
+    ...Object.values(ADVICE_MESSAGES),
     ERROR_MESSAGES.unknownField,
     ERROR_MESSAGES.bodyNotExpectedForm,
   ];

@@ -1752,3 +1752,58 @@ model SupportMessage {
   @@index([status, createdAt(sort: Desc)], map: "support_message_status_created_idx")
   @@map("support_message")
 }
+
+/// 2026-10-22: an account's public advice profile (one per account). Published
+/// by its owner with no review; the "approved adviser" pathway comes later.
+model AdviceProvider {
+  id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  authUserId          String    @unique(map: "advice_provider_one_per_account") @map("auth_user_id") @db.Uuid
+  displayName         String    @map("display_name")
+  providerKind        String    @map("provider_kind")
+  description         String
+  topics              String[]
+  languages           String[]
+  stateIds            String[]  @default([]) @map("state_ids")
+  deliveryModes       String[]  @map("delivery_modes")
+  availability        String?
+  terms               String
+  feeNote             String?   @map("fee_note")
+  commercialInterests String?   @map("commercial_interests")
+  status              String    @default("draft")
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime  @default(now()) @map("updated_at") @db.Timestamptz(6)
+  deletedAt           DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  cases AdviceCase[]
+
+  @@index([topics], map: "advice_provider_topics_idx", type: Gin)
+  @@map("advice_provider")
+}
+
+/// A question to the provider the requester chose. The id is made on the
+/// phone; its conversation has post_kind 'advice_case' and post_id = id.
+model AdviceCase {
+  id                   String    @id @db.Uuid
+  providerId           String    @map("provider_id") @db.Uuid
+  requesterAuthUserId  String    @map("requester_auth_user_id") @db.Uuid
+  requesterName        String    @map("requester_name")
+  topic                String
+  question             String
+  preferredContact     String    @default("in_app") @map("preferred_contact")
+  shareDetails         Boolean   @default(false) @map("share_details")
+  status               String    @default("open")
+  outcome              String?
+  closedAt             DateTime? @map("closed_at") @db.Timestamptz(6)
+  closedBy             String?   @map("closed_by") @db.Uuid
+  feedbackRating       Int?      @map("feedback_rating") @db.SmallInt
+  feedbackComment      String?   @map("feedback_comment")
+  createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime  @default(now()) @map("updated_at") @db.Timestamptz(6)
+  deletedAt            DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  provider AdviceProvider @relation(fields: [providerId], references: [id], map: "advice_case_provider_id_fkey")
+
+  @@index([providerId, status, createdAt(sort: Desc)], map: "advice_case_provider_idx")
+  @@index([requesterAuthUserId, createdAt(sort: Desc)], map: "advice_case_requester_idx")
+  @@map("advice_case")
+}

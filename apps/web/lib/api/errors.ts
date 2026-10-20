@@ -195,6 +195,16 @@ export const RULE_MESSAGES = {
   support_contact_required: 'Give a phone number or an email address so CORWADO can reply.',
   support_limit_reached:
     'You have sent 5 messages today. CORWADO will answer those first; you can send more tomorrow.',
+  // INDEPENDENT ADVICE (2026-10-22). About a profile or a request, never a person.
+  advice_own_provider: 'This is your own advice profile. Requests to it come to My Advisory Work.',
+  advice_provider_not_published: 'This adviser is not taking requests at the moment.',
+  advice_case_limit_reached: 'You have sent 10 advice requests today. You can send more tomorrow.',
+  advice_case_already_exists:
+    'An advice request with that identifier was already sent with different details. Open it and compare before sending again.',
+  advice_case_not_yours_to_change: 'That change is made by the other person in this request.',
+  advice_case_closed: 'This request is closed. It can no longer be changed.',
+  advice_feedback_not_closed: 'Feedback can be given once the request is closed.',
+  advice_feedback_already_given: 'Feedback has already been given on this request.',
 } as const;
 
 export type RuleKey = keyof typeof RULE_MESSAGES;

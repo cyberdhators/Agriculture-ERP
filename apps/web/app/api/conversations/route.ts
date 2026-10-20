@@ -31,6 +31,11 @@ import { prisma } from '../../../lib/db';
  * message to it. A post must be on the market; the owner of a post cannot
  * message themselves; twenty new conversations a day is the limit. Idempotent
  * on the message's phone-made id.
+ *
+ * 2026-10-22: an advice request's conversation (post_kind 'advice_case') is
+ * listed here like any other, but is never started here: the schema accepts
+ * the three post kinds only, so 'advice_case' is a 400. It is made with its
+ * case, by POST /api/advice/cases.
  */
 export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   GET: {

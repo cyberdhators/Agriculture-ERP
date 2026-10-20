@@ -8,11 +8,12 @@ import {
   MESSAGE_MAX_LENGTH,
   MESSAGE_POLL_MS,
   type ChatMessage,
+  type ConversationKind,
   type ConversationSummary,
-  type PostKind,
 } from '@agri-erp/shared';
 
 import { Button, EmptyState, Notice, Skeleton } from '@/components/ui';
+import { caseHref, topicLabel } from '@/lib/advice/labels';
 import { formatDate } from '@/lib/format';
 import { t, type Language, type TKey } from '@/lib/i18n';
 import {
@@ -38,17 +39,33 @@ import styles from './messages.module.css';
  * goes when signal returns.
  */
 
-const KIND_LABEL: Record<PostKind, TKey> = {
+const KIND_LABEL: Record<ConversationKind, TKey> = {
   listing: 'msg.aboutListing',
   buying_request: 'msg.aboutRequest',
   service: 'msg.aboutService',
+  // 2026-10-22: the conversation under an advice request.
+  advice_case: 'msg.aboutAdvice',
 };
 
-/** Where the post itself is, for "about" links. */
-export function postHref(kind: PostKind, id: string): string {
+/**
+ * Where the post itself is, for "about" links. An advice request's page is
+ * in the person's own side of the app (2026-10-22).
+ */
+export function postHref(
+  kind: ConversationKind,
+  id: string,
+  side: 'farmer' | 'buyer' = 'farmer',
+): string {
   if (kind === 'listing') return `/market/${id}`;
   if (kind === 'buying_request') return `/market/requests/${id}`;
+  if (kind === 'advice_case') return caseHref(side, id);
   return `/market/services/${id}`;
+}
+
+/** "Listing · Maize", or for an advice request its topic, in the reader's language. */
+function aboutLine(c: ConversationSummary, language: Language): string {
+  const title = c.post_kind === 'advice_case' ? topicLabel(c.post_title, language) : c.post_title;
+  return `${t(KIND_LABEL[c.post_kind], language)} · ${title}`;
 }
 
 export function Messages({ language }: { language: Language }) {
@@ -110,9 +127,7 @@ function Inbox({ language }: { language: Language }) {
                   <span className={styles.rowName}>{c.other_name}</span>
                   <span className={styles.rowTime}>{formatDate(c.last_message_at, language)}</span>
                 </span>
-                <span className={styles.rowAbout}>
-                  {t(KIND_LABEL[c.post_kind], language)} · {c.post_title}
-                </span>
+                <span className={styles.rowAbout}>{aboutLine(c, language)}</span>
                 {c.last_message_preview ? (
                   <span className={styles.rowPreview}>
                     {c.last_from_me ? `${t('msg.you', language)}: ` : ''}
@@ -136,8 +151,34 @@ function merge(a: readonly ChatMessage[], b: readonly ChatMessage[]): ChatMessag
   return [...byId.values()].sort((x, y) => x.created_at.localeCompare(y.created_at));
 }
 
-function Conversation({ id, language }: { id: string; language: Language }) {
+/**
+ * One conversation. `embedded` (2026-10-22) is the thread alone, for a page
+ * that already says what it is about -- an advice request's page: no back
+ * link, no heading, no marketplace safety line.
+ */
+export function ConversationThread({
+  id,
+  language,
+  embedded = false,
+}: {
+  id: string;
+  language: Language;
+  embedded?: boolean;
+}) {
+  return <Conversation id={id} language={language} embedded={embedded} />;
+}
+
+function Conversation({
+  id,
+  language,
+  embedded = false,
+}: {
+  id: string;
+  language: Language;
+  embedded?: boolean;
+}) {
   const pathname = usePathname();
+  const side = pathname.startsWith('/buyer') ? 'buyer' : 'farmer';
   const [conversation, setConversation] = useState<ConversationSummary | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [waiting, setWaiting] = useState<ChatMessage[]>([]);
@@ -225,9 +266,11 @@ function Conversation({ id, language }: { id: string; language: Language }) {
   if (problem === 'missing') {
     return (
       <div className={styles.page}>
-        <Link href={pathname} className={styles.back}>
-          ← {t('msg.back', language)}
-        </Link>
+        {embedded ? null : (
+          <Link href={pathname} className={styles.back}>
+            ← {t('msg.back', language)}
+          </Link>
+        )}
         <EmptyState title={t('msg.notFound', language)} body="" />
       </div>
     );
@@ -235,18 +278,29 @@ function Conversation({ id, language }: { id: string; language: Language }) {
 
   return (
     <div className={styles.page}>
-      <Link href={pathname} className={styles.back}>
-        ← {t('msg.back', language)}
-      </Link>
-      {conversation ? (
+      {embedded ? null : (
+        <Link href={pathname} className={styles.back}>
+          ← {t('msg.back', language)}
+        </Link>
+      )}
+      {embedded ? (
+        conversation && !conversation.blocked ? (
+          <div className={styles.chatHead}>
+            <span />
+            <Button variant="ghost" size="small" onClick={() => void block()}>
+              {t('msg.block', language)}
+            </Button>
+          </div>
+        ) : null
+      ) : conversation ? (
         <header className={styles.chatHead}>
           <div>
             <h1 className={styles.chatName}>{conversation.other_name}</h1>
             <Link
-              href={postHref(conversation.post_kind, conversation.post_id)}
+              href={postHref(conversation.post_kind, conversation.post_id, side)}
               className={styles.rowAbout}
             >
-              {t(KIND_LABEL[conversation.post_kind], language)} · {conversation.post_title}
+              {aboutLine(conversation, language)}
             </Link>
           </div>
           {conversation.blocked ? null : (
@@ -259,7 +313,7 @@ function Conversation({ id, language }: { id: string; language: Language }) {
         <Skeleton width="50%" height={28} />
       )}
       {problem === 'offline' ? <Notice kind="warn">{t('msg.offlineRead', language)}</Notice> : null}
-      <p className={styles.safety}>{t('msg.privacy', language)}</p>
+      {embedded ? null : <p className={styles.safety}>{t('msg.privacy', language)}</p>}
 
       <ol className={styles.thread} aria-live="polite">
         {shown.map((m) => (

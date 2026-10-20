@@ -348,6 +348,14 @@ character.
 | `account_not_suspended`            | This account is not suspended. There is nothing to restore.                                                                   |
 | `support_contact_required`         | Give a phone number or an email address so CORWADO can reply.                                                                 |
 | `support_limit_reached`            | You have sent 5 messages today. CORWADO will answer those first; you can send more tomorrow.                                  |
+| `advice_own_provider`              | This is your own advice profile. Requests to it come to My Advisory Work.                                                     |
+| `advice_provider_not_published`    | This adviser is not taking requests at the moment.                                                                            |
+| `advice_case_limit_reached`        | You have sent 10 advice requests today. You can send more tomorrow.                                                           |
+| `advice_case_already_exists`       | An advice request with that identifier was already sent with different details. Open it and compare before sending again.     |
+| `advice_case_not_yours_to_change`  | That change is made by the other person in this request.                                                                      |
+| `advice_case_closed`               | This request is closed. It can no longer be changed.                                                                          |
+| `advice_feedback_not_closed`       | Feedback can be given once the request is closed.                                                                             |
+| `advice_feedback_already_given`    | Feedback has already been given on this request.                                                                              |
 
 **A route names a rule; it never writes a sentence.** `conflict()` and
 `unprocessable()` take a key from this registry, not a string. That is how the
@@ -462,6 +470,11 @@ change.
 | `account.restored`                        |
 | `support_message.created`                 |
 | `support_message.done`                    |
+| `advice_provider.saved`                   |
+| `advice_case.created`                     |
+| `advice_case.status_changed`              |
+| `advice_case.closed`                      |
+| `advice_case.feedback`                    |
 
 `before` and `after` hold **changed fields only**, never whole rows, and never a
 password, token, authentication identifier, national id, phone, email, given
@@ -693,6 +706,30 @@ These are also exact.
 | Contact CORWADO: message length         | Write your message, 10 to 2000 characters.                                                      |
 | Support list: status not on list        | Choose new or done.                                                                             |
 | Support message: status other than done | A message can only be marked done.                                                              |
+| Advice profile: name length             | A name for your advice profile is 2 to 120 characters.                                          |
+| Advice profile: kind not on list        | Choose adviser, institute, research or training body, advisory organisation or other.           |
+| Advice profile: description length      | Describe the advice you offer in 10 to 2000 characters.                                         |
+| Advice profile: no topic                | Choose at least one topic you advise on.                                                        |
+| Advice topic: not on list               | Choose a topic from the list.                                                                   |
+| Advice profile: no language             | Choose at least one language you give advice in.                                                |
+| Advice language: not on list            | Choose a language from the list.                                                                |
+| Advice profile: states                  | Choose up to 20 states from the list, or none to cover anywhere.                                |
+| Advice profile: no delivery mode        | Choose remote, in person, or both.                                                              |
+| Advice delivery mode: not on list       | Choose remote or in person.                                                                     |
+| Advice profile: availability too long   | Availability can be at most 300 characters.                                                     |
+| Advice profile: terms not on list       | Choose free, paid, or free and paid.                                                            |
+| Advice profile: fee note too long       | A note on fees can be at most 300 characters.                                                   |
+| Advice profile: interests too long      | Commercial interests can be at most 500 characters.                                             |
+| Advice profile: status not on list      | Choose draft, published or unpublished.                                                         |
+| Advice request: question length         | Write your question in 10 to 2000 characters.                                                   |
+| Advice request: contact not on list     | Choose in the app, a phone call or an SMS.                                                      |
+| Advice request: call without sharing    | To be called or sent an SMS, tick the box to share your details with this adviser.              |
+| Advice requests: side not on list       | Choose requester or provider.                                                                   |
+| Advice request change: action           | Choose start, close or feedback.                                                                |
+| Advice request close: outcome           | Choose resolved, referred, closed unresolved or cancelled.                                      |
+| Advice feedback: rating not 1–5         | Give a rating from 1 to 5 stars.                                                                |
+| Advice feedback: comment too long       | A comment can be at most 1000 characters.                                                       |
+| Advice request change: extra field      | This field is not used for that change.                                                         |
 
 The key beside each reason is the field name, per section 4.1. An unrecognised
 field named `nickname` therefore produces `{ "nickname": "This field is not

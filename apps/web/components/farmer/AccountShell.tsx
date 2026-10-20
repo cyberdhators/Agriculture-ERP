@@ -8,6 +8,7 @@ import { Wordmark } from '@/components/brand/Wordmark';
 import { Skeleton } from '@/components/ui';
 import { useFarmerSession } from '@/lib/farmer-session';
 import { useUnreadNotifications } from '@/lib/farmer-unread';
+import { useHasAdviceProfile } from '@/lib/advice/client';
 import { useUnreadMessages } from '@/lib/messages/client';
 import { FARMER_PAGES, keepPagesOffline } from '@/lib/pwa/keep';
 import { t, type TKey } from '@/lib/i18n';
@@ -22,6 +23,8 @@ interface NavItem {
   key: TKey;
   exact?: boolean;
   glyph: ReactNode;
+  /** Shown only when the account has an advice profile (2026-10-22). */
+  providerOnly?: boolean;
 }
 
 interface NavGroup {
@@ -238,6 +241,82 @@ const NAV_GROUPS: readonly NavGroup[] = [
           >
             <circle cx="12" cy="12" r="4" />
             <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
+          </svg>
+        ),
+      },
+    ],
+  },
+  {
+    // 2026-10-22: independent advice -- find a provider and ask; offer advice.
+    label: 'nav.advice',
+    items: [
+      {
+        href: '/advice',
+        key: 'advice.find',
+        glyph: (
+          <svg
+            viewBox="0 0 24 24"
+            width="20"
+            height="20"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+          >
+            <circle cx="11" cy="11" r="6" />
+            <path d="M20 20l-4.5-4.5M9 9.5a2 2 0 1 1 2.5 1.9V13M11 15.5v.01" />
+          </svg>
+        ),
+      },
+      {
+        href: '/farmer/account/advice/requests',
+        key: 'advice.myRequests',
+        glyph: (
+          <svg
+            viewBox="0 0 24 24"
+            width="20"
+            height="20"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+          >
+            <path d="M4 5h16v11H9l-5 4V5z" />
+            <path d="M10 9a2 2 0 1 1 2.5 1.9V12M12.5 14v.01" />
+          </svg>
+        ),
+      },
+      {
+        href: '/farmer/account/advice/offer',
+        key: 'advice.offer',
+        glyph: (
+          <svg
+            viewBox="0 0 24 24"
+            width="20"
+            height="20"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+          >
+            <circle cx="9" cy="8" r="3.5" />
+            <path d="M2.5 20a6.5 6.5 0 0 1 13 0" />
+            <path d="M18 8v6M15 11h6" />
+          </svg>
+        ),
+      },
+      {
+        href: '/farmer/account/advice/work',
+        key: 'advice.work',
+        providerOnly: true,
+        glyph: (
+          <svg
+            viewBox="0 0 24 24"
+            width="20"
+            height="20"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+          >
+            <rect x="3" y="7" width="18" height="13" rx="2" />
+            <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 13h18" />
           </svg>
         ),
       },
@@ -488,6 +567,7 @@ export function AccountShell({ children }: { children: ReactNode }) {
   const { hydrated, language, farmer } = useFarmerSession();
   const unread = useUnreadNotifications(Boolean(farmer));
   const unreadMessages = useUnreadMessages(Boolean(farmer));
+  const adviser = useHasAdviceProfile(Boolean(farmer));
   const pathname = usePathname();
   const router = useRouter();
 
@@ -511,30 +591,32 @@ export function AccountShell({ children }: { children: ReactNode }) {
               {group.label ? (
                 <span className={styles.sidebarLabel}>{t(group.label, language)}</span>
               ) : null}
-              {group.items.map((item) => {
-                const active = isActive(pathname, item.href, item.exact);
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={active ? styles.sidebarItemOn : styles.sidebarItem}
-                    aria-current={active ? 'page' : undefined}
-                  >
-                    <span className={styles.sidebarGlyph} aria-hidden>
-                      {item.glyph}
-                    </span>
-                    <span>{t(item.key, language)}</span>
-                    {item.href === '/farmer/account/messages' && unreadMessages > 0 ? (
-                      <span className={styles.bellBadge}>
-                        {unreadMessages > 99 ? '99+' : unreadMessages}
+              {group.items
+                .filter((item) => adviser || !item.providerOnly)
+                .map((item) => {
+                  const active = isActive(pathname, item.href, item.exact);
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={active ? styles.sidebarItemOn : styles.sidebarItem}
+                      aria-current={active ? 'page' : undefined}
+                    >
+                      <span className={styles.sidebarGlyph} aria-hidden>
+                        {item.glyph}
                       </span>
-                    ) : null}
-                    {item.href === '/farmer/account/notifications' && unread > 0 ? (
-                      <span className={styles.bellBadge}>{unread > 99 ? '99+' : unread}</span>
-                    ) : null}
-                  </Link>
-                );
-              })}
+                      <span>{t(item.key, language)}</span>
+                      {item.href === '/farmer/account/messages' && unreadMessages > 0 ? (
+                        <span className={styles.bellBadge}>
+                          {unreadMessages > 99 ? '99+' : unreadMessages}
+                        </span>
+                      ) : null}
+                      {item.href === '/farmer/account/notifications' && unread > 0 ? (
+                        <span className={styles.bellBadge}>{unread > 99 ? '99+' : unread}</span>
+                      ) : null}
+                    </Link>
+                  );
+                })}
             </div>
           ))}
         </nav>

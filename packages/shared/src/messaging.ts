@@ -16,6 +16,14 @@ import { BUYER_MESSAGES } from './buyer';
 export const POST_KINDS = ['listing', 'buying_request', 'service'] as const;
 export type PostKind = (typeof POST_KINDS)[number];
 
+/**
+ * What a conversation can be about: a post, or (2026-10-22) an advice request.
+ * Only a post can start one through POST /api/conversations; an advice case's
+ * conversation is made with the case, by POST /api/advice/cases, and nowhere else.
+ */
+export const CONVERSATION_KINDS = [...POST_KINDS, 'advice_case'] as const;
+export type ConversationKind = (typeof CONVERSATION_KINDS)[number];
+
 /** The longest message, in characters. The database checks it too. */
 export const MESSAGE_MAX_LENGTH = 2000;
 
@@ -64,7 +72,7 @@ export type SendMessageInput = z.infer<typeof sendMessageSchema>;
 /** A conversation as the inbox shows it, from the reader's side. */
 export interface ConversationSummary {
   id: string;
-  post_kind: PostKind;
+  post_kind: ConversationKind;
   post_id: string;
   post_title: string;
   /** The other person, as they appear on the market. Never a phone. */
