@@ -165,6 +165,8 @@ export interface MarketListing {
   updated_at: string;
   /** 2026-10-20: whether the farmer gives their phone to a buyer who asks. */
   phone_on_request?: boolean;
+  /** 2026-10-23: false when the seller turned in-app messaging off. */
+  messages_allowed?: boolean;
   /** B14: the farmer's phone, given only once this buyer has sent a request for it. */
   farmer_phone?: string | null;
 }

@@ -43,6 +43,8 @@ export function MarketDetail({
 }) {
   const { overrides, reasons, withdraw } = useMarketModeration();
   const [listing, setListing] = useState<ProduceListing | null>(null);
+  // 2026-10-23: the seller's "Allow in-app messaging" choice.
+  const [messagesAllowed, setMessagesAllowed] = useState(true);
   const [allRows, setAllRows] = useState<MarketRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -60,6 +62,7 @@ export function MarketDetail({
       .then(([detail, rows]) => {
         if (cancelled) return;
         setListing(toListing(detail));
+        setMessagesAllowed(detail.messages_allowed !== false);
         setAllRows(rows);
       })
       .catch(() => {
@@ -194,7 +197,12 @@ export function MarketDetail({
             </section>
           ) : (
             // 2026-10-20: ask the seller, without either side's phone.
-            <MessageButton postKind="listing" postId={currentListing.id} language={lang} />
+            <MessageButton
+              postKind="listing"
+              postId={currentListing.id}
+              language={lang}
+              allowed={messagesAllowed}
+            />
           )
         }
         related={

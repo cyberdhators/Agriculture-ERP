@@ -195,7 +195,11 @@ export function BuyerProductDetail({ id }: { id: string }) {
                     : 'The farmer’s phone number is shown here once you send them a request.'}
                 </p>
               )}
-              <MessageButton postKind="listing" postId={listing.id} />
+              <MessageButton
+                postKind="listing"
+                postId={listing.id}
+                allowed={listing.messages_allowed !== false}
+              />
               <ProfileLink kind="listing" id={listing.id} language="en" />
             </CardBody>
           </Card>

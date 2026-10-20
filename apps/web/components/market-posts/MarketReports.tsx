@@ -22,6 +22,9 @@ interface MarketReport {
 const TARGET_LABEL: Record<string, string> = {
   buying_request: 'Buying request',
   service_listing: 'Service',
+  // 2026-10-23: a published public profile. Staff act on the account (suspend,
+  // remove the photo) from the farmer's record or the buyer list.
+  profile: 'Public profile',
 };
 
 /** Decisions the server allows from each report status (it checks them again). */
@@ -135,17 +138,24 @@ export function MarketReports() {
                 {formatDate(r.created_at)}
               </p>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                {(ACTIONS[r.status] ?? []).map((a) => (
-                  <Button
-                    key={a.action}
-                    size="small"
-                    variant={a.action === 'remove_listing' ? 'danger' : 'secondary'}
-                    disabled={busy === r.id}
-                    onClick={() => void decide(r.id, a.action)}
-                  >
-                    {a.label}
-                  </Button>
-                ))}
+                {r.target_type === 'profile' ? (
+                  <a className="small" href={`/market/p/${r.target_id}`}>
+                    View profile
+                  </a>
+                ) : null}
+                {(ACTIONS[r.status] ?? [])
+                  .filter((a) => r.target_type !== 'profile' || a.action !== 'remove_listing')
+                  .map((a) => (
+                    <Button
+                      key={a.action}
+                      size="small"
+                      variant={a.action === 'remove_listing' ? 'danger' : 'secondary'}
+                      disabled={busy === r.id}
+                      onClick={() => void decide(r.id, a.action)}
+                    >
+                      {a.label}
+                    </Button>
+                  ))}
               </div>
             </li>
           ))}

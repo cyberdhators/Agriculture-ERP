@@ -17,6 +17,7 @@ import { audited, writeAudit, type AuditTx } from './audit';
 import { ApiFailure, forbidden, invalidCursor, notFound, unprocessable } from './errors';
 import { type Authenticated } from './require-role';
 import { UUID_PATTERN } from './buyer-presenters';
+import { PUBLIC_PROFILE_WHERE } from './public-profile-sql';
 import { prisma } from '../db';
 
 /**
@@ -154,7 +155,10 @@ export const BUYING_REQUEST_COLUMNS = `br.id, br.poster_type, br.display_name,
   br.price_ssp::text AS price_ssp, br.price_per::text AS price_per, br.negotiable,
   br.delivery_terms, br.description, br.status, br.created_at, br.updated_at, br.show_phone,
   (COALESCE(f.verification_status::text, '') = 'verified'
-    OR COALESCE(o.verification_status::text, '') = 'verified') AS poster_verified`;
+    OR COALESCE(o.verification_status::text, '') = 'verified') AS poster_verified,
+  COALESCE((SELECT ap.allow_messages FROM public.account_profile ap
+             WHERE ap.auth_user_id = COALESCE(f.auth_user_id, b.auth_user_id)), true)
+    AS owner_messages`;
 
 /** The poster must still exist: a removed farmer or buyer takes their requests with them. */
 export const BUYING_REQUEST_FROM = `FROM public.buying_request_active br
@@ -191,6 +195,8 @@ export interface BuyingRequestRow {
   updated_at: Date;
   show_phone: boolean;
   poster_verified: boolean;
+  /** 2026-10-23: the poster's "Allow in-app messaging" (absent: on). */
+  owner_messages?: boolean;
 }
 
 /** THE ONLY SHAPE A BUYING REQUEST TAKES ON THE PUBLIC MARKET. A whitelist. */
@@ -214,6 +220,8 @@ export const presentBuyingRequest = (row: BuyingRequestRow) => ({
   description: row.description,
   // 2026-10-20: whether the poster offers their phone (a yes/no, never the number).
   phone_shared: row.show_phone,
+  // 2026-10-23: whether the poster takes in-app messages (their profile's choice).
+  messages_allowed: row.owner_messages ?? true,
   status: row.status,
   created_at: toIso(row.created_at),
   updated_at: toIso(row.updated_at),
@@ -260,7 +268,9 @@ export const SERVICE_COLUMNS = `sl.id, sl.trading_name, sl.service_type, sl.titl
        ELSE to_char(sl.available_until, 'YYYY-MM-DD') END AS available_until,
   sl.availability_note, sl.price_ssp::text AS price_ssp, sl.price_unit, sl.negotiable,
   sl.status, sl.created_at, sl.updated_at, sl.show_phone,
-  (f.verification_status::text = 'verified') AS farmer_verified`;
+  (f.verification_status::text = 'verified') AS farmer_verified,
+  COALESCE((SELECT ap.allow_messages FROM public.account_profile ap
+             WHERE ap.auth_user_id = f.auth_user_id), true) AS owner_messages`;
 
 export const SERVICE_FROM = `FROM public.service_listing_active sl
   JOIN public.farmer_active f ON f.id = sl.farmer_id AND f.suspended_at IS NULL
@@ -292,6 +302,8 @@ export interface ServiceRow {
   updated_at: Date;
   show_phone: boolean;
   farmer_verified: boolean;
+  /** 2026-10-23: the provider's "Allow in-app messaging" (absent: on). */
+  owner_messages?: boolean;
 }
 
 /** THE ONLY SHAPE A SERVICE LISTING TAKES ON THE PUBLIC MARKET. A whitelist. */
@@ -313,6 +325,7 @@ export const presentService = (row: ServiceRow) => ({
   price_unit: row.price_unit,
   negotiable: row.negotiable,
   phone_shared: row.show_phone,
+  messages_allowed: row.owner_messages ?? true,
   status: row.status,
   created_at: toIso(row.created_at),
   updated_at: toIso(row.updated_at),
@@ -358,6 +371,12 @@ const REPORT_TARGET: Record<MarketReportTarget, { visible: string; column: strin
   service_listing: {
     visible: `SELECT sl.id ${SERVICE_FROM} WHERE sl.id = $1::uuid AND ${SERVICE_MARKET_WHERE}`,
     column: 'service_listing_id',
+  },
+  // 2026-10-23: a published public profile, by its public id.
+  profile: {
+    visible: `SELECT ap.public_id AS id FROM public.account_profile ap
+      WHERE ap.public_id = $1::uuid AND ${PUBLIC_PROFILE_WHERE}`,
+    column: 'profile_id',
   },
 };
 
@@ -440,11 +459,12 @@ export interface MarketReportRow {
 }
 
 export const MARKET_REPORT_SELECT = `SELECT r.id, r.target_type,
-        COALESCE(r.buying_request_id, r.service_listing_id) AS target_id,
+        COALESCE(r.buying_request_id, r.service_listing_id, r.profile_id) AS target_id,
         r.reason::text AS reason, r.status::text AS status, r.created_at, r.updated_at,
-        COALESCE(br.product_name, sl.title) AS target_title,
-        COALESCE(br.display_name, sl.trading_name) AS poster_name,
-        COALESCE(br.status, sl.status) AS target_status
+        COALESCE(br.product_name, sl.title, rp.display_name) AS target_title,
+        COALESCE(br.display_name, sl.trading_name, rp.display_name) AS poster_name,
+        COALESCE(br.status, sl.status, rp.status) AS target_status
    FROM public.market_report_active r
    LEFT JOIN public.buying_request_active br ON br.id = r.buying_request_id
-   LEFT JOIN public.service_listing_active sl ON sl.id = r.service_listing_id`;
+   LEFT JOIN public.service_listing_active sl ON sl.id = r.service_listing_id
+   LEFT JOIN public.account_profile rp ON rp.public_id = r.profile_id`;

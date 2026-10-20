@@ -378,6 +378,25 @@ const NAV_GROUPS: readonly NavGroup[] = [
         ),
       },
       {
+        // 2026-10-23: public profiles v2 -- draft, preview, publish, photo.
+        href: '/farmer/account/public-profile',
+        key: 'pp.menu',
+        glyph: (
+          <svg
+            viewBox="0 0 24 24"
+            width="20"
+            height="20"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+          >
+            <rect x="3" y="4" width="18" height="16" rx="2" />
+            <circle cx="9" cy="11" r="2.5" />
+            <path d="M5.5 17a3.5 3.5 0 0 1 7 0M15 10h3M15 14h3" />
+          </svg>
+        ),
+      },
+      {
         // 2026-10-19: who you are, what you do (optional).
         href: '/farmer/account/about',
         key: 'account.tabAbout',

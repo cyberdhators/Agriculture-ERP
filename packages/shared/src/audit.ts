@@ -149,6 +149,15 @@ export const AUDIT_ACTIONS = [
   // counts and queries are in `after`; the figures themselves are not. NOT YET
   // IN THE DATABASE CHECK: one combined CHECK migration adds it (the owner).
   'analytics.exported',
+  // 2026-10-23: public profiles v2. The NAMES of changed fields only, never
+  // the about text, a tag, a name or a storage path; statuses and ids. NOT YET
+  // IN THE DATABASE CHECK: one combined CHECK migration adds them (the owner).
+  'profile.saved',
+  'profile.published',
+  'profile.unpublished',
+  'profile.photo_changed',
+  'profile.photo_removed',
+  'profile.photo_removed_by_staff',
 ] as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];

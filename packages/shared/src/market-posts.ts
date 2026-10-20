@@ -434,5 +434,6 @@ export const serviceFilterSchema = z.strictObject({
 // ---------------------------------------------------------------------------
 
 /** What a market report is about. Produce listings keep their own table. */
-export const MARKET_REPORT_TARGETS = ['buying_request', 'service_listing'] as const;
+/** 2026-10-23: and a published public profile (public profiles v2). */
+export const MARKET_REPORT_TARGETS = ['buying_request', 'service_listing', 'profile'] as const;
 export type MarketReportTarget = (typeof MARKET_REPORT_TARGETS)[number];

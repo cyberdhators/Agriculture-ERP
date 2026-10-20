@@ -1568,6 +1568,22 @@ model AccountProfile {
   activities  String[] @default([])
   createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt   DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+  /// 2026-10-23, migration 20261023090000: the public profile (v2). Draft
+  /// until the owner publishes; public_id is the only address shown publicly.
+  /// state_id / payam_id carry foreign keys in the migration, not restated here.
+  publicId       String    @unique(map: "account_profile_public_id_key") @default(dbgenerated("gen_random_uuid()")) @map("public_id") @db.Uuid
+  displayName    String?   @map("display_name")
+  about          String?
+  stateId        String?   @map("state_id")
+  payamId        String?   @map("payam_id")
+  products       String[]  @default([])
+  services       String[]  @default([])
+  photoPath      String?   @map("photo_path")
+  photoUpdatedAt DateTime? @map("photo_updated_at") @db.Timestamptz(6)
+  showPhone      Boolean   @default(false) @map("show_phone")
+  allowMessages  Boolean   @default(true) @map("allow_messages")
+  status         String    @default("draft")
+  publishedAt    DateTime? @map("published_at") @db.Timestamptz(6)
 
   @@map("account_profile")
 }
@@ -1652,6 +1668,9 @@ model MarketReport {
   updatedAt        DateTime     @default(now()) @map("updated_at") @db.Timestamptz(6)
   deletedAt        DateTime?    @map("deleted_at") @db.Timestamptz(6)
   deletedBy        String?      @map("deleted_by") @db.Uuid
+  /// 2026-10-23 (migration 20261023090000): a report about a public profile,
+  /// by its public_id. The foreign key is in the migration.
+  profileId        String?      @map("profile_id") @db.Uuid
 
   @@map("market_report")
 }

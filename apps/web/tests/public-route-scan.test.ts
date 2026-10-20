@@ -65,6 +65,14 @@ const EXPECTED_PUBLIC = [
   // 2026-10-20: a poster's public profile, reached through one of their posts on
   // the market; read-only, a whitelist of market-facing fields (no phone, no ids).
   'profiles/[kind]/[id]',
+  // 2026-10-23 (public profiles v2): a PUBLISHED public profile of a live
+  // account, by its public id (never a sign-in id); read-only, a whitelist
+  // (app/api/profiles/p/[publicId]/route.ts); the phone only to a signed-in
+  // caller and only if the owner chose to show it. And a visitor may report
+  // one, through the market-report mechanism with its unclosed exposure
+  // written in the route's header.
+  'profiles/p/[publicId]',
+  'profiles/p/[publicId]/reports',
   'services',
   'services/[id]',
   'services/[id]/reports',

@@ -19,22 +19,33 @@ import styles from './messages.module.css';
  *
  * Signed out, the server answers 401 and the box offers sign-in instead.
  * Starting needs signal; replies in the conversation can wait for it.
+ *
+ * 2026-10-23: `allowed={false}` when the owner turned "Allow in-app
+ * messaging" off on their public profile -- then there is no button at all
+ * (the server refuses a new conversation either way).
  */
 export function MessageButton({
   postKind,
   postId,
   language = 'en',
+  allowed = true,
+  initiallyOpen = false,
 }: {
   postKind: PostKind;
   postId: string;
   language?: Language;
+  allowed?: boolean;
+  /** Open the box at once (the public profile's post chooser already asked). */
+  initiallyOpen?: boolean;
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(initiallyOpen);
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [signIn, setSignIn] = useState(false);
   const [sentTo, setSentTo] = useState<string | null>(null);
+
+  if (!allowed) return null;
 
   if (!open) {
     return (

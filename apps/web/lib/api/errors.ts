@@ -209,6 +209,14 @@ export const RULE_MESSAGES = {
   learning_resource_locked:
     'A guide in review or published can be changed only by someone who can publish. Ask them to return it to draft first.',
   guide_file_unavailable: "This guide's file cannot be opened just now. Try again later.",
+  // PUBLIC PROFILES V2 (2026-10-23). About a profile or a photo, never a person.
+  profile_name_required: 'Save a name for your profile before publishing it.',
+  profile_photo_not_received: 'The photo has not reached the server yet. Try again in a moment.',
+  profile_photo_rejected:
+    'That photo could not be used. Choose a JPEG, PNG or WebP photo under 2 MB and try again.',
+  profile_no_photo: 'This profile has no photo. There is nothing to remove.',
+  profile_save_first: 'Save your profile as a draft before adding a photo.',
+  conversation_owner_no_messages: 'The owner of this post does not take messages in the app.',
 } as const;
 
 export type RuleKey = keyof typeof RULE_MESSAGES;

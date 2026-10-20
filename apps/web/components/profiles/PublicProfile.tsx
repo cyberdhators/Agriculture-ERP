@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 import type { PostKind } from '@agri-erp/shared';
@@ -17,6 +18,9 @@ import styles from './profiles.module.css';
  * person behind one post on the market -- their market name, place, badge,
  * when they joined, what they do, and everything they have on the market now.
  * Each post links to its own page, where the Message button is.
+ *
+ * 2026-10-23 (public profiles v2): when the owner has published a public
+ * profile, this page hands over to it (/market/p/:publicId).
  */
 
 interface Post {
@@ -26,6 +30,8 @@ interface Post {
 }
 
 interface Profile {
+  /** 2026-10-23: the owner's PUBLISHED public profile, if any. */
+  profile_id: string | null;
   name: string;
   verified: boolean;
   place: { payam: string | null; state: string | null };
@@ -94,6 +100,12 @@ export function PublicProfile({
   const w = W[lang];
   const labels = ABOUT_LABELS[lang];
   const [profile, setProfile] = useState<Profile | null | 'missing'>(null);
+  const router = useRouter();
+  const publishedId = profile && profile !== 'missing' ? profile.profile_id : null;
+
+  useEffect(() => {
+    if (publishedId) router.replace(`/market/p/${encodeURIComponent(publishedId)}`);
+  }, [publishedId, router]);
 
   useEffect(() => {
     let cancelled = false;
@@ -113,7 +125,7 @@ export function PublicProfile({
     };
   }, [kind, id]);
 
-  if (profile === null) {
+  if (profile === null || publishedId) {
     return (
       <div className={styles.page} aria-busy>
         <Skeleton width="50%" height={32} />

@@ -49,6 +49,19 @@ const admitsBuyer = (file: string) => /BUYER_ROLE|'buyer'\s*\]/.test(source(file
  */
 const BUYER_OUTSIDE_ITS_TREE = [
   'account/profile',
+  // PUBLIC PROFILES V2 (2026-10-23): the account's own public profile -- one
+  // per sign-in, shared by its farmer and buyer sides -- with its publish,
+  // unpublish and photo steps. Each reads and writes the caller's own row only
+  // (keyed by the session's sign-in, lib/api/public-profile.ts).
+  'account/public-profile',
+  'account/public-profile/photo',
+  'account/public-profile/photo/confirm',
+  'account/public-profile/photo/upload-url',
+  'account/public-profile/publish',
+  'account/public-profile/unpublish',
+  // The public profile page is public; it names the buyer role only to
+  // recognise a signed-in caller, who alone may see a phone the owner shows.
+  'profiles/p/[publicId]',
   // INDEPENDENT ADVICE (2026-10-22): a buyer account asks for advice and may
   // offer it, as a farmer account can. Owned by the sign-in like messaging;
   // every case read is filtered to its two participants (lib/api/advice.ts).

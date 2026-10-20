@@ -97,6 +97,8 @@ export interface BuyingRequest {
   description: string | null;
   /** 2026-10-20: whether the poster offers their phone (never the number). */
   phone_shared: boolean;
+  /** 2026-10-23: false when the poster turned in-app messaging off. */
+  messages_allowed?: boolean;
   status: string;
   created_at: string;
   updated_at: string;
@@ -141,6 +143,8 @@ export interface ServiceListing {
   price_unit: string | null;
   negotiable: boolean;
   phone_shared: boolean;
+  /** 2026-10-23: false when the poster turned in-app messaging off. */
+  messages_allowed?: boolean;
   status: string;
   created_at: string;
   updated_at: string;
@@ -164,6 +168,9 @@ export const updateService = (id: string, body: Record<string, unknown>) =>
 
 export type PostKind = 'buying-requests' | 'services';
 
+/** 2026-10-23: what a report can be about -- a post, or a published public profile. */
+export type ReportTarget = PostKind | 'profiles/p';
+
 /** The poster's phone, for a signed-in farmer or buyer. 401/403 means sign in first. */
 export const getContact = (kind: PostKind, id: string) =>
   one<{ display_name: string; contact_phone: string | null }>(
@@ -171,7 +178,7 @@ export const getContact = (kind: PostKind, id: string) =>
   );
 
 export const reportPost = (
-  kind: PostKind,
+  kind: ReportTarget,
   id: string,
   body: { reason: string; description?: string },
 ) => one<{ received: true }>(`/api/${kind}/${encodeURIComponent(id)}/reports`, send('POST', body));

@@ -43,7 +43,9 @@ export const MARKET_COLUMNS = `pl.id, pl.title, pl.category::text AS category, p
   pl.min_order_quantity::text AS min_order_quantity, pl.trading_name,
   pl.updated_at, f.verification_status::text AS supplier_verification, pl.show_phone,
   pm.name AS payam_name, c.id AS county_id, c.name AS county_name,
-  s.id AS state_id, s.name AS state_name`;
+  s.id AS state_id, s.name AS state_name,
+  COALESCE((SELECT ap.allow_messages FROM public.account_profile ap
+             WHERE ap.auth_user_id = f.auth_user_id), true) AS owner_messages`;
 
 /** Listed, not removed, with a seller who is not removed. */
 export const MARKET_FROM = `FROM public.produce_listing_active pl
@@ -95,6 +97,8 @@ export interface MarketRow {
   county_name: string;
   state_id: string;
   state_name: string;
+  /** 2026-10-23: the seller's "Allow in-app messaging" (absent in old fixtures: on). */
+  owner_messages?: boolean;
 }
 
 /** THE ONLY SHAPE A LISTING TAKES ON ITS WAY TO A BUYER. A whitelist. */
@@ -124,6 +128,8 @@ export function presentMarketListing(row: MarketRow) {
     // 2026-10-20: whether the farmer gives their phone to a buyer who sends a
     // request (a yes/no, never the number).
     phone_on_request: row.show_phone,
+    // 2026-10-23: whether the seller takes in-app messages (their profile's choice).
+    messages_allowed: row.owner_messages ?? true,
     location: {
       payam: row.payam_name,
       county_id: row.county_id,

@@ -25,6 +25,7 @@ import {
   ADVICE_MESSAGES,
   LEARNING_WORKFLOW_MESSAGES,
   ANALYTICS_MESSAGES,
+  PUBLIC_PROFILE_MESSAGES,
 } from '../src/index';
 
 /**
@@ -181,6 +182,8 @@ describe('the documented field reasons match the ones the code actually sends', 
     ...Object.values(LEARNING_WORKFLOW_MESSAGES),
     // ANALYTICS (2026-10-22)
     ...Object.values(ANALYTICS_MESSAGES),
+    // PUBLIC PROFILES V2 (2026-10-23)
+    ...Object.values(PUBLIC_PROFILE_MESSAGES),
     ERROR_MESSAGES.unknownField,
     ERROR_MESSAGES.bodyNotExpectedForm,
   ];

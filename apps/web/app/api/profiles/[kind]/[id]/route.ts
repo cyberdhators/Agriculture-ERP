@@ -21,6 +21,7 @@ import {
   type BuyingRequestRow,
   type ServiceRow,
 } from '../../../../../lib/api/market-posts';
+import { PUBLIC_PROFILE_WHERE } from '../../../../../lib/api/public-profile-sql';
 import { defineRoutes, ok } from '../../../../../lib/api/route';
 import { prisma } from '../../../../../lib/db';
 
@@ -39,6 +40,10 @@ import { prisma } from '../../../../../lib/db';
  * they joined; "who you are, what you do" if they answered it; and what they
  * have on the market now, each through its own public presenter. Never a
  * phone, a legal name, an id other than a post's, or anything private.
+ *
+ * 2026-10-23: plus `profile_id`, the public id of the owner's public profile
+ * when (and only when) it is PUBLISHED, so the screen sends the visitor there
+ * (GET /api/profiles/p/:publicId). An unpublished profile adds nothing here.
  *
  * Public, read-only, writes nothing.
  */
@@ -151,7 +156,19 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
           )
         : [];
 
+      // 2026-10-23 (public profiles v2): when the owner has PUBLISHED a public
+      // profile, its public id, so the screen can go there. Nothing else of it:
+      // a draft or unpublished profile's name, photo and text never leave here.
+      const [published] = account.auth_user_id
+        ? await prisma.$queryRawUnsafe<{ public_id: string }[]>(
+            `SELECT ap.public_id FROM public.account_profile ap
+              WHERE ap.auth_user_id = $1::uuid AND ${PUBLIC_PROFILE_WHERE}`,
+            account.auth_user_id,
+          )
+        : [];
+
       return ok({
+        profile_id: published?.public_id ?? null,
         name: owner.name,
         verified: account.verified,
         place: { payam: account.payam_name, state: account.state_name },

@@ -22,6 +22,8 @@ export const FARMER_PAGES = [
   '/farmer/account/weather',
   '/farmer/account/ai',
   '/farmer/account/about',
+  // 2026-10-23: public profiles v2 -- the editor (its data still needs signal).
+  '/farmer/account/public-profile',
   '/farmer/account/buy',
   '/farmer/account/services',
   // 2026-10-22: independent advice. Case pages carry an id, so are not kept.
