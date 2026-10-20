@@ -266,9 +266,10 @@ export function BuyerShell({ children }: { children: ReactNode }) {
               <IconMenu size={20} />
             </button>
             <div className={shell.topbarText}>
-              {/* 2026-10-21 (the owner): on a phone a personal account shows its
-                  first name only, so the name never runs under the icons. */}
-              <span className={`${shell.pageTitle} ${styles.topName}`} dir="auto">
+              {/* 2026-10-22 (the owner): on a phone a personal account shows its
+                  first name only, and any name is cut short with an ellipsis,
+                  so it never runs under the icons. */}
+              <span className={shell.pageTitle} dir="auto">
                 <span className={styles.nameFull}>
                   {profile?.organization.name ?? 'Buyer account'}
                 </span>
@@ -280,30 +281,45 @@ export function BuyerShell({ children }: { children: ReactNode }) {
                     : 'Buyer account'}
                 </span>
               </span>
+              {/* On a phone the standing moves under the name: beside the
+                  icons there is no room for it and the name both. */}
+              {profile ? (
+                <span className={styles.stampUnder}>
+                  <Stamp kind={VERIFICATION_STAMPS[profile.verification.status]}>
+                    {VERIFICATION_LABELS[profile.verification.status]}
+                  </Stamp>
+                </span>
+              ) : null}
             </div>
             <div className={`${shell.topbarSide} ${styles.topActions}`}>
-              <Link href="/buyer/messages" aria-label="Messages">
+              <Link href="/buyer/messages" aria-label="Messages" className={styles.topIcon}>
                 <IconChat size={18} />
                 {unreadMessages > 0 ? (
                   <span className={styles.unreadDot}>{unreadMessages}</span>
                 ) : null}
               </Link>
-              <Link href="/buyer/notifications" aria-label="Notifications">
+              <Link
+                href="/buyer/notifications"
+                aria-label="Notifications"
+                className={styles.topIcon}
+              >
                 <IconMail size={18} />
                 {unread !== null && unread > 0 ? (
                   <span className={styles.unreadDot}>{unread}</span>
                 ) : null}
               </Link>
               {profile ? (
-                <Stamp kind={VERIFICATION_STAMPS[profile.verification.status]}>
-                  {VERIFICATION_LABELS[profile.verification.status]}
-                </Stamp>
+                <span className={styles.stampSide}>
+                  <Stamp kind={VERIFICATION_STAMPS[profile.verification.status]}>
+                    {VERIFICATION_LABELS[profile.verification.status]}
+                  </Stamp>
+                </span>
               ) : null}
               {/* Always visible (2026-10-08): the rail's sign-out sits at the
                   bottom of a menu that is folded away on a phone. */}
               <button
                 type="button"
-                className={shell.signOut}
+                className={`${shell.signOut} ${styles.topSignOut}`}
                 style={{ marginBlockStart: 0, color: 'inherit', borderColor: 'currentColor' }}
                 onClick={() => void signOut()}
               >

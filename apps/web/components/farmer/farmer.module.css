@@ -1389,6 +1389,19 @@
   transform-origin: center;
 }
 
+/* 2026-10-22: on the band the language NOT chosen was dark ink on dark
+   green. It takes the band's ink, like the other masthead controls; the
+   chosen one keeps its light chip. */
+.shopLang .panelLangBtn {
+  color: var(--band-ink);
+  border-color: color-mix(in srgb, var(--band-ink) 55%, transparent);
+}
+
+.shopLang .panelLangBtn[aria-pressed='true'] {
+  color: var(--green-deep);
+  border-color: var(--green);
+}
+
 .shopAcct {
   display: flex;
   flex-direction: column;
@@ -1758,11 +1771,21 @@
     min-width: 0;
     display: flex;
     align-items: center;
-    justify-content: flex-end;
     gap: var(--s-2);
     flex-wrap: nowrap;
     overflow-x: auto;
     scrollbar-width: none;
+  }
+
+  /*
+   * 2026-10-22: end-aligned by an auto margin, not justify-content. With
+   * justify-content: flex-end a row wider than its column overflowed at its
+   * START, where a scroller cannot reach: the English button was cut off
+   * under the logo at 393px. An auto margin is 0 when the row is too wide,
+   * so it then starts at the start and scrolls; it no longer needs to.
+   */
+  .shopTools > :first-child {
+    margin-inline-start: auto;
   }
 
   /* A signed-in farmer has Account in the bottom bar; the header drops it. */
@@ -1774,15 +1797,35 @@
   .shopTools > * {
     flex-shrink: 0;
   }
-}
 
-/* The narrowest phones: "My listings" keeps its count and drops its words
-   (only where there is a count -- a visitor's "Buyer cart" keeps its words). */
-@media (max-width: 360px) {
+  /* 2026-10-22: a scaled switch kept its full width in the layout; tighter
+     buttons take less room for real. */
+  .shopLang {
+    transform: none;
+  }
+
+  .shopLang .panelLangBtn {
+    padding: 0 var(--s-2);
+  }
+
+  /* "My listings" keeps its count and drops its words (only where there is a
+     count -- a visitor's "Buyer cart" keeps its words); the link keeps its
+     name for screen readers and a full 40px target. */
   .shopCartBadge + .shopCartLabel {
     display: none;
   }
 
+  .shopCart {
+    box-sizing: border-box;
+    min-width: var(--touch);
+    min-height: var(--touch);
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+/* The narrowest phones. */
+@media (max-width: 360px) {
   .shopTools {
     gap: var(--s-1);
   }
@@ -1791,8 +1834,10 @@
     display: none;
   }
 
-  .shopLang {
-    transform: scale(0.85);
+  /* 2026-10-22: the language switch shows only the language to switch TO, so
+     the messages icon and the bell keep their 40px. */
+  .shopLang .panelLangBtn[aria-pressed='true'] {
+    display: none;
   }
 
   .shopAcctLine1 {
@@ -1816,12 +1861,6 @@
   .shopAcct,
   .shopCart {
     padding: 2px var(--s-1);
-  }
-
-  /* 2026-10-20: the messages icon joined the bell; both narrow a little. */
-  .shopBell {
-    width: 34px;
-    height: 34px;
   }
 
   .shopStrip {
@@ -2269,7 +2308,7 @@
 .shopBell .bellBadge {
   position: absolute;
   top: 2px;
-  right: 0;
+  inset-inline-end: 0;
 }
 
 .bellBadge {

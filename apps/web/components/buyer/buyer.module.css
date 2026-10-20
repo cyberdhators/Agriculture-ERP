@@ -296,27 +296,25 @@
   font-size: var(--text-label);
 }
 
-/* 2026-10-21: the top bar on a phone. The name is a block so it can be cut
-   short with an ellipsis instead of running under the icons; a personal
-   account shows its first name only; the narrowest phones show Sign out as
-   its icon (it keeps its accessible name through the button's title). */
-.topName {
-  display: block;
-}
-
-.nameShort {
+/* 2026-10-22 (the owner: "the chat icon is on top of the name"): the top bar
+   on a phone. The name is cut short with an ellipsis (shell .pageTitle) and a
+   personal account shows its first name only; the standing moves under the
+   name, because beside the icons there is room for it or the name, not both;
+   each icon is a 40px target whose count sits on its corner instead of
+   wrapping under it; the narrowest phones show Sign out as its icon (the
+   label stays for screen readers). The desktop bar is unchanged. */
+.nameShort,
+.stampUnder {
   display: none;
 }
 
-.topActions a {
+.stampSide {
   display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  flex-shrink: 0;
 }
 
 @media (max-width: 640px) {
-  .nameFull {
+  .nameFull,
+  .stampSide {
     display: none;
   }
 
@@ -324,18 +322,68 @@
     display: inline;
   }
 
+  .stampUnder {
+    display: block;
+    margin-block-start: 2px;
+    line-height: 1;
+  }
+
+  /* Tighter, and allowed to take a second line, so the longest standing
+     ("Pending review") stays whole inside its border on a 320px phone. */
+  .stampUnder > span {
+    max-inline-size: 100%;
+    padding: 2px 6px;
+    letter-spacing: 0.06em;
+    line-height: 1.2;
+    white-space: normal;
+  }
+
   .topActions {
-    gap: var(--s-2);
+    gap: var(--s-1);
+  }
+
+  .topIcon {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: var(--touch);
+    block-size: var(--touch);
+    flex: 0 0 auto;
+    color: inherit;
+  }
+
+  .topIcon .unreadDot {
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline-end: 0;
+    min-inline-size: 18px;
+    block-size: 18px;
+    padding-inline: 4px;
+    border-radius: 9px;
+    font-size: 11px;
+    line-height: 1;
+  }
+
+  .topSignOut {
+    flex: 0 0 auto;
+    min-block-size: var(--touch);
   }
 }
 
 @media (max-width: 420px) {
+  .topSignOut {
+    inline-size: var(--touch);
+    padding-inline: 0;
+    justify-content: center;
+  }
+
   .signOutLabel {
     position: absolute;
     inline-size: 1px;
     block-size: 1px;
     overflow: hidden;
-    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
     white-space: nowrap;
   }
 }

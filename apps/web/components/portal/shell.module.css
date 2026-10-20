@@ -259,7 +259,11 @@
   flex: 1 1 auto;
 }
 
+/* 2026-10-22: a block, so a long name or title is cut with an ellipsis. As
+   an inline span it ignored the ellipsis and ran on under whatever stood
+   beside it -- the buyer's name under the chat icon on a phone. */
 .pageTitle {
+  display: block;
   font-family: var(--font-display);
   font-size: var(--text-h2);
   line-height: 1.15;
@@ -292,6 +296,7 @@
 
 .menuToggle {
   display: none;
+  flex: 0 0 auto;
   align-items: center;
   justify-content: center;
   inline-size: 36px;
@@ -441,6 +446,18 @@
 @media (max-width: 640px) {
   .pageTitle {
     font-size: var(--text-subhead);
+  }
+
+  /* 2026-10-22: a phone's bar is tight. The menu button keeps its full
+     40px target (it was squeezed to 14px beside a long name). */
+  .topbar {
+    gap: var(--s-2);
+    padding-inline: var(--s-4);
+  }
+
+  .menuToggle {
+    inline-size: var(--touch);
+    block-size: var(--touch);
   }
 
   .scopeChip {
