@@ -40,6 +40,14 @@ import { messagesChanged } from '@/lib/messages/client';
 import { coverageLine } from './AdviceDirectory';
 import styles from './advice.module.css';
 
+/** "October 2026" from "2026-10", in the reader's language. */
+const monthOf = (month: string, lang: Language) =>
+  new Date(`${month}-01T00:00:00Z`).toLocaleDateString(lang === 'ar' ? 'ar' : 'en-GB', {
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'UTC',
+  });
+
 /**
  * ONE ADVICE PROVIDER (2026-10-22): what they advise on, in which languages,
  * where, how, when, on what terms, and any commercial interest they declare
@@ -81,8 +89,14 @@ export function ProviderDetail({
       <div className={styles.cardHead}>
         <Badge tone="leaf">{t(KIND_KEY[row.provider_kind], lang)}</Badge>
         <Badge tone="sorghum">{t(TERMS_KEY[row.terms], lang)}</Badge>
+        {row.approved_adviser ? <Badge tone="nile">{t('advice.approvedBadge', lang)}</Badge> : null}
       </div>
       <h1 dir="auto">{row.display_name}</h1>
+      {row.approved_adviser && row.approved_since ? (
+        <p className={styles.note}>
+          {t('advice.approvedSince', lang)} {monthOf(row.approved_since, lang)}
+        </p>
+      ) : null}
       <p className={styles.prose} dir="auto">
         {row.description}
       </p>

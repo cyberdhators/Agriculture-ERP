@@ -392,6 +392,8 @@ model User {
   deliveryUpdatesRecorded    DeliveryUpdate[]    @relation("DeliveryUpdateRecordedByUser")
   // 2026-10-21: "Contact CORWADO" messages a staff member marked done.
   supportMessagesHandled     SupportMessage[]    @relation("SupportMessageHandledBy")
+  // 2026-10-24: adviser applications this staff member last decided.
+  adviserApplicationsDecided AdviserApplication[] @relation("AdviserApplicationDecidedBy")
 
   @@index([role], map: "user_role_idx")
   @@index([scopeStateId], map: "user_scope_state_id_idx")
@@ -1826,11 +1828,48 @@ model AdviceProvider {
   createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt           DateTime  @default(now()) @map("updated_at") @db.Timestamptz(6)
   deletedAt           DateTime? @map("deleted_at") @db.Timestamptz(6)
+  /// 2026-10-24: the "Approved adviser" badge. Set by an approval, cleared by
+  /// a revocation, never touched by account suspension or restoration.
+  approvedAt            DateTime? @map("approved_at") @db.Timestamptz(6)
+  approvedApplicationId String?   @map("approved_application_id") @db.Uuid
 
-  cases AdviceCase[]
+  cases               AdviceCase[]
+  applications        AdviserApplication[] @relation("AdviserApplicationProvider")
+  approvedApplication AdviserApplication?  @relation("AdviceProviderApprovedApplication", fields: [approvedApplicationId], references: [id], map: "advice_provider_approved_application_id_fkey")
 
   @@index([topics], map: "advice_provider_topics_idx", type: Gin)
   @@map("advice_provider")
+}
+
+/// 2026-10-24: one application to be an approved adviser (optional). The
+/// open one (submitted or clarification requested) is unique per provider.
+model AdviserApplication {
+  id                   String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  providerId           String    @map("provider_id") @db.Uuid
+  authUserId           String    @map("auth_user_id") @db.Uuid
+  specialties          String[]
+  serviceArea          String[]  @default([]) @map("service_area")
+  languages            String[]
+  experience           String
+  qualifications       String?
+  affiliation          String?
+  accurateInformation  Boolean   @map("accurate_information")
+  discloseInterests    Boolean   @map("disclose_interests")
+  status               String    @default("submitted")
+  clarificationRequest String?   @map("clarification_request")
+  applicantReply       String?   @map("applicant_reply")
+  decisionReason       String?   @map("decision_reason")
+  decidedBy            String?   @map("decided_by") @db.Uuid
+  decidedAt            DateTime? @map("decided_at") @db.Timestamptz(6)
+  createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime  @default(now()) @map("updated_at") @db.Timestamptz(6)
+  deletedAt            DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  provider         AdviceProvider   @relation("AdviserApplicationProvider", fields: [providerId], references: [id], map: "adviser_application_provider_id_fkey")
+  decider          User?            @relation("AdviserApplicationDecidedBy", fields: [decidedBy], references: [id], map: "adviser_application_decided_by_fkey")
+  approvedProvider AdviceProvider[] @relation("AdviceProviderApprovedApplication")
+
+  @@map("adviser_application")
 }
 
 /// A question to the provider the requester chose. The id is made on the

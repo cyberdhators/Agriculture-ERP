@@ -4307,3 +4307,54 @@ public view, owner view, staff view). The owner's decisions:
   `profile.photo_removed`, `profile.photo_removed_by_staff`. They are NOT in
   the database CHECK yet -- one combined CHECK migration adds them -- so until
   it lands every profile write is refused rather than unlogged.
+
+## Approved advisers: optional, reviewed, revocable (2026-10-24)
+
+Independent advice, part 2: CORWADO's 16 October specification ("An existing
+user applies with specialties, service area, languages, experience,
+qualifications and affiliation. An authorized administrator requests
+clarification, approves or declines with a recorded reason."). Migration
+`20261024090000_adviser_approval`.
+
+- **Optional and separate.** Anyone with an advice profile can still publish it
+  and take requests with no review (part 1). Applying adds nothing and removes
+  nothing while under review or after a decline: buying, selling, the advice
+  profile and its requests all go on as before. Only approval grants anything,
+  and what it grants is the "Approved adviser" badge on the provider's public
+  profile and cards, and the directory's "Approved advisers only" filter.
+- **The application** lives on `adviser_application` (one row per attempt, so
+  history is kept): specialties, service area (states; none = anywhere),
+  languages, experience, optional qualifications and affiliation, and two
+  acknowledgements that start UNTICKED and must be ticked (the schema accepts
+  only `true`, the database CHECKs it). One open application per provider
+  (partial unique index); none while already approved.
+- **The life of an application.** Submitted -> clarification requested (staff
+  ask a question) -> submitted again (the applicant answers); approved or
+  declined from either open status; withdrawn by the applicant from either;
+  revoked by staff from approved. Declined, withdrawn and revoked are final for
+  that application; the provider may apply again.
+- **Who decides.** Administrators holding `content.moderate` ("Moderate content
+  and listings") -- the permission that already decides account suspension.
+  Reviewing what a user submitted and taking a standing away again is
+  moderation; `content.publish` is CORWADO publishing its own content. Every
+  decision needs a reason (5-1000 characters): for a clarification the reason
+  IS the question the applicant sees; for the rest it is recorded on the
+  application and shown to the applicant. A staff member may not decide on an
+  application from their own sign-in (unreachable today, checked anyway).
+- **Independent of account standing.** Approval lives on `advice_provider`
+  (`approved_at`, `approved_application_id`, set together by an approval and
+  cleared together by a revocation, in the decision's transaction), never on
+  the farmer or buyer record. Suspension and restoration never touch it, so
+  restoring an account does not restore a revoked approval -- the
+  specification's rule -- and a suspended account's badge is simply out of
+  the directory with the rest of its profile.
+- **What the public sees:** `approved_adviser` (true/false) and
+  `approved_since` (the month). Never the application, its id, its text or who
+  decided.
+- **Audit:** `adviser_application.submitted`, `.replied`, `.withdrawn` (ids and
+  statuses only, never the application's text or the answer);
+  `adviser_application.clarification_requested`, `.approved`, `.declined` and
+  `adviser_approval.revoked` (statuses and the staff member's recorded reason,
+  as `account.suspended` carries its reason). NOT YET IN THE DATABASE CHECK:
+  one combined CHECK migration adds them (the owner), so until it lands every
+  write here is refused rather than unlogged.

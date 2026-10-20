@@ -134,6 +134,8 @@ export const ADVICE_MESSAGES = {
   ratingInvalid: 'Give a rating from 1 to 5 stars.',
   commentTooLong: 'A comment can be at most 1000 characters.',
   fieldNotForAction: 'This field is not used for that change.',
+  // 2026-10-24: the directory's "Approved advisers only" filter.
+  approvedFilterInvalid: 'Use approved=1 to show approved advisers only, or leave it out.',
 } as const;
 
 const M = ADVICE_MESSAGES;
@@ -241,6 +243,8 @@ export const adviceProviderFilterSchema = z.strictObject({
   language: z.enum(ADVICE_LANGUAGES, { error: () => M.languageUnknown }).optional(),
   state_id: locationCodeSchema.optional(),
   delivery_mode: z.enum(ADVICE_DELIVERY_MODES, { error: () => M.deliveryUnknown }).optional(),
+  // 2026-10-24: approved advisers only (part 2). Leave it out for everyone.
+  approved: z.enum(['1'], { error: () => M.approvedFilterInvalid }).optional(),
   limit: z.string().optional(),
   cursor: z.string().optional(),
 });
@@ -340,6 +344,14 @@ export interface AdviceProviderPublic {
   terms: AdviceTerms;
   fee_note: string | null;
   commercial_interests: string | null;
+  /**
+   * 2026-10-24: reviewed and approved by CORWADO (the optional pathway, part
+   * 2). False for every provider who has not been, or whose approval was
+   * revoked; publishing a profile never sets it.
+   */
+  approved_adviser: boolean;
+  /** The month of the standing approval, "2026-10"; null when not approved. */
+  approved_since: string | null;
   updated_at: string;
 }
 

@@ -18,7 +18,8 @@ import { prisma } from '../../../../lib/db';
  * Every published profile whose account is live (not deleted, not
  * suspended), newest change first, with search (q) and filters: topic,
  * language, state (a profile covering no named state covers anywhere, so it
- * matches every state) and delivery mode. The person chooses; nothing here
+ * matches every state), delivery mode and, since 2026-10-24, approved
+ * advisers only (`approved=1`). The person chooses; nothing here
  * ranks or recommends.
  *
  * Rows leave through presentProvider -- no phone, no account id. Public,
@@ -49,6 +50,8 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
         where.push(`(cardinality(p.state_ids) = 0 OR ${add(filter.state_id)} = ANY (p.state_ids))`);
       }
       if (filter.delivery_mode) where.push(`${add(filter.delivery_mode)} = ANY (p.delivery_modes)`);
+      // 2026-10-24: approved advisers only. Approval is CORWADO's; publishing never sets it.
+      if (filter.approved === '1') where.push('p.approved_at IS NOT NULL');
       if (filter.cursor !== undefined) {
         const cursor = decodeCursor(filter.cursor);
         if (!cursor) throw invalidCursor();

@@ -68,6 +68,11 @@ const BUYER_OUTSIDE_ITS_TREE = [
   'advice/cases',
   'advice/cases/[id]',
   'advice/my-provider',
+  // APPROVED ADVISERS (2026-10-24): the account's own optional application,
+  // keyed by the session's sign-in through its own advice profile.
+  'advice/my-provider/application',
+  'advice/my-provider/application/reply',
+  'advice/my-provider/application/withdraw',
   // 2026-10-20: an account deletes itself (its own records only).
   'account/delete',
   // IN-APP MESSAGING (2026-10-20): conversations belong to sign-ins, and every
