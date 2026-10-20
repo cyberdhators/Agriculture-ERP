@@ -155,9 +155,6 @@ export const adviserReplySchema = z.strictObject({
   reply: text(L.replyMin, L.replyMax, M.replyInvalid),
 });
 
-/** Withdraw takes no body; an empty object is the only shape accepted. */
-export const adviserWithdrawSchema = z.strictObject({});
-
 // ---------------------------------------------------------------------------
 // STAFF -- GET /api/admin/advisers, POST /api/admin/advisers/:id/decision
 // ---------------------------------------------------------------------------
