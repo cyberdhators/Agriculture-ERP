@@ -418,3 +418,5 @@ export * from './support';
 export * from './advice-topics';
 // 2026-10-22: independent advice -- find a provider and ask (part 1).
 export * from './advice';
+// 2026-10-22: marketplace and account analytics -- filters, definitions, limits.
+export * from './analytics';

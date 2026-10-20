@@ -53,6 +53,19 @@ describe('who sees which destination', () => {
     expect(offered).toEqual(['admin', 'supervisor']);
   });
 
+  it('offers marketplace analytics to the three staff roles the route admits, never an officer', () => {
+    // 2026-10-22. The route then asks for reports.view: an administrator holds
+    // it; a supervisor or read-only user only through a preset, and the page
+    // says so when the route refuses.
+    const offered = ROLES.filter((role) =>
+      navFor(role).some((s) => s.items.some((i) => i.href === '/analytics')),
+    );
+    expect(offered).toEqual(['admin', 'supervisor', 'read_only']);
+    const section = NAV_SECTIONS.find((s) => s.items.some((i) => i.href === '/analytics'));
+    expect(section?.heading).toBe('Analytics and exports');
+    expect(pageTitleFor('/analytics')).toBe('Marketplace analytics');
+  });
+
   it('the map is offered to nobody while GIS mapping is unfinished (owner, 2026-10-19)', () => {
     // Hidden from the menu, not removed: /farms and GET /api/farms/geojson
     // stay, and when the entry returns it is admin and supervisor only --

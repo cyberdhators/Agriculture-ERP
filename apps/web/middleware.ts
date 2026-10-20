@@ -85,6 +85,8 @@ export const config = {
     '/desk/:path*',
     '/visits/:path*',
     '/reports/:path*',
+    // 2026-10-22: marketplace and account analytics.
+    '/analytics/:path*',
     '/admin/:path*',
     '/directories/:path*',
     '/library/:path*',

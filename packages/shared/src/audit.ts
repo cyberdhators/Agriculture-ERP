@@ -145,6 +145,10 @@ export const AUDIT_ACTIONS = [
   'advice_case.status_changed',
   'advice_case.closed',
   'advice_case.feedback',
+  // 2026-10-22: an analytics workbook downloaded. The filters, cut-off, row
+  // counts and queries are in `after`; the figures themselves are not. NOT YET
+  // IN THE DATABASE CHECK: one combined CHECK migration adds it (the owner).
+  'analytics.exported',
 ] as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];

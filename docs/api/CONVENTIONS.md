@@ -480,6 +480,7 @@ change.
 | `advice_case.status_changed`              |
 | `advice_case.closed`                      |
 | `advice_case.feedback`                    |
+| `analytics.exported`                      |
 
 `before` and `after` hold **changed fields only**, never whole rows, and never a
 password, token, authentication identifier, national id, phone, email, given
@@ -747,6 +748,11 @@ These are also exact.
 | Public guides: topic filter             | Choose a topic from the list, or leave it out.                                                  |
 | Public guides: language filter          | Choose English or Arabic, or leave it out.                                                      |
 | Public guides: search over 100          | A search has at most 100 characters.                                                            |
+| Analytics: date not YYYY-MM-DD          | Give the date as YYYY-MM-DD.                                                                    |
+| Analytics: window ends after today      | The window cannot end after today.                                                              |
+| Analytics: window ends before start     | The window ends before it starts.                                                               |
+| Analytics: window over 366 days         | A window can be at most 366 days.                                                               |
+| Analytics: state not a state id         | Choose a state from the list.                                                                   |
 
 The key beside each reason is the field name, per section 4.1. An unrecognised
 field named `nickname` therefore produces `{ "nickname": "This field is not

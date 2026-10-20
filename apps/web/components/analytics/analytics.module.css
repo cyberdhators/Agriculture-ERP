@@ -1,0 +1,172 @@
+/* Marketplace analytics (2026-10-22): figures by group, each with its
+   definition on demand; breakdowns as inline SVG bars; a print layout. */
+
+.page {
+  display: grid;
+  gap: var(--s-6);
+}
+
+.filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--s-4);
+  align-items: end;
+}
+
+.apply {
+  display: flex;
+  gap: var(--s-3);
+}
+
+.fieldError {
+  margin: var(--s-3) 0 0;
+  color: var(--danger);
+  font-size: var(--text-small);
+}
+
+.windowLine {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2) var(--s-5);
+  margin: 0;
+  font-size: var(--text-small);
+  color: var(--muted);
+}
+
+.windowLine b {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.group {
+  display: grid;
+  gap: var(--s-4);
+}
+
+.groupTitle {
+  margin: 0;
+  font-size: var(--text-h2);
+}
+
+.definition {
+  font-size: var(--text-small);
+  color: var(--ink-2);
+}
+
+.definition summary {
+  cursor: pointer;
+  color: var(--accent);
+}
+
+.definition p {
+  margin: var(--s-2) 0;
+}
+
+.definition dl {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--s-1) var(--s-3);
+  margin: 0;
+}
+
+.definition dt {
+  font-weight: 600;
+}
+
+.definition dd {
+  margin: 0;
+}
+
+.charts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: var(--s-4);
+}
+
+.chart {
+  margin: 0;
+  padding: var(--s-4);
+  background: var(--card);
+  border: 1px solid var(--line);
+}
+
+.chartTitle {
+  margin-bottom: var(--s-3);
+  font-weight: 600;
+}
+
+.chartTitle span {
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.chartNote {
+  margin: var(--s-2) 0 0;
+  font-size: var(--text-small);
+  color: var(--muted);
+}
+
+.svg {
+  display: block;
+  inline-size: 100%;
+  block-size: auto;
+}
+
+.svgLabel {
+  font-size: 13px;
+  fill: var(--ink-2);
+}
+
+.svgValue {
+  font-size: 13px;
+  font-weight: 600;
+  fill: var(--ink);
+}
+
+.svgBar {
+  fill: var(--green);
+}
+
+.limits {
+  margin: 0;
+  padding-inline-start: var(--s-5);
+  color: var(--ink-2);
+  font-size: var(--text-small);
+  display: grid;
+  gap: var(--s-1);
+}
+
+.printTitle {
+  font-size: 16pt;
+  font-weight: 700;
+  margin: 0 0 6pt;
+}
+
+.legend {
+  inline-size: 100%;
+  border-collapse: collapse;
+  font-size: 8.5pt;
+}
+
+.legend th,
+.legend td {
+  border: 1px solid #999;
+  padding: 3pt 4pt;
+  text-align: start;
+  vertical-align: top;
+}
+
+@media print {
+  .group,
+  .chart {
+    break-inside: avoid;
+  }
+
+  .charts {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .svgBar {
+    fill: #333;
+  }
+}

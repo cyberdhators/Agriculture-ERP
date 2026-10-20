@@ -246,6 +246,16 @@ export const NAV_SECTIONS: readonly NavSection[] = [
         roles: ['admin', 'supervisor'],
         because: 'GET and POST /api/reports/exports accept admin and supervisor only.',
       },
+      {
+        href: '/analytics',
+        label: 'Marketplace analytics',
+        icon: 'reports',
+        roles: STAFF,
+        because:
+          'GET /api/analytics/summary accepts admin, supervisor and read_only, and then requires ' +
+          'reports.view, which every administrator holds; other staff through the Analyst or ' +
+          'Administrator preset. POST /api/analytics/export is admin and supervisor only.',
+      },
     ],
   },
   {
@@ -347,6 +357,7 @@ const SEGMENT_LABELS: Record<string, string> = {
   support: 'Support messages',
   visits: 'Visits',
   reports: 'Reports',
+  analytics: 'Marketplace analytics',
   directories: 'Directories',
   library: 'Learning library',
   desk: 'Field desk',
