@@ -4358,3 +4358,50 @@ clarification, approves or declines with a recorded reason."). Migration
   as `account.suspended` carries its reason). NOT YET IN THE DATABASE CHECK:
   one combined CHECK migration adds them (the owner), so until it lands every
   write here is refused rather than unlogged.
+
+## Advice: photos and referral with consent; advice in analytics (2026-10-25)
+
+The 16 October specification: "Questions and optional attachments remain
+private to the permitted participants. Share case details and refer to another
+provider only with appropriate consent." And analytics must cover "advice
+usage, case resolution". Migration `20261025090000_advice_attachments_and_referral`
+(two new tables, RLS on both; additive).
+
+- **Photos.** Up to 3 when the question is sent (shrunk on the phone to 1280 px
+  JPEG, at most 2 MB, JPEG/PNG/WebP accepted), and either participant may add
+  one later while the case is open, up to 10 per case. Private bucket
+  `advice-attachments` (added to `storage-buckets.mjs`), path
+  `<case id>/<upload id>.<ext>`. Grant -> upload straight to Storage -> confirm,
+  which checks the provider's own size and type and removes anything wrong
+  (`advice_attachment_rejected`). Shown only to the case's requester and
+  provider, as read links that live 5 minutes, issued in one function
+  (`attachmentLinks`) that refuses anyone else; staff have no read path.
+  `tests/advice-attachment-scan.test.ts` holds this. Only the person who added
+  a photo removes it: the row is soft-deleted and the object removed, as for a
+  profile photo. Audited `advice_attachment.added` / `.removed` with ids, type
+  and size, never a path.
+- **Referral.** The case's provider proposes another published provider from
+  the directory (`advice_referral`, one waiting proposal per case). Nothing is
+  shared, and the other provider sees nothing, until the requester accepts.
+  Acceptance, in one transaction: the case closes as `referred` (closed by the
+  proposer), a NEW case opens with the other provider carrying the topic and
+  question (its own conversation), and the requester's own photos are copied
+  to it only if they ticked "share my photos too" (unticked by default; the
+  provider's photos are never passed on). The new case is in-app only with
+  `share_details` false: consent to share a phone or place was given to one
+  provider and is not carried to another (INFERRED reading of "appropriate
+  consent"; the requester can still say more in the conversation). Both cases
+  link through the referral row; the referring provider learns the referral
+  was accepted, never the new case. The requester may decline; the proposer
+  may withdraw; closing the case withdraws a waiting proposal. Audited
+  `advice_referral.proposed` / `.accepted` / `.declined` / `.withdrawn`.
+- **Analytics.** A new "Advice" group: providers published and approved
+  advisers (now); requests by topic, cases closed by outcome, median days to
+  close, feedback given by stars and the average rating, adviser applications
+  submitted and decided, referrals by status (all in the window). National
+  only (a case carries no state); counts and averages only. A median or average
+  of nothing is served as not measured (`none_in_window`), never 0.
+- **Audit CHECK.** The six new keys are in `AUDIT_ACTIONS` and CONVENTIONS
+  §5.2.2 but NOT in the database CHECK: the owner writes the combined CHECK
+  migration, so `audit-check-matches-migrations` fails on this branch until
+  then, and every write here is refused rather than unlogged.

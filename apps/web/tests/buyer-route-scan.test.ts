@@ -78,6 +78,9 @@ const BUYER_OUTSIDE_ITS_TREE = [
   'advice/cases/[id]/attachments/[attachmentId]',
   'advice/cases/[id]/attachments/confirm',
   'advice/cases/[id]/attachments/upload-url',
+  // ADVICE REFERRAL (2026-10-25): the case's provider proposes, its requester
+  // accepts or declines; the same participants-only loadCase.
+  'advice/cases/[id]/referral',
   // 2026-10-20: an account deletes itself (its own records only).
   'account/delete',
   // IN-APP MESSAGING (2026-10-20): conversations belong to sign-ins, and every

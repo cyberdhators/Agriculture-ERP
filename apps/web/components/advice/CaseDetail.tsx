@@ -9,20 +9,40 @@ import {
   ADVICE_OUTCOMES_BY_SIDE,
   type AdviceCaseView,
   type AdviceOutcome,
+  type AdviceProviderPublic,
 } from '@agri-erp/shared';
 
 import { BackLinkRow } from '@/components/market-posts/bits';
 import { ConversationThread } from '@/components/messages/Messages';
-import { Badge, Button, EmptyState, Field, Notice, Select, Textarea } from '@/components/ui';
+import {
+  Badge,
+  Button,
+  Checkbox,
+  EmptyState,
+  Field,
+  Input,
+  Notice,
+  Select,
+  Textarea,
+} from '@/components/ui';
 import {
   AdviceError,
+  answerReferral,
   attachPhoto,
   changeCase,
   getCase,
+  listProviders,
+  proposeReferral,
   removePhoto,
   shrinkAdvicePhoto,
 } from '@/lib/advice/client';
-import { CONTACT_KEY, OUTCOME_KEY, STATUS_KEY, TOPIC_KEY } from '@/lib/advice/labels';
+import {
+  CONTACT_KEY,
+  OUTCOME_KEY,
+  STATUS_KEY,
+  TOPIC_KEY,
+  caseHref,
+} from '@/lib/advice/labels';
 import { formatDate } from '@/lib/format';
 import { t, type Language } from '@/lib/i18n';
 
@@ -102,6 +122,8 @@ export function CaseDetail({
   }
 
   const mine = row.my_side === 'requester';
+  // Which side of the app this page is on, for links to a provider or a case.
+  const appSide: 'farmer' | 'buyer' = requestsHref.startsWith('/buyer') ? 'buyer' : 'farmer';
   return (
     <div className={styles.narrow}>
       <BackLinkRow
@@ -172,6 +194,7 @@ export function CaseDetail({
       </p>
 
       <Photos row={row} lang={lang} busy={busy} run={run} />
+      <Referral row={row} lang={lang} busy={busy} run={run} appSide={appSide} />
 
       {row.status === 'closed' ? null : (
         <CloseControls row={row} lang={lang} busy={busy} onChange={change} />
@@ -288,6 +311,206 @@ function Photos({
         </div>
       ) : row.status !== 'closed' ? (
         <p className={styles.note}>{t('advice.photosFull', lang)}</p>
+      ) : null}
+    </section>
+  );
+}
+
+/**
+ * REFERRAL WITH CONSENT (2026-10-25). The provider proposes another
+ * published provider from the directory; the requester accepts (and chooses
+ * whether their photos go too, unticked to start) or declines. Nothing
+ * reaches the other provider before an acceptance. Either side sees where a
+ * referral stands; only the requester can open the new case.
+ */
+function Referral({
+  row,
+  lang,
+  busy,
+  run,
+  appSide,
+}: {
+  row: AdviceCaseView;
+  lang: Language;
+  busy: boolean;
+  run: (work: () => Promise<AdviceCaseView>) => Promise<void>;
+  appSide: 'farmer' | 'buyer';
+}) {
+  const [share, setShare] = useState(false);
+  const [query, setQuery] = useState('');
+  const [found, setFound] = useState<AdviceProviderPublic[] | null>(null);
+  const [pick, setPick] = useState('');
+  const providerHref = (pid: string) =>
+    `${appSide === 'buyer' ? '/buyer/advice' : '/advice'}/${encodeURIComponent(pid)}`;
+  const rf = row.referral;
+  const mine = row.my_side === 'requester';
+
+  const from = row.referred_from ? (
+    <p className={styles.note}>
+      {t('advice.referredFrom', lang)}: <span dir="auto">{row.referred_from.provider_name}</span>
+      {row.referred_from.case_id ? (
+        <>
+          {' · '}
+          <Link href={caseHref(appSide, row.referred_from.case_id)}>
+            {t('advice.referOpenEarlier', lang)}
+          </Link>
+        </>
+      ) : null}
+    </p>
+  ) : null;
+
+  async function search() {
+    try {
+      const list = await listProviders({ q: query.trim() || undefined, topic: row.topic });
+      const others = list.filter((p) => p.id !== row.provider.id);
+      setFound(others);
+      setPick(others[0]?.id ?? '');
+    } catch {
+      setFound([]);
+    }
+  }
+
+  // Waiting for the requester.
+  if (rf && rf.status === 'proposed' && row.status !== 'closed') {
+    return (
+      <section className={styles.box}>
+        {from}
+        {mine ? (
+          <>
+            <h2>{t('advice.referAskTitle', lang)}</h2>
+            <p>
+              {t('advice.referAskBody', lang)}{' '}
+              <strong dir="auto">{rf.to_provider.display_name}</strong> (
+              <Link href={providerHref(rf.to_provider.id)}>{t('advice.viewProvider', lang)}</Link>
+              ).
+            </p>
+            <p className={styles.note}>{t('advice.referAskNothing', lang)}</p>
+            {(row.attachments ?? []).some((a) => a.mine) ? (
+              <Checkbox
+                label={t('advice.referShare', lang)}
+                checked={share}
+                onChange={(e) => setShare(e.target.checked)}
+              />
+            ) : null}
+            <div className={styles.actions}>
+              <Button
+                disabled={busy}
+                onClick={() =>
+                  void run(() =>
+                    answerReferral(row.id, { action: 'accept', share_attachments: share }),
+                  )
+                }
+              >
+                {t('advice.referAccept', lang)}
+              </Button>
+              <Button
+                variant="secondary"
+                disabled={busy}
+                onClick={() => void run(() => answerReferral(row.id, { action: 'decline' }))}
+              >
+                {t('advice.referDecline', lang)}
+              </Button>
+            </div>
+          </>
+        ) : (
+          <>
+            <h2>{t('advice.referTitle', lang)}</h2>
+            <p>
+              {t('advice.referWaiting', lang)}:{' '}
+              <strong dir="auto">{rf.to_provider.display_name}</strong>
+            </p>
+            <div className={styles.actions}>
+              <Button
+                variant="secondary"
+                disabled={busy}
+                onClick={() => void run(() => answerReferral(row.id, { action: 'withdraw' }))}
+              >
+                {t('advice.referWithdraw', lang)}
+              </Button>
+            </div>
+          </>
+        )}
+      </section>
+    );
+  }
+
+  const outcome =
+    rf && rf.status !== 'proposed' ? (
+      <p className={styles.note}>
+        {rf.status === 'accepted' ? (
+          <>
+            {t('advice.referAccepted', lang)}:{' '}
+            <span dir="auto">{rf.to_provider.display_name}</span>
+            {rf.to_case_id ? (
+              <>
+                {' · '}
+                <Link href={caseHref(appSide, rf.to_case_id)}>
+                  {t('advice.referOpenNew', lang)}
+                </Link>
+              </>
+            ) : null}
+          </>
+        ) : rf.status === 'declined' ? (
+          t('advice.referDeclined', lang)
+        ) : (
+          t('advice.referWithdrawn', lang)
+        )}
+      </p>
+    ) : null;
+
+  // The provider may propose while the case is open or in progress.
+  const canPropose = !mine && row.status !== 'closed';
+  if (!canPropose && !from && !outcome) return null;
+
+  return (
+    <section className={styles.box}>
+      {canPropose ? <h2>{t('advice.referTitle', lang)}</h2> : null}
+      {from}
+      {outcome}
+      {canPropose ? (
+        <>
+          <p className={styles.note}>{t('advice.referLead', lang)}</p>
+          <Field label={t('advice.referSearch', lang)}>
+            {(ids) => (
+              <Input {...ids} dir="auto" value={query} onChange={(e) => setQuery(e.target.value)} />
+            )}
+          </Field>
+          <div className={styles.actions}>
+            <Button variant="secondary" disabled={busy} onClick={() => void search()}>
+              {t('advice.referSearchButton', lang)}
+            </Button>
+          </div>
+          {found === null ? null : found.length === 0 ? (
+            <p className={styles.note}>{t('advice.referNone', lang)}</p>
+          ) : (
+            <>
+              <Field label={t('advice.referPick', lang)}>
+                {(ids) => (
+                  <Select {...ids} value={pick} onChange={(e) => setPick(e.target.value)}>
+                    {found.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.display_name}
+                      </option>
+                    ))}
+                  </Select>
+                )}
+              </Field>
+              {pick ? (
+                <p className="small">
+                  <Link href={providerHref(pick)}>{t('advice.viewProvider', lang)}</Link>
+                </p>
+              ) : null}
+              <div className={styles.actions}>
+                <Button
+                  disabled={busy || !pick}
+                  onClick={() => void run(() => proposeReferral(row.id, pick))}
+                >
+                  {t('advice.referPropose', lang)}
+                </Button>
+              </div>
+            </>
+          )}
+        </>
       ) : null}
     </section>
   );
