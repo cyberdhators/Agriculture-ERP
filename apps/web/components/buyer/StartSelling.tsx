@@ -8,8 +8,14 @@ import { Button, ButtonLink, Checkbox, Field, Input, Notice, Select } from '@/co
 import { getProfile } from '@/lib/buyer/api';
 import { COUNTIES, PAYAMS, STATES } from '@/lib/fixtures/p1';
 import { t } from '@/lib/i18n';
+import { useConsentText } from '@/lib/settings/client';
 
-/** The consent text version the farmer sign-up records (FarmerRegister). */
+/**
+ * The consent text version the farmer sign-up records (FarmerRegister): the
+ * built-in v1.3 text is the offline fallback; the PUBLISHED consent notice
+ * (GET /api/notices/current, 2026-10-25) is shown and recorded when it can be
+ * read.
+ */
 const CONSENT_VERSION = 'v1.3-en';
 
 /**
@@ -33,6 +39,10 @@ export function StartSelling() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [failure, setFailure] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const consent = useConsentText('en', {
+    text_version: CONSENT_VERSION,
+    body: t('consent.body', 'en'),
+  });
 
   useEffect(() => {
     // Already selling? Then there is nothing to fill in.
@@ -60,7 +70,7 @@ export function StartSelling() {
       ...(phone.trim() ? { phone: phone.trim() } : {}),
       payam_id: payamId,
       village: village.trim(),
-      consent: { text_version: CONSENT_VERSION, language: 'en', granted: agreed },
+      consent: { text_version: consent.text_version, language: 'en', granted: agreed },
     };
     const parsed = farmerStartSellingSchema.safeParse(body);
     if (!parsed.success || !agreed) {
@@ -232,7 +242,8 @@ export function StartSelling() {
       </Field>
 
       <div>
-        <p className="small">{t('consent.body', 'en')}</p>
+        <p className="small">{consent.body}</p>
+        <p className="small muted">{consent.text_version}</p>
         <Field label="Consent" error={errors.consent}>
           {(ids) => (
             <Checkbox

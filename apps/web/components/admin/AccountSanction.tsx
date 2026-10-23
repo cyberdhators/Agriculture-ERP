@@ -7,6 +7,7 @@ import type { AccountStanding, SanctionKind } from '@agri-erp/shared';
 import { formatDate } from '@/lib/format';
 
 import { ProfileModeration } from './ProfileModeration';
+import { ReasonCodeSelect } from './ReasonCodeSelect';
 import { Button, Card, Field, Notice, Stamp, Textarea } from '../ui';
 import { ConfirmationDialog } from '../ui/feedback';
 
@@ -80,6 +81,10 @@ export function AccountSanction({
   const [loadError, setLoadError] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState('');
+  // 2026-10-25: the reason code chosen from Settings' list, and the text it
+  // pre-filled, so choosing another code replaces only an untouched pre-fill.
+  const [reasonCode, setReasonCode] = useState('');
+  const [prefill, setPrefill] = useState('');
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState<Failure | null>(null);
   const [signInMissed, setSignInMissed] = useState<'suspend' | 'restore' | null>(null);
@@ -128,13 +133,20 @@ export function AccountSanction({
       >(`/api/admin/accounts/${action}`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ kind, id, reason: trimmed }),
+        body: JSON.stringify({
+          kind,
+          id,
+          reason: trimmed,
+          ...(reasonCode ? { reason_code: reasonCode } : {}),
+        }),
       });
       // The record changed either way; only the sign-in service may have missed it.
       const signInReached = answer.sign_in_blocked !== false && answer.sign_in_restored !== false;
       setSignInMissed(signInReached ? null : action);
       setOpen(false);
       setReason('');
+      setReasonCode('');
+      setPrefill('');
       onChange?.({ action, signInReached });
       await load();
     } catch (e) {
@@ -150,6 +162,8 @@ export function AccountSanction({
       variant={action === 'suspend' ? 'danger' : 'secondary'}
       onClick={() => {
         setReason('');
+        setReasonCode('');
+        setPrefill('');
         setFailure(null);
         setOpen(true);
       }}
@@ -191,6 +205,19 @@ export function AccountSanction({
       busy={busy}
     >
       {failure && !failure.fields.reason ? <Notice kind="error">{failure.message}</Notice> : null}
+      {action === 'suspend' ? (
+        <ReasonCodeSelect
+          target="account"
+          value={reasonCode}
+          onPick={(code, label) => {
+            setReasonCode(code);
+            const next = code ? `${label}: ` : '';
+            // Replace only an empty reason or one this list wrote; never what was typed.
+            if (reason.trim() === '' || reason === prefill) setReason(next);
+            setPrefill(next);
+          }}
+        />
+      ) : null}
       <Field
         label="Reason"
         hint={`At least ${REASON_MIN} characters, up to 500. Kept in the audit trail.`}

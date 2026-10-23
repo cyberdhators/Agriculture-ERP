@@ -11,6 +11,8 @@ import { t, type TKey } from '@/lib/i18n';
 
 import styles from '@/components/farmer/farmer.module.css';
 
+import { SupportContactsCard } from './SupportContacts';
+
 const TOPIC_KEY: Record<SupportTopic, TKey> = {
   account: 'help.topicAccount',
   marketplace: 'help.topicMarketplace',
@@ -119,6 +121,9 @@ export function HelpPage() {
       <PageHead title={t('help.title', language)} lead={t('help.lead', language)} />
 
       <div className={styles.settings}>
+        {/* 2026-10-25: About, contacts and links as published in Settings; none shown if unset. */}
+        <SupportContactsCard language={language} />
+
         <section className={styles.settingCard}>
           <h2>{t('help.faqTitle', language)}</h2>
           {FAQ.map(([q, a]) => (

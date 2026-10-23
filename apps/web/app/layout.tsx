@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 
 import { OfflineSync } from '@/components/pwa/OfflineSync';
 import { PwaStatus } from '@/components/pwa/PwaStatus';
+import { MaintenanceBanner } from '@/components/site/MaintenanceBanner';
 
 import './globals.css';
 
@@ -72,6 +73,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       className={`${fraunces.variable} ${instrument.variable} ${jetbrains.variable} ${openSans.variable}`}
     >
       <body>
+        {/* 2026-10-25: the maintenance notice, when switched on in Settings. */}
+        <MaintenanceBanner />
         {children}
         <PwaStatus />
         <OfflineSync />

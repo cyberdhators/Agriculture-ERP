@@ -111,7 +111,15 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
           actorId: auth.principal.id,
           action: 'product_report.status_changed',
           before: { status: row.status },
-          after: { status: next, action: body.action },
+          after: {
+            status: next,
+            action: body.action,
+            // 2026-10-25: the reason code chosen in the dialog and the staff
+            // member's written reason, if any, as a suspension records its reason.
+            // Never the reporter's description.
+            ...(body.reason_code ? { reason_code: body.reason_code } : {}),
+            ...(body.note ? { reason: body.note } : {}),
+          },
         });
         const table = TARGET_TABLE[row.target_type];
         if (body.action === 'remove_listing' && table) {

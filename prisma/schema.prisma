@@ -394,6 +394,11 @@ model User {
   supportMessagesHandled     SupportMessage[]    @relation("SupportMessageHandledBy")
   // 2026-10-24: adviser applications this staff member last decided.
   adviserApplicationsDecided AdviserApplication[] @relation("AdviserApplicationDecidedBy")
+  // 2026-10-25: settings, phase 1 -- setting versions saved and notices handled.
+  settingVersionsChanged     SettingVersion[]     @relation("SettingVersionChangedBy")
+  noticesCreated             Notice[]             @relation("NoticeCreatedBy")
+  noticesPublished           Notice[]             @relation("NoticePublishedBy")
+  noticesRetired             Notice[]             @relation("NoticeRetiredBy")
 
   @@index([role], map: "user_role_idx")
   @@index([scopeStateId], map: "user_scope_state_id_idx")
@@ -1947,4 +1952,51 @@ model AdviceReferral {
   @@index([fromCaseId, createdAt(sort: Desc)], map: "advice_referral_from_case_idx")
   @@index([toProviderId], map: "advice_referral_to_provider_idx")
   @@map("advice_referral")
+}
+
+// -----------------------------------------------------------------------------
+// 2026-10-25 -- settings, phase 1. Migration 20261025100000_settings_phase1.
+// -----------------------------------------------------------------------------
+
+/// One saved version of one setting. Append-only (a trigger refuses UPDATE
+/// and DELETE): the current value of a key is its highest version. The value's
+/// shape is the shared Zod schema for that key (packages/shared/src/settings.ts).
+model SettingVersion {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  key       String
+  version   Int
+  value     Json
+  /// Null only for a row seeded by a migration.
+  changedBy String?  @map("changed_by") @db.Uuid
+  changedAt DateTime @default(now()) @map("changed_at") @db.Timestamptz(6)
+
+  changer User? @relation("SettingVersionChangedBy", fields: [changedBy], references: [id], map: "setting_version_changed_by_fkey")
+
+  @@unique([key, version], map: "setting_version_key_version_key")
+  @@map("setting_version")
+}
+
+/// A versioned consent, terms or privacy text: draft, published or retired.
+/// At most one published per kind and language (a partial unique index).
+model Notice {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  kind        String
+  version     String
+  language    Language
+  body        String
+  status      String    @default("draft")
+  createdBy   String?   @map("created_by") @db.Uuid
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime  @default(now()) @map("updated_at") @db.Timestamptz(6)
+  publishedAt DateTime? @map("published_at") @db.Timestamptz(6)
+  publishedBy String?   @map("published_by") @db.Uuid
+  retiredAt   DateTime? @map("retired_at") @db.Timestamptz(6)
+  retiredBy   String?   @map("retired_by") @db.Uuid
+  deletedAt   DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  creator   User? @relation("NoticeCreatedBy", fields: [createdBy], references: [id], map: "notice_created_by_fkey")
+  publisher User? @relation("NoticePublishedBy", fields: [publishedBy], references: [id], map: "notice_published_by_fkey")
+  retirer   User? @relation("NoticeRetiredBy", fields: [retiredBy], references: [id], map: "notice_retired_by_fkey")
+
+  @@map("notice")
 }

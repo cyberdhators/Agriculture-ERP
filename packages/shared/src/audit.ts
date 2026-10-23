@@ -180,6 +180,17 @@ export const AUDIT_ACTIONS = [
   'advice_referral.accepted',
   'advice_referral.declined',
   'advice_referral.withdrawn',
+  // 2026-10-25: settings, phase 1. A setting save carries its key, the old
+  // and new version numbers and the NAMES of the changed fields (and, for the
+  // banner, on or off; for reason codes, the codes added and archived) --
+  // never a contact detail or the banner text. A notice row carries its kind,
+  // language, version and status, never its body.
+  'setting.changed',
+  'notice.drafted',
+  'notice.draft_edited',
+  'notice.draft_discarded',
+  'notice.published',
+  'notice.retired',
 ] as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];

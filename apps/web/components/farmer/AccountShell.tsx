@@ -13,6 +13,7 @@ import { useUnreadMessages } from '@/lib/messages/client';
 import { FARMER_PAGES, keepPagesOffline } from '@/lib/pwa/keep';
 import { t, type TKey } from '@/lib/i18n';
 
+import { SupportContactsLine } from '../support/SupportContacts';
 import { ShopMasthead } from './ShopMasthead';
 import styles from './farmer.module.css';
 
@@ -686,6 +687,8 @@ export function AccountShell({ children }: { children: ReactNode }) {
       <footer className={styles.footer}>
         <div className={styles.footerInner}>
           <Wordmark size={18} tagline taglineText={t('brand.tagline', language)} />
+          {/* 2026-10-25: support contacts as published in Settings. */}
+          <SupportContactsLine language={language} />
           <span>{t('brand.copyright', language)}</span>
         </div>
       </footer>

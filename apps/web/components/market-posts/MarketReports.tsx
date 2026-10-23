@@ -2,7 +2,9 @@
 
 import { useCallback, useEffect, useState } from 'react';
 
-import { Button, Notice, Stamp } from '@/components/ui';
+import { ReasonCodeSelect } from '@/components/admin/ReasonCodeSelect';
+import { Button, Field, Notice, Stamp, Textarea } from '@/components/ui';
+import { ConfirmationDialog } from '@/components/ui/feedback';
 import { formatDate } from '@/lib/format';
 import { usePreview } from '@/lib/preview';
 import { reasonLabel, statusLabel, statusTone } from '@/components/product-reports/presentation';
@@ -18,6 +20,9 @@ interface MarketReport {
   status: string;
   created_at: string;
 }
+
+/** The written reason a decision needs (2026-10-25); the server keeps up to its own limit. */
+const NOTE_MIN = 5;
 
 const TARGET_LABEL: Record<string, string> = {
   buying_request: 'Buying request',
@@ -53,6 +58,16 @@ export function MarketReports() {
   const [rows, setRows] = useState<MarketReport[] | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  // 2026-10-25 (settings, phase 1): each decision opens a dialog with a reason
+  // code from Settings, which pre-fills the written reason; the reason is
+  // required and kept in the audit row with the code.
+  const [pending, setPending] = useState<{ id: string; action: string; label: string } | null>(
+    null,
+  );
+  const [reasonCode, setReasonCode] = useState('');
+  const [prefill, setPrefill] = useState('');
+  const [note, setNote] = useState('');
+  const [noteError, setNoteError] = useState<string | undefined>();
 
   const load = useCallback(() => {
     fetch('/api/admin/market-reports?limit=100')
@@ -76,18 +91,38 @@ export function MarketReports() {
     if (isAdmin) load();
   }, [isAdmin, load]);
 
-  async function decide(id: string, action: string) {
+  function openDecision(id: string, action: string, label: string) {
+    setPending({ id, action, label });
+    setReasonCode('');
+    setPrefill('');
+    setNote('');
+    setNoteError(undefined);
+  }
+
+  async function decide() {
+    if (!pending) return;
+    const { id, action } = pending;
+    const written = note.trim();
+    if (written.length < NOTE_MIN) {
+      setNoteError(`Give a reason of at least ${NOTE_MIN} characters.`);
+      return;
+    }
     setBusy(id);
     try {
       const res = await fetch(`/api/admin/market-reports/${encodeURIComponent(id)}`, {
         method: 'PATCH',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ action }),
+        body: JSON.stringify({
+          action,
+          note: written,
+          ...(reasonCode ? { reason_code: reasonCode } : {}),
+        }),
       });
       if (!res.ok) {
         const body = (await res.json().catch(() => ({}))) as { error?: { message: string } };
         throw new Error(body.error?.message ?? `The decision was not recorded (${res.status}).`);
       }
+      setPending(null);
       load();
     } catch (e) {
       setFailure(e instanceof Error ? e.message : String(e));
@@ -151,7 +186,7 @@ export function MarketReports() {
                       size="small"
                       variant={a.action === 'remove_listing' ? 'danger' : 'secondary'}
                       disabled={busy === r.id}
-                      onClick={() => void decide(r.id, a.action)}
+                      onClick={() => openDecision(r.id, a.action, a.label)}
                     >
                       {a.label}
                     </Button>
@@ -161,6 +196,47 @@ export function MarketReports() {
           ))}
         </ul>
       )}
+      <ConfirmationDialog
+        open={pending !== null}
+        onCancel={() => setPending(null)}
+        onConfirm={() => void decide()}
+        title={pending ? `${pending.label}: record this decision?` : 'Record this decision?'}
+        consequence={
+          pending?.action === 'remove_listing'
+            ? 'The post leaves the market (it is not deleted) and the report is settled.'
+            : 'The report moves on with this decision, and the reason is kept in the audit trail.'
+        }
+        confirmLabel={pending?.label ?? 'Confirm'}
+        destructive={pending?.action === 'remove_listing'}
+        busy={busy !== null}
+      >
+        <ReasonCodeSelect
+          target={pending?.action === 'remove_listing' ? 'listing' : 'report'}
+          value={reasonCode}
+          onPick={(code, label) => {
+            setReasonCode(code);
+            const next = code ? `${label}: ` : '';
+            // Replace only an empty reason or one this list wrote; never what was typed.
+            if (note.trim() === '' || note === prefill) setNote(next);
+            setPrefill(next);
+          }}
+        />
+        <Field
+          label="Reason"
+          hint={`At least ${NOTE_MIN} characters, up to 500. Kept in the audit trail.`}
+          error={noteError}
+        >
+          {(ids) => (
+            <Textarea
+              {...ids}
+              rows={3}
+              maxLength={500}
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+            />
+          )}
+        </Field>
+      </ConfirmationDialog>
     </section>
   );
 }
