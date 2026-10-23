@@ -79,6 +79,20 @@ const H = `h AS (
 )`;
 const H_STATES = `(w.st IS NULL OR h.farmer_state = ANY(w.st) OR h.buyer_state = ANY(w.st))`;
 
+/**
+ * Advice cases rated in the window: the feedback audit row says when (a case
+ * carries no feedback time), the case the rating. Once per case by design;
+ * DISTINCT keeps it so. Soft-deleted cases are out.
+ */
+const ADVICE_RATED = `rated AS (
+  SELECT DISTINCT ac.id, ac.feedback_rating
+    FROM public.audit_event ae
+    JOIN public.advice_case ac ON ac.id::text = ae.entity_id CROSS JOIN w
+   WHERE ae.entity_type = 'advice_case' AND ae.action = 'advice_case.feedback'
+     AND ${inWindow('ae.occurred_at')} AND ac.deleted_at IS NULL
+     AND ac.feedback_rating IS NOT NULL AND w.st IS NULL
+)`;
+
 interface MetricSql {
   /** Tables (or `table.column`) the queries read that a pending migration creates. */
   readonly needs: readonly string[];
@@ -406,6 +420,95 @@ export const METRIC_SQL: Readonly<Record<string, MetricSql>> = {
        WHERE ${inStates('sus.state_id')}
        GROUP BY 1 ORDER BY 1`,
   },
+  // ---- Advice (2026-10-25). National only: a case carries no state. Never a
+  // question, a message, a comment or a storage path: counts and averages.
+  'advice.providers_published': {
+    needs: ['advice_provider', 'farmer.suspended_at', 'buyer.suspended_at'],
+    located: false,
+    total: `${W}
+      SELECT count(*)::int AS value FROM public.advice_provider ap CROSS JOIN w
+       WHERE ap.deleted_at IS NULL AND ap.status = 'published' AND w.st IS NULL
+         AND (EXISTS (SELECT 1 FROM public.farmer f
+                       WHERE f.auth_user_id = ap.auth_user_id AND f.deleted_at IS NULL
+                         AND f.suspended_at IS NULL)
+              OR EXISTS (SELECT 1 FROM public.buyer b
+                          WHERE b.auth_user_id = ap.auth_user_id AND b.deleted_at IS NULL
+                            AND b.suspended_at IS NULL))`,
+  },
+  'advice.approved_advisers': {
+    needs: ['advice_provider', 'adviser_application'],
+    located: false,
+    total: `${W}
+      SELECT count(*)::int AS value FROM public.advice_provider ap CROSS JOIN w
+       WHERE ap.deleted_at IS NULL AND ap.approved_at IS NOT NULL AND w.st IS NULL`,
+  },
+  'advice.requests': {
+    needs: ['advice_case'],
+    located: false,
+    breakdown: `${W}
+      SELECT ac.topic AS key, count(*)::int AS value FROM public.advice_case ac CROSS JOIN w
+       WHERE ac.deleted_at IS NULL AND ${inWindow('ac.created_at')} AND w.st IS NULL
+       GROUP BY 1 ORDER BY 1`,
+  },
+  'advice.cases_closed': {
+    needs: ['advice_case'],
+    located: false,
+    breakdown: `${W}
+      SELECT ac.outcome AS key, count(*)::int AS value FROM public.advice_case ac CROSS JOIN w
+       WHERE ac.deleted_at IS NULL AND ac.status = 'closed' AND ${inWindow('ac.closed_at')}
+         AND w.st IS NULL
+       GROUP BY 1 ORDER BY 1`,
+  },
+  'advice.median_days_to_close': {
+    needs: ['advice_case'],
+    located: false,
+    total: `${W}
+      SELECT round((percentile_cont(0.5) WITHIN GROUP (
+               ORDER BY extract(epoch FROM ac.closed_at - ac.created_at) / 86400))::numeric, 1
+             )::float8 AS value
+        FROM public.advice_case ac CROSS JOIN w
+       WHERE ac.deleted_at IS NULL AND ac.status = 'closed' AND ${inWindow('ac.closed_at')}
+         AND w.st IS NULL`,
+  },
+  'advice.feedback_given': {
+    needs: ['advice_case'],
+    located: false,
+    breakdown: `${W}, ${ADVICE_RATED}
+      SELECT rated.feedback_rating::text AS key, count(*)::int AS value FROM rated
+       GROUP BY 1 ORDER BY 1`,
+  },
+  'advice.average_rating': {
+    needs: ['advice_case'],
+    located: false,
+    total: `${W}, ${ADVICE_RATED}
+      SELECT round(avg(rated.feedback_rating)::numeric, 1)::float8 AS value FROM rated`,
+  },
+  'advice.applications_submitted': {
+    needs: ['adviser_application'],
+    located: false,
+    total: `${W}
+      SELECT count(*)::int AS value FROM public.adviser_application aa CROSS JOIN w
+       WHERE aa.deleted_at IS NULL AND ${inWindow('aa.created_at')} AND w.st IS NULL`,
+  },
+  'advice.applications_decided': {
+    needs: ['adviser_application'],
+    located: false,
+    breakdown: `${W}
+      SELECT replace(ae.action, 'adviser_application.', '') AS key,
+             count(DISTINCT ae.entity_id)::int AS value
+        FROM public.audit_event ae CROSS JOIN w
+       WHERE ae.action IN ('adviser_application.approved', 'adviser_application.declined')
+         AND ${inWindow('ae.occurred_at')} AND w.st IS NULL
+       GROUP BY 1 ORDER BY 1`,
+  },
+  'advice.referrals': {
+    needs: ['advice_referral'],
+    located: false,
+    breakdown: `${W}
+      SELECT rf.status AS key, count(*)::int AS value FROM public.advice_referral rf CROSS JOIN w
+       WHERE rf.deleted_at IS NULL AND ${inWindow('rf.created_at')} AND w.st IS NULL
+       GROUP BY 1 ORDER BY 1`,
+  },
   'system.failures': {
     needs: [],
     located: false,
@@ -433,6 +536,11 @@ const PROBED = [
   'contact_request',
   'phone_verification',
   'support_message',
+  // 2026-10-25: advice.
+  'advice_provider',
+  'advice_case',
+  'adviser_application',
+  'advice_referral',
 ] as const;
 
 async function presentRelations(db: Db): Promise<Set<string>> {
@@ -508,7 +616,13 @@ export async function analyticsSummary(
     let value: number;
     if (spec.total) {
       queries.push({ id: def.id, sql: inlineAnalyticsQuery(spec.total, params) });
-      const [row] = await db.$queryRawUnsafe<{ value: number }[]>(spec.total, ...params);
+      const [row] = await db.$queryRawUnsafe<{ value: number | null }[]>(spec.total, ...params);
+      // A count is never null; a median or an average of nothing is, and is
+      // served as not measured rather than as a silent 0 (2026-10-25).
+      if (row && row.value === null) {
+        metrics.push({ id: def.id, value: null, unavailable: 'none_in_window' });
+        continue;
+      }
       value = Number(row?.value ?? 0);
     } else {
       value = (breakdown ?? []).reduce((n, b) => n + b.value, 0);

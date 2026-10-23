@@ -55,6 +55,8 @@ const UNIT_LABEL: Readonly<Record<MetricUnit, string>> = {
   records: 'records',
   events: 'events',
   phones: 'phone numbers',
+  days: 'days (median)',
+  stars: 'stars out of 5 (average)',
 };
 
 /** Figures shown as a share of another, with the denominator their definition names. */

@@ -1,4 +1,6 @@
 import {
+  ADVICE_OUTCOMES,
+  ADVICE_TOPICS,
   ANALYTICS_LIMITATIONS,
   ANALYTICS_METRICS,
   type AnalyticsSummary,
@@ -70,6 +72,10 @@ describe('every figure has its definition and its SQL', () => {
         ['purchase_order', 'po'],
         ['support_message', 'sm'],
         ['message', 'm'],
+        ['advice_provider', 'ap'],
+        ['advice_case', 'ac'],
+        ['adviser_application', 'aa'],
+        ['advice_referral', 'rf'],
       ] as const) {
         if (new RegExp(`FROM public\\.${table} ${alias}\\b`).test(q)) {
           expect(q, `${id} reads ${table} without its deleted_at`).toMatch(
@@ -78,6 +84,53 @@ describe('every figure has its definition and its SQL', () => {
         }
       }
     }
+  });
+});
+
+describe('advice figures (2026-10-25)', () => {
+  const ADVICE_IDS = [
+    'advice.providers_published',
+    'advice.approved_advisers',
+    'advice.requests',
+    'advice.cases_closed',
+    'advice.median_days_to_close',
+    'advice.feedback_given',
+    'advice.average_rating',
+    'advice.applications_submitted',
+    'advice.applications_decided',
+    'advice.referrals',
+  ];
+
+  it('defines every advice figure, in the Advice group, with its SQL', () => {
+    const defined = ANALYTICS_METRICS.filter((m) => m.group === 'advice').map((m) => m.id);
+    expect(defined.sort()).toEqual([...ADVICE_IDS].sort());
+    for (const id of ADVICE_IDS) expect(METRIC_SQL[id], id).toBeTruthy();
+  });
+
+  it('breaks requests down by topic and closures by every outcome', () => {
+    const byId = (id: string) => ANALYTICS_METRICS.find((m) => m.id === id)!;
+    expect(Object.keys(byId('advice.requests').breakdown!.keys!).sort()).toEqual(
+      [...ADVICE_TOPICS].sort(),
+    );
+    expect(Object.keys(byId('advice.cases_closed').breakdown!.keys!).sort()).toEqual(
+      [...ADVICE_OUTCOMES].sort(),
+    );
+  });
+
+  it('never reads a question, a comment, a name or a storage path', () => {
+    for (const id of ADVICE_IDS) {
+      const sql = METRIC_SQL[id]!;
+      const q = `${sql.total ?? ''}\n${sql.breakdown ?? ''}`;
+      expect(q, id).not.toMatch(
+        /question|feedback_comment|display_name|requester_name|storage_path|experience/,
+      );
+    }
+  });
+
+  it('says in the limitations that advice is measured, and what is not', () => {
+    const text = ANALYTICS_LIMITATIONS.join(' ');
+    expect(text).not.toMatch(/Advice usage and case outcomes are not measured/);
+    expect(text).toMatch(/Advice figures are national only/);
   });
 });
 
