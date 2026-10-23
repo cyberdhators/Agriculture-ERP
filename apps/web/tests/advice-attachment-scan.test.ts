@@ -32,8 +32,14 @@ function walk(dir: string): string[] {
   return out;
 }
 
-const sources = [...walk(join(web, 'app')), ...walk(join(web, 'lib')), ...walk(join(web, 'components'))]
-  .map((full) => ({ path: relative(web, full).replace(/\\/g, '/'), text: readFileSync(full, 'utf8') }));
+const sources = [
+  ...walk(join(web, 'app')),
+  ...walk(join(web, 'lib')),
+  ...walk(join(web, 'components')),
+].map((full) => ({
+  path: relative(web, full).replace(/\\/g, '/'),
+  text: readFileSync(full, 'utf8'),
+}));
 
 const lib = read('lib/api/advice.ts');
 /** The body of attachmentLinks: from its signature to the next top-level export. */

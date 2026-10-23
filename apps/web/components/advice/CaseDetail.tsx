@@ -36,13 +36,7 @@ import {
   removePhoto,
   shrinkAdvicePhoto,
 } from '@/lib/advice/client';
-import {
-  CONTACT_KEY,
-  OUTCOME_KEY,
-  STATUS_KEY,
-  TOPIC_KEY,
-  caseHref,
-} from '@/lib/advice/labels';
+import { CONTACT_KEY, OUTCOME_KEY, STATUS_KEY, TOPIC_KEY, caseHref } from '@/lib/advice/labels';
 import { formatDate } from '@/lib/format';
 import { t, type Language } from '@/lib/i18n';
 
@@ -439,8 +433,7 @@ function Referral({
       <p className={styles.note}>
         {rf.status === 'accepted' ? (
           <>
-            {t('advice.referAccepted', lang)}:{' '}
-            <span dir="auto">{rf.to_provider.display_name}</span>
+            {t('advice.referAccepted', lang)}: <span dir="auto">{rf.to_provider.display_name}</span>
             {rf.to_case_id ? (
               <>
                 {' · '}

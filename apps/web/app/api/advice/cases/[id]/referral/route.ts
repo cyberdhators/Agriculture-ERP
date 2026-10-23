@@ -233,7 +233,10 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
             );
             await writeAudit(tx, {
               ...referral,
-              action: body.action === 'decline' ? 'advice_referral.declined' : 'advice_referral.withdrawn',
+              action:
+                body.action === 'decline'
+                  ? 'advice_referral.declined'
+                  : 'advice_referral.withdrawn',
               before: { status: 'proposed' },
               after: { status, from_case_id: current.id },
             });
