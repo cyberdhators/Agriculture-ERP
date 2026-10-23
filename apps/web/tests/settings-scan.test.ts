@@ -18,7 +18,9 @@ import { INTEGRATIONS, integrationStatus } from '../lib/api/settings';
  */
 
 const web = fileURLToPath(new URL('..', import.meta.url));
-const read = (path: string) => readFileSync(join(web, path), 'utf8');
+// Line endings normalised: a Windows checkout writes CRLF, and the slices
+// below look for '\n}\n'.
+const read = (path: string) => readFileSync(join(web, path), 'utf8').replace(/\r\n/g, '\n');
 const migration = readFileSync(
   join(web, '../../prisma/migrations/20261025100000_settings_phase1/migration.sql'),
   'utf8',
