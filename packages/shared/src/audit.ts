@@ -170,6 +170,16 @@ export const AUDIT_ACTIONS = [
   'adviser_application.approved',
   'adviser_application.declined',
   'adviser_approval.revoked',
+  // 2026-10-25: independent advice, part 3 -- photos on a case and referral
+  // with consent. Ids, statuses, a content type and a size only; never a
+  // storage path, a question or a provider's words. NOT YET IN THE DATABASE
+  // CHECK: one combined CHECK migration adds them (the owner).
+  'advice_attachment.added',
+  'advice_attachment.removed',
+  'advice_referral.proposed',
+  'advice_referral.accepted',
+  'advice_referral.declined',
+  'advice_referral.withdrawn',
 ] as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];

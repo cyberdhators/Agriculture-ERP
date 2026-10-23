@@ -73,6 +73,11 @@ const BUYER_OUTSIDE_ITS_TREE = [
   'advice/my-provider/application',
   'advice/my-provider/application/reply',
   'advice/my-provider/application/withdraw',
+  // ADVICE PHOTOS (2026-10-25): either participant of a case adds or removes
+  // a photo; loadCase finds the case for its two participants only.
+  'advice/cases/[id]/attachments/[attachmentId]',
+  'advice/cases/[id]/attachments/confirm',
+  'advice/cases/[id]/attachments/upload-url',
   // 2026-10-20: an account deletes itself (its own records only).
   'account/delete',
   // IN-APP MESSAGING (2026-10-20): conversations belong to sign-ins, and every

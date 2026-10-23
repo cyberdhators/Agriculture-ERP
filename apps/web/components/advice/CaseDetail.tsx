@@ -1,9 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import {
+  ADVICE_ATTACHMENT_LIMITS,
   ADVICE_LIMITS,
   ADVICE_OUTCOMES_BY_SIDE,
   type AdviceCaseView,
@@ -13,7 +14,14 @@ import {
 import { BackLinkRow } from '@/components/market-posts/bits';
 import { ConversationThread } from '@/components/messages/Messages';
 import { Badge, Button, EmptyState, Field, Notice, Select, Textarea } from '@/components/ui';
-import { AdviceError, changeCase, getCase } from '@/lib/advice/client';
+import {
+  AdviceError,
+  attachPhoto,
+  changeCase,
+  getCase,
+  removePhoto,
+  shrinkAdvicePhoto,
+} from '@/lib/advice/client';
 import { CONTACT_KEY, OUTCOME_KEY, STATUS_KEY, TOPIC_KEY } from '@/lib/advice/labels';
 import { formatDate } from '@/lib/format';
 import { t, type Language } from '@/lib/i18n';
@@ -49,7 +57,24 @@ export function CaseDetail({
     getCase(id)
       .then(setRow)
       .catch(() => setRow(null));
-  }, [id]);
+    // Sent from the request form: a photo that did not go with the question.
+    if (new URLSearchParams(window.location.search).get('photos') === 'failed') {
+      setFailure(t('advice.photosFailed', lang));
+    }
+  }, [id, lang]);
+
+  /** Any change that returns the case: busy while it runs, its refusal shown. */
+  const run = useCallback(async (work: () => Promise<AdviceCaseView>) => {
+    setBusy(true);
+    setFailure(null);
+    try {
+      setRow(await work());
+    } catch (e) {
+      setFailure(e instanceof AdviceError ? e.message : String(e));
+    } finally {
+      setBusy(false);
+    }
+  }, []);
 
   const change = useCallback(
     async (body: Parameters<typeof changeCase>[1]) => {
@@ -146,6 +171,8 @@ export function CaseDetail({
         {t('advice.noGuarantee', lang)} {t('advice.disclaimer', lang)}
       </p>
 
+      <Photos row={row} lang={lang} busy={busy} run={run} />
+
       {row.status === 'closed' ? null : (
         <CloseControls row={row} lang={lang} busy={busy} onChange={change} />
       )}
@@ -180,6 +207,89 @@ export function CaseDetail({
         <Link href="/help">{t('help.title', lang)} →</Link>
       </section>
     </div>
+  );
+}
+
+/**
+ * The case's photos (2026-10-25), shown to its two participants only, as
+ * links that expire in minutes. Either may add one while the case is open;
+ * only the person who added a photo may remove it.
+ */
+function Photos({
+  row,
+  lang,
+  busy,
+  run,
+}: {
+  row: AdviceCaseView;
+  lang: Language;
+  busy: boolean;
+  run: (work: () => Promise<AdviceCaseView>) => Promise<void>;
+}) {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const photos = row.attachments ?? [];
+  const canAdd = row.status !== 'closed' && photos.length < ADVICE_ATTACHMENT_LIMITS.perCase;
+
+  return (
+    <section className={styles.box}>
+      <h2>{t('advice.photos', lang)}</h2>
+      {photos.length === 0 ? (
+        <p className={styles.note}>{t('advice.photosNone', lang)}</p>
+      ) : (
+        <ul className={styles.photos}>
+          {photos.map((p) => (
+            <li key={p.id} className={styles.photo}>
+              <a href={p.url} target="_blank" rel="noreferrer">
+                {/* A short-lived signed link: a plain img, so nothing caches it past expiry. */}
+                <img src={p.url} alt={t('advice.photoAlt', lang)} loading="lazy" />
+              </a>
+              <span className="small muted">{formatDate(p.created_at, lang)}</span>
+              {p.mine ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="small"
+                  disabled={busy}
+                  onClick={() => {
+                    if (window.confirm(t('advice.photosRemoveConfirm', lang))) {
+                      void run(() => removePhoto(row.id, p.id));
+                    }
+                  }}
+                >
+                  {t('advice.photosRemove', lang)}
+                </Button>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+      )}
+      {photos.length > 0 ? <p className={styles.note}>{t('advice.photosPrivate', lang)}</p> : null}
+      {canAdd ? (
+        <div className={styles.actions}>
+          <Button
+            type="button"
+            variant="secondary"
+            disabled={busy}
+            onClick={() => fileRef.current?.click()}
+          >
+            {busy ? t('advice.photosSending', lang) : t('advice.photosAdd', lang)}
+          </Button>
+          <input
+            ref={fileRef}
+            className={styles.hiddenInput}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              e.target.value = '';
+              if (file) void run(async () => attachPhoto(row.id, await shrinkAdvicePhoto(file)));
+            }}
+          />
+        </div>
+      ) : row.status !== 'closed' ? (
+        <p className={styles.note}>{t('advice.photosFull', lang)}</p>
+      ) : null}
+    </section>
   );
 }
 

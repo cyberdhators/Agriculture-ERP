@@ -323,6 +323,16 @@ export async function issueReadLink(
   return { url: data.signedUrl, expiresAt: new Date(issuedAt + expiresInSeconds * 1000) };
 }
 
+/**
+ * Copies one object to a new path in the same bucket (2026-10-25: a photo the
+ * requester chose to share with the provider an advice case was referred to).
+ * The new path must be empty: the provider refuses to overwrite.
+ */
+export async function copyStoredObject(bucket: string, from: string, to: string): Promise<void> {
+  const { error } = await adminClient().storage.from(bucket).copy(from, to);
+  if (error) throw new Error(`Could not copy the stored object: ${error.message}`);
+}
+
 /** Removes an object that failed confirmation. Never a way to delete an arrived attachment: removal is the visit's, softly. */
 export async function removeStoredObject(bucket: string, path: string): Promise<void> {
   const { error } = await adminClient().storage.from(bucket).remove([path]);

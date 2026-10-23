@@ -1,9 +1,10 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import {
+  ADVICE_ATTACHMENT_LIMITS,
   ADVICE_CONTACT_MODES,
   ADVICE_LIMITS,
   adviceCaseCreateSchema,
@@ -23,7 +24,14 @@ import {
   Select,
   Textarea,
 } from '@/components/ui';
-import { AdviceError, createCase, getProvider, newId } from '@/lib/advice/client';
+import {
+  AdviceError,
+  attachPhoto,
+  createCase,
+  getProvider,
+  newId,
+  shrinkAdvicePhoto,
+} from '@/lib/advice/client';
 import {
   CONTACT_KEY,
   KIND_KEY,
@@ -171,6 +179,10 @@ function RequestForm({
   const [question, setQuestion] = useState('');
   const [contact, setContact] = useState<string>('in_app');
   const [share, setShare] = useState(false);
+  // 2026-10-25: up to three photos, sent after the request is stored (their
+  // place in the bucket is the case's id), each shrunk on the phone first.
+  const [photos, setPhotos] = useState<File[]>([]);
+  const fileRef = useRef<HTMLInputElement>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [failure, setFailure] = useState<string | null>(null);
   const [signIn, setSignIn] = useState(false);
@@ -205,7 +217,15 @@ function RequestForm({
     try {
       const made = await createCase(check.data);
       messagesChanged();
-      router.push(caseHref(side, made.id));
+      let photoFailed = false;
+      for (const file of photos) {
+        try {
+          await attachPhoto(made.id, await shrinkAdvicePhoto(file));
+        } catch {
+          photoFailed = true;
+        }
+      }
+      router.push(`${caseHref(side, made.id)}${photoFailed ? '?photos=failed' : ''}`);
     } catch (e) {
       if (e instanceof AdviceError && e.status === 401) setSignIn(true);
       else if (e instanceof AdviceError && e.status === 0)
@@ -289,6 +309,50 @@ function RequestForm({
             onChange={(e) => setShare(e.target.checked)}
           />
           <p className="small muted">{t('advice.shareHint', lang)}</p>
+        </div>
+        <div>
+          <p className="small">
+            <strong>{t('advice.photos', lang)}</strong>
+          </p>
+          <div className={styles.chosen}>
+            {photos.map((file, i) => (
+              <Button
+                key={`${file.name}-${i}`}
+                type="button"
+                variant="ghost"
+                size="small"
+                onClick={() => setPhotos((list) => list.filter((_, j) => j !== i))}
+              >
+                {file.name} ✕
+              </Button>
+            ))}
+            {photos.length < ADVICE_ATTACHMENT_LIMITS.atCreate ? (
+              <Button
+                type="button"
+                variant="secondary"
+                size="small"
+                onClick={() => fileRef.current?.click()}
+              >
+                {t('advice.photosChoose', lang)}
+              </Button>
+            ) : null}
+          </div>
+          <input
+            ref={fileRef}
+            className={styles.hiddenInput}
+            type="file"
+            multiple
+            accept="image/jpeg,image/png,image/webp"
+            onChange={(e) => {
+              const next = [...photos, ...Array.from(e.target.files ?? [])];
+              if (next.length > ADVICE_ATTACHMENT_LIMITS.atCreate) {
+                setFailure(t('advice.photosTooMany', lang));
+              }
+              setPhotos(next.slice(0, ADVICE_ATTACHMENT_LIMITS.atCreate));
+              e.target.value = '';
+            }}
+          />
+          <p className="small muted">{t('advice.photosHint', lang)}</p>
         </div>
       </div>
       <p className={styles.note}>

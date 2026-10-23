@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 
+import { ADVICE_ATTACHMENT_LIMITS } from '@agri-erp/shared';
 import type {
   AdviserApplicationOwn,
   AdviserApplicationState,
@@ -10,6 +11,8 @@ import type {
   AdviceProviderPublic,
   AdviceTopic,
 } from '@agri-erp/shared';
+
+import { shrinkPhoto } from '@/lib/public-profile/client';
 
 /**
  * INDEPENDENT ADVICE, THE BROWSER'S SIDE (2026-10-22). Farmers and buyers
@@ -130,6 +133,61 @@ export const changeCase = (
     | { action: 'close'; outcome: string }
     | { action: 'feedback'; rating: number; comment?: string },
 ) => call<AdviceCaseView>(`/api/advice/cases/${encodeURIComponent(id)}`, send('PATCH', body));
+
+/* ── Photos on a case (2026-10-25) ───────────────────────────────────── */
+
+/** Shrinks a photo on the phone before anything is sent, as profile photos are. */
+export const shrinkAdvicePhoto = (file: File) => shrinkPhoto(file, ADVICE_ATTACHMENT_LIMITS);
+
+/**
+ * Grant, upload straight to the private bucket, confirm. Returns the case as
+ * it now stands. The bytes never pass through a route.
+ */
+export async function attachPhoto(caseId: string, photo: Blob): Promise<AdviceCaseView> {
+  const base = `/api/advice/cases/${encodeURIComponent(caseId)}/attachments`;
+  const grant = await call<{ upload_id: string; url: string; token: string }>(
+    `${base}/upload-url`,
+    send('POST', { content_type: 'image/jpeg', byte_size: photo.size }),
+  );
+  let res: Response;
+  try {
+    res = await fetch(grant.url, {
+      method: 'PUT',
+      headers: { 'content-type': 'image/jpeg' },
+      body: photo,
+    });
+  } catch {
+    throw new AdviceError(0, 'network', 'The photo could not be sent. Check the connection.');
+  }
+  if (!res.ok) throw new AdviceError(res.status, 'upload', 'The photo could not be sent.');
+  return call<AdviceCaseView>(
+    `${base}/confirm`,
+    send('POST', { upload_id: grant.upload_id, content_type: 'image/jpeg' }),
+  );
+}
+
+export const removePhoto = (caseId: string, attachmentId: string) =>
+  call<AdviceCaseView>(
+    `/api/advice/cases/${encodeURIComponent(caseId)}/attachments/${encodeURIComponent(attachmentId)}`,
+    { method: 'DELETE' },
+  );
+
+/* ── Referral with consent (2026-10-25) ──────────────────────────────── */
+
+export const proposeReferral = (caseId: string, toProviderId: string) =>
+  call<AdviceCaseView>(
+    `/api/advice/cases/${encodeURIComponent(caseId)}/referral`,
+    send('POST', { to_provider_id: toProviderId }),
+  );
+
+export const answerReferral = (
+  caseId: string,
+  body: { action: 'accept'; share_attachments: boolean } | { action: 'decline' | 'withdraw' },
+) =>
+  call<AdviceCaseView>(
+    `/api/advice/cases/${encodeURIComponent(caseId)}/referral`,
+    send('PATCH', body),
+  );
 
 export const newId = () =>
   typeof crypto !== 'undefined' && 'randomUUID' in crypto

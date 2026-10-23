@@ -68,7 +68,19 @@ export const getPublicProfile = (publicId: string) =>
  * before anything is sent: small enough for a weak signal and well under the
  * 2 MB ceiling. A second, smaller pass if the first is still too big.
  */
-export async function shrinkProfilePhoto(file: File): Promise<Blob> {
+export function shrinkProfilePhoto(file: File): Promise<Blob> {
+  return shrinkPhoto(file, PROFILE_PHOTO_LIMITS);
+}
+
+/**
+ * The same shrinking for any photo (2026-10-25: advice photos use it with
+ * their own longest side): JPEG, at most `maxPixels` on the long side, and a
+ * second pass at three quarters of that if it is still over `maxBytes`.
+ */
+export async function shrinkPhoto(
+  file: File,
+  limits: { readonly maxPixels: number; readonly maxBytes: number },
+): Promise<Blob> {
   const bitmap = await createImageBitmap(file);
   const draw = (max: number, quality: number) =>
     new Promise<Blob>((resolve, reject) => {
@@ -84,8 +96,8 @@ export async function shrinkProfilePhoto(file: File): Promise<Blob> {
       );
     });
   try {
-    let blob = await draw(PROFILE_PHOTO_LIMITS.maxPixels, 0.82);
-    if (blob.size > PROFILE_PHOTO_LIMITS.maxBytes) blob = await draw(600, 0.7);
+    let blob = await draw(limits.maxPixels, 0.82);
+    if (blob.size > limits.maxBytes) blob = await draw(Math.round(limits.maxPixels * 0.75), 0.7);
     return blob;
   } finally {
     bitmap.close();

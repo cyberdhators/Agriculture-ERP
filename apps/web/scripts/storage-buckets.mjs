@@ -22,6 +22,9 @@ if (!loaded.ok && !process.env.NEXT_PUBLIC_SUPABASE_URL) {
 }
 
 const {
+  ADVICE_ATTACHMENT_BUCKET,
+  ADVICE_ATTACHMENT_CONTENT_TYPES,
+  ADVICE_ATTACHMENT_LIMITS,
   ATTACHMENT_CONTENT_TYPES,
   ATTACHMENT_LIMITS,
   LEARNING_LIMITS,
@@ -62,3 +65,14 @@ const photos = await ensurePrivateBucket(PROFILE_PHOTO_BUCKET, {
   allowedMimeTypes: [...PROFILE_PHOTO_CONTENT_TYPES],
 });
 console.log(`storage-buckets: ${PROFILE_PHOTO_BUCKET} ${photos} (private)`);
+
+// 2026-10-25: photos on an advice request. Private: a photo is shown only to
+// the case's requester and provider, through a read link that expires, issued
+// by GET /api/advice/cases/:id. 2 MB, JPEG/PNG/WebP -- the same numbers the
+// upload schema checks before any byte travels (well under the 50 MB plan
+// ceiling above).
+const advicePhotos = await ensurePrivateBucket(ADVICE_ATTACHMENT_BUCKET, {
+  fileSizeLimit: Math.min(ADVICE_ATTACHMENT_LIMITS.maxBytes, PROJECT_FILE_CEILING),
+  allowedMimeTypes: [...ADVICE_ATTACHMENT_CONTENT_TYPES],
+});
+console.log(`storage-buckets: ${ADVICE_ATTACHMENT_BUCKET} ${advicePhotos} (private)`);
