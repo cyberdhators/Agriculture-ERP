@@ -371,6 +371,13 @@ character.
 | `adviser_nothing_to_withdraw`      | You have no application with CORWADO to withdraw.                                                                             |
 | `adviser_decision_not_allowed`     | That decision cannot be made on this application as it stands. Reload it to see where it is.                                  |
 | `adviser_own_application`          | You cannot decide on your own application.                                                                                    |
+| `advice_attachment_limit_reached`  | This request already holds 10 photos. Remove one before adding another.                                                       |
+| `advice_attachment_not_received`   | The photo has not reached the server yet. Keep the phone on with signal and try again in a moment.                            |
+| `advice_attachment_rejected`       | That photo could not be added. Choose a JPEG, PNG or WebP photo under 2 MB and try again.                                     |
+| `advice_attachment_not_yours`      | Only the person who added a photo can remove it.                                                                              |
+| `advice_referral_provider_invalid` | That provider cannot take this request. Choose another from the directory.                                                    |
+| `advice_referral_open`             | A referral is already waiting for the requester's answer. Withdraw it before proposing another.                               |
+| `advice_referral_none`             | There is no referral waiting for an answer on this request.                                                                   |
 
 **A route names a rule; it never writes a sentence.** `conflict()` and
 `unprocessable()` take a key from this registry, not a string. That is how the
@@ -507,6 +514,12 @@ change.
 | `adviser_application.approved`                |
 | `adviser_application.declined`                |
 | `adviser_approval.revoked`                    |
+| `advice_attachment.added`                     |
+| `advice_attachment.removed`                   |
+| `advice_referral.proposed`                    |
+| `advice_referral.accepted`                    |
+| `advice_referral.declined`                    |
+| `advice_referral.withdrawn`                   |
 
 `before` and `after` hold **changed fields only**, never whole rows, and never a
 password, token, authentication identifier, national id, phone, email, given
@@ -802,6 +815,12 @@ These are also exact.
 | Adviser decision: not on list           | Choose request clarification, approve, decline or revoke.                                       |
 | Adviser decision: reason                | Give a reason of 5 to 1000 characters.                                                          |
 | Adviser queue: status not on list       | Choose submitted, clarification requested, approved, declined, revoked or withdrawn.            |
+| Advice photo: type not accepted         | Choose a JPEG, PNG or WebP photo.                                                               |
+| Advice photo: over 2 MB                 | A photo on an advice request can be at most 2 MB.                                               |
+| Advice photo: size not whole bytes      | Give the photo size as a whole number of bytes.                                                 |
+| Advice photo: upload id malformed       | The upload identifier is not in the expected form.                                              |
+| Advice referral: action not on list     | Choose accept, decline or withdraw.                                                             |
+| Advice referral: share not true/false   | Say whether to share your photos: true or false.                                                |
 
 The key beside each reason is the field name, per section 4.1. An unrecognised
 field named `nickname` therefore produces `{ "nickname": "This field is not

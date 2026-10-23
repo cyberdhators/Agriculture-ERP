@@ -58,6 +58,17 @@ describe('the metric definitions', () => {
       'onboarding.phones_started',
       'onboarding.phones_confirmed',
       'support.received',
+      // 2026-10-25: advice cases and profiles carry no state of their own.
+      'advice.providers_published',
+      'advice.approved_advisers',
+      'advice.requests',
+      'advice.cases_closed',
+      'advice.median_days_to_close',
+      'advice.feedback_given',
+      'advice.average_rating',
+      'advice.applications_submitted',
+      'advice.applications_decided',
+      'advice.referrals',
       'system.failures',
     ]);
   });
@@ -92,13 +103,21 @@ describe('the metric definitions', () => {
     );
   });
 
-  it('references no advice table yet', () => {
-    expect(JSON.stringify(ANALYTICS_METRICS)).not.toMatch(/advice_|advisory_|case_/);
+  // Replaced 2026-10-25, not removed: "no advice table yet" became "advice
+  // tables only in the Advice group", now that advice is measured.
+  it('references advice tables only from the Advice group', () => {
+    for (const m of ANALYTICS_METRICS) {
+      if (m.group === 'advice') continue;
+      expect(JSON.stringify(m), m.id).not.toMatch(/advice_|adviser_|advisory_/);
+    }
+    expect(ANALYTICS_METRICS.filter((m) => m.group === 'advice').length).toBe(10);
   });
 
   it('states its limitations', () => {
     expect(ANALYTICS_LIMITATIONS.length).toBeGreaterThan(3);
-    expect(ANALYTICS_LIMITATIONS.join(' ')).toMatch(/Advice usage/);
+    const text = ANALYTICS_LIMITATIONS.join(' ');
+    expect(text).toMatch(/Advice figures are national only/);
+    expect(text).not.toMatch(/Advice usage and case outcomes are not measured/);
   });
 });
 

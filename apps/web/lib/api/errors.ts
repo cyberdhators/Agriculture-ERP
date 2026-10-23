@@ -227,6 +227,19 @@ export const RULE_MESSAGES = {
   adviser_decision_not_allowed:
     'That decision cannot be made on this application as it stands. Reload it to see where it is.',
   adviser_own_application: 'You cannot decide on your own application.',
+  // ADVICE PHOTOS AND REFERRAL (2026-10-25). About a case's state, never a person.
+  advice_attachment_limit_reached:
+    'This request already holds 10 photos. Remove one before adding another.',
+  advice_attachment_not_received:
+    'The photo has not reached the server yet. Keep the phone on with signal and try again in a moment.',
+  advice_attachment_rejected:
+    'That photo could not be added. Choose a JPEG, PNG or WebP photo under 2 MB and try again.',
+  advice_attachment_not_yours: 'Only the person who added a photo can remove it.',
+  advice_referral_provider_invalid:
+    'That provider cannot take this request. Choose another from the directory.',
+  advice_referral_open:
+    "A referral is already waiting for the requester's answer. Withdraw it before proposing another.",
+  advice_referral_none: 'There is no referral waiting for an answer on this request.',
 } as const;
 
 export type RuleKey = keyof typeof RULE_MESSAGES;

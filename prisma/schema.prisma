@@ -1836,6 +1836,7 @@ model AdviceProvider {
   cases               AdviceCase[]
   applications        AdviserApplication[] @relation("AdviserApplicationProvider")
   approvedApplication AdviserApplication?  @relation("AdviceProviderApprovedApplication", fields: [approvedApplicationId], references: [id], map: "advice_provider_approved_application_id_fkey")
+  referralsTo         AdviceReferral[]
 
   @@index([topics], map: "advice_provider_topics_idx", type: Gin)
   @@map("advice_provider")
@@ -1893,9 +1894,57 @@ model AdviceCase {
   updatedAt            DateTime  @default(now()) @map("updated_at") @db.Timestamptz(6)
   deletedAt            DateTime? @map("deleted_at") @db.Timestamptz(6)
 
-  provider AdviceProvider @relation(fields: [providerId], references: [id], map: "advice_case_provider_id_fkey")
+  provider      AdviceProvider         @relation(fields: [providerId], references: [id], map: "advice_case_provider_id_fkey")
+  attachments   AdviceCaseAttachment[]
+  referralsFrom AdviceReferral[]       @relation("AdviceReferralFromCase")
+  referralTo    AdviceReferral?        @relation("AdviceReferralToCase")
 
   @@index([providerId, status, createdAt(sort: Desc)], map: "advice_case_provider_idx")
   @@index([requesterAuthUserId, createdAt(sort: Desc)], map: "advice_case_requester_idx")
   @@map("advice_case")
+}
+
+/// 2026-10-25: one photo on an advice case, private to its two participants
+/// (read links that expire). The id is the upload id; soft delete only.
+model AdviceCaseAttachment {
+  id           String    @id @db.Uuid
+  caseId       String    @map("case_id") @db.Uuid
+  uploadedBy   String    @map("uploaded_by") @db.Uuid
+  storagePath  String    @unique(map: "advice_case_attachment_path_unique") @map("storage_path")
+  contentType  String    @map("content_type")
+  byteSize     Int       @map("byte_size")
+  copiedFromId String?   @map("copied_from_id") @db.Uuid
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  deletedAt    DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  case       AdviceCase             @relation(fields: [caseId], references: [id], map: "advice_case_attachment_case_id_fkey")
+  copiedFrom AdviceCaseAttachment?  @relation("AdviceCaseAttachmentCopy", fields: [copiedFromId], references: [id], map: "advice_case_attachment_copied_from_id_fkey")
+  copies     AdviceCaseAttachment[] @relation("AdviceCaseAttachmentCopy")
+
+  @@index([caseId, createdAt], map: "advice_case_attachment_case_idx")
+  @@map("advice_case_attachment")
+}
+
+/// 2026-10-25: a provider's proposal to refer a case to another provider.
+/// Nothing is shared until the requester accepts; acceptance opens to_case.
+model AdviceReferral {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  fromCaseId       String    @map("from_case_id") @db.Uuid
+  toProviderId     String    @map("to_provider_id") @db.Uuid
+  proposedBy       String    @map("proposed_by") @db.Uuid
+  status           String    @default("proposed")
+  shareAttachments Boolean   @default(false) @map("share_attachments")
+  toCaseId         String?   @unique(map: "advice_referral_to_case_unique") @map("to_case_id") @db.Uuid
+  decidedAt        DateTime? @map("decided_at") @db.Timestamptz(6)
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime  @default(now()) @map("updated_at") @db.Timestamptz(6)
+  deletedAt        DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  fromCase   AdviceCase     @relation("AdviceReferralFromCase", fields: [fromCaseId], references: [id], map: "advice_referral_from_case_id_fkey")
+  toProvider AdviceProvider @relation(fields: [toProviderId], references: [id], map: "advice_referral_to_provider_id_fkey")
+  toCase     AdviceCase?    @relation("AdviceReferralToCase", fields: [toCaseId], references: [id], map: "advice_referral_to_case_id_fkey")
+
+  @@index([fromCaseId, createdAt(sort: Desc)], map: "advice_referral_from_case_idx")
+  @@index([toProviderId], map: "advice_referral_to_provider_idx")
+  @@map("advice_referral")
 }

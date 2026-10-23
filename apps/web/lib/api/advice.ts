@@ -1,11 +1,16 @@
 import {
+  ADVICE_ATTACHMENT_BUCKET,
+  ADVICE_ATTACHMENT_LIMITS,
   ADVICE_CASES_PER_DAY,
+  type AdviceAttachmentView,
   type AdviceCaseView,
   type AdviceProviderOwn,
   type AdviceProviderPublic,
+  type AdviceReferralView,
 } from '@agri-erp/shared';
 
-import { type AuditTx } from './audit';
+import { issueReadLink } from '../supabase/admin';
+import { type AuditTx, writeAudit } from './audit';
 import { notFound } from './errors';
 
 /**
@@ -230,17 +235,174 @@ function unread(row: CaseRow, authUserId: string): boolean {
   return readAt === null || readAt < row.last_message_at;
 }
 
+/** Whether this sign-in is one of the case's two people: its requester or its provider. */
+export const isParticipant = (row: CaseRow, authUserId: string): boolean =>
+  authUserId === row.requester_auth_user_id || authUserId === row.provider_auth_user_id;
+
+interface AttachmentRow {
+  id: string;
+  uploaded_by: string;
+  storage_path: string;
+  content_type: AdviceAttachmentView['content_type'];
+  byte_size: number;
+  created_at: Date;
+}
+
+/** A case's photos that are not removed, oldest first. Paths stay in the API. */
+export async function caseAttachments(db: Db, caseId: string): Promise<AttachmentRow[]> {
+  return db.$queryRawUnsafe<AttachmentRow[]>(
+    `SELECT id, uploaded_by, storage_path, content_type, byte_size, created_at
+       FROM public.advice_case_attachment
+      WHERE case_id = $1::uuid AND deleted_at IS NULL
+      ORDER BY created_at, id`,
+    caseId,
+  );
+}
+
 /**
- * THE ONLY SHAPE A CASE LEAVES IN, from the reader's side. `withShared` reads
- * the requester's shared details for the provider; lists leave it off.
+ * THE ONLY PLACE AN ADVICE PHOTO'S READ LINK IS ISSUED (2026-10-25). `row`
+ * comes from loadCase, which finds a case only for its two participants; the
+ * check below says so again, so a caller that ever passes another row gets
+ * no link. Staff have no route here. tests/advice-attachment-scan.test.ts
+ * holds both lines.
+ */
+export async function attachmentLinks(
+  db: Db,
+  row: CaseRow,
+  authUserId: string,
+): Promise<AdviceAttachmentView[]> {
+  if (!isParticipant(row, authUserId)) return [];
+  const rows = await caseAttachments(db, row.id);
+  return Promise.all(
+    rows.map(async (a) => {
+      const link = await issueReadLink(
+        ADVICE_ATTACHMENT_BUCKET,
+        a.storage_path,
+        ADVICE_ATTACHMENT_LIMITS.readLinkSeconds,
+      );
+      return {
+        id: a.id,
+        url: link.url,
+        expires_at: link.expiresAt.toISOString(),
+        content_type: a.content_type,
+        byte_size: a.byte_size,
+        mine: a.uploaded_by === authUserId,
+        created_at: a.created_at.toISOString(),
+      };
+    }),
+  );
+}
+
+export interface ReferralRow {
+  id: string;
+  from_case_id: string;
+  to_provider_id: string;
+  to_provider_name: string;
+  proposed_by: string;
+  status: AdviceReferralView['status'];
+  share_attachments: boolean;
+  to_case_id: string | null;
+  decided_at: Date | null;
+  created_at: Date;
+}
+
+export const REFERRAL_SELECT = `SELECT rf.id, rf.from_case_id, rf.to_provider_id,
+    tp.display_name AS to_provider_name, rf.proposed_by, rf.status, rf.share_attachments,
+    rf.to_case_id, rf.decided_at, rf.created_at
+  FROM public.advice_referral rf
+  JOIN public.advice_provider tp ON tp.id = rf.to_provider_id`;
+
+/** The latest referral proposed on a case, or null. */
+export async function latestReferral(db: Db, caseId: string): Promise<ReferralRow | null> {
+  const [row] = await db.$queryRawUnsafe<ReferralRow[]>(
+    `${REFERRAL_SELECT}
+      WHERE rf.from_case_id = $1::uuid AND rf.deleted_at IS NULL
+      ORDER BY rf.created_at DESC, rf.id DESC
+      LIMIT 1`,
+    caseId,
+  );
+  return row ?? null;
+}
+
+/**
+ * A referral as the case's participants see it. The new case is the
+ * requester's alone to open: the referring provider learns that it was
+ * accepted, never what happens next.
+ */
+const presentReferral = (rf: ReferralRow, side: 'requester' | 'provider'): AdviceReferralView => ({
+  id: rf.id,
+  status: rf.status,
+  to_provider: { id: rf.to_provider_id, display_name: rf.to_provider_name },
+  share_attachments: rf.share_attachments,
+  to_case_id: side === 'requester' ? rf.to_case_id : null,
+  created_at: rf.created_at.toISOString(),
+  decided_at: rf.decided_at ? rf.decided_at.toISOString() : null,
+});
+
+/**
+ * Ends a referral still waiting for the requester's answer, because its case
+ * closed. Nothing was shared, so nothing is undone. Audited per referral,
+ * ids and statuses only. Runs inside the caller's audited transaction.
+ */
+export async function withdrawWaitingReferral(
+  tx: AuditTx,
+  caseId: string,
+  actor: { actorType: 'farmer' | 'buyer'; actorId: string },
+): Promise<void> {
+  const ended = await tx.$queryRawUnsafe<{ id: string; to_provider_id: string }[]>(
+    `UPDATE public.advice_referral
+        SET status = 'withdrawn', decided_at = now(), updated_at = now()
+      WHERE from_case_id = $1::uuid AND status = 'proposed' AND deleted_at IS NULL
+      RETURNING id, to_provider_id`,
+    caseId,
+  );
+  for (const rf of ended) {
+    await writeAudit(tx, {
+      entityType: 'advice_referral',
+      entityId: rf.id,
+      actorType: actor.actorType,
+      actorId: actor.actorId,
+      action: 'advice_referral.withdrawn',
+      before: { status: 'proposed' },
+      after: { status: 'withdrawn', from_case_id: caseId, because: 'case_closed' },
+    });
+  }
+}
+
+/** Who referred this case, if an accepted referral opened it. */
+async function referredFrom(
+  db: Db,
+  row: CaseRow,
+  side: 'requester' | 'provider',
+): Promise<AdviceCaseView['referred_from']> {
+  const [found] = await db.$queryRawUnsafe<{ from_case_id: string; provider_name: string }[]>(
+    `SELECT rf.from_case_id, fp.display_name AS provider_name
+       FROM public.advice_referral rf
+       JOIN public.advice_case fc ON fc.id = rf.from_case_id
+       JOIN public.advice_provider fp ON fp.id = fc.provider_id
+      WHERE rf.to_case_id = $1::uuid AND rf.status = 'accepted' AND rf.deleted_at IS NULL`,
+    row.id,
+  );
+  if (!found) return null;
+  return {
+    provider_name: found.provider_name,
+    case_id: side === 'requester' ? found.from_case_id : null,
+  };
+}
+
+/**
+ * THE ONLY SHAPE A CASE LEAVES IN, from the reader's side. `detail` (the case
+ * page) also reads the requester's shared details for the provider, the
+ * photos as expiring links, and the referral either way; lists leave them off.
  */
 export async function presentCase(
   db: Db,
   row: CaseRow,
   authUserId: string,
-  withShared = false,
+  detail = false,
 ): Promise<AdviceCaseView> {
   const side = sideOf(row, authUserId);
+  const referral = detail ? await latestReferral(db, row.id) : null;
   return {
     id: row.id,
     my_side: side,
@@ -251,7 +413,7 @@ export async function presentCase(
     preferred_contact: row.preferred_contact,
     share_details: row.share_details,
     shared:
-      side === 'provider' && row.share_details && withShared ? await sharedDetails(db, row) : null,
+      side === 'provider' && row.share_details && detail ? await sharedDetails(db, row) : null,
     status: row.status,
     outcome: row.outcome,
     closed_at: row.closed_at ? row.closed_at.toISOString() : null,
@@ -262,5 +424,8 @@ export async function presentCase(
     unread: unread(row, authUserId),
     created_at: row.created_at.toISOString(),
     updated_at: row.updated_at.toISOString(),
+    attachments: detail ? await attachmentLinks(db, row, authUserId) : null,
+    referral: referral ? presentReferral(referral, side) : null,
+    referred_from: detail ? await referredFrom(db, row, side) : null,
   };
 }

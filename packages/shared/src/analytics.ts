@@ -16,8 +16,10 @@ import { DISPLAY_TIME_ZONE, DISPLAY_UTC_OFFSET } from './staff-permissions';
  * applies. The page, the Definitions sheet and the tests read this one list,
  * so a figure cannot be shown without the sentence that says what it is.
  *
- * Advice usage and case outcomes are NOT here yet: advice is being built on
- * other branches, and its figures join this list when its tables exist.
+ * 2026-10-25: advice usage and case resolution joined the list (the
+ * "Advice" group): providers, approved advisers, requests, closures by
+ * outcome, time to close, feedback, adviser applications and referrals.
+ * Counts and averages only -- no question, message, comment or photo is read.
  */
 
 // ---------------------------------------------------------------------------
@@ -146,18 +148,34 @@ export function resolveAnalyticsWindow(
 // THE DEFINITIONS
 // ---------------------------------------------------------------------------
 
-export const METRIC_GROUPS = ['accounts', 'participation', 'marketplace', 'system'] as const;
+export const METRIC_GROUPS = [
+  'accounts',
+  'participation',
+  'marketplace',
+  'advice',
+  'system',
+] as const;
 export type MetricGroup = (typeof METRIC_GROUPS)[number];
 
 export const METRIC_GROUP_LABELS: Readonly<Record<MetricGroup, string>> = {
   accounts: 'Accounts',
   participation: 'Participation',
   marketplace: 'Marketplace',
+  advice: 'Advice',
   system: 'System',
 };
 
 /** What a metric counts: the unit is part of the definition, never implied. */
-export type MetricUnit = 'people' | 'accounts' | 'profiles' | 'records' | 'events' | 'phones';
+export type MetricUnit =
+  | 'people'
+  | 'accounts'
+  | 'profiles'
+  | 'records'
+  | 'events'
+  | 'phones'
+  // 2026-10-25: a median and an average (advice), not counts.
+  | 'days'
+  | 'stars';
 
 export interface MetricDefinition {
   readonly id: string;
@@ -190,6 +208,20 @@ export interface MetricDefinition {
 const COUNT = 'None: a count.';
 const IN_WINDOW = 'Created in the window (Juba days, both ends included).';
 const NOW = 'As it stands now; the window does not apply.';
+
+/** ADVICE_TOPICS (advice-topics.ts), in words. */
+const ADVICE_TOPIC_KEYS = {
+  crops: 'Crops',
+  livestock: 'Livestock',
+  soil_fertiliser: 'Soil and fertiliser',
+  pests_diseases: 'Pests and diseases',
+  water_irrigation: 'Water and irrigation',
+  post_harvest: 'Post-harvest and storage',
+  marketing_prices: 'Marketing and prices',
+  finance_business: 'Finance and business',
+  climate_weather: 'Climate and weather',
+  other: 'Other',
+} as const;
 
 const ACCOUNT_KIND_KEYS = {
   farmer: 'Farmer accounts',
@@ -708,6 +740,173 @@ export const ANALYTICS_METRICS: readonly MetricDefinition[] = [
     },
   },
 
+  // ---- Advice (2026-10-25) --------------------------------------------------
+  {
+    id: 'advice.providers_published',
+    group: 'advice',
+    label: 'Advice providers published',
+    unit: 'profiles',
+    definition:
+      'Advice profiles published by their owners now whose account is live (not removed or ' +
+      'suspended): the providers the directory shows. Publishing needs no review, so this is ' +
+      'not a count of approved advisers.',
+    denominator: COUNT,
+    source:
+      "advice_provider (status 'published'), soft-deleted profiles excluded, account live " +
+      'through farmer and buyer',
+    window: NOW,
+    stateRule: null,
+  },
+  {
+    id: 'advice.approved_advisers',
+    group: 'advice',
+    label: 'Approved advisers',
+    unit: 'profiles',
+    definition:
+      'Advice providers holding an "Approved adviser" approval now: approved by CORWADO and ' +
+      'not revoked since, whether or not their profile is published at the moment.',
+    denominator: COUNT,
+    source: 'advice_provider (approved_at set), soft-deleted profiles excluded',
+    window: NOW,
+    stateRule: null,
+  },
+  {
+    id: 'advice.requests',
+    group: 'advice',
+    label: 'Advice requests made',
+    unit: 'records',
+    definition:
+      'Advice requests (cases) created in the window, by topic. A case opened by an accepted ' +
+      'referral is a new case and is counted too; referrals themselves are counted below. A ' +
+      'count only: no question is read.',
+    denominator: COUNT,
+    source: 'advice_case (topic), soft-deleted cases excluded',
+    window: IN_WINDOW,
+    stateRule: null,
+    breakdown: { label: 'Topic', keys: ADVICE_TOPIC_KEYS },
+  },
+  {
+    id: 'advice.cases_closed',
+    group: 'advice',
+    label: 'Advice cases closed',
+    unit: 'records',
+    definition:
+      'Advice cases closed in the window, by outcome: resolved and cancelled are the ' +
+      "requester's to choose, referred is the provider's (or follows an accepted referral), and " +
+      'either may close a case unresolved.',
+    denominator: COUNT,
+    source: "advice_case (status 'closed', outcome, closed_at), soft-deleted cases excluded",
+    window: 'Closed in the window.',
+    stateRule: null,
+    breakdown: {
+      label: 'Outcome',
+      keys: {
+        resolved: 'Resolved',
+        referred: 'Referred to another provider',
+        closed_unresolved: 'Closed unresolved',
+        cancelled: 'Cancelled',
+      },
+    },
+  },
+  {
+    id: 'advice.median_days_to_close',
+    group: 'advice',
+    label: 'Median days to close an advice case',
+    unit: 'days',
+    definition:
+      'The median time from a case being created to its being closed, in days to one decimal ' +
+      'place, over the cases closed in the window, whatever the outcome. Shown as not measured, ' +
+      'never as 0, when no case closed in the window.',
+    denominator: 'Advice cases closed in the same window.',
+    source: 'advice_case (created_at, closed_at), soft-deleted cases excluded',
+    window: 'Closed in the window.',
+    stateRule: null,
+  },
+  {
+    id: 'advice.feedback_given',
+    group: 'advice',
+    label: 'Advice feedback given',
+    unit: 'records',
+    definition:
+      'Advice cases the requester rated in the window (once per case, after it closed), by the ' +
+      'number of stars given. A count only: no comment is read.',
+    denominator: COUNT,
+    source:
+      'audit_event (advice_case.feedback), joined to advice_case (feedback_rating), ' +
+      'soft-deleted cases excluded',
+    window: 'Rated in the window.',
+    stateRule: null,
+    breakdown: {
+      label: 'Rating',
+      keys: { '1': '1 star', '2': '2 stars', '3': '3 stars', '4': '4 stars', '5': '5 stars' },
+    },
+  },
+  {
+    id: 'advice.average_rating',
+    group: 'advice',
+    label: 'Average advice rating',
+    unit: 'stars',
+    definition:
+      'The average of the ratings (1 to 5 stars) given in the window, to one decimal place. ' +
+      'Shown as not measured, never as 0, when no rating was given in the window.',
+    denominator: 'Advice feedback given in the same window.',
+    source:
+      'audit_event (advice_case.feedback), joined to advice_case (feedback_rating), ' +
+      'soft-deleted cases excluded',
+    window: 'Rated in the window.',
+    stateRule: null,
+  },
+  {
+    id: 'advice.applications_submitted',
+    group: 'advice',
+    label: 'Adviser applications submitted',
+    unit: 'records',
+    definition:
+      'Applications to be an approved adviser submitted in the window, whatever has happened ' +
+      'to them since. An application made again after a decline is counted again.',
+    denominator: COUNT,
+    source: 'adviser_application (created_at), soft-deleted applications excluded',
+    window: 'Submitted in the window.',
+    stateRule: null,
+  },
+  {
+    id: 'advice.applications_decided',
+    group: 'advice',
+    label: 'Adviser applications decided',
+    unit: 'records',
+    definition:
+      'Applications CORWADO approved or declined in the window, whenever they were submitted. ' +
+      'A later revocation does not remove an approval from the window it was given in.',
+    denominator: COUNT,
+    source: 'audit_event (adviser_application.approved, adviser_application.declined)',
+    window: 'Decided in the window.',
+    stateRule: null,
+    breakdown: { label: 'Decision', keys: { approved: 'Approved', declined: 'Declined' } },
+  },
+  {
+    id: 'advice.referrals',
+    group: 'advice',
+    label: 'Advice referrals proposed',
+    unit: 'records',
+    definition:
+      'Referrals a provider proposed in the window, by where they stand now: waiting for the ' +
+      'requester, accepted (a new case was opened with the other provider), declined by the ' +
+      'requester, or withdrawn.',
+    denominator: COUNT,
+    source: 'advice_referral (status), soft-deleted referrals excluded',
+    window: 'Proposed in the window.',
+    stateRule: null,
+    breakdown: {
+      label: 'Now',
+      keys: {
+        proposed: 'Waiting for the requester',
+        accepted: 'Accepted',
+        declined: 'Declined',
+        withdrawn: 'Withdrawn',
+      },
+    },
+  },
+
   // ---- System ---------------------------------------------------------------
   {
     id: 'system.failures',
@@ -738,7 +937,12 @@ export const ANALYTICS_METRICS: readonly MetricDefinition[] = [
 
 /** What every analytics page and export says it cannot show. */
 export const ANALYTICS_LIMITATIONS: readonly string[] = [
-  'Advice usage and case outcomes are not measured yet; they are added when advice is built.',
+  'Advice figures are national only: an advice case carries no state. They are counts and ' +
+    'averages; no question, message, comment or photo is read.',
+  'Whether advice changed a yield or an income is not measured: advice given is not evidence ' +
+    'of either.',
+  'A median or an average with nothing in the window to measure is shown as not measured, ' +
+    'never as 0.',
   'Sync rejections are kept on the phone with their reason code and are not reported to the ' +
     'server, so they are not counted. Failed exports and failed page loads are not recorded either.',
   'Sales recorded by farmers are self-reported. Only delivered purchase orders are confirmed trades.',
@@ -756,7 +960,7 @@ export interface AnalyticsMetricValue {
   readonly id: string;
   /** Null when the figure cannot be produced; `unavailable` says why. Never a silent zero. */
   readonly value: number | null;
-  readonly unavailable?: 'not_located' | 'not_in_database';
+  readonly unavailable?: 'not_located' | 'not_in_database' | 'none_in_window';
   readonly breakdown?: readonly { key: string; label?: string; value: number }[];
 }
 
@@ -776,6 +980,7 @@ export const UNAVAILABLE_TEXT: Readonly<
 > = {
   not_located: 'These rows carry no state, so the figure is national only.',
   not_in_database: 'The table behind this figure is not in the database yet.',
+  none_in_window: 'Nothing in the window to take a median or an average of.',
 };
 
 export const metricDefinition = (id: string): MetricDefinition | undefined =>

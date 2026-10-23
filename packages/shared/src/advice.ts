@@ -136,6 +136,13 @@ export const ADVICE_MESSAGES = {
   fieldNotForAction: 'This field is not used for that change.',
   // 2026-10-24: the directory's "Approved advisers only" filter.
   approvedFilterInvalid: 'Use approved=1 to show approved advisers only, or leave it out.',
+  // 2026-10-25: photos on a question, and referral with consent (part 3).
+  attachmentTypeInvalid: 'Choose a JPEG, PNG or WebP photo.',
+  attachmentTooLarge: 'A photo on an advice request can be at most 2 MB.',
+  attachmentSizeInvalid: 'Give the photo size as a whole number of bytes.',
+  uploadIdInvalid: 'The upload identifier is not in the expected form.',
+  referralActionUnknown: 'Choose accept, decline or withdraw.',
+  shareAttachmentsInvalid: 'Say whether to share your photos: true or false.',
 } as const;
 
 const M = ADVICE_MESSAGES;
@@ -327,6 +334,102 @@ export const adviceCasePatchSchema = z
 export type AdviceCasePatch = z.infer<typeof adviceCasePatchSchema>;
 
 // ---------------------------------------------------------------------------
+// PHOTOS ON A CASE (2026-10-25) -- POST .../attachments/upload-url, then
+// POST .../attachments/confirm; DELETE .../attachments/:attachmentId
+// ---------------------------------------------------------------------------
+
+/** The private bucket advice photos live in. Created by `pnpm storage:buckets`. */
+export const ADVICE_ATTACHMENT_BUCKET = 'advice-attachments';
+
+export const ADVICE_ATTACHMENT_CONTENT_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
+export type AdviceAttachmentContentType = (typeof ADVICE_ATTACHMENT_CONTENT_TYPES)[number];
+
+export const ADVICE_ATTACHMENT_LIMITS = {
+  /** 2 MB. The screen shrinks a photo before it is sent. */
+  maxBytes: 2 * 1024 * 1024,
+  /** The longest side the screen resizes to: enough to see a leaf spot. */
+  maxPixels: 1280,
+  /** Photos the requester may add while sending the question. */
+  atCreate: 3,
+  /** Photos one case may hold, from both sides together. */
+  perCase: 10,
+  /** How long a read link to a photo lives, in seconds. */
+  readLinkSeconds: 300,
+} as const;
+
+const ATTACHMENT_EXTENSION: Record<AdviceAttachmentContentType, string> = {
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+};
+
+/**
+ * Where one photo of a case lives: under the case's id, one object per
+ * upload, so a grant can never overwrite a photo already there.
+ */
+export const adviceAttachmentPath = (
+  caseId: string,
+  uploadId: string,
+  contentType: AdviceAttachmentContentType,
+) => `${caseId}/${uploadId}.${ATTACHMENT_EXTENSION[contentType]}`;
+
+const attachmentType = z.enum(ADVICE_ATTACHMENT_CONTENT_TYPES, {
+  error: () => M.attachmentTypeInvalid,
+});
+
+/** Asked before any byte travels: a type and a size the bucket will accept. */
+export const adviceAttachmentUploadSchema = z.strictObject({
+  content_type: attachmentType,
+  byte_size: z
+    .number({ error: () => M.attachmentSizeInvalid })
+    .int(M.attachmentSizeInvalid)
+    .min(1, M.attachmentSizeInvalid)
+    .max(ADVICE_ATTACHMENT_LIMITS.maxBytes, M.attachmentTooLarge),
+});
+export type AdviceAttachmentUpload = z.infer<typeof adviceAttachmentUploadSchema>;
+
+/** The upload the grant was for. The server checks what actually arrived. */
+export const adviceAttachmentConfirmSchema = z.strictObject({
+  upload_id: z.string({ error: () => M.uploadIdInvalid }).uuid(M.uploadIdInvalid),
+  content_type: attachmentType,
+});
+export type AdviceAttachmentConfirm = z.infer<typeof adviceAttachmentConfirmSchema>;
+
+// ---------------------------------------------------------------------------
+// REFERRAL WITH CONSENT (2026-10-25) -- POST / PATCH .../cases/:id/referral
+// ---------------------------------------------------------------------------
+
+export const ADVICE_REFERRAL_STATUSES = ['proposed', 'accepted', 'declined', 'withdrawn'] as const;
+export type AdviceReferralStatus = (typeof ADVICE_REFERRAL_STATUSES)[number];
+
+export const ADVICE_REFERRAL_ACTIONS = ['accept', 'decline', 'withdraw'] as const;
+export type AdviceReferralAction = (typeof ADVICE_REFERRAL_ACTIONS)[number];
+
+/** The case's provider proposes another published provider, chosen from the directory. */
+export const adviceReferralProposeSchema = z.strictObject({
+  to_provider_id: idSchema,
+});
+export type AdviceReferralPropose = z.infer<typeof adviceReferralProposeSchema>;
+
+/**
+ * The answer to a waiting proposal: the requester accepts or declines; the
+ * provider who proposed it withdraws it. Sharing photos is OFF unless the
+ * requester ticks it, and is part of an acceptance only.
+ */
+export const adviceReferralDecideSchema = z
+  .strictObject({
+    action: z.enum(ADVICE_REFERRAL_ACTIONS, { error: () => M.referralActionUnknown }),
+    share_attachments: z.boolean({ error: () => M.shareAttachmentsInvalid }).optional(),
+  })
+  .superRefine((value, ctx) => {
+    if (value.action !== 'accept' && value.share_attachments !== undefined) {
+      ctx.addIssue({ code: 'custom', path: ['share_attachments'], message: M.fieldNotForAction });
+    }
+  })
+  .transform((value) => ({ ...value, share_attachments: value.share_attachments ?? false }));
+export type AdviceReferralDecide = z.infer<typeof adviceReferralDecideSchema>;
+
+// ---------------------------------------------------------------------------
 // WHAT LEAVES THE API
 // ---------------------------------------------------------------------------
 
@@ -387,4 +490,42 @@ export interface AdviceCaseView {
   unread: boolean;
   created_at: string;
   updated_at: string;
+  /**
+   * 2026-10-25: the case's photos, each as a read link that expires, for its
+   * two participants only. Null in lists: only the case page reads them.
+   */
+  attachments: AdviceAttachmentView[] | null;
+  /** The latest referral proposed on this case; null in lists and when there is none. */
+  referral: AdviceReferralView | null;
+  /** Set when this case was opened by an accepted referral. Null in lists. */
+  referred_from: {
+    /** The provider who referred it (a public name). */
+    provider_name: string;
+    /** The earlier case, for the requester only; the new provider never sees it. */
+    case_id: string | null;
+  } | null;
+}
+
+/** One photo on a case. The path never leaves the API; the link expires. */
+export interface AdviceAttachmentView {
+  id: string;
+  url: string;
+  expires_at: string;
+  content_type: AdviceAttachmentContentType;
+  byte_size: number;
+  /** Added by the reader, who alone may remove it. */
+  mine: boolean;
+  created_at: string;
+}
+
+/** A referral from this case, as either participant sees it. */
+export interface AdviceReferralView {
+  id: string;
+  status: AdviceReferralStatus;
+  to_provider: { id: string; display_name: string };
+  share_attachments: boolean;
+  /** The case opened with the other provider: the requester's to open, null for the provider. */
+  to_case_id: string | null;
+  created_at: string;
+  decided_at: string | null;
 }

@@ -5,7 +5,12 @@ import {
   adviceCasePatchSchema,
 } from '@agri-erp/shared';
 
-import { loadCase, presentCase, sideOf } from '../../../../../lib/api/advice';
+import {
+  loadCase,
+  presentCase,
+  sideOf,
+  withdrawWaitingReferral,
+} from '../../../../../lib/api/advice';
 import { audited, writeAudit } from '../../../../../lib/api/audit';
 import { unprocessable } from '../../../../../lib/api/errors';
 import { checkId } from '../../../../../lib/api/market-posts';
@@ -30,6 +35,9 @@ import { prisma } from '../../../../../lib/db';
  *             referred or closed unresolved (ADVICE_OUTCOMES_BY_SIDE)
  *   feedback  the requester rates it, 1 to 5 with an optional comment,
  *             once it is closed, once
+ * Closing also withdraws a referral still waiting for the requester's answer
+ * (2026-10-25). GET's case carries its photos as read links that expire, and
+ * its referral, for the two participants only.
  * Repeating a change already made returns the case as it is. A closed case
  * takes no other change. Audited with statuses and the rating, never the
  * question, a message or the comment.
@@ -97,6 +105,9 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
             before: { status: current.status },
             after: { status: 'closed', outcome, closed_by_side: side },
           });
+          // 2026-10-25: a referral still waiting for the requester's answer
+          // ends with the case; nothing was shared, so nothing is undone.
+          await withdrawWaitingReferral(tx, current.id, entity);
           return loadCase(tx, current.id, reader);
         }
 
