@@ -104,8 +104,9 @@ describe('a service leaves with its suspended or removed poster, farmer or buyer
 
   it('the public service shape names no farmer, buyer or sign-in id and no phone', () => {
     const body =
-      posts.match(/export const presentService = \(row: ServiceRow\) => \(\{([\s\S]*?)\n\}\);/)?.[1] ??
-      '';
+      posts.match(
+        /export const presentService = \(row: ServiceRow\) => \(\{([\s\S]*?)\n\}\);/,
+      )?.[1] ?? '';
     expect(body.length).toBeGreaterThan(100);
     for (const key of ['farmer_id', 'buyer_id', 'auth_user_id', 'contact_phone', 'payam_id']) {
       expect(body, `presentService returns ${key}`).not.toMatch(new RegExp(`\\b${key}\\s*:`));

@@ -242,7 +242,11 @@ describe("a buyer account's service (2026-10-26)", () => {
   it('keeps every other rule a farmer has', () => {
     expect(
       reasons(
-        buyerServiceListingSchema.safeParse({ ...service, state_id: 'SS-CE', price_ssp: undefined }),
+        buyerServiceListingSchema.safeParse({
+          ...service,
+          state_id: 'SS-CE',
+          price_ssp: undefined,
+        }),
       ),
     ).toContain(MARKET_POST_MESSAGES.priceOrNegotiable);
   });

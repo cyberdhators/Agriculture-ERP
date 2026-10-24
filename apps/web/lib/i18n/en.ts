@@ -681,7 +681,8 @@ export const en = {
   'requests.phoneHint': 'Leave empty to use your account phone.',
   'requests.viewOnMarket': 'View on the market',
   'svc.marketTitle': 'Services for hire',
-  'svc.marketLead': 'Tractor hire, transport, processing and storage offered by farmers and organisations.',
+  'svc.marketLead':
+    'Tractor hire, transport, processing and storage offered by farmers and organisations.',
   'svc.marketEmpty': 'No services match.',
   'svc.search': 'Search service or place',
   'svc.anyType': 'Any service',
