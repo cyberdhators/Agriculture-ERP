@@ -4521,3 +4521,33 @@ services and seeks advice". Migration
   the market. The farmer side is unchanged.
 - **Audit:** no new key -- `listing.created`, `listing.updated` and
   `listing.status_changed`, with the poster's type as the actor.
+
+## Notifications, suspension notice, appeals (2026-10-26) — fixes from the client acceptance test
+
+CORWADO's acceptance test (24 October 2026) found that nobody is told about
+adviser decisions or a suspension, that an old session came back after a
+restore, that appeals were not built and that product reports had no decision
+buttons. The specification: "Notify relevant users of inquiries, case updates,
+invitations and account actions" and "Suspend with reason/notification,
+review appeal and restore".
+
+- **In-app notices, fixed sentences only:** adviser decisions (question,
+  approved, not approved, revoked); account restored; a sender's first message
+  in a conversation (one notice per side, naming only the kind of post); an
+  advice case started or closed; a referral proposed or accepted. No message,
+  case or reason text ever enters a notice. Every notice is audited as
+  `notification.created`.
+- **Suspension:** one essential SMS to the account's +211 mobile naming the
+  reason CODE's label (never the free-text reason) and the appeal path
+  (agrionesouthsudan.com/help, which redirects to www); the outcome
+  (sent / failed / no mobile) is in the suspension's audit row; a failed text
+  never undoes the suspension. All open sessions are ended before the ban.
+  OWNER TO CONFIRM: SMS on suspension is an essential service message.
+- **Appeals are support messages** with the topic "Appeal a decision", not
+  tickets (helpdesk ticketing stays out of scope); staff see an Appeals filter
+  in Support messages, linked to the account where it can be identified.
+- **Product reports:** Reviewing / Resolve / Dismiss / Remove listing with a
+  reason code and a written reason, as the server already allowed.
+- **Open:** channel preferences (essential vs promotional) have no table yet;
+  the older listing-withdrawn notice still names the listing and staff's
+  reason (left as it was; the notice scan names it as the one exception).
