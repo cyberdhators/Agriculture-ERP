@@ -2,16 +2,51 @@
 
 import { useCallback, useEffect, useState } from 'react';
 
-import type { ProductReport } from '@agri-erp/shared';
+import type { ModerationAction, ProductReport } from '@agri-erp/shared';
 
+import { ReasonCodeSelect } from '@/components/admin/ReasonCodeSelect';
 import { ServiceNotConnectedError } from '@/lib/communications/api';
-import { listProductReports } from '@/lib/product-reports/api';
+import { decideProductReport, listProductReports } from '@/lib/product-reports/api';
 import { formatDate } from '@/lib/format';
 import { usePreview } from '@/lib/preview';
 
-import { Button, Dialog, Notice, PageHeader, Stamp } from '../ui';
+import { Button, Dialog, Field, Notice, PageHeader, Stamp, Textarea } from '../ui';
 import { DataTable, LoadingState, Pagination, UnavailableState } from '../ui/data';
+import { ConfirmationDialog } from '../ui/feedback';
 import { reasonLabel, statusLabel, statusTone } from './presentation';
+
+/** The written reason a decision needs, as on the other report queue; the server keeps up to 500. */
+const NOTE_MIN = 5;
+
+/**
+ * The decisions the server allows from each report status
+ * (app/api/admin/product-reports/[id]/route.ts TRANSITIONS; it checks them
+ * again). Resolved and dismissed are terminal, so they offer nothing.
+ * `suspend_listing` is accepted by the server but only marks the report
+ * reviewing -- it does nothing to the listing -- so it is not offered under a
+ * name that would say otherwise.
+ */
+const ACTIONS: Record<string, ReadonlyArray<{ action: ModerationAction; label: string }>> = {
+  new: [
+    { action: 'mark_reviewing', label: 'Reviewing' },
+    { action: 'resolve', label: 'Resolve' },
+    { action: 'dismiss', label: 'Dismiss' },
+    { action: 'remove_listing', label: 'Remove listing' },
+  ],
+  reviewing: [
+    { action: 'resolve', label: 'Resolve' },
+    { action: 'dismiss', label: 'Dismiss' },
+    { action: 'remove_listing', label: 'Remove listing' },
+  ],
+};
+
+const CONSEQUENCE: Record<string, string> = {
+  mark_reviewing: 'The report is marked as being reviewed. The listing stays on the market.',
+  resolve: 'The report is settled as resolved. The listing stays on the market.',
+  dismiss: 'The report is settled as dismissed. The listing stays on the market.',
+  remove_listing:
+    "The listing leaves the market (it is not deleted) and the report is settled as resolved. The seller's account is not suspended: that is a separate decision on their record.",
+};
 
 /**
  * PRODUCT REPORTS — the administrator's marketplace moderation queue.
@@ -30,12 +65,14 @@ import { reasonLabel, statusLabel, statusTone } from './presentation';
  * rendered differently, because "no listing has been reported" and "nobody has
  * looked" are opposite statements.
  *
- * THIS SCREEN READS; IT DOES NOT YET MODERATE. The server enforces the state
- * machine on `PATCH /api/admin/product-reports/:id` — mark reviewing, resolve,
- * dismiss, remove listing, with resolved and dismissed terminal — but no
- * button here calls it, because wiring those decisions is a change the owner
- * has not asked for. The screen offers nothing it cannot do rather than a
- * control whose consequences have not been agreed.
+ * DECISIONS (2026-10-26, CORWADO's acceptance test: "the server accepts
+ * them but the screen has no buttons"). The report's detail offers the
+ * decisions the server allows from its status -- mark reviewing, resolve,
+ * dismiss, remove listing -- each through a dialog with a reason code from
+ * Settings and a required written reason, as the buying-request and service
+ * queue does (components/market-posts/MarketReports.tsx). The server enforces
+ * the state machine and keeps the reason in the audit row. Removing a listing
+ * is separate from the seller's account standing and from adviser approval.
  */
 export function ProductReports() {
   const { role, hydrated } = usePreview();
@@ -51,6 +88,51 @@ export function ProductReports() {
   const [error, setError] = useState<string | undefined>();
   const [detail, setDetail] = useState<ProductReport | null>(null);
   const [attempt, setAttempt] = useState(0);
+  const [pending, setPending] = useState<{
+    report: ProductReport;
+    action: ModerationAction;
+    label: string;
+  } | null>(null);
+  const [reasonCode, setReasonCode] = useState('');
+  const [prefill, setPrefill] = useState('');
+  const [note, setNote] = useState('');
+  const [noteError, setNoteError] = useState<string | undefined>();
+  const [deciding, setDeciding] = useState(false);
+  const [decisionFailure, setDecisionFailure] = useState<string | null>(null);
+
+  function openDecision(report: ProductReport, action: ModerationAction, label: string) {
+    setDetail(null);
+    setPending({ report, action, label });
+    setReasonCode('');
+    setPrefill('');
+    setNote('');
+    setNoteError(undefined);
+    setDecisionFailure(null);
+  }
+
+  async function decide() {
+    if (!pending) return;
+    const written = note.trim();
+    if (written.length < NOTE_MIN) {
+      setNoteError(`Give a reason of at least ${NOTE_MIN} characters.`);
+      return;
+    }
+    setDeciding(true);
+    setDecisionFailure(null);
+    try {
+      await decideProductReport(pending.report.id, {
+        action: pending.action,
+        note: written,
+        ...(reasonCode ? { reason_code: reasonCode } : {}),
+      });
+      setPending(null);
+      setAttempt((n) => n + 1);
+    } catch (e) {
+      setDecisionFailure(e instanceof Error ? e.message : 'The decision was not recorded.');
+    } finally {
+      setDeciding(false);
+    }
+  }
 
   const load = useCallback(() => {
     if (!isAdmin) return;
@@ -241,13 +323,73 @@ export function ProductReports() {
              * answered — the direction that can be widened later without a
              * privacy incident.
              */}
-            <p className="small muted" style={{ marginBlockStart: 'var(--s-4)' }}>
-              Moderation actions are not available: each needs a state transition and its own
-              authorization on the server, and none exists yet.
-            </p>
+            {(ACTIONS[detail.status] ?? []).length > 0 ? (
+              <div
+                style={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: 8,
+                  marginBlockStart: 'var(--s-4)',
+                }}
+              >
+                {(ACTIONS[detail.status] ?? []).map((a) => (
+                  <Button
+                    key={a.action}
+                    size="small"
+                    variant={a.action === 'remove_listing' ? 'danger' : 'secondary'}
+                    onClick={() => openDecision(detail, a.action, a.label)}
+                  >
+                    {a.label}
+                  </Button>
+                ))}
+              </div>
+            ) : (
+              <p className="small muted" style={{ marginBlockStart: 'var(--s-4)' }}>
+                This report is settled. A settled report is not reopened.
+              </p>
+            )}
           </>
         ) : null}
       </Dialog>
+
+      <ConfirmationDialog
+        open={pending !== null}
+        onCancel={() => setPending(null)}
+        onConfirm={() => void decide()}
+        title={pending ? `${pending.label}: record this decision?` : 'Record this decision?'}
+        consequence={pending ? (CONSEQUENCE[pending.action] ?? '') : ''}
+        confirmLabel={pending?.label ?? 'Confirm'}
+        destructive={pending?.action === 'remove_listing'}
+        busy={deciding}
+      >
+        {decisionFailure ? <Notice kind="error">{decisionFailure}</Notice> : null}
+        <ReasonCodeSelect
+          target={pending?.action === 'remove_listing' ? 'listing' : 'report'}
+          value={reasonCode}
+          onPick={(code, label) => {
+            setReasonCode(code);
+            const next = code ? `${label}: ` : '';
+            // Replace only an empty reason or one this list wrote; never what was typed.
+            if (note.trim() === '' || note === prefill) setNote(next);
+            setPrefill(next);
+          }}
+        />
+        <Field
+          label="Reason"
+          hint={`At least ${NOTE_MIN} characters, up to 500. Kept in the audit trail.`}
+          error={noteError}
+        >
+          {(ids) => (
+            <Textarea
+              {...ids}
+              rows={3}
+              maxLength={500}
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+            />
+          )}
+        </Field>
+      </ConfirmationDialog>
     </div>
   );
 }

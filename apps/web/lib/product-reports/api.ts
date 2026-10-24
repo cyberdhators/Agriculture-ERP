@@ -1,4 +1,9 @@
-import type { ProductReport, ProductReportFilter, UnreadReportCount } from '@agri-erp/shared';
+import type {
+  ModerateReport,
+  ProductReport,
+  ProductReportFilter,
+  UnreadReportCount,
+} from '@agri-erp/shared';
 
 import { ServiceNotConnectedError } from '@/lib/communications/api';
 
@@ -90,5 +95,26 @@ export async function getProductReport(id: string): Promise<ProductReport> {
 export async function getUnreadReportCount(): Promise<UnreadReportCount> {
   const body = await request<UnreadReportCount>('/api/admin/product-reports/unread-count');
   if (!body.data) throw new ProductReportApiError(500, 'empty', 'No count in the response.');
+  return body.data;
+}
+
+/**
+ * `PATCH /api/admin/product-reports/:id` -- one decision (2026-10-26,
+ * CORWADO's acceptance test: the server accepted decisions no screen offered).
+ * The server owns the state machine and checks the decision again; the
+ * written reason and the reason code go to the audit row, never to anyone else.
+ */
+export async function decideProductReport(
+  id: string,
+  decision: ModerateReport,
+): Promise<ProductReport> {
+  const body = await request<ProductReport>(
+    `/api/admin/product-reports/${encodeURIComponent(id)}`,
+    {
+      method: 'PATCH',
+      body: JSON.stringify(decision),
+    },
+  );
+  if (!body.data) throw new ProductReportApiError(500, 'empty', 'No report in the response.');
   return body.data;
 }

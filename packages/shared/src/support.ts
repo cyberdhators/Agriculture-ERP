@@ -14,7 +14,21 @@ import { phoneSchema } from './phone';
  * the route, which is the only place that knows whether a session exists.
  */
 
-export const SUPPORT_TOPICS = ['account', 'marketplace', 'messages', 'technical', 'other'] as const;
+/**
+ * 2026-10-26 (CORWADO's acceptance test, "review appeal and restore"):
+ * 'appeal' -- "Appeal a decision". An appeal is a support MESSAGE like any
+ * other (no ticket, no thread); staff see appeals on their own and, when the
+ * account can be identified, a link to the record where Restore is. A
+ * suspended person is signed out, so a visitor may appeal with their phone.
+ */
+export const SUPPORT_TOPICS = [
+  'account',
+  'marketplace',
+  'messages',
+  'technical',
+  'appeal',
+  'other',
+] as const;
 export type SupportTopic = (typeof SUPPORT_TOPICS)[number];
 
 export const SUPPORT_STATUSES = ['new', 'done'] as const;
@@ -29,7 +43,7 @@ export const SUPPORT_MESSAGES_PER_DAY = 5;
 // Each pinned in docs/api/CONVENTIONS.md §5.2.3
 export const SUPPORT_MESSAGES = {
   nameLength: 'Give your name, 2 to 120 characters.',
-  topicUnknown: 'Choose account, marketplace, messages, technical or other.',
+  topicUnknown: 'Choose account, marketplace, messages, technical, appeal or other.',
   bodyLength: 'Write your message, 10 to 2000 characters.',
   statusUnknown: 'Choose new or done.',
   doneOnly: 'A message can only be marked done.',
@@ -58,6 +72,8 @@ export type SupportMessageInput = z.infer<typeof supportMessageSchema>;
 /** The staff list's query string. */
 export const supportFilterSchema = z.strictObject({
   status: z.enum(SUPPORT_STATUSES, { error: () => S.statusUnknown }).optional(),
+  // 2026-10-26: the Appeals view.
+  topic: z.enum(SUPPORT_TOPICS, { error: () => S.topicUnknown }).optional(),
   limit: z.string().optional(),
   cursor: z.string().optional(),
 });
@@ -81,4 +97,21 @@ export interface SupportMessage {
   status: SupportStatus;
   handled_at: string | null;
   created_at: string;
+  /**
+   * 2026-10-26: for an APPEAL only, the account it is about, when it can be
+   * told: the sender's own sign-in, or a visitor's phone carried by exactly
+   * one farmer or one buyer record. Where staff open the record and Restore.
+   * Null for every other topic, and when nobody or more than one matches.
+   */
+  account: SupportAccountLink | null;
+}
+
+export interface SupportAccountLink {
+  kind: 'farmer' | 'buyer';
+  id: string;
+  /** A buyer's organisation standing, which names the Buyer accounts tab it is on. */
+  buyer_standing: string | null;
+  suspended: boolean;
+  /** 'sign_in' when the sender was signed in; 'phone' when matched by a visitor's phone. */
+  matched_by: 'sign_in' | 'phone';
 }

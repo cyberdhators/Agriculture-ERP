@@ -4,12 +4,12 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
 import { EmptyState } from '@/components/ui';
-import { noticeHref } from '@/lib/farmer-notices';
+import { noticeHref, noticeKey } from '@/lib/farmer-notices';
 import { farmerApi, FarmerApiError, useFarmerSession } from '@/lib/farmer-session';
 import { notificationsChanged } from '@/lib/farmer-unread';
 import { loadWithSnapshot } from '@/lib/offline/snapshot';
 import { formatDate } from '@/lib/format';
-import { t, type Language } from '@/lib/i18n';
+import { t, type Language, type TKey } from '@/lib/i18n';
 
 import { PageHead } from './AccountShell';
 import styles from './farmer.module.css';
@@ -91,10 +91,14 @@ function NotificationCard({
   const unread = !notification.read_at;
   // 2026-10-10 (CORWADO): a notice about a request opens the request.
   const href = noticeHref(notification.title);
+  // 2026-10-26: a fixed notice is shown in the farmer's language; an older one as stored.
+  const key = noticeKey(notification.title);
+  const title = key ? t(`${key}.title` as TKey, language) : notification.title;
+  const body = key ? t(`${key}.body` as TKey, language) : notification.body;
   const content = (
     <>
-      <div className={styles.notiTitle}>{notification.title}</div>
-      <p className="small">{notification.body}</p>
+      <div className={styles.notiTitle}>{title}</div>
+      <p className="small">{body}</p>
       <span className="small muted">
         {formatDate(notification.created_at, language)}
         {href ? ` · ${language === 'ar' ? 'افتح' : 'Open'} →` : ''}
