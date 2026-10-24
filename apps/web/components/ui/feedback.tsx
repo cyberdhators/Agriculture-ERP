@@ -120,6 +120,7 @@ export function ConfirmationDialog({
   confirmLabel = 'Confirm',
   destructive = false,
   busy = false,
+  confirmDisabled = false,
   children,
 }: {
   open: boolean;
@@ -130,6 +131,8 @@ export function ConfirmationDialog({
   confirmLabel?: string;
   destructive?: boolean;
   busy?: boolean;
+  /** Keeps the confirm button disabled, e.g. until the dialog's choices have loaded. */
+  confirmDisabled?: boolean;
   /** Room for a reason field, which the audit row will carry. */
   children?: ReactNode;
 }) {
@@ -148,7 +151,11 @@ export function ConfirmationDialog({
            * own dialog focus lands there — which is what you want when the
            * next keystroke could deactivate somebody's account.
            */}
-          <Button variant={destructive ? 'danger' : 'primary'} onClick={onConfirm} disabled={busy}>
+          <Button
+            variant={destructive ? 'danger' : 'primary'}
+            onClick={onConfirm}
+            disabled={busy || confirmDisabled}
+          >
             {busy ? 'Working…' : confirmLabel}
           </Button>
         </>

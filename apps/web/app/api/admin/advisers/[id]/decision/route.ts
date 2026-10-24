@@ -14,9 +14,11 @@ import {
 import { audited, writeAudit } from '../../../../../../lib/api/audit';
 import { notFound, unprocessable } from '../../../../../../lib/api/errors';
 import { checkId } from '../../../../../../lib/api/market-posts';
+import { notifyAccount } from '../../../../../../lib/api/notify';
 import { requirePermission } from '../../../../../../lib/api/permissions';
 import { defineRoutes, ok } from '../../../../../../lib/api/route';
 import { prisma } from '../../../../../../lib/db';
+import { type AccountNotice } from '../../../../../../lib/farmer-notices';
 
 /**
  * POST /api/admin/advisers/:id/decision { action, reason } -- a staff
@@ -36,6 +38,11 @@ import { prisma } from '../../../../../../lib/db';
  * changed here, and the suspension routes never touch an approval: the two
  * are independent, so restoring an account does not restore a revocation.
  *
+ * 2026-10-26 (CORWADO's acceptance test): the applicant is told, in the same
+ * transaction, by one in-app notice with a fixed sentence (NOTICE below). The
+ * question or the reason is never in the notice; it is on their Offer advice
+ * page.
+ *
  * A staff member may not decide on an application made from their own
  * sign-in. Staff accounts are not farmers or buyers today, so this cannot
  * arise; it is checked anyway, by sign-in id.
@@ -45,6 +52,14 @@ const AUDIT_ACTION: Record<AdviserDecision, AuditAction> = {
   approve: 'adviser_application.approved',
   decline: 'adviser_application.declined',
   revoke: 'adviser_approval.revoked',
+};
+
+/** The notice each decision sends the applicant. Fixed sentences: lib/farmer-notices.ts. */
+const NOTICE: Record<AdviserDecision, AccountNotice> = {
+  request_clarification: 'adviser_clarification_requested',
+  approve: 'adviser_approved',
+  decline: 'adviser_declined',
+  revoke: 'adviser_revoked',
 };
 
 export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
@@ -136,6 +151,11 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
           action: AUDIT_ACTION[body.action],
           before: { status: current.status },
           after: { status: rule.to, provider_id: current.provider_id, reason: body.reason },
+        });
+
+        await notifyAccount(tx, { authUserId: current.auth_user_id }, NOTICE[body.action], {
+          actorType: auth.role,
+          actorId: auth.principal.id,
         });
 
         const [fresh] = await tx.$queryRawUnsafe<StaffApplicationRow[]>(

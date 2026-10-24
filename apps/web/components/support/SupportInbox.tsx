@@ -1,8 +1,9 @@
 'use client';
 
+import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 
-import type { SupportMessage, SupportStatus } from '@agri-erp/shared';
+import type { SupportAccountLink, SupportMessage, SupportStatus } from '@agri-erp/shared';
 
 import { Button, Notice, Stamp } from '@/components/ui';
 import { formatDate } from '@/lib/format';
@@ -13,6 +14,7 @@ const TOPIC_LABEL: Record<SupportMessage['topic'], string> = {
   marketplace: 'Marketplace',
   messages: 'Messages',
   technical: 'Technical',
+  appeal: 'Appeal',
   other: 'Other',
 };
 
@@ -27,18 +29,32 @@ const FROM_LABEL: Record<SupportMessage['from_kind'], string> = {
  * (the routes refuse anyone else, and then ask for support.handle). Staff
  * read, contact the person outside the app, and mark it done. No replies,
  * assignment or tickets: the owner's choice.
+ *
+ * 2026-10-26 (CORWADO's acceptance test, "review appeal and restore"): an
+ * Appeals view, and on an appeal whose account can be told, a link to the
+ * farmer's record or the buyer's row, where Restore is. Still a message: the
+ * decision is made on the record, then the message is marked done.
  */
+
+/** Where an appeal's account is: the farmer's record, or the Buyer accounts tab its organisation is on. */
+function accountHref(account: SupportAccountLink): string {
+  if (account.kind === 'farmer') return `/farmers/${account.id}`;
+  return account.buyer_standing
+    ? `/admin/buyers?standing=${encodeURIComponent(account.buyer_standing)}`
+    : '/admin/buyers';
+}
 export function SupportInbox() {
   const { role, hydrated } = usePreview();
   const isAdmin = hydrated && role === 'admin';
   const [status, setStatus] = useState<SupportStatus>('new');
+  const [appealsOnly, setAppealsOnly] = useState(false);
   const [rows, setRows] = useState<SupportMessage[] | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
 
   const load = useCallback(() => {
     setRows(null);
-    fetch(`/api/admin/support?status=${status}&limit=100`)
+    fetch(`/api/admin/support?status=${status}${appealsOnly ? '&topic=appeal' : ''}&limit=100`)
       .then(async (res) => {
         const body = (await res.json().catch(() => ({}))) as {
           data?: SupportMessage[];
@@ -53,7 +69,7 @@ export function SupportInbox() {
         setRows([]);
         setFailure(e instanceof Error ? e.message : String(e));
       });
-  }, [status]);
+  }, [status, appealsOnly]);
 
   useEffect(() => {
     if (isAdmin) load();
@@ -111,6 +127,14 @@ export function SupportInbox() {
         >
           Done
         </Button>
+        <Button
+          size="small"
+          variant={appealsOnly ? 'primary' : 'secondary'}
+          aria-pressed={appealsOnly}
+          onClick={() => setAppealsOnly((v) => !v)}
+        >
+          Appeals
+        </Button>
       </div>
       {failure ? (
         <Notice kind="error">
@@ -122,7 +146,13 @@ export function SupportInbox() {
       ) : rows.length === 0 ? (
         <Notice kind="info" title={status === 'new' ? 'Nothing new' : 'None done yet'}>
           <p className="small">
-            {status === 'new' ? 'No message is waiting.' : 'No message has been marked done.'}
+            {appealsOnly
+              ? status === 'new'
+                ? 'No appeal is waiting.'
+                : 'No appeal has been marked done.'
+              : status === 'new'
+                ? 'No message is waiting.'
+                : 'No message has been marked done.'}
           </p>
         </Notice>
       ) : (
@@ -152,6 +182,26 @@ export function SupportInbox() {
               <p dir="auto" style={{ whiteSpace: 'pre-wrap' }}>
                 {m.body}
               </p>
+              {m.topic === 'appeal' ? (
+                m.account ? (
+                  <p className="small">
+                    <Link href={accountHref(m.account)}>
+                      {m.account.kind === 'farmer'
+                        ? 'Open the farmer record'
+                        : 'Open in Buyer accounts'}
+                    </Link>
+                    {m.account.suspended ? ' · suspended now' : ' · not suspended'}
+                    {m.account.matched_by === 'phone'
+                      ? ' · found by the phone number given; check it is the same person'
+                      : ''}
+                    . Restore is there; then mark this message done.
+                  </p>
+                ) : (
+                  <p className="small muted">
+                    No account could be matched to this appeal. Find it by the name or phone above.
+                  </p>
+                )
+              ) : null}
               {m.status === 'new' ? (
                 <Button
                   size="small"

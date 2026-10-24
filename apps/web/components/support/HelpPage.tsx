@@ -18,6 +18,7 @@ const TOPIC_KEY: Record<SupportTopic, TKey> = {
   marketplace: 'help.topicMarketplace',
   messages: 'help.topicMessages',
   technical: 'help.topicTechnical',
+  appeal: 'help.topicAppeal',
   other: 'help.topicOther',
 };
 
@@ -206,6 +207,10 @@ export function HelpPage() {
                   </Select>
                 )}
               </Field>
+              {/* 2026-10-26: an appeal -- a suspended person is signed out, so their phone finds the account. */}
+              {topic === 'appeal' ? (
+                <p className="small muted">{t('help.appealHint', language)}</p>
+              ) : null}
               <Field label={t('help.body', language)} error={fields.body}>
                 {(ids) => (
                   <Textarea

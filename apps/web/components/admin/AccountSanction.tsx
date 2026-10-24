@@ -7,7 +7,7 @@ import type { AccountStanding, SanctionKind } from '@agri-erp/shared';
 import { formatDate } from '@/lib/format';
 
 import { ProfileModeration } from './ProfileModeration';
-import { ReasonCodeSelect } from './ReasonCodeSelect';
+import { ReasonCodeSelect, useReasonCodes } from './ReasonCodeSelect';
 import { Button, Card, Field, Notice, Stamp, Textarea } from '../ui';
 import { ConfirmationDialog } from '../ui/feedback';
 
@@ -88,6 +88,10 @@ export function AccountSanction({
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState<Failure | null>(null);
   const [signInMissed, setSignInMissed] = useState<'suspend' | 'restore' | null>(null);
+  const [smsMissed, setSmsMissed] = useState(false);
+  // 2026-10-26 (acceptance test): read when the box mounts, so the dialog
+  // shows the codes at once; Suspend stays disabled until they have loaded.
+  const { loading: codesLoading } = useReasonCodes('account');
 
   const load = useCallback(async () => {
     setLoadError(null);
@@ -129,6 +133,8 @@ export function AccountSanction({
         AccountStanding & {
           sign_in_blocked?: boolean;
           sign_in_restored?: boolean;
+          sessions_ended?: boolean;
+          notice_sms?: 'sent' | 'failed' | 'no_mobile';
         }
       >(`/api/admin/accounts/${action}`, {
         method: 'POST',
@@ -141,8 +147,12 @@ export function AccountSanction({
         }),
       });
       // The record changed either way; only the sign-in service may have missed it.
-      const signInReached = answer.sign_in_blocked !== false && answer.sign_in_restored !== false;
+      const signInReached =
+        answer.sign_in_blocked !== false &&
+        answer.sign_in_restored !== false &&
+        answer.sessions_ended !== false;
       setSignInMissed(signInReached ? null : action);
+      setSmsMissed(answer.notice_sms === 'failed');
       setOpen(false);
       setReason('');
       setReasonCode('');
@@ -182,6 +192,14 @@ export function AccountSanction({
           </Button>
         </Notice>
       ) : null}
+      {smsMissed ? (
+        <Notice kind="warn" title="Text message not sent">
+          <p className="small">
+            The account was suspended, but the text message telling them so could not be sent. Tell
+            them another way if you can.
+          </p>
+        </Notice>
+      ) : null}
       {signInMissed ? (
         <Notice kind="warn" title="Sign-in not updated">
           <p className="small">
@@ -203,6 +221,7 @@ export function AccountSanction({
       confirmLabel={action === 'suspend' ? 'Suspend account' : 'Restore account'}
       destructive={action === 'suspend'}
       busy={busy}
+      confirmDisabled={action === 'suspend' && codesLoading}
     >
       {failure && !failure.fields.reason ? <Notice kind="error">{failure.message}</Notice> : null}
       {action === 'suspend' ? (

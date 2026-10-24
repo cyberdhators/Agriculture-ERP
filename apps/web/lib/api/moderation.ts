@@ -1,7 +1,15 @@
-import { type AccountStanding, type SanctionKind } from '@agri-erp/shared';
+import {
+  SETTING_DEFAULTS,
+  parseSouthSudanMobile,
+  type AccountStanding,
+  type SanctionKind,
+} from '@agri-erp/shared';
 
+import { sendOneSms, smsConfig } from '../sms/bird';
+import { suspensionSmsText } from '../suspension-sms';
 import { type AuditTx } from './audit';
 import { notFound } from './errors';
+import { currentSetting, settingsTablesPresent } from './settings';
 
 /**
  * SUSPEND AND RESTORE (2026-10-21). docs/DECISIONS.md, "Staff suspend and
@@ -71,3 +79,63 @@ export const standingOf = (account: AccountRecords): AccountStanding => ({
   reason: account.reason,
   has_sign_in: account.authUserId !== null,
 });
+
+// ---------------------------------------------------------------------------
+// THE SUSPENSION TEXT MESSAGE (2026-10-26, CORWADO's acceptance test of 24
+// October: "Suspend with reason/notification, review appeal and restore").
+// docs/DECISIONS.md, "Notices for decisions, restores, new conversations and
+// advice updates".
+// ---------------------------------------------------------------------------
+
+/** What happened to the one text message a suspension sends. Audited; never the text or the number. */
+export type SuspensionSms = 'sent' | 'failed' | 'no_mobile';
+
+/** The label of a reason code -- archived codes included, since a decision may name one. */
+export async function reasonCodeLabel(db: Db, code: string | undefined): Promise<string | null> {
+  if (!code) return null;
+  const setting = (await settingsTablesPresent(db))
+    ? (await currentSetting('reason_codes', db)).value
+    : SETTING_DEFAULTS.reason_codes;
+  return setting.codes.find((c) => c.code === code)?.label ?? null;
+}
+
+/**
+ * The account's mobile for the message: the farmer record's phone, else the
+ * buyer's, and only when it is a South Sudan mobile (+211). Never returned to
+ * a screen, never audited.
+ */
+export async function suspensionPhone(db: Db, account: AccountRecords): Promise<string | null> {
+  const [row] = await db.$queryRawUnsafe<
+    { farmer_phone: string | null; buyer_phone: string | null }[]
+  >(
+    `SELECT (SELECT phone FROM public.farmer WHERE id = $1::uuid) AS farmer_phone,
+            (SELECT phone FROM public.buyer WHERE id = $2::uuid) AS buyer_phone`,
+    account.farmerId,
+    account.buyerId,
+  );
+  for (const phone of [row?.farmer_phone, row?.buyer_phone]) {
+    if (!phone) continue;
+    const parsed = parseSouthSudanMobile(phone);
+    if (parsed.ok) return parsed.value;
+  }
+  return null;
+}
+
+/**
+ * Sends the ONE essential message a suspension sends, through the existing
+ * Bird client. An essential service message: no marketing preference stops
+ * it. NEVER THROWS -- an SMS that cannot be sent (no configuration, Bird down,
+ * refused) is 'failed', and the suspension stands regardless.
+ */
+export async function sendSuspensionSms(
+  phone: string | null,
+  label: string | null,
+): Promise<SuspensionSms> {
+  if (!phone) return 'no_mobile';
+  try {
+    const sent = await sendOneSms(smsConfig(), phone, suspensionSmsText(label));
+    return sent.accepted ? 'sent' : 'failed';
+  } catch {
+    return 'failed';
+  }
+}

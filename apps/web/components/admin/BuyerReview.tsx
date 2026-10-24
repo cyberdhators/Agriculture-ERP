@@ -1,5 +1,6 @@
 'use client';
 
+import { useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 
 import {
@@ -58,7 +59,13 @@ const CONSEQUENCES: Record<BuyerVerificationStatus, string> = {
 
 export function BuyerReview() {
   const toast = useToast();
-  const [status, setStatus] = useState<BuyerVerificationStatus>('pending');
+  // 2026-10-26: an appeal in Support links here with ?standing=, the tab its organisation is on.
+  const asked = useSearchParams().get('standing');
+  const [status, setStatus] = useState<BuyerVerificationStatus>(() =>
+    (BUYER_VERIFICATION_STATUSES as readonly string[]).includes(asked ?? '')
+      ? (asked as BuyerVerificationStatus)
+      : 'pending',
+  );
   const list = useCursorList((cursor) => adminListBuyers(status, cursor), status);
   const [pending, setPending] = useState<{
     org: AdminBuyerOrganization;

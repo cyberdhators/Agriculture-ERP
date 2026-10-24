@@ -10,6 +10,7 @@ import {
   me,
   presentMessage,
 } from '../../../../../lib/api/messaging';
+import { noticeIfFirstMessage } from '../../../../../lib/api/notify';
 import { created, defineRoutes } from '../../../../../lib/api/route';
 import { prisma } from '../../../../../lib/db';
 
@@ -20,6 +21,8 @@ import { prisma } from '../../../../../lib/db';
  * either side has blocked the conversation.
  *
  * The audit row names the conversation; the text never enters it.
+ * 2026-10-26: a side's first message sends the other one notice
+ * (noticeIfFirstMessage), naming only the kind of post.
  */
 export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   POST: {
@@ -45,6 +48,8 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
             action: 'message.sent',
             after: { conversation_id: conversation.id },
           });
+          // 2026-10-26: the other person is told of this side's FIRST message only.
+          await noticeIfFirstMessage(tx, conversation.id, sender, actorOf(auth));
         }
         return row;
       });

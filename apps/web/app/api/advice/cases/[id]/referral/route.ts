@@ -25,6 +25,11 @@ import { audited, writeAudit, type AuditTx } from '../../../../../../lib/api/aud
 import { conflict, notFound, unprocessable } from '../../../../../../lib/api/errors';
 import { checkId } from '../../../../../../lib/api/market-posts';
 import { actorOf, insertMessage, me } from '../../../../../../lib/api/messaging';
+import {
+  noticeCaseChanged,
+  noticeIfFirstMessage,
+  notifyAccount,
+} from '../../../../../../lib/api/notify';
 import { defineRoutes, ok } from '../../../../../../lib/api/route';
 import { prisma } from '../../../../../../lib/db';
 import { copyStoredObject, removeStoredObject } from '../../../../../../lib/supabase/admin';
@@ -56,6 +61,10 @@ import { copyStoredObject, removeStoredObject } from '../../../../../../lib/supa
  * not one of the case's two participants gets 404.
  *
  * Audited with ids, statuses and the share choice only -- never the question.
+ *
+ * 2026-10-26 (CORWADO's acceptance test): a proposal sends the requester one
+ * in-app notice; an acceptance tells the new provider (their new request) and
+ * the proposer (their case closed). Fixed sentences, no case text.
  */
 
 interface Target {
@@ -144,6 +153,14 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
           action: 'advice_referral.proposed',
           after: { status: 'proposed', from_case_id: current.id, to_provider_id: to.id },
         });
+        // 2026-10-26: the requester is told a referral waits for their answer.
+        // The other provider's name is on the case, not in the notice.
+        await notifyAccount(
+          tx,
+          { authUserId: current.requester_auth_user_id },
+          'advice_referral_proposed',
+          actorOf(auth),
+        );
         return current;
       });
       return ok(await presentCase(prisma, row, reader, true));
@@ -309,6 +326,13 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
             action: 'message.sent',
             after: { conversation_id: conversation.id },
           });
+          // 2026-10-26: the new provider is told there is a request for them.
+          await noticeIfFirstMessage(
+            tx,
+            conversation.id,
+            current.requester_auth_user_id,
+            actorOf(auth),
+          );
 
           // 2. The photos, only if the requester ticked the box, and only
           //    those still on the case (a photo removed meanwhile stays out).
@@ -386,6 +410,8 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
               referral_id: proposal.id,
             },
           });
+          // 2026-10-26: the provider who proposed it is told their case closed.
+          await noticeCaseChanged(tx, current, 'requester', actorOf(auth));
           return loadCase(tx, current.id, reader);
         });
       } catch (e) {

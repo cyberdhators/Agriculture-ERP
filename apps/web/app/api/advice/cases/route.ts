@@ -18,6 +18,7 @@ import { audited, writeAudit, type AuditTx } from '../../../../lib/api/audit';
 import { conflict, notFound, unprocessable } from '../../../../lib/api/errors';
 import { parseQuery } from '../../../../lib/api/market-posts';
 import { actorOf, insertMessage, me, myName } from '../../../../lib/api/messaging';
+import { noticeIfFirstMessage } from '../../../../lib/api/notify';
 import { created, defineRoutes, ok, paged } from '../../../../lib/api/route';
 import { prisma } from '../../../../lib/db';
 
@@ -186,6 +187,8 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
           action: 'message.sent',
           after: { conversation_id: conversation.id },
         });
+        // 2026-10-26: the provider is told there is a new request; never its text.
+        await noticeIfFirstMessage(tx, conversation.id, requester, actorOf(auth));
         return loadCase(tx, body.id, requester);
       });
       return created(await presentCase(prisma, row, requester));

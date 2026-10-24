@@ -10,7 +10,13 @@ import {
 import { ApiFailure, invalidCursor } from '../../../../lib/api/errors';
 import { requirePermission } from '../../../../lib/api/permissions';
 import { defineRoutes, paged } from '../../../../lib/api/route';
-import { SUPPORT_COLUMNS, presentSupport, type SupportRow } from '../../../../lib/api/support';
+import {
+  APPEAL_ACCOUNT_COLUMNS,
+  APPEAL_ACCOUNT_JOIN,
+  SUPPORT_COLUMNS,
+  presentSupport,
+  type SupportRow,
+} from '../../../../lib/api/support';
 import { prisma } from '../../../../lib/db';
 
 /**
@@ -21,6 +27,11 @@ import { prisma } from '../../../../lib/db';
  * The phone, email and text ARE returned: answering the person is the whole
  * point of the list, and it reaches staff who hold the support permission
  * only. `source_digest` and the sender's sign-in id are never selected.
+ *
+ * 2026-10-26: `?topic=appeal` is the Appeals view, and an appeal carries
+ * `account` -- the farmer or buyer record it is about, when that can be told
+ * (lib/api/support.ts APPEAL_ACCOUNT_JOIN) -- so staff open the record and
+ * Restore there. The sign-in id itself is still never returned.
  */
 export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   GET: {
@@ -45,25 +56,30 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       }
 
       const params: unknown[] = [];
-      const where: string[] = ['deleted_at IS NULL'];
+      const where: string[] = ['sm.deleted_at IS NULL'];
       if (filter.status) {
         params.push(filter.status);
-        where.push(`status = $${params.length}`);
+        where.push(`sm.status = $${params.length}`);
+      }
+      if (filter.topic) {
+        params.push(filter.topic);
+        where.push(`sm.topic = $${params.length}`);
       }
       if (filter.cursor !== undefined) {
         const cursor = decodeCursor(filter.cursor);
         if (!cursor) throw invalidCursor();
         params.push(cursor.createdAt, cursor.id);
         where.push(
-          `(created_at, id) < ($${params.length - 1}::timestamptz, $${params.length}::uuid)`,
+          `(sm.created_at, sm.id) < ($${params.length - 1}::timestamptz, $${params.length}::uuid)`,
         );
       }
 
       const rows = await prisma.$queryRawUnsafe<SupportRow[]>(
-        `SELECT ${SUPPORT_COLUMNS}
-           FROM public.support_message
+        `SELECT ${SUPPORT_COLUMNS}, ${APPEAL_ACCOUNT_COLUMNS}
+           FROM public.support_message sm
+           ${APPEAL_ACCOUNT_JOIN}
           WHERE ${where.join(' AND ')}
-          ORDER BY created_at DESC, id DESC
+          ORDER BY sm.created_at DESC, sm.id DESC
           LIMIT ${limit + 1}`,
         ...params,
       );
