@@ -642,7 +642,7 @@ export const ar: Partial<Record<TKey, string>> = {
   'requests.phoneHint': 'اتركه فارغاً لاستخدام هاتف حسابك.',
   'requests.viewOnMarket': 'اعرضه في السوق',
   'svc.marketTitle': 'خدمات للإيجار',
-  'svc.marketLead': 'استئجار الجرارات والنقل والتجهيز والتخزين التي يقدمها المزارعون.',
+  'svc.marketLead': 'استئجار الجرارات والنقل والتجهيز والتخزين التي يقدمها المزارعون والمؤسسات.',
   'svc.marketEmpty': 'لا توجد خدمات مطابقة.',
   'svc.search': 'ابحث عن خدمة أو مكان',
   'svc.anyType': 'أي خدمة',

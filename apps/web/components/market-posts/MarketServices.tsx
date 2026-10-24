@@ -8,7 +8,7 @@ import { SERVICE_TYPES } from '@agri-erp/shared';
 import { VerifiedFarmerBadge } from '@/components/listings/VerifiedFarmerBadge';
 import { MessageButton } from '@/components/messages/MessageButton';
 import { ProfileLink } from '@/components/profiles/PublicProfile';
-import { Badge, EmptyState, Input, Notice } from '@/components/ui';
+import { Badge, EmptyState, Input, Notice, Stamp } from '@/components/ui';
 import { formatDate } from '@/lib/format';
 import { t, type Language } from '@/lib/i18n';
 import { getService, listServices, type ServiceListing } from '@/lib/market-posts/api';
@@ -26,6 +26,18 @@ function availabilityLine(s: ServiceListing, lang: Language): string {
   return s.available_until
     ? `${from} ${t('svc.until', lang)} ${formatDate(s.available_until, lang)}`
     : from;
+}
+
+/**
+ * The Verified badge of whoever offers the service: "Verified farmer" for a
+ * farmer, "Verified" for a buyer account's organisation (2026-10-26). Only
+ * when true; never a filter.
+ */
+function ProviderBadge({ s, lang }: { s: ServiceListing; lang: Language }) {
+  if (s.poster_type === 'buyer') {
+    return s.poster_verified ? <Stamp kind="verified">{t('account.verified', lang)}</Stamp> : null;
+  }
+  return <VerifiedFarmerBadge verified={s.farmer_verified} lang={lang} />;
 }
 
 /**
@@ -129,7 +141,7 @@ export function MarketServices({ lang, postHref }: { lang: Language; postHref?: 
             <li key={s.id} className={styles.card}>
               <div className={styles.cardHead}>
                 <Badge tone="sorghum">{serviceTypeLabel(s, lang)}</Badge>
-                <VerifiedFarmerBadge verified={s.farmer_verified} lang={lang} />
+                <ProviderBadge s={s} lang={lang} />
               </div>
               <Link href={`/market/services/${s.id}`} className={styles.cardTitle} dir="auto">
                 {s.title}
@@ -176,7 +188,7 @@ export function MarketServiceDetail({ id, lang }: { id: string; lang: Language }
       <BackLinkRow href="/market/services" label={t('svc.marketTitle', lang)} />
       <div className={styles.cardHead}>
         <Badge tone="sorghum">{serviceTypeLabel(row, lang)}</Badge>
-        <VerifiedFarmerBadge verified={row.farmer_verified} lang={lang} />
+        <ProviderBadge s={row} lang={lang} />
       </div>
       <h1 dir="auto">{row.title}</h1>
       <span className={styles.price}>{servicePriceLine(row, lang)}</span>
@@ -187,7 +199,8 @@ export function MarketServiceDetail({ id, lang }: { id: string; lang: Language }
         <div>
           <dt className="small muted">{t('svc.location', lang)}</dt>
           <dd dir="auto">
-            {row.location} · {row.payam_name}, {row.state_name}
+            {row.location} · {row.payam_name ? `${row.payam_name}, ` : ''}
+            {row.state_name}
           </dd>
         </div>
         <div>

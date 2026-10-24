@@ -85,6 +85,9 @@ const NAV: ReadonlyArray<{
   // LISTINGS LANE (2026-10-19): public buying requests ("I need X"), not the
   // requests above, which go to one listing.
   { href: '/buyer/buying-requests', label: 'Buying requests', icon: IconReports },
+  // 2026-10-26: any account offers services -- an institute, college,
+  // research body, advisory organisation or adviser as well as a farmer.
+  { href: '/buyer/services', label: 'My services', icon: IconEdit },
   // 2026-10-20: in-app messaging about posts.
   { href: '/buyer/messages', label: 'Messages', icon: IconChat },
   // 2026-10-22: independent advice -- find a provider and ask, or offer it.

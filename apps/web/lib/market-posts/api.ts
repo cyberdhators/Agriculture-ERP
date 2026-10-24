@@ -127,13 +127,19 @@ export const updateBuyingRequest = (id: string, body: Record<string, unknown>) =
 
 export interface ServiceListing {
   id: string;
+  /** 2026-10-26: a farmer's or a buyer account's (an organisation). */
+  poster_type: 'farmer' | 'buyer';
   trading_name: string;
+  /** The farmer's, or the buyer organisation's, Verified badge. */
+  poster_verified: boolean;
+  /** True only for a verified farmer. */
   farmer_verified: boolean;
   service_type: string;
   title: string;
   description: string;
   location: string;
-  payam_name: string;
+  /** None for a buyer account's service: it has a state only. */
+  payam_name: string | null;
   state_id: string;
   state_name: string;
   available_from: string;

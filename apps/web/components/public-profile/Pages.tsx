@@ -17,6 +17,8 @@ const FARMER_MANAGE: readonly ManageLink[] = [
 ];
 
 const BUYER_MANAGE: readonly ManageLink[] = [
+  // 2026-10-26: a buyer account offers services too.
+  { href: '/buyer/services', label: 'pp.manageServices' },
   { href: '/buyer/buying-requests', label: 'pp.manageRequests' },
 ];
 
