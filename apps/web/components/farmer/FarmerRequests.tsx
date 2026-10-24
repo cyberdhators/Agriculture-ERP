@@ -4,7 +4,10 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { Button, ButtonLink, Notice } from '@/components/ui';
 import { FarmerApiError, farmerApi, useFarmerSession } from '@/lib/farmer-session';
+import { UNIT_KEY } from '@/lib/farmers/listings';
+import type { ProduceListing } from '@/lib/fixtures/farmers';
 import { formatDate, formatPhone } from '@/lib/format';
+import { t } from '@/lib/i18n';
 import { enqueue, queuedOf, subscribeOutbox } from '@/lib/offline/outbox';
 import { loadWithSnapshot, saveSnapshot } from '@/lib/offline/snapshot';
 
@@ -208,7 +211,10 @@ export function FarmerRequests({ limit }: { limit?: number }) {
                   </div>
                   <div className="small" dir="auto">
                     <span className="mono">
-                      {r.quantity} {r.unit}
+                      {r.quantity}{' '}
+                      {UNIT_KEY[r.unit as ProduceListing['unit']]
+                        ? t(UNIT_KEY[r.unit as ProduceListing['unit']], language)
+                        : r.unit}
                     </span>
                     {' · '}
                     {w.deliver} {r.delivery_location}

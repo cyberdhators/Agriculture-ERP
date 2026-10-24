@@ -308,7 +308,11 @@ export function ServiceForm({
             )}
           </Field>
         </div>
-        <Field label={t('listingForm.price', lang)} optional error={err('price_ssp')}>
+        <Field
+          label={t('listingForm.price', lang)}
+          hint={t('svc.priceHint', lang)}
+          error={err('price_ssp')}
+        >
           {(ids) => (
             <PrefixedInput
               {...ids}

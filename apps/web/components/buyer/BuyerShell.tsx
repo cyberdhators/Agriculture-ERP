@@ -88,10 +88,12 @@ const NAV: ReadonlyArray<{
   // 2026-10-20: in-app messaging about posts.
   { href: '/buyer/messages', label: 'Messages', icon: IconChat },
   // 2026-10-22: independent advice -- find a provider and ask, or offer it.
-  // My Advisory Work is reached from Offer advice once a profile exists.
+  // 2026-10-24 (acceptance QA): My Advisory Work is in the menu too, as on the
+  // farmer side; without a profile its page says to offer advice first.
   { href: '/buyer/advice', label: 'Find advice', icon: IconSearch },
   { href: '/buyer/advice/requests', label: 'My advice requests', icon: IconChat },
   { href: '/buyer/advice/offer', label: 'Offer advice', icon: IconStaff },
+  { href: '/buyer/advice/work', label: 'My Advisory Work', icon: IconReports },
   { href: '/buyer/notifications', label: 'Notifications', icon: IconMail },
   { href: '/buyer/profile', label: 'Profile', icon: IconStaff },
   // 2026-10-23: public profiles v2 -- draft, preview, publish, photo.

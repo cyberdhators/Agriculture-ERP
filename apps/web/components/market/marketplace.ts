@@ -132,6 +132,9 @@ export function moreFromSeller(
   excludeId: string,
   count = 4,
 ): MarketRow[] {
+  // 2026-10-24 (acceptance QA): no seller key, no "more from this seller" --
+  // an empty key once matched every listing on the market.
+  if (!sellerId) return [];
   return sortRows(
     rows.filter(
       (r) =>
@@ -169,6 +172,7 @@ export function payamOptions(rows: readonly MarketRow[]): { id: string; name: st
 }
 
 export function liveCount(rows: readonly MarketRow[], farmerId: string): number {
+  if (!farmerId) return 0;
   return rows.filter((r) => r.listing.farmer_id === farmerId && r.listing.status === 'listed')
     .length;
 }

@@ -40,6 +40,8 @@ export interface ApiListing {
   seller_payam_id?: string;
   seller_payam_name?: string;
   seller_created_at?: string;
+  /** 2026-10-24: the same opaque key on every listing of one seller (public reads). */
+  seller_key?: string;
   /** 2026-10-23: false when the seller turned in-app messaging off. */
   messages_allowed?: boolean;
 }
@@ -147,7 +149,9 @@ export async function updateListing(
 export function toListing(api: ApiListing): ProduceListing {
   return {
     id: api.id,
-    farmer_id: api.farmer_id,
+    // 2026-10-24: a public read carries no farmer id, only the seller's opaque
+    // key -- which groups one seller's listings just as well.
+    farmer_id: api.farmer_id ?? api.seller_key ?? '',
     trading_name: api.trading_name,
     title: api.title,
     category: api.category as ListingCategory,
@@ -173,7 +177,7 @@ export function toListing(api: ApiListing): ProduceListing {
 
 export function toSeller(api: ApiListing): SellerInfo {
   return {
-    id: api.farmer_id,
+    id: api.farmer_id ?? api.seller_key ?? '',
     verification_status: (api.seller_verification_status ?? 'pending') as VerificationStatus,
     payam_id: api.seller_payam_id ?? '',
     payam_name: api.seller_payam_name ?? '',

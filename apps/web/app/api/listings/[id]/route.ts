@@ -36,6 +36,7 @@ interface BrowseRow extends ListingRow {
   seller_payam_id: string;
   seller_payam_name: string;
   seller_created_at: string;
+  seller_key: string;
   owner_messages: boolean;
 }
 
@@ -67,6 +68,7 @@ const BROWSE_COLUMNS = `pl.id, pl.trading_name, pl.title,
   f.payam_id AS seller_payam_id,
   pm.name AS seller_payam_name,
   f.created_at::text AS seller_created_at,
+  md5('agrione-seller:' || f.id::text) AS seller_key,
   COALESCE((SELECT ap.allow_messages FROM public.account_profile ap
              WHERE ap.auth_user_id = f.auth_user_id), true) AS owner_messages`;
 
@@ -120,6 +122,10 @@ const presentBrowse = (row: BrowseRow) => ({
   seller_payam_id: row.seller_payam_id,
   seller_payam_name: row.seller_payam_name,
   seller_created_at: row.seller_created_at,
+  // 2026-10-24 (acceptance QA): the same opaque key on every listing of one
+  // seller, so "More from this seller" and the seller's listing count can
+  // group them. A one-way hash: the farmer id itself is still never sent.
+  seller_key: row.seller_key,
   // LISTINGS LANE (2026-10-19): a badge, shown only -- never a filter.
   farmer_verified: row.seller_verification_status === 'verified',
   // 2026-10-23: whether the seller takes in-app messages (their profile's choice).

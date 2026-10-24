@@ -1092,4 +1092,6 @@ export const ar: Partial<Record<TKey, string>> = {
   'adviser.sent': 'أُرسل. ستراجعه كوروادو.',
   'adviser.history': 'طلبات سابقة',
   'adviser.sentOn': 'أُرسل',
+  // 2026-10-24 (acceptance QA): the price is needed unless the service is negotiable.
+  'svc.priceHint': 'اكتب سعراً، أو ضع علامة على «قابل للتفاوض» أدناه.',
 };

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 
 import { Wordmark } from '@/components/brand/Wordmark';
 import { IconSearch } from '@/components/ui/icons';
@@ -27,7 +27,30 @@ import styles from './farmer.module.css';
  * band does the filtering; it changes chrome only, never data.
  */
 export function ShopMasthead({ subnav, hideStrip }: { subnav?: ReactNode; hideStrip?: boolean }) {
-  const { farmer, language, setLanguage, listingsFor } = useFarmerSession();
+  const { farmer, hydrated, language, setLanguage, listingsFor } = useFarmerSession();
+  // 2026-10-24 (acceptance QA): a buyer with no farmer side is signed in too;
+  // the header greets them and opens their buyer dashboard, not "Sign in".
+  const [buyerName, setBuyerName] = useState<string | null>(null);
+  useEffect(() => {
+    if (!hydrated || farmer) return;
+    let cancelled = false;
+    fetch('/api/buyer/profile')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((b: { data?: { person?: { given_name?: string } } } | null) => {
+        if (!cancelled) setBuyerName(b?.data?.person?.given_name ?? null);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [hydrated, farmer]);
+  const signedIn = Boolean(farmer) || buyerName !== null;
+  const accountHref = farmer
+    ? '/farmer/account'
+    : buyerName !== null
+      ? '/buyer/dashboard'
+      : '/join';
+  const greetingName = farmer ? farmer.given_name : buyerName;
   const unread = useUnreadNotifications(Boolean(farmer));
   const unreadMessages = useUnreadMessages(Boolean(farmer));
   const router = useRouter();
@@ -41,7 +64,14 @@ export function ShopMasthead({ subnav, hideStrip }: { subnav?: ReactNode; hideSt
   function onSearch(event: React.FormEvent) {
     event.preventDefault();
     const q = query.trim();
-    router.push(q ? `/market?q=${encodeURIComponent(q)}` : '/market');
+    // 2026-10-24 (acceptance QA): search the tab you are on -- a buying
+    // request searched from Buying requests was looked for among produce.
+    const base = pathname.startsWith('/market/requests')
+      ? '/market/requests'
+      : pathname.startsWith('/market/services')
+        ? '/market/services'
+        : '/market';
+    router.push(q ? `${base}?q=${encodeURIComponent(q)}` : base);
   }
 
   return (
@@ -80,16 +110,16 @@ export function ShopMasthead({ subnav, hideStrip }: { subnav?: ReactNode; hideSt
           </div>
 
           <Link
-            href={farmer ? '/farmer/account' : '/join'}
+            href={accountHref}
             className={farmer ? `${styles.shopAcct} ${styles.shopAcctSignedIn}` : styles.shopAcct}
             dir="auto"
           >
             <span className={styles.shopAcctLine1}>
-              {farmer ? t('shell.greeting', language) : t('login.title', language)}
-              {farmer ? ` ${farmer.given_name}` : ''}
+              {signedIn ? t('shell.greeting', language) : t('login.title', language)}
+              {signedIn && greetingName ? ` ${greetingName}` : ''}
             </span>
             <span className={styles.shopAcctLine2}>
-              {farmer ? t('account.title', language) : t('shell.joinLine2', language)}
+              {signedIn ? t('account.title', language) : t('shell.joinLine2', language)}
             </span>
           </Link>
 
