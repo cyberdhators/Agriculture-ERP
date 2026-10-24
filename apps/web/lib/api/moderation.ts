@@ -6,6 +6,7 @@ import {
 } from '@agri-erp/shared';
 
 import { sendOneSms, smsConfig } from '../sms/bird';
+import { suspensionSmsText } from '../suspension-sms';
 import { type AuditTx } from './audit';
 import { notFound } from './errors';
 import { currentSetting, settingsTablesPresent } from './settings';
@@ -88,29 +89,6 @@ export const standingOf = (account: AccountRecords): AccountStanding => ({
 
 /** What happened to the one text message a suspension sends. Audited; never the text or the number. */
 export type SuspensionSms = 'sent' | 'failed' | 'no_mobile';
-
-/** The address the message names. The Contact CORWADO form is on the help page. */
-export const APPEAL_ADDRESS = 'agrionesouthsudan.com/help';
-
-/** Longest reason label that keeps the message inside one 160-character SMS. */
-const LABEL_MAX = 39;
-
-/**
- * The fixed text. It carries the reason CODE's label (one of CORWADO's list,
- * written by staff for this purpose), never the free-text reason, which may
- * name other people or hold notes meant for the file. With no code chosen, no
- * reason is named.
- */
-export function suspensionSmsText(label: string | null): string {
-  const named =
-    label === null
-      ? ''
-      : ` Reason: ${label.length > LABEL_MAX ? `${label.slice(0, LABEL_MAX - 3)}...` : label}.`;
-  return (
-    `AgriOne: your account is suspended.${named} To appeal, visit ${APPEAL_ADDRESS} ` +
-    `and choose 'Appeal a decision'.`
-  );
-}
 
 /** The label of a reason code -- archived codes included, since a decision may name one. */
 export async function reasonCodeLabel(db: Db, code: string | undefined): Promise<string | null> {
