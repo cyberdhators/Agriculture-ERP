@@ -59,7 +59,8 @@ const OWNER_SQL: Record<PostKind, string> = {
     ${MARKET_FROM} WHERE pl.id = $1::uuid AND ${MARKET_BASE_WHERE}`,
   buying_request: `SELECT br.display_name AS name, f.id AS farmer_id, b.id AS buyer_id
     ${BUYING_REQUEST_FROM} WHERE br.id = $1::uuid AND ${BUYING_REQUEST_MARKET_WHERE}`,
-  service: `SELECT sl.trading_name AS name, sl.farmer_id, NULL::uuid AS buyer_id
+  // 2026-10-26: a service may be a farmer's or a buyer account's.
+  service: `SELECT sl.trading_name AS name, f.id AS farmer_id, b.id AS buyer_id
     ${SERVICE_FROM} WHERE sl.id = $1::uuid AND ${SERVICE_MARKET_WHERE}`,
 };
 
@@ -147,14 +148,14 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
         account.farmer_id,
         account.buyer_id,
       );
-      const services = account.farmer_id
-        ? await prisma.$queryRawUnsafe<ServiceRow[]>(
-            `SELECT ${SERVICE_COLUMNS} ${SERVICE_FROM}
-              WHERE sl.farmer_id = $1::uuid AND ${SERVICE_MARKET_WHERE}
-              ORDER BY sl.updated_at DESC LIMIT 50`,
-            account.farmer_id,
-          )
-        : [];
+      const services = await prisma.$queryRawUnsafe<ServiceRow[]>(
+        `SELECT ${SERVICE_COLUMNS} ${SERVICE_FROM}
+          WHERE (sl.farmer_id = $1::uuid OR sl.buyer_id = $2::uuid)
+            AND ${SERVICE_MARKET_WHERE}
+          ORDER BY sl.updated_at DESC LIMIT 50`,
+        account.farmer_id,
+        account.buyer_id,
+      );
 
       // 2026-10-23 (public profiles v2): when the owner has PUBLISHED a public
       // profile, its public id, so the screen can go there. Nothing else of it:

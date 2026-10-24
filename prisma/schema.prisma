@@ -1631,18 +1631,22 @@ model BuyingRequest {
   @@map("buying_request")
 }
 
-/// Tractor hire, transport, processing, storage, other. Owned by a farmer.
+/// Tractor hire, transport, processing, storage, other. Offered by a farmer
+/// or a buyer account (2026-10-26): exactly one of farmerId / buyerId, the one
+/// posterType names. A buyer's service has a state and no payam.
 model ServiceListing {
   id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  farmerId         String    @map("farmer_id") @db.Uuid
+  posterType       String    @map("poster_type")
+  farmerId         String?   @map("farmer_id") @db.Uuid
+  buyerId          String?   @map("buyer_id") @db.Uuid
   tradingName      String    @map("trading_name")
   serviceType      String    @map("service_type")
   title            String
   description      String
   location         String
-  payamId          String    @map("payam_id")
+  payamId          String?   @map("payam_id")
   stateId          String    @map("state_id")
-  availableFrom    DateTime  @map("available_from") @db.Date
+  availableFrom   DateTime  @map("available_from") @db.Date
   availableUntil   DateTime? @map("available_until") @db.Date
   availabilityNote String?   @map("availability_note")
   priceSsp         Decimal?  @map("price_ssp") @db.Decimal(12, 2)

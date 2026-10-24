@@ -751,6 +751,7 @@ These are also exact.
 | Listing edit: quantity below sold       | The quantity cannot be less than what you have already sold.                                    |
 | Market post: yes/no not a choice        | Choose yes or no.                                                                               |
 | Buying requests: poster filter          | Choose farmer or buyer.                                                                         |
+| Service: farmer sends a state           | Your location comes from your farmer record.                                                    |
 | Message: kind of post                   | Choose a listing, a buying request or a service.                                                |
 | Message: body missing or blank          | Write a message.                                                                                |
 | Message: over 2000 characters           | A message has at most 2000 characters.                                                          |

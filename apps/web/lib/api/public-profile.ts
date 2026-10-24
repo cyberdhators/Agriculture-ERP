@@ -169,14 +169,18 @@ export async function postsOf(db: Db, farmerId: string | null, buyerId: string |
           buyerId,
         )
       : [];
-  const services = farmerId
-    ? await db.$queryRawUnsafe<ServiceRow[]>(
-        `SELECT ${SERVICE_COLUMNS} ${SERVICE_FROM}
-          WHERE sl.farmer_id = $1::uuid AND ${SERVICE_MARKET_WHERE}
-          ORDER BY sl.updated_at DESC LIMIT 50`,
-        farmerId,
-      )
-    : [];
+  // 2026-10-26: a buyer account may offer services too.
+  const services =
+    farmerId || buyerId
+      ? await db.$queryRawUnsafe<ServiceRow[]>(
+          `SELECT ${SERVICE_COLUMNS} ${SERVICE_FROM}
+            WHERE (sl.farmer_id = $1::uuid OR sl.buyer_id = $2::uuid)
+              AND ${SERVICE_MARKET_WHERE}
+            ORDER BY sl.updated_at DESC LIMIT 50`,
+          farmerId,
+          buyerId,
+        )
+      : [];
   return {
     listings: listings.map(presentMarketListing),
     buying_requests: requests.map(presentBuyingRequest),

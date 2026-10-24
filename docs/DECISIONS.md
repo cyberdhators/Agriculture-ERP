@@ -4482,3 +4482,42 @@ administrator holds it; other staff only through the Administrator preset).
   commodities, categories, units; archive without deleting), and notification
   templates (triggers, channel preferences, templates; suspension duration and
   appeals).
+
+## Services: any account may offer one (2026-10-26)
+
+Replaces "owned by a farmer account for now" (Listings, 2026-10-19). The
+client's acceptance test failed check 7: an institution, or any buyer account,
+could not post a service without first registering as a farmer. CORWADO's
+specification: institutes, colleges, research bodies, advisory organisations
+and independent advisers "may publish ordinary profiles and service
+advertisements"; "one account buys, sells, publishes buying requests, offers
+services and seeks advice". Migration
+`20261026090000_service_listing_any_account` (additive in effect).
+
+- **Owner.** The design of buying requests: `poster_type` (farmer | buyer) with
+  `farmer_id` or `buyer_id`, exactly one, the one the type names (a CHECK).
+  Written by the server from the session (`marketPoster`), never the body.
+  Existing rows were backfilled `farmer`.
+- **Place.** A farmer's service keeps the farmer record's payam and state; a
+  farmer may not send a state ("Your location comes from your farmer
+  record."). A buyer account has no payam: it chooses a state from the list
+  (checked against `state`), and `payam_id` is empty -- allowed only on a
+  buyer's row (a CHECK). The location in words is given by both.
+- **Live poster.** The poster joins are LEFT joins to `farmer_active` and
+  `buyer_active`, each filtering `suspended_at`, and every read of a service
+  requires the poster to be live, so a suspended or removed account's
+  services leave the market, the owner's list, contact, messaging, profiles
+  and reports. `tests/suspension-scan.test.ts` holds this.
+- **Public shape.** Adds `poster_type` and `poster_verified` (the farmer's
+  badge, or the buyer organisation's); `farmer_verified` stays, true only for
+  a verified farmer. No id of either account.
+- **Everything else that reads a service** follows: messaging names the
+  buyer's sign-in as the owner; both public profile routes list a buyer's
+  services; deleting an account withdraws its services as a buyer too.
+  Analytics and the moderators' report queue needed no change (they read the
+  service's own state and name).
+- **Screens.** "My services" on the buyer side (list, new, edit; English),
+  with a State selector and the organisation's name as the default name on
+  the market. The farmer side is unchanged.
+- **Audit:** no new key -- `listing.created`, `listing.updated` and
+  `listing.status_changed`, with the poster's type as the actor.

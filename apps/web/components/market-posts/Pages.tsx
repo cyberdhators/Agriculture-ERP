@@ -1,5 +1,6 @@
 'use client';
 
+import { useBuyer } from '@/components/buyer/BuyerShell';
 import { PageHead } from '@/components/farmer/AccountShell';
 import { ButtonLink, PageHeader } from '@/components/ui';
 import { useFarmerSession } from '@/lib/farmer-session';
@@ -23,6 +24,7 @@ import { ServiceForm } from './ServiceForm';
 const FARMER_REQUESTS = '/farmer/account/buying-requests';
 const FARMER_SERVICES = '/farmer/account/my-services';
 const BUYER_REQUESTS = '/buyer/buying-requests';
+const BUYER_SERVICES = '/buyer/services';
 
 // ---- The public market ------------------------------------------------------
 
@@ -45,8 +47,13 @@ export function MarketRequestDetailPage({ id }: { id: string }) {
 
 export function MarketServicesPage() {
   const { farmer, language } = useFarmerSession();
+  // 2026-10-26: any account offers services; anyone not signed in as a farmer
+  // goes through the buyer side, which asks them to sign in first.
   return (
-    <MarketServices lang={language} postHref={farmer ? `${FARMER_SERVICES}/new` : undefined} />
+    <MarketServices
+      lang={language}
+      postHref={farmer ? `${FARMER_SERVICES}/new` : `${BUYER_SERVICES}/new`}
+    />
   );
 }
 
@@ -152,6 +159,47 @@ export function BuyerBuyingRequestFormPage({ id }: { id?: string }) {
         subtitle={t('requests.formLead', 'en')}
       />
       <BuyingRequestForm lang="en" id={id} listHref={BUYER_REQUESTS} />
+    </>
+  );
+}
+
+/**
+ * 2026-10-26: a buyer account's own services -- an institute, college,
+ * research body, advisory organisation or adviser offers them as a farmer
+ * does. Inside the buyer shell, so the organisation is known.
+ */
+export function BuyerServicesPage() {
+  return (
+    <>
+      <PageHeader
+        title={t('svc.mineTitle', 'en')}
+        subtitle={t('svc.mineLead', 'en')}
+        actions={<ButtonLink href={`${BUYER_SERVICES}/new`}>{t('svc.new', 'en')}</ButtonLink>}
+      />
+      <MyServices lang="en" basePath={BUYER_SERVICES} />
+    </>
+  );
+}
+
+export function BuyerServiceFormPage({ id }: { id?: string }) {
+  const { profile } = useBuyer();
+  const org = profile.organization;
+  // The organisation's name is the name on the market unless changed.
+  return (
+    <>
+      <PageHeader
+        title={t(id ? 'svc.editTitle' : 'svc.newTitle', 'en')}
+        subtitle={t('svc.formLead', 'en')}
+      />
+      <ServiceForm
+        lang="en"
+        id={id}
+        listHref={BUYER_SERVICES}
+        poster="buyer"
+        defaultName={org.name}
+        defaultStateId={org.state_id ?? ''}
+        defaultLocation={org.city ?? ''}
+      />
     </>
   );
 }

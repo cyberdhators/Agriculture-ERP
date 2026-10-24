@@ -94,7 +94,8 @@ export function BuyerMarketplace() {
       <p className="small">
         Also on the market: <Link href="/market/requests">buying requests</Link> and{' '}
         <Link href="/market/services">services for hire</Link>.{' '}
-        <Link href="/buyer/buying-requests/new">Post what you need</Link>.
+        <Link href="/buyer/buying-requests/new">Post what you need</Link> or{' '}
+        <Link href="/buyer/services/new">offer a service</Link>.
       </p>
 
       <form className={styles.form} onSubmit={apply} role="search" aria-label="Filter products">

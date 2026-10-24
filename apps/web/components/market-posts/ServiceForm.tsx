@@ -4,7 +4,13 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-import { SERVICE_PRICE_UNITS, SERVICE_TYPES, serviceListingSchema } from '@agri-erp/shared';
+import {
+  SERVICE_PRICE_UNITS,
+  SERVICE_TYPES,
+  buyerServiceListingSchema,
+  farmerServiceListingSchema,
+  type ServicePosterType,
+} from '@agri-erp/shared';
 
 import {
   Button,
@@ -20,6 +26,7 @@ import { t, type Language } from '@/lib/i18n';
 import {
   MarketPostError,
   createService,
+  listStates,
   myServices,
   newId,
   updateService,
@@ -35,6 +42,7 @@ interface Values {
   title: string;
   description: string;
   location: string;
+  state_id: string;
   available_from: string;
   available_until: string;
   availability_note: string;
@@ -51,6 +59,7 @@ const fromService = (s: ServiceListing): Values => ({
   title: s.title,
   description: s.description,
   location: s.location,
+  state_id: s.state_id,
   available_from: s.available_from,
   available_until: s.available_until ?? '',
   availability_note: s.availability_note ?? '',
@@ -64,9 +73,11 @@ const fromService = (s: ServiceListing): Values => ({
 /**
  * LISTINGS LANE (2026-10-19). Offer or edit a service: tractor hire,
  * transport, processing, storage or other -- a type, a description, a general
- * location, when it is available, and a price or "negotiable". The farmer's
- * own (the server takes the owner, payam and state from the session). The
- * same shared schema as the route. Needs signal.
+ * location, when it is available, and a price or "negotiable". The owner is
+ * the session's account. A farmer's payam and state are the farmer record's;
+ * a buyer account (2026-10-26: an institute, college, research body, advisory
+ * organisation or adviser) chooses its state here. The same shared schemas as
+ * the route. Needs signal.
  */
 export function ServiceForm({
   lang,
@@ -74,13 +85,19 @@ export function ServiceForm({
   listHref,
   defaultName = '',
   defaultLocation = '',
+  poster = 'farmer',
+  defaultStateId = '',
 }: {
   lang: Language;
   id?: string;
   listHref: string;
   defaultName?: string;
   defaultLocation?: string;
+  /** Who is offering it: a buyer account also chooses a state. */
+  poster?: ServicePosterType;
+  defaultStateId?: string;
 }) {
+  const choosesState = poster === 'buyer';
   const router = useRouter();
   const [values, setValues] = useState<Values>({
     trading_name: defaultName,
@@ -88,6 +105,7 @@ export function ServiceForm({
     title: '',
     description: '',
     location: defaultLocation,
+    state_id: defaultStateId,
     available_from: todayLocal(),
     available_until: '',
     availability_note: '',
@@ -101,6 +119,14 @@ export function ServiceForm({
   const [failure, setFailure] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(Boolean(id));
+  const [states, setStates] = useState<{ id: string; name: string }[]>([]);
+
+  useEffect(() => {
+    if (!choosesState) return;
+    listStates()
+      .then(setStates)
+      .catch(() => setStates([]));
+  }, [choosesState]);
 
   useEffect(() => {
     if (!id) return;
@@ -133,6 +159,7 @@ export function ServiceForm({
       price_unit: values.price_ssp === '' ? null : values.price_unit || null,
       negotiable: values.negotiable,
     };
+    if (choosesState) out.state_id = values.state_id;
     out.show_phone = values.show_phone;
     if (values.contact_phone.trim() !== '') out.contact_phone = values.contact_phone;
     if (status) out.status = status;
@@ -143,7 +170,8 @@ export function ServiceForm({
     setFailure(null);
     const payload = body(status);
     if (!id) {
-      const check = serviceListingSchema.safeParse(payload);
+      const schema = choosesState ? buyerServiceListingSchema : farmerServiceListingSchema;
+      const check = schema.safeParse(payload);
       if (!check.success) {
         const next: Record<string, string> = {};
         for (const issue of check.error.issues) {
@@ -263,6 +291,24 @@ export function ServiceForm({
             )}
           </Field>
         </div>
+        {choosesState ? (
+          <Field label={t('requests.state', lang)} error={err('state_id')}>
+            {(ids) => (
+              <Select
+                {...ids}
+                value={values.state_id}
+                onChange={(e) => set('state_id', e.target.value)}
+              >
+                <option value="">{t('register.select', lang)}</option>
+                {states.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </Select>
+            )}
+          </Field>
+        ) : null}
         <Field label={t('listingForm.availableFrom', lang)} error={err('available_from')}>
           {(ids) => (
             <Input
