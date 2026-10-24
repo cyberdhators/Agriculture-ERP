@@ -78,15 +78,15 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
           farmerId,
           buyerId,
         );
-        const services = farmerId
-          ? await count(
-              `UPDATE public.service_listing SET status = 'withdrawn', updated_at = now()
-                WHERE farmer_id = $1::uuid AND deleted_at IS NULL
-                  AND status IN ('draft', 'active', 'paused')
-                RETURNING id`,
-              farmerId,
-            )
-          : 0;
+        // 2026-10-26: a buyer account's services are withdrawn with it too.
+        const services = await count(
+          `UPDATE public.service_listing SET status = 'withdrawn', updated_at = now()
+            WHERE (farmer_id = $1::uuid OR buyer_id = $2::uuid) AND deleted_at IS NULL
+              AND status IN ('draft', 'active', 'paused')
+            RETURNING id`,
+          farmerId,
+          buyerId,
+        );
         const conversations = await count(
           `UPDATE public.conversation
               SET owner_name = CASE WHEN owner_auth_user_id = $1::uuid

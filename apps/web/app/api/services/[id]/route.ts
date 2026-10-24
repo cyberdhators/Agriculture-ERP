@@ -1,9 +1,11 @@
 import {
+  BUYER_ROLE,
   FARMER_ROLE,
   MARKET_POST_MESSAGES,
   canonicalStatus,
   defaultEndDate,
   serviceListingPatchSchema,
+  servicePosterIssue,
 } from '@agri-erp/shared';
 
 import { audited, writeAudit } from '../../../../lib/api/audit';
@@ -16,13 +18,13 @@ import {
   checkLifecycle,
   invalidField,
   loadOwnService,
+  marketPoster,
   presentOwnService,
   presentService,
   todayUtc,
   type ServiceRow,
 } from '../../../../lib/api/market-posts';
 import { defineRoutes, ok } from '../../../../lib/api/route';
-import { farmerScope } from '../../../../lib/api/scope';
 import { prisma } from '../../../../lib/db';
 
 /**
@@ -31,9 +33,12 @@ import { prisma } from '../../../../lib/db';
  * GET is public and answers only for a service on the market; anything else
  * is the house 404.
  *
- * PATCH is the owning farmer's: an edit, a move through the lifecycle
+ * PATCH is the owning account's -- a farmer's or (2026-10-26) a buyer
+ * account's, by the session: an edit, a move through the lifecycle
  * (publish, pause, resume, withdraw, complete) or a renewal (a new
  * available_until). No stock, so no sales. Withdrawn and completed are final.
+ * A buyer account may move its service to another state (checked against the
+ * list); a farmer's location stays its record's, so a farmer may not send one.
  */
 const CASTS: Record<string, string> = {
   available_from: '::date',
@@ -55,13 +60,22 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   },
 
   PATCH: {
-    roles: [FARMER_ROLE],
+    roles: [FARMER_ROLE, BUYER_ROLE],
     bodySchema: serviceListingPatchSchema,
     handler: async ({ auth, body, params }) => {
-      const { farmerId } = farmerScope(auth);
+      const poster = marketPoster(auth);
       const id = checkId(params.id);
+      const issue = servicePosterIssue(poster.type, body, false);
+      if (issue) throw invalidField(issue.field, issue.message);
       const row = await audited(prisma, async (tx) => {
-        const current = await loadOwnService(tx, farmerId, id, true);
+        const current = await loadOwnService(tx, poster, id, true);
+        if (body.state_id !== undefined) {
+          const [state] = await tx.$queryRawUnsafe<{ id: string }[]>(
+            'SELECT id FROM public.state WHERE id = $1 AND deleted_at IS NULL',
+            body.state_id,
+          );
+          if (!state) throw invalidField('state_id', MARKET_POST_MESSAGES.stateUnknown);
+        }
         const today = todayUtc();
         // Going live with no end date: thirty days on the market.
         const goesLive = body.status === 'active' && canonicalStatus(current.status) !== 'active';
@@ -117,8 +131,8 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
         await writeAudit(tx, {
           entityType: 'service_listing',
           entityId: id,
-          actorType: 'farmer',
-          actorId: farmerId,
+          actorType: poster.type,
+          actorId: poster.id,
           action: moved ? 'listing.status_changed' : 'listing.updated',
           before:
             moved || endChanged
@@ -126,7 +140,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
               : null,
           after: changed,
         });
-        return loadOwnService(tx, farmerId, id);
+        return loadOwnService(tx, poster, id);
       });
       return ok(presentOwnService(row));
     },

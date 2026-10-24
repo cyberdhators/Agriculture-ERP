@@ -50,6 +50,7 @@ export const MARKET_POST_MESSAGES = {
   posterUnknown: 'Choose farmer or buyer.',
   titleInvalid: 'A title is 2 to 200 characters.',
   stateUnknown: 'Choose a location from the list.',
+  stateFromFarmerRecord: 'Your location comes from your farmer record.',
 } as const;
 
 const M = MARKET_POST_MESSAGES;
@@ -373,7 +374,17 @@ export const SERVICE_PRICE_UNITS = [
 ] as const;
 export type ServicePriceUnit = (typeof SERVICE_PRICE_UNITS)[number];
 
-/** Owned by a farmer account for now (owner, 2026-10-19). No stock, so no sales. */
+/**
+ * Offered by any account, farmer or buyer (2026-10-26, replacing "owned by a
+ * farmer account for now"; docs/DECISIONS.md, "Services: any account may offer
+ * one"). Who offers it is the session's account, never a field. No stock, so
+ * no sales.
+ *
+ * WHERE IT IS. A farmer's service takes the payam and state of the farmer's
+ * record, so a farmer never sends `state_id` (refused: stateFromFarmerRecord).
+ * A buyer account has no payam: it MUST send `state_id`, from the state list
+ * (servicePosterIssue; buyerServiceListingSchema on the buyer's form).
+ */
 const serviceShape = {
   trading_name: text(2, 120, M.displayNameInvalid),
   service_type: z.enum(SERVICE_TYPES, { error: () => M.serviceTypeUnknown }),
@@ -392,26 +403,76 @@ const serviceShape = {
   contact_phone: phoneSchema.optional(),
   // 2026-10-20: the phone is shown only if the poster chooses; off unless ticked.
   show_phone: flag.default(false),
+  // 2026-10-26: a buyer account's service only (see above).
+  state_id: locationCodeSchema.optional(),
 };
 
-export const serviceListingSchema = z
-  .strictObject({
-    id: z.string().uuid(BUYER_MESSAGES.identifierMalformed).optional(),
-    ...serviceShape,
-    status: createStatusSchema.default('draft'),
-  })
-  .superRefine((value, ctx) => {
-    if (value.price_ssp == null && !value.negotiable) {
-      ctx.addIssue({ code: 'custom', path: ['price_ssp'], message: M.priceOrNegotiable });
-    }
-    if (value.price_ssp != null && value.price_unit == null) {
-      ctx.addIssue({ code: 'custom', path: ['price_unit'], message: M.priceUnitRequired });
-    }
-    if (value.available_until && value.available_until < value.available_from) {
-      ctx.addIssue({ code: 'custom', path: ['available_until'], message: M.untilBeforeFrom });
-    }
-  });
+/** Who is offering a service, as the server resolves it from the session. */
+export type ServicePosterType = 'farmer' | 'buyer';
+
+/**
+ * The location rule that depends on who is posting, which a body cannot say:
+ * a buyer must name a state, a farmer must not (theirs is the record's). The
+ * route applies it on create (`creating`) and on every change; the forms use
+ * it through the schemas below. Returns the field and its reason, or null.
+ */
+export function servicePosterIssue(
+  poster: ServicePosterType,
+  value: { state_id?: string | undefined },
+  creating: boolean,
+): { field: 'state_id'; message: string } | null {
+  if (poster === 'farmer' && value.state_id !== undefined) {
+    return { field: 'state_id', message: M.stateFromFarmerRecord };
+  }
+  if (poster === 'buyer' && creating && !value.state_id) {
+    return { field: 'state_id', message: M.stateUnknown };
+  }
+  return null;
+}
+
+const serviceObject = z.strictObject({
+  id: z.string().uuid(BUYER_MESSAGES.identifierMalformed).optional(),
+  ...serviceShape,
+  status: createStatusSchema.default('draft'),
+});
+
+const serviceRules = (value: z.infer<typeof serviceObject>, ctx: z.RefinementCtx) => {
+  if (value.price_ssp == null && !value.negotiable) {
+    ctx.addIssue({ code: 'custom', path: ['price_ssp'], message: M.priceOrNegotiable });
+  }
+  if (value.price_ssp != null && value.price_unit == null) {
+    ctx.addIssue({ code: 'custom', path: ['price_unit'], message: M.priceUnitRequired });
+  }
+  if (value.available_until && value.available_until < value.available_from) {
+    ctx.addIssue({ code: 'custom', path: ['available_until'], message: M.untilBeforeFrom });
+  }
+};
+
+const posterRule =
+  (poster: ServicePosterType) =>
+  (value: { state_id?: string | undefined }, ctx: z.RefinementCtx, creating: boolean) => {
+    const issue = servicePosterIssue(poster, value, creating);
+    if (issue) ctx.addIssue({ code: 'custom', path: [issue.field], message: issue.message });
+  };
+
+/**
+ * POST /api/services, for either kind of account: the route then applies
+ * servicePosterIssue for the session's poster. The forms use the two below.
+ */
+export const serviceListingSchema = serviceObject.superRefine(serviceRules);
 export type ServiceListingInput = z.infer<typeof serviceListingSchema>;
+
+/** A farmer's new service: no state (the record's). */
+export const farmerServiceListingSchema = serviceObject.superRefine((value, ctx) => {
+  serviceRules(value, ctx);
+  posterRule('farmer')(value, ctx, true);
+});
+
+/** A buyer account's new service: a state from the list is required. */
+export const buyerServiceListingSchema = serviceObject.superRefine((value, ctx) => {
+  serviceRules(value, ctx);
+  posterRule('buyer')(value, ctx, true);
+});
 
 export const serviceListingPatchSchema = z
   .strictObject({ ...patchOf(serviceShape), status: statusSchema.optional() })

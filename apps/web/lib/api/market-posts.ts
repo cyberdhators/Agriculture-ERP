@@ -261,34 +261,57 @@ export async function loadOwnBuyingRequest(db: Db, poster: Poster, id: string, l
 // SERVICE LISTINGS
 // ---------------------------------------------------------------------------
 
-export const SERVICE_COLUMNS = `sl.id, sl.trading_name, sl.service_type, sl.title, sl.description,
-  sl.location, sl.payam_id, pm.name AS payam_name, sl.state_id, s.name AS state_name,
+/**
+ * 2026-10-26: a service is offered by a farmer OR a buyer account (the design
+ * of buying requests): `poster_type` with `farmer_id` | `buyer_id`. A buyer's
+ * service has a state and no payam. The verified badge is the farmer's, or
+ * the buyer's organisation's.
+ */
+export const SERVICE_COLUMNS = `sl.id, sl.poster_type, sl.trading_name, sl.service_type, sl.title,
+  sl.description, sl.location, sl.payam_id, pm.name AS payam_name, sl.state_id, s.name AS state_name,
   to_char(sl.available_from, 'YYYY-MM-DD') AS available_from,
   CASE WHEN sl.available_until IS NULL THEN NULL
        ELSE to_char(sl.available_until, 'YYYY-MM-DD') END AS available_until,
   sl.availability_note, sl.price_ssp::text AS price_ssp, sl.price_unit, sl.negotiable,
   sl.status, sl.created_at, sl.updated_at, sl.show_phone,
-  (f.verification_status::text = 'verified') AS farmer_verified,
+  (COALESCE(f.verification_status::text, '') = 'verified'
+    OR COALESCE(o.verification_status::text, '') = 'verified') AS poster_verified,
   COALESCE((SELECT ap.allow_messages FROM public.account_profile ap
-             WHERE ap.auth_user_id = f.auth_user_id), true) AS owner_messages`;
+             WHERE ap.auth_user_id = COALESCE(f.auth_user_id, b.auth_user_id)), true)
+    AS owner_messages`;
 
+/** The poster must still exist and not be suspended: see SERVICE_POSTER_LIVE. */
 export const SERVICE_FROM = `FROM public.service_listing_active sl
-  JOIN public.farmer_active f ON f.id = sl.farmer_id AND f.suspended_at IS NULL
-  JOIN public.payam pm ON pm.id = sl.payam_id
+  LEFT JOIN public.farmer_active f ON f.id = sl.farmer_id AND f.suspended_at IS NULL
+  LEFT JOIN public.buyer_active b ON b.id = sl.buyer_id AND b.suspended_at IS NULL
+  LEFT JOIN public.buyer_organization_active o ON o.id = b.organization_id
+  LEFT JOIN public.payam pm ON pm.id = sl.payam_id
   JOIN public.state s ON s.id = sl.state_id`;
 
+/**
+ * The joins above are LEFT, so this is what takes a removed or suspended
+ * poster's services off every read -- the market, the owner's own list, the
+ * contact, messaging, profiles and reports all include it.
+ */
+export const SERVICE_POSTER_LIVE = `(f.id IS NOT NULL OR b.id IS NOT NULL)`;
+
+/** Every read of a service: the poster is live. */
+export const SERVICE_WHERE = SERVICE_POSTER_LIVE;
+
 export const SERVICE_MARKET_WHERE = `sl.status = 'active'
-  AND (sl.available_until IS NULL OR sl.available_until >= current_date)`;
+  AND (sl.available_until IS NULL OR sl.available_until >= current_date)
+  AND ${SERVICE_POSTER_LIVE}`;
 
 export interface ServiceRow {
   id: string;
+  poster_type: string;
   trading_name: string;
   service_type: string;
   title: string;
   description: string;
   location: string;
-  payam_id: string;
-  payam_name: string;
+  payam_id: string | null;
+  payam_name: string | null;
   state_id: string;
   state_name: string;
   available_from: string;
@@ -301,16 +324,23 @@ export interface ServiceRow {
   created_at: Date;
   updated_at: Date;
   show_phone: boolean;
-  farmer_verified: boolean;
+  poster_verified: boolean;
   /** 2026-10-23: the provider's "Allow in-app messaging" (absent: on). */
   owner_messages?: boolean;
 }
 
-/** THE ONLY SHAPE A SERVICE LISTING TAKES ON THE PUBLIC MARKET. A whitelist. */
+/**
+ * THE ONLY SHAPE A SERVICE LISTING TAKES ON THE PUBLIC MARKET. A whitelist.
+ * 2026-10-26: plus who offers it (farmer or buyer) and the verified badge --
+ * a farmer's, or a buyer's organisation's. `farmer_verified` stays for the
+ * screens that read it, and is true only for a verified farmer. No ids.
+ */
 export const presentService = (row: ServiceRow) => ({
   id: row.id,
+  poster_type: row.poster_type,
   trading_name: row.trading_name,
-  farmer_verified: row.farmer_verified,
+  poster_verified: row.poster_verified,
+  farmer_verified: row.poster_type === 'farmer' && row.poster_verified,
   service_type: row.service_type,
   title: row.title,
   description: row.description,
@@ -339,21 +369,23 @@ export const presentOwnService = (row: ServiceRow & { contact_phone: string }) =
   show_phone: row.show_phone,
 });
 
-export async function loadOwnService(db: Db, farmerId: string, id: string, lock = false) {
+/** The poster's own service, by the session's account (farmer or buyer). */
+export async function loadOwnService(db: Db, poster: Poster, id: string, lock = false) {
   checkId(id);
+  // The row is locked on its table, not through the view and its joins.
   if (lock) {
     await db.$queryRawUnsafe(
       `SELECT id FROM public.service_listing
-        WHERE id = $1::uuid AND farmer_id = $2::uuid FOR UPDATE`,
+        WHERE id = $1::uuid AND ${poster.column} = $2::uuid FOR UPDATE`,
       id,
-      farmerId,
+      poster.id,
     );
   }
   const [row] = await db.$queryRawUnsafe<(ServiceRow & { contact_phone: string })[]>(
     `SELECT ${OWN_SERVICE_COLUMNS} ${SERVICE_FROM}
-      WHERE sl.id = $1::uuid AND sl.farmer_id = $2::uuid`,
+      WHERE sl.id = $1::uuid AND sl.${poster.column} = $2::uuid AND ${SERVICE_WHERE}`,
     id,
-    farmerId,
+    poster.id,
   );
   if (!row) throw notFound();
   return row;

@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 
 import {
+  BUYER_ROLE,
   ERROR_CODES,
   ERROR_MESSAGES,
   FARMER_ROLE,
@@ -9,6 +10,7 @@ import {
   defaultEndDate,
   serviceFilterSchema,
   serviceListingSchema,
+  servicePosterIssue,
 } from '@agri-erp/shared';
 
 import { audited, writeAudit } from '../../../lib/api/audit';
@@ -22,15 +24,16 @@ import {
   invalidField,
   likePattern,
   loadOwnService,
+  marketPoster,
   pageLimit,
   parseQuery,
+  posterPhone,
   presentOwnService,
   presentService,
   todayUtc,
   type ServiceRow,
 } from '../../../lib/api/market-posts';
 import { created, defineRoutes, ok, paged } from '../../../lib/api/route';
-import { farmerScope } from '../../../lib/api/scope';
 import { prisma } from '../../../lib/db';
 
 /**
@@ -39,13 +42,16 @@ import { prisma } from '../../../lib/db';
  * October 2026.
  *
  * GET is public: every active service whose end date has not passed, from a
- * farmer whose record is live, with search (q) and filters (service type,
- * state). Rows leave through presentService -- no phone, no farmer id; the
- * "Verified farmer" badge is shown, never filtered on.
+ * farmer or buyer account that is live and not suspended, with search (q)
+ * and filters (service type, state). Rows leave through presentService -- no
+ * phone, no farmer or buyer id; the Verified badge is shown, never filtered on.
  *
- * POST is a farmer's own (owned by a farmer account for now, the owner,
- * 2026-10-19). The owner, payam and state come from the session's farmer
- * record, never the body. With no end date, thirty days on the market.
+ * POST is for any signed-in farmer or buyer account (2026-10-26, replacing
+ * "owned by a farmer account for now": an institute, college, research body,
+ * advisory organisation or independent adviser offers services on its own
+ * initiative). The owner is the session's account, never the body. A farmer's
+ * payam and state come from the farmer record; a buyer account names a state
+ * from the list (no payam). With no end date, thirty days on the market.
  * Idempotent on a client-generated id (C-9).
  */
 export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
@@ -94,24 +100,47 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   },
 
   POST: {
-    roles: [FARMER_ROLE],
+    roles: [FARMER_ROLE, BUYER_ROLE],
     bodySchema: serviceListingSchema,
     handler: async ({ auth, body }) => {
-      const { farmerId } = farmerScope(auth);
+      const poster = marketPoster(auth);
       const id = body.id ?? randomUUID();
 
-      const [existing] = await prisma.$queryRawUnsafe<{ farmer_id: string }[]>(
-        'SELECT farmer_id FROM public.service_listing WHERE id = $1::uuid',
-        id,
-      );
+      const [existing] = await prisma.$queryRawUnsafe<
+        { farmer_id: string | null; buyer_id: string | null }[]
+      >('SELECT farmer_id, buyer_id FROM public.service_listing WHERE id = $1::uuid', id);
       if (existing) {
-        if (existing.farmer_id !== farmerId) {
-          throw new ApiFailure(409, ERROR_CODES.conflict, ERROR_MESSAGES.conflict);
-        }
-        return ok(presentOwnService(await loadOwnService(prisma, farmerId, id)));
+        const mine =
+          poster.type === 'farmer'
+            ? existing.farmer_id === poster.id
+            : existing.buyer_id === poster.id;
+        if (!mine) throw new ApiFailure(409, ERROR_CODES.conflict, ERROR_MESSAGES.conflict);
+        return ok(presentOwnService(await loadOwnService(prisma, poster, id)));
       }
 
-      const farmer = await loadSelf(prisma, farmerId);
+      const issue = servicePosterIssue(poster.type, body, true);
+      if (issue) throw invalidField(issue.field, issue.message);
+
+      // Where the service is: the farmer record's payam and state, or the
+      // state a buyer account chose (checked against the list), with no payam.
+      let payamId: string | null = null;
+      let stateId: string;
+      let phone: string;
+      if (poster.type === 'farmer') {
+        const farmer = await loadSelf(prisma, poster.id);
+        payamId = farmer.payam_id;
+        stateId = farmer.state_id;
+        phone = body.contact_phone ?? farmer.phone;
+      } else {
+        const [state] = await prisma.$queryRawUnsafe<{ id: string }[]>(
+          'SELECT id FROM public.state WHERE id = $1 AND deleted_at IS NULL',
+          body.state_id,
+        );
+        if (!state) throw invalidField('state_id', MARKET_POST_MESSAGES.stateUnknown);
+        stateId = state.id;
+        phone = body.contact_phone ?? (await posterPhone(prisma, poster));
+      }
+
       const today = todayUtc();
       const availableUntil = defaultEndDate(body.available_until, body.available_from, today);
       if (availableUntil < body.available_from) {
@@ -124,45 +153,50 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       const row = await audited(prisma, async (tx) => {
         await tx.$executeRawUnsafe(
           `INSERT INTO public.service_listing
-             (id, farmer_id, trading_name, service_type, title, description, location,
-              payam_id, state_id, available_from, available_until, availability_note,
-              price_ssp, price_unit, negotiable, contact_phone, status, show_phone)
-           VALUES ($1::uuid, $2::uuid, $3, $4, $5, $6, $7, $8, $9, $10::date, $11::date,
-                   $12, $13, $14, $15, $16, $17, $18)`,
+             (id, poster_type, farmer_id, buyer_id, trading_name, service_type, title,
+              description, location, payam_id, state_id, available_from, available_until,
+              availability_note, price_ssp, price_unit, negotiable, contact_phone, status,
+              show_phone)
+           VALUES ($1::uuid, $2, $3::uuid, $4::uuid, $5, $6, $7, $8, $9, $10, $11,
+                   $12::date, $13::date, $14, $15, $16, $17, $18, $19, $20)`,
           id,
-          farmerId,
+          poster.type,
+          poster.type === 'farmer' ? poster.id : null,
+          poster.type === 'buyer' ? poster.id : null,
           body.trading_name,
           body.service_type,
           body.title,
           body.description,
           body.location,
-          farmer.payam_id,
-          farmer.state_id,
+          payamId,
+          stateId,
           body.available_from,
           availableUntil,
           body.availability_note ?? null,
           body.price_ssp ?? null,
           body.price_ssp == null ? null : (body.price_unit ?? null),
           body.negotiable,
-          body.contact_phone ?? farmer.phone,
+          phone,
           body.status,
           body.show_phone,
         );
         await writeAudit(tx, {
           entityType: 'service_listing',
           entityId: id,
-          actorType: 'farmer',
-          actorId: farmerId,
+          actorType: poster.type,
+          actorId: poster.id,
           action: 'listing.created',
           after: {
             kind: 'service_listing',
+            poster_type: poster.type,
             title: body.title,
             service_type: body.service_type,
+            state_id: stateId,
             status: body.status,
             available_until: availableUntil,
           },
         });
-        return loadOwnService(tx, farmerId, id);
+        return loadOwnService(tx, poster, id);
       });
       return created(presentOwnService(row));
     },

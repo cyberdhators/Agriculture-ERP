@@ -87,7 +87,10 @@ const POST_OWNER_SQL: Record<PostKind, string> = {
       COALESCE(f.auth_user_id, b.auth_user_id) AS owner_auth_user_id,
       br.display_name AS owner_name
     ${BUYING_REQUEST_FROM} WHERE br.id = $1::uuid AND ${BUYING_REQUEST_MARKET_WHERE}`,
-  service: `SELECT sl.title, f.auth_user_id AS owner_auth_user_id, sl.trading_name AS owner_name
+  // 2026-10-26: a service may be a buyer account's; its owner is that sign-in.
+  service: `SELECT sl.title,
+      COALESCE(f.auth_user_id, b.auth_user_id) AS owner_auth_user_id,
+      sl.trading_name AS owner_name
     ${SERVICE_FROM} WHERE sl.id = $1::uuid AND ${SERVICE_MARKET_WHERE}`,
 };
 
