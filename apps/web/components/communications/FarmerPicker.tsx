@@ -271,6 +271,16 @@ export function FarmerPicker({ selected, onChange }: FarmerPickerProps) {
       ) : rows.length === 0 ? (
         <Notice kind="info" title="No farmers match">
           <p className="small">Change the search or the filters.</p>
+          {/* 2026-10-24 (acceptance QA): a phone searched under the Verified
+              default found nothing for a farmer not yet verified. */}
+          {status === 'verified' ? (
+            <p className="small">
+              Only verified farmers are shown.{' '}
+              <Button variant="ghost" size="small" onClick={() => setStatus('')}>
+                Include farmers not yet verified
+              </Button>
+            </p>
+          ) : null}
         </Notice>
       ) : (
         <>

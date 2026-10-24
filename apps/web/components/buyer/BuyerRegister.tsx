@@ -2,7 +2,11 @@
 
 import { useState, type FormEvent } from 'react';
 
-import { buyerRegistrationSchema, zodErrorToApiError } from '@agri-erp/shared';
+import {
+  SIGN_IN_ANNOUNCE_HEADER,
+  buyerRegistrationSchema,
+  zodErrorToApiError,
+} from '@agri-erp/shared';
 
 import { BUYER_HOME_PATH, LOGIN_PATH } from '@/lib/auth/paths';
 import { BuyerApiError, registerBuyer } from '@/lib/buyer/api';
@@ -70,6 +74,13 @@ export function BuyerRegister() {
         email: parsed.data.email,
         password: parsed.data.password,
       });
+      // 2026-10-24 (acceptance QA): the sign-in that follows registration is
+      // announced, so the access log records it as the account's first sign-in.
+      if (!error) {
+        await fetch('/api/me', { headers: { [SIGN_IN_ANNOUNCE_HEADER]: '1' } }).catch(
+          () => undefined,
+        );
+      }
       window.location.assign(error ? LOGIN_PATH : BUYER_HOME_PATH);
     } catch (e) {
       // No answer (network drop or the 45-second limit): the account may have

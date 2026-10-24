@@ -48,6 +48,11 @@ function ProviderBadge({ s, lang }: { s: ServiceListing; lang: Language }) {
  */
 export function MarketServices({ lang, postHref }: { lang: Language; postHref?: string }) {
   const [q, setQ] = useState('');
+  // 2026-10-24: the header search lands here with ?q= (read after mount).
+  useEffect(() => {
+    const fromUrl = new URLSearchParams(window.location.search).get('q');
+    if (fromUrl) setQ(fromUrl);
+  }, []);
   const [query, setQuery] = useState('');
   const [type, setType] = useState('');
   const [state, setState] = useState('');

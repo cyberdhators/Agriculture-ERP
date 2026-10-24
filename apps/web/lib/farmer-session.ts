@@ -11,7 +11,7 @@ import {
   type ReactNode,
 } from 'react';
 
-import { farmerAuthIdentifier } from '@agri-erp/shared';
+import { SIGN_IN_ANNOUNCE_HEADER, farmerAuthIdentifier } from '@agri-erp/shared';
 
 import { DEFAULT_LANGUAGE, LANG_COOKIE, LANG_STORAGE, isLanguage, type Language } from '@/lib/i18n';
 import type { Farmer, ProduceListing } from '@/lib/fixtures/farmers';
@@ -280,6 +280,13 @@ export function FarmerSessionProvider({
       } catch {
         return { ok: false, reason: 'unavailable' };
       }
+      // 2026-10-24 (acceptance QA): announce the sign-in, as the staff sign-in
+      // does, so the access log records it as a sign-in (the first one as
+      // first_sign_in) rather than a return session. Registration signs in
+      // here too. Best effort: the sign-in itself has already succeeded.
+      await fetch('/api/farmer/me', { headers: { [SIGN_IN_ANNOUNCE_HEADER]: '1' } }).catch(
+        () => undefined,
+      );
       await load();
       return { ok: true };
     },

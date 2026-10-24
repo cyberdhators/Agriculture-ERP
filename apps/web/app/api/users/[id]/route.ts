@@ -200,6 +200,17 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
           auth.principal.id,
         );
         if (!row) throw notFound();
+        // 2026-10-24 (acceptance QA): a removed staff member keeps no live
+        // permission grant -- revoked with the account, in the same
+        // transaction (revocation is the grants' own soft delete).
+        const revoked = await tx.$queryRawUnsafe<{ id: string }[]>(
+          `UPDATE public.staff_permission_grant
+              SET revoked_at = now(), revoked_by = $2::uuid, revoke_reason = 'Staff account removed'
+            WHERE user_id = $1::uuid AND revoked_at IS NULL
+            RETURNING id`,
+          target.id,
+          auth.principal.id,
+        );
         // A deactivation is not an edit (DECISIONS): its own action key.
         await writeAudit(tx, {
           entityType: 'user',
@@ -208,7 +219,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
           actorId: auth.principal.id,
           action: 'user.soft_deleted',
           before: { deleted_at: null },
-          after: { deleted_at: toIso(row.deleted_at) },
+          after: { deleted_at: toIso(row.deleted_at), grants_revoked: revoked.length },
         });
         return row.deleted_at;
       });

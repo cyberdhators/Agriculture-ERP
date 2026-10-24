@@ -58,7 +58,7 @@ export function WeatherTile({
               {loc.current ? (
                 <>
                   <span className={styles.weatherHeroCond} dir="auto">
-                    {loc.current.conditions}
+                    {conditionLabel(loc.current.conditions, language)}
                   </span>
                   <span className={styles.weatherHeroFacts}>
                     {t('weather.humidity', language)} {loc.current.humidity_pct}% ·{' '}
@@ -109,7 +109,7 @@ export function WeatherTile({
                     {t('weather.rainChance', language)} {Math.round(d.rain_probability * 100)}%
                   </span>
                   <span className={styles.weatherDayCond} dir="auto">
-                    {d.conditions}
+                    {conditionLabel(d.conditions, language)}
                   </span>
                 </li>
               ))}
@@ -178,4 +178,41 @@ function timeOf(iso: string, language: Language): string {
     minute: '2-digit',
     timeZone: 'Africa/Juba',
   }).format(d);
+}
+
+/**
+ * 2026-10-24 (acceptance QA): the provider's condition words in Arabic. The
+ * weather service sends a fixed set of English descriptions; the common ones
+ * are translated here, and anything else keeps the provider's own words.
+ */
+const CONDITIONS_AR: Record<string, string> = {
+  'clear sky': 'سماء صافية',
+  'few clouds': 'غيوم قليلة',
+  'scattered clouds': 'غيوم متفرقة',
+  'broken clouds': 'غيوم متقطعة',
+  'overcast clouds': 'غائم كلياً',
+  'light rain': 'مطر خفيف',
+  'moderate rain': 'مطر معتدل',
+  'heavy intensity rain': 'مطر غزير',
+  'very heavy rain': 'مطر غزير جداً',
+  'light intensity shower rain': 'زخات مطر خفيفة',
+  'shower rain': 'زخات مطر',
+  rain: 'مطر',
+  drizzle: 'رذاذ',
+  'light intensity drizzle': 'رذاذ خفيف',
+  thunderstorm: 'عاصفة رعدية',
+  'thunderstorm with rain': 'عاصفة رعدية مع مطر',
+  'thunderstorm with light rain': 'عاصفة رعدية مع مطر خفيف',
+  'thunderstorm with heavy rain': 'عاصفة رعدية مع مطر غزير',
+  mist: 'ضباب خفيف',
+  haze: 'غبار عالق',
+  fog: 'ضباب',
+  dust: 'غبار',
+  sand: 'رمال',
+  smoke: 'دخان',
+};
+
+function conditionLabel(conditions: string, language: Language): string {
+  if (language !== 'ar') return conditions;
+  return CONDITIONS_AR[conditions.trim().toLowerCase()] ?? conditions;
 }

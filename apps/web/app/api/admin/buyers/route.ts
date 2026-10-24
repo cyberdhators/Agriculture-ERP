@@ -70,7 +70,13 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
         limit = Math.min(n, MAX_LIMIT);
       }
       const params: unknown[] = [];
-      const where = ['o.deleted_at IS NULL'];
+      // 2026-10-24 (acceptance QA): an organisation whose every member deleted
+      // their own account is closed, not awaiting review -- it leaves the list
+      // (its records stay, soft-deleted, for the audit trail).
+      const where = [
+        'o.deleted_at IS NULL',
+        'EXISTS (SELECT 1 FROM public.buyer_active m WHERE m.organization_id = o.id)',
+      ];
       if (filter.status) {
         if (!(BUYER_VERIFICATION_STATUSES as readonly string[]).includes(filter.status)) {
           throw new ApiFailure(400, ERROR_CODES.invalidInput, ERROR_MESSAGES.invalidInput, {

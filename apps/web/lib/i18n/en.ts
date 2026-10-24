@@ -1144,6 +1144,8 @@ export const en = {
   'adviser.sent': 'Sent. CORWADO will review it.',
   'adviser.history': 'Earlier applications',
   'adviser.sentOn': 'Sent',
+  // 2026-10-24 (acceptance QA): the price is needed unless the service is negotiable.
+  'svc.priceHint': 'Give a price, or tick Negotiable below.',
 } as const;
 
 export type TKey = keyof typeof en;
