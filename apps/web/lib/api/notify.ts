@@ -68,3 +68,81 @@ export async function notifyAccount(
   });
   return true;
 }
+
+// ---------------------------------------------------------------------------
+// NEW CONVERSATIONS -- one notice per side, not one per message
+// ---------------------------------------------------------------------------
+
+const MESSAGE_NOTICE: Record<string, AccountNotice> = {
+  listing: 'message_listing',
+  buying_request: 'message_buying_request',
+  service: 'message_service',
+  advice_case: 'message_advice_case',
+};
+
+/**
+ * Called after a message is stored. When it is the SENDER'S FIRST message in
+ * the conversation -- the one that starts it, or the other person's first
+ * reply -- the person it went to is sent one notice naming only the kind of
+ * post. Every later message is left to the unread badge, so a conversation
+ * makes at most two notices. The message's text is never read here.
+ */
+export async function noticeIfFirstMessage(
+  tx: AuditTx,
+  conversationId: string,
+  sender: string,
+  actor: NoticeActor,
+): Promise<void> {
+  const [row] = await tx.$queryRawUnsafe<
+    {
+      post_kind: string;
+      owner_auth_user_id: string;
+      starter_auth_user_id: string;
+      sent: number;
+    }[]
+  >(
+    `SELECT c.post_kind, c.owner_auth_user_id, c.starter_auth_user_id,
+            (SELECT count(*) FROM public.message m
+              WHERE m.conversation_id = c.id AND m.sender_auth_user_id = $2::uuid)::int AS sent
+       FROM public.conversation c WHERE c.id = $1::uuid`,
+    conversationId,
+    sender,
+  );
+  const notice = row ? MESSAGE_NOTICE[row.post_kind] : undefined;
+  if (!row || row.sent !== 1 || !notice) return;
+  const to = row.owner_auth_user_id === sender ? row.starter_auth_user_id : row.owner_auth_user_id;
+  if (to === sender) return;
+  await notifyAccount(tx, { authUserId: to }, notice, actor);
+}
+
+// ---------------------------------------------------------------------------
+// ADVICE CASES -- a change of status, or a referral proposed
+// ---------------------------------------------------------------------------
+
+/**
+ * Tells the OTHER participant of an advice case that it changed: the
+ * requester when the provider acts, the provider when the requester does.
+ * Never the question, the outcome's wording or a message.
+ */
+export async function noticeCaseChanged(
+  tx: AuditTx,
+  advice: { requester_auth_user_id: string; provider_auth_user_id: string },
+  actedAs: 'requester' | 'provider',
+  actor: NoticeActor,
+): Promise<void> {
+  if (actedAs === 'provider') {
+    await notifyAccount(
+      tx,
+      { authUserId: advice.requester_auth_user_id },
+      'advice_request_updated',
+      actor,
+    );
+  } else {
+    await notifyAccount(
+      tx,
+      { authUserId: advice.provider_auth_user_id },
+      'advice_work_updated',
+      actor,
+    );
+  }
+}

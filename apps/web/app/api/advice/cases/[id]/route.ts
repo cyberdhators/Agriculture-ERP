@@ -15,6 +15,7 @@ import { audited, writeAudit } from '../../../../../lib/api/audit';
 import { unprocessable } from '../../../../../lib/api/errors';
 import { checkId } from '../../../../../lib/api/market-posts';
 import { actorOf, me } from '../../../../../lib/api/messaging';
+import { noticeCaseChanged } from '../../../../../lib/api/notify';
 import { defineRoutes, ok } from '../../../../../lib/api/route';
 import { prisma } from '../../../../../lib/db';
 
@@ -41,6 +42,10 @@ import { prisma } from '../../../../../lib/db';
  * Repeating a change already made returns the case as it is. A closed case
  * takes no other change. Audited with statuses and the rating, never the
  * question, a message or the comment.
+ *
+ * 2026-10-26 (CORWADO's acceptance test): start and close send the OTHER
+ * participant one in-app notice with a fixed sentence (noticeCaseChanged).
+ * Feedback sends none.
  */
 export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   GET: {
@@ -78,6 +83,8 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
             before: { status: current.status },
             after: { status: 'in_progress' },
           });
+          // 2026-10-26: the other side is told the case changed; never how or why.
+          await noticeCaseChanged(tx, current, side, actorOf(auth));
           return loadCase(tx, current.id, reader);
         }
 
@@ -108,6 +115,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
           // 2026-10-25: a referral still waiting for the requester's answer
           // ends with the case; nothing was shared, so nothing is undone.
           await withdrawWaitingReferral(tx, current.id, entity);
+          await noticeCaseChanged(tx, current, side, actorOf(auth));
           return loadCase(tx, current.id, reader);
         }
 

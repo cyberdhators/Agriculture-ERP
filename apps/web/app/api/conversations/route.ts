@@ -16,6 +16,7 @@ import {
   startedToday,
   type ConversationRow,
 } from '../../../lib/api/messaging';
+import { noticeIfFirstMessage } from '../../../lib/api/notify';
 import { created, defineRoutes, paged } from '../../../lib/api/route';
 import { prisma } from '../../../lib/db';
 
@@ -136,6 +137,8 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
             action: 'message.sent',
             after: { conversation_id: conversation.id },
           });
+          // 2026-10-26: the owner is told of a NEW conversation, never of each message.
+          await noticeIfFirstMessage(tx, conversation.id, sender, actorOf(auth));
         }
         return {
           conversation: presentConversation(
