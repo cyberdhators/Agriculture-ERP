@@ -4405,3 +4405,80 @@ usage, case resolution". Migration `20261025090000_advice_attachments_and_referr
   §5.2.2 but NOT in the database CHECK: the owner writes the combined CHECK
   migration, so `audit-check-matches-migrations` fails on this branch until
   then, and every write here is refused rather than unlogged.
+
+## Settings, phase 1 (2026-10-25)
+
+CORWADO's 16 October specification, the "Settings" tab ("Service
+configuration, policy versions, security, integration and recovery
+controls"). Migration `20261025100000_settings_phase1`. A staff screen at
+`/admin/settings`, a new "Settings" tab in the portal navigation;
+administrators holding `settings.manage` read and write it (every
+administrator holds it; other staff only through the Administrator preset).
+
+- **Versioned, never overwritten.** Settings live in `setting_version`: one row
+  per saved version of one key (`identity`, `support`, `maintenance`,
+  `reason_codes`), each value checked by its shared Zod schema
+  (`packages/shared/src/settings.ts`). A save appends version n+1 and must name
+  the version it was made against, so two administrators cannot silently undo
+  each other; a trigger refuses UPDATE and DELETE. Earlier versions are shown
+  on the screen. A key never saved reads as its fallback -- what the site
+  showed before -- so nothing changes until someone saves.
+- **Identity and help.** The approved service name, About text, support phone,
+  WhatsApp, email, opening hours and up to ten https help links. The public
+  `/help` page shows About, contacts and links; the market and farmer footers
+  show a Help link and the published contacts. None was published before, so
+  until one is saved they show nothing new but the Help link.
+- **Terms and data.** Versioned notices in `notice` (consent, terms, privacy;
+  en and ar): draft, preview, publish -- which retires the version it
+  replaces, kept for ever -- and discard (a draft only, softly). The current
+  consent text is seeded as `v1.3` en and ar, published, word for word the
+  sign-up text (a test holds the two together). The sign-up screens read the
+  published consent from the public `GET /api/notices/current` and record
+  `<version>-<language>` as before, with the built-in v1.3 text as the offline
+  fallback. Consents already given keep their version; publishing asks nobody
+  to agree again. Acknowledgement history: counts of accepted and still-current
+  consents per version and language, from the existing consent records, live
+  farmers only, no names. Retention is shown as the open decisions it is
+  (messages, access logs, deleted accounts: not set, kept indefinitely);
+  nothing purges.
+- **Security and operations (read-only, never a secret).** Each integration
+  (Supabase, database, Bird, Resend, OpenWeather, Anthropic, Sentry, scheduler,
+  Mapbox) shows whether each environment variable NAME it reads is set -- a
+  boolean, never a value, length or prefix. Mapbox shows "not in use": no code
+  reads a Mapbox variable yet. Staff MFA: a count of staff with a verified
+  authenticator app from Supabase Auth's factor table, or "not tracked" if it
+  cannot be read. Backup and restoration: static text from
+  `docs/RUNBOOK-restore.md`; the last backup and drill are not recorded in the
+  application. The one editable item: the maintenance notice (text and on/off),
+  a banner at the top of every page, public and portal, while on.
+- **Moderation reason codes.** A list (code, label, offered for listing /
+  account / profile / report, active) seeded with six defaults: prohibited
+  content, misleading listing, fraud or scam, abusive behaviour, duplicate or
+  spam, other. A saved code is never removed (refused: past decisions may name
+  it); it is archived and can be restored. The suspend dialog and the
+  buying-request/service report decisions offer the active codes; choosing one
+  pre-fills the written reason, which stays required. The chosen code (and the
+  report decision's written reason, which was previously discarded) is recorded
+  in the audit row. The produce product-report screen still offers no
+  decisions, as before, so it has no dropdown.
+- **Public reads.** `GET /api/settings/public` (service name, About, support
+  contacts and links, the banner) and `GET /api/notices/current`. Whitelists;
+  read-only; cached for a minute.
+- **Audit:** `setting.changed` (the key, both version numbers and the NAMES of
+  changed fields; for the banner on/off; for reason codes the codes added and
+  archived -- never a contact detail or text), `notice.drafted`,
+  `notice.draft_edited`, `notice.draft_discarded`, `notice.published`,
+  `notice.retired` (kind, language, version, status -- never the body). NOT
+  YET IN THE DATABASE CHECK: one combined CHECK migration adds them (the
+  owner), so until it lands every settings write is refused rather than
+  unlogged.
+- **Phase 2** will cover the remaining subsections of the specification's
+  table: language and region (languages, time-zone display, date formats,
+  currencies, units), registration and recovery (verification, sign-in and
+  recovery methods, session rules, age eligibility -- self-service registration
+  preserved), profile privacy defaults (field visibility, discoverability,
+  contact visibility, never exposing existing users silently), marketplace and
+  reference lists (listing fields, validity and reminders; locations,
+  commodities, categories, units; archive without deleting), and notification
+  templates (triggers, channel preferences, templates; suspension duration and
+  appeals).

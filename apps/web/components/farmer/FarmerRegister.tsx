@@ -27,6 +27,7 @@ import { maxBirthYear, validateFarmer, type FarmerFormValues } from '@/lib/farme
 import { COUNTIES, PAYAMS, STATES } from '@/lib/fixtures/p1';
 import { farmerApi, FarmerApiError, useFarmerSession } from '@/lib/farmer-session';
 import { t, type Language } from '@/lib/i18n';
+import { useConsentText } from '@/lib/settings/client';
 
 import styles from './farmer.module.css';
 
@@ -38,6 +39,12 @@ const MAX_YEAR = maxBirthYear(REFERENCE);
  * farmer's phone, as CORWADO's own form declares -- "shared with transporters
  * and buyers only as needed to link me to them". Every farmer registering from
  * now agrees to this text, and the version is recorded with the consent.
+ *
+ * 2026-10-25 (settings, phase 1): the PUBLISHED consent notice is read from
+ * GET /api/notices/current, so CORWADO can publish a new version from
+ * Settings. These built-in v1.3 texts are the offline fallback, shown until
+ * the published one arrives and whenever it cannot be read; the version shown
+ * is always the version recorded.
  */
 const CONSENT_VERSION: Record<'en' | 'ar', string> = {
   en: 'v1.3-en',
@@ -243,6 +250,11 @@ export function FarmerRegister() {
   const { language, register } = useFarmerSession();
   const router = useRouter();
   const w = W[language === 'ar' ? 'ar' : 'en'];
+  const consentLanguage = language === 'ar' ? 'ar' : 'en';
+  const consent = useConsentText(consentLanguage, {
+    text_version: CONSENT_VERSION[consentLanguage],
+    body: t('consent.body', language),
+  });
 
   const [step, setStep] = useState<Step>(0);
   const [values, setValues] = useState<FarmerFormValues>({
@@ -450,8 +462,8 @@ export function FarmerRegister() {
       payam_id: valid.payam_id,
       village: village.trim(),
       consent: {
-        text_version: CONSENT_VERSION[language === 'ar' ? 'ar' : 'en'],
-        language: language === 'ar' ? 'ar' : 'en',
+        text_version: consent.text_version,
+        language: consentLanguage,
         granted: true,
       },
       ...farmBody(),
@@ -880,10 +892,8 @@ export function FarmerRegister() {
         <div className={styles.stack}>
           <div>
             <p className={styles.progressLabel}>{t('register.consentTitle', language)}</p>
-            <div className={styles.consentBody}>{t('consent.body', language)}</div>
-            <p className={styles.consentVersion}>
-              {CONSENT_VERSION[language === 'ar' ? 'ar' : 'en']}
-            </p>
+            <div className={styles.consentBody}>{consent.body}</div>
+            <p className={styles.consentVersion}>{consent.text_version}</p>
           </div>
           <Field label={t('register.consentTitle', language)} error={errors.consent_granted}>
             {(ids) => (

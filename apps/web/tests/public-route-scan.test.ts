@@ -62,6 +62,13 @@ const EXPECTED_PUBLIC = [
   'listings/[id]',
   'listings/[id]/contact-requests',
   'listings/[id]/reports',
+  // 2026-10-25 (settings, phase 1): the published consent, terms or privacy
+  // text a person signing up must read, and the public settings (service
+  // name, support contacts, help links, maintenance banner). Read-only, each
+  // through a whitelist (app/api/notices/current, lib/api/settings.ts
+  // publicSettings): no draft, no staff name, nothing about security.
+  'notices/current',
+  'settings/public',
   // 2026-10-20: a poster's public profile, reached through one of their posts on
   // the market; read-only, a whitelist of market-facing fields (no phone, no ids).
   'profiles/[kind]/[id]',

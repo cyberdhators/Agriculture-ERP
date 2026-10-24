@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 import { BUYER_MESSAGES } from './buyer';
 import { MARKET_POST_MESSAGES } from './market-posts';
+import { reasonCodeSchema } from './settings';
 import { STAFF_PERMISSION_MESSAGES } from './staff-permissions';
 
 /**
@@ -25,6 +26,9 @@ export const accountSanctionSchema = z.strictObject({
     .trim()
     .min(5, STAFF_PERMISSION_MESSAGES.reasonRequired)
     .max(500, STAFF_PERMISSION_MESSAGES.reasonTooLong),
+  // 2026-10-25 (settings, phase 1): the reason code chosen from the list,
+  // which pre-fills the reason. The written reason stays required.
+  reason_code: reasonCodeSchema.optional(),
 });
 export type AccountSanctionInput = z.infer<typeof accountSanctionSchema>;
 

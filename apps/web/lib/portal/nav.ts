@@ -37,7 +37,8 @@ export type IconKey =
   | 'export'
   | 'directory'
   | 'library'
-  | 'audit';
+  | 'audit'
+  | 'settings';
 
 export interface NavItem {
   readonly href: string;
@@ -67,9 +68,9 @@ const STAFF: readonly Role[] = ['admin', 'supervisor', 'read_only'];
  *
  * Every screen that was here stays: the farmer register, farms, visits and the
  * field desk are contracted deliverables (c) and (d), so they move under the
- * tab they belong to rather than leave. SETTINGS IS NOT LISTED YET -- rule 1
- * above: no screen exists for it, and a tab with no page behind it is a 404
- * wearing a label. It is added here when its screen is.
+ * tab they belong to rather than leave. SETTINGS joined on 2026-10-25, when
+ * its screen (/admin/settings, phase 1) existed -- rule 1 above: a tab with no
+ * page behind it is a 404 wearing a label.
  */
 export const NAV_SECTIONS: readonly NavSection[] = [
   {
@@ -314,6 +315,22 @@ export const NAV_SECTIONS: readonly NavSection[] = [
       },
     ],
   },
+  {
+    heading: 'Settings',
+    items: [
+      {
+        // 2026-10-25: settings, phase 1.
+        href: '/admin/settings',
+        label: 'Settings',
+        icon: 'settings',
+        roles: ['admin'],
+        because:
+          'GET and PUT /api/admin/settings, /api/admin/notices and /api/admin/settings/status ' +
+          'are administrator-only and then require settings.manage, which every administrator ' +
+          'holds; other roles only through the Administrator preset.',
+      },
+    ],
+  },
 ];
 
 /** The sections this role may see, with the items it may not removed and empty sections dropped. */
@@ -360,6 +377,7 @@ const SEGMENT_LABELS: Record<string, string> = {
   audit: 'Audit trail',
   'staff-access': 'Staff permissions',
   'access-logs': 'Access logs',
+  settings: 'Settings',
   farmers: 'Farmers',
   farms: 'Farms & maps',
   communications: 'Communications',

@@ -5,6 +5,7 @@ import type { ReactNode } from 'react';
 import { AccountShell } from '@/components/farmer/AccountShell';
 import { FarmerShell } from '@/components/farmer/FarmerShell';
 import { ShopMasthead } from '@/components/farmer/ShopMasthead';
+import { SupportContactsLine } from '@/components/support/SupportContacts';
 import { Wordmark } from '@/components/brand/Wordmark';
 import { useFarmerSession } from '@/lib/farmer-session';
 import { t } from '@/lib/i18n';
@@ -37,6 +38,8 @@ export function MarketShell({ children }: { children: ReactNode }) {
         <footer className={farmer.footer}>
           <div className={farmer.footerInner}>
             <Wordmark size={18} tagline taglineText={t('brand.tagline', language)} />
+            {/* 2026-10-25: support contacts as published in Settings. */}
+            <SupportContactsLine language={language} />
             <span>{t('brand.copyright', language)}</span>
           </div>
         </footer>

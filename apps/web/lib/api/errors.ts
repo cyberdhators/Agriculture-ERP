@@ -240,6 +240,17 @@ export const RULE_MESSAGES = {
   advice_referral_open:
     "A referral is already waiting for the requester's answer. Withdraw it before proposing another.",
   advice_referral_none: 'There is no referral waiting for an answer on this request.',
+  // SETTINGS, PHASE 1 (2026-10-25).
+  setting_changed_elsewhere:
+    'This setting was changed by someone else after you opened it. Reload to see the current version, then make your change again.',
+  reason_code_removed:
+    'A reason code cannot be removed, because past decisions may name it. Archive it instead.',
+  notice_version_exists:
+    'That version already exists for this notice and language. Choose a new version number.',
+  notice_version_not_newer:
+    'Choose a version number higher than the one already published for this notice and language.',
+  notice_not_draft:
+    'Only a draft can be edited, published or discarded. A published or retired notice stays as it was.',
 } as const;
 
 export type RuleKey = keyof typeof RULE_MESSAGES;

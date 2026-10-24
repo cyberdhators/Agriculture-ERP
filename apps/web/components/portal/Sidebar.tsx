@@ -21,6 +21,7 @@ import {
   IconMap,
   IconOfficer,
   IconReports,
+  IconSettings,
   IconSidebarCollapse,
   IconSignOut,
   IconStaff,
@@ -56,6 +57,7 @@ const ICONS: Record<IconKey, (p: { size?: number }) => ReactNode> = {
   directory: IconDirectory,
   library: IconLibrary,
   audit: IconAudit,
+  settings: IconSettings,
 };
 
 export interface SidebarProps {

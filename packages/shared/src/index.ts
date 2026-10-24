@@ -424,3 +424,5 @@ export * from './analytics';
 export * from './public-profile';
 // 2026-10-24: independent advice part 2 -- the optional approved-adviser pathway.
 export * from './adviser-approval';
+// 2026-10-25: settings, phase 1 -- versioned settings, notices, reason codes.
+export * from './settings';

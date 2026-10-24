@@ -378,6 +378,11 @@ character.
 | `advice_referral_provider_invalid` | That provider cannot take this request. Choose another from the directory.                                                    |
 | `advice_referral_open`             | A referral is already waiting for the requester's answer. Withdraw it before proposing another.                               |
 | `advice_referral_none`             | There is no referral waiting for an answer on this request.                                                                   |
+| `setting_changed_elsewhere`        | This setting was changed by someone else after you opened it. Reload to see the current version, then make your change again. |
+| `reason_code_removed`              | A reason code cannot be removed, because past decisions may name it. Archive it instead.                                      |
+| `notice_version_exists`            | That version already exists for this notice and language. Choose a new version number.                                        |
+| `notice_version_not_newer`         | Choose a version number higher than the one already published for this notice and language.                                   |
+| `notice_not_draft`                 | Only a draft can be edited, published or discarded. A published or retired notice stays as it was.                            |
 
 **A route names a rule; it never writes a sentence.** `conflict()` and
 `unprocessable()` take a key from this registry, not a string. That is how the
@@ -520,6 +525,12 @@ change.
 | `advice_referral.accepted`                    |
 | `advice_referral.declined`                    |
 | `advice_referral.withdrawn`                   |
+| `setting.changed`                             |
+| `notice.drafted`                              |
+| `notice.draft_edited`                         |
+| `notice.draft_discarded`                      |
+| `notice.published`                            |
+| `notice.retired`                              |
 
 `before` and `after` hold **changed fields only**, never whole rows, and never a
 password, token, authentication identifier, national id, phone, email, given
@@ -821,6 +832,29 @@ These are also exact.
 | Advice photo: upload id malformed       | The upload identifier is not in the expected form.                                              |
 | Advice referral: action not on list     | Choose accept, decline or withdraw.                                                             |
 | Advice referral: share not true/false   | Say whether to share your photos: true or false.                                                |
+| Setting: key not on list                | Choose identity, support, maintenance or reason codes.                                          |
+| Setting: expected version               | Send the version you loaded, as a whole number.                                                 |
+| Identity: service name length           | Give a service name of 2 to 80 characters.                                                      |
+| Identity: About too long                | Keep the About text to 2000 characters.                                                         |
+| Support: phone or WhatsApp malformed    | Enter up to 40 digits, spaces and hyphens, starting with + for a country code.                  |
+| Support: email malformed                | Enter an email address such as help@example.org.                                                |
+| Support: opening hours too long         | Keep the opening hours to 200 characters.                                                       |
+| Support: over 10 help links             | List at most 10 help links.                                                                     |
+| Help link: label length                 | Give each link a label of 2 to 80 characters.                                                   |
+| Help link: not an https address         | Give each link a full address starting https://, up to 500 characters.                          |
+| Setting: on/off not true or false       | Choose on or off.                                                                               |
+| Maintenance banner: over 300 characters | Keep the notice to 300 characters.                                                              |
+| Maintenance banner: on with no text     | Write a notice of 5 to 300 characters before switching the banner on.                           |
+| Reason codes: none, or over 50          | Keep between 1 and 50 reason codes.                                                             |
+| Reason code: malformed                  | A code is 2 to 40 lower-case letters, digits and underscores, starting with a letter.           |
+| Reason code: listed twice               | Each code may appear only once.                                                                 |
+| Reason code: label length               | Give each reason a label of 3 to 80 characters.                                                 |
+| Reason code: applies to nothing known   | Choose at least one of listing, account, profile or report.                                     |
+| Notice: kind not on list                | Choose consent, terms or privacy.                                                               |
+| Notice: language not en or ar           | Choose en or ar.                                                                                |
+| Notice: version malformed               | Give the version as v followed by numbers, such as v1.4.                                        |
+| Notice: text length                     | Write the notice in 20 to 20000 characters.                                                     |
+| Notice: edit changes nothing            | Change the version or the text before saving.                                                   |
 
 The key beside each reason is the field name, per section 4.1. An unrecognised
 field named `nickname` therefore produces `{ "nickname": "This field is not

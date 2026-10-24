@@ -150,7 +150,15 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
           before: { status: row.status },
           // The action and the status, never the description: that is free
           // text a member of the public wrote and may name a person (C-4.7).
-          after: { status: next, action: body.action },
+          after: {
+            status: next,
+            action: body.action,
+            // 2026-10-25: the reason code chosen in the dialog and the staff
+            // member's written reason, if any, as a suspension records its reason.
+            // Never the reporter's description.
+            ...(body.reason_code ? { reason_code: body.reason_code } : {}),
+            ...(body.note ? { reason: body.note } : {}),
+          },
         });
 
         if (removesListing) {

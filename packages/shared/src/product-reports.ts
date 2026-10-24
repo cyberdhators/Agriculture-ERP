@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { reasonCodeSchema } from './settings';
+
 /**
  * MARKETPLACE PRODUCT REPORTS — THE CONTRACT, AHEAD OF THE BACKEND.
  *
@@ -101,6 +103,9 @@ export const moderateReportSchema = z.strictObject({
     .trim()
     .max(PRODUCT_REPORT_LIMITS.descriptionMax, PRODUCT_REPORT_MESSAGES.descriptionTooLong)
     .optional(),
+  // 2026-10-25 (settings, phase 1): the moderation reason code chosen in the
+  // dialog, recorded in the audit row beside the action. Optional.
+  reason_code: reasonCodeSchema.optional(),
 });
 export type ModerateReport = z.infer<typeof moderateReportSchema>;
 

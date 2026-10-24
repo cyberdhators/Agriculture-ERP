@@ -43,7 +43,12 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
             actorId: auth.principal.id,
             action: 'account.restored',
             before: { suspended: true },
-            after: { suspended: false, reason: body.reason },
+            after: {
+              suspended: false,
+              reason: body.reason,
+              // 2026-10-25: the reason code chosen from the list, if any.
+              ...(body.reason_code ? { reason_code: body.reason_code } : {}),
+            },
           });
         }
         return accountOf(tx, body.kind, body.id);

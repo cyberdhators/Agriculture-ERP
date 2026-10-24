@@ -780,6 +780,15 @@ export const en = {
   'help.sent': 'Sent. CORWADO will contact you.',
   'help.sendAnother': 'Send another message',
   'help.failed': 'The message was not sent. Please try again.',
+  // 2026-10-25 (settings, phase 1): support contacts and links CORWADO publishes.
+  'help.contactTitle': 'Contact CORWADO',
+  'help.contactPhone': 'Phone',
+  'help.contactEmail': 'Email',
+  'help.contactWhatsapp': 'WhatsApp',
+  'help.contactHours': 'Opening hours',
+  'help.linksTitle': 'Useful links',
+  'help.aboutTitle': 'About this service',
+  'footer.help': 'Help',
   // 2026-10-22: independent advice -- find a provider and ask.
   'nav.advice': 'Advice',
   'advice.find': 'Find advice',

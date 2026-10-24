@@ -25,7 +25,7 @@ describe('who sees which destination', () => {
 
   it('an administrator sees every section', () => {
     const headings = navFor('admin').map((s) => s.heading);
-    // CORWADO's ten tabs (2026-10-19). Settings joins when its screen exists.
+    // CORWADO's ten tabs (2026-10-19). Settings joined with its screen (2026-10-25).
     expect(headings).toEqual([
       'Overview',
       'Users and organizations',
@@ -36,7 +36,20 @@ describe('who sees which destination', () => {
       'Analytics and exports',
       'Staff and permissions',
       'Access and audit logs',
+      'Settings',
     ]);
+  });
+
+  it('offers Settings to administrators alone, under its own tab', () => {
+    // 2026-10-25. Every settings route is administrator-only and then asks for
+    // settings.manage; the nav agrees with them, it is not the control.
+    const offered = ROLES.filter((role) =>
+      navFor(role).some((s) => s.items.some((i) => i.href === '/admin/settings')),
+    );
+    expect(offered).toEqual(['admin']);
+    const section = NAV_SECTIONS.find((s) => s.items.some((i) => i.href === '/admin/settings'));
+    expect(section?.heading).toBe('Settings');
+    expect(pageTitleFor('/admin/settings')).toBe('Settings');
   });
 
   it('only an administrator is offered the audit trail (C-4.8)', () => {
