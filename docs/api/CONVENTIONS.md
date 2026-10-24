@@ -758,7 +758,7 @@ These are also exact.
 | Delete account: no password             | Enter your password to confirm.                                                                 |
 | Delete account: not confirmed           | Tick the box to confirm you want to delete your account.                                        |
 | Contact CORWADO: name                   | Give your name, 2 to 120 characters.                                                            |
-| Contact CORWADO: topic not on list      | Choose account, marketplace, messages, technical or other.                                      |
+| Contact CORWADO: topic not on list      | Choose account, marketplace, messages, technical, appeal or other.                              |
 | Contact CORWADO: message length         | Write your message, 10 to 2000 characters.                                                      |
 | Support list: status not on list        | Choose new or done.                                                                             |
 | Support message: status other than done | A message can only be marked done.                                                              |

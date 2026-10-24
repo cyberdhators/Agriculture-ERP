@@ -798,6 +798,9 @@ export const en = {
   'help.topicMarketplace': 'The marketplace',
   'help.topicMessages': 'Messages',
   'help.topicTechnical': 'Something is not working',
+  'help.topicAppeal': 'Appeal a decision',
+  'help.appealHint':
+    'If your account was suspended you are signed out. Give the phone number of your account so CORWADO can find it, and say why the decision should change.',
   'help.topicOther': 'Something else',
   'help.body': 'Your message',
   'help.send': 'Send',

@@ -755,6 +755,9 @@ export const ar: Partial<Record<TKey, string>> = {
   'help.topicMarketplace': 'السوق',
   'help.topicMessages': 'الرسائل',
   'help.topicTechnical': 'شيء لا يعمل',
+  'help.topicAppeal': 'الطعن في قرار',
+  'help.appealHint':
+    'إذا عُلّق حسابك فقد تم تسجيل خروجك. اكتب رقم هاتف حسابك لتتمكن CORWADO من العثور عليه، واذكر سبب وجوب تغيير القرار.',
   'help.topicOther': 'شيء آخر',
   'help.body': 'رسالتك',
   'help.send': 'إرسال',
