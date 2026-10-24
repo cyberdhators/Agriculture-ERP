@@ -47,6 +47,80 @@ describe('the market leaves out suspended accounts', () => {
   }
 });
 
+/**
+ * SERVICES FOR ANY ACCOUNT (2026-10-26). A service is a farmer's or a buyer
+ * account's, so its poster joins are LEFT joins, and a LEFT join filters
+ * nothing by itself: what takes a removed or suspended poster's services off
+ * is the poster-live condition. So every read of a service must carry it.
+ */
+describe('a service leaves with its suspended or removed poster, farmer or buyer', () => {
+  const posts = read('lib/api/market-posts.ts');
+
+  it('joins both kinds of poster through the live views, each filtering suspended_at', () => {
+    const from = posts.match(/export const SERVICE_FROM = `([^`]*)`/)?.[1] ?? '';
+    expect(from).toMatch(
+      /LEFT JOIN public\.farmer_active f ON f\.id = sl\.farmer_id AND f\.suspended_at IS NULL/,
+    );
+    expect(from).toMatch(
+      /LEFT JOIN public\.buyer_active b ON b\.id = sl\.buyer_id AND b\.suspended_at IS NULL/,
+    );
+  });
+
+  it('the market and every own-record read require a live poster', () => {
+    expect(posts).toMatch(
+      /export const SERVICE_POSTER_LIVE = `\(f\.id IS NOT NULL OR b\.id IS NOT NULL\)`/,
+    );
+    expect(posts).toMatch(/export const SERVICE_WHERE = SERVICE_POSTER_LIVE;/);
+    expect(posts).toMatch(/export const SERVICE_MARKET_WHERE = `[^`]*\$\{SERVICE_POSTER_LIVE\}`/);
+  });
+
+  const readers = [
+    'lib/api/market-posts.ts',
+    'lib/api/messaging.ts',
+    'lib/api/public-profile.ts',
+    'app/api/services/route.ts',
+    'app/api/services/mine/route.ts',
+    'app/api/services/[id]/route.ts',
+    'app/api/services/[id]/contact/route.ts',
+    'app/api/profiles/[kind]/[id]/route.ts',
+  ];
+  for (const file of readers) {
+    it(`every read of a service in ${file} carries the live-poster condition`, () => {
+      const text = read(file);
+      const at = [...text.matchAll(/\$\{SERVICE_FROM\}/g)].map((m) => m.index ?? 0);
+      expect(at.length, `${file} reads no service`).toBeGreaterThan(0);
+      for (const i of at) {
+        const window = text.slice(i, i + 200);
+        const direct = /\$\{SERVICE_(MARKET_)?WHERE\}/.test(window);
+        // The public list builds its WHERE as a list that starts with the market filter.
+        const built =
+          /where\.join\(/.test(window) && /const where = \[SERVICE_MARKET_WHERE\]/.test(text);
+        expect(direct || built, `${file}: a service read without the live-poster condition`).toBe(
+          true,
+        );
+      }
+    });
+  }
+
+  it('the public service shape names no farmer, buyer or sign-in id and no phone', () => {
+    const body =
+      posts.match(/export const presentService = \(row: ServiceRow\) => \(\{([\s\S]*?)\n\}\);/)?.[1] ??
+      '';
+    expect(body.length).toBeGreaterThan(100);
+    for (const key of ['farmer_id', 'buyer_id', 'auth_user_id', 'contact_phone', 'payam_id']) {
+      expect(body, `presentService returns ${key}`).not.toMatch(new RegExp(`\\b${key}\\s*:`));
+    }
+    expect(body, 'presentService spreads a row').not.toMatch(/\.\.\./);
+  });
+
+  it('deleting an account withdraws its services as a farmer and as a buyer', () => {
+    const text = read('app/api/account/delete/route.ts');
+    expect(text).toMatch(
+      /UPDATE public\.service_listing SET status = 'withdrawn'[^`]*\(farmer_id = \$1::uuid OR buyer_id = \$2::uuid\)/,
+    );
+  });
+});
+
 describe('the advice directory leaves out suspended accounts (2026-10-22)', () => {
   it('a provider is live only through a farmer or buyer record that is not suspended', () => {
     const text = read('lib/api/advice.ts');

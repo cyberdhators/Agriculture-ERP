@@ -102,6 +102,13 @@ const BUYER_OUTSIDE_ITS_TREE = [
   'buying-requests/[id]/contact',
   'buying-requests/mine',
   'services/[id]/contact',
+  // SERVICES FOR ANY ACCOUNT (2026-10-26): a buyer account -- an institute,
+  // college, research body, advisory organisation or adviser -- offers and
+  // manages its own services, as a farmer can. The owner is the session's
+  // account (marketPoster), in every WHERE; nothing of a farmer is returned.
+  'services',
+  'services/[id]',
+  'services/mine',
   // 2026-10-21: "Contact CORWADO" is public; it names the buyer role only to
   // recognise a signed-in sender, and reads nothing but that sender's own phone.
   'support',

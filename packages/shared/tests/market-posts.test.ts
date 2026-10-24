@@ -8,16 +8,19 @@ import {
   buyingRequestFilterSchema,
   buyingRequestPatchSchema,
   buyingRequestSchema,
+  buyerServiceListingSchema,
   canMove,
   canonicalStatus,
   defaultEndDate,
   farmerListingPatchSchema,
+  farmerServiceListingSchema,
   lifecycleActions,
   lifecycleStage,
   listingSaleSchema,
   listingStoredStatus,
   serviceListingPatchSchema,
   serviceListingSchema,
+  servicePosterIssue,
 } from '../src/index';
 
 /**
@@ -205,10 +208,48 @@ describe('a service listing', () => {
     ).toContain(MARKET_POST_MESSAGES.untilBeforeFrom);
   });
 
-  it('never carries an owner, payam or state: those come from the farmer record', () => {
-    for (const key of ['farmer_id', 'payam_id', 'state_id']) {
+  it('never carries an owner or a payam: the session names the owner', () => {
+    for (const key of ['farmer_id', 'buyer_id', 'poster_type', 'payam_id']) {
       expect(serviceListingSchema.safeParse({ ...service, [key]: 'x' }).success).toBe(false);
     }
+  });
+
+  it("a farmer's state is the record's, so a farmer may not send one (2026-10-26)", () => {
+    expect(farmerServiceListingSchema.safeParse(service).success).toBe(true);
+    expect(
+      reasons(farmerServiceListingSchema.safeParse({ ...service, state_id: 'SS-CE' })),
+    ).toContain(MARKET_POST_MESSAGES.stateFromFarmerRecord);
+    expect(servicePosterIssue('farmer', { state_id: 'SS-CE' }, false)?.message).toBe(
+      MARKET_POST_MESSAGES.stateFromFarmerRecord,
+    );
+  });
+});
+
+describe("a buyer account's service (2026-10-26)", () => {
+  it('must name a state from the list', () => {
+    expect(reasons(buyerServiceListingSchema.safeParse(service))).toContain(
+      MARKET_POST_MESSAGES.stateUnknown,
+    );
+    expect(servicePosterIssue('buyer', {}, true)).toEqual({
+      field: 'state_id',
+      message: MARKET_POST_MESSAGES.stateUnknown,
+    });
+    const parsed = buyerServiceListingSchema.parse({ ...service, state_id: 'SS-CE' });
+    expect(parsed.state_id).toBe('SS-CE');
+    expect(parsed.status).toBe('draft');
+  });
+
+  it('keeps every other rule a farmer has', () => {
+    expect(
+      reasons(
+        buyerServiceListingSchema.safeParse({ ...service, state_id: 'SS-CE', price_ssp: undefined }),
+      ),
+    ).toContain(MARKET_POST_MESSAGES.priceOrNegotiable);
+  });
+
+  it('a change need not repeat the state, and may move it', () => {
+    expect(servicePosterIssue('buyer', {}, false)).toBeNull();
+    expect(serviceListingPatchSchema.parse({ state_id: 'SS-CE' })).toEqual({ state_id: 'SS-CE' });
   });
 
   it('renews with a new date alone', () => {
