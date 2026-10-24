@@ -135,6 +135,7 @@ describe('sheet names', () => {
   it('replaces the characters Excel refuses and strips edge apostrophes', () => {
     expect(safeSheetName(`'a/b\\c[d]e:f*g?h'`, new Set())).toBe('a-b-c-d-e-f-g-h');
     expect(safeSheetName('   ', new Set())).toBe('Sheet');
+    expect(safeSheetName('New: first sign-ins', new Set())).toBe('New - first sign-ins');
   });
 
   it('makes names unique ignoring case, within the limit', () => {

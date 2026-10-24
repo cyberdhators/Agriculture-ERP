@@ -193,6 +193,9 @@ export const SHEET_NAME_MAX = 31;
  */
 export function safeSheetName(name: string, taken: Set<string>): string {
   let base = name
+    // 2026-10-24 (acceptance QA): "New: first sign-ins" read as
+    // "New- first sign-ins"; a colon before a space becomes a spaced dash.
+    .replace(/:\s+/g, ' - ')
     .replace(/[[\]:*?/\\]/g, '-')
     .replace(/^'+|'+$/g, '')
     .trim();
