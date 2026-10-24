@@ -3,6 +3,7 @@ import { accountSanctionSchema } from '@agri-erp/shared';
 import { audited, writeAudit } from '../../../../../lib/api/audit';
 import { unprocessable } from '../../../../../lib/api/errors';
 import { accountOf, standingOf } from '../../../../../lib/api/moderation';
+import { notifyAccount } from '../../../../../lib/api/notify';
 import { requirePermission } from '../../../../../lib/api/permissions';
 import { defineRoutes, ok } from '../../../../../lib/api/route';
 import { prisma } from '../../../../../lib/db';
@@ -15,6 +16,12 @@ import { enableAuthAccount } from '../../../../../lib/supabase/admin';
  * Clears the suspension on the account's farmer and buyer records (one audit
  * row each), then lifts the sign-in ban. The posts come back as they were.
  * Not for a deleted account: its records are out of reach here.
+ *
+ * 2026-10-26 (CORWADO's acceptance test): the account is told, by one in-app
+ * notice with a fixed sentence ("Your AgriOne account has been restored"), on
+ * its farmer record or else its buyer's organisation. No text message: the
+ * account can sign in again and read it. Restoring never restores an adviser
+ * approval that was revoked (lib/api/adviser-approval.ts).
  */
 export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   POST: {
@@ -51,6 +58,12 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
             },
           });
         }
+        await notifyAccount(
+          tx,
+          { authUserId: found.authUserId, farmerId: found.farmerId },
+          'account_restored',
+          { actorType: auth.role, actorId: auth.principal.id },
+        );
         return accountOf(tx, body.kind, body.id);
       });
 

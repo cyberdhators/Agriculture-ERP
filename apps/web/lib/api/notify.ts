@@ -1,5 +1,5 @@
 import { ACCOUNT_NOTICES, type AccountNotice } from '../farmer-notices';
-import { writeAudit, type AuditTx } from './audit';
+import { writeAudit, type AuditEntry, type AuditTx } from './audit';
 
 /**
  * ONE IN-APP NOTICE TO ONE ACCOUNT (2026-10-26, CORWADO's acceptance test of
@@ -20,10 +20,7 @@ import { writeAudit, type AuditTx } from './audit';
  * recipient's kind and the notice's name only.
  */
 
-export type NoticeActor = {
-  actorType: 'admin' | 'supervisor' | 'buyer' | 'farmer';
-  actorId: string;
-};
+export type NoticeActor = Pick<AuditEntry, 'actorType' | 'actorId'>;
 
 export type NoticeRecipient = { authUserId: string | null; farmerId?: string | null };
 
