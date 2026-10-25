@@ -558,8 +558,8 @@ export async function processBatch(
     await tx.$executeRawUnsafe(
       `INSERT INTO public.notification (id, farmer_id, buyer_organization_id, channel, title, body)
        SELECT x.nid, f.id, CASE WHEN f.id IS NULL THEN b.organization_id END, 'in_app',
-              replace($3, '{name}', COALESCE(NULLIF(left(btrim(COALESCE(f.given_name, b.given_name)), $6), ''), $5)),
-              replace($4, '{name}', COALESCE(NULLIF(left(btrim(COALESCE(f.given_name, b.given_name)), $6), ''), $5))
+              replace($3, '{name}', COALESCE(NULLIF(left(btrim(COALESCE(f.given_name, b.given_name)), $6::int), ''), $5)),
+              replace($4, '{name}', COALESCE(NULLIF(left(btrim(COALESCE(f.given_name, b.given_name)), $6::int), ''), $5))
          FROM unnest($1::uuid[], $2::uuid[]) AS x(did, nid)
          JOIN public.announcement_delivery d ON d.id = x.did
          LEFT JOIN public.farmer f ON d.recipient_kind = 'farmer' AND f.id = d.recipient_id
