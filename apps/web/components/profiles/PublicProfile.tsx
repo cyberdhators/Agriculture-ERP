@@ -4,13 +4,14 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-import type { PostKind } from '@agri-erp/shared';
+import type { PostKind, PublicExpertise } from '@agri-erp/shared';
 
 import { ABOUT_LABELS } from '@/components/account/AccountActivities';
 import { postHref } from '@/components/messages/Messages';
 import { EmptyState, Skeleton, Stamp } from '@/components/ui';
 import { t, type Language } from '@/lib/i18n';
 
+import { Expertise } from './Expertise';
 import styles from './profiles.module.css';
 
 /**
@@ -52,6 +53,8 @@ interface Profile {
     location: string;
   }[];
   services: { id: string; title: string; location: string }[];
+  /** 2026-10-28: topics of a published advice profile, and the approved-adviser badge. */
+  expertise?: PublicExpertise;
 }
 
 const W = {
@@ -200,6 +203,7 @@ export function PublicProfile({
             ))}
           </ul>
         ) : null}
+        <Expertise expertise={profile.expertise} language={lang} />
       </header>
 
       {anything ? (

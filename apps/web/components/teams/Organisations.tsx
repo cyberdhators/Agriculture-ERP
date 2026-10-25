@@ -15,6 +15,8 @@ import {
 import { ABOUT_LABELS } from '@/components/account/AccountActivities';
 import { Button, Checkbox, Field, Input, Notice, Select, Textarea } from '@/components/ui';
 
+import { OrganisationStateField } from './StateField';
+
 import {
   PERMISSION_WORDS,
   PRESET_WORDS,
@@ -198,6 +200,7 @@ function CreateOrganisation({
   const [activities, setActivities] = useState<string[]>([]);
   const [about, setAbout] = useState('');
   const [location, setLocation] = useState('');
+  const [stateId, setStateId] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [failure, setFailure] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -212,6 +215,7 @@ function CreateOrganisation({
       activities,
       about,
       location,
+      state_id: stateId === '' ? null : stateId,
     };
     const parsed = createOrganizationSchema.safeParse(input);
     if (!parsed.success) {
@@ -304,6 +308,12 @@ function CreateOrganisation({
             />
           )}
         </Field>
+        <OrganisationStateField
+          language={language}
+          value={stateId}
+          onChange={setStateId}
+          error={errors.state_id}
+        />
         <Field label={w.location} error={errors.location} optional>
           {(ids) => (
             <Input

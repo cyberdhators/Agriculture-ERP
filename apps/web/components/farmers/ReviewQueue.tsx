@@ -277,7 +277,9 @@ export function ReviewQueue() {
                           {farmerPayamName(farmer.payam_id)} ·{' '}
                           {farmer.sex === null ? '—' : farmer.sex === 'f' ? 'F' : 'M'}{' '}
                           <span className="mono">
-                            {farmer.year_of_birth === null ? '—' : TODAY_YEAR - farmer.year_of_birth}
+                            {farmer.year_of_birth === null
+                              ? '—'
+                              : TODAY_YEAR - farmer.year_of_birth}
                           </span>{' '}
                           ·{' '}
                           {officer

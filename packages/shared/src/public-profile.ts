@@ -258,4 +258,17 @@ export interface PublicProfileView {
   listings: unknown[];
   buying_requests: unknown[];
   service_listings: unknown[];
+  /** 2026-10-28 (infographic no. 5): expertise from the advice provider profile. */
+  expertise: PublicExpertise;
+}
+
+/**
+ * 2026-10-28 (user journeys, infographic no. 5): "relevant expertise" on a
+ * public profile -- the topics of the account's PUBLISHED advice provider
+ * profile, and whether it holds the "Approved adviser" authorization. Nothing
+ * else of the provider profile or of any application.
+ */
+export interface PublicExpertise {
+  topics: string[];
+  approved_adviser: boolean;
 }

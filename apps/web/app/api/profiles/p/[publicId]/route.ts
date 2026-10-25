@@ -13,6 +13,7 @@ import {
   PROFILE_FROM,
   PUBLIC_PROFILE_WHERE,
   accountOfSignIn,
+  expertiseOf,
   photoLink,
   postsOf,
   type ProfileRow,
@@ -100,6 +101,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
         listings: posts.listings,
         buying_requests: posts.buying_requests,
         service_listings: posts.services,
+        expertise: await expertiseOf(prisma, row.auth_user_id),
       };
       return ok(view);
     },

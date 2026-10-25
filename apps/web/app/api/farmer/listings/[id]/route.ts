@@ -19,6 +19,7 @@ import { addressCorrections, sentKeys } from '../../../../../lib/api/listing-cor
 import { checkLifecycle, invalidField, todayUtc } from '../../../../../lib/api/market-posts';
 import { defineRoutes, ok } from '../../../../../lib/api/route';
 import { farmerScope } from '../../../../../lib/api/scope';
+import { actingWith } from '../../../../../lib/api/organizations';
 import { prisma } from '../../../../../lib/db';
 
 /**
@@ -48,22 +49,39 @@ const CASTS: Record<string, string> = {
 export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   GET: {
     roles: [FARMER_ROLE],
-    handler: async ({ auth, params }) =>
-      ok(
+    handler: async ({ auth, params, request }) => {
+      // 2026-10-28: an organisation's listing, for its members with listings.manage.
+      const acting = await actingWith(prisma, request, auth, 'listings.manage');
+      return ok(
         presentOwnListing(
-          await loadOwnListing(prisma, farmerScope(auth).farmerId, params.id ?? ''),
+          await loadOwnListing(
+            prisma,
+            farmerScope(auth).farmerId,
+            params.id ?? '',
+            false,
+            acting?.organizationId ?? null,
+          ),
         ),
-      ),
+      );
+    },
   },
 
   PATCH: {
     roles: [FARMER_ROLE],
     bodySchema: farmerListingPatchSchema,
-    handler: async ({ auth, body, params }) => {
+    handler: async ({ auth, body, params, request }) => {
       const { farmerId } = farmerScope(auth);
+      // 2026-10-28: an organisation's listing, for its members with listings.manage.
+      const acting = await actingWith(prisma, request, auth, 'listings.manage');
       const id = params.id ?? '';
       const row = await audited(prisma, async (tx) => {
-        const current = await loadOwnListing(tx, farmerId, id, true);
+        const current = await loadOwnListing(
+          tx,
+          farmerId,
+          id,
+          true,
+          acting?.organizationId ?? null,
+        );
         // The legacy `sold` is written as `completed` from now on.
         if (body.status !== undefined)
           body.status = listingStoredStatus(canonicalStatus(body.status)) as typeof body.status;

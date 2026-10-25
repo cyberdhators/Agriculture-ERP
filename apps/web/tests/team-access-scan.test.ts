@@ -140,6 +140,22 @@ describe('invitations and acting-as', () => {
       expect(read(file), file).toMatch(/await actingPoster\(prisma, request, auth\)/);
     }
   });
+
+  // 2026-10-28 (user journeys): produce listings too, through the farmer routes.
+  it('a produce listing for an organisation needs listings.manage and stays apart', () => {
+    for (const file of [
+      'app/api/farmer/listings/route.ts',
+      'app/api/farmer/listings/[id]/route.ts',
+      'app/api/farmer/listings/[id]/sales/route.ts',
+    ]) {
+      expect(read(file), file).toMatch(
+        /await actingWith\(prisma, request, auth, 'listings\.manage'\)/,
+      );
+    }
+    const accounts = read('lib/api/farmer-accounts.ts');
+    expect(accounts).toMatch(/farmer_id = \$\{param\}::uuid AND organization_id IS NULL/);
+    expect(accounts).toMatch(/organization_id = \$\{param\}::uuid/);
+  });
 });
 
 describe('deletion and recovery', () => {

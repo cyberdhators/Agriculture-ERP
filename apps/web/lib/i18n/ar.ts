@@ -752,7 +752,6 @@ export const ar: Partial<Record<TKey, string>> = {
   'posts.previewSaved': 'لا تُحفظ التغييرات حتى تضغط "احفظ".',
   'listingForm.where': 'أين المنتج؟',
   'listingForm.whereHint': 'يرى المشترون البايام والمقاطعة والولاية فقط، لا أكثر.',
-  'listingForm.forOrganisation': 'تنشر باسم',
   // 2026-10-21: a suspended (or deleted) account trying to sign in.
   'login.suspended': 'هذا الحساب موقوف أو مغلق. تواصل مع كوروادو للمساعدة.',
   // 2026-10-21: "Contact CORWADO" -- the help page.
@@ -1111,6 +1110,8 @@ export const ar: Partial<Record<TKey, string>> = {
   'advice.approvedBadge': 'مستشار معتمد',
   'advice.approvedSince': 'معتمد من كوروادو منذ',
   'advice.approvedOnly': 'المستشارون المعتمدون فقط',
+  // 2026-10-28 (infographic no. 5): expertise on a public profile.
+  'profile.expertise': 'مجالات الخبرة',
   'adviser.title': 'مستشار معتمد (اختياري)',
   'adviser.lead':
     'يمكنك أن تطلب من كوروادو مراجعة خبرتك ومؤهلاتك. إذا وافقت كوروادو، يظهر على ملفك الاستشاري شعار "مستشار معتمد". هذا اختياري: ملفك الاستشاري وطلبات الاستشارة والبيع والشراء تعمل كما هي سواء قدّمت أم لا، أثناء المراجعة وبعدها.',

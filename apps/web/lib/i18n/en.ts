@@ -764,7 +764,8 @@ export const en = {
   'msg.blockPerson': 'Block this person',
   'msg.blockPersonConfirm':
     'Block this person? Neither of you will be able to message the other, here or about any other post, until you unblock them in Settings.',
-  'msg.personBlocked': 'You blocked this person. You can unblock them in Settings, Blocked accounts.',
+  'msg.personBlocked':
+    'You blocked this person. You can unblock them in Settings, Blocked accounts.',
   'blocks.title': 'Blocked accounts',
   'blocks.lead':
     'People you blocked cannot message you or start a conversation with you, and you cannot message them. Unblocking lets you both message again.',
@@ -799,7 +800,6 @@ export const en = {
   'posts.previewSaved': 'Changes are not saved until you press Save.',
   'listingForm.where': 'Where is the produce?',
   'listingForm.whereHint': 'Buyers see the payam, county and state, never more.',
-  'listingForm.forOrganisation': 'Posting for',
   // 2026-10-21: a suspended (or deleted) account trying to sign in.
   'login.suspended': 'This account is suspended or closed. Contact CORWADO for help.',
   // 2026-10-21: "Contact CORWADO" -- the help page.
@@ -1165,6 +1165,8 @@ export const en = {
   'advice.approvedBadge': 'Approved adviser',
   'advice.approvedSince': 'Approved by CORWADO since',
   'advice.approvedOnly': 'Approved advisers only',
+  // 2026-10-28 (infographic no. 5): expertise on a public profile.
+  'profile.expertise': 'Expertise',
   'adviser.title': 'Approved adviser (optional)',
   'adviser.lead':
     'You can ask CORWADO to review your experience and qualifications. If CORWADO approves, your advice profile shows an "Approved adviser" badge. This is optional: your advice profile, your advice requests, buying and selling all work the same whether you apply or not, during the review and after it.',

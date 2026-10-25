@@ -183,7 +183,11 @@ export const INTEGRATIONS: ReadonlyArray<{
     purpose: 'Error reporting',
     variables: ['NEXT_PUBLIC_SENTRY_DSN', 'SENTRY_ENVIRONMENT'],
   },
-  { name: 'Scheduler', purpose: 'Hourly weather fetch; daily expiry reminders', variables: ['CRON_SECRET'] },
+  {
+    name: 'Scheduler',
+    purpose: 'Hourly weather fetch; daily expiry reminders',
+    variables: ['CRON_SECRET'],
+  },
   { name: 'Mapbox', purpose: 'Farm maps (hidden for now)', variables: [] },
 ];
 

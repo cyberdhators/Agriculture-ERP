@@ -4680,6 +4680,7 @@ Migration `20261027090000_team_access`.
   forms yet (the API accepts it); no route or screen was run end-to-end
   (`next dev` and DB tests are not run on this machine) -- the pure suite,
   type check and lint are what was run.
+
 ## Self-service password recovery and a verified change of number (2026-10-27)
 
 CORWADO's 16 October specification: "Provide resend, change-number and secure
@@ -4773,3 +4774,82 @@ a reason; listing removal is separate from account action."
 - New table `listing_correction` (soft delete, RLS on, no policies). Audit:
   `listing.correction_requested` (code and note, as a suspension records its
   reason) and `listing.correction_addressed` (the names of the changed fields).
+
+## User journeys (2026-10-28) — sign-up, shortcut hub, preview, block, expiry reminders
+
+CORWADO's 16 October specification, lines 36-57 and section 3, and the
+infographics no. 4 (one account, many functions), no. 5 (profile visibility)
+and no. 7 (marketplace journey). Branch `feat/user-journeys`, migration
+`20261028100000_user_journeys` (additive; not applied anywhere).
+
+**Phone sign-up asks only what the specification lists (DOCUMENTED, spec line
+38).** Name, language, mobile number, password and the notice; the SMS code
+activates the account as before. Sex, year of birth, state/county/payam and
+village moved to the optional "More about you" step (skippable) and to "Your
+details" in the optional setup (`PATCH /api/farmer/me/details`); given at
+sign-up they are still captured.
+
+- The farmer columns `sex`, `year_of_birth`, `payam_id`, `county_id`,
+  `state_id` lost NOT NULL (no type change, no data rewritten). Two CHECKs
+  keep everything else as strict as before (INFERRED, from the officer intake
+  and reach rules): `farmer_officer_record_complete` (an officer-registered
+  farmer still has all five) and `farmer_location_whole` (all three levels or
+  none).
+- An account with no county is numbered `AO-000001` from its own sequence
+  (the per-county counter needs a county). The number is never re-derived, so
+  a place given later does not renumber it (C-5.4).
+- **Verification and visits wait for a place** (INFERRED): reach figures and
+  visits are by place, so `farmer_location_required` (422) refuses a verify or
+  a visit for a farmer with no location yet. Supervisors (state-scoped) do not
+  see such farmers; administrators do. Analytics filtered by state leave them
+  out, as they already do buyers with no state.
+- A produce listing asks "Where is the produce?" when the account has no
+  place; a service from such an account names a state as an email account
+  does. The market reads the listing's own payam, not the farmer's.
+- Language: an explicit English / Arabic choice on the first step; the choice
+  is recorded with the consent, as before.
+
+**Email sign-up (INFERRED design, DOCUMENTED requirement).** Terms/privacy
+acknowledgement (unticked, required; text from the published `terms` and
+`privacy` notices, built-in v1.0 fallback — **OWNER: CORWADO to approve or
+publish the real texts in Settings**), stored in `account_acknowledgement`;
+language stored in `buyer.preferred_language`. **Email verification is a
+6-digit code sent before the account exists** (Resend), the twin of the phone
+code, not Supabase's confirmation link: self-registration is off on the auth
+service, so there is no Supabase sign-up to confirm, and a proven address
+means the account is active the moment it is created — no half-made account
+that cannot sign in, no limited session to police. Codes: 15 minutes, 5
+tries, 3 per address per 30 minutes, 60 s between sends, 200 per hour
+system-wide. On whenever Resend is configured; `EMAIL_VERIFICATION=off` turns
+it off. The code route never says whether an address has an account
+(registration still answers 409, as before).
+
+**Shortcut hub (DOCUMENTED, spec line 49).** "What would you like to do?" on
+both homes: Sell produce, Buy, Post a buying request, Offer services, Get
+advice, My profile, Organisations. The account's activities order the tiles
+(a tile serving more chosen activities first; ties keep the default order) and
+hide none (`lib/account/shortcuts.ts`, pure test). Existing content stays
+below.
+
+**Person-level block (INFERRED).** From a conversation, "Block this person"
+blocks the other side's account (`account_block`; the account is read from a
+conversation the caller is in, never from the body; `blocked_name` is the name
+the caller saw). Both ways: while either has a live block, neither can start a
+conversation with the other or send a message; the refusal never says who
+blocked. Blocking while acting for an organisation is refused (the shared
+inbox closes conversations instead). Unblock ends the row; history stays.
+Settings list "Blocked accounts" in both shells. Audited `account.blocked` /
+`account.unblocked`. Gap: starting an advice case with a blocked person is not
+checked (its messages are).
+
+**Expiry reminders (OBSERVED existing scheduler, INFERRED rest).** The
+scheduler in use is Supabase pg_cron (weather, 2026-10-08), so the daily job
+follows it: `scripts/expiry-reminders-cron-install.mjs` installs a 06:00 UTC
+job calling `POST /api/cron/expiry-reminders` with the CRON_SECRET bearer
+(own Vault entry). No `vercel.json` (one scheduler, not two); GET is accepted
+so a Vercel cron could be added. Active listings, buying requests and services
+ending within `EXPIRY_REMINDER_DAYS` (3; TODO pointer for the settings lane)
+get one fixed in-app notice (no title in it), once per post per end date
+(`post_expiry_reminder`, unique; insert first, notify only if inserted); an
+edited end date earns a new reminder. Suspended or removed posters get none.
+Batch of 500. **OWNER: run the install script once against production.**

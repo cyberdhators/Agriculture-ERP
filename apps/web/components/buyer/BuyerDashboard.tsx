@@ -6,6 +6,7 @@ import { getSummary, type BuyerSummary } from '@/lib/buyer/api';
 import { useCart } from '@/lib/buyer/cart';
 import { CATEGORY_LABELS, VERIFICATION_MESSAGES, labelOf } from '@/lib/buyer/labels';
 
+import { ShortcutHub } from '../account/ShortcutHub';
 import { ButtonLink, Notice, PageHeader } from '../ui';
 import { CardSkeleton, ChartCard, StatCard, StatGrid } from '../ui/data';
 import { useBuyer } from './BuyerShell';
@@ -65,6 +66,9 @@ export function BuyerDashboard() {
           ) : null}
         </Notice>
       ) : null}
+
+      {/* 2026-10-28: one home for every ordinary function (infographic no. 4). */}
+      <ShortcutHub shell="buyer" language="en" />
 
       {error ? (
         <Notice kind="error" title="The dashboard could not be loaded">

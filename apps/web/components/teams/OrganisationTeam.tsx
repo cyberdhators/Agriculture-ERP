@@ -18,6 +18,8 @@ import {
 
 import { Button, Checkbox, Field, Input, Notice, Select, Textarea } from '@/components/ui';
 
+import { OrganisationStateField } from './StateField';
+
 import {
   PERMISSION_WORDS,
   PRESET_WORDS,
@@ -195,6 +197,7 @@ function ProfileEditor({
   const [name, setName] = useState(org.name);
   const [about, setAbout] = useState(org.about ?? '');
   const [location, setLocation] = useState(org.location ?? '');
+  const [stateId, setStateId] = useState(org.state_id ?? '');
   const [phone, setPhone] = useState(org.public_phone ?? '');
   const [email, setEmail] = useState(org.public_email ?? '');
   const [showTeam, setShowTeam] = useState(org.show_team);
@@ -206,6 +209,7 @@ function ProfileEditor({
       name,
       about,
       location,
+      state_id: stateId === '' ? null : stateId,
       public_phone: phone,
       public_email: email,
       show_team: showTeam,
@@ -239,6 +243,7 @@ function ProfileEditor({
           />
         )}
       </Field>
+      <OrganisationStateField language={language} value={stateId} onChange={setStateId} />
       <Field label={w.location} optional>
         {(ids) => (
           <Input
