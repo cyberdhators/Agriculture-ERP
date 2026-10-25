@@ -567,11 +567,13 @@ export const en = {
   'notice.messageService.title': 'You have a new message about a service',
   'notice.messageService.body': 'Open Messages to read it.',
   'notice.orgInvitation.title': 'You have been invited to join an organisation',
-  'notice.orgInvitation.body': 'Open Organisations in your account to see the role and accept or decline.',
+  'notice.orgInvitation.body':
+    'Open Organisations in your account to see the role and accept or decline.',
   'notice.orgTransfer.title': 'You have been offered administration of an organisation',
   'notice.orgTransfer.body': 'Open Organisations in your account to accept or decline.',
   'notice.orgAccessEnded.title': 'Your access to an organisation has ended',
-  'notice.orgAccessEnded.body': 'Your own account is not affected. Open Organisations to see your memberships.',
+  'notice.orgAccessEnded.body':
+    'Your own account is not affected. Open Organisations to see your memberships.',
   'notice.orgRecovered.title': 'CORWADO made you an administrator of an organisation',
   'notice.orgRecovered.body': 'Open Organisations in your account to manage its team.',
   'notice.messageAdviceCase.title': 'You have a new message about an advice request',

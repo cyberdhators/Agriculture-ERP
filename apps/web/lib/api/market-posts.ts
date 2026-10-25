@@ -130,11 +130,7 @@ export function marketPoster(auth: Authenticated): Poster {
  * membership is organization_access_ended). Read from the session and the
  * re-checked acting cookie, never from a body.
  */
-export async function actingPoster(
-  db: Db,
-  request: Request,
-  auth: Authenticated,
-): Promise<Poster> {
+export async function actingPoster(db: Db, request: Request, auth: Authenticated): Promise<Poster> {
   const poster = marketPoster(auth);
   const acting = await actingWith(db, request, auth, 'listings.manage');
   return acting

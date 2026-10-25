@@ -294,12 +294,16 @@ export interface MessageRow {
  */
 export const presentMessage = (
   row: MessageRow,
-  conversation: Pick<ConversationRow, 'owner_auth_user_id' | 'owner_organization_id' | 'starter_organization_id'> &
+  conversation: Pick<
+    ConversationRow,
+    'owner_auth_user_id' | 'owner_organization_id' | 'starter_organization_id'
+  > &
     Partial<ConversationRow>,
   viewer: Viewer,
 ): ChatMessage => {
   const side: Side =
-    row.sender_side ?? (row.sender_auth_user_id === conversation.owner_auth_user_id ? 'owner' : 'starter');
+    row.sender_side ??
+    (row.sender_auth_user_id === conversation.owner_auth_user_id ? 'owner' : 'starter');
   const mySide = sideOf(conversation as ConversationRow, viewer);
   const mine = side === mySide;
   return {

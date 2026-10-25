@@ -53,9 +53,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       if (cursor) {
         const c = decodeCursor(cursor);
         if (!c) throw invalidCursor();
-        where.push(
-          `(o.updated_at, o.id) < (${add(c.createdAt)}::timestamptz, ${add(c.id)}::uuid)`,
-        );
+        where.push(`(o.updated_at, o.id) < (${add(c.createdAt)}::timestamptz, ${add(c.id)}::uuid)`);
       }
       const rows = await prisma.$queryRawUnsafe<Row[]>(
         `SELECT o.id, o.name, o.profile_kind, o.status, o.closed_at, o.created_at, o.updated_at,

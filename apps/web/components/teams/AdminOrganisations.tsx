@@ -45,9 +45,7 @@ export function AdminOrganisations() {
       { cache: 'no-store' },
     ).catch(() => null);
     if (!response?.ok) {
-      setFailure(
-        response ? await errorText(response, 'Could not load.') : 'Could not load.',
-      );
+      setFailure(response ? await errorText(response, 'Could not load.') : 'Could not load.');
       setRows([]);
       return;
     }

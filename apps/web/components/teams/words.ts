@@ -13,7 +13,8 @@ export const TEAM_WORDS = {
     lead: 'Create a profile for your group, business or institution, and invite colleagues. Each person signs in with their own account; nobody shares a password.',
     actingAs: 'Acting as',
     yourself: 'Yourself',
-    actingNote: 'What you post and the messages you send now show this name. Your own account records that you did it.',
+    actingNote:
+      'What you post and the messages you send now show this name. Your own account records that you did it.',
     accessEnded: 'Your access to that organisation has ended. You are acting as yourself.',
     invitations: 'Invitations for you',
     noInvitations: 'No invitations are waiting for you.',
@@ -66,7 +67,8 @@ export const TEAM_WORDS = {
     revoke: 'Remove access',
     revokeReason: 'Reason (kept in the organisation’s history)',
     revokeNote: 'Their own account and everything the organisation has stays as it is.',
-    secondAdmin: 'Only one administrator. Add a second administrator so the organisation is never locked out.',
+    secondAdmin:
+      'Only one administrator. Add a second administrator so the organisation is never locked out.',
     handover: 'Hand over or share administration',
     handoverTo: 'Offer administration to',
     handoverThen: 'After they accept, I will be',
@@ -78,7 +80,8 @@ export const TEAM_WORDS = {
     email: 'Email',
     target: 'Their phone number or email',
     sendInvite: 'Create invitation',
-    inviteLink: 'Invitation link — copy it and send it to them. It works only when they sign in with that phone or email, and expires in 7 days.',
+    inviteLink:
+      'Invitation link — copy it and send it to them. It works only when they sign in with that phone or email, and expires in 7 days.',
     copy: 'Copy link',
     copied: 'Copied.',
     delivery: {
@@ -99,16 +102,19 @@ export const TEAM_WORDS = {
       cancelled: 'Withdrawn',
     } as Record<string, string>,
     close: 'Close the organisation',
-    closeLead: 'Closing takes its posts off the market, closes its conversations and ends everyone’s access. Its records are kept. This cannot be undone from the app.',
+    closeLead:
+      'Closing takes its posts off the market, closes its conversations and ends everyone’s access. Its records are kept. This cannot be undone from the app.',
     closeReason: 'Reason',
     closeConfirm: 'I understand. Close this organisation.',
     closeButton: 'Close organisation',
     closedNote: 'This organisation has been closed.',
     back: 'All organisations',
     inviteTitle: 'Invitation to join an organisation',
-    signInFirst: 'Sign in with the phone number or email address the invitation was sent to, then open this link again.',
+    signInFirst:
+      'Sign in with the phone number or email address the invitation was sent to, then open this link again.',
     signIn: 'Sign in',
-    otherAccount: 'This invitation was sent to a different phone number or email address. Sign in with that one to accept it.',
+    otherAccount:
+      'This invitation was sent to a different phone number or email address. Sign in with that one to accept it.',
     notFoundInvite: 'This invitation link is not valid.',
     expires: 'Expires',
   },
@@ -117,7 +123,8 @@ export const TEAM_WORDS = {
     lead: 'أنشئ ملفاً لمجموعتك أو شركتك أو مؤسستك وادعُ زملاءك. يسجّل كل شخص الدخول بحسابه الخاص؛ لا أحد يشارك كلمة مرور.',
     actingAs: 'تتصرف باسم',
     yourself: 'نفسك',
-    actingNote: 'ما تنشره والرسائل التي ترسلها يظهر الآن بهذا الاسم. ويُسجَّل في حسابك أنك من قام بذلك.',
+    actingNote:
+      'ما تنشره والرسائل التي ترسلها يظهر الآن بهذا الاسم. ويُسجَّل في حسابك أنك من قام بذلك.',
     accessEnded: 'انتهى وصولك إلى تلك المنظمة. أنت تتصرف باسمك.',
     invitations: 'دعوات لك',
     noInvitations: 'لا توجد دعوات بانتظارك.',
@@ -182,7 +189,8 @@ export const TEAM_WORDS = {
     email: 'بريد إلكتروني',
     target: 'رقم هاتفه أو بريده الإلكتروني',
     sendInvite: 'إنشاء دعوة',
-    inviteLink: 'رابط الدعوة — انسخه وأرسله إليه. يعمل فقط عندما يسجّل الدخول بذلك الهاتف أو البريد، وينتهي بعد 7 أيام.',
+    inviteLink:
+      'رابط الدعوة — انسخه وأرسله إليه. يعمل فقط عندما يسجّل الدخول بذلك الهاتف أو البريد، وينتهي بعد 7 أيام.',
     copy: 'نسخ الرابط',
     copied: 'تم النسخ.',
     delivery: {
@@ -203,14 +211,16 @@ export const TEAM_WORDS = {
       cancelled: 'مسحوبة',
     } as Record<string, string>,
     close: 'إغلاق المنظمة',
-    closeLead: 'الإغلاق يسحب منشوراتها من السوق ويغلق محادثاتها وينهي وصول الجميع. تُحفظ سجلاتها. لا يمكن التراجع عن ذلك من التطبيق.',
+    closeLead:
+      'الإغلاق يسحب منشوراتها من السوق ويغلق محادثاتها وينهي وصول الجميع. تُحفظ سجلاتها. لا يمكن التراجع عن ذلك من التطبيق.',
     closeReason: 'السبب',
     closeConfirm: 'أفهم ذلك. أغلق هذه المنظمة.',
     closeButton: 'إغلاق المنظمة',
     closedNote: 'تم إغلاق هذه المنظمة.',
     back: 'كل المنظمات',
     inviteTitle: 'دعوة للانضمام إلى منظمة',
-    signInFirst: 'سجّل الدخول بالهاتف أو البريد الذي أُرسلت إليه الدعوة، ثم افتح هذا الرابط مرة أخرى.',
+    signInFirst:
+      'سجّل الدخول بالهاتف أو البريد الذي أُرسلت إليه الدعوة، ثم افتح هذا الرابط مرة أخرى.',
     signIn: 'تسجيل الدخول',
     otherAccount: 'أُرسلت هذه الدعوة إلى رقم هاتف أو بريد مختلف. سجّل الدخول به لقبولها.',
     notFoundInvite: 'رابط الدعوة هذا غير صالح.',
@@ -222,7 +232,8 @@ export const PRESET_WORDS: Record<Lang, Record<OrgPreset, { label: string; about
   en: {
     administrator: {
       label: 'Administrator',
-      about: 'Manages the team, edits the profile, posts for the organisation and answers its messages.',
+      about:
+        'Manages the team, edits the profile, posts for the organisation and answers its messages.',
     },
     contributor: {
       label: 'Contributor',

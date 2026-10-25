@@ -260,10 +260,8 @@ export const RULE_MESSAGES = {
     'You are the only administrator. Hand administration to another member, or close the organisation.',
   organization_admin_needs_acceptance:
     'Administration is offered to a member, who must accept it. Use Hand over administration.',
-  organization_already_member:
-    'That person is already a member of this organisation.',
-  organization_invitation_not_pending:
-    'This invitation has already been answered or withdrawn.',
+  organization_already_member: 'That person is already a member of this organisation.',
+  organization_invitation_not_pending: 'This invitation has already been answered or withdrawn.',
   organization_invitation_expired:
     'This invitation has expired. Ask the organisation to send a new one.',
   organization_invitation_other_account:
@@ -278,8 +276,7 @@ export const RULE_MESSAGES = {
     'You are the only administrator of an organisation. Close it with your account, or hand it over first.',
   organization_own_post:
     "This post belongs to your organisation. Its messages come to the organisation's shared inbox.",
-  organization_use_leave:
-    'To end your own access, use Leave organisation.',
+  organization_use_leave: 'To end your own access, use Leave organisation.',
 } as const;
 
 export type RuleKey = keyof typeof RULE_MESSAGES;

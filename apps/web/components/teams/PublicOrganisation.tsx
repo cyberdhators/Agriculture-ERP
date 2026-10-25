@@ -108,16 +108,15 @@ export function PublicOrganisation({ id }: { id: string }) {
           <ul>
             {profile.buying_requests.map((b) => (
               <li key={b.id}>
-                <Link href={`/market/requests/${b.id}`}>{b.product_name}</Link> ·{' '}
-                {b.location}
+                <Link href={`/market/requests/${b.id}`}>{b.product_name}</Link> · {b.location}
               </li>
             ))}
           </ul>
         </section>
       ) : null}
       <p className="small muted">
-        Public profiles are published by their owners. A profile on AgriOne is not an endorsement
-        by CORWADO.
+        Public profiles are published by their owners. A profile on AgriOne is not an endorsement by
+        CORWADO.
       </p>
     </main>
   );

@@ -145,7 +145,10 @@ export function permissionsFor(
 }
 
 /** Whether an ACTIVE member holds `permission`. Team management is the administrator's alone. */
-export function memberMay(member: MemberLike | null | undefined, permission: OrgPermission): boolean {
+export function memberMay(
+  member: MemberLike | null | undefined,
+  permission: OrgPermission,
+): boolean {
   if (!member || member.status !== 'active') return false;
   if (permission === 'team.manage') return member.preset === 'administrator';
   if (member.preset === 'administrator') return true;

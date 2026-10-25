@@ -107,8 +107,10 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
           if (JSON.stringify(old ?? null) === JSON.stringify(value ?? null)) continue;
           values.push(value ?? null);
           sets.push(`${column} = $${values.length}${key === 'activities' ? '::text[]' : ''}`);
-          before[key] = old ?? null;
-          after[key] = value ?? null;
+          // A contact never enters the audit row: whether one is given, not what it is.
+          const contact = key === 'public_phone' || key === 'public_email';
+          before[key] = contact ? old != null : (old ?? null);
+          after[key] = contact ? value != null : (value ?? null);
         }
         if (sets.length === 0) return presentMine(current, member);
         if (after.status === 'published') sets.push('published_at = now()');

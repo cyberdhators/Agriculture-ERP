@@ -108,11 +108,7 @@ export const asMember = (row: MemberRow): MemberLike => ({
 });
 
 /** An organisation that exists (closed or open), or 404. */
-export async function loadOrganization(
-  db: Db,
-  id: string,
-  lock = false,
-): Promise<OrganizationRow> {
+export async function loadOrganization(db: Db, id: string, lock = false): Promise<OrganizationRow> {
   const [row] = await db.$queryRawUnsafe<OrganizationRow[]>(
     `SELECT ${ORGANIZATION_COLUMNS} FROM public.organization o
       WHERE o.id = $1::uuid AND o.deleted_at IS NULL ${lock ? 'FOR UPDATE' : ''}`,
@@ -344,7 +340,11 @@ export interface Acting {
  * refused (organization_access_ended), never silently read as personal: an
  * inquiry answered "as yourself" by mistake is a disclosure.
  */
-export async function actingAs(db: Db, request: Request, auth: Authenticated): Promise<Acting | null> {
+export async function actingAs(
+  db: Db,
+  request: Request,
+  auth: Authenticated,
+): Promise<Acting | null> {
   const acting = await resolveActing(db, request, auth);
   if (acting === 'ended') throw unprocessable('organization_access_ended');
   return acting;

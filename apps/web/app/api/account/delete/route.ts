@@ -130,7 +130,11 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
               ...actor,
               action: 'organization_member.left',
               before: { status: 'active' },
-              after: { status: 'left', organization_id: team.organizationId, by: 'account_deleted' },
+              after: {
+                status: 'left',
+                organization_id: team.organizationId,
+                by: 'account_deleted',
+              },
             });
           }
         }

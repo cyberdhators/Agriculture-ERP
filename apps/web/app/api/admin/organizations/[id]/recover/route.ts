@@ -99,12 +99,10 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
             evidence: body.evidence,
           },
         });
-        await notifyAccount(
-          tx,
-          { authUserId: named.auth_user_id },
-          'organization_recovered',
-          { actorType: auth.role, actorId: auth.principal.id },
-        );
+        await notifyAccount(tx, { authUserId: named.auth_user_id }, 'organization_recovered', {
+          actorType: auth.role,
+          actorId: auth.principal.id,
+        });
         return { organization_id: id, member_id: memberId, preset: 'administrator' };
       });
       return ok(result);

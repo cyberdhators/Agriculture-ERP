@@ -140,9 +140,7 @@ export function OrganisationTeam({
         <Notice kind="info">{w.secondAdmin}</Notice>
       ) : null}
 
-      {canEdit ? (
-        <ProfileEditor org={org} language={language} say={say} reload={load} />
-      ) : null}
+      {canEdit ? <ProfileEditor org={org} language={language} say={say} reload={load} /> : null}
 
       {!org.closed ? (
         <MyMembership org={org} side={side} language={language} say={say} reload={load} />
@@ -243,7 +241,12 @@ function ProfileEditor({
       </Field>
       <Field label={w.location} optional>
         {(ids) => (
-          <Input {...ids} dir="auto" value={location} onChange={(e) => setLocation(e.target.value)} />
+          <Input
+            {...ids}
+            dir="auto"
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
+          />
         )}
       </Field>
       <Field label={w.publicPhone} optional>
@@ -259,12 +262,7 @@ function ProfileEditor({
       </Field>
       <Field label={w.publicEmail} optional>
         {(ids) => (
-          <Input
-            {...ids}
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
+          <Input {...ids} type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
         )}
       </Field>
       <Checkbox
@@ -329,9 +327,7 @@ function MyMembership({
 
   async function leave() {
     if (!window.confirm(w.leaveConfirm)) return;
-    const response = await sendJson(`/api/organizations/${org.id}/leave`, 'POST').catch(
-      () => null,
-    );
+    const response = await sendJson(`/api/organizations/${org.id}/leave`, 'POST').catch(() => null);
     if (!response?.ok) {
       say(false, response ? await errorText(response, w.failed) : w.failed);
       return;
@@ -424,11 +420,10 @@ function MemberRow({
   const active = member.status === 'active';
 
   async function saveRole() {
-    const response = await sendJson(
-      `/api/organizations/${org.id}/members/${member.id}`,
-      'PATCH',
-      { preset, permissions },
-    ).catch(() => null);
+    const response = await sendJson(`/api/organizations/${org.id}/members/${member.id}`, 'PATCH', {
+      preset,
+      permissions,
+    }).catch(() => null);
     if (!response?.ok) {
       say(false, response ? await errorText(response, w.failed) : w.failed);
       return;
@@ -526,9 +521,7 @@ function MemberRow({
             {w.revokeNote}
           </p>
           <Field label={w.revokeReason}>
-            {(ids) => (
-              <Input {...ids} value={reason} onChange={(e) => setReason(e.target.value)} />
-            )}
+            {(ids) => <Input {...ids} value={reason} onChange={(e) => setReason(e.target.value)} />}
           </Field>
           <div style={row}>
             <Button size="small" variant="danger" onClick={() => void revoke()}>
@@ -842,9 +835,7 @@ function CloseOrganisation({
       ) : (
         <div style={col}>
           <Field label={w.closeReason}>
-            {(ids) => (
-              <Input {...ids} value={reason} onChange={(e) => setReason(e.target.value)} />
-            )}
+            {(ids) => <Input {...ids} value={reason} onChange={(e) => setReason(e.target.value)} />}
           </Field>
           <Checkbox
             label={w.closeConfirm}

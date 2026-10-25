@@ -23,7 +23,8 @@ const W = {
     failed: 'The account was not deleted. Please try again.',
     orgs: 'You are the only administrator of these organisations. Hand administration to a colleague first (Organisations), or close them with your account: their posts are taken off the market, their conversations closed and everyone’s access ended. Their records are kept.',
     closeOrgs: 'Close these organisations with my account.',
-    orgsLeave: 'Where someone else is an administrator, you simply leave the organisation; it carries on without you.',
+    orgsLeave:
+      'Where someone else is an administrator, you simply leave the organisation; it carries on without you.',
   },
   ar: {
     title: 'حذف حسابي',
@@ -171,7 +172,11 @@ export function DeleteAccount({ language = 'en' }: { language?: Lang }) {
           ) : null}
           {error ? <Notice kind="error">{error}</Notice> : null}
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <Button type="submit" variant="danger" disabled={busy || !confirm || !password || (soleOrgs.length > 0 && !closeOrgs)}>
+            <Button
+              type="submit"
+              variant="danger"
+              disabled={busy || !confirm || !password || (soleOrgs.length > 0 && !closeOrgs)}
+            >
               {busy ? w.deleting : w.delete}
             </Button>
             <Button type="button" variant="ghost" onClick={() => setOpen(false)}>

@@ -59,8 +59,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       );
 
       if (isUnread(conversation, viewer)) {
-        const side =
-          sideOf(conversation, viewer) === 'owner' ? 'owner_read_at' : 'starter_read_at';
+        const side = sideOf(conversation, viewer) === 'owner' ? 'owner_read_at' : 'starter_read_at';
         await prisma.$queryRawUnsafe(
           `UPDATE public.conversation SET ${side} = now() WHERE id = $1::uuid`,
           conversation.id,
