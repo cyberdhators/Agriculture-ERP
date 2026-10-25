@@ -93,5 +93,13 @@ export const deleteAccountSchema = z.strictObject({
     .min(1, ACCOUNT_DELETION_MESSAGES.passwordRequired)
     .max(200, ACCOUNT_DELETION_MESSAGES.passwordRequired),
   confirm: z.literal(true, { error: () => ACCOUNT_DELETION_MESSAGES.confirmRequired }),
+  /**
+   * 2026-10-27 (team access): the person is the last administrator of one or
+   * more organisations and chooses to close them with the account. Without
+   * it, deletion is refused with the list (organization_last_admin_delete).
+   */
+  close_organizations: z
+    .boolean({ error: () => ACCOUNT_DELETION_MESSAGES.confirmRequired })
+    .optional(),
 });
 export type DeleteAccountInput = z.infer<typeof deleteAccountSchema>;

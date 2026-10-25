@@ -191,6 +191,25 @@ export const AUDIT_ACTIONS = [
   'notice.draft_discarded',
   'notice.published',
   'notice.retired',
+  // TEAM ACCESS (2026-10-27): organisational profiles, members, invitations.
+  'organization.created',
+  'organization.updated',
+  'organization.published',
+  'organization.unpublished',
+  'organization.closed',
+  'organization.recovered',
+  'organization_member.joined',
+  'organization_member.updated',
+  'organization_member.revoked',
+  'organization_member.left',
+  'organization_invitation.created',
+  'organization_invitation.accepted',
+  'organization_invitation.declined',
+  'organization_invitation.cancelled',
+  'organization_transfer.offered',
+  'organization_transfer.accepted',
+  'organization_transfer.declined',
+  'organization_transfer.cancelled',
 ] as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];

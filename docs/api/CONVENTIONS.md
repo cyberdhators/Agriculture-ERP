@@ -383,6 +383,20 @@ character.
 | `notice_version_exists`            | That version already exists for this notice and language. Choose a new version number.                                        |
 | `notice_version_not_newer`         | Choose a version number higher than the one already published for this notice and language.                                   |
 | `notice_not_draft`                 | Only a draft can be edited, published or discarded. A published or retired notice stays as it was.                            |
+| `organization_access_ended` | You no longer have access to that organisation. Switch back to your own account. |
+| `organization_closed` | This organisation profile has been closed. Nothing more can be changed in it. |
+| `organization_last_admin` | You are the only administrator. Hand administration to another member, or close the organisation. |
+| `organization_admin_needs_acceptance` | Administration is offered to a member, who must accept it. Use Hand over administration. |
+| `organization_already_member` | That person is already a member of this organisation. |
+| `organization_invitation_not_pending` | This invitation has already been answered or withdrawn. |
+| `organization_invitation_expired` | This invitation has expired. Ask the organisation to send a new one. |
+| `organization_invitation_other_account` | This invitation was sent to a different phone number or email address. Sign in with that one to accept it. |
+| `organization_invitation_pending` | An invitation to that phone number or email address is already waiting. Withdraw it before sending another. |
+| `organization_transfer_pending` | An offer of administration to that member is already waiting for an answer. Withdraw it first. |
+| `organization_transfer_not_member` | Administration can only be offered to another current member of the organisation. |
+| `organization_last_admin_delete` | You are the only administrator of an organisation. Close it with your account, or hand it over first. |
+| `organization_own_post` | This post belongs to your organisation. Its messages come to the organisation's shared inbox. |
+| `organization_use_leave` | To end your own access, use Leave organisation. |
 
 **A route names a rule; it never writes a sentence.** `conflict()` and
 `unprocessable()` take a key from this registry, not a string. That is how the
@@ -531,6 +545,24 @@ change.
 | `notice.draft_discarded`                      |
 | `notice.published`                            |
 | `notice.retired`                              |
+| `organization.created`                        |
+| `organization.updated`                        |
+| `organization.published`                      |
+| `organization.unpublished`                    |
+| `organization.closed`                         |
+| `organization.recovered`                      |
+| `organization_member.joined`                  |
+| `organization_member.updated`                 |
+| `organization_member.revoked`                 |
+| `organization_member.left`                    |
+| `organization_invitation.created`             |
+| `organization_invitation.accepted`            |
+| `organization_invitation.declined`            |
+| `organization_invitation.cancelled`           |
+| `organization_transfer.offered`               |
+| `organization_transfer.accepted`              |
+| `organization_transfer.declined`              |
+| `organization_transfer.cancelled`             |
 
 `before` and `after` hold **changed fields only**, never whole rows, and never a
 password, token, authentication identifier, national id, phone, email, given
@@ -856,6 +888,23 @@ These are also exact.
 | Notice: version malformed               | Give the version as v followed by numbers, such as v1.4.                                        |
 | Notice: text length                     | Write the notice in 20 to 20000 characters.                                                     |
 | Notice: edit changes nothing            | Change the version or the text before saving.                                                   |
+| Organisation: name length | Give the organisation a name of 2 to 120 characters. |
+| Organisation: kind not on list | Choose group, business or institution. |
+| Organisation: description too long | Keep the description to 2000 characters. |
+| Organisation: location too long | Keep the location to 200 characters. |
+| Organisation: status not on list | Choose draft or published. |
+| Invitation: channel not phone or email | Choose phone or email. |
+| Team: preset not on list | Choose Administrator, Contributor or Viewer. |
+| Team: permission not on list | Choose permissions from the list. |
+| Team: permissions beyond the preset | A Viewer can only read the shared inbox, and only an Administrator manages the team. |
+| Team: reason length | Give a reason of 3 to 300 characters. |
+| Recovery: evidence length | Describe the evidence in 3 to 300 characters. |
+| Team: confirmation not ticked | Tick the box to confirm. |
+| Invitation: link token malformed | This invitation link is not complete. Open the link from the invitation again. |
+| Invitation: neither or both of link and id | Answer one invitation: give its link or its identifier, not both. |
+| Handover: after-role not on list | Choose what you become after the handover. |
+| Team: public title too long | Keep the title to 80 characters. |
+| Team: edit changes nothing | Change something before saving. |
 
 The key beside each reason is the field name, per section 4.1. An unrecognised
 field named `nickname` therefore produces `{ "nickname": "This field is not

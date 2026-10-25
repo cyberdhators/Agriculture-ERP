@@ -251,6 +251,35 @@ export const RULE_MESSAGES = {
     'Choose a version number higher than the one already published for this notice and language.',
   notice_not_draft:
     'Only a draft can be edited, published or discarded. A published or retired notice stays as it was.',
+  // TEAM ACCESS (2026-10-27)
+  organization_access_ended:
+    'You no longer have access to that organisation. Switch back to your own account.',
+  organization_closed:
+    'This organisation profile has been closed. Nothing more can be changed in it.',
+  organization_last_admin:
+    'You are the only administrator. Hand administration to another member, or close the organisation.',
+  organization_admin_needs_acceptance:
+    'Administration is offered to a member, who must accept it. Use Hand over administration.',
+  organization_already_member:
+    'That person is already a member of this organisation.',
+  organization_invitation_not_pending:
+    'This invitation has already been answered or withdrawn.',
+  organization_invitation_expired:
+    'This invitation has expired. Ask the organisation to send a new one.',
+  organization_invitation_other_account:
+    'This invitation was sent to a different phone number or email address. Sign in with that one to accept it.',
+  organization_invitation_pending:
+    'An invitation to that phone number or email address is already waiting. Withdraw it before sending another.',
+  organization_transfer_pending:
+    'An offer of administration to that member is already waiting for an answer. Withdraw it first.',
+  organization_transfer_not_member:
+    'Administration can only be offered to another current member of the organisation.',
+  organization_last_admin_delete:
+    'You are the only administrator of an organisation. Close it with your account, or hand it over first.',
+  organization_own_post:
+    "This post belongs to your organisation. Its messages come to the organisation's shared inbox.",
+  organization_use_leave:
+    'To end your own access, use Leave organisation.',
 } as const;
 
 export type RuleKey = keyof typeof RULE_MESSAGES;
