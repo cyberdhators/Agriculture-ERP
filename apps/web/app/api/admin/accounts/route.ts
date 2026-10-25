@@ -41,7 +41,14 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
     handler: async ({ auth, request }) => {
       const permissions = await permissionsOf(auth);
       const mayUseContact = holdsPermission(permissions, 'support.handle');
-      if (!mayUseContact && !holdsPermission(permissions, 'content.moderate')) throw forbidden();
+      // 2026-10-30: the Administrator preset (staff.manage) also sees the list,
+      // without contacts; suspending and disabling keep their own permission.
+      if (
+        !mayUseContact &&
+        !holdsPermission(permissions, 'content.moderate') &&
+        !holdsPermission(permissions, 'staff.manage')
+      )
+        throw forbidden();
 
       const parsed = adminAccountFilterSchema.safeParse(
         Object.fromEntries(new URL(request.url).searchParams),

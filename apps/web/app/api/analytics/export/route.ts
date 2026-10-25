@@ -10,7 +10,6 @@ import { audited, writeAudit } from '../../../../lib/api/audit';
 import { forbidden } from '../../../../lib/api/errors';
 import { requirePermissionCoverage } from '../../../../lib/api/permissions';
 import { defineRoutes, streamed } from '../../../../lib/api/route';
-import { requireWriter } from '../../../../lib/api/scope';
 import { prisma } from '../../../../lib/db';
 
 /**
@@ -35,10 +34,12 @@ import { prisma } from '../../../../lib/db';
  */
 export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   POST: {
-    roles: ['admin', 'supervisor'],
+    // 2026-10-30: an Analyst may hold the read-only role. Exporting aggregated
+    // figures is reading, not writing, so read_only is admitted and the
+    // reports.view permission decides (presets are binding since #219).
+    roles: ['admin', 'supervisor', 'read_only'],
     bodySchema: analyticsExportSchema,
     handler: async ({ auth, body, deviceId }) => {
-      requireWriter(auth);
       const { coverage } = await requirePermissionCoverage(auth, 'reports.view');
       const filters = body.filters ?? {};
       const states = analyticsStates(auth.scope, coverage, filters.state_id, forbidden);

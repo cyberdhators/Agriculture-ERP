@@ -49,7 +49,9 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       const permissions = await permissionsOf(auth);
       const canReveal = holdsPermission(permissions, 'support.handle');
       const canModerate = holdsPermission(permissions, 'content.moderate');
-      if (!canReveal && !canModerate) throw forbidden();
+      // 2026-10-30: the Administrator preset (staff.manage) also reads a record.
+      if (!canReveal && !canModerate && !holdsPermission(permissions, 'staff.manage'))
+        throw forbidden();
 
       const kind = params.kind ?? '';
       const id = params.id ?? '';
