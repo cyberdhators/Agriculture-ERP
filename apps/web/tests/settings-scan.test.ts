@@ -68,7 +68,7 @@ describe('the seeded consent notice is the text the sign-up screens show', () =>
   });
 });
 
-describe('only administrators holding settings.manage change settings', () => {
+describe('only staff holding settings.manage change settings', () => {
   for (const route of [
     'app/api/admin/settings/route.ts',
     'app/api/admin/settings/history/route.ts',
@@ -78,9 +78,11 @@ describe('only administrators holding settings.manage change settings', () => {
     'app/api/admin/notices/[id]/publish/route.ts',
     'app/api/admin/notices/acknowledgements/route.ts',
   ]) {
-    it(`${route} is administrator-only and asks for settings.manage before any data`, () => {
+    it(`${route} admits the staff roles and asks for settings.manage before any data`, () => {
       const text = read(route);
-      expect(text).toMatch(/roles: \['admin'\]/);
+      // 2026-10-30 (presets are binding): the permission is the control.
+      expect(text).toMatch(/roles: \['admin', 'supervisor'(, 'read_only')?\]/);
+      expect(text).not.toMatch(/roles: \['admin'\]/);
       expect(text).not.toMatch(/'public'/);
       const handlers = text.split('handler: async').slice(1);
       expect(handlers.length).toBeGreaterThan(0);
@@ -127,7 +129,7 @@ describe('only administrators holding settings.manage change settings', () => {
 
   it('the reason-code list for the dialogs asks for content.moderate', () => {
     const text = read('app/api/admin/reason-codes/route.ts');
-    expect(text).toMatch(/roles: \['admin'\]/);
+    expect(text).toMatch(/roles: \['admin', 'supervisor'(, 'read_only')?\]/);
     expect(text).toMatch(/requirePermission\(auth, 'content\.moderate'\)/);
   });
 });

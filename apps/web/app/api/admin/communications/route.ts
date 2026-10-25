@@ -11,6 +11,7 @@ import { audited, writeAudit } from '../../../../lib/api/audit';
 import { ApiFailure } from '../../../../lib/api/errors';
 import { scopeClause } from '../../../../lib/api/farmers';
 import type { Authenticated } from '../../../../lib/api/require-role';
+import { requirePermission } from '../../../../lib/api/permissions';
 import { defineRoutes, ok } from '../../../../lib/api/route';
 import { requireWriter } from '../../../../lib/api/scope';
 import { prisma } from '../../../../lib/db';
@@ -59,9 +60,10 @@ import { adminAuthEmails } from '../../../../lib/supabase/admin';
  */
 export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   POST: {
-    roles: ['admin'],
+    roles: ['admin', 'supervisor'],
     bodySchema: sendCommunicationSchema,
     handler: async ({ auth, body }) => {
+      await requirePermission(auth, 'communications.send');
       requireWriter(auth);
 
       // The second lock. The schema already refuses these pairs; a route does

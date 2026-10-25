@@ -27,7 +27,6 @@ import {
 } from '@/lib/format';
 import { usePreview } from '@/lib/preview';
 import { useContentAccess } from '@/lib/library/access';
-import { canSeeUnpublished } from '@/lib/library/library-view';
 import { useQueryState } from '@/lib/query-state';
 
 import { ButtonLink, Card, EmptyState, PageHeader, SearchInput, Select, Tabs } from '../ui';
@@ -57,7 +56,7 @@ function pick<T extends string>(list: readonly T[], value: string): T | '' {
  * scope. So only an administrator is offered the other tabs.
  */
 export function LibraryScreen() {
-  const { role, resources, hydrated, catalog } = usePreview();
+  const { resources, hydrated, catalog } = usePreview();
   const access = useContentAccess();
   const { get, set } = useQueryState();
 
@@ -73,7 +72,9 @@ export function LibraryScreen() {
    * whose scope is not `all`, and only an administrator has that scope. So the
    * status tabs are an administrator's; everyone else sees published guides.
    */
-  const seesAll = hydrated && canSeeUnpublished(role);
+  // 2026-10-30: drafts are served only to someone who may write guides; the
+  // server decides, and a supervisor holding the permission sees them too.
+  const seesAll = hydrated && access.write;
   const status: LearningStatus = seesAll
     ? pick(LEARNING_STATUSES, get('status')) || 'published'
     : 'published';

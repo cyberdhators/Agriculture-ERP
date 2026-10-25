@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-  LEGACY_ADMIN_PERMISSIONS,
   ORDINARY_PRESETS,
   PERMISSION_KEYS,
   PRESET_PERMISSIONS,
   RETURN_SESSION_INACTIVITY_MS,
+  ROLLOUT_PRESETS_FOR_ADMINS_WITHOUT_GRANTS,
   STAFF_PRESETS,
   classifyVisit,
   covers,
@@ -65,10 +65,10 @@ describe('presets', () => {
 });
 
 describe('effective permissions', () => {
-  it('an existing administrator holds everything except appointing a Super Admin, with no grant', () => {
+  it('an administrator with no grant holds NO permission (2026-10-30: presets are binding)', () => {
     const p = effectivePermissions({ role: 'admin', grants: [] });
-    for (const key of LEGACY_ADMIN_PERMISSIONS) expect(holdsPermission(p, key), key).toBe(true);
-    expect(holdsPermission(p, 'superadmin.grant')).toBe(false);
+    expect(p.size).toBe(0);
+    for (const key of PERMISSION_KEYS) expect(holdsPermission(p, key), key).toBe(false);
     expect(isSuperAdmin(p)).toBe(false);
   });
 
@@ -127,6 +127,66 @@ describe('effective permissions', () => {
   it('an empty states request is refused, never read as "anywhere"', () => {
     expect(covers({ platform: false, states: new Set(['CE']) }, states())).toBe(false);
     expect(covers(undefined, platform)).toBe(false);
+  });
+});
+
+describe('preset resolution: the role alone grants nothing (2026-10-30)', () => {
+  const held = (role: string, preset: (typeof STAFF_PRESETS)[number]) =>
+    [...effectivePermissions({ role, grants: [{ preset, scope: platform }] }).keys()].sort();
+
+  it('an administrator with Moderator + Editor holds moderation and publishing only', () => {
+    expect(held('admin', 'moderator_editor')).toEqual(['content.moderate', 'content.publish']);
+  });
+
+  it('an administrator with Support holds support only', () => {
+    expect(held('admin', 'support')).toEqual(['support.handle']);
+  });
+
+  it('an Analyst holds analytics (reports.view) only, on any staff role', () => {
+    for (const role of ['admin', 'supervisor', 'read_only']) {
+      expect(held(role, 'analyst'), role).toEqual(['reports.view']);
+    }
+  });
+
+  it('the Administrator preset holds the administrative powers and never Super Admin or sensitive exports', () => {
+    const keys = held('admin', 'administrator');
+    expect(keys).toEqual(
+      ['audit.view', 'communications.send', 'reports.view', 'settings.manage', 'staff.manage'].sort(),
+    );
+    expect(keys).not.toContain('superadmin.grant');
+    expect(keys).not.toContain('exports.identifiable');
+    expect(keys).not.toContain('content.moderate');
+    expect(keys).not.toContain('support.handle');
+  });
+
+  it('Super Admin holds every key', () => {
+    expect(held('admin', 'super_admin')).toEqual([...PERMISSION_KEYS].sort());
+  });
+
+  it('combined presets are the union of their keys', () => {
+    const p = effectivePermissions({
+      role: 'admin',
+      grants: [
+        { preset: 'moderator_editor', scope: platform },
+        { preset: 'support', scope: platform },
+      ],
+    });
+    expect([...p.keys()].sort()).toEqual(
+      ['content.moderate', 'content.publish', 'support.handle'].sort(),
+    );
+  });
+
+  it('the rollout presets give an administrator exactly what the old legacy rule did, less identifiable exports', () => {
+    const p = effectivePermissions({
+      role: 'admin',
+      grants: ROLLOUT_PRESETS_FOR_ADMINS_WITHOUT_GRANTS.map((preset) => ({ preset, scope: platform })),
+    });
+    const legacy = PERMISSION_KEYS.filter(
+      (k) => k !== 'superadmin.grant' && k !== 'exports.identifiable',
+    );
+    expect([...p.keys()].sort()).toEqual([...legacy].sort());
+    for (const key of legacy) expect(holdsPermission(p, key), key).toBe(true);
+    expect(isSuperAdmin(p)).toBe(false);
   });
 });
 

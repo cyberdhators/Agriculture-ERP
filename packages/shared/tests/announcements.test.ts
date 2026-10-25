@@ -139,9 +139,18 @@ describe('the communications permission', () => {
     }
   });
 
-  it('an existing administrator holds it; a supervisor without a grant does not', () => {
+  it('only through a preset: an administrator or supervisor without a grant does not hold it', () => {
     expect(
       holdsPermission(effectivePermissions({ role: 'admin', grants: [] }), 'communications.send'),
+    ).toBe(false);
+    expect(
+      holdsPermission(
+        effectivePermissions({
+          role: 'admin',
+          grants: [{ preset: 'administrator', scope: { kind: 'platform' } }],
+        }),
+        'communications.send',
+      ),
     ).toBe(true);
     expect(
       holdsPermission(

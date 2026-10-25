@@ -18,7 +18,7 @@ import { currentSetting, settingsTablesPresent } from '../../../../lib/api/setti
  */
 export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   GET: {
-    roles: ['admin'],
+    roles: ['admin', 'supervisor', 'read_only'],
     handler: async ({ auth, request }) => {
       await requirePermission(auth, 'content.moderate');
       const { applies_to } = parseQuery(request, reasonCodesQuerySchema);

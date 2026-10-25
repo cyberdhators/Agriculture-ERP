@@ -21,6 +21,7 @@ import {
   toAuditParams,
 } from '@/lib/admin/audit-view';
 import { AUDIT_FIXTURE } from '@/lib/admin/fixtures';
+import { useHolds } from '@/lib/admin/use-permission';
 import { usePreview } from '@/lib/preview';
 import { useQueryState } from '@/lib/query-state';
 
@@ -49,7 +50,7 @@ import styles from './admin.module.css';
  * summary data, not this.
  */
 export function AuditTrail() {
-  const { role, hydrated } = usePreview();
+  const { hydrated } = usePreview();
   const { get, set } = useQueryState();
 
   const urlState = useMemo(() => fromQuery(get), [get]);
@@ -64,7 +65,10 @@ export function AuditTrail() {
   const [detail, setDetail] = useState<AuditEvent | null>(null);
   const [attempt, setAttempt] = useState(0);
 
-  const isAdmin = hydrated && role === 'admin';
+  // 2026-10-30 (presets are binding): offered to whoever holds audit.view, on any
+  // staff role; the route asks for the same permission.
+  const holds = useHolds('audit.view');
+  const isAdmin = hydrated && holds === true;
 
   useEffect(() => {
     setDraft(urlState);
@@ -119,14 +123,15 @@ export function AuditTrail() {
   );
 
   if (!hydrated) return null;
+  if (holds === null) return null;
 
   if (!isAdmin) {
     return (
       <div className={styles.page}>
         <PageHeader eyebrow="Governance" title="Audit log" />
-        <UnavailableState title="The audit log is not available to your role">
-          Reading who changed what across the whole system is reserved to administrators (C-4.8).
-          Your own work is unaffected.
+        <UnavailableState title="The audit log is not available to you">
+          Reading who changed what across the whole system needs the Administrator preset
+          (C-4.8). Your own work is unaffected.
         </UnavailableState>
       </div>
     );

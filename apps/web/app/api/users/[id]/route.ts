@@ -2,7 +2,7 @@ import { patchUserSchema, toIso } from '@agri-erp/shared';
 
 import { audited, writeAudit, writeAuditOutcome } from '../../../../lib/api/audit';
 import { notFound, unprocessable } from '../../../../lib/api/errors';
-import { wouldLoseLastSuperAdmin } from '../../../../lib/api/permissions';
+import { wouldLoseLastSuperAdmin, requirePermission } from '../../../../lib/api/permissions';
 import { defineRoutes, empty, ok } from '../../../../lib/api/route';
 import { requireWriter } from '../../../../lib/api/scope';
 import { prisma } from '../../../../lib/db';
@@ -87,6 +87,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
     roles: ['admin'],
     bodySchema: patchUserSchema,
     handler: async ({ auth, body, params }) => {
+      await requirePermission(auth, 'staff.manage');
       requireWriter(auth);
       const target = await loadVisible(params.id ?? '', null);
 
@@ -180,6 +181,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   DELETE: {
     roles: ['admin'],
     handler: async ({ auth, params }) => {
+      await requirePermission(auth, 'staff.manage');
       requireWriter(auth);
       const target = await loadVisible(params.id ?? '', null);
 

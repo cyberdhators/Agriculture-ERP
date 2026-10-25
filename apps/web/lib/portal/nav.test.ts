@@ -1,6 +1,16 @@
 import { describe, expect, it } from 'vitest';
 
-import { ALL_ITEMS, NAV_SECTIONS, activeHref, crumbsFor, navFor, pageTitleFor } from './nav';
+import type { PermissionKey } from '@agri-erp/shared';
+
+import {
+  ALL_ITEMS,
+  NAV_SECTIONS,
+  activeHref,
+  crumbsFor,
+  heldFrom,
+  navFor,
+  pageTitleFor,
+} from './nav';
 
 /**
  * The navigation is role-aware, and this asserts it IN BOTH DIRECTIONS.
@@ -12,6 +22,11 @@ import { ALL_ITEMS, NAV_SECTIONS, activeHref, crumbsFor, navFor, pageTitleFor } 
  */
 
 const ROLES = ['admin', 'supervisor', 'read_only', 'officer'] as const;
+
+/** What someone holds, platform-wide, as GET /api/admin/staff-access/me reports it. */
+const holding = (...keys: PermissionKey[]) => heldFrom(keys.map((key) => ({ key, platform: true })));
+const hrefsOf = (sections: ReturnType<typeof navFor>) =>
+  sections.flatMap((s) => s.items.map((i) => i.href));
 
 describe('who sees which destination', () => {
   it('offers every destination to somebody', () => {
@@ -40,23 +55,29 @@ describe('who sees which destination', () => {
     ]);
   });
 
-  it('offers Settings to administrators alone, under its own tab', () => {
-    // 2026-10-25. Every settings route is administrator-only and then asks for
-    // settings.manage; the nav agrees with them, it is not the control.
+  it('offers Settings to the staff roles, under its own tab, and then only to holders', () => {
+    // 2026-10-25, widened 2026-10-30. Every settings route admits the staff
+    // roles and then asks for settings.manage; the nav agrees with them, it is
+    // not the control.
     const offered = ROLES.filter((role) =>
       navFor(role).some((s) => s.items.some((i) => i.href === '/admin/settings')),
     );
-    expect(offered).toEqual(['admin']);
+    expect(offered).toEqual(['admin', 'supervisor', 'read_only']);
+    expect(hrefsOf(navFor('admin', holding('settings.manage')))).toContain('/admin/settings');
+    expect(hrefsOf(navFor('admin', holding('content.moderate')))).not.toContain('/admin/settings');
     const section = NAV_SECTIONS.find((s) => s.items.some((i) => i.href === '/admin/settings'));
     expect(section?.heading).toBe('Settings');
     expect(pageTitleFor('/admin/settings')).toBe('Settings');
   });
 
-  it('only an administrator is offered the audit trail (C-4.8)', () => {
+  it('only a holder of audit.view is offered the audit trail (C-4.8)', () => {
     const offered = ROLES.filter((role) =>
-      navFor(role).some((s) => s.items.some((i) => i.href === '/admin/audit')),
+      navFor(role, holding('audit.view')).some((s) => s.items.some((i) => i.href === '/admin/audit')),
     );
-    expect(offered).toEqual(['admin']);
+    expect(offered).toEqual(['admin', 'supervisor', 'read_only']);
+    for (const role of ROLES) {
+      expect(hrefsOf(navFor(role, holding('support.handle'))), role).not.toContain('/admin/audit');
+    }
   });
 
   it('only an administrator and a supervisor are offered exports', () => {
@@ -113,24 +134,33 @@ describe('who sees which destination', () => {
     }
   });
 
-  it('offers communications, product reports, support messages and buyer review to administrators alone', () => {
-    // Every route behind these is administrator-only on the server. This
-    // asserts the nav agrees with them, not that the nav is the control.
-    for (const href of [
-      '/communications',
-      '/product-reports',
-      '/admin/support',
-      '/admin/buyers',
-      '/admin/procurement',
-      '/admin/advisers',
-      '/admin/organizations',
-      '/admin/accounts',
-      '/admin/marketplace',
-    ]) {
+  it('offers buyer review and buyer requests to administrators alone (B13 routes)', () => {
+    for (const href of ['/admin/buyers', '/admin/procurement']) {
       const offered = ROLES.filter((role) =>
         navFor(role).some((s) => s.items.some((i) => i.href === href)),
       );
       expect(offered, `${href} was offered beyond administrators`).toEqual(['admin']);
+    }
+  });
+
+  it('offers the preset screens to every staff role the routes admit, never an officer', () => {
+    // 2026-10-30: these routes admit admin, supervisor and read_only, then ask
+    // for the permission. The defect was that they admitted role admin alone.
+    for (const href of [
+      '/communications',
+      '/product-reports',
+      '/admin/support',
+      '/admin/advisers',
+      '/admin/organizations',
+      '/admin/accounts',
+      '/admin/marketplace',
+      '/admin/staff-access',
+      '/admin/access-logs',
+    ]) {
+      const offered = ROLES.filter((role) =>
+        navFor(role).some((s) => s.items.some((i) => i.href === href)),
+      );
+      expect(offered, href).toEqual(['admin', 'supervisor', 'read_only']);
     }
   });
 
@@ -179,6 +209,69 @@ describe('who sees which destination', () => {
   });
 });
 
+describe('presets decide what is offered (2026-10-30)', () => {
+  const PRESET_GATED = ALL_ITEMS.filter((i) => i.permissions).map((i) => i.href);
+
+  it('an administrator holding nothing is offered no permission-gated destination', () => {
+    const hrefs = hrefsOf(navFor('admin', holding()));
+    for (const href of PRESET_GATED) expect(hrefs, href).not.toContain(href);
+    // ...and keeps the registry, which no preset describes.
+    expect(hrefs).toContain('/farmers');
+    expect(hrefs).toContain('/admin/users');
+  });
+
+  it('while the answer is not known, permission-gated destinations are hidden', () => {
+    const hrefs = hrefsOf(navFor('admin', null));
+    for (const href of PRESET_GATED) expect(hrefs, href).not.toContain(href);
+  });
+
+  it('Moderator + Editor: the moderation screens, not support, settings, staff or the audit trail', () => {
+    const hrefs = hrefsOf(navFor('admin', holding('content.moderate', 'content.publish')));
+    for (const href of ['/admin/marketplace', '/product-reports', '/admin/advisers', '/admin/accounts']) {
+      expect(hrefs, href).toContain(href);
+    }
+    for (const href of [
+      '/admin/support',
+      '/admin/settings',
+      '/admin/staff-access',
+      '/admin/audit',
+      '/admin/access-logs',
+      '/communications',
+      '/analytics',
+    ]) {
+      expect(hrefs, href).not.toContain(href);
+    }
+  });
+
+  it('Support: support cases, organisations and accounts, nothing of moderation or administration', () => {
+    const hrefs = hrefsOf(navFor('supervisor', holding('support.handle')));
+    for (const href of ['/admin/support', '/admin/organizations', '/admin/accounts']) {
+      expect(hrefs, href).toContain(href);
+    }
+    for (const href of ['/admin/marketplace', '/product-reports', '/admin/settings', '/admin/audit']) {
+      expect(hrefs, href).not.toContain(href);
+    }
+  });
+
+  it('Analyst: analytics, even when limited to states', () => {
+    const states = heldFrom([{ key: 'reports.view', platform: false }]);
+    expect(hrefsOf(navFor('read_only', states))).toContain('/analytics');
+    expect(hrefsOf(navFor('read_only', states))).not.toContain('/admin/support');
+  });
+
+  it('a state-limited grant does not open a platform-wide screen', () => {
+    const states = heldFrom([{ key: 'support.handle', platform: false }]);
+    expect(hrefsOf(navFor('supervisor', states))).not.toContain('/admin/support');
+  });
+
+  it('every permission-gated item names keys and reasons that agree', () => {
+    for (const item of ALL_ITEMS.filter((i) => i.permissions)) {
+      expect(item.permissions!.length, item.href).toBeGreaterThan(0);
+      for (const key of item.permissions!) expect(item.because, item.href).toContain(key);
+    }
+  });
+});
+
 describe('the highlighted destination', () => {
   it('lights the longest match, so a child page does not light its parent too', () => {
     expect(activeHref('/admin/audit', 'admin')).toBe('/admin/audit');
@@ -186,8 +279,10 @@ describe('the highlighted destination', () => {
     expect(activeHref('/farmers/abc-123', 'admin')).toBe('/farmers');
   });
 
-  it('lights nothing on a page the role cannot reach', () => {
-    expect(activeHref('/admin/audit', 'supervisor')).toBeNull();
+  it('lights nothing on a page the person cannot reach', () => {
+    expect(activeHref('/admin/audit', 'officer')).toBeNull();
+    expect(activeHref('/admin/audit', 'supervisor', holding())).toBeNull();
+    expect(activeHref('/admin/audit', 'supervisor', holding('audit.view'))).toBe('/admin/audit');
   });
 
   it('does not light a prefix that merely starts the same', () => {

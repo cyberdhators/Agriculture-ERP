@@ -39,7 +39,7 @@ import { prisma } from '../../../../lib/db';
  */
 export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   GET: {
-    roles: ['admin'],
+    roles: ['admin', 'supervisor', 'read_only'],
     handler: async ({ auth }) => {
       await requirePermission(auth, 'settings.manage');
       return ok(await currentSettings());
@@ -47,7 +47,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   },
 
   PUT: {
-    roles: ['admin'],
+    roles: ['admin', 'supervisor'],
     bodySchema: settingSaveSchema,
     handler: async ({ auth, body: raw }) => {
       await requirePermission(auth, 'settings.manage');

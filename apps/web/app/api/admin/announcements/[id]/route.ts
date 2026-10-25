@@ -31,7 +31,7 @@ import { prisma } from '../../../../../lib/db';
  */
 export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   GET: {
-    roles: ['admin'],
+    roles: ['admin', 'supervisor', 'read_only'],
     handler: async ({ auth, params }) => {
       await requirePermission(auth, 'communications.send');
       const row = await loadAnnouncement(idParam(params));
@@ -46,7 +46,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   },
 
   PUT: {
-    roles: ['admin'],
+    roles: ['admin', 'supervisor'],
     bodySchema: announcementDraftSchema,
     handler: async ({ auth, body: raw, params }) => {
       requireWriter(auth);
@@ -113,7 +113,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   },
 
   DELETE: {
-    roles: ['admin'],
+    roles: ['admin', 'supervisor'],
     handler: async ({ auth, params }) => {
       requireWriter(auth);
       await requirePermission(auth, 'communications.send');

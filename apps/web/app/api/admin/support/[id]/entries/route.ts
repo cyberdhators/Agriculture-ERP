@@ -39,7 +39,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   POST: {
-    roles: ['admin'],
+    roles: ['admin', 'supervisor'],
     bodySchema: supportCaseEntrySchema,
     handler: async ({ auth, body, params }) => {
       await requirePermission(auth, 'support.handle');

@@ -4,11 +4,17 @@ import { z } from 'zod';
  * STAFF PERMISSIONS, SUPER ADMIN AND ACCESS LOGS (CORWADO specification of
  * 16 October 2026, the administration part). 2026-10-19.
  *
- * AN ADDITIVE LAYER. The four staff roles (identity.ts) and requireRole are
- * unchanged: a role still decides who may reach a route at all. A permission
- * is a second, finer question asked only by the routes this layer added:
- * "may THIS staff member do THIS, here?" Nothing that worked before depends on
- * a permission, so nothing that worked before can stop working.
+ * 2026-10-30: PRESETS ARE BINDING. Until then an account with the role
+ * `admin` held every permission except Super Admin without any grant (the
+ * "legacy rule"), so the Moderator + Editor, Support, Analyst and
+ * Administrator presets restricted nothing for an administrator. Now a staff
+ * member's permissions are exactly the union of their ACTIVE preset grants;
+ * the role still decides which routes a person may knock on (requireRole) and,
+ * for a supervisor or read-only account, the state their data is limited to,
+ * but the role alone grants no permission. Migration
+ * 20261030090000_presets_binding_keep_admin_powers gave every administrator
+ * who had no grant the presets that together equal what the legacy rule gave
+ * them, so nobody lost access on the day it landed (docs/DECISIONS.md).
  *
  * Everything in this file is pure: the presets, the effective-permission
  * calculation, the Super Admin rules, the return-session classifier and the
@@ -108,15 +114,22 @@ export const PERMISSION_LABELS: Readonly<Record<PermissionKey, string>> = {
 };
 
 /**
- * THE LEGACY RULE. An existing `admin` holds every permission except
- * `superadmin.grant`, at platform scope, without any grant row. So the day this
- * lands, every administrator can already do everything the new screens offer
- * except appoint a Super Admin -- which nobody can do until one exists (see
- * `superAdminGrantDecision`, the bootstrap).
+ * THE ROLLOUT OF 2026-10-30. Before presets became binding an `admin` held
+ * every key except `superadmin.grant` (and `exports.identifiable`, which no
+ * route asks for yet, now belongs to Super Admin alone). Migration
+ * 20261030090000 gave every active administrator with no active grant these
+ * three presets, platform-wide, so that their union is exactly what they held
+ * before minus `exports.identifiable` -- a test asserts it. Kept here only as
+ * the record of that migration; nothing reads it to decide a permission.
  */
-export const LEGACY_ADMIN_PERMISSIONS: readonly PermissionKey[] = PERMISSION_KEYS.filter(
-  (k) => k !== 'superadmin.grant',
-);
+export const ROLLOUT_PRESETS_FOR_ADMINS_WITHOUT_GRANTS = [
+  'administrator',
+  'moderator_editor',
+  'support',
+] as const satisfies readonly StaffPreset[];
+
+/** The reason written on each grant that migration made. */
+export const ROLLOUT_GRANT_REASON = 'Kept their powers when presets became binding (2026-10-30)';
 
 // ---------------------------------------------------------------------------
 // SCOPE AND EFFECTIVE PERMISSIONS
@@ -149,8 +162,10 @@ export type EffectivePermissions = ReadonlyMap<PermissionKey, Coverage>;
 const STAFF_ROLES = new Set(['admin', 'supervisor', 'read_only']);
 
 /**
- * What a staff member may do, and where. The union of the legacy rule and every
- * active grant: a platform grant swallows any state grant of the same key.
+ * What a staff member may do, and where: the union of every active grant, and
+ * nothing else. The role grants no permission (2026-10-30; before then an
+ * `admin` held almost everything without a grant). A platform grant swallows
+ * any state grant of the same key.
  *
  * A Super Admin grant counts only for an `admin`. The delegation route refuses
  * to give it to anyone else; this is the second line, so an administrator later
@@ -173,9 +188,6 @@ export function effectivePermissions(subject: PermissionSubject): EffectivePermi
     out.set(key, { platform: false, states });
   };
 
-  if (subject.role === 'admin') {
-    for (const key of LEGACY_ADMIN_PERMISSIONS) widen(key, PLATFORM);
-  }
   for (const grant of subject.grants) {
     if (grant.preset === 'super_admin' && subject.role !== 'admin') continue;
     for (const key of PRESET_PERMISSIONS[grant.preset]) widen(key, grant.scope);

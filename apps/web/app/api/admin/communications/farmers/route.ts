@@ -11,6 +11,7 @@ import {
 
 import { ApiFailure, invalidCursor } from '../../../../../lib/api/errors';
 import { scopeClause } from '../../../../../lib/api/farmers';
+import { requirePermission } from '../../../../../lib/api/permissions';
 import { defineRoutes, ok, paged } from '../../../../../lib/api/route';
 import { prisma } from '../../../../../lib/db';
 
@@ -48,8 +49,9 @@ const likeEscape = (text: string) => text.replace(/[\\%_]/g, (ch) => `\\${ch}`);
 
 export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   GET: {
-    roles: ['admin'],
+    roles: ['admin', 'supervisor', 'read_only'],
     handler: async ({ request, auth }) => {
+      await requirePermission(auth, 'communications.send');
       const url = new URL(request.url);
       const parsed = communicationFarmerFilterSchema.safeParse(
         Object.fromEntries(url.searchParams),

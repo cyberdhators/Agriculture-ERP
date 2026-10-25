@@ -7,6 +7,7 @@ import {
   checkId,
   type MarketReportRow,
 } from '../../../../../lib/api/market-posts';
+import { requirePermission } from '../../../../../lib/api/permissions';
 import { defineRoutes, ok } from '../../../../../lib/api/route';
 import { requireWriter } from '../../../../../lib/api/scope';
 import { prisma } from '../../../../../lib/db';
@@ -72,14 +73,18 @@ const present = (row: Row) => ({
 
 export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   GET: {
-    roles: ['admin'],
-    handler: async ({ params }) => ok(present(await load(params.id ?? ''))),
+    roles: ['admin', 'supervisor', 'read_only'],
+    handler: async ({ auth, params }) => {
+      await requirePermission(auth, 'content.moderate');
+      return ok(present(await load(params.id ?? '')));
+    },
   },
 
   PATCH: {
-    roles: ['admin'],
+    roles: ['admin', 'supervisor'],
     bodySchema: moderateReportSchema,
     handler: async ({ auth, body, params }) => {
+      await requirePermission(auth, 'content.moderate');
       requireWriter(auth);
       const row = await load(params.id ?? '');
       const next = ACTION_STATUS[body.action as ModerationAction];

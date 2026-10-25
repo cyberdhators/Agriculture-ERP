@@ -340,6 +340,18 @@ export async function sweep(prisma: PrismaClient): Promise<void> {
        WHERE ${column} IN (SELECT id FROM public."user" WHERE name LIKE '${TEST_PREFIX}%')`,
     );
   }
+  // 2026-10-30: preset grants reference the test users (user_id, granted_by,
+  // revoked_by); the grant's states hang off the grant.
+  const testUsers = `(SELECT id FROM public."user" WHERE name LIKE '${TEST_PREFIX}%')`;
+  await prisma.$executeRawUnsafe(
+    `DELETE FROM public.staff_permission_grant_state WHERE grant_id IN
+       (SELECT id FROM public.staff_permission_grant
+         WHERE user_id IN ${testUsers} OR granted_by IN ${testUsers} OR revoked_by IN ${testUsers})`,
+  );
+  await prisma.$executeRawUnsafe(
+    `DELETE FROM public.staff_permission_grant
+      WHERE user_id IN ${testUsers} OR granted_by IN ${testUsers} OR revoked_by IN ${testUsers}`,
+  );
   await prisma.$executeRawUnsafe(`DELETE FROM public."officer" WHERE name LIKE '${TEST_PREFIX}%'`);
   await prisma.$executeRawUnsafe(`DELETE FROM public."user"    WHERE name LIKE '${TEST_PREFIX}%'`);
   // B5's out-of-state fixtures: a county and payam under EE that exist only during a run.
@@ -368,6 +380,14 @@ export async function createPrincipal(
     verification?: 'pending' | 'under_review' | 'verified' | 'rejected' | 'suspended';
     /** Buyers only: join an existing organisation instead of making one. */
     organizationId?: string;
+    /**
+     * Staff only (2026-10-30, presets are binding): the platform-wide presets
+     * this principal holds. An administrator defaults to the three that the
+     * rollout migration (20261030090000) gave every administrator without a
+     * grant, so a test admin can do what a production admin kept; pass `[]`
+     * for an administrator who holds nothing.
+     */
+    presets?: readonly ('administrator' | 'moderator_editor' | 'analyst' | 'support')[];
   } = {},
 ): Promise<TestPrincipal & { password: string }> {
   assertStaging();
@@ -450,6 +470,18 @@ export async function createPrincipal(
     role,
     role === 'admin' ? null : (options.stateId ?? null),
   );
+  const presets =
+    options.presets ??
+    (role === 'admin' ? (['administrator', 'moderator_editor', 'support'] as const) : []);
+  for (const preset of presets) {
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO public.staff_permission_grant (user_id, preset, scope_kind, reason, granted_by)
+       VALUES ($1::uuid, $2, 'platform', $3, $1::uuid)`,
+      row!.id,
+      preset,
+      `${TEST_PREFIX} principal preset`,
+    );
+  }
   const tokens = await signIn(identifier, password);
   return {
     role,

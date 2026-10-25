@@ -147,9 +147,9 @@ describe('a suspended account cannot use the app', () => {
 
 describe('only moderators suspend and restore', () => {
   for (const route of ['suspend', 'restore', 'standing']) {
-    it(`/api/admin/accounts/${route} is admin-only and asks for content.moderate`, () => {
+    it(`/api/admin/accounts/${route} admits the staff roles and asks for content.moderate`, () => {
       const text = read(`app/api/admin/accounts/${route}/route.ts`);
-      expect(text).toMatch(/roles: \['admin'\]/);
+      expect(text).toMatch(/roles: \['admin', 'supervisor'(, 'read_only')?\]/);
       expect(text).toMatch(/requirePermission\(auth, 'content\.moderate'\)/);
     });
   }

@@ -2,6 +2,7 @@ import { moderateReportSchema, toIso, type ModerationAction } from '@agri-erp/sh
 
 import { audited, writeAudit } from '../../../../../lib/api/audit';
 import { ApiFailure, notFound } from '../../../../../lib/api/errors';
+import { requirePermission } from '../../../../../lib/api/permissions';
 import { defineRoutes, ok } from '../../../../../lib/api/route';
 import { requireWriter } from '../../../../../lib/api/scope';
 import { prisma } from '../../../../../lib/db';
@@ -91,17 +92,19 @@ const present = (row: ReportRow) => ({
 
 export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   GET: {
-    roles: ['admin'],
-    handler: async ({ params }) => {
+    roles: ['admin', 'supervisor', 'read_only'],
+    handler: async ({ auth, params }) => {
+      await requirePermission(auth, 'content.moderate');
       const row = await loadReport(params.id ?? '');
       return ok(present(row));
     },
   },
 
   PATCH: {
-    roles: ['admin'],
+    roles: ['admin', 'supervisor'],
     bodySchema: moderateReportSchema,
     handler: async ({ auth, body, params }) => {
+      await requirePermission(auth, 'content.moderate');
       requireWriter(auth);
       const row = await loadReport(params.id ?? '');
 

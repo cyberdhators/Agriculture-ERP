@@ -170,7 +170,7 @@ describe('deletion and recovery', () => {
 
   it('exceptional recovery is staff-only, permissioned, re-authenticated and audited', () => {
     const text = read('app/api/admin/organizations/[id]/recover/route.ts');
-    expect(text).toMatch(/roles: \['admin'\]/);
+    expect(text).toMatch(/roles: \['admin', 'supervisor'\]/);
     expect(text).toMatch(/requirePermission\(auth, 'support\.handle'\)/);
     expect(text).toMatch(/requireReauth\(await reauthenticate\(/);
     expect(text).toMatch(/action: 'organization\.recovered'/);

@@ -180,17 +180,18 @@ export const presentEntry = (row: CaseEntryRow): SupportCaseEntry => ({
 
 /**
  * Staff who may be made responsible for a case: live staff accounts that hold
- * support.handle -- every administrator (the legacy rule), and anyone with an
- * active platform-wide Support or Super Admin grant. Platform-wide only:
- * support cases carry no state. Ordered by name.
+ * support.handle platform-wide -- an active platform-wide Support grant, or a
+ * Super Admin grant on an administrator account (a Super Admin grant counts
+ * only there, as in effectivePermissions). The role alone no longer qualifies
+ * (2026-10-30: presets are binding). Platform-wide only: support cases carry
+ * no state. Ordered by name.
  */
 export const ASSIGNABLE_STAFF_SQL = `SELECT u.id, u.name
    FROM public.user_active u
-  WHERE u.role = 'admin'
-     OR EXISTS (
+  WHERE EXISTS (
        SELECT 1 FROM public.staff_permission_grant g
-        WHERE g.user_id = u.id AND g.revoked_at IS NULL
-          AND g.preset IN ('support', 'super_admin') AND g.scope_kind = 'platform')
+        WHERE g.user_id = u.id AND g.revoked_at IS NULL AND g.scope_kind = 'platform'
+          AND (g.preset = 'support' OR (g.preset = 'super_admin' AND u.role = 'admin')))
   ORDER BY u.name, u.id`;
 
 /** The person's own case: their words, the number, where it stands, staff replies only. */

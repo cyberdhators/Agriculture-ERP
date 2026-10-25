@@ -1,3 +1,4 @@
+import { requirePermission } from '../../../../../lib/api/permissions';
 import { defineRoutes, ok } from '../../../../../lib/api/route';
 import { prisma } from '../../../../../lib/db';
 
@@ -13,8 +14,9 @@ import { prisma } from '../../../../../lib/db';
  */
 export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   GET: {
-    roles: ['admin'],
-    handler: async () => {
+    roles: ['admin', 'supervisor', 'read_only'],
+    handler: async ({ auth }) => {
+      await requirePermission(auth, 'content.moderate');
       const [row] = await prisma.$queryRawUnsafe<{ unread: number }[]>(
         `SELECT count(*)::int AS unread FROM public.product_report_active WHERE status = 'new'`,
       );

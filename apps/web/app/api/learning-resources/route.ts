@@ -12,6 +12,7 @@ import { conflict, invalidCursor } from '../../../lib/api/errors';
 import {
   RESOURCE_COLUMNS,
   RESOURCE_FROM,
+  contentAccess,
   loadResource,
   presentResource,
   requireContentWriter,
@@ -62,10 +63,13 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       const where: string[] = [];
       const params: unknown[] = [];
 
-      // A non-administrator sees published resources only. The constraint is
-      // the role, not a filter the caller chose. `status` and the old
-      // `published` flag cannot disagree (a CHECK, migration 20261022100000).
-      if (auth.scope.kind !== 'all') {
+      // Only someone who may write guides (content.moderate or content.publish,
+      // through a preset) sees drafts and guides in review; everyone else sees
+      // published resources only. The constraint is the caller's permission,
+      // not a filter they chose (2026-10-30: before, the role `admin`). `status`
+      // and the old `published` flag cannot disagree (a CHECK, migration
+      // 20261022100000).
+      if (!(await contentAccess(auth)).write) {
         where.push(`r.status = 'published'`);
       }
 
@@ -131,7 +135,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   },
 
   POST: {
-    roles: ['admin'],
+    roles: ['admin', 'supervisor'],
     bodySchema: learningResourceInputSchema,
     handler: async ({ auth, body }) => {
       requireWriter(auth);

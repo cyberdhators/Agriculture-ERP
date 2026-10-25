@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 
 import { myAccess } from '@/lib/admin/staff-access-api';
+import { type HeldPermissions, heldFrom } from '@/lib/portal/nav';
 import { usePreview } from '@/lib/preview';
 
 import { Wordmark } from '../brand/Wordmark';
@@ -38,15 +39,24 @@ export function Shell({ children }: { children: ReactNode }) {
   // 2026-10-19: an administrator who holds Super Admin is labelled so. The
   // permission is read from the server (GET /api/admin/staff-access/me); the
   // label is only a name, never a grant.
+  //
+  // 2026-10-30 (presets are binding): the same answer decides which
+  // permission-gated destinations the rail offers, for every staff role. Until
+  // it arrives (or if it fails) `held` is null and those destinations are
+  // hidden; an officer holds no permissions and is never asked.
   const [superAdmin, setSuperAdmin] = useState(false);
+  const [held, setHeld] = useState<HeldPermissions | null>(null);
   useEffect(() => {
-    if (role !== 'admin' || !me) {
-      setSuperAdmin(false);
-      return;
-    }
+    setSuperAdmin(false);
+    setHeld(null);
+    if (role === 'officer' || !me) return;
     let on = true;
     myAccess()
-      .then((a) => on && setSuperAdmin(a.is_super_admin))
+      .then((a) => {
+        if (!on) return;
+        setSuperAdmin(a.is_super_admin);
+        setHeld(heldFrom(a.permissions));
+      })
       .catch(() => undefined);
     return () => {
       on = false;
@@ -111,6 +121,7 @@ export function Shell({ children }: { children: ReactNode }) {
           onToggleCollapsed={toggleCollapsed}
           onSignOut={() => void signOut()}
           roleLabel={superAdmin ? 'Super Admin' : undefined}
+          held={held}
         />
 
         {drawerOpen ? (

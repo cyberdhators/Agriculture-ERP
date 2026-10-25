@@ -24,10 +24,16 @@ import { type Authenticated } from './require-role';
  * requireRole is called before anything else. Hiding a button is a courtesy;
  * this is the control.
  *
- * ADDITIVE. requireRole is not changed and still runs first (the route
- * wrapper calls it). A permission can only NARROW what a role already admits
- * to one of these new routes; it never widens what an existing route allows,
- * and no existing route consults it in this pass.
+ * TWO QUESTIONS, IN ORDER. requireRole (the route wrapper) asks "may this kind
+ * of account knock on this door at all?"; requirePermission asks "does this
+ * person hold the power behind it?". Since 2026-10-30 the second answer comes
+ * ONLY from the person's active preset grants: the role `admin` alone grants
+ * no permission. So a route whose work belongs to a preset (moderation,
+ * support, communications, analytics, settings, staff, audit) admits every
+ * staff role that can hold that preset and then asks for the permission; it
+ * never relies on `roles: ['admin']` alone (apps/web/tests/
+ * preset-permission-scan.test.ts). Read-only accounts are admitted to reads
+ * only: they create no records (C-3.9).
  *
  * The decision itself is `effectivePermissions` / `covers` in packages/shared,
  * a pure function with its own tests. This file only loads the rows.

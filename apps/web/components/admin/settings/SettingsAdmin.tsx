@@ -60,7 +60,8 @@ const TABS: { key: Tab; label: string }[] = [
  */
 export function SettingsAdmin() {
   const { role, hydrated } = usePreview();
-  const isAdmin = hydrated && role === 'admin';
+  // 2026-10-30: any staff role; the route decides by permission (a 403 shows the refusal).
+  const isAdmin = hydrated && role !== 'officer';
   const [tab, setTab] = useState<Tab>('identity');
   const [settings, setSettings] = useState<CurrentSetting[] | null>(null);
   const [failure, setFailure] = useState<Failure | null>(null);

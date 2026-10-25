@@ -36,7 +36,7 @@ interface Row {
 
 export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   GET: {
-    roles: ['admin'],
+    roles: ['admin', 'supervisor', 'read_only'],
     handler: async ({ auth, request }) => {
       await requirePermission(auth, 'support.handle');
       const search = new URL(request.url).searchParams;

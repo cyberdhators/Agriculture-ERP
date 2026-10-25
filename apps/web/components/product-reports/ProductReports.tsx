@@ -9,6 +9,7 @@ import { ReasonCodeSelect } from '@/components/admin/ReasonCodeSelect';
 import { ServiceNotConnectedError } from '@/lib/communications/api';
 import { decideProductReport, listProductReports } from '@/lib/product-reports/api';
 import { formatDate } from '@/lib/format';
+import { useHolds } from '@/lib/admin/use-permission';
 import { usePreview } from '@/lib/preview';
 
 import { Button, Dialog, Field, Notice, PageHeader, Stamp, Textarea } from '../ui';
@@ -76,8 +77,11 @@ const CONSEQUENCE: Record<string, string> = {
  * is separate from the seller's account standing and from adviser approval.
  */
 export function ProductReports() {
-  const { role, hydrated } = usePreview();
-  const isAdmin = hydrated && role === 'admin';
+  const { hydrated } = usePreview();
+  // 2026-10-30 (presets are binding): offered to whoever holds content.moderate, on any
+  // staff role; the route asks for the same permission.
+  const holds = useHolds('content.moderate');
+  const isAdmin = hydrated && holds === true;
 
   const [reports, setReports] = useState<ProductReport[]>([]);
   const [cursor, setCursor] = useState<string | null>(null);
@@ -163,13 +167,15 @@ export function ProductReports() {
   useEffect(() => load(), [load, attempt]);
 
   if (!hydrated) return null;
+  if (holds === null) return null;
 
   if (!isAdmin) {
     return (
       <div>
         <PageHeader eyebrow="Governance" title="Product reports" />
-        <UnavailableState title="Product reports are not available to your role">
-          Marketplace moderation is reserved to administrators.
+        <UnavailableState title="Product reports are not available to you">
+          Marketplace moderation needs the Moderator + Editor preset. Ask an administrator who
+          manages staff permissions.
         </UnavailableState>
       </div>
     );

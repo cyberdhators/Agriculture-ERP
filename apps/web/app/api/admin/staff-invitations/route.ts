@@ -45,7 +45,7 @@ import { prisma } from '../../../../lib/db';
  */
 export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   GET: {
-    roles: ['admin'],
+    roles: ['admin', 'supervisor', 'read_only'],
     handler: async ({ auth }) => {
       const { coverage } = await requirePermissionCoverage(auth, 'staff.manage');
       const rows = await prisma.$queryRawUnsafe<StaffInvitationRow[]>(
@@ -63,7 +63,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   },
 
   POST: {
-    roles: ['admin'],
+    roles: ['admin', 'supervisor'],
     bodySchema: staffInvitationSchema,
     handler: async ({ auth, body: raw, request }) => {
       const body = raw as StaffInvitationInput;

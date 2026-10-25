@@ -73,7 +73,8 @@ const ANNOUNCEMENT_STATUS: Record<StaffAnnouncement['status'], string> = {
  */
 export function AnnouncementDetail({ id }: { id: string }) {
   const { role, hydrated } = usePreview();
-  const isAdmin = hydrated && role === 'admin';
+  // 2026-10-30: any staff role; the route decides by permission (a 403 shows the refusal).
+  const isAdmin = hydrated && role !== 'officer';
   const [state, setState] = useState<AnnouncementState | null>(null);
   const [failure, setFailure] = useState<Failure | null>(null);
   const [editing, setEditing] = useState(false);

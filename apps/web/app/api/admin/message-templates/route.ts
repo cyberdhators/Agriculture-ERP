@@ -26,7 +26,7 @@ import { prisma } from '../../../../lib/db';
  */
 export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   GET: {
-    roles: ['admin'],
+    roles: ['admin', 'supervisor', 'read_only'],
     handler: async ({ auth }) => {
       await requirePermission(auth, 'communications.send');
       const rows = await prisma.$queryRawUnsafe<TemplateRow[]>(
@@ -39,7 +39,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   },
 
   POST: {
-    roles: ['admin'],
+    roles: ['admin', 'supervisor'],
     bodySchema: templateCreateSchema,
     handler: async ({ auth, body: raw }) => {
       requireWriter(auth);

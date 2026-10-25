@@ -52,7 +52,7 @@ import { suspensionSmsText } from '../../../../../lib/suspension-sms';
  */
 export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   POST: {
-    roles: ['admin'],
+    roles: ['admin', 'supervisor'],
     bodySchema: accountSuspendSchema,
     handler: async ({ auth, body }) => {
       await requirePermission(auth, 'content.moderate');

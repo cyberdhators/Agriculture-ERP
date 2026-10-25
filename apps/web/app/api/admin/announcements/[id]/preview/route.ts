@@ -18,7 +18,7 @@ import { defineRoutes, ok } from '../../../../../../lib/api/route';
  */
 export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   GET: {
-    roles: ['admin'],
+    roles: ['admin', 'supervisor', 'read_only'],
     handler: async ({ auth, params }) => {
       await requirePermission(auth, 'communications.send');
       const row = await loadAnnouncement(idParam(params));

@@ -10,7 +10,7 @@ import {
 
 import { audited, writeAudit, writeAuditOutcome } from '../../../lib/api/audit';
 import { countOrphanAuthAccounts } from '../../../lib/api/orphans';
-import { activeSuperAdminIds, permissionsOf } from '../../../lib/api/permissions';
+import { activeSuperAdminIds, permissionsOf, requirePermission } from '../../../lib/api/permissions';
 import { authUnavailable, conflict, invalidCursor, unprocessable } from '../../../lib/api/errors';
 import { created, defineRoutes, paged } from '../../../lib/api/route';
 import { requireWriter } from '../../../lib/api/scope';
@@ -131,6 +131,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
     roles: ['admin'],
     bodySchema: createUserSchema,
     handler: async ({ auth, body }) => {
+      await requirePermission(auth, 'staff.manage');
       requireWriter(auth);
 
       // 2026-10-28 (lane-security): staff are INVITED by email and choose

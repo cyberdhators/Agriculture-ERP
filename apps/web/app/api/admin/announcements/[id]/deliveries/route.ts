@@ -39,7 +39,7 @@ interface Row {
  */
 export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   GET: {
-    roles: ['admin'],
+    roles: ['admin', 'supervisor', 'read_only'],
     handler: async ({ auth, params, request }) => {
       await requirePermission(auth, 'communications.send');
       const id = idParam(params);

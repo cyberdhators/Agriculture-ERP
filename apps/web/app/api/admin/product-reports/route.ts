@@ -9,6 +9,7 @@ import {
 } from '@agri-erp/shared';
 
 import { ApiFailure, invalidCursor } from '../../../../lib/api/errors';
+import { requirePermission } from '../../../../lib/api/permissions';
 import { defineRoutes, paged } from '../../../../lib/api/route';
 import { prisma } from '../../../../lib/db';
 
@@ -31,8 +32,9 @@ const REPORT_COLUMNS = `r.id, r.listing_id, r.reason::text AS reason, r.status::
 
 export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   GET: {
-    roles: ['admin'],
-    handler: async ({ request }) => {
+    roles: ['admin', 'supervisor', 'read_only'],
+    handler: async ({ auth, request }) => {
+      await requirePermission(auth, 'content.moderate');
       const parsed = productReportFilterSchema.safeParse(
         Object.fromEntries(new URL(request.url).searchParams),
       );

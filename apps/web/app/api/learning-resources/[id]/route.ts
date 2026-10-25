@@ -30,7 +30,7 @@ const sameList = (a: readonly string[], b: readonly string[]) =>
 
 export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   PATCH: {
-    roles: ['admin'],
+    roles: ['admin', 'supervisor'],
     bodySchema: learningResourceInputSchema,
     handler: async ({ auth, body, params }) => {
       requireWriter(auth);
@@ -125,7 +125,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   },
 
   DELETE: {
-    roles: ['admin'],
+    roles: ['admin', 'supervisor'],
     handler: async ({ auth, params }) => {
       requireWriter(auth);
       const access = await requireContentWriter(auth);

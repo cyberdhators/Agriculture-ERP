@@ -32,7 +32,7 @@ import { prisma } from '../../../../../../lib/db';
  */
 export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   GET: {
-    roles: ['admin'],
+    roles: ['admin', 'supervisor', 'read_only'],
     handler: async ({ auth, params }) => {
       await requirePermission(auth, 'content.moderate');
       const kind = kindOf(params.kind);

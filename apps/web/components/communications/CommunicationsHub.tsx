@@ -60,7 +60,8 @@ export function CommunicationsHub() {
 
 function AnnouncementsPanel() {
   const { role, hydrated } = usePreview();
-  const isAdmin = hydrated && role === 'admin';
+  // 2026-10-30: any staff role; the route decides by permission (a 403 shows the refusal).
+  const isAdmin = hydrated && role !== 'officer';
   const router = useRouter();
   const [rows, setRows] = useState<StaffAnnouncement[] | null>(null);
   const [failure, setFailure] = useState<Failure | null>(null);
