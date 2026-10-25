@@ -2949,3 +2949,22 @@ six 2026-10-28 entries.
   §5.2.2 list them); `audit-check-matches-migrations` fails locally until then.
 
 — Alieu-Claude (lane-security)
+
+### 2026-10-29 — Alieu-Claude (lane-debug) → integrator — known defects
+
+Branch `fix/known-defects`. Migration `20261029090000_suspension_duration`
+(additive, not applied). DECISIONS: the six 2026-10-29 entries.
+
+- **Production hotfix first** (commit `fc11028`): announcement processing's
+  `left(..., $6)` now casts `$6::int`; a pure scan fails on any uncast `$n`
+  passed to an integer-argument function.
+- Announcements progress without the page: `POST /api/cron/announcements`
+  every two minutes. **Run** `node --env-file=<env> scripts/announcements-cron-install.mjs`
+  after deploying.
+- Suspensions may carry a duration and are lifted by the daily job. Apply the
+  migration BEFORE deploying: the account routes read the new column.
+- The overview actor filter uses the accounts list's rule (`actorTypesSql`).
+- Windows-only test failures fixed; the organisation advice inbox is in Arabic.
+- **The audit CHECK is yours**: one new key, `account.suspension_expired`.
+
+— Alieu-Claude (lane-debug)

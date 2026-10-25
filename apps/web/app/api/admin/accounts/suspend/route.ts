@@ -1,4 +1,4 @@
-import { accountSanctionSchema } from '@agri-erp/shared';
+import { accountSuspendSchema, suspensionEndDate, suspensionEndsAt } from '@agri-erp/shared';
 
 import { audited, writeAudit } from '../../../../../lib/api/audit';
 import { unprocessable } from '../../../../../lib/api/errors';
@@ -13,6 +13,7 @@ import { requirePermission } from '../../../../../lib/api/permissions';
 import { defineRoutes, ok } from '../../../../../lib/api/route';
 import { prisma } from '../../../../../lib/db';
 import { disableAuthAccount, revokeAllSessions } from '../../../../../lib/supabase/admin';
+import { suspensionSmsText } from '../../../../../lib/suspension-sms';
 
 /**
  * POST /api/admin/accounts/suspend -- staff suspend a farmer or buyer account
@@ -43,17 +44,23 @@ import { disableAuthAccount, revokeAllSessions } from '../../../../../lib/supaba
  * not redeem. If Supabase does not answer, the suspension already holds (every
  * request is refused by requireRole); the answer says which step did not
  * (sessions_ended, sign_in_blocked).
+ *
+ * 2026-10-29: an optional DURATION (suspend_days, 1 to 365). Without it the
+ * suspension has no end, as before. With it, suspension_ends_at is set to the
+ * start of the end day in Juba, the text message names that date, and the
+ * daily job (POST /api/cron/expiry-reminders) lifts it then.
  */
 export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   POST: {
     roles: ['admin'],
-    bodySchema: accountSanctionSchema,
+    bodySchema: accountSuspendSchema,
     handler: async ({ auth, body }) => {
       await requirePermission(auth, 'content.moderate');
       const done = await audited(prisma, async (tx) => {
         const found = await accountOf(tx, body.kind, body.id, true);
         if (found.suspendedAt) throw unprocessable('account_already_suspended');
         const label = await reasonCodeLabel(tx, body.reason_code);
+        const until = suspensionEndsAt(new Date(), body.suspend_days);
         for (const [table, id] of [
           ['farmer', found.farmerId],
           ['buyer', found.buyerId],
@@ -61,14 +68,19 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
           if (!id) continue;
           await tx.$executeRawUnsafe(
             `UPDATE public.${table}
-                SET suspended_at = now(), suspended_reason = $2, suspended_by = $3::uuid
+                SET suspended_at = now(), suspended_reason = $2, suspended_by = $3::uuid,
+                    suspension_ends_at = $4::timestamptz
               WHERE id = $1::uuid AND suspended_at IS NULL`,
             id,
             body.reason,
             auth.principal.id,
+            until,
           );
         }
-        const sms = await sendSuspensionSms(await suspensionPhone(tx, found), label);
+        const endDate = until ? suspensionEndDate(until) : null;
+        const sms = await sendSuspensionSms(await suspensionPhone(tx, found), label, (l) =>
+          suspensionSmsText(l, endDate),
+        );
         for (const [table, id] of [
           ['farmer', found.farmerId],
           ['buyer', found.buyerId],
@@ -86,6 +98,8 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
               reason: body.reason,
               // 2026-10-25: the reason code chosen from the list, if any.
               ...(body.reason_code ? { reason_code: body.reason_code } : {}),
+              // 2026-10-29: when it ends by itself; null for no end.
+              suspension_ends_at: until?.toISOString() ?? null,
               // 2026-10-26: what happened to the text message; never its text or the number.
               notice_sms: sms,
             },

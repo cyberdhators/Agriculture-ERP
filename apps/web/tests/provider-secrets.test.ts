@@ -29,7 +29,8 @@ function sources(dir: string, out: string[] = []): string[] {
 
 const files = sources(WEB);
 const read = (f: string) => readFileSync(f, 'utf8');
-const rel = (f: string) => f.slice(WEB.length);
+// Forward slashes on every platform, so the paths below compare on Windows too.
+const rel = (f: string) => f.slice(WEB.length).replace(/\\/g, '/');
 
 describe('the email provider key stays on the server', () => {
   it('found the source tree, so this cannot pass by scanning nothing', () => {

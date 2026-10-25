@@ -42,7 +42,8 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
           if (!id) continue;
           await tx.$executeRawUnsafe(
             `UPDATE public.${table}
-                SET suspended_at = NULL, suspended_reason = NULL, suspended_by = NULL
+                SET suspended_at = NULL, suspended_reason = NULL, suspended_by = NULL,
+                    suspension_ends_at = NULL
               WHERE id = $1::uuid AND suspended_at IS NOT NULL`,
             id,
           );

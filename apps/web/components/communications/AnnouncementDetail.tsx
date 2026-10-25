@@ -65,9 +65,11 @@ const ANNOUNCEMENT_STATUS: Record<StaffAnnouncement['status'], string> = {
  * delivery record -- one row per recipient per channel with its status,
  * reason, provider message id and error.
  *
- * Sending runs in batches from this page; closing the page pauses it, and
- * "Continue sending" resumes it. Failed deliveries are retried only when
- * someone presses "Retry failed".
+ * Sending runs in batches from this page, and -- since 2026-10-29 -- also
+ * every two minutes from a scheduled job (POST /api/cron/announcements), so
+ * closing the page no longer stops it; "Continue sending" just goes faster,
+ * and Pause stops only this page's batches. Failed deliveries are retried
+ * only when someone presses "Retry failed".
  */
 export function AnnouncementDetail({ id }: { id: string }) {
   const { role, hydrated } = usePreview();
@@ -299,7 +301,7 @@ export function AnnouncementDetail({ id }: { id: string }) {
             subtitle={
               a.status === 'completed'
                 ? `Completed ${a.completed_at ? formatDate(a.completed_at) : ''}. ${a.recipient_count ?? 0} recipients.`
-                : `${state.remaining} deliveries waiting. ${a.recipient_count ?? 0} recipients.`
+                : `${state.remaining} deliveries waiting. ${a.recipient_count ?? 0} recipients. Sending continues every few minutes even when this page is closed.`
             }
             actions={
               <>

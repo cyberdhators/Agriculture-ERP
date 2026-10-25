@@ -22,7 +22,7 @@ import { prisma } from '../db';
 import { MailerNotConfiguredError, mailerConfig, sendOneEmail } from '../email/resend';
 import { SmsNotConfiguredError, SmsUnavailableError, sendOneSms, smsConfig } from '../sms/bird';
 import { adminAuthEmails } from '../supabase/admin';
-import { audited, writeAudit, type AuditTx } from './audit';
+import { audited, writeAudit, type AuditEntry, type AuditTx } from './audit';
 import { settingValue } from './settings';
 import { UUID_PATTERN } from './buyer-presenters';
 import { notFound, unprocessable } from './errors';
@@ -479,6 +479,19 @@ async function batchAuditReady(): Promise<boolean> {
   return !row || row.def.includes(`'announcement.batch_sent'`);
 }
 
+/**
+ * Who a batch is audited as: the administrator whose screen asked for it, or
+ * 'system' when the scheduled job (POST /api/cron/announcements, 2026-10-29)
+ * moved it on.
+ */
+export type BatchActor = Pick<AuditEntry, 'actorType' | 'actorId'>;
+
+export const SYSTEM_ACTOR: BatchActor = { actorType: 'system', actorId: null };
+
+function batchActor(by: Authenticated | BatchActor): BatchActor {
+  return 'principal' in by ? { actorType: by.role, actorId: by.principal.id } : by;
+}
+
 interface Claimed {
   id: string;
   channel: 'sms' | 'email';
@@ -501,7 +514,7 @@ interface Result {
  * claimed with SKIP LOCKED, so two tabs never send the same delivery.
  */
 export async function processBatch(
-  auth: Authenticated,
+  by: Authenticated | BatchActor,
   announcement: AnnouncementRow,
   serviceName: string,
 ): Promise<BatchOutcome> {
@@ -513,7 +526,7 @@ export async function processBatch(
     waiting_for_configuration: [],
     interrupted_marked_failed: 0,
   };
-  const actor = { actorType: auth.role, actorId: auth.principal.id } as const;
+  const actor = batchActor(by);
 
   // 1. A claim that never finished is reported, never resent.
   outcome.interrupted_marked_failed = await audited(prisma, async (tx) => {
@@ -558,8 +571,8 @@ export async function processBatch(
     await tx.$executeRawUnsafe(
       `INSERT INTO public.notification (id, farmer_id, buyer_organization_id, channel, title, body)
        SELECT x.nid, f.id, CASE WHEN f.id IS NULL THEN b.organization_id END, 'in_app',
-              replace($3, '{name}', COALESCE(NULLIF(left(btrim(COALESCE(f.given_name, b.given_name)), $6), ''), $5)),
-              replace($4, '{name}', COALESCE(NULLIF(left(btrim(COALESCE(f.given_name, b.given_name)), $6), ''), $5))
+              replace($3, '{name}', COALESCE(NULLIF(left(btrim(COALESCE(f.given_name, b.given_name)), $6::int), ''), $5)),
+              replace($4, '{name}', COALESCE(NULLIF(left(btrim(COALESCE(f.given_name, b.given_name)), $6::int), ''), $5))
          FROM unnest($1::uuid[], $2::uuid[]) AS x(did, nid)
          JOIN public.announcement_delivery d ON d.id = x.did
          LEFT JOIN public.farmer f ON d.recipient_kind = 'farmer' AND f.id = d.recipient_id
@@ -772,7 +785,7 @@ export async function processBatch(
  * Marks a sending announcement completed once nothing is queued or in flight,
  * with its audit row. Returns whether it did.
  */
-export async function completeIfDone(auth: Authenticated, id: string): Promise<boolean> {
+export async function completeIfDone(by: Authenticated | BatchActor, id: string): Promise<boolean> {
   return audited(prisma, async (tx) => {
     const [row] = await tx.$queryRawUnsafe<{ id: string }[]>(
       `UPDATE public.announcement a
@@ -788,8 +801,7 @@ export async function completeIfDone(auth: Authenticated, id: string): Promise<b
     await writeAudit(tx, {
       entityType: 'announcement',
       entityId: id,
-      actorType: auth.role,
-      actorId: auth.principal.id,
+      ...batchActor(by),
       action: 'announcement.completed',
       before: { status: 'sending' },
       after: { status: 'completed', deliveries: counts },

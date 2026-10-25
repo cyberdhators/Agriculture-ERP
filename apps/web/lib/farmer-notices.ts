@@ -78,6 +78,12 @@ export const ACCOUNT_NOTICES = {
     body: 'You can sign in and use AgriOne again.',
     key: 'notice.accountRestored',
   },
+  // 2026-10-29: a suspension with a duration ended by itself (the daily job).
+  suspension_ended: {
+    title: 'Your AgriOne account suspension has ended',
+    body: 'The suspension period is over. You can sign in and use AgriOne again.',
+    key: 'notice.suspensionEnded',
+  },
   message_listing: {
     title: 'You have a new message about a product listing',
     body: 'Open Messages to read it.',

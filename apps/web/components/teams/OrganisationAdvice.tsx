@@ -50,18 +50,145 @@ interface Detail {
   }[];
 }
 
-const STATUS_WORDS: Record<AdviceCaseStatus, string> = {
-  open: 'New',
-  in_progress: 'In progress',
-  closed: 'Closed',
+/**
+ * 2026-10-29: the page's words in English and Arabic, as the other team
+ * pages keep theirs (ShortcutHub, StateField). Messages the server sends
+ * back (errorText) stay as the server wrote them.
+ */
+const EN = {
+  status: { open: 'New', in_progress: 'In progress', closed: 'Closed' } as Record<
+    AdviceCaseStatus,
+    string
+  >,
+  outcome: {
+    resolved: 'Resolved',
+    referred: 'Referred elsewhere',
+    closed_unresolved: 'Closed unresolved',
+    cancelled: 'Cancelled',
+  } as Record<AdviceOutcome, string>,
+  back: '← Back to the organisation',
+  title: 'Advice requests',
+  lead: "Questions people asked your organisation's advice profile. Only members who handle advisory cases can see them. Your personal messages stay separate.",
+  tabsLabel: 'Organisation advice',
+  inbox: 'Shared inbox',
+  profile: 'Advice profile',
+  profileTitle: "Your organisation's advice profile",
+  profileLead:
+    'Requests to this profile come to the shared inbox. Publishing needs no approval from CORWADO; it is not an endorsement.',
+  profileNotLoaded: 'The profile could not be loaded.',
+  profileNotSaved: 'The profile could not be saved.',
+  unreachable: 'The server could not be reached. Check the connection.',
+  noPermission:
+    'You need the "Handle advisory cases" permission to see these requests. Ask an administrator of the organisation.',
+  notLoaded: 'The requests could not be loaded.',
+  checkForm: 'Check the form.',
+  notMade: 'That change was not made.',
+  unreachableShort: 'The server could not be reached.',
+  done: 'Done.',
+  statusLabel: 'Request status',
+  none: 'No requests here.',
+  newMessage: 'New message',
+  from: 'From',
+  handledBy: 'Handled by',
+  you: 'you',
+  notAccepted: ' (not accepted yet)',
+  nobody: 'Nobody is handling this yet.',
+  claim: 'Take it',
+  accept: 'Accept',
+  release: 'Give it back',
+  hide: 'Hide',
+  open: 'Open',
+  assignLabel: 'Give this request to',
+  chooseMember: 'Choose a member',
+  youMark: '(you)',
+  assign: 'Assign',
+  notOpened: 'This request could not be opened.',
+  offline: 'Offline.',
+  writeFirst: 'Write a message first.',
+  notSent: 'The message was not sent.',
+  notSentOffline: 'Not sent: offline.',
+  sharedBy: 'Shared by the person asking:',
+  nothing: 'nothing',
+  conversation: 'Conversation',
+  youDot: 'You · ',
+  replyLabel: 'Reply for the organisation',
+  replyHint: 'Ask a question, answer, or follow up.',
+  send: 'Send',
+  acceptToReply: 'Accept this request to reply.',
+  onlyHandler: 'Only the member handling this request replies to it.',
+  closeLabel: 'Close with outcome',
+  choose: 'Choose',
+  closeRequest: 'Close request',
+  footer: "Advice is not a guarantee of results. Keep the requester's details private.",
 };
 
-const OUTCOME_WORDS: Record<AdviceOutcome, string> = {
-  resolved: 'Resolved',
-  referred: 'Referred elsewhere',
-  closed_unresolved: 'Closed unresolved',
-  cancelled: 'Cancelled',
+type Words = typeof EN;
+
+const AR: Words = {
+  status: { open: 'جديد', in_progress: 'قيد المتابعة', closed: 'مغلق' },
+  outcome: {
+    resolved: 'تم الحل',
+    referred: 'أُحيل إلى جهة أخرى',
+    closed_unresolved: 'أُغلق دون حل',
+    cancelled: 'أُلغي',
+  },
+  back: '→ العودة إلى المنظمة',
+  title: 'طلبات النصيحة',
+  lead: 'أسئلة طرحها الناس على ملف النصيحة الخاص بمنظمتك. لا يراها إلا الأعضاء الذين يتولون حالات النصيحة. رسائلك الشخصية تبقى منفصلة.',
+  tabsLabel: 'نصيحة المنظمة',
+  inbox: 'البريد المشترك',
+  profile: 'ملف النصيحة',
+  profileTitle: 'ملف النصيحة الخاص بمنظمتك',
+  profileLead:
+    'تصل الطلبات الموجهة إلى هذا الملف إلى البريد المشترك. لا يحتاج النشر إلى موافقة CORWADO، وليس تزكية منها.',
+  profileNotLoaded: 'تعذر تحميل الملف.',
+  profileNotSaved: 'تعذر حفظ الملف.',
+  unreachable: 'تعذر الوصول إلى الخادم. تحقق من الاتصال.',
+  noPermission:
+    'تحتاج إلى صلاحية «تولي حالات النصيحة» لرؤية هذه الطلبات. اطلبها من أحد مديري المنظمة.',
+  notLoaded: 'تعذر تحميل الطلبات.',
+  checkForm: 'تحقق من النموذج.',
+  notMade: 'لم يتم هذا التغيير.',
+  unreachableShort: 'تعذر الوصول إلى الخادم.',
+  done: 'تم.',
+  statusLabel: 'حالة الطلب',
+  none: 'لا توجد طلبات هنا.',
+  newMessage: 'رسالة جديدة',
+  from: 'من',
+  handledBy: 'يتولاه',
+  you: 'أنت',
+  notAccepted: ' (لم يُقبل بعد)',
+  nobody: 'لا أحد يتولى هذا الطلب بعد.',
+  claim: 'تولَّه',
+  accept: 'قبول',
+  release: 'أعِده',
+  hide: 'إخفاء',
+  open: 'فتح',
+  assignLabel: 'أسند هذا الطلب إلى',
+  chooseMember: 'اختر عضواً',
+  youMark: '(أنت)',
+  assign: 'إسناد',
+  notOpened: 'تعذر فتح هذا الطلب.',
+  offline: 'لا يوجد اتصال.',
+  writeFirst: 'اكتب رسالة أولاً.',
+  notSent: 'لم تُرسل الرسالة.',
+  notSentOffline: 'لم تُرسل: لا يوجد اتصال.',
+  sharedBy: 'ما شاركه صاحب الطلب:',
+  nothing: 'لا شيء',
+  conversation: 'المحادثة',
+  youDot: 'أنت · ',
+  replyLabel: 'الرد باسم المنظمة',
+  replyHint: 'اطرح سؤالاً، أو أجب، أو تابع.',
+  send: 'إرسال',
+  acceptToReply: 'اقبل هذا الطلب لتتمكن من الرد.',
+  onlyHandler: 'لا يرد على هذا الطلب إلا العضو الذي يتولاه.',
+  closeLabel: 'الإغلاق مع النتيجة',
+  choose: 'اختر',
+  closeRequest: 'إغلاق الطلب',
+  footer: 'النصيحة ليست ضماناً للنتائج. حافظ على سرية بيانات صاحب الطلب.',
 };
+
+const wordsFor = (language: Language): Words => (language === 'ar' ? AR : EN);
 
 const col: React.CSSProperties = { display: 'flex', flexDirection: 'column', gap: 12 };
 const row: React.CSSProperties = {
@@ -110,24 +237,24 @@ export function OrganisationAdvice({
   const base = `/api/organizations/${id}`;
   const back = `${teamBase(side)}/${id}`;
   const find = side === 'farmer' ? FARMER_ADVICE.find : BUYER_ADVICE.find;
+  const w = wordsFor(language);
 
   return (
     <div style={{ ...col, gap: 20, maxWidth: 760 }}>
       <Link href={back} className="small">
-        ← Back to the organisation
+        {w.back}
       </Link>
       <header>
-        <h1 style={{ margin: 0 }}>Advice requests</h1>
+        <h1 style={{ margin: 0 }}>{w.title}</h1>
         <p className="small muted" style={{ margin: 0 }}>
-          Questions people asked your organisation&apos;s advice profile. Only members who handle
-          advisory cases can see them. Your personal messages stay separate.
+          {w.lead}
         </p>
       </header>
       <Tabs
-        label="Organisation advice"
+        label={w.tabsLabel}
         items={[
-          { key: 'inbox', label: 'Shared inbox' },
-          { key: 'profile', label: 'Advice profile' },
+          { key: 'inbox', label: w.inbox },
+          { key: 'profile', label: w.profile },
         ]}
         value={tab}
         onChange={setTab}
@@ -140,15 +267,15 @@ export function OrganisationAdvice({
           base={find}
           workHref={back}
           source={{
-            title: "Your organisation's advice profile",
-            lead: 'Requests to this profile come to the shared inbox. Publishing needs no approval from CORWADO; it is not an endorsement.',
+            title: w.profileTitle,
+            lead: w.profileLead,
             load: async () => {
               const response = await fetch(`${base}/advice-provider`, { cache: 'no-store' });
               if (!response.ok) {
                 throw new AdviceError(
                   response.status,
                   'refused',
-                  await errorText(response, 'The profile could not be loaded.'),
+                  await errorText(response, w.profileNotLoaded),
                 );
               }
               return (await readData<{ profile: AdviceProviderOwn | null }>(response)).profile;
@@ -166,7 +293,7 @@ export function OrganisationAdvice({
                 throw new AdviceError(
                   response.status,
                   failure.error?.code ?? 'unknown',
-                  failure.error?.message ?? 'The profile could not be saved.',
+                  failure.error?.message ?? w.profileNotSaved,
                   failure.error?.fields ?? {},
                 );
               }
@@ -180,6 +307,7 @@ export function OrganisationAdvice({
 }
 
 function Inbox({ base, language }: { base: string; language: Language }) {
+  const w = wordsFor(language);
   const [status, setStatus] = useState<AdviceCaseStatus>('open');
   const [cases, setCases] = useState<OrgAdviceCaseView[] | null>(null);
   const [handlers, setHandlers] = useState<OrgAdviceHandler[]>([]);
@@ -192,17 +320,15 @@ function Inbox({ base, language }: { base: string; language: Language }) {
       cache: 'no-store',
     }).catch(() => null);
     if (!response) {
-      setRefused('The server could not be reached. Check the connection.');
+      setRefused(w.unreachable);
       return;
     }
     if (response.status === 403) {
-      setRefused(
-        'You need the "Handle advisory cases" permission to see these requests. Ask an administrator of the organisation.',
-      );
+      setRefused(w.noPermission);
       return;
     }
     if (!response.ok) {
-      setRefused(await errorText(response, 'The requests could not be loaded.'));
+      setRefused(await errorText(response, w.notLoaded));
       return;
     }
     setRefused(null);
@@ -211,7 +337,7 @@ function Inbox({ base, language }: { base: string; language: Language }) {
       () => null,
     );
     if (team?.ok) setHandlers(await readData<OrgAdviceHandler[]>(team));
-  }, [base, status]);
+  }, [base, status, w]);
 
   useEffect(() => {
     setCases(null);
@@ -221,7 +347,7 @@ function Inbox({ base, language }: { base: string; language: Language }) {
   async function act(caseId: string, input: OrgAdviceActionInput) {
     const check = orgAdviceActionSchema.safeParse(input);
     if (!check.success) {
-      setMessage({ ok: false, text: check.error.issues[0]?.message ?? 'Check the form.' });
+      setMessage({ ok: false, text: check.error.issues[0]?.message ?? w.checkForm });
       return;
     }
     const response = await sendJson(
@@ -232,13 +358,11 @@ function Inbox({ base, language }: { base: string; language: Language }) {
     if (!response?.ok) {
       setMessage({
         ok: false,
-        text: response
-          ? await errorText(response, 'That change was not made.')
-          : 'The server could not be reached.',
+        text: response ? await errorText(response, w.notMade) : w.unreachableShort,
       });
       return;
     }
-    setMessage({ ok: true, text: 'Done.' });
+    setMessage({ ok: true, text: w.done });
     await load();
   }
 
@@ -253,10 +377,10 @@ function Inbox({ base, language }: { base: string; language: Language }) {
   return (
     <div style={col}>
       <Tabs
-        label="Request status"
+        label={w.statusLabel}
         items={(['open', 'in_progress', 'closed'] as const).map((key) => ({
           key,
-          label: STATUS_WORDS[key],
+          label: w.status[key],
         }))}
         value={status}
         onChange={(next) => {
@@ -270,47 +394,46 @@ function Inbox({ base, language }: { base: string; language: Language }) {
         </Notice>
       ) : null}
       {cases === null ? <p className="small muted">…</p> : null}
-      {cases && cases.length === 0 ? <p className="small muted">No requests here.</p> : null}
+      {cases && cases.length === 0 ? <p className="small muted">{w.none}</p> : null}
       {cases?.map((c) => (
         <div key={c.id} style={box}>
           <div style={{ ...row, justifyContent: 'space-between' }}>
             <strong>{topicLabel(c.topic, language)}</strong>
             <span style={row}>
-              {c.unread ? <Badge tone="sorghum">New message</Badge> : null}
-              <Badge tone={c.status === 'closed' ? 'neutral' : 'leaf'}>
-                {STATUS_WORDS[c.status]}
-              </Badge>
+              {c.unread ? <Badge tone="sorghum">{w.newMessage}</Badge> : null}
+              <Badge tone={c.status === 'closed' ? 'neutral' : 'leaf'}>{w.status[c.status]}</Badge>
             </span>
           </div>
           <p className="small muted" style={{ margin: 0 }}>
-            From {c.requester_name} · {when(c.created_at)}
-            {c.outcome ? ` · ${OUTCOME_WORDS[c.outcome]}` : ''}
+            {w.from} <span dir="auto">{c.requester_name}</span> · {when(c.created_at)}
+            {c.outcome ? ` · ${w.outcome[c.outcome]}` : ''}
           </p>
           <p className="small" style={{ margin: 0 }}>
             {c.assigned_to
-              ? `Handled by ${c.assigned_to.is_me ? 'you' : c.assigned_to.name}${
-                  c.accepted ? '' : ' (not accepted yet)'
+              ? `${w.handledBy} ${c.assigned_to.is_me ? w.you : c.assigned_to.name}${
+                  c.accepted ? '' : w.notAccepted
                 }`
-              : 'Nobody is handling this yet.'}
+              : w.nobody}
           </p>
           <div style={row}>
             {c.may.claim ? (
-              <Button onClick={() => void act(c.id, { action: 'claim' })}>Take it</Button>
+              <Button onClick={() => void act(c.id, { action: 'claim' })}>{w.claim}</Button>
             ) : null}
             {c.may.accept ? (
-              <Button onClick={() => void act(c.id, { action: 'accept' })}>Accept</Button>
+              <Button onClick={() => void act(c.id, { action: 'accept' })}>{w.accept}</Button>
             ) : null}
             {c.may.release ? (
               <Button variant="secondary" onClick={() => void act(c.id, { action: 'release' })}>
-                Give it back
+                {w.release}
               </Button>
             ) : null}
             <Button variant="ghost" onClick={() => setOpenId(openId === c.id ? null : c.id)}>
-              {openId === c.id ? 'Hide' : 'Open'}
+              {openId === c.id ? w.hide : w.open}
             </Button>
           </div>
           {c.may.assign ? (
             <AssignTo
+              w={w}
               handlers={handlers}
               current={c.assigned_to?.member_id ?? null}
               onAssign={(memberId) => void act(c.id, { action: 'assign', member_id: memberId })}
@@ -318,6 +441,7 @@ function Inbox({ base, language }: { base: string; language: Language }) {
           ) : null}
           {openId === c.id ? (
             <CaseThread
+              w={w}
               base={base}
               caseId={c.id}
               onChanged={() => void load()}
@@ -331,10 +455,12 @@ function Inbox({ base, language }: { base: string; language: Language }) {
 }
 
 function AssignTo({
+  w,
   handlers,
   current,
   onAssign,
 }: {
+  w: Words;
   handlers: OrgAdviceHandler[];
   current: string | null;
   onAssign: (memberId: string) => void;
@@ -342,13 +468,13 @@ function AssignTo({
   const [choice, setChoice] = useState(current ?? '');
   return (
     <div style={row}>
-      <Field label="Give this request to">
+      <Field label={w.assignLabel}>
         {(ids) => (
           <Select {...ids} value={choice} onChange={(e) => setChoice(e.target.value)}>
-            <option value="">Choose a member</option>
+            <option value="">{w.chooseMember}</option>
             {handlers.map((h) => (
               <option key={h.member_id} value={h.member_id}>
-                {h.is_me ? `${h.name} (you)` : h.name}
+                {h.is_me ? `${h.name} ${w.youMark}` : h.name}
               </option>
             ))}
           </Select>
@@ -359,18 +485,20 @@ function AssignTo({
         disabled={!choice || choice === current}
         onClick={() => onAssign(choice)}
       >
-        Assign
+        {w.assign}
       </Button>
     </div>
   );
 }
 
 function CaseThread({
+  w,
   base,
   caseId,
   onChanged,
   onClose,
 }: {
+  w: Words;
   base: string;
   caseId: string;
   onChanged: () => void;
@@ -387,13 +515,11 @@ function CaseThread({
       () => null,
     );
     if (!response?.ok) {
-      setFailure(
-        response ? await errorText(response, 'This request could not be opened.') : 'Offline.',
-      );
+      setFailure(response ? await errorText(response, w.notOpened) : w.offline);
       return;
     }
     setDetail(await readData<Detail>(response));
-  }, [base, caseId]);
+  }, [base, caseId, w]);
 
   useEffect(() => {
     void load();
@@ -402,7 +528,7 @@ function CaseThread({
   async function reply() {
     const check = sendMessageSchema.safeParse({ id: newId(), body: text });
     if (!check.success) {
-      setFailure(check.error.issues[0]?.message ?? 'Write a message first.');
+      setFailure(check.error.issues[0]?.message ?? w.writeFirst);
       return;
     }
     setBusy(true);
@@ -413,9 +539,7 @@ function CaseThread({
     ).catch(() => null);
     setBusy(false);
     if (!response?.ok) {
-      setFailure(
-        response ? await errorText(response, 'The message was not sent.') : 'Not sent: offline.',
-      );
+      setFailure(response ? await errorText(response, w.notSent) : w.notSentOffline);
       return;
     }
     setText('');
@@ -441,11 +565,11 @@ function CaseThread({
       </p>
       {detail.shared ? (
         <p className="small muted" style={{ margin: 0 }}>
-          Shared by the person asking:{' '}
-          {[detail.shared.place, detail.shared.phone].filter(Boolean).join(' · ') || 'nothing'}
+          {w.sharedBy}{' '}
+          {[detail.shared.place, detail.shared.phone].filter(Boolean).join(' · ') || w.nothing}
         </p>
       ) : null}
-      <div style={col} aria-label="Conversation">
+      <div style={col} aria-label={w.conversation}>
         {detail.messages.map((m) => (
           <div
             key={m.id}
@@ -463,7 +587,7 @@ function CaseThread({
               {m.body}
             </p>
             <p className="small muted" style={{ margin: 0 }}>
-              {m.from_me ? (m.sent_by ? `${m.sent_by} · ` : 'You · ') : ''}
+              {m.from_me ? (m.sent_by ? `${m.sent_by} · ` : w.youDot) : ''}
               {when(m.created_at)}
             </p>
           </div>
@@ -476,37 +600,33 @@ function CaseThread({
       ) : null}
       {c.may.reply && !detail.blocked ? (
         <div style={col}>
-          <Field label="Reply for the organisation" hint="Ask a question, answer, or follow up.">
+          <Field label={w.replyLabel} hint={w.replyHint}>
             {(ids) => (
               <Textarea {...ids} rows={3} value={text} onChange={(e) => setText(e.target.value)} />
             )}
           </Field>
           <div style={row}>
             <Button disabled={busy || text.trim() === ''} onClick={() => void reply()}>
-              Send
+              {w.send}
             </Button>
           </div>
         </div>
       ) : c.status !== 'closed' ? (
-        <p className="small muted">
-          {c.assigned_to?.is_me
-            ? 'Accept this request to reply.'
-            : 'Only the member handling this request replies to it.'}
-        </p>
+        <p className="small muted">{c.assigned_to?.is_me ? w.acceptToReply : w.onlyHandler}</p>
       ) : null}
       {c.may.close ? (
         <div style={row}>
-          <Field label="Close with outcome">
+          <Field label={w.closeLabel}>
             {(ids) => (
               <Select
                 {...ids}
                 value={outcome}
                 onChange={(e) => setOutcome(e.target.value as AdviceOutcome | '')}
               >
-                <option value="">Choose</option>
+                <option value="">{w.choose}</option>
                 {ORG_ADVICE_OUTCOMES.map((o) => (
                   <option key={o} value={o}>
-                    {OUTCOME_WORDS[o]}
+                    {w.outcome[o]}
                   </option>
                 ))}
               </Select>
@@ -517,12 +637,12 @@ function CaseThread({
             disabled={!outcome}
             onClick={() => outcome && onClose(outcome)}
           >
-            Close request
+            {w.closeRequest}
           </Button>
         </div>
       ) : null}
       <p className="small muted" style={{ margin: 0 }}>
-        Advice is not a guarantee of results. Keep the requester&apos;s details private.
+        {w.footer}
       </p>
     </div>
   );

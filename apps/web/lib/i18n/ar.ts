@@ -530,6 +530,8 @@ export const ar: Partial<Record<TKey, string>> = {
   'notice.advisoryNoteReviewed.body': 'افتح «تقديم المشورة» لمعرفة حالتها.',
   'notice.accountRestored.title': 'تمت استعادة حسابك في AgriOne',
   'notice.accountRestored.body': 'يمكنك تسجيل الدخول واستخدام AgriOne من جديد.',
+  'notice.suspensionEnded.title': 'انتهى تعليق حسابك في AgriOne',
+  'notice.suspensionEnded.body': 'انتهت مدة التعليق. يمكنك تسجيل الدخول واستخدام AgriOne من جديد.',
   'notice.messageListing.title': 'لديك رسالة جديدة حول منتج معروض',
   'notice.messageListing.body': 'افتح «الرسائل» لقراءتها.',
   'notice.messageBuyingRequest.title': 'لديك رسالة جديدة حول طلب شراء',

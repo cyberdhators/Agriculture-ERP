@@ -81,6 +81,9 @@ const EXPECTED_PUBLIC = [
   // 2026-10-28: the daily expiry reminders, called by pg_cron. Public only in
   // that a scheduler has no session: 401 without the CRON_SECRET bearer.
   'cron/expiry-reminders',
+  // 2026-10-29: the announcement queue, every two minutes by pg_cron. Public only
+  // in that a scheduler has no session: 401 without the CRON_SECRET bearer.
+  'cron/announcements',
   // B14: farmers enrol themselves (CORWADO, 2026-10-07); see docs/DECISIONS.md.
   'farmer/register',
   'listings',
@@ -140,7 +143,13 @@ describe('public routes are counted, not trusted', () => {
   it('exactly the expected routes declare roles: public', () => {
     const publicRoutes = files
       .filter((file) => /roles:\s*'public'/.test(readFileSync(file, 'utf8')))
-      .map((file) => file.slice(API_DIR.length + 1).replace(/\/route\.ts$/, ''))
+      // Forward slashes on every platform, so the names compare on Windows too.
+      .map((file) =>
+        file
+          .slice(API_DIR.length + 1)
+          .replace(/\\/g, '/')
+          .replace(/\/route\.ts$/, ''),
+      )
       .sort();
 
     expect(

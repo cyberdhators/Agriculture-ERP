@@ -57,7 +57,9 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
                 SET disabled_at = now(), disabled_reason = $2, disabled_by = $3::uuid,
                     suspended_at = COALESCE(suspended_at, now()),
                     suspended_reason = COALESCE(suspended_reason, $2),
-                    suspended_by = COALESCE(suspended_by, $3::uuid)
+                    suspended_by = COALESCE(suspended_by, $3::uuid),
+                    -- 2026-10-29: a disable is permanent; no end date survives it.
+                    suspension_ends_at = NULL
               WHERE id = $1::uuid AND disabled_at IS NULL`,
             id,
             body.reason,

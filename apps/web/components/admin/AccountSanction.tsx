@@ -2,14 +2,21 @@
 
 import { useCallback, useEffect, useState } from 'react';
 
-import type { AccountStanding, SanctionKind } from '@agri-erp/shared';
+import {
+  SUSPENSION_DAYS_MAX,
+  SUSPENSION_MESSAGES,
+  suspensionEndDate,
+  suspensionEndsAt,
+  type AccountStanding,
+  type SanctionKind,
+} from '@agri-erp/shared';
 
 import { formatDate } from '@/lib/format';
 import { usePublicSettings } from '@/lib/settings/client';
 
 import { ProfileModeration } from './ProfileModeration';
 import { ReasonCodeSelect, useReasonCodes } from './ReasonCodeSelect';
-import { Button, Card, Field, Notice, Stamp, Textarea } from '../ui';
+import { Button, Card, Field, Input, Notice, Stamp, Textarea } from '../ui';
 import { ConfirmationDialog } from '../ui/feedback';
 
 /**
@@ -122,6 +129,8 @@ export function AccountSanction({
   const [loadError, setLoadError] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState('');
+  // 2026-10-29: an optional duration in days; empty is no end date.
+  const [days, setDays] = useState('');
   // 2026-10-27 (settings phase 2): the review period and appeal window.
   const publicSettings = usePublicSettings();
   // 2026-10-25: the reason code chosen from Settings' list, and the text it
@@ -172,6 +181,18 @@ export function AccountSanction({
 
   const decide = async () => {
     const trimmed = reason.trim();
+    const dayCount = action === 'suspend' && days.trim() !== '' ? Number(days) : null;
+    if (
+      dayCount !== null &&
+      (!Number.isInteger(dayCount) || dayCount < 1 || dayCount > SUSPENSION_DAYS_MAX)
+    ) {
+      setFailure({
+        status: 400,
+        message: 'Check the number of days.',
+        fields: { suspend_days: SUSPENSION_MESSAGES.daysInvalid },
+      });
+      return;
+    }
     if (trimmed.length < REASON_MIN) {
       setFailure({
         status: 400,
@@ -198,6 +219,7 @@ export function AccountSanction({
           id,
           reason: trimmed,
           ...(reasonCode ? { reason_code: reasonCode } : {}),
+          ...(dayCount !== null ? { suspend_days: dayCount } : {}),
         }),
       });
       // The record changed either way; only the sign-in service may have missed it.
@@ -209,6 +231,7 @@ export function AccountSanction({
       setSmsMissed(answer.notice_sms === 'failed');
       setOpen(false);
       setReason('');
+      setDays('');
       setReasonCode('');
       setPrefill('');
       onChange?.({ action, signInReached });
@@ -230,6 +253,7 @@ export function AccountSanction({
           onClick={() => {
             setAction(a);
             setReason('');
+            setDays('');
             setReasonCode('');
             setPrefill('');
             setFailure(null);
@@ -281,6 +305,15 @@ export function AccountSanction({
     </>
   );
 
+  const dayValue = Number(days);
+  const endPreview =
+    days.trim() !== '' &&
+    Number.isInteger(dayValue) &&
+    dayValue >= 1 &&
+    dayValue <= SUSPENSION_DAYS_MAX
+      ? suspensionEndsAt(new Date(), dayValue)
+      : null;
+
   const dialog = (
     <ConfirmationDialog
       open={open}
@@ -293,13 +326,43 @@ export function AccountSanction({
       busy={busy}
       confirmDisabled={asksForCode && codesLoading}
     >
-      {failure && !failure.fields.reason ? <Notice kind="error">{failure.message}</Notice> : null}
+      {failure && !failure.fields.reason && !failure.fields.suspend_days ? (
+        <Notice kind="error">{failure.message}</Notice>
+      ) : null}
       {action === 'suspend' ? (
         <p className="small muted">
-          The account stays suspended until it is restored. Review it within{' '}
-          {publicSettings?.suspension_review_days ?? 30} days; an appeal is accepted for{' '}
-          {publicSettings?.appeal_window_days ?? 30} days (Settings, Notifications and moderation).
+          {days.trim() === ''
+            ? 'With no number of days, the account stays suspended until it is restored.'
+            : 'The suspension ends by itself on the day shown, and the account is told.'}{' '}
+          Review it within {publicSettings?.suspension_review_days ?? 30} days; an appeal is
+          accepted for {publicSettings?.appeal_window_days ?? 30} days (Settings, Notifications and
+          moderation).
         </p>
+      ) : null}
+      {action === 'suspend' ? (
+        <Field
+          label="Suspend for (days)"
+          optional
+          hint={
+            endPreview
+              ? `Ends on ${formatDate(suspensionEndDate(endPreview))}. The text message to the account names this date.`
+              : 'From 1 to 365. Leave empty for no end date.'
+          }
+          error={failure?.fields.suspend_days}
+        >
+          {(ids) => (
+            <Input
+              {...ids}
+              type="number"
+              inputMode="numeric"
+              min={1}
+              max={SUSPENSION_DAYS_MAX}
+              step={1}
+              value={days}
+              onChange={(e) => setDays(e.target.value)}
+            />
+          )}
+        </Field>
       ) : null}
       {asksForCode ? (
         <ReasonCodeSelect
@@ -362,6 +425,9 @@ export function AccountSanction({
           <Stamp kind="rejected">Suspended</Stamp>
           <p className="small" style={{ marginTop: 'var(--s-2)' }}>
             {standing.suspended_at ? `Since ${formatDate(standing.suspended_at)}. ` : ''}
+            {standing.suspension_ends_at
+              ? `Ends by itself on ${formatDate(suspensionEndDate(new Date(standing.suspension_ends_at)))}. `
+              : 'No end date: lasts until restored. '}
             {standing.reason ? <span dir="auto">{standing.reason}</span> : null}
           </p>
         </div>

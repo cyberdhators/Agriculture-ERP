@@ -5,6 +5,7 @@ import { emptyBodySchema } from '@agri-erp/shared';
 import { unauthenticated } from '../../../../lib/api/errors';
 import { runExpiryReminders } from '../../../../lib/api/expiry-reminders';
 import { defineRoutes, ok } from '../../../../lib/api/route';
+import { liftExpiredSuspensions } from '../../../../lib/api/suspension-expiry';
 
 /**
  * POST (and GET) /api/cron/expiry-reminders -- the daily reminder that a post
@@ -20,6 +21,11 @@ import { defineRoutes, ok } from '../../../../lib/api/route';
  * fails CLOSED when CRON_SECRET is not configured. It takes no input and
  * returns only counts. Idempotent: a second run the same day sends nothing
  * (lib/api/expiry-reminders.ts).
+ *
+ * 2026-10-29: the same daily run also LIFTS SUSPENSIONS WHOSE END HAS PASSED
+ * (lib/api/suspension-expiry.ts) -- one daily job, one secret, one installer.
+ * Each half runs even if the other fails; a failure is then reported as an
+ * error once both have run.
  */
 export const maxDuration = 60;
 
@@ -35,7 +41,13 @@ function authorised(request: Request): boolean {
 
 async function run(request: Request) {
   if (!authorised(request)) throw unauthenticated();
-  return ok(await runExpiryReminders());
+  const [reminders, suspensions] = await Promise.allSettled([
+    runExpiryReminders(),
+    liftExpiredSuspensions(),
+  ]);
+  if (reminders.status === 'rejected') throw reminders.reason;
+  if (suspensions.status === 'rejected') throw suspensions.reason;
+  return ok({ ...reminders.value, suspensions: suspensions.value });
 }
 
 export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
