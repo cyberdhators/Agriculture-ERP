@@ -31,6 +31,11 @@ import {
   ORGANIZATION_MESSAGES,
   ACCOUNT_RECOVERY_MESSAGES,
   LISTING_CORRECTION_MESSAGES,
+  ADVISORY_NOTE_MESSAGES,
+  STAFF_MFA_MESSAGES,
+  SIGN_IN_MESSAGES,
+  STAFF_INVITATION_MESSAGES,
+  ORG_ADVICE_MESSAGES,
 } from '../src/index';
 
 /**
@@ -198,6 +203,12 @@ describe('the documented field reasons match the ones the code actually sends', 
     // RECOVERY AND CORRECTIONS (2026-10-27)
     ...Object.values(ACCOUNT_RECOVERY_MESSAGES),
     ...Object.values(LISTING_CORRECTION_MESSAGES),
+    // STAFF SECURITY, ADVISORY AUTHORIZATION, ORGANISATION ADVICE (2026-10-28)
+    ...Object.values(ADVISORY_NOTE_MESSAGES),
+    ...Object.values(STAFF_MFA_MESSAGES),
+    ...Object.values(SIGN_IN_MESSAGES),
+    ...Object.values(STAFF_INVITATION_MESSAGES),
+    ...Object.values(ORG_ADVICE_MESSAGES),
     ERROR_MESSAGES.unknownField,
     ERROR_MESSAGES.bodyNotExpectedForm,
   ];

@@ -315,8 +315,7 @@ export function AccountSanction({
             {standing.advisory.status === 'suspended' && standing.advisory.suspended_until
               ? ` until ${formatDate(standing.advisory.suspended_until)}`
               : ''}
-            .{' '}
-            <a href="/admin/advisers">Review in Advisers</a>
+            . <a href="/admin/advisers">Review in Advisers</a>
           </p>
           <p className="small muted">
             Decided separately: suspending or restoring the account does not change it.

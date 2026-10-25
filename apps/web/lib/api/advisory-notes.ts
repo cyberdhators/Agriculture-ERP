@@ -71,7 +71,11 @@ export const STAFF_NOTE_SELECT = `SELECT ${NOTE_COLUMNS},
 
 export const presentStaffNote = (row: StaffNoteRow): AdvisoryNoteStaff => ({
   ...presentOwnNote(row),
-  provider: { id: row.provider_id, display_name: row.provider_name, approval_active: row.approval_active },
+  provider: {
+    id: row.provider_id,
+    display_name: row.provider_name,
+    approval_active: row.approval_active,
+  },
   reviewed_by_name: row.reviewed_by_name,
 });
 

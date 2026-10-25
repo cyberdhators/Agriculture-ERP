@@ -522,6 +522,11 @@ character.
 | `mfa_factor_not_verified`               | No confirmed authenticator was found. Enter a code from the app to confirm it first.                                          |
 | `advisory_note_not_approved`            | Only an approved adviser whose approval is not suspended can submit official advisory notes.                                  |
 | `advisory_note_not_allowed`             | That change cannot be made to this note as it stands. Reload it to see where it is.                                           |
+| `org_advice_admin_only`                 | Only an administrator of the organisation can give a request to someone else. Take it yourself if it is unassigned.           |
+| `org_advice_assignee_invalid`           | That member cannot take advice requests for this organisation. Choose a member who handles advice.                            |
+| `org_advice_already_assigned`           | Someone else in the organisation has already taken this request.                                                              |
+| `org_advice_not_assignee`               | This request is being handled by someone else in the organisation.                                                            |
+| `org_advice_accept_first`               | Accept this request before replying to it or closing it.                                                                      |
 
 **A route names a rule; it never writes a sentence.** `conflict()` and
 `unprocessable()` take a key from this registry, not a string. That is how the
@@ -1001,9 +1006,32 @@ These are also exact.
 | Adviser application: affiliation           | An affiliation can be at most 300 characters.                                                   |
 | Adviser application: not ticked            | Tick the box to confirm this statement.                                                         |
 | Adviser clarification: answer              | Write your answer in 5 to 2000 characters.                                                      |
-| Adviser decision: not on list              | Choose request clarification, approve, decline or revoke.                                       |
+| Adviser decision: not on list              | Choose request clarification, approve, decline, revoke, suspend or restore.                     |
 | Adviser decision: reason                   | Give a reason of 5 to 1000 characters.                                                          |
-| Adviser queue: status not on list          | Choose submitted, clarification requested, approved, declined, revoked or withdrawn.            |
+| Adviser queue: status not on list          | Choose submitted, clarification requested, approved, suspended, declined, revoked or withdrawn. |
+| Adviser suspension: days                   | Choose how long the suspension lasts: 1 to 365 days.                                            |
+| Adviser approval: nothing ticked           | Tick at least one thing you checked before approving.                                           |
+| Adviser approval: check not on list        | Choose what was checked from the list.                                                          |
+| Adviser decision: field not for it         | This field is not used for that decision.                                                       |
+| Advisory note: title                       | Give the note a title of 5 to 200 characters.                                                   |
+| Advisory note: text                        | Write the note in 50 to 5000 characters.                                                        |
+| Advisory note: subjects                    | Choose one to four subjects from the list.                                                      |
+| Advisory note: language                    | Choose the language the note is written in.                                                     |
+| Advisory note review: action               | Choose return, publish or unpublish.                                                            |
+| Advisory note review: note                 | Give a note of 5 to 1000 characters.                                                            |
+| Two-step sign-in: code shape               | Enter the six-digit code from your authenticator app.                                           |
+| Two-step reset: not ticked                 | Tick the box to confirm.                                                                        |
+| Two-step reset: reason                     | Give a reason of at least five characters. It is kept in the audit trail.                       |
+| Two-step reset: reason too long            | Keep the reason under 500 characters.                                                           |
+| Two-step reset: own password               | Enter your own password to confirm.                                                             |
+| Sign-in: no identifier                     | Enter your email address or phone number.                                                       |
+| Sign-in: no password                       | Enter your password.                                                                            |
+| Staff invitation: token                    | This invitation link is not complete. Open the link from the email again.                       |
+| Organisation advice: action                | Choose claim, assign, accept, release or close.                                                 |
+| Organisation advice: no member             | Choose the member to assign this request to.                                                    |
+| Organisation advice: outcome               | Choose referred or closed unresolved.                                                           |
+| Organisation advice: field not for it      | This field is not used for that change.                                                         |
+| Organisation advice: status                | Choose open, in progress or closed.                                                             |
 | Advice photo: type not accepted            | Choose a JPEG, PNG or WebP photo.                                                               |
 | Advice photo: over 2 MB                    | A photo on an advice request can be at most 2 MB.                                               |
 | Advice photo: size not whole bytes         | Give the photo size as a whole number of bytes.                                                 |
@@ -1334,9 +1362,32 @@ These are also exact.
 | Adviser application: affiliation           | An affiliation can be at most 300 characters.                                                   |
 | Adviser application: not ticked            | Tick the box to confirm this statement.                                                         |
 | Adviser clarification: answer              | Write your answer in 5 to 2000 characters.                                                      |
-| Adviser decision: not on list              | Choose request clarification, approve, decline or revoke.                                       |
+| Adviser decision: not on list              | Choose request clarification, approve, decline, revoke, suspend or restore.                     |
 | Adviser decision: reason                   | Give a reason of 5 to 1000 characters.                                                          |
-| Adviser queue: status not on list          | Choose submitted, clarification requested, approved, declined, revoked or withdrawn.            |
+| Adviser queue: status not on list          | Choose submitted, clarification requested, approved, suspended, declined, revoked or withdrawn. |
+| Adviser suspension: days                   | Choose how long the suspension lasts: 1 to 365 days.                                            |
+| Adviser approval: nothing ticked           | Tick at least one thing you checked before approving.                                           |
+| Adviser approval: check not on list        | Choose what was checked from the list.                                                          |
+| Adviser decision: field not for it         | This field is not used for that decision.                                                       |
+| Advisory note: title                       | Give the note a title of 5 to 200 characters.                                                   |
+| Advisory note: text                        | Write the note in 50 to 5000 characters.                                                        |
+| Advisory note: subjects                    | Choose one to four subjects from the list.                                                      |
+| Advisory note: language                    | Choose the language the note is written in.                                                     |
+| Advisory note review: action               | Choose return, publish or unpublish.                                                            |
+| Advisory note review: note                 | Give a note of 5 to 1000 characters.                                                            |
+| Two-step sign-in: code shape               | Enter the six-digit code from your authenticator app.                                           |
+| Two-step reset: not ticked                 | Tick the box to confirm.                                                                        |
+| Two-step reset: reason                     | Give a reason of at least five characters. It is kept in the audit trail.                       |
+| Two-step reset: reason too long            | Keep the reason under 500 characters.                                                           |
+| Two-step reset: own password               | Enter your own password to confirm.                                                             |
+| Sign-in: no identifier                     | Enter your email address or phone number.                                                       |
+| Sign-in: no password                       | Enter your password.                                                                            |
+| Staff invitation: token                    | This invitation link is not complete. Open the link from the email again.                       |
+| Organisation advice: action                | Choose claim, assign, accept, release or close.                                                 |
+| Organisation advice: no member             | Choose the member to assign this request to.                                                    |
+| Organisation advice: outcome               | Choose referred or closed unresolved.                                                           |
+| Organisation advice: field not for it      | This field is not used for that change.                                                         |
+| Organisation advice: status                | Choose open, in progress or closed.                                                             |
 | Advice photo: type not accepted            | Choose a JPEG, PNG or WebP photo.                                                               |
 | Advice photo: over 2 MB                    | A photo on an advice request can be at most 2 MB.                                               |
 | Advice photo: size not whole bytes         | Give the photo size as a whole number of bytes.                                                 |

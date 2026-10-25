@@ -456,7 +456,11 @@ export function StaffAccess() {
                   </Button>
                 ) : null}
                 {me.is_super_admin && s.id !== me.user_id ? (
-                  <Button variant="ghost" size="small" onClick={() => open({ kind: 'mfa', staff: s })}>
+                  <Button
+                    variant="ghost"
+                    size="small"
+                    onClick={() => open({ kind: 'mfa', staff: s })}
+                  >
                     Reset two-step sign-in
                   </Button>
                 ) : null}
@@ -682,9 +686,9 @@ export function StaffAccess() {
         }}
       >
         <p className="small">
-          Removes their authenticator app and signs them out everywhere. Next time they sign in
-          they set up a new one. Use this when a phone is lost or replaced, after checking it is
-          really them who is asking.
+          Removes their authenticator app and signs them out everywhere. Next time they sign in they
+          set up a new one. Use this when a phone is lost or replaced, after checking it is really
+          them who is asking.
         </p>
         <ReasonField value={reason} onChange={setReason} />
         <ReauthFields

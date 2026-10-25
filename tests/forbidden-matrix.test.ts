@@ -49,6 +49,12 @@ import {
 } from './helpers/principals';
 import { removeStoredObject } from '../apps/web/lib/supabase/admin';
 import { VISIT_ATTACHMENT_BUCKET } from '../packages/shared/src/visit';
+import * as staffInvitations from '../apps/web/app/api/admin/staff-invitations/route';
+import * as staffInvitationRevoke from '../apps/web/app/api/admin/staff-invitations/[id]/revoke/route';
+import * as mfaReset from '../apps/web/app/api/admin/staff-access/users/[id]/mfa-reset/route';
+import * as advisoryNotes from '../apps/web/app/api/admin/advisory-notes/route';
+import * as advisoryNoteReview from '../apps/web/app/api/admin/advisory-notes/[id]/review/route';
+import * as staffMfa from '../apps/web/app/api/staff/mfa/route';
 import { makeTestPrisma, requireTestEnv } from './helpers/db';
 import { call } from './helpers/request';
 
@@ -209,6 +215,60 @@ const principals = () => ({ admin, supervisor, read_only: readOnly, officer });
 
 /** Every route, the roles allowed, and how to call it. */
 const ROUTES = [
+  // 2026-10-28 (lane-security): staff invitations, two-step sign-in, official
+  // advisory notes. Each refuses every role it does not name.
+  {
+    name: 'GET /api/admin/staff-invitations',
+    mod: staffInvitations,
+    method: 'GET' as const,
+    allow: ['admin'],
+  },
+  {
+    name: 'POST /api/admin/staff-invitations',
+    mod: staffInvitations,
+    method: 'POST' as const,
+    allow: ['admin'],
+    body: () => ({
+      name: 'Zztest Invitee',
+      email: 'zztest-invitee@example.invalid',
+      role: 'admin',
+    }),
+  },
+  {
+    name: 'POST /api/admin/staff-invitations/:id/revoke',
+    mod: staffInvitationRevoke,
+    method: 'POST' as const,
+    allow: ['admin'],
+    params: () => ({ id: DUMMY_ID }),
+  },
+  {
+    name: 'POST /api/admin/staff-access/users/:id/mfa-reset',
+    mod: mfaReset,
+    method: 'POST' as const,
+    allow: ['admin'],
+    params: () => ({ id: DUMMY_ID }),
+    body: () => ({ reason: 'Zztest reason', password: 'zztest-not-a-password', confirm: true }),
+  },
+  {
+    name: 'GET /api/admin/advisory-notes',
+    mod: advisoryNotes,
+    method: 'GET' as const,
+    allow: ['admin'],
+  },
+  {
+    name: 'POST /api/admin/advisory-notes/:id/review',
+    mod: advisoryNoteReview,
+    method: 'POST' as const,
+    allow: ['admin'],
+    params: () => ({ id: DUMMY_ID }),
+    body: () => ({ action: 'publish' }),
+  },
+  {
+    name: 'GET /api/staff/mfa',
+    mod: staffMfa,
+    method: 'GET' as const,
+    allow: ['admin', 'supervisor', 'read_only'],
+  },
   {
     name: 'GET /api/me',
     mod: me,

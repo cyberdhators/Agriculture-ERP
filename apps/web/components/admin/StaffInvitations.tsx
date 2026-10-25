@@ -1,9 +1,6 @@
 'use client';
 
-import {
-  type StaffInvitationView,
-  staffInvitationSchema,
-} from '@agri-erp/shared';
+import { type StaffInvitationView, staffInvitationSchema } from '@agri-erp/shared';
 import { useCallback, useEffect, useState } from 'react';
 
 import { formatJubaTime } from '@/lib/admin/access-view';
@@ -122,8 +119,8 @@ export function StaffInvitations() {
     <Card padded>
       <h2 className="label">Invite staff</h2>
       <p className="small muted" style={{ marginBottom: 'var(--s-3)' }}>
-        The person gets an email with a link. They choose their own password; nobody else ever
-        sees it. The link works once and expires in 7 days.
+        The person gets an email with a link. They choose their own password; nobody else ever sees
+        it. The link works once and expires in 7 days.
       </p>
 
       <div style={{ display: 'grid', gap: 'var(--s-3)', maxWidth: '32rem' }}>
@@ -167,8 +164,8 @@ export function StaffInvitations() {
           </Field>
         ) : (
           <p className="small muted">
-            Administrators are asked to set up two-step sign-in when they first sign in. Presets
-            and Super Admin are given separately, after they join.
+            Administrators are asked to set up two-step sign-in when they first sign in. Presets and
+            Super Admin are given separately, after they join.
           </p>
         )}
         {error ? <Notice kind="error">{error}</Notice> : null}

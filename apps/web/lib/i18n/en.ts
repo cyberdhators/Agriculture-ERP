@@ -1162,12 +1162,12 @@ export const en = {
   'adviser.status.revoked': 'Approval revoked',
   'adviser.status.withdrawn': 'Withdrawn',
   'adviser.status.suspended': 'Approval suspended for a time',
-  'adviser.suspendedUntil':
-    'Your approved-adviser badge and official notes are hidden until',
+  'adviser.suspendedUntil': 'Your approved-adviser badge and official notes are hidden until',
   'notes.title': 'Official advisory notes',
   'notes.lead':
     'As an approved adviser you can send short advisory notes to CORWADO. Staff review them; once published they appear on your profile as "Reviewed by CORWADO".',
-  'notes.paused': 'While your approval is suspended you cannot send notes, and published ones are hidden.',
+  'notes.paused':
+    'While your approval is suspended you cannot send notes, and published ones are hidden.',
   'notes.new': 'New note',
   'notes.titleField': 'Title',
   'notes.topics': 'Subjects (up to four)',

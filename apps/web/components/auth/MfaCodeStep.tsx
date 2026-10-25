@@ -15,13 +15,7 @@ import { supabaseBrowser } from '@/lib/supabase/browser';
  *
  * Nothing here decides access: it only lets the person finish signing in.
  */
-export function MfaCodeStep({
-  onVerified,
-  intro,
-}: {
-  onVerified: () => void;
-  intro: string;
-}) {
+export function MfaCodeStep({ onVerified, intro }: { onVerified: () => void; intro: string }) {
   const [code, setCode] = useState('');
   const [error, setError] = useState<string | undefined>();
   const [busy, setBusy] = useState(false);

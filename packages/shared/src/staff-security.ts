@@ -116,7 +116,11 @@ export function aalOfToken(token: string | null | undefined): 'aal1' | 'aal2' | 
       typeof atob === 'function'
         ? atob(padded)
         : // Node without atob (older runtimes): Buffer is always present there.
-          (globalThis as { Buffer?: { from(s: string, e: string): { toString(e: string): string } } })
+          (
+            globalThis as {
+              Buffer?: { from(s: string, e: string): { toString(e: string): string } };
+            }
+          )
             .Buffer!.from(padded, 'base64')
             .toString('binary');
     const claims = JSON.parse(json) as { aal?: unknown };
@@ -145,7 +149,11 @@ export const mfaResetSchema = z.strictObject({
     .string({ error: () => STAFF_MFA_MESSAGES.passwordRequired })
     .min(1, STAFF_MFA_MESSAGES.passwordRequired)
     .max(256, STAFF_MFA_MESSAGES.passwordRequired),
-  totp_code: z.string().trim().regex(/^\d{6}$/, STAFF_MFA_MESSAGES.codeShape).optional(),
+  totp_code: z
+    .string()
+    .trim()
+    .regex(/^\d{6}$/, STAFF_MFA_MESSAGES.codeShape)
+    .optional(),
   confirm: z.literal(true, { error: () => STAFF_MFA_MESSAGES.confirmRequired }),
 });
 export type MfaResetInput = z.infer<typeof mfaResetSchema>;

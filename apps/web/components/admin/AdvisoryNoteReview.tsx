@@ -76,8 +76,8 @@ export function AdvisoryNoteReview() {
       <h2>Official advisory notes</h2>
       <p className="small muted">
         Short notes from approved advisers. Publishing puts a note on the adviser&rsquo;s public
-        profile as &ldquo;Reviewed by CORWADO&rdquo;. Only staff who can publish content may
-        publish or unpublish.
+        profile as &ldquo;Reviewed by CORWADO&rdquo;. Only staff who can publish content may publish
+        or unpublish.
       </p>
       <Tabs items={TABS} value={tab} onChange={(k) => setTab(k)} label="Note status" />
       {failure ? <Notice kind="error">{failure}</Notice> : null}
@@ -161,7 +161,12 @@ function NoteCard({ note: n, onDone }: { note: AdvisoryNoteStaff; onDone: () => 
           ) : null}
           {error ? <Notice kind="error">{error}</Notice> : null}
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <Button size="small" variant="primary" disabled={busy} onClick={() => void decide(action)}>
+            <Button
+              size="small"
+              variant="primary"
+              disabled={busy}
+              onClick={() => void decide(action)}
+            >
               {busy ? 'Saving…' : ACTION_LABEL[action]}
             </Button>
             <Button size="small" variant="ghost" disabled={busy} onClick={() => setAction(null)}>

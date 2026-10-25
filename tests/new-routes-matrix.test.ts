@@ -11,6 +11,11 @@ import * as unreadCount from '../apps/web/app/api/admin/product-reports/unread-c
 import * as submit from '../apps/web/app/api/listings/[id]/reports/route';
 import * as adminOrganizations from '../apps/web/app/api/admin/organizations/route';
 import * as adminOrgRecover from '../apps/web/app/api/admin/organizations/[id]/recover/route';
+import * as staffInvitations from '../apps/web/app/api/admin/staff-invitations/route';
+import * as staffInvitationRevoke from '../apps/web/app/api/admin/staff-invitations/[id]/revoke/route';
+import * as mfaReset from '../apps/web/app/api/admin/staff-access/users/[id]/mfa-reset/route';
+import * as advisoryNotes from '../apps/web/app/api/admin/advisory-notes/route';
+import * as advisoryNoteReview from '../apps/web/app/api/admin/advisory-notes/[id]/review/route';
 import { type TestPrincipal, createPrincipal, sweep } from './helpers/principals';
 import { makeTestPrisma, requireTestEnv } from './helpers/db';
 import { call } from './helpers/request';
@@ -128,6 +133,36 @@ const ADMIN_ROUTES = [
       reason_code: 'misleading_listing',
       note: 'Zztest correction note',
     }),
+  },
+  // 2026-10-28 (lane-security): staff invitations, two-step sign-in reset,
+  // official advisory notes.
+  { name: 'GET /api/admin/staff-invitations', mod: staffInvitations, method: 'GET' as const },
+  {
+    name: 'POST /api/admin/staff-invitations',
+    mod: staffInvitations,
+    method: 'POST' as const,
+    body: () => ({ name: 'Zztest Invitee', email: 'zztest-invitee@example.org', role: 'admin' }),
+  },
+  {
+    name: 'POST /api/admin/staff-invitations/:id/revoke',
+    mod: staffInvitationRevoke,
+    method: 'POST' as const,
+    params: () => ({ id: DUMMY_ID }),
+  },
+  {
+    name: 'POST /api/admin/staff-access/users/:id/mfa-reset',
+    mod: mfaReset,
+    method: 'POST' as const,
+    params: () => ({ id: DUMMY_ID }),
+    body: () => ({ reason: 'Zztest reason', password: 'zztest-not-a-password', confirm: true }),
+  },
+  { name: 'GET /api/admin/advisory-notes', mod: advisoryNotes, method: 'GET' as const },
+  {
+    name: 'POST /api/admin/advisory-notes/:id/review',
+    mod: advisoryNoteReview,
+    method: 'POST' as const,
+    params: () => ({ id: DUMMY_ID }),
+    body: () => ({ action: 'publish' }),
   },
 ];
 

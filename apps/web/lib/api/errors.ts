@@ -253,7 +253,7 @@ export const RULE_MESSAGES = {
     'Only a draft can be edited, published or discarded. A published or retired notice stays as it was.',
   // ORGANISATION ADVICE CASES (2026-10-28). About a case's assignment, never a person.
   org_advice_admin_only:
-    "Only an administrator of the organisation can give a request to someone else. Take it yourself if it is unassigned.",
+    'Only an administrator of the organisation can give a request to someone else. Take it yourself if it is unassigned.',
   org_advice_assignee_invalid:
     'That member cannot take advice requests for this organisation. Choose a member who handles advice.',
   org_advice_already_assigned: 'Someone else in the organisation has already taken this request.',
@@ -295,10 +295,8 @@ export const RULE_MESSAGES = {
     'This invitation has already been used, withdrawn or has expired. Ask CORWADO for a new one.',
   staff_direct_create_super_admin_only:
     'Only a Super Admin can create a staff account with a password. Send an invitation instead.',
-  mfa_reset_own:
-    'You cannot reset your own two-step sign-in. Ask another Super Admin.',
-  mfa_not_enrolled:
-    'This account has no authenticator to reset.',
+  mfa_reset_own: 'You cannot reset your own two-step sign-in. Ask another Super Admin.',
+  mfa_not_enrolled: 'This account has no authenticator to reset.',
   mfa_factor_not_verified:
     'No confirmed authenticator was found. Enter a code from the app to confirm it first.',
   advisory_note_not_approved:

@@ -152,8 +152,8 @@ export function StaffInviteAccept() {
         {stage === 'ready' && preview ? (
           <form className={styles.form} onSubmit={(e) => void submit(e)} noValidate>
             <p className={styles.hint}>
-              {preview.name}, you are invited to join as {ROLE_WORDS[preview.role]}. Your sign-in
-              is {preview.email_hint}. Choose a password only you know.
+              {preview.name}, you are invited to join as {ROLE_WORDS[preview.role]}. Your sign-in is{' '}
+              {preview.email_hint}. Choose a password only you know.
             </p>
             {error ? (
               <Notice kind="error" title="Not created">

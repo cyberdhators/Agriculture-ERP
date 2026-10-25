@@ -32,6 +32,16 @@ const EXPECTED_PUBLIC = [
   // whitelist (lib/api/advice.ts presentProvider): no phone, no account id.
   'advice/providers',
   'advice/providers/[id]',
+  // 2026-10-28: an approved adviser's PUBLISHED official notes, only while
+  // the approval stands and is not suspended (lib/api/advisory-notes.ts).
+  'advice/providers/[id]/notes',
+  // 2026-10-28: sign-in through the server, so a failed sign-in is recorded
+  // and limited; the caller is signing in, so has no session yet.
+  'auth/sign-in',
+  // 2026-10-28: a staff invitation, opened by the invitee who has no account
+  // yet. The token travels in the body; only its hash is stored.
+  'staff-invitations/accept',
+  'staff-invitations/preview',
   // 2026-10-19: phone verification at farmer sign-up -- the farmer has no
   // account yet. Sends are limited per phone and system-wide in
   // lib/api/phone-verification.ts (a counter in the database, not a request

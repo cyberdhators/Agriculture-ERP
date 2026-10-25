@@ -151,15 +151,13 @@ export function StaffSecurity() {
           {status.enrol_now ? (
             <Notice kind="warn" title="Set this up before you continue">
               <p className="small">
-                CORWADO administrators sign in with two steps. It takes about two minutes and
-                needs an authenticator app (for example Google Authenticator or Microsoft
-                Authenticator) on your phone.
+                CORWADO administrators sign in with two steps. It takes about two minutes and needs
+                an authenticator app (for example Google Authenticator or Microsoft Authenticator)
+                on your phone.
               </p>
             </Notice>
           ) : (
-            <p className="small">
-              Two-step sign-in is optional for your role, and recommended.
-            </p>
+            <p className="small">Two-step sign-in is optional for your role, and recommended.</p>
           )}
 
           {!enrolment ? (
@@ -223,9 +221,8 @@ export function StaffSecurity() {
         <Card padded>
           <Notice kind="success" title="Two-step sign-in is on">
             <p className="small">
-              Each time you sign in you will be asked for a code from your authenticator app. If
-              you lose or replace your phone, ask a Super Admin to reset it from Staff and
-              permissions.
+              Each time you sign in you will be asked for a code from your authenticator app. If you
+              lose or replace your phone, ask a Super Admin to reset it from Staff and permissions.
             </p>
           </Notice>
           {justEnrolled || new URL(window.location.href).searchParams.get('next') ? (

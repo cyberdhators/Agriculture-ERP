@@ -117,7 +117,11 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
           throw unprocessable('adviser_own_application');
         }
         // A lapsed suspension is an approval again (it may be suspended anew).
-        const standing = effectiveAdviserStatus(current.status, current.suspended_until, Date.now());
+        const standing = effectiveAdviserStatus(
+          current.status,
+          current.suspended_until,
+          Date.now(),
+        );
         if (!(rule.from as readonly string[]).includes(standing)) {
           throw unprocessable('adviser_decision_not_allowed');
         }

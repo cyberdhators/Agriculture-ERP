@@ -11,8 +11,24 @@ import {
   advisoryNoteInputSchema,
 } from '@agri-erp/shared';
 
-import { Badge, Button, Checkbox, Field, Input, Notice, Select, Textarea, type Tone } from '@/components/ui';
-import { AdviceError, getMyNotes, resubmitNote, submitNote, withdrawNote } from '@/lib/advice/client';
+import {
+  Badge,
+  Button,
+  Checkbox,
+  Field,
+  Input,
+  Notice,
+  Select,
+  Textarea,
+  type Tone,
+} from '@/components/ui';
+import {
+  AdviceError,
+  getMyNotes,
+  resubmitNote,
+  submitNote,
+  withdrawNote,
+} from '@/lib/advice/client';
 import { LANGUAGE_KEY, TOPIC_KEY } from '@/lib/advice/labels';
 import { formatDate } from '@/lib/format';
 import { t, type Language, type TKey } from '@/lib/i18n';
@@ -123,9 +139,7 @@ export function AdvisoryNotes({ lang }: { lang: Language }) {
     <div className={styles.formGrid} aria-labelledby="advisory-notes">
       <h3 id="advisory-notes">{t('notes.title', lang)}</h3>
       <p className="small">{t('notes.lead', lang)}</p>
-      {!maySubmit && notes !== null ? (
-        <Notice kind="warn">{t('notes.paused', lang)}</Notice>
-      ) : null}
+      {!maySubmit && notes !== null ? <Notice kind="warn">{t('notes.paused', lang)}</Notice> : null}
       {failure ? <Notice kind="error">{failure}</Notice> : null}
       {done ? <Notice kind="success">{done}</Notice> : null}
 
