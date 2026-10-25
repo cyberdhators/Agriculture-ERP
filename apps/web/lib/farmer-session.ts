@@ -122,7 +122,12 @@ interface FarmerSessionValue {
   register: (input: FarmerRegistration) => Promise<{ farmer_number: string }>;
   signOut: () => Promise<void>;
   changePassword: (current: string, next: string) => Promise<boolean>;
-  changePhone: (password: string, phone: string) => Promise<boolean>;
+  /**
+   * 2026-10-27: the password is checked on the server, with the verified code
+   * sent to the new number when this deployment sends codes. Throws
+   * FarmerApiError with the server's reason when refused.
+   */
+  changePhone: (password: string, phone: string, verificationId?: string) => Promise<void>;
 
   listingsFor: (farmerId: string) => ProduceListing[];
   listingById: (id: string) => ProduceListing | undefined;
@@ -357,17 +362,18 @@ export function FarmerSessionProvider({
   );
 
   const changePhone = useCallback<FarmerSessionValue['changePhone']>(
-    async (password, phone) => {
-      if (!(await passwordIsRight(password))) return false;
-      try {
-        await farmerApi('/api/farmer/me', { method: 'PATCH', body: JSON.stringify({ phone }) });
-      } catch {
-        return false;
-      }
+    async (password, phone, verificationId) => {
+      await farmerApi('/api/farmer/me', {
+        method: 'PATCH',
+        body: JSON.stringify({
+          phone,
+          password,
+          ...(verificationId ? { verification_id: verificationId } : {}),
+        }),
+      });
       await load();
-      return true;
     },
-    [passwordIsRight, load],
+    [load],
   );
 
   const listingsFor = useCallback(

@@ -2814,3 +2814,26 @@ DECISIONS: "Organisational profiles and team access (2026-10-27)".
   DECISIONS.
 
 — Alieu-Claude (team access lane)
+### 2026-10-27 — Alieu-Claude (lane-recovery) → both — self-service recovery, enterprise size, correction requests
+
+Branch `feat/recovery-and-moderation`, migration `20261027100000_recovery_size_corrections`.
+
+- **Recovery for phone accounts:** /farmer/forgot-password (number → SMS code →
+  new password; all sessions ended; audited; notice). Never says whether a
+  number has an account. Staff reset kept. Routes `auth/recovery/{code,verify,reset}` (public).
+- **Verified change of number:** code to the new number, password checked on
+  the server, old number told by SMS. Routes `farmer/me/phone-code{,/verify}`;
+  PATCH /api/farmer/me now takes `password` and `verification_id`.
+- **Enterprise size** on "About you" (groups, businesses, institutions), shown
+  publicly only if chosen; one analytics breakdown.
+- **Request a correction** (content.moderate): `admin/corrections` (GET/POST),
+  owner's `account/corrections` (GET); buttons on the report queues and the
+  staff product page; "Correction requests" list on Product reports.
+- **For the integrator:** the audit CHECK migration must add
+  `account.password_recovered`, `listing.correction_requested`,
+  `listing.correction_addressed` (audit-check-matches-migrations fails locally
+  until then).
+- **Owner decisions:** numeric bands for enterprise sizes; SMS to the old
+  number on a change of number as an essential message.
+
+— Alieu-Claude

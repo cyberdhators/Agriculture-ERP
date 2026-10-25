@@ -3,9 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-import { parseSouthSudanMobile } from '@agri-erp/shared';
-
-import { Button, Field, Notice, PasswordInput, PrefixedInput } from '@/components/ui';
+import { Button, Field, Notice, PasswordInput } from '@/components/ui';
 import { validatePassword } from '@/lib/farmers/schema';
 import { useFarmerSession } from '@/lib/farmer-session';
 import { t } from '@/lib/i18n';
@@ -14,12 +12,13 @@ import { formatPhone } from '@/lib/format';
 import { DeleteAccount } from '@/components/account/DeleteAccount';
 
 import { PageHead } from './AccountShell';
+import { ChangePhone } from './ChangePhone';
 import styles from './farmer.module.css';
 
 type Panel = 'password' | 'phone' | null;
 
 export function FarmerSecurity() {
-  const { farmer, language, signOut, changePassword, changePhone } = useFarmerSession();
+  const { farmer, language, signOut, changePassword } = useFarmerSession();
   const router = useRouter();
 
   const [panel, setPanel] = useState<Panel>(null);
@@ -33,10 +32,6 @@ export function FarmerSecurity() {
     next?: string;
     again?: string;
   }>({});
-
-  const [phonePassword, setPhonePassword] = useState('');
-  const [newPhone, setNewPhone] = useState('');
-  const [phoneErrors, setPhoneErrors] = useState<{ password?: string; phone?: string }>({});
 
   if (!farmer) return null;
 
@@ -66,27 +61,6 @@ export function FarmerSecurity() {
     setAgain('');
     setPanel(null);
     setDone('password');
-  }
-
-  async function submitPhone(event: React.FormEvent) {
-    event.preventDefault();
-    const errors: typeof phoneErrors = {};
-    const parsed = parseSouthSudanMobile(newPhone);
-    if (!parsed.ok) errors.phone = parsed.message;
-    if (phonePassword === '') errors.password = t('account.wrongPassword', language);
-    if (Object.keys(errors).length > 0 || !parsed.ok) {
-      setPhoneErrors(errors);
-      return;
-    }
-    if (!(await changePhone(phonePassword, parsed.value))) {
-      setPhoneErrors({ password: t('account.wrongPassword', language) });
-      return;
-    }
-    setPhoneErrors({});
-    setPhonePassword('');
-    setNewPhone('');
-    setPanel(null);
-    setDone('phone');
   }
 
   async function onSignOut() {
@@ -196,41 +170,13 @@ export function FarmerSecurity() {
               {t('account.changePhone', language)}
             </Button>
             {panel === 'phone' ? (
-              <form className={styles.inlineForm} onSubmit={submitPhone} noValidate>
-                <Field label={t('account.newPhone', language)} error={phoneErrors.phone}>
-                  {(ids) => (
-                    <PrefixedInput
-                      {...ids}
-                      prefix="+211"
-                      inputMode="tel"
-                      autoComplete="tel-national"
-                      className="mono"
-                      placeholder="9XX XXX XXX"
-                      value={newPhone}
-                      onChange={(e) => setNewPhone(e.target.value)}
-                    />
-                  )}
-                </Field>
-                <Field
-                  label={t('login.passwordLabel', language)}
-                  hint={t('account.changePhoneNote', language)}
-                  error={phoneErrors.password}
-                >
-                  {(ids) => (
-                    <PasswordInput
-                      {...ids}
-                      autoComplete="current-password"
-                      value={phonePassword}
-                      showLabel={show}
-                      hideLabel={hide}
-                      onChange={(e) => setPhonePassword(e.target.value)}
-                    />
-                  )}
-                </Field>
-                <Button type="submit" variant="primary">
-                  {t('account.changePhone', language)}
-                </Button>
-              </form>
+              <ChangePhone
+                language={language}
+                onDone={() => {
+                  setPanel(null);
+                  setDone('phone');
+                }}
+              />
             ) : null}
           </div>
         </section>

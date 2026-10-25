@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import type { ModerationAction, ProductReport } from '@agri-erp/shared';
 
+import { RequestCorrectionButton } from '@/components/admin/Corrections';
 import { ReasonCodeSelect } from '@/components/admin/ReasonCodeSelect';
 import { ServiceNotConnectedError } from '@/lib/communications/api';
 import { decideProductReport, listProductReports } from '@/lib/product-reports/api';
@@ -304,6 +305,16 @@ export function ProductReports() {
               </span>
             </p>
             {detail.vendor_name ? <p className="small">Vendor: {detail.vendor_name}</p> : null}
+            {/* 2026-10-27: ask the seller to fix it; the listing stays live. */}
+            {detail.listing_title ? (
+              <div style={{ marginBlockStart: 'var(--s-2)' }}>
+                <RequestCorrectionButton
+                  targetType="produce_listing"
+                  targetId={detail.listing_id}
+                  targetTitle={detail.listing_title}
+                />
+              </div>
+            ) : null}
 
             <p className="label" style={{ marginBlockStart: 'var(--s-4)' }}>
               Report

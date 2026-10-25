@@ -277,6 +277,9 @@ export const RULE_MESSAGES = {
   organization_own_post:
     "This post belongs to your organisation. Its messages come to the organisation's shared inbox.",
   organization_use_leave: 'To end your own access, use Leave organisation.',
+  // CORRECTIONS (2026-10-27). About a post's state, never a person.
+  correction_already_open:
+    'A correction has already been requested for this post and is waiting for its owner.',
 } as const;
 
 export type RuleKey = keyof typeof RULE_MESSAGES;

@@ -428,3 +428,7 @@ export * from './adviser-approval';
 export * from './settings';
 // 2026-10-27: organisational profiles and team access.
 export * from './organization';
+// 2026-10-27: self-service password recovery and a verified change of number.
+export * from './account-recovery';
+// 2026-10-27: a moderator asks for a correction to a marketplace post.
+export * from './listing-corrections';

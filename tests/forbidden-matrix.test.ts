@@ -39,6 +39,7 @@ import * as userItem from '../apps/web/app/api/users/[id]/route';
 import * as users from '../apps/web/app/api/users/route';
 import * as adminOrganizations from '../apps/web/app/api/admin/organizations/route';
 import * as adminOrgRecover from '../apps/web/app/api/admin/organizations/[id]/recover/route';
+import * as corrections from '../apps/web/app/api/admin/corrections/route';
 import { randomUUID } from 'node:crypto';
 import {
   FARMER_TEST_FAMILY,
@@ -690,6 +691,25 @@ const ROUTES = [
       reason: 'Zztest reason',
       evidence: 'Zztest evidence',
       password: 'zztest-not-a-password',
+    }),
+  },
+  // 2026-10-27: correction requests. An administrator, then content.moderate.
+  {
+    name: 'GET /api/admin/corrections',
+    mod: corrections,
+    method: 'GET' as const,
+    allow: ['admin'],
+  },
+  {
+    name: 'POST /api/admin/corrections',
+    mod: corrections,
+    method: 'POST' as const,
+    allow: ['admin'],
+    body: () => ({
+      target_type: 'produce_listing',
+      target_id: DUMMY_ID,
+      reason_code: 'misleading_listing',
+      note: 'Zztest correction note',
     }),
   },
 ];

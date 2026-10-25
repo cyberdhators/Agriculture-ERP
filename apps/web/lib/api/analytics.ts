@@ -79,6 +79,9 @@ const H = `h AS (
 )`;
 const H_STATES = `(w.st IS NULL OR h.farmer_state = ANY(w.st) OR h.buyer_state = ANY(w.st))`;
 
+/** 2026-10-27: the same account holders with their enterprise size (a column migration 20261027100000 adds). */
+const H_SIZED = H.replace('ap.profile_kind,', 'ap.profile_kind, ap.enterprise_size,');
+
 /**
  * Advice cases rated in the window: the feedback audit row says when (a case
  * carries no feedback time), the case the rating. Once per case by design;
@@ -254,6 +257,17 @@ export const METRIC_SQL: Readonly<Record<string, MetricSql>> = {
     breakdown: `${W}, ${H}
       SELECT h.profile_kind AS key, count(*)::int AS value FROM h CROSS JOIN w
        WHERE ${H_STATES}
+       GROUP BY 1 ORDER BY 1`,
+  },
+  // 2026-10-27: SME is a size, not a kind of business. Groups, businesses and
+  // institutions only; an unstated size counts as not_stated.
+  'participation.enterprise_sizes': {
+    needs: ['account_profile', 'account_profile.enterprise_size'],
+    located: true,
+    breakdown: `${W}, ${H_SIZED}
+      SELECT COALESCE(h.enterprise_size, 'not_stated') AS key, count(*)::int AS value
+        FROM h CROSS JOIN w
+       WHERE h.profile_kind <> 'individual' AND ${H_STATES}
        GROUP BY 1 ORDER BY 1`,
   },
   'listings.created': {
@@ -548,8 +562,9 @@ async function presentRelations(db: Db): Promise<Set<string>> {
     `SELECT t AS name FROM unnest($1::text[]) AS t WHERE to_regclass('public.' || t) IS NOT NULL
      UNION ALL
      SELECT (c.table_name || '.' || c.column_name)::text FROM information_schema.columns c
-      WHERE c.table_schema = 'public' AND c.table_name IN ('farmer', 'buyer')
-        AND c.column_name = 'suspended_at'`,
+      WHERE c.table_schema = 'public'
+        AND ((c.table_name IN ('farmer', 'buyer') AND c.column_name = 'suspended_at')
+          OR (c.table_name = 'account_profile' AND c.column_name = 'enterprise_size'))`,
     [...PROBED],
   );
   return new Set(rows.map((r) => r.name));

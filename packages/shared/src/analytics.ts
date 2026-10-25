@@ -494,6 +494,30 @@ export const ANALYTICS_METRICS: readonly MetricDefinition[] = [
       },
     },
   },
+  {
+    id: 'participation.enterprise_sizes',
+    group: 'participation',
+    label: 'Groups, businesses and institutions by size',
+    unit: 'profiles',
+    definition:
+      'Group, business and institution profiles by the enterprise size they state: micro, small, ' +
+      'medium or large, or not stated. A size, not a kind of business: an SME may also be a ' +
+      'trader, processor or supplier. No numeric bands are defined.',
+    denominator: COUNT,
+    source: 'account_profile (enterprise_size), for accounts with a farmer or buyer record',
+    window: NOW,
+    stateRule: ACCOUNT_STATE_RULE,
+    breakdown: {
+      label: 'Enterprise size',
+      keys: {
+        micro: 'Micro',
+        small: 'Small',
+        medium: 'Medium',
+        large: 'Large',
+        not_stated: 'Not stated',
+      },
+    },
+  },
 
   // ---- Marketplace ----------------------------------------------------------
   {

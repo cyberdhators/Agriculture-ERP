@@ -4680,3 +4680,96 @@ Migration `20261027090000_team_access`.
   forms yet (the API accepts it); no route or screen was run end-to-end
   (`next dev` and DB tests are not run on this machine) -- the pure suite,
   type check and lint are what was run.
+## Self-service password recovery and a verified change of number (2026-10-27)
+
+CORWADO's 16 October specification: "Provide resend, change-number and secure
+recovery functions", and "Ordinary participation must not depend on project
+staff". This **supersedes for self-service** the 2026-10-09 entry "Password
+reset: buyers by email, farmers by their officer or an administrator": the
+staff path (POST /api/farmers/:id/sign-in) is **kept** beside it, for a farmer
+without a working phone.
+
+- **Forgot your password? (phone accounts).** /farmer/forgot-password: the
+  number, then a 6-digit SMS code (purpose `password_recovery`), then a new
+  password. On reset the code is used once, the password is set in Supabase
+  Auth, **every existing session is ended** (revokeAllSessions), one audit row
+  (`account.password_recovered`: method and whether sessions ended) and one
+  fixed in-app notice. OBSERVED in pure tests only; the Supabase calls are
+  INFERRED from the documented behaviour (no non-production project exists).
+- **Never reveal whether a number has an account.** The code request writes a
+  verification row and returns the same answer for every well-formed +211
+  number, so the per-number and system-wide limits (and 429s) apply equally.
+  The SMS goes only to a number with a live, unsuspended phone account, and it
+  is sent **after** the answer (`after` from next/server), so the answer's
+  timing does not differ either. INFERRED: the residual difference is the
+  account lookup, one indexed query in both cases. A row for a number with no
+  account holds the hash of a code nobody was sent, so verifying it answers
+  "wrong", exactly as a mistyped code does.
+- **Change of number.** A code goes to the NEW number (purpose
+  `phone_change`, bound to the requesting account by a new
+  `phone_verification.auth_user_id`), must be verified, and is used up by
+  PATCH /api/farmer/me. The password re-entry, previously checked only in the
+  browser, is now checked **on the server** (lib/api/reauth.ts). The code
+  request does not check whether the new number is taken, so it cannot be used
+  to look numbers up; a taken number is refused only at the change, after the
+  person has proved they hold it. The OLD number gets one essential SMS
+  ("the phone number on your account was changed ... contact CORWADO"); its
+  outcome (sent / failed / not_mobile) is in the `farmer.updated` audit row
+  with `verified_by`, never either number. A fixed in-app notice too.
+- **Resend:** the same request again; the existing 60-second cooldown, 3 codes
+  per number per 30 minutes and 200 per hour system-wide now cover all three
+  purposes together. The screens count down with `resendWaitSeconds`.
+- **Codes off:** with no SMS settings or FARMER_PHONE_VERIFICATION=off,
+  recovery answers `available: false` (the screen sends the person to an
+  officer or CORWADO) and a change of number needs the password alone.
+- **`account_recovery` (migration 20261009090000) stays unused.** Reusing it
+  was considered and declined: it is keyed one row per sign-in for a code
+  _shown at registration_, has no phone, no purpose, no expiry and no
+  per-number rate limit, while `phone_verification` already has hashed codes
+  bound to their row, expiry, five tries, and per-number and system limits. A
+  second code store would split the limits. Dropping the table remains the
+  owner's decision (unchanged since 2026-10-09).
+- **Officers** (phone sign-in, staff) are not covered: their password stays
+  with an administrator. INFERRED from the specification's "ordinary
+  participation".
+
+## Enterprise size: a size, not a kind of business (2026-10-27)
+
+The specification: "SME is a size classification, not an alternative to
+processor, supplier or trader." Neither the specification nor this file defines
+bands, so the size is **labels only**: micro, small, medium, large, or not
+stated (null). **OWNER TO CONFIRM** whether CORWADO wants numeric bands (staff
+or turnover) attached to the labels.
+
+- Optional, on `account_profile` (`enterprise_size`, `show_enterprise_size`),
+  offered to a group, business or institution only (a CHECK refuses one for an
+  individual); separate from the activities, which are unchanged.
+- Edited in "About you" with the profile kind; shown on the published public
+  profile **only if the owner ticks "Show the size on my public profile"**
+  (off by default).
+- Admin analytics: one breakdown, "Groups, businesses and institutions by
+  size", including not stated. Audited in `account.profile_updated` as before.
+
+## A moderator requests a correction; the post stays live (2026-10-27)
+
+The specification, Marketplace: "Inspect, request correction and moderate with
+a reason; listing removal is separate from account action."
+
+- Staff holding `content.moderate` (administrators) request a correction on a
+  produce listing, service listing or buying request with a **reason code**
+  (CORWADO's list, active and offered for listings) **and a note** (5-500
+  characters). From the product-report and market-report queues, and from the
+  staff marketplace product page. At most one open request per post.
+- The owner gets ONE fixed in-app notice ("CORWADO asked you to correct one of
+  your posts"); the note is shown on their own list of posts with a
+  "Correction requested" stamp, **never in the notice** (the notification
+  rule of 2026-10-26). No SMS: the account-notice path does not send one.
+- **The post is not touched.** It stays on the market unless a moderator
+  separately removes it; nothing is done to the account.
+- When the owner next saves a change to the post's **content**, the request is
+  marked `addressed` in the same transaction and the moderator sees it in
+  "Correction requests". A lifecycle move (pause, resume, withdraw, complete)
+  or a renewal of the end date alone does not count.
+- New table `listing_correction` (soft delete, RLS on, no policies). Audit:
+  `listing.correction_requested` (code and note, as a suspension records its
+  reason) and `listing.correction_addressed` (the names of the changed fields).

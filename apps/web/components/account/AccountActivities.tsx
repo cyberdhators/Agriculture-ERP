@@ -4,10 +4,13 @@ import { useEffect, useState } from 'react';
 
 import {
   ACTIVITIES,
+  ENTERPRISE_SIZES,
   GROUP_KINDS,
   PROFILE_KINDS,
   accountProfileSchema,
+  takesEnterpriseSize,
   type Activity,
+  type EnterpriseSize,
   type GroupKind,
   type ProfileKind,
 } from '@agri-erp/shared';
@@ -47,6 +50,15 @@ export const ABOUT_LABELS: Record<Lang, Record<string, string>> = {
     saved: 'Saved.',
     failed: 'Not saved. Please try again.',
     choose: 'Choose…',
+    size: 'Size of the enterprise',
+    sizeHint:
+      'Optional. A size, not a kind of business: an SME can also be a trader, processor or supplier.',
+    notStated: 'Not stated',
+    micro: 'Micro',
+    small: 'Small',
+    medium: 'Medium',
+    large: 'Large',
+    showSize: 'Show the size on my public profile',
   },
   ar: {
     title: 'أخبرنا عن نفسك',
@@ -78,6 +90,15 @@ export const ABOUT_LABELS: Record<Lang, Record<string, string>> = {
     saved: 'تم الحفظ.',
     failed: 'لم يتم الحفظ. حاول مرة أخرى.',
     choose: 'اختر…',
+    size: 'حجم المنشأة',
+    sizeHint:
+      'اختياري. هو حجم وليس نوع نشاط: يمكن للمنشأة الصغيرة أو المتوسطة أن تكون تاجراً أو مُصنِّعاً أو مورداً أيضاً.',
+    notStated: 'غير محدد',
+    micro: 'متناهية الصغر',
+    small: 'صغيرة',
+    medium: 'متوسطة',
+    large: 'كبيرة',
+    showSize: 'اعرض الحجم في ملفي العام',
   },
 };
 
@@ -92,6 +113,9 @@ export function AccountActivities({ language, next }: { language: Lang; next?: s
   const [kind, setKind] = useState<ProfileKind>('individual');
   const [groupKind, setGroupKind] = useState<GroupKind | ''>('');
   const [activities, setActivities] = useState<Activity[]>([]);
+  // 2026-10-27: the enterprise size, separate from the activities ('' = not stated).
+  const [size, setSize] = useState<EnterpriseSize | ''>('');
+  const [showSize, setShowSize] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
 
@@ -105,6 +129,8 @@ export function AccountActivities({ language, next }: { language: Lang; next?: s
               profile_kind: ProfileKind;
               group_kind: GroupKind | null;
               activities: Activity[];
+              enterprise_size?: EnterpriseSize | null;
+              show_enterprise_size?: boolean;
             };
           } | null,
         ) => {
@@ -112,6 +138,8 @@ export function AccountActivities({ language, next }: { language: Lang; next?: s
           setKind(b.data.profile_kind);
           setGroupKind(b.data.group_kind ?? '');
           setActivities(b.data.activities);
+          setSize(b.data.enterprise_size ?? '');
+          setShowSize(b.data.show_enterprise_size ?? false);
         },
       )
       .catch(() => undefined);
@@ -125,6 +153,9 @@ export function AccountActivities({ language, next }: { language: Lang; next?: s
       profile_kind: kind,
       group_kind: kind === 'group' ? groupKind || undefined : null,
       activities,
+      ...(takesEnterpriseSize(kind)
+        ? { enterprise_size: size || null, show_enterprise_size: showSize && size !== '' }
+        : { enterprise_size: null, show_enterprise_size: false }),
     };
     const parsed = accountProfileSchema.safeParse(body);
     if (!parsed.success) {
@@ -191,6 +222,33 @@ export function AccountActivities({ language, next }: { language: Lang; next?: s
             </Select>
           )}
         </Field>
+      ) : null}
+      {takesEnterpriseSize(kind) ? (
+        <>
+          <Field label={w.size!} hint={w.sizeHint}>
+            {(ids) => (
+              <Select
+                {...ids}
+                value={size}
+                onChange={(e) => setSize(e.target.value as EnterpriseSize | '')}
+              >
+                <option value="">{w.notStated}</option>
+                {ENTERPRISE_SIZES.map((s) => (
+                  <option key={s} value={s}>
+                    {w[s]}
+                  </option>
+                ))}
+              </Select>
+            )}
+          </Field>
+          {size ? (
+            <Checkbox
+              label={w.showSize!}
+              checked={showSize}
+              onChange={() => setShowSize((v) => !v)}
+            />
+          ) : null}
+        </>
       ) : null}
       <fieldset style={{ border: 0, padding: 0, margin: 0, display: 'grid', gap: 'var(--s-2)' }}>
         <legend className="small">{w.activities}</legend>
