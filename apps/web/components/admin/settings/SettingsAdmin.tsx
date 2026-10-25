@@ -9,17 +9,39 @@ import { usePreview } from '@/lib/preview';
 
 import { asFailure, call, type CurrentSetting, type Failure } from './api';
 import { IdentitySection } from './IdentitySection';
+import {
+  LanguageRegionSection,
+  NotificationsModerationSection,
+  ProfilePrivacySection,
+  ReferenceListsSection,
+  RegistrationRecoverySection,
+} from './Phase2Sections';
 import { ReasonCodesSection } from './ReasonCodesSection';
 import { SecuritySection } from './SecuritySection';
 import { TermsSection } from './TermsSection';
 
-type Tab = 'identity' | 'terms' | 'security' | 'moderation';
+type Tab =
+  | 'identity'
+  | 'language'
+  | 'registration'
+  | 'privacy'
+  | 'reference'
+  | 'moderation'
+  | 'terms'
+  | 'security';
 
+// The specification's order. Phase 2 (2026-10-27) added language and region,
+// registration and recovery, profile privacy and reference lists, and joined
+// the reason codes under Notifications and moderation.
 const TABS: { key: Tab; label: string }[] = [
   { key: 'identity', label: 'Identity and help' },
+  { key: 'language', label: 'Language and region' },
+  { key: 'registration', label: 'Registration and recovery' },
+  { key: 'privacy', label: 'Profile privacy' },
+  { key: 'reference', label: 'Marketplace and reference lists' },
+  { key: 'moderation', label: 'Notifications and moderation' },
   { key: 'terms', label: 'Terms and data' },
   { key: 'security', label: 'Security and operations' },
-  { key: 'moderation', label: 'Moderation reason codes' },
 ];
 
 /**
@@ -32,9 +54,9 @@ const TABS: { key: Tab; label: string }[] = [
  * Secrets are never shown: integrations appear as "set" or "missing" by the
  * name of the variable.
  *
- * Phase 2 adds language and region, registration and recovery, profile
- * privacy defaults, marketplace reference lists and notification templates
- * (docs/DECISIONS.md).
+ * Phase 2 (2026-10-27) adds language and region, registration and recovery,
+ * profile privacy defaults, marketplace and reference lists, and
+ * notifications and moderation (docs/DECISIONS.md, "Settings, phase 2").
  */
 export function SettingsAdmin() {
   const { role, hydrated } = usePreview();
@@ -74,6 +96,11 @@ export function SettingsAdmin() {
   const support = get('support');
   const maintenance = get('maintenance');
   const reasonCodes = get('reason_codes');
+  const languageRegion = get('language_region');
+  const registration = get('registration_recovery');
+  const privacy = get('profile_privacy');
+  const referenceLists = get('reference_lists');
+  const notifications = get('notifications_moderation');
 
   return (
     <section style={{ display: 'grid', gap: 'var(--s-4)' }}>
@@ -98,6 +125,21 @@ export function SettingsAdmin() {
       {tab === 'terms' ? <TermsSection /> : null}
       {tab === 'security' && maintenance ? (
         <SecuritySection maintenance={maintenance} onSaved={replace} />
+      ) : null}
+      {tab === 'language' && languageRegion ? (
+        <LanguageRegionSection setting={languageRegion} onSaved={replace} />
+      ) : null}
+      {tab === 'registration' && registration ? (
+        <RegistrationRecoverySection setting={registration} onSaved={replace} />
+      ) : null}
+      {tab === 'privacy' && privacy ? (
+        <ProfilePrivacySection setting={privacy} onSaved={replace} />
+      ) : null}
+      {tab === 'reference' && referenceLists ? (
+        <ReferenceListsSection setting={referenceLists} onSaved={replace} />
+      ) : null}
+      {tab === 'moderation' && notifications ? (
+        <NotificationsModerationSection setting={notifications} onSaved={replace} />
       ) : null}
       {tab === 'moderation' && reasonCodes ? (
         <ReasonCodesSection setting={reasonCodes} onSaved={replace} />

@@ -57,6 +57,22 @@ export const ACCOUNT_NOTICES = {
     body: 'Open Offer advice to see the reason.',
     key: 'notice.adviserRevoked',
   },
+  // 2026-10-28: an approval paused, and given back; an official note reviewed.
+  adviser_suspended: {
+    title: 'Your approved-adviser status was suspended for a time',
+    body: 'Open Offer advice to see the reason and when it ends.',
+    key: 'notice.adviserSuspended',
+  },
+  adviser_restored: {
+    title: 'Your approved-adviser status was restored',
+    body: 'Your advice profile shows the approved-adviser badge again.',
+    key: 'notice.adviserRestored',
+  },
+  advisory_note_reviewed: {
+    title: 'CORWADO reviewed one of your advisory notes',
+    body: 'Open Offer advice to see where it stands.',
+    key: 'notice.advisoryNoteReviewed',
+  },
   account_restored: {
     title: 'Your AgriOne account has been restored',
     body: 'You can sign in and use AgriOne again.',
@@ -135,6 +151,26 @@ export const ACCOUNT_NOTICES = {
     body: 'Open your listings to see what to change. The post stays on the market meanwhile.',
     key: 'notice.correctionRequested',
   },
+  // 2026-10-28: staff removed a post from the marketplace console. The reason
+  // is in the audit trail; a notice never carries it.
+  listing_removed: {
+    title: 'CORWADO removed one of your posts from the market',
+    body: 'Your account is not affected. If you think this was a mistake, contact CORWADO.',
+    key: 'notice.listingRemoved',
+  },
+  // 2026-10-28: support cases. A staff reply, or the case resolved or closed.
+  // Never the reply's text, the case's text or the staff member's name.
+  support_case_updated: {
+    title: 'CORWADO answered your message',
+    body: 'Open Help to read the answer.',
+    key: 'notice.supportCaseUpdated',
+  },
+  // 2026-10-28: an account disabled (permanent; only a Super Admin restores it).
+  account_reenabled: {
+    title: 'Your AgriOne account has been re-enabled',
+    body: 'You can sign in and use AgriOne again.',
+    key: 'notice.accountReenabled',
+  },
   // 2026-10-28: the daily reminder that a post ends soon. Never its title.
   expiry_listing: {
     title: 'One of your product listings ends soon',
@@ -177,7 +213,10 @@ export function noticeHref(title: string): string | null {
     title === n.adviser_clarification_requested.title ||
     title === n.adviser_approved.title ||
     title === n.adviser_declined.title ||
-    title === n.adviser_revoked.title
+    title === n.adviser_revoked.title ||
+    title === n.adviser_suspended.title ||
+    title === n.adviser_restored.title ||
+    title === n.advisory_note_reviewed.title
   ) {
     return '/farmer/account/advice/offer';
   }
@@ -205,6 +244,8 @@ export function noticeHref(title: string): string | null {
     return '/farmer/account/security';
   }
   if (title === n.listing_correction_requested.title) return '/farmer/account/listings';
+  if (title === n.listing_removed.title) return '/help';
+  if (title === n.support_case_updated.title) return '/help#my-messages';
   if (title === n.expiry_listing.title) return '/farmer/account/listings';
   if (title === n.expiry_buying_request.title) return '/farmer/account/buying-requests';
   if (title === n.expiry_service.title) return '/farmer/account/my-services';

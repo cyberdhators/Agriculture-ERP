@@ -219,6 +219,19 @@ export const AUDIT_ACTIONS = [
   'account.password_recovered',
   'listing.correction_requested',
   'listing.correction_addressed',
+  // 2026-10-28 (admin console lane): a permanent DISABLE of an account
+  // (distinct from suspend; lifted only by a Super Admin, with a reason), a
+  // staff member revealing an account's private contact (which field, never
+  // the value), a staff removal of a marketplace post from the console (not
+  // through a report), and support CASES: a change of status, type, priority,
+  // assignee, evidence or resolution, and a staff reply to the person. NOT
+  // YET IN THE DATABASE CHECK: the integrator's combined CHECK migration adds them.
+  'account.disabled',
+  'account.reenabled',
+  'account.contact_revealed',
+  'listing.removed',
+  'support_case.updated',
+  'support_case.replied',
   // 2026-10-28 (user journeys): one account blocks or unblocks another, person
   // level (ids only, never a name); the daily job's reminder that a post ends
   // soon (kind, id, end date). NOT YET IN THE DATABASE CHECK: the integrator's
@@ -230,6 +243,42 @@ export const AUDIT_ACTIONS = [
   // terms and privacy notice at sign-up (version and language only). NOT YET
   // IN THE DATABASE CHECK: the integrator's combined CHECK migration adds it.
   'acknowledgement.recorded',
+  // 2026-10-27: official announcements, message templates and notification
+  // preferences. A template row carries its channel, status and the NAMES of
+  // changed fields; an announcement row its scope, channels, category and
+  // counts -- never a message's text, a recipient or a contact. NOT YET IN
+  // THE DATABASE CHECK: one combined CHECK migration adds them (the owner).
+  'message_template.created',
+  'message_template.updated',
+  'message_template.status_changed',
+  'announcement.drafted',
+  'announcement.draft_edited',
+  'announcement.draft_discarded',
+  'announcement.queued',
+  'announcement.batch_sent',
+  'announcement.retry_queued',
+  'announcement.completed',
+  'notification_preference.updated',
+  // 2026-10-28 (lane-security): staff invitations (the address is never in a
+  // row), two-step sign-in enrolment and reset, the advisory suspension and
+  // restoration of an approval, official advisory notes, and an organisation's
+  // shared advice inbox (assign, accept, release). NOT YET IN THE DATABASE
+  // CHECK: the integrator's combined CHECK migration adds them.
+  'staff.invited',
+  'staff.invitation_revoked',
+  'staff.invitation_accepted',
+  'staff.mfa_enrolled',
+  'staff.mfa_reset',
+  'adviser_approval.suspended',
+  'adviser_approval.restored',
+  'advisory_note.submitted',
+  'advisory_note.withdrawn',
+  'advisory_note.returned',
+  'advisory_note.published',
+  'advisory_note.unpublished',
+  'advice_case.assigned',
+  'advice_case.accepted',
+  'advice_case.released',
 ] as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];

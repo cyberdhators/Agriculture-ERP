@@ -8,7 +8,9 @@ import { Wordmark } from '@/components/brand/Wordmark';
 import { Button, Card, Field, Input, Notice } from '@/components/ui';
 import { loginIdentifier } from '@/lib/auth/identifier';
 import { BUYER_REGISTER_PATH, homeFor } from '@/lib/auth/paths';
-import { supabaseBrowser } from '@/lib/supabase/browser';
+import { serverSignIn, waitInWords } from '@/lib/auth/server-sign-in';
+
+import { MfaCodeStep } from './MfaCodeStep';
 
 import styles from './auth.module.css';
 
@@ -33,44 +35,49 @@ export function LoginForm({
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | undefined>();
   const [busy, setBusy] = useState(false);
+  // 2026-10-28: the account has an authenticator; the code is asked next.
+  const [codeStep, setCodeStep] = useState(false);
+
+  async function finish() {
+    // B13: the session now exists; ask the server who it belongs to. A buyer
+    // goes to the buyer side, staff to where they were going. If the answer
+    // does not come, staff routing is the default and the portal's own
+    // check sends a buyer on (lib/preview.tsx).
+    // The one header: tells the access log this visit IS a sign-in (staff
+    // permissions lane, 2026-10-19). It changes nothing about the answer.
+    const role = await fetch('/api/me', { headers: { [SIGN_IN_ANNOUNCE_HEADER]: '1' } })
+      .then(async (res) => ((await res.json()) as { data?: { role?: string } }).data?.role)
+      .catch(() => undefined);
+    router.replace(homeFor(role, next));
+    router.refresh();
+  }
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
     setBusy(true);
     setError(undefined);
     try {
-      const { error: signInError } = await supabaseBrowser().auth.signInWithPassword({
-        email: loginIdentifier(login),
-        password,
-      });
-      if (signInError) {
-        // The same taxonomy as isSessionRefusal in lib/api/require-role.ts:
-        // 400, 401, 403 and 404 are "this is not a valid sign-in"; anything
-        // else -- 429, 5xx, a network failure -- is the service failing to
-        // answer. They disagreed before, so a 401 told the user the service was
-        // down when their password was simply wrong.
-        const refused =
-          signInError.status !== undefined && [400, 401, 403, 404].includes(signInError.status);
+      // 2026-10-28: through the server (POST /api/auth/sign-in), so a failed
+      // sign-in is recorded in the access log and attempts are limited. The
+      // session cookie arrives on that response.
+      const outcome = await serverSignIn(loginIdentifier(login), password);
+      if (!outcome.ok) {
         setError(
-          signInError.code === 'user_banned'
+          outcome.reason === 'suspended'
             ? 'This account is suspended or closed. Contact CORWADO for help.'
-            : refused
+            : outcome.reason === 'wrong'
               ? 'That email or phone number and password do not match.'
-              : 'The sign-in service could not be reached. Try again in a moment.',
+              : outcome.reason === 'locked'
+                ? `Too many attempts. Wait ${waitInWords(outcome.retryAfterSeconds)} and try again.`
+                : 'The sign-in service could not be reached. Try again in a moment.',
         );
         return;
       }
-      // B13: the session now exists; ask the server who it belongs to. A buyer
-      // goes to the buyer side, staff to where they were going. If the answer
-      // does not come, staff routing is the default and the portal's own
-      // check sends a buyer on (lib/preview.tsx).
-      // The one header: tells the access log this visit IS a sign-in (staff
-      // permissions lane, 2026-10-19). It changes nothing about the answer.
-      const role = await fetch('/api/me', { headers: { [SIGN_IN_ANNOUNCE_HEADER]: '1' } })
-        .then(async (res) => ((await res.json()) as { data?: { role?: string } }).data?.role)
-        .catch(() => undefined);
-      router.replace(homeFor(role, next));
-      router.refresh();
+      if (outcome.mfaRequired) {
+        setCodeStep(true);
+        return;
+      }
+      await finish();
     } catch {
       setError('Sign-in is not available on this deployment. Tell an administrator.');
     } finally {
@@ -99,13 +106,20 @@ export function LoginForm({
           )}
         </div>
 
-        {error ? (
+        {codeStep ? (
+          <MfaCodeStep
+            onVerified={() => void finish()}
+            intro="Your account uses two-step sign-in. Enter the six-digit code from your authenticator app."
+          />
+        ) : null}
+
+        {codeStep ? null : error ? (
           <Notice kind="error" title="Not signed in">
             <p className="small">{error}</p>
           </Notice>
         ) : null}
 
-        <form className={styles.form} onSubmit={onSubmit} noValidate>
+        <form className={styles.form} onSubmit={onSubmit} noValidate hidden={codeStep}>
           <Field label="Email or phone number">
             {(ids) => (
               <Input

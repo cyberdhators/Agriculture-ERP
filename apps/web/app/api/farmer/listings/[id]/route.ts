@@ -21,6 +21,7 @@ import { defineRoutes, ok } from '../../../../../lib/api/route';
 import { farmerScope } from '../../../../../lib/api/scope';
 import { actingWith } from '../../../../../lib/api/organizations';
 import { prisma } from '../../../../../lib/db';
+import { listingValidityDays } from '../../../../../lib/api/settings';
 
 /**
  * GET and PATCH /api/farmer/listings/:id -- one of the farmer's own listings.
@@ -93,6 +94,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
             null,
             body.available_from ?? current.available_from,
             today,
+            await listingValidityDays(),
           );
         }
         const endChanged =

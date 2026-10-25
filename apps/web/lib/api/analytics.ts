@@ -1,10 +1,16 @@
 import {
   ANALYTICS_LIMITATIONS,
   ANALYTICS_METRICS,
+  ANALYTICS_SERIES,
+  type Activity,
   type AnalyticsMetricValue,
+  type AnalyticsSeriesValue,
   type AnalyticsSummary,
   type AnalyticsWindow,
   DISPLAY_TIME_ZONE,
+  type ListingCategory,
+  analyticsBucket,
+  bucketStarts,
   toIso,
 } from '@agri-erp/shared';
 import { type Prisma } from '@prisma/client';
@@ -18,9 +24,11 @@ import { type Prisma } from '@prisma/client';
  * what, from where) and computed here by the SQL keyed to the same id; a test
  * holds the two lists equal.
  *
- * EVERY QUERY TAKES THE SAME THREE PARAMETERS, through one CTE `w`: the
+ * EVERY QUERY TAKES THE SAME PARAMETERS, through one CTE `w`: the
  * window's first instant (s), the instant after its last day (e), both at
- * Juba midnight, and the states to limit to (st, NULL for national). So the
+ * Juba midnight, the states to limit to (st, NULL for national), and since
+ * 2026-10-28 the commodity (cm) and actor type (ac), NULL when not chosen;
+ * the over-time queries add the period (b). So the
  * export log can record each query with its parameters inlined, and no query
  * can quietly use a different window from its neighbours.
  *
@@ -36,7 +44,13 @@ import { type Prisma } from '@prisma/client';
 
 type Db = { $queryRawUnsafe: Prisma.TransactionClient['$queryRawUnsafe'] };
 
-const W = `WITH w AS (SELECT $1::timestamptz AS s, $2::timestamptz AS e, $3::text[] AS st)`;
+const W = `WITH w AS (SELECT $1::timestamptz AS s, $2::timestamptz AS e, $3::text[] AS st, $4::text AS cm, $5::text AS ac)`;
+
+/**
+ * 2026-10-28: the over-time queries take one more parameter, the period
+ * ('day', 'week' or 'month', from analyticsBucket), as `w.b`.
+ */
+const WS = `WITH w AS (SELECT $1::timestamptz AS s, $2::timestamptz AS e, $3::text[] AS st, $4::text AS cm, $5::text AS ac, $6::text AS b)`;
 
 /** Every account that can sign in, with its state; soft-deleted accounts are not here. */
 const P = `p AS (
@@ -56,6 +70,35 @@ const P = `p AS (
 
 const inWindow = (column: string) => `${column} >= w.s AND ${column} < w.e`;
 const inStates = (column: string) => `(w.st IS NULL OR ${column} = ANY(w.st))`;
+
+/**
+ * 2026-10-28. The commodity filter (`w.cm`, a listing_category) and the
+ * actor-type filter (`w.ac`, one of the activities under "What you do").
+ * Each is a no-op when not chosen. A figure whose SQL carries a predicate
+ * declares it (`commodity` / `actor` below); a test holds the declaration and
+ * the SQL together, and the summary refuses to serve an undeclared figure
+ * under a filter rather than serve it unfiltered.
+ */
+const byCommodity = (column: string) => `(w.cm IS NULL OR ${column}::text = w.cm)`;
+
+/**
+ * Marked, so the summary can neutralise it when account_profile is not in the
+ * database yet (a relation that does not exist fails the whole statement,
+ * even inside a branch that is never taken). Under an actor filter that
+ * figure is then not measured, never unfiltered.
+ */
+const ACTOR_OPEN = '/*actor*/';
+const ACTOR_CLOSE = '/*end-actor*/';
+const byActor = (authUserId: string) =>
+  `${ACTOR_OPEN}(w.ac IS NULL OR EXISTS (SELECT 1 FROM public.account_profile apx
+     WHERE apx.auth_user_id = ${authUserId} AND w.ac = ANY(apx.activities)))${ACTOR_CLOSE}`;
+
+/** The sign-in account behind a produce listing, a buying request or a service. */
+const LISTING_OWNER = `(SELECT fx.auth_user_id FROM public.farmer fx WHERE fx.id = l.farmer_id)`;
+const posterOf = (alias: string) =>
+  `COALESCE((SELECT fx.auth_user_id FROM public.farmer fx WHERE fx.id = ${alias}.farmer_id),
+            (SELECT bx.auth_user_id FROM public.buyer bx WHERE bx.id = ${alias}.buyer_id))`;
+const L_NARROW = `${byCommodity('l.category')} AND ${byActor(LISTING_OWNER)}`;
 
 /** The state of the post a conversation is about. */
 const POST_STATE = `CASE c.post_kind
@@ -105,6 +148,10 @@ interface MetricSql {
   readonly total?: string;
   /** Returns rows `{ key, value }` and optionally `label`. */
   readonly breakdown?: string;
+  /** 2026-10-28: the queries honour the commodity filter (w.cm). */
+  readonly commodity?: true;
+  /** 2026-10-28: the queries honour the actor-type filter (w.ac). */
+  readonly actor?: true;
 }
 
 /**
@@ -115,49 +162,57 @@ export const METRIC_SQL: Readonly<Record<string, MetricSql>> = {
   'accounts.new': {
     needs: ['access_log'],
     located: true,
+    actor: true,
     total: `${W}, ${P}
       SELECT count(DISTINCT p.auth_user_id)::int AS value FROM ${ACCESS_JOIN}
        WHERE a.event = 'account_created' AND a.principal_kind IN ('farmer', 'buyer')
-         AND ${inWindow('a.occurred_at')} AND ${inStates('p.state_id')}`,
+         AND ${inWindow('a.occurred_at')} AND ${inStates('p.state_id')} AND ${byActor('p.auth_user_id')}`,
     breakdown: `${W}, ${P}
       SELECT p.kind AS key, count(DISTINCT p.auth_user_id)::int AS value FROM ${ACCESS_JOIN}
        WHERE a.event = 'account_created' AND a.principal_kind IN ('farmer', 'buyer')
-         AND ${inWindow('a.occurred_at')} AND ${inStates('p.state_id')}
+         AND ${inWindow('a.occurred_at')} AND ${inStates('p.state_id')} AND ${byActor('p.auth_user_id')}
        GROUP BY 1 ORDER BY 1`,
   },
   'farmers.registered': {
     needs: [],
     located: true,
+    actor: true,
     breakdown: `${W}
       SELECT f.registration_source::text AS key, count(*)::int AS value
         FROM public.farmer f CROSS JOIN w
-       WHERE f.deleted_at IS NULL AND ${inWindow('f.created_at')} AND ${inStates('f.state_id')}
+       WHERE f.deleted_at IS NULL AND ${inWindow('f.created_at')} AND ${inStates('f.state_id')} AND ${byActor('f.auth_user_id')}
        GROUP BY 1 ORDER BY 1`,
   },
   'farmers.verified': {
     needs: [],
     located: true,
+    actor: true,
     total: `${W}
       SELECT count(DISTINCT v.farmer_id)::int AS value
         FROM public.verification_event v
         JOIN public.farmer_verified_v f ON f.id = v.farmer_id CROSS JOIN w
-       WHERE v.decision = 'verified' AND ${inWindow('v.decided_at')} AND ${inStates('f.state_id')}`,
+       WHERE v.decision = 'verified' AND ${inWindow('v.decided_at')} AND ${inStates('f.state_id')}
+         AND ${byActor('(SELECT fx.auth_user_id FROM public.farmer fx WHERE fx.id = v.farmer_id)')}`,
   },
   'farmers.rejected': {
     needs: [],
     located: true,
+    actor: true,
     total: `${W}
       SELECT count(DISTINCT v.farmer_id)::int AS value
         FROM public.verification_event v
         JOIN public.farmer f ON f.id = v.farmer_id AND f.deleted_at IS NULL CROSS JOIN w
-       WHERE v.decision = 'rejected' AND ${inWindow('v.decided_at')} AND ${inStates('f.state_id')}`,
+       WHERE v.decision = 'rejected' AND ${inWindow('v.decided_at')} AND ${inStates('f.state_id')}
+         AND ${byActor('f.auth_user_id')}`,
   },
   'farmers.pending_now': {
     needs: [],
     located: true,
+    actor: true,
     total: `${W}
       SELECT count(*)::int AS value FROM public.farmer f CROSS JOIN w
-       WHERE f.deleted_at IS NULL AND f.verification_status = 'pending' AND ${inStates('f.state_id')}`,
+       WHERE f.deleted_at IS NULL AND f.verification_status = 'pending' AND ${inStates('f.state_id')}
+         AND ${byActor('f.auth_user_id')}`,
   },
   'buyers.registered': {
     needs: ['buyer_organization'],
@@ -195,25 +250,28 @@ export const METRIC_SQL: Readonly<Record<string, MetricSql>> = {
   'access.first_sign_ins': {
     needs: ['access_log'],
     located: true,
+    actor: true,
     breakdown: `${W}, ${P}
       SELECT a.principal_kind AS key, count(DISTINCT a.principal_id)::int AS value FROM ${ACCESS_JOIN}
-       WHERE a.event = 'first_sign_in' AND ${inWindow('a.occurred_at')} AND ${inStates('p.state_id')}
+       WHERE a.event = 'first_sign_in' AND ${inWindow('a.occurred_at')} AND ${inStates('p.state_id')} AND ${byActor('p.auth_user_id')}
        GROUP BY 1 ORDER BY 1`,
   },
   'access.active': {
     needs: ['access_log'],
     located: true,
+    actor: true,
     breakdown: `${W}, ${P}
       SELECT a.principal_kind AS key, count(DISTINCT a.principal_id)::int AS value FROM ${ACCESS_JOIN}
-       WHERE a.event IN ${SIGNED_IN} AND ${inWindow('a.occurred_at')} AND ${inStates('p.state_id')}
+       WHERE a.event IN ${SIGNED_IN} AND ${inWindow('a.occurred_at')} AND ${inStates('p.state_id')} AND ${byActor('p.auth_user_id')}
        GROUP BY 1 ORDER BY 1`,
   },
   'access.returning': {
     needs: ['access_log'],
     located: true,
+    actor: true,
     breakdown: `${W}, ${P}
       SELECT a.principal_kind AS key, count(DISTINCT a.principal_id)::int AS value FROM ${ACCESS_JOIN}
-       WHERE a.event IN ${SIGNED_IN} AND ${inWindow('a.occurred_at')} AND ${inStates('p.state_id')}
+       WHERE a.event IN ${SIGNED_IN} AND ${inWindow('a.occurred_at')} AND ${inStates('p.state_id')} AND ${byActor('p.auth_user_id')}
          AND NOT EXISTS (
            SELECT 1 FROM public.access_log f1
             WHERE f1.principal_kind = a.principal_kind AND f1.principal_id = a.principal_id
@@ -223,40 +281,44 @@ export const METRIC_SQL: Readonly<Record<string, MetricSql>> = {
   'access.sessions': {
     needs: ['access_log'],
     located: true,
+    actor: true,
     breakdown: `${W}, ${P}
       SELECT a.event AS key, count(*)::int AS value FROM ${ACCESS_JOIN}
-       WHERE a.event IN ${SIGNED_IN} AND ${inWindow('a.occurred_at')} AND ${inStates('p.state_id')}
+       WHERE a.event IN ${SIGNED_IN} AND ${inWindow('a.occurred_at')} AND ${inStates('p.state_id')} AND ${byActor('p.auth_user_id')}
        GROUP BY 1 ORDER BY 1`,
   },
   'participation.by_state': {
     needs: ['access_log'],
     located: true,
+    actor: true,
     breakdown: `${W}, ${P}
       SELECT COALESCE(p.state_id, 'none') AS key, max(s.name) AS label,
              count(DISTINCT p.kind || ':' || p.id::text)::int AS value
         FROM ${ACCESS_JOIN} LEFT JOIN public.state s ON s.id = p.state_id
        WHERE a.principal_kind IN ('farmer', 'buyer') AND a.event IN ${SIGNED_IN}
-         AND ${inWindow('a.occurred_at')} AND ${inStates('p.state_id')}
+         AND ${inWindow('a.occurred_at')} AND ${inStates('p.state_id')} AND ${byActor('p.auth_user_id')}
        GROUP BY 1 ORDER BY 3 DESC, 1`,
   },
   'participation.activities': {
     needs: ['account_profile'],
     located: true,
+    actor: true,
     total: `${W}, ${H}
       SELECT count(*)::int AS value FROM h CROSS JOIN w
-       WHERE cardinality(h.activities) > 0 AND ${H_STATES}`,
+       WHERE cardinality(h.activities) > 0 AND ${H_STATES} AND ${byActor('h.auth_user_id')}`,
     breakdown: `${W}, ${H}
       SELECT act AS key, count(*)::int AS value
         FROM h CROSS JOIN w CROSS JOIN LATERAL unnest(h.activities) AS act
-       WHERE ${H_STATES}
+       WHERE ${H_STATES} AND ${byActor('h.auth_user_id')}
        GROUP BY 1 ORDER BY 2 DESC, 1`,
   },
   'participation.profile_kinds': {
     needs: ['account_profile'],
     located: true,
+    actor: true,
     breakdown: `${W}, ${H}
       SELECT h.profile_kind AS key, count(*)::int AS value FROM h CROSS JOIN w
-       WHERE ${H_STATES}
+       WHERE ${H_STATES} AND ${byActor('h.auth_user_id')}
        GROUP BY 1 ORDER BY 1`,
   },
   // 2026-10-27: SME is a size, not a kind of business. Groups, businesses and
@@ -264,29 +326,38 @@ export const METRIC_SQL: Readonly<Record<string, MetricSql>> = {
   'participation.enterprise_sizes': {
     needs: ['account_profile', 'account_profile.enterprise_size'],
     located: true,
+    actor: true,
     breakdown: `${W}, ${H_SIZED}
       SELECT COALESCE(h.enterprise_size, 'not_stated') AS key, count(*)::int AS value
         FROM h CROSS JOIN w
-       WHERE h.profile_kind <> 'individual' AND ${H_STATES}
+       WHERE h.profile_kind <> 'individual' AND ${H_STATES} AND ${byActor('h.auth_user_id')}
        GROUP BY 1 ORDER BY 1`,
   },
   'listings.created': {
     needs: [],
     located: true,
+    commodity: true,
+    actor: true,
     total: `${W}
       SELECT count(*)::int AS value FROM public.produce_listing l CROSS JOIN w
-       WHERE l.deleted_at IS NULL AND ${inWindow('l.created_at')} AND ${inStates('l.state_id')}`,
+       WHERE l.deleted_at IS NULL AND ${inWindow('l.created_at')} AND ${inStates('l.state_id')}
+         AND ${L_NARROW}`,
   },
   'listings.active_now': {
     needs: [],
     located: true,
+    commodity: true,
+    actor: true,
     total: `${W}
       SELECT count(*)::int AS value FROM public.produce_listing l CROSS JOIN w
-       WHERE l.deleted_at IS NULL AND l.status::text = 'listed' AND ${inStates('l.state_id')}`,
+       WHERE l.deleted_at IS NULL AND l.status::text = 'listed' AND ${inStates('l.state_id')}
+         AND ${L_NARROW}`,
   },
   'listings.completed': {
     needs: [],
     located: true,
+    commodity: true,
+    actor: true,
     total: `${W}
       SELECT count(DISTINCT l.id)::int AS value
         FROM public.audit_event ae
@@ -294,37 +365,47 @@ export const METRIC_SQL: Readonly<Record<string, MetricSql>> = {
        WHERE ae.entity_type = 'produce_listing' AND ae.action = 'listing.status_changed'
          AND ae.after ->> 'status' IN ('completed', 'sold') AND ${inWindow('ae.occurred_at')}
          AND l.deleted_at IS NULL AND l.status::text IN ('completed', 'sold')
-         AND ${inStates('l.state_id')}`,
+         AND ${inStates('l.state_id')}
+         AND ${L_NARROW}`,
   },
   'trades.sales_recorded': {
     needs: [],
     located: true,
+    commodity: true,
+    actor: true,
     total: `${W}
       SELECT count(*)::int AS value
         FROM public.audit_event ae
         JOIN public.produce_listing l ON l.id::text = ae.entity_id CROSS JOIN w
        WHERE ae.entity_type = 'produce_listing' AND ae.after ->> 'sale_quantity' IS NOT NULL
-         AND ${inWindow('ae.occurred_at')} AND l.deleted_at IS NULL AND ${inStates('l.state_id')}`,
+         AND ${inWindow('ae.occurred_at')} AND l.deleted_at IS NULL AND ${inStates('l.state_id')}
+         AND ${L_NARROW}`,
   },
   'trades.orders_delivered': {
     needs: ['purchase_order'],
     located: true,
+    commodity: true,
+    actor: true,
     total: `${W}
       SELECT count(DISTINCT po.id)::int AS value
         FROM public.delivery_update du
         JOIN public.purchase_order po ON po.id = du.order_id AND po.deleted_at IS NULL
         JOIN public.produce_listing l ON l.id = po.listing_id CROSS JOIN w
        WHERE du.status::text IN ('delivered', 'completed') AND ${inWindow('du.occurred_at')}
-         AND ${inStates('l.state_id')}`,
+         AND ${inStates('l.state_id')}
+         AND ${L_NARROW}`,
   },
   'orders.created': {
     needs: ['purchase_order'],
     located: true,
+    commodity: true,
+    actor: true,
     total: `${W}
       SELECT count(*)::int AS value
         FROM public.purchase_order po
         JOIN public.produce_listing l ON l.id = po.listing_id CROSS JOIN w
-       WHERE po.deleted_at IS NULL AND ${inWindow('po.created_at')} AND ${inStates('l.state_id')}`,
+       WHERE po.deleted_at IS NULL AND ${inWindow('po.created_at')} AND ${inStates('l.state_id')}
+         AND ${L_NARROW}`,
   },
   'purchase_requests.sent': {
     needs: ['purchase_request'],
@@ -339,32 +420,42 @@ export const METRIC_SQL: Readonly<Record<string, MetricSql>> = {
   'buying_requests.created': {
     needs: ['buying_request'],
     located: true,
+    commodity: true,
+    actor: true,
     breakdown: `${W}
       SELECT r.poster_type AS key, count(*)::int AS value FROM public.buying_request r CROSS JOIN w
        WHERE r.deleted_at IS NULL AND ${inWindow('r.created_at')} AND ${inStates('r.state_id')}
+         AND ${byCommodity('r.category')} AND ${byActor(posterOf('r'))}
        GROUP BY 1 ORDER BY 1`,
   },
   'buying_requests.active_now': {
     needs: ['buying_request'],
     located: true,
+    commodity: true,
+    actor: true,
     total: `${W}
       SELECT count(*)::int AS value FROM public.buying_request r CROSS JOIN w
-       WHERE r.deleted_at IS NULL AND r.status = 'active' AND ${inStates('r.state_id')}`,
+       WHERE r.deleted_at IS NULL AND r.status = 'active' AND ${inStates('r.state_id')}
+         AND ${byCommodity('r.category')} AND ${byActor(posterOf('r'))}`,
   },
   'services.created': {
     needs: ['service_listing'],
     located: true,
+    actor: true,
     breakdown: `${W}
       SELECT sv.service_type AS key, count(*)::int AS value FROM public.service_listing sv CROSS JOIN w
        WHERE sv.deleted_at IS NULL AND ${inWindow('sv.created_at')} AND ${inStates('sv.state_id')}
+         AND ${byActor(posterOf('sv'))}
        GROUP BY 1 ORDER BY 1`,
   },
   'services.active_now': {
     needs: ['service_listing'],
     located: true,
+    actor: true,
     total: `${W}
       SELECT count(*)::int AS value FROM public.service_listing sv CROSS JOIN w
-       WHERE sv.deleted_at IS NULL AND sv.status = 'active' AND ${inStates('sv.state_id')}`,
+       WHERE sv.deleted_at IS NULL AND sv.status = 'active' AND ${inStates('sv.state_id')}
+         AND ${byActor(posterOf('sv'))}`,
   },
   'messages.conversations': {
     needs: ['conversation', 'buying_request', 'service_listing'],
@@ -385,11 +476,14 @@ export const METRIC_SQL: Readonly<Record<string, MetricSql>> = {
   'inquiries.contact_requests': {
     needs: ['contact_request'],
     located: true,
+    commodity: true,
+    actor: true,
     total: `${W}
       SELECT count(*)::int AS value
         FROM public.contact_request cr
         JOIN public.produce_listing l ON l.id = cr.listing_id CROSS JOIN w
-       WHERE ${inWindow('cr.created_at')} AND ${inStates('l.state_id')}`,
+       WHERE ${inWindow('cr.created_at')} AND ${inStates('l.state_id')}
+         AND ${L_NARROW}`,
   },
   'moderation.reports': {
     needs: ['market_report'],
@@ -583,10 +677,147 @@ export function inlineAnalyticsQuery(sql: string, params: readonly unknown[]): s
   });
 }
 
+// ---------------------------------------------------------------------------
+// OVER TIME (2026-10-28)
+// ---------------------------------------------------------------------------
+
+/** A timestamp's period start, in Juba, as YYYY-MM-DD. */
+const period = (column: string) =>
+  `date_trunc(w.b, (${column}) AT TIME ZONE '${DISPLAY_TIME_ZONE}')::date`;
+
+interface SeriesSql {
+  readonly needs: readonly string[];
+  readonly commodity?: true;
+  readonly actor?: true;
+  /** Returns rows `{ bucket, key, value }`; missing pairs are zero. */
+  readonly sql: string;
+}
+
+/** The SQL for each over-time figure, keyed by the id in ANALYTICS_SERIES. */
+export const SERIES_SQL: Readonly<Record<string, SeriesSql>> = {
+  'series.registrations': {
+    needs: ['access_log'],
+    actor: true,
+    sql: `${WS}, ${P}
+      SELECT ${period('a.occurred_at')}::text AS bucket, p.kind AS key,
+             count(DISTINCT p.auth_user_id)::int AS value
+        FROM ${ACCESS_JOIN}
+       WHERE a.event = 'account_created' AND a.principal_kind IN ('farmer', 'buyer')
+         AND ${inWindow('a.occurred_at')} AND ${inStates('p.state_id')}
+         AND ${byActor('p.auth_user_id')}
+       GROUP BY 1, 2 ORDER BY 1, 2`,
+  },
+  // New: the account's first sign-in ever falls in the same period. Returning:
+  // it fell earlier (or before the access log began, so there is none).
+  'series.active_users': {
+    needs: ['access_log'],
+    actor: true,
+    sql: `${WS}, ${P}, seen AS (
+        SELECT DISTINCT ${period('a.occurred_at')} AS bucket, a.principal_kind, a.principal_id
+          FROM ${ACCESS_JOIN}
+         WHERE a.event IN ${SIGNED_IN} AND ${inWindow('a.occurred_at')}
+           AND ${inStates('p.state_id')} AND ${byActor('p.auth_user_id')}
+      ), firsts AS (
+        SELECT f1.principal_kind, f1.principal_id, min(f1.occurred_at) AS first_at
+          FROM public.access_log f1 WHERE f1.event = 'first_sign_in'
+         GROUP BY 1, 2
+      )
+      SELECT seen.bucket::text AS bucket,
+             CASE WHEN firsts.first_at IS NOT NULL AND ${period('firsts.first_at')} = seen.bucket
+                  THEN 'new' ELSE 'returning' END AS key,
+             count(*)::int AS value
+        FROM seen CROSS JOIN w
+        LEFT JOIN firsts ON firsts.principal_kind = seen.principal_kind
+                        AND firsts.principal_id = seen.principal_id
+       GROUP BY 1, 2 ORDER BY 1, 2`,
+  },
+  // Two measures side by side, never summed.
+  'series.market_activity': {
+    needs: ['buying_request'],
+    commodity: true,
+    actor: true,
+    sql: `${WS}, posted AS (
+        SELECT 'listings'::text AS key, l.created_at AS at
+          FROM public.produce_listing l CROSS JOIN w
+         WHERE l.deleted_at IS NULL AND ${inWindow('l.created_at')} AND ${inStates('l.state_id')}
+           AND ${L_NARROW}
+        UNION ALL
+        SELECT 'buying_requests', r.created_at
+          FROM public.buying_request r CROSS JOIN w
+         WHERE r.deleted_at IS NULL AND ${inWindow('r.created_at')} AND ${inStates('r.state_id')}
+           AND ${byCommodity('r.category')} AND ${byActor(posterOf('r'))}
+      )
+      SELECT ${period('posted.at')}::text AS bucket, posted.key, count(*)::int AS value
+        FROM posted CROSS JOIN w
+       GROUP BY 1, 2 ORDER BY 1, 2`,
+  },
+};
+
+/**
+ * Fills the rows of one over-time query into one line per key, a point for
+ * every period (0 where no row came back: the query ran and found nothing).
+ * A row for a period or key the definition does not name is ignored. Pure.
+ */
+export function fillSeries(
+  periods: readonly string[],
+  keys: readonly string[],
+  rows: readonly { bucket: string; key: string; value: number }[],
+): { key: string; points: number[] }[] {
+  const at = new Map(periods.map((p, i) => [p, i]));
+  const lines = keys.map((key) => ({ key, points: periods.map(() => 0) }));
+  const byKey = new Map(lines.map((l) => [l.key, l]));
+  for (const row of rows) {
+    const i = at.get(row.bucket);
+    const line = byKey.get(row.key);
+    if (i === undefined || !line) continue;
+    line.points[i] = Number(row.value);
+  }
+  return lines;
+}
+
+/**
+ * When account_profile is not in the database the actor predicate cannot even
+ * be parsed, so it is replaced by its "no actor chosen" branch. Only ever
+ * applied when no actor filter is chosen: with one, the figure is served as
+ * not in the database instead.
+ */
+export const withoutActor = (sql: string): string =>
+  sql.replace(/\/\*actor\*\/[\s\S]*?\/\*end-actor\*\//g, '(w.ac IS NULL)');
+
 export interface AnalyticsRun {
   readonly summary: AnalyticsSummary;
   /** Each query as it ran, with its parameters inlined, keyed by metric id. */
   readonly queries: readonly { id: string; sql: string }[];
+}
+
+/** What the caller asked for, beyond the window. All already validated. */
+export interface AnalyticsNarrowing {
+  readonly state: string | null;
+  readonly commodity: ListingCategory | null;
+  readonly actorType: Activity | null;
+}
+
+/**
+ * Why a figure cannot be served under these filters, or null when it can.
+ * Pure, and the one place the rule lives for figures and series alike.
+ */
+export function narrowingRefusal(
+  spec: {
+    readonly needs: readonly string[];
+    readonly located?: boolean;
+    readonly commodity?: true;
+    readonly actor?: true;
+  },
+  states: readonly string[] | null,
+  narrowing: Pick<AnalyticsNarrowing, 'commodity' | 'actorType'>,
+  present: ReadonlySet<string>,
+): AnalyticsMetricValue['unavailable'] | null {
+  if (spec.located === false && states !== null) return 'not_located';
+  if (narrowing.commodity !== null && !spec.commodity) return 'not_filterable';
+  if (narrowing.actorType !== null && !spec.actor) return 'not_filterable';
+  if (spec.needs.some((n) => !present.has(n))) return 'not_in_database';
+  if (narrowing.actorType !== null && !present.has('account_profile')) return 'not_in_database';
+  return null;
 }
 
 /**
@@ -597,31 +828,36 @@ export async function analyticsSummary(
   db: Db,
   window: AnalyticsWindow,
   states: readonly string[] | null,
-  requestedState: string | null,
+  narrowing: AnalyticsNarrowing,
   now: Date = new Date(),
 ): Promise<AnalyticsRun> {
   const present = await presentRelations(db);
-  const params = [window.startsAt, window.endsAt, states ? [...states] : null];
+  const params = [
+    window.startsAt,
+    window.endsAt,
+    states ? [...states] : null,
+    narrowing.commodity,
+    narrowing.actorType,
+  ];
+  const prepare = (sql: string) => (present.has('account_profile') ? sql : withoutActor(sql));
   const queries: { id: string; sql: string }[] = [];
   const metrics: AnalyticsMetricValue[] = [];
 
   for (const def of ANALYTICS_METRICS) {
     const spec = METRIC_SQL[def.id];
     if (!spec) throw new Error(`analytics: no SQL for ${def.id}`);
-    if (!spec.located && states !== null) {
-      metrics.push({ id: def.id, value: null, unavailable: 'not_located' });
-      continue;
-    }
-    if (spec.needs.some((n) => !present.has(n))) {
-      metrics.push({ id: def.id, value: null, unavailable: 'not_in_database' });
+    const refusal = narrowingRefusal(spec, states, narrowing, present);
+    if (refusal) {
+      metrics.push({ id: def.id, value: null, unavailable: refusal });
       continue;
     }
     let breakdown: { key: string; label?: string; value: number }[] | undefined;
     if (spec.breakdown) {
-      queries.push({ id: def.id, sql: inlineAnalyticsQuery(spec.breakdown, params) });
+      const sql = prepare(spec.breakdown);
+      queries.push({ id: def.id, sql: inlineAnalyticsQuery(sql, params) });
       const rows = await db.$queryRawUnsafe<
         { key: string | null; label?: string | null; value: number }[]
-      >(spec.breakdown, ...params);
+      >(sql, ...params);
       breakdown = rows.map((r) => ({
         key: r.key ?? 'none',
         ...(r.label ? { label: r.label } : {}),
@@ -630,8 +866,9 @@ export async function analyticsSummary(
     }
     let value: number;
     if (spec.total) {
-      queries.push({ id: def.id, sql: inlineAnalyticsQuery(spec.total, params) });
-      const [row] = await db.$queryRawUnsafe<{ value: number | null }[]>(spec.total, ...params);
+      const sql = prepare(spec.total);
+      queries.push({ id: def.id, sql: inlineAnalyticsQuery(sql, params) });
+      const [row] = await db.$queryRawUnsafe<{ value: number | null }[]>(sql, ...params);
       // A count is never null; a median or an average of nothing is, and is
       // served as not measured rather than as a silent 0 (2026-10-25).
       if (row && row.value === null) {
@@ -645,6 +882,28 @@ export async function analyticsSummary(
     metrics.push({ id: def.id, value, ...(breakdown ? { breakdown } : {}) });
   }
 
+  // Over time (2026-10-28): the same parameters plus the period.
+  const bucket = analyticsBucket(window.days);
+  const periods = bucketStarts(window, bucket);
+  const seriesParams = [...params, bucket];
+  const series: AnalyticsSeriesValue[] = [];
+  for (const def of ANALYTICS_SERIES) {
+    const spec = SERIES_SQL[def.id];
+    if (!spec) throw new Error(`analytics: no SQL for ${def.id}`);
+    const refusal = narrowingRefusal(spec, states, narrowing, present);
+    if (refusal) {
+      series.push({ id: def.id, periods, lines: null, unavailable: refusal });
+      continue;
+    }
+    const sql = prepare(spec.sql);
+    queries.push({ id: def.id, sql: inlineAnalyticsQuery(sql, seriesParams) });
+    const rows = await db.$queryRawUnsafe<{ bucket: string; key: string; value: number }[]>(
+      sql,
+      ...seriesParams,
+    );
+    series.push({ id: def.id, periods, lines: fillSeries(periods, Object.keys(def.keys), rows) });
+  }
+
   return {
     summary: {
       window: {
@@ -653,10 +912,14 @@ export async function analyticsSummary(
         days: window.days,
         time_zone: DISPLAY_TIME_ZONE,
       },
-      state_id: requestedState,
+      state_id: narrowing.state,
+      commodity: narrowing.commodity,
+      actor_type: narrowing.actorType,
       scope_states: states ? [...states] : null,
       generated_at: toIso(now),
       metrics,
+      bucket,
+      series,
       limitations: ANALYTICS_LIMITATIONS,
     },
     queries,

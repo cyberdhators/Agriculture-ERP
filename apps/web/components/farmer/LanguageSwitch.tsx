@@ -1,6 +1,7 @@
 'use client';
 
 import { useFarmerSession } from '@/lib/farmer-session';
+import { useArabicEnabled } from '@/lib/settings/client';
 import { t, type Language } from '@/lib/i18n';
 
 import styles from './farmer.module.css';
@@ -13,6 +14,8 @@ export function LanguageButtons({
   value: Language;
   onChange: (lang: Language) => void;
 }) {
+  // 2026-10-27: Arabic is offered while Settings say so.
+  const arabic = useArabicEnabled();
   return (
     <div className={styles.panelLang} role="group" aria-label={t('account.language', value)}>
       <button
@@ -23,16 +26,18 @@ export function LanguageButtons({
       >
         {t('language.name', 'en')}
       </button>
-      <button
-        type="button"
-        className={styles.panelLangBtn}
-        aria-pressed={value === 'ar'}
-        onClick={() => onChange('ar')}
-        lang="ar"
-        dir="rtl"
-      >
-        {t('language.arabicNative', 'en')}
-      </button>
+      {arabic ? (
+        <button
+          type="button"
+          className={styles.panelLangBtn}
+          aria-pressed={value === 'ar'}
+          onClick={() => onChange('ar')}
+          lang="ar"
+          dir="rtl"
+        >
+          {t('language.arabicNative', 'en')}
+        </button>
+      ) : null}
     </div>
   );
 }

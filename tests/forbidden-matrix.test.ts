@@ -28,6 +28,8 @@ import * as verificationQueue from '../apps/web/app/api/verification/queue/route
 import * as weather from '../apps/web/app/api/weather/route';
 import * as directoryItem from '../apps/web/app/api/directory-entries/[id]/route';
 import * as directory from '../apps/web/app/api/directory-entries/route';
+import * as announcementsList from '../apps/web/app/api/admin/announcements/route';
+import * as templatesList from '../apps/web/app/api/admin/message-templates/route';
 import * as learningItem from '../apps/web/app/api/learning-resources/[id]/route';
 import * as learningMove from '../apps/web/app/api/learning-resources/[id]/transition/route';
 import * as learning from '../apps/web/app/api/learning-resources/route';
@@ -40,6 +42,16 @@ import * as users from '../apps/web/app/api/users/route';
 import * as adminOrganizations from '../apps/web/app/api/admin/organizations/route';
 import * as adminOrgRecover from '../apps/web/app/api/admin/organizations/[id]/recover/route';
 import * as corrections from '../apps/web/app/api/admin/corrections/route';
+import * as adminMarketplace from '../apps/web/app/api/admin/marketplace/route';
+import * as adminMarketplaceRemoved from '../apps/web/app/api/admin/marketplace/removed/route';
+import * as adminMarketplaceRemove from '../apps/web/app/api/admin/marketplace/[kind]/[id]/remove/route';
+import * as adminOverview from '../apps/web/app/api/admin/overview/route';
+import * as adminAccounts from '../apps/web/app/api/admin/accounts/route';
+import * as adminAccountReveal from '../apps/web/app/api/admin/accounts/[kind]/[id]/reveal/route';
+import * as adminAccountDisable from '../apps/web/app/api/admin/accounts/disable/route';
+import * as adminAccountReenable from '../apps/web/app/api/admin/accounts/reenable/route';
+import * as adminSupport from '../apps/web/app/api/admin/support/route';
+import * as adminSupportEntries from '../apps/web/app/api/admin/support/[id]/entries/route';
 import { randomUUID } from 'node:crypto';
 import {
   FARMER_TEST_FAMILY,
@@ -51,6 +63,12 @@ import { removeStoredObject } from '../apps/web/lib/supabase/admin';
 import { VISIT_ATTACHMENT_BUCKET } from '../packages/shared/src/visit';
 import { makeTestPrisma, requireTestEnv } from './helpers/db';
 import { call } from './helpers/request';
+import * as staffInvitations from '../apps/web/app/api/admin/staff-invitations/route';
+import * as staffInvitationRevoke from '../apps/web/app/api/admin/staff-invitations/[id]/revoke/route';
+import * as mfaReset from '../apps/web/app/api/admin/staff-access/users/[id]/mfa-reset/route';
+import * as advisoryNotes from '../apps/web/app/api/admin/advisory-notes/route';
+import * as advisoryNoteReview from '../apps/web/app/api/admin/advisory-notes/[id]/review/route';
+import * as staffMfa from '../apps/web/app/api/staff/mfa/route';
 
 /**
  * ============================================================================
@@ -209,6 +227,73 @@ const principals = () => ({ admin, supervisor, read_only: readOnly, officer });
 
 /** Every route, the roles allowed, and how to call it. */
 const ROUTES = [
+  // 2026-10-28 (lane-security): staff invitations, two-step sign-in, official
+  // advisory notes. Each refuses every role it does not name.
+  {
+    name: 'GET /api/admin/staff-invitations',
+    mod: staffInvitations,
+    method: 'GET' as const,
+    allow: ['admin'],
+  },
+  {
+    name: 'POST /api/admin/staff-invitations',
+    mod: staffInvitations,
+    method: 'POST' as const,
+    allow: ['admin'],
+    body: () => ({
+      name: 'Zztest Invitee',
+      email: 'zztest-invitee@example.invalid',
+      role: 'admin',
+    }),
+  },
+  {
+    name: 'POST /api/admin/staff-invitations/:id/revoke',
+    mod: staffInvitationRevoke,
+    method: 'POST' as const,
+    allow: ['admin'],
+    params: () => ({ id: DUMMY_ID }),
+  },
+  {
+    name: 'POST /api/admin/staff-access/users/:id/mfa-reset',
+    mod: mfaReset,
+    method: 'POST' as const,
+    allow: ['admin'],
+    params: () => ({ id: DUMMY_ID }),
+    body: () => ({ reason: 'Zztest reason', password: 'zztest-not-a-password', confirm: true }),
+  },
+  {
+    name: 'GET /api/admin/advisory-notes',
+    mod: advisoryNotes,
+    method: 'GET' as const,
+    allow: ['admin'],
+  },
+  {
+    name: 'POST /api/admin/advisory-notes/:id/review',
+    mod: advisoryNoteReview,
+    method: 'POST' as const,
+    allow: ['admin'],
+    params: () => ({ id: DUMMY_ID }),
+    body: () => ({ action: 'publish' }),
+  },
+  {
+    name: 'GET /api/staff/mfa',
+    mod: staffMfa,
+    method: 'GET' as const,
+    allow: ['admin', 'supervisor', 'read_only'],
+  },
+  // 2026-10-27: official announcements and templates -- administrators only.
+  {
+    name: 'GET /api/admin/announcements',
+    mod: announcementsList,
+    method: 'GET' as const,
+    allow: ['admin'],
+  },
+  {
+    name: 'GET /api/admin/message-templates',
+    mod: templatesList,
+    method: 'GET' as const,
+    allow: ['admin'],
+  },
   {
     name: 'GET /api/me',
     mod: me,
@@ -711,6 +796,83 @@ const ROUTES = [
       reason_code: 'misleading_listing',
       note: 'Zztest correction note',
     }),
+  }, // 2026-10-28: the administration overview. Staff roles, then reports.view,
+  // which only an administrator holds without a grant -- so the test's
+  // supervisor and read-only principals (no grants) are refused.
+  {
+    name: 'GET /api/admin/overview',
+    mod: adminOverview,
+    method: 'GET' as const,
+    allow: ['admin'],
+  },
+  // 2026-10-28: the marketplace console. An administrator, then content.moderate.
+  // (The inspect route is in new-routes-matrix only: an admin asking for a
+  // post that does not exist is rightly 404, not the 200 "may, do" expects.)
+  {
+    name: 'GET /api/admin/marketplace',
+    mod: adminMarketplace,
+    method: 'GET' as const,
+    allow: ['admin'],
+  },
+  {
+    name: 'GET /api/admin/marketplace/removed',
+    mod: adminMarketplaceRemoved,
+    method: 'GET' as const,
+    allow: ['admin'],
+  },
+  {
+    name: 'POST /api/admin/marketplace/:kind/:id/remove',
+    mod: adminMarketplaceRemove,
+    method: 'POST' as const,
+    allow: ['admin'],
+    params: () => ({ kind: 'produce_listing', id: DUMMY_ID }),
+    body: () => ({ reason: 'Zztest removal reason' }),
+  },
+  // 2026-10-28: users and organizations, and support cases. Administrators
+  // only (then a permission every administrator holds, except re-enable,
+  // which needs a Super Admin). The single-record GETs are in
+  // new-routes-matrix only: a record that does not exist is rightly 404.
+  {
+    name: 'GET /api/admin/accounts',
+    mod: adminAccounts,
+    method: 'GET' as const,
+    allow: ['admin'],
+  },
+  {
+    name: 'POST /api/admin/accounts/:kind/:id/reveal',
+    mod: adminAccountReveal,
+    method: 'POST' as const,
+    allow: ['admin'],
+    params: () => ({ kind: 'farmer', id: DUMMY_ID }),
+    body: () => ({ field: 'phone' }),
+  },
+  {
+    name: 'POST /api/admin/accounts/disable',
+    mod: adminAccountDisable,
+    method: 'POST' as const,
+    allow: ['admin'],
+    body: () => ({ kind: 'farmer', id: DUMMY_ID, reason: 'Zztest disable reason' }),
+  },
+  {
+    name: 'POST /api/admin/accounts/reenable',
+    mod: adminAccountReenable,
+    method: 'POST' as const,
+    allow: ['admin'],
+    body: () => ({ kind: 'farmer', id: DUMMY_ID, reason: 'Zztest re-enable reason' }),
+  },
+  {
+    name: 'GET /api/admin/support',
+    mod: adminSupport,
+    method: 'GET' as const,
+    allow: ['admin'],
+  },
+  {
+    name: 'POST /api/admin/support/:id/entries',
+    mod: adminSupportEntries,
+    method: 'POST' as const,
+    allow: ['admin'],
+    params: () => ({ id: DUMMY_ID }),
+    body: () => ({ kind: 'note', body: 'Zztest note' }),
   },
 ];
 

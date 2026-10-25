@@ -31,6 +31,8 @@ export const PERMISSION_KEYS = [
   'audit.view',
   'settings.manage',
   'exports.identifiable',
+  // 2026-10-27: official announcements and message templates (Communications).
+  'communications.send',
 ] as const;
 
 export type PermissionKey = (typeof PERMISSION_KEYS)[number];
@@ -63,7 +65,14 @@ export const PRESET_PERMISSIONS: Readonly<Record<StaffPreset, readonly Permissio
   super_admin: PERMISSION_KEYS,
   // "Settings and staff, as assigned": manages staff presets within its scope,
   // the settings, and reads the trail and the reports it needs to do so.
-  administrator: ['staff.manage', 'settings.manage', 'audit.view', 'reports.view'],
+  // 2026-10-27: and official announcements, which reach every account.
+  administrator: [
+    'staff.manage',
+    'settings.manage',
+    'audit.view',
+    'reports.view',
+    'communications.send',
+  ],
   moderator_editor: ['content.moderate', 'content.publish'],
   analyst: ['reports.view'],
   support: ['support.handle'],
@@ -79,7 +88,7 @@ export const PRESET_LABELS: Readonly<Record<StaffPreset, string>> = {
 
 export const PRESET_DESCRIPTIONS: Readonly<Record<StaffPreset, string>> = {
   super_admin: 'Everything, including appointing other Super Admins.',
-  administrator: 'Settings and staff, as assigned.',
+  administrator: 'Settings, staff and official announcements, as assigned.',
   moderator_editor: 'Moderate content and listings.',
   analyst: 'View data and reports.',
   support: 'Assist users and resolve issues.',
@@ -95,6 +104,7 @@ export const PERMISSION_LABELS: Readonly<Record<PermissionKey, string>> = {
   'audit.view': 'View access logs and the audit trail',
   'settings.manage': 'Manage settings',
   'exports.identifiable': 'Export identifiable data',
+  'communications.send': 'Send official announcements and manage message templates',
 };
 
 /**
@@ -381,9 +391,11 @@ export const scopeOfGrantInput = (input: {
  * database trigger on the account tables; the others by the "me" routes and by
  * the Super Admin re-authentication step.
  *
- * `reauth_failed` is the only failed-password event: staff, farmers and buyers
- * all sign in in the browser, straight to Supabase, so no server sees a failed
- * sign-in. The one password check a server makes is re-authentication.
+ * `reauth_failed` is a wrong password at re-authentication. `sign_in_failed`
+ * (2026-10-28) is a wrong password at sign-in for an account that exists:
+ * the app's sign-in screens now sign in through POST /api/auth/sign-in, so a
+ * server sees each attempt. An identifier with no account is never recorded
+ * here (there is no account to record it against).
  */
 export const ACCESS_EVENTS = [
   'account_created',
@@ -391,6 +403,7 @@ export const ACCESS_EVENTS = [
   'sign_in',
   'return_session',
   'reauth_failed',
+  'sign_in_failed',
 ] as const;
 
 export type AccessEvent = (typeof ACCESS_EVENTS)[number];
@@ -401,6 +414,7 @@ export const ACCESS_EVENT_LABELS: Readonly<Record<AccessEvent, string>> = {
   sign_in: 'Sign-in',
   return_session: 'Return session',
   reauth_failed: 'Failed re-authentication',
+  sign_in_failed: 'Failed sign-in',
 };
 
 export const ACCESS_PRINCIPAL_KINDS = ['user', 'officer', 'buyer', 'farmer'] as const;
@@ -434,12 +448,17 @@ export function classifyVisit(input: {
   readonly lastSeenAt: Date | null;
   readonly now: Date;
   readonly signInAnnounced: boolean;
-}): Exclude<AccessEvent, 'account_created' | 'reauth_failed'> | null {
+  /**
+   * 2026-10-27 (settings phase 2): the inactivity threshold from Registration
+   * and recovery. Omitted, the specification's thirty minutes.
+   */
+  readonly inactivityMs?: number;
+}): Exclude<AccessEvent, 'account_created' | 'reauth_failed' | 'sign_in_failed'> | null {
   if (!input.firstSignInAt) return 'first_sign_in';
   if (input.signInAnnounced) return 'sign_in';
   if (!input.lastSeenAt) return 'return_session';
   const idle = input.now.getTime() - input.lastSeenAt.getTime();
-  return idle > RETURN_SESSION_INACTIVITY_MS ? 'return_session' : null;
+  return idle > (input.inactivityMs ?? RETURN_SESSION_INACTIVITY_MS) ? 'return_session' : null;
 }
 
 /**

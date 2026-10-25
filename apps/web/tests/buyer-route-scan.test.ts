@@ -80,6 +80,18 @@ const BUYER_OUTSIDE_ITS_TREE = [
   'advice/my-provider/application',
   'advice/my-provider/application/reply',
   'advice/my-provider/application/withdraw',
+  // 2026-10-28: an approved adviser's own official notes, keyed by the
+  // session's sign-in (its personal advice profile only).
+  'advice/my-provider/notes',
+  'advice/my-provider/notes/[id]',
+  // 2026-10-28: an organisation's advice profile and its shared advice inbox,
+  // for members holding advisory.handle (or profile.edit for the profile).
+  'organizations/[id]/advice-provider',
+  'organizations/[id]/advice-cases',
+  'organizations/[id]/advice-cases/handlers',
+  'organizations/[id]/advice-cases/[caseId]',
+  'organizations/[id]/advice-cases/[caseId]/action',
+  'organizations/[id]/advice-cases/[caseId]/messages',
   // ADVICE PHOTOS (2026-10-25): either participant of a case adds or removes
   // a photo; loadCase finds the case for its two participants only.
   'advice/cases/[id]/attachments/[attachmentId]',
@@ -90,6 +102,10 @@ const BUYER_OUTSIDE_ITS_TREE = [
   'advice/cases/[id]/referral',
   // 2026-10-20: an account deletes itself (its own records only).
   'account/delete',
+  // 2026-10-27: the account's own notification preferences (keyed by the
+  // session's sign-in) and the announcements delivered to its own inbox.
+  'account/notification-preferences',
+  'account/announcements',
   // IN-APP MESSAGING (2026-10-20): conversations belong to sign-ins, and every
   // read is filtered to the caller's own (lib/api/messaging.ts).
   'conversations',
@@ -118,6 +134,8 @@ const BUYER_OUTSIDE_ITS_TREE = [
   'services/mine',
   // 2026-10-21: "Contact CORWADO" is public; it names the buyer role only to
   // recognise a signed-in sender, and reads nothing but that sender's own phone.
+  // 2026-10-28: GET lists the session's OWN cases (keyed by its sign-in) with
+  // staff replies only -- never a note, evidence, staff name or priority.
   'support',
   // TEAM ACCESS (2026-10-27): organisational profiles any account may create
   // and act for. Every read is keyed by the session's sign-in and its ACTIVE

@@ -24,6 +24,47 @@ export type NoticeActor = Pick<AuditEntry, 'actorType' | 'actorId'>;
 
 export type NoticeRecipient = { authUserId: string | null; farmerId?: string | null };
 
+/**
+ * 2026-10-27: the notices that are ACTIVITY UPDATES, which a person may
+ * switch off in the app (notification preferences, `updates_in_app`). Every
+ * other notice -- an adviser decision, a restored account -- is essential and
+ * always sent.
+ */
+export const UPDATE_NOTICES: ReadonlySet<AccountNotice> = new Set<AccountNotice>([
+  'message_listing',
+  'message_buying_request',
+  'message_service',
+  'message_advice_case',
+  'advice_request_updated',
+  'advice_work_updated',
+  'advice_referral_proposed',
+]);
+
+/**
+ * Whether the account has switched activity updates off. Asks first whether
+ * the preferences table exists (migration 20261027110000), in a form that
+ * cannot fail, so a notice never fails -- and never takes its caller's
+ * change with it -- on a database that has not had the migration yet.
+ */
+async function updatesSwitchedOff(
+  tx: AuditTx,
+  authUserId: string | null,
+  farmerId: string | null,
+): Promise<boolean> {
+  const [present] = await tx.$queryRawUnsafe<{ present: boolean }[]>(
+    `SELECT to_regclass('public.notification_preference') IS NOT NULL AS present`,
+  );
+  if (!present?.present) return false;
+  const [row] = await tx.$queryRawUnsafe<{ off: boolean }[]>(
+    `SELECT NOT p.updates_in_app AS off FROM public.notification_preference p
+      WHERE p.auth_user_id = COALESCE(
+        $1::uuid, (SELECT f.auth_user_id FROM public.farmer f WHERE f.id = $2::uuid))`,
+    authUserId,
+    farmerId,
+  );
+  return row?.off === true;
+}
+
 export async function notifyAccount(
   tx: AuditTx,
   recipient: NoticeRecipient,
@@ -50,6 +91,12 @@ export async function notifyAccount(
   const farmerId = target?.farmer_id ?? null;
   const organizationId = farmerId ? null : (target?.buyer_organization_id ?? null);
   if (!farmerId && !organizationId) return false;
+  if (
+    UPDATE_NOTICES.has(notice) &&
+    (await updatesSwitchedOff(tx, recipient.authUserId, farmerId))
+  ) {
+    return false;
+  }
 
   const [row] = await tx.$queryRawUnsafe<{ id: string }[]>(
     `INSERT INTO public.notification (farmer_id, buyer_organization_id, channel, title, body)
@@ -134,10 +181,13 @@ export async function noticeIfFirstMessage(
     const members = await tx.$queryRawUnsafe<{ auth_user_id: string }[]>(
       `SELECT auth_user_id FROM public.organization_member
         WHERE organization_id = $1::uuid AND status = 'active' AND auth_user_id <> $2::uuid
-          AND (preset = 'administrator' OR 'inbox.read' = ANY (permissions))
+          AND (preset = 'administrator' OR $3 = ANY (permissions))
         ORDER BY joined_at LIMIT 20`,
       otherOrganization,
       sender,
+      // 2026-10-28: an advice request reaches the members who handle advice,
+      // not everyone who reads the organisation's inbox.
+      row.post_kind === 'advice_case' ? 'advisory.handle' : 'inbox.read',
     );
     for (const member of members) {
       await notifyAccount(tx, { authUserId: member.auth_user_id }, notice, actor);
@@ -160,10 +210,33 @@ export async function noticeIfFirstMessage(
  */
 export async function noticeCaseChanged(
   tx: AuditTx,
-  advice: { requester_auth_user_id: string; provider_auth_user_id: string },
+  advice: {
+    requester_auth_user_id: string;
+    provider_auth_user_id: string;
+    /** 2026-10-28: an organisation's case, and the member handling it. */
+    provider_organization_id?: string | null;
+    assigned_auth_user_id?: string | null;
+  },
   actedAs: 'requester' | 'provider',
   actor: NoticeActor,
 ): Promise<void> {
+  if (actedAs === 'requester' && advice.provider_organization_id) {
+    // An organisation's case: the member handling it, or -- while nobody is --
+    // the members who handle advice. Never whoever set the profile up.
+    const to = advice.assigned_auth_user_id
+      ? [{ auth_user_id: advice.assigned_auth_user_id }]
+      : await tx.$queryRawUnsafe<{ auth_user_id: string }[]>(
+          `SELECT auth_user_id FROM public.organization_member
+            WHERE organization_id = $1::uuid AND status = 'active'
+              AND (preset = 'administrator' OR 'advisory.handle' = ANY (permissions))
+            ORDER BY joined_at LIMIT 20`,
+          advice.provider_organization_id,
+        );
+    for (const member of to) {
+      await notifyAccount(tx, { authUserId: member.auth_user_id }, 'advice_work_updated', actor);
+    }
+    return;
+  }
   if (actedAs === 'provider') {
     await notifyAccount(
       tx,

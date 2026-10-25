@@ -14,9 +14,17 @@
  * is no shared-strings table to keep in step. One style beyond the default:
  * bold, for header rows.
  *
- * NOT HERE, ON PURPOSE: charts (editable charts come later), formulas, dates
- * as serial numbers (dates travel as text, YYYY-MM-DD, so no reader's locale
- * can reinterpret them), merged cells, compression.
+ * CHARTS (2026-10-28). A sheet may carry charts: real DrawingML charts
+ * (xl/charts/chartN.xml), placed by a drawing (xl/drawings/drawingN.xml) that
+ * the sheet points at through its own relationships. Each series REFERENCES
+ * cells on the same sheet ('Sheet'!$B$5:$B$20), so the chart is editable in
+ * Excel and follows the numbers when they change; a cache of the values is
+ * written too, so a reader that does not recalculate still draws it. Line and
+ * clustered-column charts only.
+ *
+ * NOT HERE, ON PURPOSE: formulas, dates as serial numbers (dates travel as
+ * text, YYYY-MM-DD, so no reader's locale can reinterpret them), merged
+ * cells, compression.
  *
  * Pure: no I/O, no clock unless none is given. Tested in xlsx.test.ts, which
  * reads the bytes back.
@@ -30,6 +38,31 @@ export interface Sheet {
   readonly rows: readonly (readonly Cell[])[];
   /** Column widths in characters, first column first. Optional. */
   readonly widths?: readonly number[];
+  /** Editable charts over this sheet's own cells (2026-10-28). Optional. */
+  readonly charts?: readonly ChartSpec[];
+}
+
+/**
+ * One chart. Every index is zero-based, as `rows` is. The series are the
+ * columns `valueCols`; each is named by its cell in `headerRow` and takes its
+ * values from `firstRow` to `lastRow`, against the categories in
+ * `categoryCol` over the same rows.
+ */
+export interface ChartSpec {
+  readonly kind: 'line' | 'column';
+  readonly title: string;
+  readonly headerRow: number;
+  readonly firstRow: number;
+  readonly lastRow: number;
+  readonly categoryCol: number;
+  readonly valueCols: readonly number[];
+  /** The top-left cell it is drawn from, and how many columns and rows it covers. */
+  readonly at: {
+    readonly col: number;
+    readonly row: number;
+    readonly cols: number;
+    readonly rows: number;
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -245,7 +278,8 @@ function cellXml(cell: Cell, ref: string): string {
   return `<c r="${ref}"${style} t="inlineStr"><is><t xml:space="preserve">${escapeXml(text)}</t></is></c>`;
 }
 
-export function sheetXml(sheet: Sheet): string {
+/** `drawingRelId`: the sheet's relationship to its drawing, when it carries charts. */
+export function sheetXml(sheet: Sheet, drawingRelId?: string): string {
   const cols =
     sheet.widths && sheet.widths.length > 0
       ? `<cols>${sheet.widths
@@ -258,7 +292,10 @@ export function sheetXml(sheet: Sheet): string {
       return `<row r="${r + 1}">${cells}</row>`;
     })
     .join('');
-  return `${XML_HEAD}<worksheet xmlns="${NS_MAIN}">${cols}<sheetData>${rows}</sheetData></worksheet>`;
+  // <drawing> comes after <sheetData> in the schema's order.
+  const drawing = drawingRelId ? `<drawing r:id="${drawingRelId}"/>` : '';
+  const ns = drawingRelId ? ` xmlns:r="${NS_REL}"` : '';
+  return `${XML_HEAD}<worksheet xmlns="${NS_MAIN}"${ns}>${cols}<sheetData>${rows}</sheetData>${drawing}</worksheet>`;
 }
 
 const STYLES_XML =
@@ -277,6 +314,136 @@ const STYLES_XML =
 export const XLSX_CONTENT_TYPE =
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
+// ---------------------------------------------------------------------------
+// CHARTS (2026-10-28)
+// ---------------------------------------------------------------------------
+
+const NS_CHART = 'http://schemas.openxmlformats.org/drawingml/2006/chart';
+const NS_DRAWING_MAIN = 'http://schemas.openxmlformats.org/drawingml/2006/main';
+const NS_SHEET_DRAWING = 'http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing';
+
+const CT_DRAWING = 'application/vnd.openxmlformats-officedocument.drawing+xml';
+const CT_CHART = 'application/vnd.openxmlformats-officedocument.drawingml.chart+xml';
+
+/** An absolute reference to cells on a named sheet: 'Name'!$A$1:$A$9. */
+export function sheetRef(sheetName: string, col: number, fromRow: number, toRow?: number): string {
+  const quoted = `'${sheetName.replace(/'/g, "''")}'`;
+  const cell = (r: number) => `$${columnName(col)}$${r + 1}`;
+  return toRow === undefined || toRow === fromRow
+    ? `${quoted}!${cell(fromRow)}`
+    : `${quoted}!${cell(fromRow)}:${cell(toRow)}`;
+}
+
+const cellText = (cell: Cell | undefined): string =>
+  cell === null || cell === undefined ? '' : typeof cell === 'object' ? cell.text : String(cell);
+
+/** Problems with a chart's ranges, or none. A chart over cells that are not there is refused. */
+export function chartProblems(sheet: Sheet, chart: ChartSpec): string[] {
+  const problems: string[] = [];
+  if (chart.valueCols.length === 0) problems.push('no series');
+  if (chart.firstRow > chart.lastRow) problems.push('no data rows');
+  if (chart.headerRow >= chart.firstRow) problems.push('the header is not above the data');
+  if (chart.lastRow >= sheet.rows.length) problems.push('data rows past the end of the sheet');
+  for (const col of chart.valueCols) {
+    for (let r = chart.firstRow; r <= Math.min(chart.lastRow, sheet.rows.length - 1); r++) {
+      const v = sheet.rows[r]?.[col];
+      if (typeof v !== 'number') problems.push(`${columnName(col)}${r + 1} is not a number`);
+    }
+  }
+  return problems;
+}
+
+function seriesXml(sheetName: string, sheet: Sheet, chart: ChartSpec, col: number, i: number) {
+  const n = chart.lastRow - chart.firstRow + 1;
+  const strCache = (values: string[]) =>
+    `<c:strCache><c:ptCount val="${values.length}"/>${values
+      .map((v, k) => `<c:pt idx="${k}"><c:v>${escapeXml(v)}</c:v></c:pt>`)
+      .join('')}</c:strCache>`;
+  const categories: string[] = [];
+  const values: number[] = [];
+  for (let r = chart.firstRow; r <= chart.lastRow; r++) {
+    categories.push(cellText(sheet.rows[r]?.[chart.categoryCol]));
+    const v = sheet.rows[r]?.[col];
+    values.push(typeof v === 'number' ? v : 0);
+  }
+  const name = cellText(sheet.rows[chart.headerRow]?.[col]);
+  const tx = `<c:tx><c:strRef><c:f>${escapeXml(sheetRef(sheetName, col, chart.headerRow))}</c:f>${strCache([name])}</c:strRef></c:tx>`;
+  const cat = `<c:cat><c:strRef><c:f>${escapeXml(
+    sheetRef(sheetName, chart.categoryCol, chart.firstRow, chart.lastRow),
+  )}</c:f>${strCache(categories)}</c:strRef></c:cat>`;
+  const val = `<c:val><c:numRef><c:f>${escapeXml(
+    sheetRef(sheetName, col, chart.firstRow, chart.lastRow),
+  )}</c:f><c:numCache><c:formatCode>General</c:formatCode><c:ptCount val="${n}"/>${values
+    .map((v, k) => `<c:pt idx="${k}"><c:v>${v}</c:v></c:pt>`)
+    .join('')}</c:numCache></c:numRef></c:val>`;
+  const head = `<c:idx val="${i}"/><c:order val="${i}"/>${tx}`;
+  // Element order is fixed by the schema: line (marker, cat, val, smooth),
+  // bar (invertIfNegative, cat, val).
+  return chart.kind === 'line'
+    ? `<c:ser>${head}<c:marker><c:symbol val="circle"/><c:size val="5"/></c:marker>${cat}${val}<c:smooth val="0"/></c:ser>`
+    : `<c:ser>${head}<c:invertIfNegative val="0"/>${cat}${val}</c:ser>`;
+}
+
+/** One chart part: a line or clustered-column chart with a title, axes and a legend. */
+export function chartXml(sheetName: string, sheet: Sheet, chart: ChartSpec): string {
+  const problems = chartProblems(sheet, chart);
+  if (problems.length > 0) {
+    throw new Error(`chartXml: "${chart.title}" -- ${problems.join('; ')}`);
+  }
+  const series = chart.valueCols
+    .map((col, i) => seriesXml(sheetName, sheet, chart, col, i))
+    .join('');
+  const axes = '<c:axId val="500000001"/><c:axId val="500000002"/>';
+  const plot =
+    chart.kind === 'line'
+      ? `<c:lineChart><c:grouping val="standard"/><c:varyColors val="0"/>${series}<c:marker val="1"/>${axes}</c:lineChart>`
+      : `<c:barChart><c:barDir val="col"/><c:grouping val="clustered"/><c:varyColors val="0"/>${series}<c:gapWidth val="80"/>${axes}</c:barChart>`;
+  return (
+    `${XML_HEAD}<c:chartSpace xmlns:c="${NS_CHART}" xmlns:a="${NS_DRAWING_MAIN}" xmlns:r="${NS_REL}">` +
+    '<c:roundedCorners val="0"/><c:chart>' +
+    `<c:title><c:tx><c:rich><a:bodyPr/><a:p><a:r><a:t>${escapeXml(chart.title)}</a:t></a:r></a:p></c:rich></c:tx><c:overlay val="0"/></c:title>` +
+    '<c:autoTitleDeleted val="0"/><c:plotArea><c:layout/>' +
+    plot +
+    '<c:catAx><c:axId val="500000001"/><c:scaling><c:orientation val="minMax"/></c:scaling>' +
+    '<c:delete val="0"/><c:axPos val="b"/><c:numFmt formatCode="General" sourceLinked="1"/>' +
+    '<c:tickLblPos val="nextTo"/><c:crossAx val="500000002"/><c:crosses val="autoZero"/>' +
+    '<c:auto val="1"/><c:lblAlgn val="ctr"/><c:lblOffset val="100"/><c:noMultiLvlLbl val="0"/></c:catAx>' +
+    '<c:valAx><c:axId val="500000002"/><c:scaling><c:orientation val="minMax"/></c:scaling>' +
+    '<c:delete val="0"/><c:axPos val="l"/><c:majorGridlines/><c:numFmt formatCode="General" sourceLinked="1"/>' +
+    '<c:tickLblPos val="nextTo"/><c:crossAx val="500000001"/><c:crosses val="autoZero"/>' +
+    '<c:crossBetween val="between"/></c:valAx>' +
+    '</c:plotArea><c:legend><c:legendPos val="b"/><c:overlay val="0"/></c:legend>' +
+    '<c:plotVisOnly val="1"/><c:dispBlanksAs val="gap"/></c:chart></c:chartSpace>'
+  );
+}
+
+/** A drawing placing one chart per anchor; chart k is relationship rId(k+1). */
+export function drawingXml(charts: readonly ChartSpec[]): string {
+  const anchors = charts
+    .map((chart, k) => {
+      const { col, row, cols, rows } = chart.at;
+      const marker = (tag: string, c: number, r: number) =>
+        `<xdr:${tag}><xdr:col>${c}</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>${r}</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:${tag}>`;
+      return (
+        '<xdr:twoCellAnchor>' +
+        marker('from', col, row) +
+        marker('to', col + cols, row + rows) +
+        '<xdr:graphicFrame macro="">' +
+        `<xdr:nvGraphicFramePr><xdr:cNvPr id="${k + 2}" name="${escapeXml(`Chart ${k + 1}`)}"/><xdr:cNvGraphicFramePr/></xdr:nvGraphicFramePr>` +
+        '<xdr:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/></xdr:xfrm>' +
+        `<a:graphic><a:graphicData uri="${NS_CHART}"><c:chart xmlns:c="${NS_CHART}" r:id="rId${k + 1}"/></a:graphicData></a:graphic>` +
+        '</xdr:graphicFrame><xdr:clientData/></xdr:twoCellAnchor>'
+      );
+    })
+    .join('');
+  return `${XML_HEAD}<xdr:wsDr xmlns:xdr="${NS_SHEET_DRAWING}" xmlns:a="${NS_DRAWING_MAIN}" xmlns:r="${NS_REL}">${anchors}</xdr:wsDr>`;
+}
+
+const relsXml = (rels: readonly { id: string; type: string; target: string }[]): string =>
+  `${XML_HEAD}<Relationships xmlns="${NS_PKG_REL}">` +
+  rels.map((r) => `<Relationship Id="${r.id}" Type="${r.type}" Target="${r.target}"/>`).join('') +
+  '</Relationships>';
+
 /** The workbook as bytes. At least one sheet; names are made safe here. */
 export function buildXlsx(sheets: readonly Sheet[], when: Date = new Date()): Uint8Array {
   if (sheets.length === 0) throw new Error('buildXlsx: a workbook needs at least one sheet');
@@ -284,6 +451,48 @@ export function buildXlsx(sheets: readonly Sheet[], when: Date = new Date()): Ui
   const names = sheets.map((s) => safeSheetName(s.name, taken));
   const encoder = new TextEncoder();
   const part = (name: string, xml: string): ZipEntry => ({ name, data: encoder.encode(xml) });
+
+  // Drawings are numbered by the sheets that have charts; charts across the workbook.
+  const chartParts: ZipEntry[] = [];
+  const overrides: string[] = [];
+  const sheetParts: ZipEntry[] = [];
+  let drawingNo = 0;
+  let chartNo = 0;
+  sheets.forEach((sheet, i) => {
+    const charts = sheet.charts ?? [];
+    if (charts.length === 0) {
+      sheetParts.push(part(`xl/worksheets/sheet${i + 1}.xml`, sheetXml(sheet)));
+      return;
+    }
+    drawingNo += 1;
+    sheetParts.push(part(`xl/worksheets/sheet${i + 1}.xml`, sheetXml(sheet, 'rId1')));
+    sheetParts.push(
+      part(
+        `xl/worksheets/_rels/sheet${i + 1}.xml.rels`,
+        relsXml([
+          { id: 'rId1', type: `${NS_REL}/drawing`, target: `../drawings/drawing${drawingNo}.xml` },
+        ]),
+      ),
+    );
+    const drawingRels: { id: string; type: string; target: string }[] = [];
+    for (const [k, chart] of charts.entries()) {
+      chartNo += 1;
+      chartParts.push(part(`xl/charts/chart${chartNo}.xml`, chartXml(names[i]!, sheet, chart)));
+      overrides.push(
+        `<Override PartName="/xl/charts/chart${chartNo}.xml" ContentType="${CT_CHART}"/>`,
+      );
+      drawingRels.push({
+        id: `rId${k + 1}`,
+        type: `${NS_REL}/chart`,
+        target: `../charts/chart${chartNo}.xml`,
+      });
+    }
+    chartParts.push(part(`xl/drawings/drawing${drawingNo}.xml`, drawingXml(charts)));
+    chartParts.push(part(`xl/drawings/_rels/drawing${drawingNo}.xml.rels`, relsXml(drawingRels)));
+    overrides.push(
+      `<Override PartName="/xl/drawings/drawing${drawingNo}.xml" ContentType="${CT_DRAWING}"/>`,
+    );
+  });
 
   const contentTypes =
     `${XML_HEAD}<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">` +
@@ -297,6 +506,7 @@ export function buildXlsx(sheets: readonly Sheet[], when: Date = new Date()): Ui
       )
       .join('') +
     '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>' +
+    overrides.join('') +
     '</Types>';
 
   const rootRels =
@@ -329,7 +539,8 @@ export function buildXlsx(sheets: readonly Sheet[], when: Date = new Date()): Ui
       part('xl/workbook.xml', workbook),
       part('xl/_rels/workbook.xml.rels', workbookRels),
       part('xl/styles.xml', STYLES_XML),
-      ...sheets.map((s, i) => part(`xl/worksheets/sheet${i + 1}.xml`, sheetXml(s))),
+      ...sheetParts,
+      ...chartParts,
     ],
     when,
   );

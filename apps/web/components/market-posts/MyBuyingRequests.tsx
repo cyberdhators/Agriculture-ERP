@@ -138,6 +138,7 @@ export function MyBuyingRequests({
                 lang={lang}
                 onAction={(input) => act(r, input)}
                 endLabel={t('requests.neededBy', lang)}
+                endsOn={r.needed_by}
               />
               <div className={styles.cardFoot}>
                 <Link href={`${basePath}/${r.id}/edit`} className="small">

@@ -10,7 +10,8 @@ import {
 import { audited, writeAudit } from '../../../lib/api/audit';
 import { ApiFailure, internalError, unprocessable } from '../../../lib/api/errors';
 import { requireRole, type Authenticated } from '../../../lib/api/require-role';
-import { created, defineRoutes } from '../../../lib/api/route';
+import { created, defineRoutes, ok } from '../../../lib/api/route';
+import { presentOwnCase, type OwnCaseRow } from '../../../lib/api/support';
 import { prisma } from '../../../lib/db';
 
 /**
@@ -51,6 +52,34 @@ async function senderOf(request: Request): Promise<Authenticated | null> {
 }
 
 export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
+  /**
+   * GET /api/support -- the signed-in farmer's or buyer's OWN cases
+   * (2026-10-28), newest first, at most 50: the case number, their topic and
+   * words, where it stands, and staff REPLIES only. Never an internal note,
+   * evidence, a staff member's name, the priority or the assignee. Keyed by
+   * the session's sign-in; nobody else's cases are read.
+   */
+  GET: {
+    roles: [FARMER_ROLE, BUYER_ROLE],
+    handler: async ({ auth }) => {
+      const rows = await prisma.$queryRawUnsafe<OwnCaseRow[]>(
+        `SELECT sm.id, sm.case_number, sm.topic, sm.status, sm.body, sm.created_at,
+                sm.updated_at,
+                (SELECT json_agg(json_build_object('body', e.body, 'created_at', e.created_at)
+                                 ORDER BY e.created_at, e.id)
+                   FROM public.support_case_entry e
+                  WHERE e.support_message_id = sm.id AND e.kind = 'reply'
+                    AND e.deleted_at IS NULL) AS replies
+           FROM public.support_message sm
+          WHERE sm.from_auth_user_id = $1::uuid AND sm.deleted_at IS NULL
+          ORDER BY sm.created_at DESC, sm.id DESC
+          LIMIT 50`,
+        auth.principal.authUserId,
+      );
+      return ok(rows.map(presentOwnCase), { 'cache-control': 'no-store' });
+    },
+  },
+
   POST: {
     roles: 'public',
     bodySchema: supportMessageSchema,
@@ -85,11 +114,11 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
 
       const fromKind = sender ? (sender.principal.kind as 'farmer' | 'buyer') : 'visitor';
       const row = await audited(prisma, async (tx) => {
-        const [inserted] = await tx.$queryRawUnsafe<{ id: string }[]>(
+        const [inserted] = await tx.$queryRawUnsafe<{ id: string; case_number: bigint }[]>(
           `INSERT INTO public.support_message
              (from_auth_user_id, from_kind, name, phone, email, topic, body, source_digest)
            VALUES ($1::uuid, $2, $3, $4, $5, $6, $7, $8)
-           RETURNING id`,
+           RETURNING id, case_number`,
           sender?.principal.authUserId ?? null,
           fromKind,
           body.name,
@@ -115,8 +144,9 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
         return inserted;
       });
 
-      // The sender learns it arrived, and nothing to enumerate or poll.
-      return created({ received: true, id: row.id });
+      // The sender learns it arrived and its case number (2026-10-28), which
+      // they quote; a signed-in sender reads its progress through GET.
+      return created({ received: true, id: row.id, case_number: Number(row.case_number) });
     },
   },
 });

@@ -8,9 +8,11 @@ import { PageHead } from '@/components/farmer/AccountShell';
 import { Button, Field, Input, Notice, Select, Textarea } from '@/components/ui';
 import { useFarmerSession } from '@/lib/farmer-session';
 import { t, type TKey } from '@/lib/i18n';
+import { usePublicSettings } from '@/lib/settings/client';
 
 import styles from '@/components/farmer/farmer.module.css';
 
+import { MySupportCases } from './MySupportCases';
 import { SupportContactsCard } from './SupportContacts';
 
 const TOPIC_KEY: Record<SupportTopic, TKey> = {
@@ -39,6 +41,8 @@ const FAQ: ReadonlyArray<[TKey, TKey]> = [
  */
 export function HelpPage() {
   const { language, farmer } = useFarmerSession();
+  // 2026-10-27 (settings phase 2): the appeal window, from Settings.
+  const publicSettings = usePublicSettings();
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
@@ -48,6 +52,9 @@ export function HelpPage() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
+  // 2026-10-28: the new case's number, and a nudge for "Your messages" to reload.
+  const [caseNumber, setCaseNumber] = useState<number | null>(null);
+  const [sentCount, setSentCount] = useState(0);
 
   useEffect(() => {
     if (farmer) {
@@ -108,6 +115,11 @@ export function HelpPage() {
         setError(json.error?.fields ? null : (json.error?.message ?? t('help.failed', language)));
         return;
       }
+      const created = (await response.json().catch(() => ({}))) as {
+        data?: { case_number?: number };
+      };
+      setCaseNumber(created.data?.case_number ?? null);
+      setSentCount((n) => n + 1);
       setSent(true);
       setBody('');
     } catch {
@@ -143,6 +155,11 @@ export function HelpPage() {
             <>
               <Notice kind="success">
                 <p className="small">{t('help.sent', language)}</p>
+                {caseNumber !== null ? (
+                  <p className="small">
+                    {t('help.caseSent', language)} <strong>#{caseNumber}</strong>.
+                  </p>
+                ) : null}
               </Notice>
               <div>
                 <Button variant="secondary" onClick={() => setSent(false)}>
@@ -209,7 +226,13 @@ export function HelpPage() {
               </Field>
               {/* 2026-10-26: an appeal -- a suspended person is signed out, so their phone finds the account. */}
               {topic === 'appeal' ? (
-                <p className="small muted">{t('help.appealHint', language)}</p>
+                <p className="small muted">
+                  {t('help.appealHint', language)}{' '}
+                  {t('help.appealWindow', language).replace(
+                    '{n}',
+                    String(publicSettings?.appeal_window_days ?? 30),
+                  )}
+                </p>
               ) : null}
               <Field label={t('help.body', language)} error={fields.body}>
                 {(ids) => (
@@ -229,6 +252,9 @@ export function HelpPage() {
             </form>
           )}
         </section>
+
+        {/* 2026-10-28: the signed-in person's own cases and CORWADO's replies. */}
+        <MySupportCases language={language} refresh={sentCount} />
       </div>
     </>
   );

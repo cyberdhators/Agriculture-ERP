@@ -208,6 +208,9 @@ Exact. No discretion.
 | 422    | `unprocessable`          | Input was valid but violates a business rule.                                                                            | Yes            |
 | 500    | `internal_error`         | Unexpected.                                                                                                              | Yes            |
 | 503    | `auth_unavailable`       | The sign-in service could not be consulted, so nothing is known about the session. Not a session failure.                | Yes            |
+| 403    | `mfa_required`           | A staff account with an authenticator, on a session that has not passed the code step (2026-10-28).                      | Yes            |
+| 403    | `mfa_enrolment_required` | An administrator without an authenticator, when STAFF_MFA_ENFORCEMENT is `required` (2026-10-28).                        | Yes            |
+| 429    | `rate_limited`           | Too many failed sign-ins for one identifier, or attempts from one address. Carries `Retry-After` (2026-10-28).           | Yes            |
 
 **The "Emitted today?" column is part of the contract.** A code marked _No_ is
 documented, agreed and deliberately unreachable — no route can currently produce
@@ -258,6 +261,9 @@ character for character.
 | `unsupported_media_type` | Send the request as application/json.                                       |
 | `internal_error`         | Something went wrong. Please try again.                                     |
 | `auth_unavailable`       | The sign-in service could not be reached. Try again in a moment.            |
+| `mfa_required`           | Enter the code from your authenticator app to continue.                     |
+| `mfa_enrolment_required` | Set up two-step sign-in to continue.                                        |
+| `rate_limited`           | Too many attempts. Wait a few minutes and try again.                        |
 
 None of these is templated. Nothing is interpolated into any of them.
 
@@ -399,7 +405,7 @@ character.
 | `organization_own_post`                 | This post belongs to your organisation. Its messages come to the organisation's shared inbox.                                 |
 | `organization_use_leave`                | To end your own access, use Leave organisation.                                                                               |
 | Rule                                    | Exact message                                                                                                                 |
-| ----------------------------------      | ----------------------------------------------------------------------------------------------------------------------------- |
+| ---                                     | ---                                                                                                                           |
 | `phone_already_registered`              | That phone number is already registered to another officer.                                                                   |
 | `account_already_exists`                | An account already exists for that address.                                                                                   |
 | `last_admin_cannot_be_removed`          | This is the only administrator account. Create another administrator before removing this one.                                |
@@ -509,6 +515,12 @@ character.
 | `notice_version_not_newer`              | Choose a version number higher than the one already published for this notice and language.                                   |
 | `notice_not_draft`                      | Only a draft can be edited, published or discarded. A published or retired notice stays as it was.                            |
 | `correction_already_open`               | A correction has already been requested for this post and is waiting for its owner.                                           |
+| `account_already_disabled`              | This account is already disabled.                                                                                             |
+| `account_not_disabled`                  | This account is not disabled. There is nothing to re-enable.                                                                  |
+| `account_disabled_restore`              | This account is disabled, not just suspended. Only a Super Admin can restore it, with a reason.                               |
+| `support_case_no_back_to_new`           | A case cannot go back to new. Choose in progress or waiting.                                                                  |
+| `support_case_resolution_required`      | Write a resolution note before resolving or closing a case.                                                                   |
+| `support_case_assignee_not_staff`       | That person cannot be made responsible for support cases.                                                                     |
 | `account_block_self`                    | You cannot block yourself.                                                                                                    |
 | `account_block_not_found`               | That block has already been lifted.                                                                                           |
 | `account_block_personal_only`           | Block people from your own messages. In an organisation's inbox, close the conversation instead.                              |
@@ -517,6 +529,30 @@ character.
 | `email_code_too_many_tries`             | Too many wrong tries. Ask for a new code.                                                                                     |
 | `email_code_wrong`                      | That code is not right. Check the email and try again.                                                                        |
 | `email_not_verified`                    | Confirm your email address with the emailed code first.                                                                       |
+| `announcement_not_draft`                | Only a draft announcement can be edited, sent or discarded. A sent announcement stays as it was.                              |
+| `announcement_recipients_changed`       | The recipients changed since the preview. Preview again, check the new count, then send.                                      |
+| `announcement_no_recipients`            | Nobody in this scope can be reached on the chosen channels. Change the scope or the channels.                                 |
+| `announcement_not_sending`              | This announcement has nothing waiting to be sent.                                                                             |
+| `announcement_nothing_to_retry`         | No failed deliveries are waiting to be retried.                                                                               |
+| `announcement_state_unknown`            | Choose a state from the list.                                                                                                 |
+| `template_inactive`                     | Choose an active template. A draft or archived template cannot be used to send.                                               |
+| `template_title_mismatch`               | An SMS template has no title, and an in-app or email template needs one.                                                      |
+| `template_sms_too_long`                 | An SMS can be at most 3 parts: 459 plain characters, or 201 with Arabic or special ones.                                      |
+| `minimum_age_not_met`                   | You must be older to register for this service. Ask your extension officer for help.                                          |
+| `reference_value_archived`              | That choice is no longer offered for new entries. Choose another from the list.                                               |
+| `staff_invitation_pending`              | An invitation to that address is already waiting. Withdraw it before sending another.                                         |
+| `staff_invitation_not_pending`          | This invitation has already been used, withdrawn or has expired. Ask CORWADO for a new one.                                   |
+| `staff_direct_create_super_admin_only`  | Only a Super Admin can create a staff account with a password. Send an invitation instead.                                    |
+| `mfa_reset_own`                         | You cannot reset your own two-step sign-in. Ask another Super Admin.                                                          |
+| `mfa_not_enrolled`                      | This account has no authenticator to reset.                                                                                   |
+| `mfa_factor_not_verified`               | No confirmed authenticator was found. Enter a code from the app to confirm it first.                                          |
+| `advisory_note_not_approved`            | Only an approved adviser whose approval is not suspended can submit official advisory notes.                                  |
+| `advisory_note_not_allowed`             | That change cannot be made to this note as it stands. Reload it to see where it is.                                           |
+| `org_advice_admin_only`                 | Only an administrator of the organisation can give a request to someone else. Take it yourself if it is unassigned.           |
+| `org_advice_assignee_invalid`           | That member cannot take advice requests for this organisation. Choose a member who handles advice.                            |
+| `org_advice_already_assigned`           | Someone else in the organisation has already taken this request.                                                              |
+| `org_advice_not_assignee`               | This request is being handled by someone else in the organisation.                                                            |
+| `org_advice_accept_first`               | Accept this request before replying to it or closing it.                                                                      |
 
 **A route names a rule; it never writes a sentence.** `conflict()` and
 `unprocessable()` take a key from this registry, not a string. That is how the
@@ -686,10 +722,42 @@ change.
 | `account.password_recovered`                  |
 | `listing.correction_requested`                |
 | `listing.correction_addressed`                |
+| `account.disabled`                            |
+| `account.reenabled`                           |
+| `account.contact_revealed`                    |
+| `listing.removed`                             |
+| `support_case.updated`                        |
+| `support_case.replied`                        |
 | `account.blocked`                             |
 | `account.unblocked`                           |
 | `post.expiry_reminder_sent`                   |
 | `acknowledgement.recorded`                    |
+| `message_template.created`                    |
+| `message_template.updated`                    |
+| `message_template.status_changed`             |
+| `announcement.drafted`                        |
+| `announcement.draft_edited`                   |
+| `announcement.draft_discarded`                |
+| `announcement.queued`                         |
+| `announcement.batch_sent`                     |
+| `announcement.retry_queued`                   |
+| `announcement.completed`                      |
+| `notification_preference.updated`             |
+| `staff.invited`                               |
+| `staff.invitation_revoked`                    |
+| `staff.invitation_accepted`                   |
+| `staff.mfa_enrolled`                          |
+| `staff.mfa_reset`                             |
+| `adviser_approval.suspended`                  |
+| `adviser_approval.restored`                   |
+| `advisory_note.submitted`                     |
+| `advisory_note.withdrawn`                     |
+| `advisory_note.returned`                      |
+| `advisory_note.published`                     |
+| `advisory_note.unpublished`                   |
+| `advice_case.assigned`                        |
+| `advice_case.accepted`                        |
+| `advice_case.released`                        |
 
 `before` and `after` hold **changed fields only**, never whole rows, and never a
 password, token, authentication identifier, national id, phone, email, given
@@ -922,8 +990,29 @@ These are also exact.
 | Contact CORWADO: name                      | Give your name, 2 to 120 characters.                                                            |
 | Contact CORWADO: topic not on list         | Choose account, marketplace, messages, technical, appeal or other.                              |
 | Contact CORWADO: message length            | Write your message, 10 to 2000 characters.                                                      |
-| Support list: status not on list           | Choose new or done.                                                                             |
-| Support message: status other than done    | A message can only be marked done.                                                              |
+| Support list: status not on list           | Choose new, in progress, waiting, resolved or closed.                                           |
+| Support case: type not on list             | Choose technical issue, complaint, appeal or enquiry.                                           |
+| Support case: priority not on list         | Choose low, normal, high or urgent.                                                             |
+| Support case: assignee not a staff id      | Choose a staff member from the list.                                                            |
+| Support case: resolution length            | Write the resolution in 1 to 2000 characters.                                                   |
+| Support case: change with no field         | Choose something to change.                                                                     |
+| Support case entry: kind not on list       | Choose reply, note or evidence.                                                                 |
+| Support case entry: body length            | Write 1 to 2000 characters.                                                                     |
+| Support case entry: link not a web address | Give a web address starting http:// or https://, at most 500 characters.                        |
+| Support case entry: evidence with no link  | Evidence needs a link.                                                                          |
+| Support list: search too long              | Search with at most 120 characters.                                                             |
+| Overview: actor type not on list           | Choose an actor type from the list.                                                             |
+| Marketplace console: tab not on list       | Choose produce, inputs, buying requests, services or inactive.                                  |
+| Marketplace console: status not on list    | Choose active, paused, expired, withdrawn or completed.                                         |
+| Marketplace console: category not on list  | Choose a category or a service type from the list.                                              |
+| Marketplace console: flag not on list      | Choose reported or correction requested.                                                        |
+| Marketplace console: kind not on list      | Choose a product listing, a buying request or a service.                                        |
+| Marketplace console: search too long       | Search with at most 100 characters.                                                             |
+| Accounts list: kind not on list            | Choose people or organisations.                                                                 |
+| Accounts list: sign-in not yes or no       | Choose yes or no.                                                                               |
+| Accounts list: status not on list          | Choose active, suspended, disabled or closed.                                                   |
+| Accounts list: date not YYYY-MM-DD         | Give the date as YYYY-MM-DD.                                                                    |
+| Account contact reveal: field              | Choose phone or email.                                                                          |
 | Advice profile: name length                | A name for your advice profile is 2 to 120 characters.                                          |
 | Advice profile: kind not on list           | Choose adviser, institute, research or training body, advisory organisation or other.           |
 | Advice profile: description length         | Describe the advice you offer in 10 to 2000 characters.                                         |
@@ -965,6 +1054,8 @@ These are also exact.
 | Analytics: window ends before start        | The window ends before it starts.                                                               |
 | Analytics: window over 366 days            | A window can be at most 366 days.                                                               |
 | Analytics: state not a state id            | Choose a state from the list.                                                                   |
+| Analytics: commodity not on list           | Choose a commodity from the list.                                                               |
+| Analytics: actor type not on list          | Choose an actor type from the list.                                                             |
 | Public profile: name length                | A name for your public profile is 2 to 120 characters.                                          |
 | Public profile: activity not on list       | Choose what you do from the list.                                                               |
 | Public profile: about too long             | Keep the description to 1000 characters.                                                        |
@@ -985,16 +1076,39 @@ These are also exact.
 | Adviser application: affiliation           | An affiliation can be at most 300 characters.                                                   |
 | Adviser application: not ticked            | Tick the box to confirm this statement.                                                         |
 | Adviser clarification: answer              | Write your answer in 5 to 2000 characters.                                                      |
-| Adviser decision: not on list              | Choose request clarification, approve, decline or revoke.                                       |
+| Adviser decision: not on list              | Choose request clarification, approve, decline, revoke, suspend or restore.                     |
 | Adviser decision: reason                   | Give a reason of 5 to 1000 characters.                                                          |
-| Adviser queue: status not on list          | Choose submitted, clarification requested, approved, declined, revoked or withdrawn.            |
+| Adviser queue: status not on list          | Choose submitted, clarification requested, approved, suspended, declined, revoked or withdrawn. |
+| Adviser suspension: days                   | Choose how long the suspension lasts: 1 to 365 days.                                            |
+| Adviser approval: nothing ticked           | Tick at least one thing you checked before approving.                                           |
+| Adviser approval: check not on list        | Choose what was checked from the list.                                                          |
+| Adviser decision: field not for it         | This field is not used for that decision.                                                       |
+| Advisory note: title                       | Give the note a title of 5 to 200 characters.                                                   |
+| Advisory note: text                        | Write the note in 50 to 5000 characters.                                                        |
+| Advisory note: subjects                    | Choose one to four subjects from the list.                                                      |
+| Advisory note: language                    | Choose the language the note is written in.                                                     |
+| Advisory note review: action               | Choose return, publish or unpublish.                                                            |
+| Advisory note review: note                 | Give a note of 5 to 1000 characters.                                                            |
+| Two-step sign-in: code shape               | Enter the six-digit code from your authenticator app.                                           |
+| Two-step reset: not ticked                 | Tick the box to confirm.                                                                        |
+| Two-step reset: reason                     | Give a reason of at least five characters. It is kept in the audit trail.                       |
+| Two-step reset: reason too long            | Keep the reason under 500 characters.                                                           |
+| Two-step reset: own password               | Enter your own password to confirm.                                                             |
+| Sign-in: no identifier                     | Enter your email address or phone number.                                                       |
+| Sign-in: no password                       | Enter your password.                                                                            |
+| Staff invitation: token                    | This invitation link is not complete. Open the link from the email again.                       |
+| Organisation advice: action                | Choose claim, assign, accept, release or close.                                                 |
+| Organisation advice: no member             | Choose the member to assign this request to.                                                    |
+| Organisation advice: outcome               | Choose referred or closed unresolved.                                                           |
+| Organisation advice: field not for it      | This field is not used for that change.                                                         |
+| Organisation advice: status                | Choose open, in progress or closed.                                                             |
 | Advice photo: type not accepted            | Choose a JPEG, PNG or WebP photo.                                                               |
 | Advice photo: over 2 MB                    | A photo on an advice request can be at most 2 MB.                                               |
 | Advice photo: size not whole bytes         | Give the photo size as a whole number of bytes.                                                 |
 | Advice photo: upload id malformed          | The upload identifier is not in the expected form.                                              |
 | Advice referral: action not on list        | Choose accept, decline or withdraw.                                                             |
 | Advice referral: share not true/false      | Say whether to share your photos: true or false.                                                |
-| Setting: key not on list                   | Choose identity, support, maintenance or reason codes.                                          |
+| Setting: key not on list                   | Choose a settings section from the list.                                                        |
 | Setting: expected version                  | Send the version you loaded, as a whole number.                                                 |
 | Identity: service name length              | Give a service name of 2 to 80 characters.                                                      |
 | Identity: About too long                   | Keep the About text to 2000 characters.                                                         |
@@ -1035,7 +1149,7 @@ These are also exact.
 | Team: public title too long                | Keep the title to 80 characters.                                                                |
 | Team: edit changes nothing                 | Change something before saving.                                                                 |
 | Situation                                  | Exact reason                                                                                    |
-| ---------------------------------------    | ----------------------------------------------------------------------------------------------- |
+| ---                                        | ---                                                                                             |
 | A field the request may not send           | This field is not recognised.                                                                   |
 | The body is not an object at all           | The request was not sent in the expected form.                                                  |
 | Page marker: not text                      | The page marker must be text.                                                                   |
@@ -1253,8 +1367,7 @@ These are also exact.
 | Contact CORWADO: name                      | Give your name, 2 to 120 characters.                                                            |
 | Contact CORWADO: topic not on list         | Choose account, marketplace, messages, technical, appeal or other.                              |
 | Contact CORWADO: message length            | Write your message, 10 to 2000 characters.                                                      |
-| Support list: status not on list           | Choose new or done.                                                                             |
-| Support message: status other than done    | A message can only be marked done.                                                              |
+| Support list: status not on list           | Choose new, in progress, waiting, resolved or closed.                                           |
 | Advice profile: name length                | A name for your advice profile is 2 to 120 characters.                                          |
 | Advice profile: kind not on list           | Choose adviser, institute, research or training body, advisory organisation or other.           |
 | Advice profile: description length         | Describe the advice you offer in 10 to 2000 characters.                                         |
@@ -1296,6 +1409,8 @@ These are also exact.
 | Analytics: window ends before start        | The window ends before it starts.                                                               |
 | Analytics: window over 366 days            | A window can be at most 366 days.                                                               |
 | Analytics: state not a state id            | Choose a state from the list.                                                                   |
+| Analytics: commodity not on list           | Choose a commodity from the list.                                                               |
+| Analytics: actor type not on list          | Choose an actor type from the list.                                                             |
 | Public profile: name length                | A name for your public profile is 2 to 120 characters.                                          |
 | Public profile: activity not on list       | Choose what you do from the list.                                                               |
 | Public profile: about too long             | Keep the description to 1000 characters.                                                        |
@@ -1316,16 +1431,39 @@ These are also exact.
 | Adviser application: affiliation           | An affiliation can be at most 300 characters.                                                   |
 | Adviser application: not ticked            | Tick the box to confirm this statement.                                                         |
 | Adviser clarification: answer              | Write your answer in 5 to 2000 characters.                                                      |
-| Adviser decision: not on list              | Choose request clarification, approve, decline or revoke.                                       |
+| Adviser decision: not on list              | Choose request clarification, approve, decline, revoke, suspend or restore.                     |
 | Adviser decision: reason                   | Give a reason of 5 to 1000 characters.                                                          |
-| Adviser queue: status not on list          | Choose submitted, clarification requested, approved, declined, revoked or withdrawn.            |
+| Adviser queue: status not on list          | Choose submitted, clarification requested, approved, suspended, declined, revoked or withdrawn. |
+| Adviser suspension: days                   | Choose how long the suspension lasts: 1 to 365 days.                                            |
+| Adviser approval: nothing ticked           | Tick at least one thing you checked before approving.                                           |
+| Adviser approval: check not on list        | Choose what was checked from the list.                                                          |
+| Adviser decision: field not for it         | This field is not used for that decision.                                                       |
+| Advisory note: title                       | Give the note a title of 5 to 200 characters.                                                   |
+| Advisory note: text                        | Write the note in 50 to 5000 characters.                                                        |
+| Advisory note: subjects                    | Choose one to four subjects from the list.                                                      |
+| Advisory note: language                    | Choose the language the note is written in.                                                     |
+| Advisory note review: action               | Choose return, publish or unpublish.                                                            |
+| Advisory note review: note                 | Give a note of 5 to 1000 characters.                                                            |
+| Two-step sign-in: code shape               | Enter the six-digit code from your authenticator app.                                           |
+| Two-step reset: not ticked                 | Tick the box to confirm.                                                                        |
+| Two-step reset: reason                     | Give a reason of at least five characters. It is kept in the audit trail.                       |
+| Two-step reset: reason too long            | Keep the reason under 500 characters.                                                           |
+| Two-step reset: own password               | Enter your own password to confirm.                                                             |
+| Sign-in: no identifier                     | Enter your email address or phone number.                                                       |
+| Sign-in: no password                       | Enter your password.                                                                            |
+| Staff invitation: token                    | This invitation link is not complete. Open the link from the email again.                       |
+| Organisation advice: action                | Choose claim, assign, accept, release or close.                                                 |
+| Organisation advice: no member             | Choose the member to assign this request to.                                                    |
+| Organisation advice: outcome               | Choose referred or closed unresolved.                                                           |
+| Organisation advice: field not for it      | This field is not used for that change.                                                         |
+| Organisation advice: status                | Choose open, in progress or closed.                                                             |
 | Advice photo: type not accepted            | Choose a JPEG, PNG or WebP photo.                                                               |
 | Advice photo: over 2 MB                    | A photo on an advice request can be at most 2 MB.                                               |
 | Advice photo: size not whole bytes         | Give the photo size as a whole number of bytes.                                                 |
 | Advice photo: upload id malformed          | The upload identifier is not in the expected form.                                              |
 | Advice referral: action not on list        | Choose accept, decline or withdraw.                                                             |
 | Advice referral: share not true/false      | Say whether to share your photos: true or false.                                                |
-| Setting: key not on list                   | Choose identity, support, maintenance or reason codes.                                          |
+| Setting: key not on list                   | Choose a settings section from the list.                                                        |
 | Setting: expected version                  | Send the version you loaded, as a whole number.                                                 |
 | Identity: service name length              | Give a service name of 2 to 80 characters.                                                      |
 | Identity: About too long                   | Keep the About text to 2000 characters.                                                         |
@@ -1361,6 +1499,38 @@ These are also exact.
 | Email sign-up: language not en or ar       | Choose English or Arabic.                                                                       |
 | Email code: not 6 digits                   | Enter the 6-digit code from the email.                                                          |
 | Email code: verification id malformed      | Ask for a new code.                                                                             |
+| Settings: languages                        | Keep English switched on, with Arabic on or off.                                                |
+| Settings: date format                      | Choose one of the date formats in the list.                                                     |
+| Settings: number out of range              | Enter a whole number within the range shown.                                                    |
+| Settings: category not on list             | Choose categories from the list.                                                                |
+| Settings: unit not on list                 | Choose units from the list.                                                                     |
+| Settings: crop not on list                 | Choose crops from the list.                                                                     |
+| Settings: whole list archived              | Keep at least one choice in each list available.                                                |
+| Settings: reminder after end               | Send the reminder before the listing ends: fewer days than it stays listed.                     |
+| Settings: SMS cost                         | Enter the cost of one SMS part in US dollars, from 0 to 1, or leave it blank.                   |
+| Announcements: templateNameInvalid         | Give the template a name of 3 to 80 characters.                                                 |
+| Announcements: channelUnknown              | Choose in-app, SMS or email.                                                                    |
+| Announcements: channelsRequired            | Choose at least one channel.                                                                    |
+| Announcements: titleInvalid                | Give a title of 3 to 120 characters.                                                            |
+| Announcements: titleNotForSms              | An SMS template has no title.                                                                   |
+| Announcements: bodyInvalid                 | Write the message in 1 to 2000 characters.                                                      |
+| Announcements: smsBodyRequired             | Write the SMS text, or untick SMS.                                                              |
+| Announcements: smsTooLong                  | An SMS can be at most 3 parts: 459 plain characters, or 201 with Arabic or special ones.        |
+| Announcements: placeholderUnknown          | Use only the placeholders {name} and {service_name}.                                            |
+| Announcements: templateStatusUnknown       | Choose draft, active or archived.                                                               |
+| Announcements: templateEditEmpty           | Change something before saving.                                                                 |
+| Announcements: categoryUnknown             | Choose announcement or essential.                                                               |
+| Announcements: scopeUnknown                | Choose all accounts, phone accounts, email accounts, a state, an activity, staff or officers.   |
+| Announcements: scopeStateRequired          | Choose the state.                                                                               |
+| Announcements: scopeActivityRequired       | Choose the activity.                                                                            |
+| Announcements: scopeExtraField             | Only a state scope has a state, and only an activity scope has an activity.                     |
+| Announcements: staffEmailOnly              | Staff are reached by email only: choose email.                                                  |
+| Announcements: officersSmsOnly             | Extension officers are reached by SMS only: choose SMS.                                         |
+| Announcements: templateIdInvalid           | Choose a template from the list.                                                                |
+| Announcements: confirmRequired             | Tick the confirmation before sending.                                                           |
+| Announcements: expectedRecipientsInvalid   | Send the recipient count the preview showed, as a whole number.                                 |
+| Announcements: preferenceInvalid           | Choose on or off.                                                                               |
+| Announcements: deliveryFilterInvalid       | Choose a channel and a status from the lists.                                                   |
 
 The key beside each reason is the field name, per section 4.1. An unrecognised
 field named `nickname` therefore produces `{ "nickname": "This field is not

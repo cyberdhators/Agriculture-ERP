@@ -1,5 +1,8 @@
 'use client';
 
+import { useEffect } from 'react';
+
+import { setDisplayDateFormat } from '@/lib/format';
 import { usePublicSettings } from '@/lib/settings/client';
 
 /**
@@ -12,6 +15,12 @@ import { usePublicSettings } from '@/lib/settings/client';
  */
 export function MaintenanceBanner() {
   const settings = usePublicSettings();
+  // 2026-10-27 (settings phase 2): this component is on every page, so it is
+  // where the chosen date format is handed to the date display.
+  const dateFormat = settings?.language_region?.date_format;
+  useEffect(() => {
+    if (dateFormat) setDisplayDateFormat(dateFormat);
+  }, [dateFormat]);
   const notice = settings?.maintenance;
   if (!notice?.enabled || !notice.message) return null;
   return (

@@ -2,6 +2,10 @@
 
 import { useState } from 'react';
 
+import {
+  AccountAnnouncements,
+  NotificationPreferencesCard,
+} from '@/components/account/NotificationSettings';
 import { listNotifications, markNotificationRead } from '@/lib/buyer/api';
 import { formatDate } from '@/lib/format';
 
@@ -18,7 +22,7 @@ import styles from './buyer.module.css';
  */
 export function BuyerNotifications() {
   const { refreshUnread } = useBuyer();
-  const [view, setView] = useState<'all' | 'unread'>('all');
+  const [view, setView] = useState<'all' | 'unread' | 'announcements' | 'settings'>('all');
   const list = useCursorList((cursor) => listNotifications(view === 'unread', cursor), view);
   const [marking, setMarking] = useState<string | null>(null);
 
@@ -43,9 +47,16 @@ export function BuyerNotifications() {
         items={[
           { key: 'all', label: 'All' },
           { key: 'unread', label: 'Unread' },
+          // 2026-10-27: official announcements and what this account receives.
+          { key: 'announcements', label: 'Announcements' },
+          { key: 'settings', label: 'Notification settings' },
         ]}
       />
-      {list.error ? (
+      {view === 'announcements' ? (
+        <AccountAnnouncements />
+      ) : view === 'settings' ? (
+        <NotificationPreferencesCard emailAccount />
+      ) : list.error ? (
         <EmptyState
           error
           title="Notifications could not be loaded"

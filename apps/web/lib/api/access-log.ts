@@ -7,6 +7,7 @@ import {
 } from '@agri-erp/shared';
 
 import { prisma } from '../db';
+import { cachedSettingValue } from './settings';
 import { type Authenticated } from './require-role';
 
 /**
@@ -101,11 +102,16 @@ async function recordVisitUnsafe(auth: Authenticated, request: Request): Promise
     previous = row ?? { first_sign_in_at: null, last_seen_at: null };
   }
 
+  // 2026-10-27 (settings phase 2): the threshold is Registration and
+  // recovery's setting, remembered for a minute; thirty minutes until saved.
+  const inactivityMinutes = (await cachedSettingValue('registration_recovery'))
+    .session_inactivity_minutes;
   const event = classifyVisit({
     firstSignInAt: previous.first_sign_in_at,
     lastSeenAt: previous.last_seen_at,
     now: new Date(),
     signInAnnounced,
+    inactivityMs: inactivityMinutes * 60_000,
   });
   if (!event) return;
 
@@ -144,6 +150,27 @@ export async function recordReauthFailed(auth: Authenticated, request: Request):
         'reauth_failed',
         deviceLabel(request.headers.get('user-agent')),
       ).catch(() => undefined),
+    );
+  } catch {
+    // Best effort, as above.
+  }
+}
+
+/**
+ * 2026-10-28: a wrong password at sign-in, for an account that exists. Called
+ * by POST /api/auth/sign-in only. Records the account's kind and id, the
+ * event, the time and the device family -- never what was typed.
+ */
+export async function recordSignInFailed(
+  kind: AccessPrincipalKind,
+  id: string,
+  request: Request,
+): Promise<void> {
+  try {
+    await withDeadline(
+      insertEvent(kind, id, 'sign_in_failed', deviceLabel(request.headers.get('user-agent'))).catch(
+        () => undefined,
+      ),
     );
   } catch {
     // Best effort, as above.

@@ -3,12 +3,14 @@ import {
   MAX_LIMIT,
   createUserSchema,
   decodeCursor,
+  isSuperAdmin,
   encodeCursor,
   toIso,
 } from '@agri-erp/shared';
 
 import { audited, writeAudit, writeAuditOutcome } from '../../../lib/api/audit';
 import { countOrphanAuthAccounts } from '../../../lib/api/orphans';
+import { activeSuperAdminIds, permissionsOf } from '../../../lib/api/permissions';
 import { authUnavailable, conflict, invalidCursor, unprocessable } from '../../../lib/api/errors';
 import { created, defineRoutes, paged } from '../../../lib/api/route';
 import { requireWriter } from '../../../lib/api/scope';
@@ -130,6 +132,18 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
     bodySchema: createUserSchema,
     handler: async ({ auth, body }) => {
       requireWriter(auth);
+
+      // 2026-10-28 (lane-security): staff are INVITED by email and choose
+      // their own password (POST /api/admin/staff-invitations). Creating an
+      // account with a password typed by someone else is kept as the Super
+      // Admin's fallback only. While no Super Admin exists yet, any
+      // administrator may still do it, exactly as before -- otherwise the
+      // platform could lose its only way to add staff before the first Super
+      // Admin is appointed.
+      const superAdmins = await activeSuperAdminIds(prisma).catch(() => [] as string[]);
+      if (superAdmins.length > 0 && !isSuperAdmin(await permissionsOf(auth))) {
+        throw unprocessable('staff_direct_create_super_admin_only');
+      }
 
       if (body.state_id) {
         const [state] = await prisma.$queryRawUnsafe<{ id: string }[]>(

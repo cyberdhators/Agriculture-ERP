@@ -4472,7 +4472,7 @@ administrator holds it; other staff only through the Administrator preset).
   YET IN THE DATABASE CHECK: one combined CHECK migration adds them (the
   owner), so until it lands every settings write is refused rather than
   unlogged.
-- **Phase 2** will cover the remaining subsections of the specification's
+- **Phase 2** (built 2026-10-27: "Settings, phase 2" below) covers the remaining subsections of the specification's
   table: language and region (languages, time-zone display, date formats,
   currencies, units), registration and recovery (verification, sign-in and
   recovery methods, session rules, age eligibility -- self-service registration
@@ -4775,6 +4775,136 @@ a reason; listing removal is separate from account action."
   `listing.correction_requested` (code and note, as a suspension records its
   reason) and `listing.correction_addressed` (the names of the changed fields).
 
+## Admin console: overview, accounts, marketplace, support cases (2026-10-28)
+
+CORWADO's specification of 16 October, section 4 (lines 95-111), and the
+infographics "AgriOne Admin Portal, 1 of 3" (no. 1) and "Profile creation and
+visibility" (no. 5, panel 4). Branch `feat/admin-console`, migration
+`20261028090000_admin_console`. Communications and Settings belong to another
+lane and are not touched.
+
+**Overview.**
+
+- DOCUMENTED (spec line 95; infographic 1, panel 1): staff see a new overview
+  at `/dashboard` from `GET /api/admin/overview` (admin, supervisor and
+  read_only, then `reports.view`, scoped to states like `/api/analytics/summary`).
+  It has tiles, open-case counts, two day-by-day trends (registrations;
+  listings vs buying requests) and system alerts. Its filters (date range,
+  state, actor type) are carried into the links to each queue.
+- INFERRED (one instance: the brief): people, sign-in accounts and
+  organisation profiles are separate tiles. People are live farmers and buyers,
+  one per sign-in, plus farmers with no sign-in. Accounts are distinct
+  sign-ins. Organisations are those not deleted or closed.
+- INFERRED: officers keep the caseload overview at `/dashboard`. Staff find the
+  farmer-verification figures at `/reports/programme`, linked from the new
+  overview. They remain a programme measure but are no longer the headline.
+- INFERRED: "actor type" means the activities on the account profile. Figures
+  narrowed to different actor types overlap. Cases are not narrowed by actor.
+- INFERRED: the alerts are failures in the window (the analytics failure
+  actions, plus suspensions whose text message failed), integrations that are
+  not configured (shown only to holders of `settings.manage`, as the settings
+  status route does), the maintenance banner, and tables not yet in the
+  database. Delivery status in `notification` is not used yet.
+- INFERRED: the charts are inline SVG. No chart library was added.
+
+**Users and organizations.**
+
+- DOCUMENTED (spec line 97): one list at `/admin/accounts`
+  (`GET /api/admin/accounts`). It holds sign-in accounts (phone or email, with
+  their farmer and buyer records together), farmers with no sign-in, and
+  organisational profiles. Columns: actor types, organisations, joined
+  date-time, first sign-in, last active, status, verification, publication and
+  advisory status. Filters: people or organisations, actor type, status,
+  sign-in, state, and joined dates. Administrators only, then
+  `support.handle` or `content.moderate`.
+- INFERRED from the deletion law (CLAUDE.md §4): **deleted accounts are never
+  listed or counted**, so the list has no "deleted" status, although the brief
+  asked for one. **Owner decision:** whether staff need a restricted view of
+  deleted accounts, which would need an exception to the law.
+- INFERRED: "search by contact as permitted" means that digits typed into the
+  search box match a phone only for `support.handle`. Email search is not
+  possible, because an email address lives only in Supabase Auth.
+- DOCUMENTED (infographic 5, panel 4): each account has a page at
+  `/admin/accounts/:kind/:id` showing its profile, contact-verified flags, its
+  phone and email **masked**, its activity (access_log events and its own
+  audit action keys), staff actions on its records (with the written reason),
+  its organisations and its advisory status.
+- **Reveal:** `POST …/reveal` returns one contact in clear, for
+  `support.handle` only. It is audited as `account.contact_revealed`, which
+  names the field and never the value.
+- **Disable** (`POST /api/admin/accounts/disable`, `content.moderate`, reason
+  and code) is distinct from suspend:
+  - A disabled record is also suspended (a database CHECK), so every existing
+    suspension filter applies to it unchanged.
+  - Every session is ended, sign-in is banned, and a text message saying
+    "disabled" is sent, with the code label only.
+  - Restore refuses it with `account_disabled_restore`.
+  - **Re-enable** (`POST /api/admin/accounts/reenable`) needs
+    `superadmin.grant` and a reason. It clears both the disable and the
+    suspension and sends a fixed notice.
+  - Audit keys: `account.disabled` and `account.reenabled`.
+  - INFERRED: re-enable asks for no re-authentication. **Owner decision:**
+    whether it should require the password, as Super Admin delegation does.
+
+**Marketplace console.**
+
+- DOCUMENTED (spec line 99): `/admin/marketplace` has the tabs Produce,
+  Inputs (`seeds_inputs`), Buying requests, Services and Inactive (paused,
+  expired, withdrawn, completed). Each tab has search and filters. Each post
+  can be inspected, have a correction requested (the existing route), or be
+  removed with a reason. Every route requires `content.moderate`.
+- INFERRED from the deletion law: "removed" posts are read from the audit
+  trail's removal records (`listing.removed`,
+  `product_report.listing_removed`), never from the soft-deleted rows. Titles
+  are recorded from now on. Earlier removals show "Title not recorded".
+- OBSERVED in the schema: there is no expired status, so "expired" is
+  computed. A live post past its end date shows as expired, matching what the
+  market already hides.
+- DOCUMENTED (infographic 5, "Draft is private"): drafts are never listed.
+- INFERRED: posts of suspended owners are shown and flagged.
+- INFERRED: removal (audit key `listing.removed`) never touches the account,
+  and it leaves open reports and corrections as they are. The owner gets a
+  fixed notice that does not include the reason.
+- INFERRED: the inspect view omits the contact phone, and counts photos
+  rather than showing them, because the stored paths are not web addresses.
+
+**Support cases. This follows spec line 103 even though an earlier note
+said "no ticketing".**
+
+- DOCUMENTED, spec line 103: "Reports and Support: Case IDs, responsible
+  staff, evidence, status, dates and resolution. Handle technical issues,
+  complaints and appeals." The note of 2026-10-21 ("no tickets, no
+  assignment, no replies") and CLAUDE.md §2's "helpdesk ticketing" exclusion
+  are superseded **for these fields only**. There are still no SLAs, no
+  automatic routing and no email threading. **Owner decision:** confirm this
+  reading of the scope.
+- A "Contact CORWADO" message is a case:
+  - a visible case number (`#1045`, an identity column that also numbered the
+    existing rows);
+  - a type: technical issue, complaint, appeal or enquiry. The default comes
+    from the topic, so no row was rewritten;
+  - a priority and a responsible staff member (staff who hold
+    `support.handle`);
+  - a status: new → in progress → waiting for the person → resolved or
+    closed. The earlier `done` reads as resolved;
+  - a resolution note, required to resolve or close;
+  - dates: opened, last change, and settled.
+- Staff can add three kinds of entry to a case (new table
+  `support_case_entry`):
+  - **replies**, which the person reads on the Help page under "Your messages
+    to CORWADO", after a fixed in-app notice that never carries the text;
+  - **internal notes**;
+  - **evidence links**.
+- A visitor has no inbox, so staff are told to answer them by phone or email.
+- Appeals are cases of type appeal, and the case links to the account, where
+  Restore is.
+- Audit keys: `support_case.updated` and `support_case.replied`. Note and
+  reply text never enters an audit row.
+
+**Not yet in the database CHECK:** `account.disabled`, `account.reenabled`,
+`account.contact_revealed`, `listing.removed`, `support_case.updated`,
+`support_case.replied`. The integrator's combined CHECK migration adds them.
+
 ## User journeys (2026-10-28) — sign-up, shortcut hub, preview, block, expiry reminders
 
 CORWADO's 16 October specification, lines 36-57 and section 3, and the
@@ -4885,3 +5015,283 @@ account's advice profile, only when that profile is published, and an
 "Approved adviser" badge when the account holds an approved, unrevoked
 authorization (shown whether or not the advice profile is published). Nothing
 else from the advice profile is public.
+
+## Official announcements, templates, preferences and delivery records (2026-10-27)
+
+CORWADO's 16 October specification, Communications: "Official announcements,
+templates, recipient scope, preferences and delivery records. Preview before
+sending; private conversations are not a broadcast resource", and Settings,
+"Notifications and moderation: triggers, channel preferences and templates".
+Migration `20261027110000_communications` (additive: four new tables). Branch
+`feat/communications-settings2`.
+
+- **Before (OBSERVED, reading main at 65e2462).** `POST
+/api/admin/communications` (admin only) emails chosen staff through Resend
+  and texts chosen farmers or officers through Bird; the browser sends record
+  ids. No sent-history table. `notification.channel` is `sms | in_app`; the
+  in-app notices of `lib/api/notify.ts` are fixed sentences. Buyer accounts and
+  email accounts were not reachable. That screen is kept unchanged as the
+  "Direct message" tab.
+- **Recipient scope (DOCUMENTED by the spec; the grouping INFERRED).** All
+  accounts, phone accounts (farmer records), email accounts (buyer accounts,
+  and farmer accounts that also hold a buyer side), one state, one activity
+  (account_profile activities; "farmer" and "buyer" also take every farmer or
+  buyer account), staff (email only) and extension officers (SMS only). An
+  account that is both a farmer and a buyer is ONE recipient on its farmer
+  side, as `notifyAccount` already does. Live records only: farmers with
+  consent granted and not withdrawn, not suspended, not merged; buyers not
+  suspended; active officers and staff. Recipients are resolved in SQL from
+  those tables; no route accepts a list of ids, and nothing reads a
+  conversation or a message (`tests/announcements-scan.test.ts`).
+- **One plan for preview and send.** `PLAN_SQL` decides, per recipient per
+  channel, sent or skipped and why: no inbox (in-app to staff or officers), a
+  preference, no contact (no +211 mobile; no email account), or a shared phone
+  or organisation inbox (the first recipient is sent, the rest skipped, so a
+  handset is billed once and an inbox gets one notice). The preview counts it;
+  the send inserts it. The send must quote the preview's recipient count, or
+  it is refused (`announcement_recipients_changed`) and the preview refreshed.
+- **Preview.** The text rendered with the example name "Amina", the count, and
+  per channel will-send / switched off / no contact / shared. SMS: parts per
+  message (estimated with `{name}` at its 20-character cap), total parts and,
+  when Settings hold a cost per part, a US$ estimate. Bird's invoice is the
+  authority.
+- **Placeholders:** `{name}` (first name, cut to 20 characters, "friend" when
+  none) and `{service_name}`. Anything else in braces is refused.
+- **Categories.** `announcement` respects preferences; `essential` (account,
+  security, service continuity) ignores them -- the only kind a person cannot
+  switch off. INFERRED; OWNER TO CONFIRM who may mark an announcement
+  essential (today: anyone holding the permission, with a warning on the form).
+- **Batches within Vercel limits.** Send = queue only (one statement). The
+  screen then calls `POST .../process` until nothing remains: up to 500 in-app
+  notices per call (set-based), then up to 40 SMS/email, 6 at a time, no new
+  provider call after 30 s, `maxDuration` 60 s. Rows are claimed with SKIP
+  LOCKED, so two tabs never send one delivery twice. Every outcome is written
+  back with an audit row of counts. A closed tab pauses; "Continue sending"
+  resumes. A claim that never finished (function killed) is marked FAILED after
+  10 minutes and never resent automatically -- an SMS may have gone, and a
+  second would be billed; "Retry failed" is a person's decision. Before any
+  provider call the audit CHECK is read, as the direct SMS route does. A
+  provider not configured leaves its deliveries waiting and says so.
+- **Delivery record.** `announcement_delivery`, one row per recipient per
+  channel: status (queued, sending, sent, failed, skipped), skip reason,
+  provider message id (Bird's; Resend's id is now returned by `sendOneEmail`),
+  provider error, attempts. No phone, address or text is stored there or in an
+  audit row; contacts are read at the moment of sending.
+- **In-app.** Each in-app delivery is a row in the existing `notification`
+  table (farmer inbox, or the buyer organisation's), so it appears among the
+  person's notices; a person's own list is `GET /api/account/announcements`
+  (farmer Notifications page; buyer Notifications -> Announcements). The
+  notification text is staff-written official text, the one deliberate
+  exception to "fixed sentences only"; it never carries a message, case or
+  reason.
+- **Email to accounts.** Buyer accounts now receive announcement email (address
+  from Supabase Auth, never stored); `.invalid` identifiers are never used.
+  A footer points to the notification settings, except on essential mail.
+- **Preferences.** `notification_preference`, one row per sign-in, no row =
+  everything on: announcements in-app / SMS / email, and activity updates in
+  the app (`lib/api/notify.ts` now skips message and advice notices for an
+  account that switched them off; adviser decisions and a restored account are
+  essential and always sent). Shown on the farmer's Account page and the
+  buyer's Notifications -> Notification settings, with the essential messages
+  named. SMS/email "updates" have no switch because nothing sends them.
+- **Templates.** `message_template`: per channel (SMS has no title), draft ->
+  active -> archived and back; never deleted (an announcement may name it);
+  only an active template can start an announcement.
+- **Permission.** New key `communications.send`, in the Administrator preset
+  (Super Admin has every key; the legacy admin rule gives it to every existing
+  administrator). Routes are `roles: ['admin']` then `requirePermission`, as
+  settings are; supervisors stay refused (new-routes matrix).
+- **Audit keys (NOT YET IN THE DATABASE CHECK; the owner's combined CHECK
+  migration adds them):** `message_template.created`, `message_template.updated`,
+  `message_template.status_changed`, `announcement.drafted`,
+  `announcement.draft_edited`, `announcement.draft_discarded`,
+  `announcement.queued`, `announcement.batch_sent`, `announcement.retry_queued`,
+  `announcement.completed`, `notification_preference.updated`.
+- **Open:** automatic background sending (a cron) is not built -- the screen
+  drives the batches; WhatsApp stays blocked; buyers' phone numbers are only
+  texted when they are +211 mobiles.
+
+## Settings, phase 2 (2026-10-27)
+
+The remaining subsections of the Settings table, as versioned settings exactly
+like phase 1 (append-only `setting_version`, expected-version saves, history,
+audited as `setting.changed` with the NAMES of changed fields, plus archived
+and restored list values and the new privacy defaults). Migration
+`20261027110100_settings_phase2` widens the known-key CHECK; nothing is seeded,
+and each fallback is what the code did before. RULE (applied throughout): a
+field is offered only where code reads it.
+
+- **Language and region.** Arabic on/off (English always on) -- read by the
+  farmer language choices; a farmer who had chosen Arabic reads English while
+  it is off. Date format (27 Jul 2026 / 27/07/2026 / 2026-07-27) -- read by
+  `formatDate`, handed over by the banner component on every page; INFERRED
+  limitation: text rendered before the settings arrive keeps the default
+  until it re-renders. Time zone Africa/Juba, currency SSP and units are
+  shown as fixed facts, not settings (prices are recorded in SSP; changing
+  currency is a data change). OWNER TO CONFIRM if a configurable currency is
+  wanted.
+- **Registration and recovery.** Sign-up code wait (60 s default; read by the
+  phone-code route), return-session inactivity (30 min; read by the access
+  log), minimum age for farmer self-registration (none by default; from the
+  year of birth, generously: this year minus birth year). There is no switch
+  for self-service registration, deliberately. OWNER TO CONFIRM a minimum age.
+- **Profile privacy.** Defaults for a NEW profile: show phone (off), allow
+  messages (on). Read where the profile row is first created and by the empty
+  profile form; an existing profile is never changed, and the screen says so.
+- **Marketplace and reference lists.** Listing validity (30 days; read wherever
+  a listing or service gets no end date), reminder days (3; the owner's
+  listing, request and service screens mark a post ending within that many
+  days -- no SMS reminder is sent), and archive/restore of listing categories,
+  units and registration crops (commodities). Archived values are left out of
+  new-post and registration forms and refused by the create routes
+  (`reference_value_archived`); every existing record keeps its value. The
+  values are Postgres enums, so nothing is deleted; a whole list cannot be
+  archived. Locations come from the official list, not here.
+- **Notifications and moderation.** SMS cost per part (for the preview),
+  suspension review period (shown in the suspend dialog; a suspension still
+  ends only by a restore) and appeal window (shown on the help page's appeal
+  text). Templates and delivery records link to Communications. OWNER TO
+  CONFIRM both periods (defaults 30 days).
+
+## Staff two-step sign-in, with a rollout that cannot lock CORWADO out (2026-10-28)
+
+The specification: "require strong staff authentication"; infographic 2, "Manage
+MFA: require or reset multi-factor authentication". Lane-security.
+
+- TOTP through Supabase Auth MFA (DOCUMENTED: enabled by default on Supabase
+  projects; NOT exercised against the live project -- there is only production).
+  A staff member sets it up at **Administration -> Your sign-in security**
+  (`/admin/sign-in-security`): QR code and key, then a first code. Supabase
+  verifies the code in the browser; `POST /api/staff/mfa` then confirms a
+  verified factor exists (admin API) and audits `staff.mfa_enrolled`.
+- **requireRole enforces it** (`staffMfaGate`, packages/shared): a staff account
+  WITH a verified factor whose session is not `aal2` is refused everywhere
+  (403 `mfa_required`) except `GET /api/me` and `/api/staff/mfa` (`mfaExempt`,
+  pinned by `staff-security-scan.test.ts`). The `aal` claim is read from the
+  token that getUser has just validated (INFERRED safe: getUser verifies it on
+  the server first; the claim is never trusted on its own).
+- **Rollout, `STAFF_MFA_ENFORCEMENT`**: `verify` (default, also for any unknown
+  value) never refuses someone who has not enrolled -- the portal sends
+  administrators to enrol before anything else; `required` also refuses an
+  unenrolled administrator on the server (403 `mfa_enrolment_required`);
+  `off` is the emergency switch. INFERRED: defaulting to `required` could leave
+  CORWADO locked out of the admin API if enrolment failed in production.
+- Sign-in: when the account has a factor the sign-in screen asks for the code.
+- **Reset** (lost phone): Super Admins only (`superadmin.grant`), never on
+  themselves, with re-authentication; removes every factor (DOCUMENTED: deleting
+  a verified factor signs the account out everywhere). Audited `staff.mfa_reset`.
+- Gap: the LAST Super Admin who loses their phone can only be reset from the
+  Supabase dashboard. Owner decision: who holds that dashboard access.
+
+## Sign-in through the server: failed sign-ins and a rate limit (2026-10-28)
+
+- The staff/buyer email sign-in and the farmer phone sign-in now post to
+  `POST /api/auth/sign-in` (public), which signs in with the anon key and writes
+  the session cookie on its own response (DOCUMENTED: @supabase/ssr's
+  route-handler pattern; NOT exercised live). A wrong password for an EXISTING
+  account writes `sign_in_failed` to that account's access log (new value in the
+  access_log CHECK); the account is found via `auth.users` by email (INFERRED:
+  the app's database role may read it -- if not, the failure is simply not logged).
+- Rate limit: 5 failures per identifier in 15 minutes (table `sign_in_attempt`,
+  identifier stored as SHA-256 only, a success clears the count) and 30 attempts
+  per address per 15 minutes per server instance (in memory, never stored).
+  429 `rate_limited` with Retry-After. The answer never says whether an account
+  exists. Gap (DOCUMENTED Supabase behaviour): anyone with the public anon key
+  can still call Supabase Auth directly; those attempts meet Supabase's own
+  limits and are in its auth logs, not ours. The Auth "password verification
+  hook" would close this but is a paid-plan feature (owner decision).
+- The public-route scan's "no route rate-limits" guard was replaced (not
+  removed) by a test of what this limiter does.
+
+## Last activity moves on API calls, throttled (2026-10-28)
+
+- The route wrapper updates `account_activity.last_seen_at` at most once per
+  account per five minutes (in memory per instance, and `last_seen_at < now() -
+5 min` in the statement). Update only: the first row is still written by the
+  "me" visit, which decides first sign-in. A return session is now measured
+  from the last API call. Never throws; gives up after one second.
+
+## Staff are invited by email and choose their own password (2026-10-28)
+
+- `POST /api/admin/staff-invitations` (`staff.manage`, over the state for a
+  state-scoped role): name, email, role, state. A 32-byte token, only its hash
+  stored, valid 7 days, one open invitation per address. Email by Resend; when
+  email is not configured (production today) or the send fails, the answer
+  carries the link once so the inviter can pass it on -- the same degradation
+  as team invitations. The link puts the token after `#`, so it never reaches
+  a server log; `/staff-invite` sends it in a request body.
+- The invitee sets the password (`POST /api/staff-invitations/accept`); the
+  account is created then (same compensating transaction as `POST /api/users`).
+- `POST /api/users` (password typed by someone else) is kept as the **Super
+  Admin fallback**: once any Super Admin exists, only Super Admins may use it;
+  while none exists, any administrator still may (INFERRED: otherwise the
+  platform could not add staff before the first Super Admin is appointed).
+- Lists show the address masked (`a•••@domain`). Audit `staff.invited`,
+  `staff.invitation_revoked`, `staff.invitation_accepted`; never the address.
+
+## Approved advisers: suspend, restore, what was checked, and official notes (2026-10-28)
+
+The specification and infographics 3 and 8: "Suspend advisory access ...
+Restore authorization"; "Account restoration does not automatically restore
+advisory privileges"; "Approved advisory channels, official content
+publication ... require separately assigned permissions"; "Verification states
+-- what was checked".
+
+- New decisions `suspend` (approved -> suspended, reason, 1-365 days) and
+  `restore` (suspended -> approved); revoke also from suspended. A suspension
+  **lapses by itself** at its end (`effectiveAdviserStatus`); the provider's
+  approval columns are not cleared, so no second approval can slip in. Every
+  reader of the badge also asks `APPROVAL_SUSPENDED_SQL`. Audited
+  `adviser_approval.suspended` / `.restored`; fixed-sentence notices.
+- Approval now records **what was checked** (at least one of identity,
+  experience, qualifications, affiliation, service area, languages, interests
+  disclosed), shown publicly on the profile as "Approved adviser: what CORWADO
+  checked". Older approvals say they predate the record.
+- The admin account record (the Suspend/Restore box) shows the **advisory
+  authorization** beside account standing, read-only, with a link to Advisers.
+  Account suspend/restore still never touch it.
+- **Official advisory notes** (new table `advisory_note`): only an approved,
+  unsuspended adviser may submit; staff with `content.moderate` or
+  `content.publish` may return one with a note; only `content.publish` may
+  publish or unpublish (publishing authority is separately assigned). Published
+  notes show on the public profile, "Reviewed by CORWADO", only while the
+  approval is active. INFERRED: a short text note rather than a library file,
+  because library resources require an uploaded file; reviewed at Admin ->
+  Advisers. Audit `advisory_note.*`.
+
+## Organisation advice cases (2026-10-28)
+
+DOCUMENTED: the spec's "Requests go directly to the provider's authorized staff"
+(infographic 8, "Institution shared inbox"). Migration
+`20261028112000_organisation_advice_cases`.
+
+- INFERRED: one advice profile per organisation, kept apart from personal
+  profiles (the one-per-account unique replaced by two partial unique indexes,
+  one with the same personal meaning), edited by members with `profile.edit` or
+  `advisory.handle`.
+- INFERRED: the organisation's shared advice inbox is for `advisory.handle`
+  holders only (the first reader of that permission), not `inbox.read`.
+- INFERRED: any handler may take an unassigned case; only an organisation
+  administrator assigns to someone else; only the accepted assignee or an
+  administrator replies or closes, and sees the requester's shared details.
+  Audit `advice_case.assigned`, `.accepted`, `.released`.
+- INFERRED: a profile counts as live while the organisation is published and
+  open and has at least one handler. Gaps: no photo links for organisation
+  handlers; refer-with-consent not offered from the organisation inbox; inbox
+  copy English only; a suspended member still counts towards "live".
+
+## Analytics: commodity and actor-type filters, figures over time, editable Excel charts (2026-10-28)
+
+DOCUMENTED: spec "Measures and exports" requires filters, graphs and editable
+Excel charts. INFERRED: commodity = listing_category, so it narrows produce
+listings, orders, contact requests and buying requests only; actor type =
+account_profile.activities ("What you do"), which reaches accounts, farmers with
+a sign-in, account holders and post owners (for an organisation's post, the
+person who posted it). Any other figure is served as not measured
+("not_filterable") under a filter, never unfiltered; a test holds each figure's
+filter flags, its SQL and its definition together. INFERRED: period = day up to
+31 days, Monday week up to 184, month beyond; "new" active = first sign-in ever
+in that period. OBSERVED: the writer's chart parts read back in the pure tests
+(relationships, content types, sheet references, cached values). NOT observed:
+opening the file in Excel or LibreOffice -- check one real export before
+acceptance. Gap: the commodity filter does not reach services or conversations.

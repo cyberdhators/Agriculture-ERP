@@ -39,8 +39,11 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       if (!provider) return ok({ approved: false, approved_at: null, current: null, history: [] });
       const history = (await applicationsOf(prisma, provider.id)).map(presentOwnApplication);
       return ok({
+        // 2026-10-28: false while the approval is suspended (approved_at is
+        // presented as null then); suspended_until says until when.
         approved: provider.approved_at !== null,
         approved_at: provider.approved_at ? provider.approved_at.toISOString() : null,
+        suspended_until: history.find((h) => h.status === 'suspended')?.suspended_until ?? null,
         current: history[0] ?? null,
         history,
       });
@@ -66,7 +69,13 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
         // behind this one, so it sees this application and is refused.
         const provider = await loadOwnProvider(tx, owner, true);
         if (!provider) throw unprocessable('adviser_profile_required');
-        if (provider.approved_at) throw unprocessable('adviser_already_approved');
+        // 2026-10-28: a SUSPENDED approval still stands (the badge is only
+        // hidden), so the raw column is asked, not the presented one.
+        const [standing] = await tx.$queryRawUnsafe<{ approved: boolean }[]>(
+          `SELECT approved_at IS NOT NULL AS approved FROM public.advice_provider WHERE id = $1::uuid`,
+          provider.id,
+        );
+        if (standing?.approved) throw unprocessable('adviser_already_approved');
         if (await openApplicationOf(tx, provider.id)) {
           throw unprocessable('adviser_application_open');
         }

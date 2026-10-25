@@ -259,6 +259,14 @@ export const RULE_MESSAGES = {
     'Choose a version number higher than the one already published for this notice and language.',
   notice_not_draft:
     'Only a draft can be edited, published or discarded. A published or retired notice stays as it was.',
+  // ORGANISATION ADVICE CASES (2026-10-28). About a case's assignment, never a person.
+  org_advice_admin_only:
+    'Only an administrator of the organisation can give a request to someone else. Take it yourself if it is unassigned.',
+  org_advice_assignee_invalid:
+    'That member cannot take advice requests for this organisation. Choose a member who handles advice.',
+  org_advice_already_assigned: 'Someone else in the organisation has already taken this request.',
+  org_advice_not_assignee: 'This request is being handled by someone else in the organisation.',
+  org_advice_accept_first: 'Accept this request before replying to it or closing it.',
   // TEAM ACCESS (2026-10-27)
   organization_access_ended:
     'You no longer have access to that organisation. Switch back to your own account.',
@@ -288,6 +296,14 @@ export const RULE_MESSAGES = {
   // CORRECTIONS (2026-10-27). About a post's state, never a person.
   correction_already_open:
     'A correction has already been requested for this post and is waiting for its owner.',
+  // ADMIN CONSOLE (2026-10-28). About an account's standing or a case, never a person.
+  account_already_disabled: 'This account is already disabled.',
+  account_not_disabled: 'This account is not disabled. There is nothing to re-enable.',
+  account_disabled_restore:
+    'This account is disabled, not just suspended. Only a Super Admin can restore it, with a reason.',
+  support_case_no_back_to_new: 'A case cannot go back to new. Choose in progress or waiting.',
+  support_case_resolution_required: 'Write a resolution note before resolving or closing a case.',
+  support_case_assignee_not_staff: 'That person cannot be made responsible for support cases.',
   // PERSON-LEVEL BLOCK (2026-10-28). Never says which side blocked.
   account_block_self: 'You cannot block yourself.',
   account_block_not_found: 'That block has already been lifted.',
@@ -295,6 +311,41 @@ export const RULE_MESSAGES = {
     "Block people from your own messages. In an organisation's inbox, close the conversation instead.",
   conversation_account_blocked:
     'Messages cannot be sent between you and this person. If you blocked them, you can unblock them in Settings.',
+  // ANNOUNCEMENTS AND SETTINGS PHASE 2 (2026-10-27).
+  announcement_not_draft:
+    'Only a draft announcement can be edited, sent or discarded. A sent announcement stays as it was.',
+  announcement_recipients_changed:
+    'The recipients changed since the preview. Preview again, check the new count, then send.',
+  announcement_no_recipients:
+    'Nobody in this scope can be reached on the chosen channels. Change the scope or the channels.',
+  announcement_not_sending: 'This announcement has nothing waiting to be sent.',
+  announcement_nothing_to_retry: 'No failed deliveries are waiting to be retried.',
+  announcement_state_unknown: 'Choose a state from the list.',
+  template_inactive:
+    'Choose an active template. A draft or archived template cannot be used to send.',
+  template_title_mismatch:
+    'An SMS template has no title, and an in-app or email template needs one.',
+  template_sms_too_long:
+    'An SMS can be at most 3 parts: 459 plain characters, or 201 with Arabic or special ones.',
+  minimum_age_not_met:
+    'You must be older to register for this service. Ask your extension officer for help.',
+  reference_value_archived:
+    'That choice is no longer offered for new entries. Choose another from the list.',
+  // STAFF SECURITY AND ADVISORY AUTHORIZATION (2026-10-28, lane-security).
+  staff_invitation_pending:
+    'An invitation to that address is already waiting. Withdraw it before sending another.',
+  staff_invitation_not_pending:
+    'This invitation has already been used, withdrawn or has expired. Ask CORWADO for a new one.',
+  staff_direct_create_super_admin_only:
+    'Only a Super Admin can create a staff account with a password. Send an invitation instead.',
+  mfa_reset_own: 'You cannot reset your own two-step sign-in. Ask another Super Admin.',
+  mfa_not_enrolled: 'This account has no authenticator to reset.',
+  mfa_factor_not_verified:
+    'No confirmed authenticator was found. Enter a code from the app to confirm it first.',
+  advisory_note_not_approved:
+    'Only an approved adviser whose approval is not suspended can submit official advisory notes.',
+  advisory_note_not_allowed:
+    'That change cannot be made to this note as it stands. Reload it to see where it is.',
 } as const;
 
 export type RuleKey = keyof typeof RULE_MESSAGES;
@@ -341,6 +392,20 @@ export const authUnavailable = () =>
     undefined,
     retryAfter(SYNC_OUTCOME_SPECS.retry_later.retryAfterSeconds),
   );
+/** 2026-10-28: a staff session that has not passed the code step. */
+export const mfaRequired = () =>
+  new ApiFailure(403, ERROR_CODES.mfaRequired, ERROR_MESSAGES.mfaRequired);
+
+/** 2026-10-28: an administrator without an authenticator, in "required" mode. */
+export const mfaEnrolmentRequired = () =>
+  new ApiFailure(403, ERROR_CODES.mfaEnrolmentRequired, ERROR_MESSAGES.mfaEnrolmentRequired);
+
+/** 2026-10-28: too many sign-in attempts; says when to try again. */
+export const rateLimited = (retryAfterSeconds: number) =>
+  new ApiFailure(429, ERROR_CODES.rateLimited, ERROR_MESSAGES.rateLimited, undefined, {
+    'retry-after': String(Math.max(1, Math.ceil(retryAfterSeconds))),
+  });
+
 export const internalError = () =>
   new ApiFailure(
     500,

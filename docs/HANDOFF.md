@@ -2839,6 +2839,44 @@ Branch `feat/recovery-and-moderation`, migration `20261027100000_recovery_size_c
 
 — Alieu-Claude
 
+### 2026-10-28 — Alieu-Claude (lane-admin) → integrator — admin console: overview, accounts, marketplace, support cases
+
+Branch `feat/admin-console`. Spec section 4 (lines 95-111) and infographics 1 and 5. DECISIONS:
+"Admin console: overview, accounts, marketplace, support cases (2026-10-28)".
+
+- **Migration `20261028090000_admin_console`** (additive, not applied anywhere):
+  - `disabled_*` columns on farmer and buyer, with three views refreshed;
+  - case columns on `support_message`, with the status CHECK widened (`done` kept);
+  - new table `support_case_entry`.
+- **The audit CHECK is yours.** The new keys are `account.disabled`,
+  `account.reenabled`, `account.contact_revealed`, `listing.removed`,
+  `support_case.updated` and `support_case.replied`. They are already in
+  AUDIT_ACTIONS and CONVENTIONS §5.2.2.
+- **What works (in code):**
+  - Staff overview at `/dashboard`. The old one is at `/reports/programme`;
+    officers are unchanged.
+  - `/admin/accounts`, with an account page per account: masked contacts with
+    an audited reveal, activity, staff actions, and Suspend, Disable, Restore
+    and Re-enable (the last for a Super Admin only).
+  - `/admin/marketplace` with five tabs: inspect a post, request a correction,
+    remove it with a reason.
+  - Support cases at `/admin/support` and `/admin/support/:id`. People read
+    staff replies on the Help page.
+- **Lists updated:**
+  - nav (two new items; "Support messages" is now "Support cases");
+  - nav test;
+  - ADMIN_ROUTES and forbidden-matrix ROUTES;
+  - the buyer-route-scan comment;
+  - CONVENTIONS §5.2.1 and §5.2.3;
+  - conventions-match-code imports.
+- **Owner decisions:**
+  - the scope reading for support cases;
+  - no view of deleted accounts;
+  - re-enable without re-authentication;
+  - who may disable (`content.moderate` today).
+
+— Alieu-Claude (lane-admin)
+
 ### 2026-10-28 — Alieu-Claude (lane-journeys) → integrator — user journeys
 
 Branch `feat/user-journeys`, migration `20261028100000_user_journeys` (additive;
@@ -2867,3 +2905,47 @@ DECISIONS: "User journeys (2026-10-28)".
   was checked by hand and is identical).
 
 — Alieu-Claude (lane-journeys)
+
+### 2026-10-27 — lane-comms (for Alieu-Claude) — official announcements, preferences, settings phase 2
+
+**Done** on `feat/communications-settings2`: Communications now has
+Announcements (compose or start from a template -> scope -> preview with
+counts, per-channel split and SMS cost -> confirmed send -> batches -> delivery
+record with retry), Templates (draft/active/archived) and the old screen as
+Direct message. Per-account notification preferences on the farmer Account
+page and buyer Notifications; essential messages cannot be switched off;
+`notifyAccount` respects "updates". Settings phase 2: language and region,
+registration and recovery, profile privacy, marketplace and reference lists,
+notifications and moderation, each read by its code (DECISIONS, both entries
+of 2026-10-27). Migrations `20261027110000_communications`,
+`20261027110100_settings_phase2`. New permission `communications.send`
+(Administrator preset).
+**Needs from you.** The combined audit CHECK with 11 new keys (listed in
+DECISIONS); applying both migrations; owner decisions marked OWNER TO
+CONFIRM.
+**Decided.** Announcement recipients are resolved on the server by scope only;
+a failed or interrupted delivery is never resent without a person pressing
+Retry.
+
+### 2026-10-28 — Alieu-Claude (lane-security) → integrator — staff security, advisory authorization, organisation advice, analytics
+
+Branch `feat/staff-security-advisory`. Migrations `20261028110000_staff_security_advisory`
+and `20261028112000_organisation_advice_cases` (additive; two CHECKs widened, one
+unique constraint replaced by partial unique indexes). Not applied. DECISIONS: the
+six 2026-10-28 entries.
+
+- Staff two-step sign-in (TOTP) with `STAFF_MFA_ENFORCEMENT` (default `verify`;
+  switch to `required` once CORWADO's administrators have enrolled); Super Admin
+  reset; sign-in through `POST /api/auth/sign-in` with failed sign-ins logged and
+  rate-limited; last activity on API calls; staff email invitations with a
+  copyable link when email is not configured.
+- Adviser suspend/restore with duration, what-was-checked, advisory status on the
+  account record, official advisory notes reviewed by staff.
+- Organisation advice profile and shared advice inbox (assign/accept) for
+  `advisory.handle`.
+- Analytics: commodity and actor-type filters, three over-time charts, real
+  editable Excel charts.
+- **The audit CHECK is yours**: 15 new keys (AUDIT_ACTIONS and CONVENTIONS
+  §5.2.2 list them); `audit-check-matches-migrations` fails locally until then.
+
+— Alieu-Claude (lane-security)

@@ -1,4 +1,4 @@
-import { ALL_ROLES, BUYER_ROLE } from '@agri-erp/shared';
+import { ALL_ROLES, BUYER_ROLE, staffMfaMode, staffMfaStatus } from '@agri-erp/shared';
 
 import { recordVisit } from '../../../lib/api/access-log';
 import { defineRoutes, ok } from '../../../lib/api/route';
@@ -16,6 +16,10 @@ import { defineRoutes, ok } from '../../../lib/api/route';
 export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   GET: {
     roles: [...ALL_ROLES, BUYER_ROLE],
+    // 2026-10-28: answered to a staff session that has not yet passed the
+    // two-step code, so the portal can send it to finish signing in. It
+    // returns who the caller is and nothing else.
+    mfaExempt: true,
     handler: async ({ auth, request }) => {
       // STAFF PERMISSIONS LANE (2026-10-19): the access log. The portal calls
       // this on load and the sign-in screen straight after a sign-in, so it is
@@ -28,6 +32,10 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
         name: auth.principal.name,
         role: auth.role,
         scope: auth.scope,
+        // 2026-10-28: staff only -- where the caller stands on two-step sign-in.
+        ...(auth.mfa
+          ? { mfa: staffMfaStatus(auth.mfa, staffMfaMode(process.env.STAFF_MFA_ENFORCEMENT)) }
+          : {}),
       });
     },
   },

@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { ACTIVITIES, type Activity } from './account-profile';
+import { LISTING_CATEGORIES, type ListingCategory } from './buyer';
 import { DISPLAY_TIME_ZONE, DISPLAY_UTC_OFFSET } from './staff-permissions';
 
 /**
@@ -37,6 +39,9 @@ export const ANALYTICS_MESSAGES = {
   windowReversed: 'The window ends before it starts.',
   windowTooLong: `A window can be at most ${ANALYTICS_MAX_DAYS} days.`,
   stateInvalid: 'Choose a state from the list.',
+  // 2026-10-28: the commodity and actor-type filters.
+  commodityInvalid: 'Choose a commodity from the list.',
+  actorTypeInvalid: 'Choose an actor type from the list.',
 } as const;
 
 const M = ANALYTICS_MESSAGES;
@@ -88,6 +93,12 @@ export const analyticsFilterSchema = z
       .trim()
       .regex(/^[A-Za-z0-9_-]{1,32}$/, M.stateInvalid)
       .optional(),
+    // 2026-10-28: a commodity category (LISTING_CATEGORIES) and an actor type
+    // (ACTIVITIES, "What you do"). Each narrows only the figures whose
+    // definition says how it applies; every other figure is shown as not
+    // measured under it, never silently unfiltered.
+    commodity: z.enum(LISTING_CATEGORIES, { error: () => M.commodityInvalid }).optional(),
+    actor_type: z.enum(ACTIVITIES, { error: () => M.actorTypeInvalid }).optional(),
   })
   .superRefine((f, ctx) => {
     const today = jubaToday();
@@ -195,6 +206,17 @@ export interface MetricDefinition {
    * the figure is national only and is not served under a state filter.
    */
   readonly stateRule: string | null;
+  /**
+   * 2026-10-28. How a commodity filter applies. Absent: the rows carry no
+   * commodity, so under a commodity filter the figure is not measured.
+   */
+  readonly commodityRule?: string;
+  /**
+   * 2026-10-28. How an actor-type filter applies. Absent: the rows cannot be
+   * tied to an account's "What you do", so under that filter the figure is not
+   * measured.
+   */
+  readonly actorRule?: string;
   /** Present when the figure is served with a breakdown. */
   readonly breakdown?: {
     readonly label: string;
@@ -230,6 +252,34 @@ const ACCOUNT_KIND_KEYS = {
   user: 'Staff',
 } as const;
 
+/** "What you do" in words: the actor-type filter and the activities breakdown. */
+export const ANALYTICS_ACTOR_LABELS: Readonly<Record<Activity, string>> = {
+  farmer: 'Farmer',
+  trader: 'Trader',
+  processor: 'Processor',
+  input_supplier: 'Input supplier',
+  transport: 'Transport',
+  other_services: 'Other services',
+  knowledge_provider: 'Knowledge provider',
+  financial_services: 'Financial services',
+  buyer: 'Buyer',
+};
+
+/** 2026-10-28: how the commodity and actor-type filters apply, figure by figure. */
+const COMMODITY_LISTING = "The listing's commodity category.";
+const COMMODITY_REQUEST = "The buying request's commodity category.";
+const ACTOR_ACCOUNT =
+  'Accounts whose "What you do" includes the activity. Extension officers and staff have no ' +
+  'such profile, so they drop out under this filter.';
+const ACTOR_FARMER =
+  `Farmers whose sign-in account's "What you do" includes the activity. Farmers registered by ` +
+  'an officer who never signed in have no such profile and drop out.';
+const ACTOR_HOLDER = 'Account holders whose "What you do" includes the activity.';
+const ACTOR_LISTING = `Listings of a farmer whose sign-in account's "What you do" includes the activity.`;
+const ACTOR_POSTER =
+  `Posts by a person whose sign-in account's "What you do" includes the activity (for an ` +
+  `organisation's post, the person who posted it).`;
+
 const ACCOUNT_STATE_RULE =
   "A farmer by the farmer's state; a buyer by the buyer organisation's state (a buyer with no " +
   "state is counted only nationally); an officer by the officer's state; staff by their state scope.";
@@ -250,6 +300,7 @@ export const ANALYTICS_METRICS: readonly MetricDefinition[] = [
       "access_log (event 'account_created'), joined to farmer and buyer for the sign-in account",
     window: IN_WINDOW,
     stateRule: ACCOUNT_STATE_RULE,
+    actorRule: ACTOR_ACCOUNT,
     breakdown: {
       label: 'Kind of account',
       keys: { farmer: ACCOUNT_KIND_KEYS.farmer, buyer: ACCOUNT_KIND_KEYS.buyer },
@@ -269,6 +320,7 @@ export const ANALYTICS_METRICS: readonly MetricDefinition[] = [
     source: 'farmer (registration_source), soft-deleted records excluded',
     window: IN_WINDOW,
     stateRule: "The farmer's state.",
+    actorRule: ACTOR_FARMER,
     breakdown: {
       label: 'Registered by',
       keys: { self: 'Self-registered', officer: 'Registered by an officer' },
@@ -286,6 +338,7 @@ export const ANALYTICS_METRICS: readonly MetricDefinition[] = [
     source: "verification_event (decision 'verified'), joined to farmer_verified_v",
     window: 'Decision made in the window.',
     stateRule: "The farmer's state.",
+    actorRule: ACTOR_FARMER,
   },
   {
     id: 'farmers.rejected',
@@ -299,6 +352,7 @@ export const ANALYTICS_METRICS: readonly MetricDefinition[] = [
     source: "verification_event (decision 'rejected'), soft-deleted records excluded",
     window: 'Decision made in the window.',
     stateRule: "The farmer's state.",
+    actorRule: ACTOR_FARMER,
   },
   {
     id: 'farmers.pending_now',
@@ -310,6 +364,7 @@ export const ANALYTICS_METRICS: readonly MetricDefinition[] = [
     source: "farmer (verification_status 'pending'), soft-deleted records excluded",
     window: NOW,
     stateRule: "The farmer's state.",
+    actorRule: ACTOR_FARMER,
   },
   {
     id: 'buyers.registered',
@@ -377,6 +432,7 @@ export const ANALYTICS_METRICS: readonly MetricDefinition[] = [
     source: "access_log (event 'first_sign_in')",
     window: 'First sign-in in the window.',
     stateRule: ACCOUNT_STATE_RULE,
+    actorRule: ACTOR_ACCOUNT,
     breakdown: { label: 'Kind of account', keys: ACCOUNT_KIND_KEYS },
   },
   {
@@ -390,6 +446,7 @@ export const ANALYTICS_METRICS: readonly MetricDefinition[] = [
     source: "access_log (events 'first_sign_in', 'sign_in', 'return_session')",
     window: 'Seen in the window.',
     stateRule: ACCOUNT_STATE_RULE,
+    actorRule: ACTOR_ACCOUNT,
     breakdown: { label: 'Kind of account', keys: ACCOUNT_KIND_KEYS },
   },
   {
@@ -404,6 +461,7 @@ export const ANALYTICS_METRICS: readonly MetricDefinition[] = [
     source: 'access_log',
     window: 'Seen in the window; first sign-in before it.',
     stateRule: ACCOUNT_STATE_RULE,
+    actorRule: ACTOR_ACCOUNT,
     breakdown: { label: 'Kind of account', keys: ACCOUNT_KIND_KEYS },
   },
   {
@@ -418,6 +476,7 @@ export const ANALYTICS_METRICS: readonly MetricDefinition[] = [
     source: 'access_log',
     window: 'Occurred in the window.',
     stateRule: ACCOUNT_STATE_RULE,
+    actorRule: ACTOR_ACCOUNT,
     breakdown: {
       label: 'Event',
       keys: {
@@ -441,6 +500,7 @@ export const ANALYTICS_METRICS: readonly MetricDefinition[] = [
     source: 'access_log, located through farmer and buyer_organization',
     window: 'Seen in the window.',
     stateRule: ACCOUNT_STATE_RULE,
+    actorRule: ACTOR_ACCOUNT,
     breakdown: { label: 'State', keys: { none: 'No state given' } },
   },
   {
@@ -456,20 +516,11 @@ export const ANALYTICS_METRICS: readonly MetricDefinition[] = [
     source: 'account_profile (activities), for accounts with a farmer or buyer record',
     window: NOW,
     stateRule: ACCOUNT_STATE_RULE,
+    actorRule: ACTOR_HOLDER,
     breakdown: {
       label: 'Activity',
       overlapping: true,
-      keys: {
-        farmer: 'Farmer',
-        trader: 'Trader',
-        processor: 'Processor',
-        input_supplier: 'Input supplier',
-        transport: 'Transport',
-        other_services: 'Other services',
-        knowledge_provider: 'Knowledge provider',
-        financial_services: 'Financial services',
-        buyer: 'Buyer',
-      },
+      keys: ANALYTICS_ACTOR_LABELS,
     },
   },
   {
@@ -484,6 +535,7 @@ export const ANALYTICS_METRICS: readonly MetricDefinition[] = [
     source: 'account_profile (profile_kind), for accounts with a farmer or buyer record',
     window: NOW,
     stateRule: ACCOUNT_STATE_RULE,
+    actorRule: ACTOR_HOLDER,
     breakdown: {
       label: 'Kind of profile',
       keys: {
@@ -507,6 +559,7 @@ export const ANALYTICS_METRICS: readonly MetricDefinition[] = [
     source: 'account_profile (enterprise_size), for accounts with a farmer or buyer record',
     window: NOW,
     stateRule: ACCOUNT_STATE_RULE,
+    actorRule: ACTOR_HOLDER,
     breakdown: {
       label: 'Enterprise size',
       keys: {
@@ -530,6 +583,8 @@ export const ANALYTICS_METRICS: readonly MetricDefinition[] = [
     source: 'produce_listing, soft-deleted listings excluded',
     window: IN_WINDOW,
     stateRule: "The listing's state.",
+    commodityRule: COMMODITY_LISTING,
+    actorRule: ACTOR_LISTING,
   },
   {
     id: 'listings.active_now',
@@ -542,6 +597,8 @@ export const ANALYTICS_METRICS: readonly MetricDefinition[] = [
     source: "produce_listing (status 'listed')",
     window: NOW,
     stateRule: "The listing's state.",
+    commodityRule: COMMODITY_LISTING,
+    actorRule: ACTOR_LISTING,
   },
   {
     id: 'listings.completed',
@@ -556,6 +613,8 @@ export const ANALYTICS_METRICS: readonly MetricDefinition[] = [
       "audit_event (listing.status_changed to 'completed' or 'sold'), joined to produce_listing",
     window: 'Closed in the window.',
     stateRule: "The listing's state.",
+    commodityRule: COMMODITY_LISTING,
+    actorRule: ACTOR_LISTING,
   },
   {
     id: 'trades.sales_recorded',
@@ -571,6 +630,8 @@ export const ANALYTICS_METRICS: readonly MetricDefinition[] = [
       '/api/farmer/listings/:id/sales)',
     window: 'Recorded in the window.',
     stateRule: "The listing's state.",
+    commodityRule: COMMODITY_LISTING,
+    actorRule: ACTOR_LISTING,
   },
   {
     id: 'trades.orders_delivered',
@@ -584,6 +645,8 @@ export const ANALYTICS_METRICS: readonly MetricDefinition[] = [
     source: "delivery_update (status 'delivered' or 'completed'), joined to purchase_order",
     window: 'Delivered in the window.',
     stateRule: "The listing's state (where the produce is).",
+    commodityRule: COMMODITY_LISTING,
+    actorRule: ACTOR_LISTING,
   },
   {
     id: 'orders.created',
@@ -595,6 +658,8 @@ export const ANALYTICS_METRICS: readonly MetricDefinition[] = [
     source: 'purchase_order, soft-deleted orders excluded',
     window: IN_WINDOW,
     stateRule: "The listing's state (where the produce is).",
+    commodityRule: COMMODITY_LISTING,
+    actorRule: ACTOR_LISTING,
   },
   {
     id: 'purchase_requests.sent',
@@ -621,6 +686,8 @@ export const ANALYTICS_METRICS: readonly MetricDefinition[] = [
     source: 'buying_request, soft-deleted requests excluded',
     window: IN_WINDOW,
     stateRule: "The request's state.",
+    commodityRule: COMMODITY_REQUEST,
+    actorRule: ACTOR_POSTER,
     breakdown: { label: 'Posted by', keys: { farmer: 'Farmers', buyer: 'Buyers' } },
   },
   {
@@ -633,6 +700,8 @@ export const ANALYTICS_METRICS: readonly MetricDefinition[] = [
     source: "buying_request (status 'active')",
     window: NOW,
     stateRule: "The request's state.",
+    commodityRule: COMMODITY_REQUEST,
+    actorRule: ACTOR_POSTER,
   },
   {
     id: 'services.created',
@@ -645,6 +714,7 @@ export const ANALYTICS_METRICS: readonly MetricDefinition[] = [
     source: 'service_listing, soft-deleted listings excluded',
     window: IN_WINDOW,
     stateRule: "The service's state.",
+    actorRule: ACTOR_POSTER,
     breakdown: {
       label: 'Service',
       keys: {
@@ -666,6 +736,7 @@ export const ANALYTICS_METRICS: readonly MetricDefinition[] = [
     source: "service_listing (status 'active')",
     window: NOW,
     stateRule: "The service's state.",
+    actorRule: ACTOR_POSTER,
   },
   {
     id: 'messages.conversations',
@@ -706,6 +777,8 @@ export const ANALYTICS_METRICS: readonly MetricDefinition[] = [
     source: 'contact_request',
     window: IN_WINDOW,
     stateRule: "The listing's state.",
+    commodityRule: COMMODITY_LISTING,
+    actorRule: ACTOR_LISTING,
   },
   {
     id: 'moderation.reports',
@@ -976,7 +1049,13 @@ export const ANALYTICS_LIMITATIONS: readonly string[] = [
     'have no sign-in events.',
   'Phone sign-up codes and support messages carry no state, so they are national figures only.',
   'Buyer organisations that gave no state are counted only in national figures.',
-  'Charts in the Excel file are not editable yet: the file carries the numbers and definitions.',
+  'Charts in the Excel file are real, editable Excel charts drawn from the numbers on the same ' +
+    'sheet; changing a number changes its chart.',
+  'The commodity filter narrows only produce listings, orders, contact requests and buying ' +
+    'requests (the rows that carry a commodity); the actor-type filter only figures that can be ' +
+    'tied to an account\'s "What you do". Every other figure is shown as not measured under them.',
+  'Over-time charts count by Juba day, Monday-starting week or calendar month, chosen by the ' +
+    'window length. The first and last period may be partial: only days inside the window count.',
 ];
 
 /** One figure as the summary route serves it. */
@@ -984,17 +1063,23 @@ export interface AnalyticsMetricValue {
   readonly id: string;
   /** Null when the figure cannot be produced; `unavailable` says why. Never a silent zero. */
   readonly value: number | null;
-  readonly unavailable?: 'not_located' | 'not_in_database' | 'none_in_window';
+  readonly unavailable?: 'not_located' | 'not_in_database' | 'none_in_window' | 'not_filterable';
   readonly breakdown?: readonly { key: string; label?: string; value: number }[];
 }
 
 export interface AnalyticsSummary {
   readonly window: { from: string; to: string; days: number; time_zone: string };
   readonly state_id: string | null;
+  /** 2026-10-28: the commodity and actor-type filters as applied; null when not chosen. */
+  readonly commodity: ListingCategory | null;
+  readonly actor_type: Activity | null;
   /** The states the figures are limited to; null means national. */
   readonly scope_states: readonly string[] | null;
   readonly generated_at: string;
   readonly metrics: readonly AnalyticsMetricValue[];
+  /** 2026-10-28: the over-time figures, bucketed by `bucket`. */
+  readonly bucket: AnalyticsBucket;
+  readonly series: readonly AnalyticsSeriesValue[];
   readonly limitations: readonly string[];
 }
 
@@ -1005,7 +1090,153 @@ export const UNAVAILABLE_TEXT: Readonly<
   not_located: 'These rows carry no state, so the figure is national only.',
   not_in_database: 'The table behind this figure is not in the database yet.',
   none_in_window: 'Nothing in the window to take a median or an average of.',
+  not_filterable:
+    'These rows cannot be narrowed by the commodity or actor type chosen, so the figure is not shown under that filter.',
 };
 
 export const metricDefinition = (id: string): MetricDefinition | undefined =>
   ANALYTICS_METRICS.find((m) => m.id === id);
+
+// ---------------------------------------------------------------------------
+// OVER TIME (2026-10-28)
+// ---------------------------------------------------------------------------
+
+/**
+ * Time series: the same counting rules as the figures above, split into
+ * periods. The period is chosen by the window's length so a chart never has
+ * hundreds of points: up to 31 days by day, up to 184 by week (starting
+ * Monday, as Postgres's date_trunc does), longer by calendar month. Periods
+ * are Juba calendar periods; only days inside the window are counted, so the
+ * first and last period may be partial.
+ */
+export const ANALYTICS_BUCKETS = ['day', 'week', 'month'] as const;
+export type AnalyticsBucket = (typeof ANALYTICS_BUCKETS)[number];
+
+export const ANALYTICS_BUCKET_LABELS: Readonly<Record<AnalyticsBucket, string>> = {
+  day: 'Day',
+  week: 'Week starting',
+  month: 'Month',
+};
+
+export function analyticsBucket(days: number): AnalyticsBucket {
+  if (days <= 31) return 'day';
+  if (days <= 184) return 'week';
+  return 'month';
+}
+
+/**
+ * The first day of every period that touches the window, oldest first, as
+ * YYYY-MM-DD. The server fills each with its count, 0 included, so every
+ * series has exactly these points.
+ */
+export function bucketStarts(
+  window: Pick<AnalyticsWindow, 'from' | 'to'>,
+  bucket: AnalyticsBucket,
+): string[] {
+  let start = window.from;
+  if (bucket === 'week') {
+    const dow = new Date(`${start}T00:00:00Z`).getUTCDay(); // 0 Sunday .. 6 Saturday
+    start = addDays(start, -((dow + 6) % 7));
+  } else if (bucket === 'month') {
+    start = `${start.slice(0, 7)}-01`;
+  }
+  const out: string[] = [];
+  let at = start;
+  while (at <= window.to) {
+    out.push(at);
+    if (bucket === 'day') at = addDays(at, 1);
+    else if (bucket === 'week') at = addDays(at, 7);
+    else {
+      const y = Number(at.slice(0, 4));
+      const m = Number(at.slice(5, 7));
+      at = m === 12 ? `${y + 1}-01-01` : `${y}-${String(m + 1).padStart(2, '0')}-01`;
+    }
+  }
+  return out;
+}
+
+export interface SeriesDefinition {
+  readonly id: string;
+  readonly label: string;
+  readonly unit: MetricUnit;
+  /** How it is best drawn: a line for movement, columns for counts per period. */
+  readonly chart: 'line' | 'column';
+  readonly definition: string;
+  readonly denominator: string;
+  readonly source: string;
+  readonly window: string;
+  readonly stateRule: string;
+  readonly commodityRule?: string;
+  readonly actorRule?: string;
+  /** The lines (or column groups), in order, with their labels. */
+  readonly keys: Readonly<Record<string, string>>;
+  /** True when the keys are different measures and must never be added together. */
+  readonly separateMeasures?: boolean;
+}
+
+const PER_PERIOD = 'Counted per period (day, week or month), inside the window only.';
+
+export const ANALYTICS_SERIES: readonly SeriesDefinition[] = [
+  {
+    id: 'series.registrations',
+    label: 'Registrations over time',
+    unit: 'accounts',
+    chart: 'column',
+    definition:
+      'New farmer and buyer sign-in accounts per period, as "New sign-in accounts" counts them. ' +
+      'A person who opened both kinds of account appears under each.',
+    denominator: COUNT,
+    source: "access_log (event 'account_created'), joined to farmer and buyer",
+    window: PER_PERIOD,
+    stateRule: ACCOUNT_STATE_RULE,
+    actorRule: ACTOR_ACCOUNT,
+    keys: { farmer: ACCOUNT_KIND_KEYS.farmer, buyer: ACCOUNT_KIND_KEYS.buyer },
+  },
+  {
+    id: 'series.active_users',
+    label: 'New and returning active accounts over time',
+    unit: 'accounts',
+    chart: 'line',
+    definition:
+      'Accounts seen in each period (a first sign-in, sign-in or return session), split in two: ' +
+      'new, when the account signed in for the very first time in that period; returning, when ' +
+      'its first sign-in was earlier. An account is counted once per period.',
+    denominator: COUNT,
+    source: "access_log (events 'first_sign_in', 'sign_in', 'return_session')",
+    window: PER_PERIOD,
+    stateRule: ACCOUNT_STATE_RULE,
+    actorRule: ACTOR_ACCOUNT,
+    keys: { new: 'New', returning: 'Returning' },
+  },
+  {
+    id: 'series.market_activity',
+    label: 'Listings and buying requests over time',
+    unit: 'records',
+    chart: 'line',
+    definition:
+      'Produce listings created and buying requests created per period, drafts included, as ' +
+      '"Produce listings created" and "Buying requests posted" count them. Two different ' +
+      'measures side by side; never added together.',
+    denominator: COUNT,
+    source: 'produce_listing and buying_request, soft-deleted rows excluded',
+    window: PER_PERIOD,
+    stateRule: "The listing's or the request's state.",
+    commodityRule: "The listing's or the request's commodity category.",
+    actorRule: ACTOR_POSTER,
+    keys: { listings: 'Produce listings', buying_requests: 'Buying requests' },
+    separateMeasures: true,
+  },
+];
+
+/** One over-time figure as the summary route serves it. */
+export interface AnalyticsSeriesValue {
+  readonly id: string;
+  /** Period starts, oldest first; every line has one point per period. */
+  readonly periods: readonly string[];
+  /** Null when the figure cannot be produced; `unavailable` says why. */
+  readonly lines: readonly { key: string; points: readonly number[] }[] | null;
+  readonly unavailable?: AnalyticsMetricValue['unavailable'];
+}
+
+export const seriesDefinition = (id: string): SeriesDefinition | undefined =>
+  ANALYTICS_SERIES.find((s) => s.id === id);

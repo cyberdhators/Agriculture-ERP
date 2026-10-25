@@ -6,6 +6,7 @@ import {
   presentProvider,
   type ProviderRow,
 } from '../../../../lib/api/advice';
+import { APPROVAL_SUSPENDED_SQL } from '../../../../lib/api/adviser-approval';
 import { invalidCursor } from '../../../../lib/api/errors';
 import { cursorOf, likePattern, pageLimit, parseQuery } from '../../../../lib/api/market-posts';
 import { defineRoutes, paged } from '../../../../lib/api/route';
@@ -51,7 +52,10 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       }
       if (filter.delivery_mode) where.push(`${add(filter.delivery_mode)} = ANY (p.delivery_modes)`);
       // 2026-10-24: approved advisers only. Approval is CORWADO's; publishing never sets it.
-      if (filter.approved === '1') where.push('p.approved_at IS NOT NULL');
+      // 2026-10-28: an approval paused by a suspension does not count.
+      if (filter.approved === '1') {
+        where.push(`p.approved_at IS NOT NULL AND NOT ${APPROVAL_SUSPENDED_SQL}`);
+      }
       if (filter.cursor !== undefined) {
         const cursor = decodeCursor(filter.cursor);
         if (!cursor) throw invalidCursor();

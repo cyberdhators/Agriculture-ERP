@@ -9,6 +9,7 @@ import {
   type PublicProfileStatus,
 } from '@agri-erp/shared';
 
+import { settingValue } from './settings';
 import { type AuditTx } from './audit';
 import {
   MARKET_BASE_WHERE,
@@ -276,6 +277,9 @@ export async function presentOwnProfile(
   const account = await accountOfSignIn(db, authUserId);
   // A staff-registered farmer may have no name to suggest: then none.
   const suggested = await myName(db, authUserId).catch(() => '');
+  // 2026-10-27 (settings phase 2): a profile not yet created starts from
+  // Profile privacy's defaults; a saved profile keeps its own choices.
+  const defaults = row ? null : await settingValue('profile_privacy');
   return {
     public_id: row?.public_id ?? null,
     status: row?.status ?? 'draft',
@@ -290,8 +294,8 @@ export async function presentOwnProfile(
     about: row?.about ?? null,
     products: row?.products ?? [],
     services: row?.services ?? [],
-    show_phone: row?.show_phone ?? false,
-    allow_messages: row?.allow_messages ?? true,
+    show_phone: row ? row.show_phone : (defaults?.show_phone_default ?? false),
+    allow_messages: row ? row.allow_messages : (defaults?.allow_messages_default ?? true),
     photo_url: await photoLink(row?.photo_path ?? null),
     verified: account.verified,
     member_since: account.member_since ? account.member_since.toISOString().slice(0, 7) : null,

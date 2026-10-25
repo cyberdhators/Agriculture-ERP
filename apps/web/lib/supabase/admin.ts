@@ -209,6 +209,38 @@ export async function revokeAllSessions(authUserId: string): Promise<void> {
 }
 
 /**
+ * 2026-10-28: TWO-STEP SIGN-IN. The ids of an account's VERIFIED
+ * authenticator factors (TOTP), read from the authentication service. Used to
+ * confirm an enrolment before it is recorded, and before a reset.
+ * Throws on any failure.
+ */
+export async function verifiedFactorIds(authUserId: string): Promise<string[]> {
+  const { data, error } = await adminClient().auth.admin.mfa.listFactors({ userId: authUserId });
+  if (error || !data) throw new Error('Could not read the authenticators of the account.');
+  return data.factors.filter((f) => f.status === 'verified').map((f) => f.id);
+}
+
+/**
+ * 2026-10-28: removes EVERY authenticator factor of an account (verified or
+ * not), so its owner can enrol a new one. Supabase documents that deleting a
+ * verified factor signs the account out of every session. Returns how many
+ * were removed. Throws on any failure, leaving the rest in place.
+ */
+export async function deleteAllFactors(authUserId: string): Promise<number> {
+  const admin = adminClient();
+  const { data, error } = await admin.auth.admin.mfa.listFactors({ userId: authUserId });
+  if (error || !data) throw new Error('Could not read the authenticators of the account.');
+  for (const factor of data.factors) {
+    const { error: deleteError } = await admin.auth.admin.mfa.deleteFactor({
+      id: factor.id,
+      userId: authUserId,
+    });
+    if (deleteError) throw new Error('Could not remove an authenticator.');
+  }
+  return data.factors.length;
+}
+
+/**
  * Authentication accounts with no application row — the residue of a creation
  * that failed after the account was made and could not be undone.
  *
@@ -256,6 +288,25 @@ export async function adminAuthEmails(
     found.set(id, data.user.email);
   }
   return found;
+}
+
+/**
+ * 2026-10-28: ONE email account's address and whether it was confirmed, for
+ * the staff account page (masked there; revealed only to support.handle,
+ * audited). Only for an EMAIL sign-in -- a farmer's identifier is derived
+ * from the phone and is not a mailbox. Null when there is no such account or
+ * the service does not answer: the page then says it could not be checked.
+ */
+export async function authEmailFacts(
+  authUserId: string,
+): Promise<{ email: string; confirmed: boolean } | null> {
+  try {
+    const { data, error } = await adminClient().auth.admin.getUserById(authUserId);
+    if (error || !data.user?.email) return null;
+    return { email: data.user.email, confirmed: Boolean(data.user.email_confirmed_at) };
+  } catch {
+    return null;
+  }
 }
 
 /**

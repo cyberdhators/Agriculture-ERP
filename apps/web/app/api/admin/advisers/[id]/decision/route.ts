@@ -1,6 +1,8 @@
 import {
   ADVISER_DECISION_RULES,
+  type AdviserApplicationStatus,
   adviserDecisionSchema,
+  effectiveAdviserStatus,
   type AdviserDecision,
   type AdviserDecisionInput,
   type AuditAction,
@@ -29,7 +31,14 @@ import { type AccountNotice } from '../../../../../../lib/farmer-notices';
  *                          IS the question the applicant sees
  *   approve                open -> approved; the provider gains the badge
  *   decline                open -> declined
- *   revoke                 approved -> revoked; the provider loses the badge
+ *   revoke                 approved | suspended -> revoked; the provider loses the badge
+ *   suspend (2026-10-28)   approved -> suspended for suspend_days (1-365); the
+ *                          badge is hidden until then, when it lapses by itself
+ *   restore (2026-10-28)   suspended -> approved early; the badge shows again
+ *
+ * 2026-10-28: an approval records what the staff member checked (`checks`),
+ * which the public profile shows as "what CORWADO checked". A suspension past
+ * its end date counts as approved (effectiveAdviserStatus).
  *
  * In ONE transaction: the application, the provider's approved_at and
  * approved_application_id (approve sets both, revoke clears both), and one
@@ -52,6 +61,8 @@ const AUDIT_ACTION: Record<AdviserDecision, AuditAction> = {
   approve: 'adviser_application.approved',
   decline: 'adviser_application.declined',
   revoke: 'adviser_approval.revoked',
+  suspend: 'adviser_approval.suspended',
+  restore: 'adviser_approval.restored',
 };
 
 /** The notice each decision sends the applicant. Fixed sentences: lib/farmer-notices.ts. */
@@ -60,6 +71,8 @@ const NOTICE: Record<AdviserDecision, AccountNotice> = {
   approve: 'adviser_approved',
   decline: 'adviser_declined',
   revoke: 'adviser_revoked',
+  suspend: 'adviser_suspended',
+  restore: 'adviser_restored',
 };
 
 export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
@@ -75,9 +88,15 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       const row = await audited(prisma, async (tx) => {
         // Lock the application and its provider, in that order, every time.
         const [current] = await tx.$queryRawUnsafe<
-          { id: string; status: string; auth_user_id: string; provider_id: string }[]
+          {
+            id: string;
+            status: AdviserApplicationStatus;
+            suspended_until: Date | null;
+            auth_user_id: string;
+            provider_id: string;
+          }[]
         >(
-          `SELECT a.id, a.status, a.auth_user_id, a.provider_id
+          `SELECT a.id, a.status, a.suspended_until, a.auth_user_id, a.provider_id
              FROM public.adviser_application a
             WHERE a.id = $1::uuid AND a.deleted_at IS NULL
             FOR UPDATE`,
@@ -97,11 +116,36 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
         if (current.auth_user_id === auth.principal.authUserId) {
           throw unprocessable('adviser_own_application');
         }
-        if (!(rule.from as readonly string[]).includes(current.status)) {
+        // A lapsed suspension is an approval again (it may be suspended anew).
+        const standing = effectiveAdviserStatus(
+          current.status,
+          current.suspended_until,
+          Date.now(),
+        );
+        if (!(rule.from as readonly string[]).includes(standing)) {
           throw unprocessable('adviser_decision_not_allowed');
         }
 
-        if (body.action === 'request_clarification') {
+        let suspendedUntil: Date | null = null;
+        if (body.action === 'suspend') {
+          suspendedUntil = new Date(Date.now() + (body.suspend_days ?? 1) * 24 * 60 * 60 * 1000);
+          await tx.$executeRawUnsafe(
+            `UPDATE public.adviser_application
+                SET status = 'suspended', suspended_until = $2::timestamptz,
+                    suspension_reason = $3, updated_at = now()
+              WHERE id = $1::uuid`,
+            id,
+            suspendedUntil.toISOString(),
+            body.reason,
+          );
+        } else if (body.action === 'restore') {
+          await tx.$executeRawUnsafe(
+            `UPDATE public.adviser_application
+                SET status = 'approved', suspended_until = NULL, updated_at = now()
+              WHERE id = $1::uuid`,
+            id,
+          );
+        } else if (body.action === 'request_clarification') {
           await tx.$executeRawUnsafe(
             `UPDATE public.adviser_application
                 SET status = 'clarification_requested', clarification_request = $2,
@@ -117,12 +161,15 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
           await tx.$executeRawUnsafe(
             `UPDATE public.adviser_application
                 SET status = $2, decision_reason = $3, decided_by = $4::uuid,
-                    decided_at = now(), updated_at = now()
+                    decided_at = now(), updated_at = now(), suspended_until = NULL,
+                    verified_checks = CASE WHEN $2 = 'approved' THEN $5::text[]
+                                           ELSE verified_checks END
               WHERE id = $1::uuid`,
             id,
             rule.to,
             body.reason,
             auth.principal.id,
+            body.action === 'approve' ? (body.checks ?? []) : [],
           );
           if (body.action === 'approve') {
             await tx.$executeRawUnsafe(
@@ -149,8 +196,16 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
           actorType: auth.role,
           actorId: auth.principal.id,
           action: AUDIT_ACTION[body.action],
-          before: { status: current.status },
-          after: { status: rule.to, provider_id: current.provider_id, reason: body.reason },
+          before: { status: standing },
+          after: {
+            status: rule.to,
+            provider_id: current.provider_id,
+            reason: body.reason,
+            ...(body.action === 'approve' ? { checks: body.checks ?? [] } : {}),
+            ...(suspendedUntil
+              ? { suspended_until: suspendedUntil.toISOString(), days: body.suspend_days }
+              : {}),
+          },
         });
 
         await notifyAccount(tx, { authUserId: current.auth_user_id }, NOTICE[body.action], {
