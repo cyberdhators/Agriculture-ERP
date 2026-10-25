@@ -259,6 +259,25 @@ export async function adminAuthEmails(
 }
 
 /**
+ * 2026-10-28: ONE email account's address and whether it was confirmed, for
+ * the staff account page (masked there; revealed only to support.handle,
+ * audited). Only for an EMAIL sign-in -- a farmer's identifier is derived
+ * from the phone and is not a mailbox. Null when there is no such account or
+ * the service does not answer: the page then says it could not be checked.
+ */
+export async function authEmailFacts(
+  authUserId: string,
+): Promise<{ email: string; confirmed: boolean } | null> {
+  try {
+    const { data, error } = await adminClient().auth.admin.getUserById(authUserId);
+    if (error || !data.user?.email) return null;
+    return { email: data.user.email, confirmed: Boolean(data.user.email_confirmed_at) };
+  } catch {
+    return null;
+  }
+}
+
+/**
  * ============================================================================
  * STORAGE (B8, C-8.8). Bytes never pass through a route: the API issues a
  * grant for one object path, the phone uploads straight to Storage, and the

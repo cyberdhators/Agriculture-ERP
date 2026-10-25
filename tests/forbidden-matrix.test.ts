@@ -40,6 +40,10 @@ import * as users from '../apps/web/app/api/users/route';
 import * as adminOrganizations from '../apps/web/app/api/admin/organizations/route';
 import * as adminOrgRecover from '../apps/web/app/api/admin/organizations/[id]/recover/route';
 import * as corrections from '../apps/web/app/api/admin/corrections/route';
+import * as adminMarketplace from '../apps/web/app/api/admin/marketplace/route';
+import * as adminMarketplaceRemoved from '../apps/web/app/api/admin/marketplace/removed/route';
+import * as adminMarketplaceRemove from '../apps/web/app/api/admin/marketplace/[kind]/[id]/remove/route';
+import * as adminOverview from '../apps/web/app/api/admin/overview/route';
 import { randomUUID } from 'node:crypto';
 import {
   FARMER_TEST_FAMILY,
@@ -711,6 +715,37 @@ const ROUTES = [
       reason_code: 'misleading_listing',
       note: 'Zztest correction note',
     }),
+  }, // 2026-10-28: the administration overview. Staff roles, then reports.view,
+  // which only an administrator holds without a grant -- so the test's
+  // supervisor and read-only principals (no grants) are refused.
+  {
+    name: 'GET /api/admin/overview',
+    mod: adminOverview,
+    method: 'GET' as const,
+    allow: ['admin'],
+  },
+  // 2026-10-28: the marketplace console. An administrator, then content.moderate.
+  // (The inspect route is in new-routes-matrix only: an admin asking for a
+  // post that does not exist is rightly 404, not the 200 "may, do" expects.)
+  {
+    name: 'GET /api/admin/marketplace',
+    mod: adminMarketplace,
+    method: 'GET' as const,
+    allow: ['admin'],
+  },
+  {
+    name: 'GET /api/admin/marketplace/removed',
+    mod: adminMarketplaceRemoved,
+    method: 'GET' as const,
+    allow: ['admin'],
+  },
+  {
+    name: 'POST /api/admin/marketplace/:kind/:id/remove',
+    mod: adminMarketplaceRemove,
+    method: 'POST' as const,
+    allow: ['admin'],
+    params: () => ({ kind: 'produce_listing', id: DUMMY_ID }),
+    body: () => ({ reason: 'Zztest removal reason' }),
   },
 ];
 

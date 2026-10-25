@@ -25,3 +25,18 @@ export function suspensionSmsText(label: string | null): string {
     `and choose 'Appeal a decision'.`
   );
 }
+
+/**
+ * 2026-10-28: the text a DISABLE sends -- the same shape, saying "disabled".
+ * At most 160 characters with the longest label (tests/notify-scan.test.ts).
+ */
+export function disabledSmsText(label: string | null): string {
+  const named =
+    label === null
+      ? ''
+      : ` Reason: ${label.length > LABEL_MAX ? `${label.slice(0, LABEL_MAX - 3)}...` : label}.`;
+  return (
+    `AgriOne: your account is disabled.${named} To appeal, visit ${APPEAL_ADDRESS} ` +
+    `and choose 'Appeal a decision'.`
+  );
+}

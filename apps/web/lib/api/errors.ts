@@ -280,6 +280,14 @@ export const RULE_MESSAGES = {
   // CORRECTIONS (2026-10-27). About a post's state, never a person.
   correction_already_open:
     'A correction has already been requested for this post and is waiting for its owner.',
+  // ADMIN CONSOLE (2026-10-28). About an account's standing or a case, never a person.
+  account_already_disabled: 'This account is already disabled.',
+  account_not_disabled: 'This account is not disabled. There is nothing to re-enable.',
+  account_disabled_restore:
+    'This account is disabled, not just suspended. Only a Super Admin can restore it, with a reason.',
+  support_case_no_back_to_new: 'A case cannot go back to new. Choose in progress or waiting.',
+  support_case_resolution_required: 'Write a resolution note before resolving or closing a case.',
+  support_case_assignee_not_staff: 'That person cannot be made responsible for support cases.',
 } as const;
 
 export type RuleKey = keyof typeof RULE_MESSAGES;

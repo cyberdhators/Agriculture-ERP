@@ -39,4 +39,12 @@ export interface AccountStanding {
   reason: string | null;
   /** Whether the account can sign in at all (an officer-registered farmer may have no sign-in). */
   has_sign_in: boolean;
+  /**
+   * 2026-10-28: DISABLED -- a permanent stop, distinct from a suspension (a
+   * disabled account is also suspended). Only a Super Admin lifts it, with a
+   * reason; Restore refuses it.
+   */
+  disabled: boolean;
+  disabled_at: string | null;
+  disabled_reason: string | null;
 }

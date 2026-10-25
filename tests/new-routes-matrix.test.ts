@@ -4,6 +4,10 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import * as communications from '../apps/web/app/api/admin/communications/route';
 import * as corrections from '../apps/web/app/api/admin/corrections/route';
+import * as adminMarketplace from '../apps/web/app/api/admin/marketplace/route';
+import * as adminMarketplaceRemoved from '../apps/web/app/api/admin/marketplace/removed/route';
+import * as adminMarketplaceItem from '../apps/web/app/api/admin/marketplace/[kind]/[id]/route';
+import * as adminMarketplaceRemove from '../apps/web/app/api/admin/marketplace/[kind]/[id]/remove/route';
 import * as smsFarmers from '../apps/web/app/api/admin/communications/farmers/route';
 import * as adminQueue from '../apps/web/app/api/admin/product-reports/route';
 import * as adminDetail from '../apps/web/app/api/admin/product-reports/[id]/route';
@@ -128,6 +132,26 @@ const ADMIN_ROUTES = [
       reason_code: 'misleading_listing',
       note: 'Zztest correction note',
     }),
+  },
+  // 2026-10-28: the marketplace console (then content.moderate).
+  { name: 'GET /api/admin/marketplace', mod: adminMarketplace, method: 'GET' as const },
+  {
+    name: 'GET /api/admin/marketplace/removed',
+    mod: adminMarketplaceRemoved,
+    method: 'GET' as const,
+  },
+  {
+    name: 'GET /api/admin/marketplace/:kind/:id',
+    mod: adminMarketplaceItem,
+    method: 'GET' as const,
+    params: () => ({ kind: 'produce_listing', id: DUMMY_ID }),
+  },
+  {
+    name: 'POST /api/admin/marketplace/:kind/:id/remove',
+    mod: adminMarketplaceRemove,
+    method: 'POST' as const,
+    params: () => ({ kind: 'produce_listing', id: DUMMY_ID }),
+    body: () => ({ reason: 'Zztest removal reason' }),
   },
 ];
 

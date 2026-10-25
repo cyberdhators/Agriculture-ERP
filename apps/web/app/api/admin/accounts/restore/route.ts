@@ -32,6 +32,9 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       const account = await audited(prisma, async (tx) => {
         const found = await accountOf(tx, body.kind, body.id, true);
         if (!found.suspendedAt) throw unprocessable('account_not_suspended');
+        // 2026-10-28: a DISABLED account is lifted only by a Super Admin
+        // (POST /api/admin/accounts/reenable), never by an ordinary restore.
+        if (found.disabledAt) throw unprocessable('account_disabled_restore');
         for (const [table, id] of [
           ['farmer', found.farmerId],
           ['buyer', found.buyerId],

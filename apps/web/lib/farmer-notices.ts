@@ -135,6 +135,26 @@ export const ACCOUNT_NOTICES = {
     body: 'Open your listings to see what to change. The post stays on the market meanwhile.',
     key: 'notice.correctionRequested',
   },
+  // 2026-10-28: staff removed a post from the marketplace console. The reason
+  // is in the audit trail; a notice never carries it.
+  listing_removed: {
+    title: 'CORWADO removed one of your posts from the market',
+    body: 'Your account is not affected. If you think this was a mistake, contact CORWADO.',
+    key: 'notice.listingRemoved',
+  },
+  // 2026-10-28: support cases. A staff reply, or the case resolved or closed.
+  // Never the reply's text, the case's text or the staff member's name.
+  support_case_updated: {
+    title: 'CORWADO answered your message',
+    body: 'Open Help to read the answer.',
+    key: 'notice.supportCaseUpdated',
+  },
+  // 2026-10-28: an account disabled (permanent; only a Super Admin restores it).
+  account_reenabled: {
+    title: 'Your AgriOne account has been re-enabled',
+    body: 'You can sign in and use AgriOne again.',
+    key: 'notice.accountReenabled',
+  },
 } as const;
 
 export type AccountNotice = keyof typeof ACCOUNT_NOTICES;
@@ -189,5 +209,7 @@ export function noticeHref(title: string): string | null {
     return '/farmer/account/security';
   }
   if (title === n.listing_correction_requested.title) return '/farmer/account/listings';
+  if (title === n.listing_removed.title) return '/help';
+  if (title === n.support_case_updated.title) return '/help#my-messages';
   return null;
 }

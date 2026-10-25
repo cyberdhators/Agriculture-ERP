@@ -508,6 +508,12 @@ character.
 | `notice_version_not_newer`              | Choose a version number higher than the one already published for this notice and language.                                   |
 | `notice_not_draft`                      | Only a draft can be edited, published or discarded. A published or retired notice stays as it was.                            |
 | `correction_already_open`               | A correction has already been requested for this post and is waiting for its owner.                                           |
+| `account_already_disabled`              | This account is already disabled.                                                                                             |
+| `account_not_disabled`                  | This account is not disabled. There is nothing to re-enable.                                                                  |
+| `account_disabled_restore`              | This account is disabled, not just suspended. Only a Super Admin can restore it, with a reason.                               |
+| `support_case_no_back_to_new`           | A case cannot go back to new. Choose in progress or waiting.                                                                  |
+| `support_case_resolution_required`      | Write a resolution note before resolving or closing a case.                                                                   |
+| `support_case_assignee_not_staff`       | That person cannot be made responsible for support cases.                                                                     |
 
 **A route names a rule; it never writes a sentence.** `conflict()` and
 `unprocessable()` take a key from this registry, not a string. That is how the
@@ -913,8 +919,17 @@ These are also exact.
 | Contact CORWADO: name                      | Give your name, 2 to 120 characters.                                                            |
 | Contact CORWADO: topic not on list         | Choose account, marketplace, messages, technical, appeal or other.                              |
 | Contact CORWADO: message length            | Write your message, 10 to 2000 characters.                                                      |
-| Support list: status not on list           | Choose new or done.                                                                             |
-| Support message: status other than done    | A message can only be marked done.                                                              |
+| Support list: status not on list           | Choose new, in progress, waiting, resolved or closed.                                           |
+| Support case: type not on list             | Choose technical issue, complaint, appeal or enquiry.                                           |
+| Support case: priority not on list         | Choose low, normal, high or urgent.                                                             |
+| Support case: assignee not a staff id      | Choose a staff member from the list.                                                            |
+| Support case: resolution length            | Write the resolution in 1 to 2000 characters.                                                   |
+| Support case: change with no field         | Choose something to change.                                                                     |
+| Support case entry: kind not on list       | Choose reply, note or evidence.                                                                 |
+| Support case entry: body length            | Write 1 to 2000 characters.                                                                     |
+| Support case entry: link not a web address | Give a web address starting http:// or https://, at most 500 characters.                        |
+| Support case entry: evidence with no link  | Evidence needs a link.                                                                          |
+| Support list: search too long              | Search with at most 120 characters.                                                             |
 | Advice profile: name length                | A name for your advice profile is 2 to 120 characters.                                          |
 | Advice profile: kind not on list           | Choose adviser, institute, research or training body, advisory organisation or other.           |
 | Advice profile: description length         | Describe the advice you offer in 10 to 2000 characters.                                         |
@@ -1244,8 +1259,7 @@ These are also exact.
 | Contact CORWADO: name                      | Give your name, 2 to 120 characters.                                                            |
 | Contact CORWADO: topic not on list         | Choose account, marketplace, messages, technical, appeal or other.                              |
 | Contact CORWADO: message length            | Write your message, 10 to 2000 characters.                                                      |
-| Support list: status not on list           | Choose new or done.                                                                             |
-| Support message: status other than done    | A message can only be marked done.                                                              |
+| Support list: status not on list           | Choose new, in progress, waiting, resolved or closed.                                           |
 | Advice profile: name length                | A name for your advice profile is 2 to 120 characters.                                          |
 | Advice profile: kind not on list           | Choose adviser, institute, research or training body, advisory organisation or other.           |
 | Advice profile: description length         | Describe the advice you offer in 10 to 2000 characters.                                         |

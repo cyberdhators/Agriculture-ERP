@@ -30,6 +30,9 @@ export interface AccountRecords {
   buyerId: string | null;
   suspendedAt: Date | null;
   reason: string | null;
+  /** 2026-10-28: disabled (permanent; a Super Admin lifts it). Disabled is also suspended. */
+  disabledAt: Date | null;
+  disabledReason: string | null;
 }
 
 /** The account behind one farmer or buyer record, with both its records. */
@@ -40,12 +43,20 @@ export async function accountOf(
   lock = false,
 ): Promise<AccountRecords> {
   const [start] = await db.$queryRawUnsafe<
-    { auth_user_id: string | null; suspended_at: Date | null; suspended_reason: string | null }[]
+    {
+      auth_user_id: string | null;
+      suspended_at: Date | null;
+      suspended_reason: string | null;
+      disabled_at: Date | null;
+      disabled_reason: string | null;
+    }[]
   >(
     kind === 'farmer'
-      ? `SELECT auth_user_id, suspended_at, suspended_reason FROM public.farmer
+      ? `SELECT auth_user_id, suspended_at, suspended_reason, disabled_at, disabled_reason
+           FROM public.farmer
           WHERE id = $1::uuid AND deleted_at IS NULL ${lock ? 'FOR UPDATE' : ''}`
-      : `SELECT auth_user_id, suspended_at, suspended_reason FROM public.buyer
+      : `SELECT auth_user_id, suspended_at, suspended_reason, disabled_at, disabled_reason
+           FROM public.buyer
           WHERE id = $1::uuid AND deleted_at IS NULL ${lock ? 'FOR UPDATE' : ''}`,
     id,
   );
@@ -70,6 +81,8 @@ export async function accountOf(
     buyerId,
     suspendedAt: start.suspended_at,
     reason: start.suspended_reason,
+    disabledAt: start.disabled_at,
+    disabledReason: start.disabled_reason,
   };
 }
 
@@ -78,6 +91,9 @@ export const standingOf = (account: AccountRecords): AccountStanding => ({
   suspended_at: account.suspendedAt?.toISOString() ?? null,
   reason: account.reason,
   has_sign_in: account.authUserId !== null,
+  disabled: account.disabledAt !== null,
+  disabled_at: account.disabledAt?.toISOString() ?? null,
+  disabled_reason: account.disabledReason,
 });
 
 // ---------------------------------------------------------------------------
@@ -130,10 +146,12 @@ export async function suspensionPhone(db: Db, account: AccountRecords): Promise<
 export async function sendSuspensionSms(
   phone: string | null,
   label: string | null,
+  // 2026-10-28: a disable sends the same shape of message, saying "disabled".
+  text: (label: string | null) => string = suspensionSmsText,
 ): Promise<SuspensionSms> {
   if (!phone) return 'no_mobile';
   try {
-    const sent = await sendOneSms(smsConfig(), phone, suspensionSmsText(label));
+    const sent = await sendOneSms(smsConfig(), phone, text(label));
     return sent.accepted ? 'sent' : 'failed';
   } catch {
     return 'failed';
