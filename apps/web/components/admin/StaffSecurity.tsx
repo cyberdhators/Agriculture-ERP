@@ -172,7 +172,6 @@ export function StaffSecurity() {
                 1. In your authenticator app, add an account and scan this code.
               </p>
               {/* A data URL made by Supabase for this factor; nothing is fetched. */}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={enrolment.qr}
                 alt="QR code to add AgriOne to your authenticator app"

@@ -138,7 +138,7 @@ async function resolveSession(request: Request): Promise<SessionFacts | null> {
   if (!data.user) return null;
   // The token getUser just validated is the session's own; its `aal` claim
   // says whether the code step was passed. Read from memory, no second call.
-  let token: string | null = null;
+  let token: string | null;
   try {
     token = (await client.auth.getSession()).data.session?.access_token ?? null;
   } catch {
