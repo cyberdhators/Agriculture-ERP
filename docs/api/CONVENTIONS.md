@@ -531,6 +531,16 @@ change.
 | `notice.draft_discarded`                      |
 | `notice.published`                            |
 | `notice.retired`                              |
+| `message_template.created`                   |
+| `message_template.updated`                   |
+| `message_template.status_changed`            |
+| `announcement.drafted`                       |
+| `announcement.draft_edited`                  |
+| `announcement.draft_discarded`               |
+| `announcement.queued`                        |
+| `announcement.batch_sent`                    |
+| `announcement.retry_queued`                  |
+| `notification_preference.updated`            |
 
 `before` and `after` hold **changed fields only**, never whole rows, and never a
 password, token, authentication identifier, national id, phone, email, given

@@ -426,3 +426,5 @@ export * from './public-profile';
 export * from './adviser-approval';
 // 2026-10-25: settings, phase 1 -- versioned settings, notices, reason codes.
 export * from './settings';
+// 2026-10-27: official announcements, message templates, notification preferences.
+export * from './announcements';

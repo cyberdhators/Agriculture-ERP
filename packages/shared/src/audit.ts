@@ -191,6 +191,21 @@ export const AUDIT_ACTIONS = [
   'notice.draft_discarded',
   'notice.published',
   'notice.retired',
+  // 2026-10-27: official announcements, message templates and notification
+  // preferences. A template row carries its channel, status and the NAMES of
+  // changed fields; an announcement row its scope, channels, category and
+  // counts -- never a message's text, a recipient or a contact. NOT YET IN
+  // THE DATABASE CHECK: one combined CHECK migration adds them (the owner).
+  'message_template.created',
+  'message_template.updated',
+  'message_template.status_changed',
+  'announcement.drafted',
+  'announcement.draft_edited',
+  'announcement.draft_discarded',
+  'announcement.queued',
+  'announcement.batch_sent',
+  'announcement.retry_queued',
+  'notification_preference.updated',
 ] as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];

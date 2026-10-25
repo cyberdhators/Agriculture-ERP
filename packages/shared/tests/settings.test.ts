@@ -45,9 +45,20 @@ const migration = readFileSync(
 const reasonOf = (result: { success: boolean; error?: { issues: { message: string }[] } }) =>
   result.success ? null : (result.error?.issues[0]?.message ?? null);
 
+/** 2026-10-27: phase 2 widened the known-key CHECK; the latest definition governs. */
+const phase2Migration = readFileSync(
+  fileURLToPath(
+    new URL(
+      '../../../prisma/migrations/20261027110100_settings_phase2/migration.sql',
+      import.meta.url,
+    ),
+  ),
+  'utf8',
+);
+
 describe('the database and the schemas name the same things', () => {
   it('the setting keys are the CHECK list', () => {
-    const check = migration.match(/setting_version_key_known" CHECK \("key" IN \(([^)]*)\)/);
+    const check = phase2Migration.match(/setting_version_key_known" CHECK \("key" IN \(([^)]*)\)/);
     expect(check, 'CHECK not found').not.toBeNull();
     const keys = [...(check?.[1] ?? '').matchAll(/'([a-z_]+)'/g)].map((m) => m[1]);
     expect(keys).toEqual([...SETTING_KEYS]);
