@@ -1121,4 +1121,21 @@ export const ar: Partial<Record<TKey, string>> = {
   'adviser.sentOn': 'أُرسل',
   // 2026-10-24 (acceptance QA): the price is needed unless the service is negotiable.
   'svc.priceHint': 'اكتب سعراً، أو ضع علامة على «قابل للتفاوض» أدناه.',
+  // 2026-10-27: notification preferences and announcements.
+  'prefs.title': 'إعدادات الإشعارات',
+  'prefs.lead': 'اختر كيف ترسل إليك كوروادو الإعلانات والتحديثات.',
+  'prefs.announcements': 'الإعلانات الرسمية',
+  'prefs.inApp': 'داخل التطبيق',
+  'prefs.sms': 'برسالة نصية',
+  'prefs.email': 'بالبريد الإلكتروني',
+  'prefs.emailNone': 'يصل البريد الإلكتروني إلى الحسابات التي تسجّل الدخول بعنوان بريد إلكتروني.',
+  'prefs.updates': 'تحديثات رسائلك ونصائحك داخل التطبيق',
+  'prefs.essential': 'تُرسل الرسائل الأساسية والأمنية دائماً: القرارات المتعلقة بحسابك، وتعليق الحساب، ورموز تسجيل الدخول، والإعلانات المصنّفة أساسية. لا يمكن إيقافها.',
+  'prefs.save': 'حفظ إعدادات الإشعارات',
+  'prefs.saved': 'تم الحفظ.',
+  'prefs.failed': 'تعذّر حفظ الإعدادات. تحقّق من الاتصال وحاول مرة أخرى.',
+  'prefs.loadFailed': 'تعذّر تحميل إعدادات الإشعارات.',
+  'announcements.title': 'الإعلانات',
+  'announcements.empty': 'لا توجد إعلانات بعد.',
+  'announcements.essential': 'أساسي',
 };

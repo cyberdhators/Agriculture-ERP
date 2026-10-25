@@ -1174,6 +1174,23 @@ export const en = {
   'adviser.sentOn': 'Sent',
   // 2026-10-24 (acceptance QA): the price is needed unless the service is negotiable.
   'svc.priceHint': 'Give a price, or tick Negotiable below.',
+  // 2026-10-27: notification preferences and announcements.
+  'prefs.title': 'Notification settings',
+  'prefs.lead': 'Choose how CORWADO may send you announcements and updates.',
+  'prefs.announcements': 'Official announcements',
+  'prefs.inApp': 'In the app',
+  'prefs.sms': 'By SMS',
+  'prefs.email': 'By email',
+  'prefs.emailNone': 'Email reaches accounts that sign in with an email address.',
+  'prefs.updates': 'Updates about your messages and advice, in the app',
+  'prefs.essential': 'Essential and security messages are always sent: decisions about your account, a suspension, sign-in codes and announcements marked essential. They cannot be switched off.',
+  'prefs.save': 'Save notification settings',
+  'prefs.saved': 'Saved.',
+  'prefs.failed': 'The settings could not be saved. Check the connection and try again.',
+  'prefs.loadFailed': 'Your notification settings could not be loaded.',
+  'announcements.title': 'Announcements',
+  'announcements.empty': 'No announcements yet.',
+  'announcements.essential': 'Essential',
 } as const;
 
 export type TKey = keyof typeof en;

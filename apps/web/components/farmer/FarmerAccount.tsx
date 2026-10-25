@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 
 import { parseSouthSudanMobile } from '@agri-erp/shared';
 
+import { NotificationPreferencesCard } from '@/components/account/NotificationSettings';
 import { Button, Field, Notice, PasswordInput, PrefixedInput } from '@/components/ui';
 import { validatePassword } from '@/lib/farmers/schema';
 import { farmerPayamName } from '@/lib/fixtures/farmers';
@@ -111,6 +112,9 @@ export function FarmerAccount() {
   return (
     <>
       <PageHead title={t('account.tabAccount', language)} />
+
+      {/* 2026-10-27: what CORWADO may send, and how. Essential messages have no switch. */}
+      <NotificationPreferencesCard language={language} emailAccount={false} />
 
       {done === 'password' ? (
         <Notice kind="success" className={styles.block}>

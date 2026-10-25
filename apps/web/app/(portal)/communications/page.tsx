@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 
-import { Communications } from '@/components/communications/Communications';
+import { CommunicationsHub } from '@/components/communications/CommunicationsHub';
 
 export const metadata: Metadata = { title: 'Communications' };
 
 export default function CommunicationsPage() {
-  return <Communications />;
+  return <CommunicationsHub />;
 }
