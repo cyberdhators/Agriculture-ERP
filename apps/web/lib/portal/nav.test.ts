@@ -24,7 +24,8 @@ import {
 const ROLES = ['admin', 'supervisor', 'read_only', 'officer'] as const;
 
 /** What someone holds, platform-wide, as GET /api/admin/staff-access/me reports it. */
-const holding = (...keys: PermissionKey[]) => heldFrom(keys.map((key) => ({ key, platform: true })));
+const holding = (...keys: PermissionKey[]) =>
+  heldFrom(keys.map((key) => ({ key, platform: true })));
 const hrefsOf = (sections: ReturnType<typeof navFor>) =>
   sections.flatMap((s) => s.items.map((i) => i.href));
 
@@ -72,7 +73,9 @@ describe('who sees which destination', () => {
 
   it('only a holder of audit.view is offered the audit trail (C-4.8)', () => {
     const offered = ROLES.filter((role) =>
-      navFor(role, holding('audit.view')).some((s) => s.items.some((i) => i.href === '/admin/audit')),
+      navFor(role, holding('audit.view')).some((s) =>
+        s.items.some((i) => i.href === '/admin/audit'),
+      ),
     );
     expect(offered).toEqual(['admin', 'supervisor', 'read_only']);
     for (const role of ROLES) {
@@ -227,7 +230,12 @@ describe('presets decide what is offered (2026-10-30)', () => {
 
   it('Moderator + Editor: the moderation screens, not support, settings, staff or the audit trail', () => {
     const hrefs = hrefsOf(navFor('admin', holding('content.moderate', 'content.publish')));
-    for (const href of ['/admin/marketplace', '/product-reports', '/admin/advisers', '/admin/accounts']) {
+    for (const href of [
+      '/admin/marketplace',
+      '/product-reports',
+      '/admin/advisers',
+      '/admin/accounts',
+    ]) {
       expect(hrefs, href).toContain(href);
     }
     for (const href of [
@@ -248,7 +256,12 @@ describe('presets decide what is offered (2026-10-30)', () => {
     for (const href of ['/admin/support', '/admin/organizations', '/admin/accounts']) {
       expect(hrefs, href).toContain(href);
     }
-    for (const href of ['/admin/marketplace', '/product-reports', '/admin/settings', '/admin/audit']) {
+    for (const href of [
+      '/admin/marketplace',
+      '/product-reports',
+      '/admin/settings',
+      '/admin/audit',
+    ]) {
       expect(hrefs, href).not.toContain(href);
     }
   });

@@ -151,7 +151,13 @@ describe('preset resolution: the role alone grants nothing (2026-10-30)', () => 
   it('the Administrator preset holds the administrative powers and never Super Admin or sensitive exports', () => {
     const keys = held('admin', 'administrator');
     expect(keys).toEqual(
-      ['audit.view', 'communications.send', 'reports.view', 'settings.manage', 'staff.manage'].sort(),
+      [
+        'audit.view',
+        'communications.send',
+        'reports.view',
+        'settings.manage',
+        'staff.manage',
+      ].sort(),
     );
     expect(keys).not.toContain('superadmin.grant');
     expect(keys).not.toContain('exports.identifiable');
@@ -179,7 +185,10 @@ describe('preset resolution: the role alone grants nothing (2026-10-30)', () => 
   it('the rollout presets give an administrator exactly what the old legacy rule did, less identifiable exports', () => {
     const p = effectivePermissions({
       role: 'admin',
-      grants: ROLLOUT_PRESETS_FOR_ADMINS_WITHOUT_GRANTS.map((preset) => ({ preset, scope: platform })),
+      grants: ROLLOUT_PRESETS_FOR_ADMINS_WITHOUT_GRANTS.map((preset) => ({
+        preset,
+        scope: platform,
+      })),
     });
     const legacy = PERMISSION_KEYS.filter(
       (k) => k !== 'superadmin.grant' && k !== 'exports.identifiable',

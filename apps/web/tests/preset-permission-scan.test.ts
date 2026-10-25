@@ -208,10 +208,9 @@ describe('the preset screens admit every staff role that can hold the preset', (
 
   it('the support and moderation queues ask for their own permission', () => {
     const asks = (id: string, key: string) =>
-      expect(
-        handlers.find((h) => h.id === id)?.body ?? '',
-        id,
-      ).toMatch(new RegExp(`requirePermission\\(auth, '${key.replace('.', '\\.')}'\\)`));
+      expect(handlers.find((h) => h.id === id)?.body ?? '', id).toMatch(
+        new RegExp(`requirePermission\\(auth, '${key.replace('.', '\\.')}'\\)`),
+      );
     asks('admin/support/route.ts GET', 'support.handle');
     asks('admin/support/[id]/route.ts PATCH', 'support.handle');
     asks('admin/marketplace/route.ts GET', 'content.moderate');

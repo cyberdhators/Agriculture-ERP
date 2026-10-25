@@ -219,8 +219,8 @@ export function Communications() {
       <div className={styles.stack}>
         <PageHeader eyebrow="Communications" title="Communications" />
         <UnavailableState title="Communications is not available to you">
-          Sending messages from the portal needs the Administrator preset. Ask an administrator
-          who manages staff permissions.
+          Sending messages from the portal needs the Administrator preset. Ask an administrator who
+          manages staff permissions.
         </UnavailableState>
       </div>
     );

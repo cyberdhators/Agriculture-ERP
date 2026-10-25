@@ -5479,14 +5479,15 @@ Super Admin appointment, security changes or sensitive exports", "enforce
 permissions in the underlying service, not only by hiding menu items".
 
 **Decided.**
+
 - **Permissions = the union of the person's ACTIVE preset grants**, nothing
   else (`effectivePermissions`, packages/shared). The role still decides which
   routes a person may knock on and, for a supervisor or read-only account, the
   state their data is limited to. A Super Admin grant still counts only on an
   `admin` account. Super Admin keeps every key.
 - **Preset routes admit every staff role that can hold the preset, then ask
-  for the permission**: reads `admin, supervisor, read_only`; writes `admin,
-  supervisor` (read-only accounts create no records, C-3.9). Accounts,
+  for the permission**: reads `admin, supervisor, read_only`; writes
+  `admin, supervisor` (read-only accounts create no records, C-3.9). Accounts,
   advisers and advisory notes, announcements and templates, communications,
   corrections, the marketplace console and removed list, product and market
   reports, reason codes, notices and settings, organisations, support cases,

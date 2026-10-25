@@ -130,8 +130,8 @@ export function AuditTrail() {
       <div className={styles.page}>
         <PageHeader eyebrow="Governance" title="Audit log" />
         <UnavailableState title="The audit log is not available to you">
-          Reading who changed what across the whole system needs the Administrator preset
-          (C-4.8). Your own work is unaffected.
+          Reading who changed what across the whole system needs the Administrator preset (C-4.8).
+          Your own work is unaffected.
         </UnavailableState>
       </div>
     );

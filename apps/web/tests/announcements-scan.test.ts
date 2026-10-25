@@ -61,9 +61,10 @@ describe('staff holding communications.send, enforced in the route', () => {
     // 2026-10-30 (presets are binding): every staff role that can hold the
     // Administrator preset; reads admit read-only accounts, writes do not.
     for (const roles of handlers) {
-      expect(["roles: ['admin', 'supervisor', 'read_only']", "roles: ['admin', 'supervisor']"]).toContain(
-        roles,
-      );
+      expect([
+        "roles: ['admin', 'supervisor', 'read_only']",
+        "roles: ['admin', 'supervisor']",
+      ]).toContain(roles);
     }
     const checks = text.match(/await requirePermission\(auth, 'communications\.send'\)/g) ?? [];
     expect(checks.length).toBe(handlers.length);
