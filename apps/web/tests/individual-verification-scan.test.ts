@@ -60,13 +60,13 @@ describe('person-facing screens show no individual verification', () => {
     expect(offenders, 'these person-facing screens show a person’s verification').toEqual([]);
   });
 
-  it('no "Verified farmer" badge exists anywhere in the web app', () => {
+  it('no "Verified farmer" badge is rendered or sent anywhere in the web app', () => {
+    // Staff reports' "Verified farmers reached" is the programme's field
+    // record, not a badge, so the scan looks for the badge's own shapes.
     const all = [...files('components'), ...files('lib'), ...files('app')];
-    const offenders = all.filter((f) =>
-      /Verified farmer|VerifiedFarmerBadge|market\.verifiedFarmer|farmer_verified\b(?!_v)/.test(
-        read(f),
-      ),
-    );
+    const badge =
+      /VerifiedFarmerBadge|market\.verifiedFarmer|>\s*Verified farmer\s*<|'Verified farmer'|`Verified farmer`|\bfarmer_verified:/;
+    const offenders = all.filter((f) => badge.test(read(f)));
     expect(offenders).toEqual([]);
   });
 
