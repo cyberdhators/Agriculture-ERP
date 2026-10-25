@@ -35,6 +35,7 @@ import {
 } from '../../../lib/api/market-posts';
 import { created, defineRoutes, ok, paged } from '../../../lib/api/route';
 import { prisma } from '../../../lib/db';
+import { listingValidityDays } from '../../../lib/api/settings';
 
 /**
  * /api/services -- service listings: tractor hire, transport, processing,
@@ -147,7 +148,12 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       }
 
       const today = todayUtc();
-      const availableUntil = defaultEndDate(body.available_until, body.available_from, today);
+      const availableUntil = defaultEndDate(
+        body.available_until,
+        body.available_from,
+        today,
+        await listingValidityDays(),
+      );
       if (availableUntil < body.available_from) {
         throw invalidField('available_until', MARKET_POST_MESSAGES.untilBeforeFrom);
       }

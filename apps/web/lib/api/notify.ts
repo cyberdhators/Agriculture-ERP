@@ -24,6 +24,47 @@ export type NoticeActor = Pick<AuditEntry, 'actorType' | 'actorId'>;
 
 export type NoticeRecipient = { authUserId: string | null; farmerId?: string | null };
 
+/**
+ * 2026-10-27: the notices that are ACTIVITY UPDATES, which a person may
+ * switch off in the app (notification preferences, `updates_in_app`). Every
+ * other notice -- an adviser decision, a restored account -- is essential and
+ * always sent.
+ */
+export const UPDATE_NOTICES: ReadonlySet<AccountNotice> = new Set<AccountNotice>([
+  'message_listing',
+  'message_buying_request',
+  'message_service',
+  'message_advice_case',
+  'advice_request_updated',
+  'advice_work_updated',
+  'advice_referral_proposed',
+]);
+
+/**
+ * Whether the account has switched activity updates off. Asks first whether
+ * the preferences table exists (migration 20261027110000), in a form that
+ * cannot fail, so a notice never fails -- and never takes its caller's
+ * change with it -- on a database that has not had the migration yet.
+ */
+async function updatesSwitchedOff(
+  tx: AuditTx,
+  authUserId: string | null,
+  farmerId: string | null,
+): Promise<boolean> {
+  const [present] = await tx.$queryRawUnsafe<{ present: boolean }[]>(
+    `SELECT to_regclass('public.notification_preference') IS NOT NULL AS present`,
+  );
+  if (!present?.present) return false;
+  const [row] = await tx.$queryRawUnsafe<{ off: boolean }[]>(
+    `SELECT NOT p.updates_in_app AS off FROM public.notification_preference p
+      WHERE p.auth_user_id = COALESCE(
+        $1::uuid, (SELECT f.auth_user_id FROM public.farmer f WHERE f.id = $2::uuid))`,
+    authUserId,
+    farmerId,
+  );
+  return row?.off === true;
+}
+
 export async function notifyAccount(
   tx: AuditTx,
   recipient: NoticeRecipient,
@@ -50,6 +91,12 @@ export async function notifyAccount(
   const farmerId = target?.farmer_id ?? null;
   const organizationId = farmerId ? null : (target?.buyer_organization_id ?? null);
   if (!farmerId && !organizationId) return false;
+  if (
+    UPDATE_NOTICES.has(notice) &&
+    (await updatesSwitchedOff(tx, recipient.authUserId, farmerId))
+  ) {
+    return false;
+  }
 
   const [row] = await tx.$queryRawUnsafe<{ id: string }[]>(
     `INSERT INTO public.notification (farmer_id, buyer_organization_id, channel, title, body)

@@ -37,7 +37,8 @@ try {
       VAULT_NAME,
     );
     if (existing) {
-      await tx.$queryRawUnsafe('SELECT vault.update_secret($1::uuid, $2)', existing.id, secret);
+      // update_secret returns void, which a query cannot read back: execute it.
+      await tx.$executeRawUnsafe('SELECT vault.update_secret($1::uuid, $2)', existing.id, secret);
     } else {
       await tx.$queryRawUnsafe('SELECT vault.create_secret($1, $2)', secret, VAULT_NAME);
     }

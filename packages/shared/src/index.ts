@@ -451,3 +451,5 @@ export * from './admin-marketplace';
 export * from './admin-overview';
 // 2026-10-28: users and organisations -- the accounts list, masks, statuses.
 export * from './admin-accounts';
+// 2026-10-27: official announcements, message templates, notification preferences.
+export * from './announcements';

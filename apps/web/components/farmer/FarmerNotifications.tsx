@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
+import { AccountAnnouncements } from '@/components/account/NotificationSettings';
 import { EmptyState } from '@/components/ui';
 import { noticeHref, noticeKey } from '@/lib/farmer-notices';
 import { farmerApi, FarmerApiError, useFarmerSession } from '@/lib/farmer-session';
@@ -65,6 +66,8 @@ export function FarmerNotifications() {
   return (
     <>
       <PageHead title={t('notifications.title', language)} />
+      {/* 2026-10-27: official announcements, also listed among the notices below. */}
+      <AccountAnnouncements language={language} />
       {notifications.length === 0 ? (
         <EmptyState
           title={t('notifications.empty', language)}

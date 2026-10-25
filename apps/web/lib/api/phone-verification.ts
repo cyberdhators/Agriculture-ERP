@@ -6,6 +6,7 @@ import { PHONE_CODE, phoneCodeSmsText, type PhoneCodePurpose } from '@agri-erp/s
 
 import { type AuditTx } from './audit';
 import { ApiFailure, unprocessable } from './errors';
+import { cachedSettingValue } from './settings';
 import { prisma } from '../db';
 import {
   SmsNotConfiguredError,
@@ -101,8 +102,11 @@ export async function issuePhoneCode(
     phone,
     PHONE_CODE.windowMinutes,
   );
-  if (counts && counts.phone_last_s !== null && counts.phone_last_s < PHONE_CODE.resendSeconds) {
-    const wait = PHONE_CODE.resendSeconds - counts.phone_last_s;
+  // 2026-10-27 (settings phase 2): the wait is Registration and recovery's
+  // setting; 60 seconds, as before, until one is saved.
+  const resendSeconds = (await cachedSettingValue('registration_recovery')).code_resend_seconds;
+  if (counts && counts.phone_last_s !== null && counts.phone_last_s < resendSeconds) {
+    const wait = resendSeconds - counts.phone_last_s;
     throw tooMany(`Please wait ${wait} seconds before asking for another code.`, wait);
   }
   if (counts && counts.phone_recent >= PHONE_CODE.perPhone) {

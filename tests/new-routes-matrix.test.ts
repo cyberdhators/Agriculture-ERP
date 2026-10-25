@@ -23,6 +23,16 @@ import * as unreadCount from '../apps/web/app/api/admin/product-reports/unread-c
 import * as submit from '../apps/web/app/api/listings/[id]/reports/route';
 import * as adminOrganizations from '../apps/web/app/api/admin/organizations/route';
 import * as adminOrgRecover from '../apps/web/app/api/admin/organizations/[id]/recover/route';
+// 2026-10-27: official announcements and message templates.
+import * as announcements from '../apps/web/app/api/admin/announcements/route';
+import * as announcementItem from '../apps/web/app/api/admin/announcements/[id]/route';
+import * as announcementPreview from '../apps/web/app/api/admin/announcements/[id]/preview/route';
+import * as announcementSend from '../apps/web/app/api/admin/announcements/[id]/send/route';
+import * as announcementProcess from '../apps/web/app/api/admin/announcements/[id]/process/route';
+import * as announcementRetry from '../apps/web/app/api/admin/announcements/[id]/retry/route';
+import * as announcementDeliveries from '../apps/web/app/api/admin/announcements/[id]/deliveries/route';
+import * as templates from '../apps/web/app/api/admin/message-templates/route';
+import * as templateItem from '../apps/web/app/api/admin/message-templates/[id]/route';
 import { type TestPrincipal, createPrincipal, sweep } from './helpers/principals';
 import { makeTestPrisma, requireTestEnv } from './helpers/db';
 import { call } from './helpers/request';
@@ -210,6 +220,91 @@ const ADMIN_ROUTES = [
     method: 'POST' as const,
     params: () => ({ id: DUMMY_ID }),
     body: () => ({ kind: 'note', body: 'Zztest note' }),
+  },
+  // 2026-10-27: official announcements and message templates. Administrators
+  // only, then communications.send; every other role is refused before any
+  // recipient is counted or any message is sent.
+  { name: 'GET /api/admin/announcements', mod: announcements, method: 'GET' as const },
+  {
+    name: 'POST /api/admin/announcements',
+    mod: announcements,
+    method: 'POST' as const,
+    body: () => ({
+      title: 'Zztest announcement',
+      body: 'Zztest body',
+      category: 'announcement',
+      channels: ['in_app'],
+      scope: { kind: 'all' },
+    }),
+  },
+  {
+    name: 'GET /api/admin/announcements/:id',
+    mod: announcementItem,
+    method: 'GET' as const,
+    params: () => ({ id: DUMMY_ID }),
+  },
+  {
+    name: 'PATCH /api/admin/support/:id',
+    mod: adminSupportCase,
+    method: 'PATCH' as const,
+    params: () => ({ id: DUMMY_ID }),
+    body: () => ({ priority: 'high' }),
+  },
+  {
+    name: 'POST /api/admin/support/:id/entries',
+    mod: adminSupportEntries,
+    method: 'POST' as const,
+    params: () => ({ id: DUMMY_ID }),
+    body: () => ({ kind: 'note', body: 'Zztest note' }),
+    name: 'DELETE /api/admin/announcements/:id',
+    mod: announcementItem,
+    method: 'DELETE' as const,
+    params: () => ({ id: DUMMY_ID }),
+  },
+  {
+    name: 'GET /api/admin/announcements/:id/preview',
+    mod: announcementPreview,
+    method: 'GET' as const,
+    params: () => ({ id: DUMMY_ID }),
+  },
+  {
+    name: 'POST /api/admin/announcements/:id/send',
+    mod: announcementSend,
+    method: 'POST' as const,
+    params: () => ({ id: DUMMY_ID }),
+    body: () => ({ confirm: true, expected_recipients: 0 }),
+  },
+  {
+    name: 'POST /api/admin/announcements/:id/process',
+    mod: announcementProcess,
+    method: 'POST' as const,
+    params: () => ({ id: DUMMY_ID }),
+  },
+  {
+    name: 'POST /api/admin/announcements/:id/retry',
+    mod: announcementRetry,
+    method: 'POST' as const,
+    params: () => ({ id: DUMMY_ID }),
+  },
+  {
+    name: 'GET /api/admin/announcements/:id/deliveries',
+    mod: announcementDeliveries,
+    method: 'GET' as const,
+    params: () => ({ id: DUMMY_ID }),
+  },
+  { name: 'GET /api/admin/message-templates', mod: templates, method: 'GET' as const },
+  {
+    name: 'POST /api/admin/message-templates',
+    mod: templates,
+    method: 'POST' as const,
+    body: () => ({ name: 'Zztest template', channel: 'sms', body: 'Zztest' }),
+  },
+  {
+    name: 'PATCH /api/admin/message-templates/:id',
+    mod: templateItem,
+    method: 'PATCH' as const,
+    params: () => ({ id: DUMMY_ID }),
+    body: () => ({ status: 'archived' }),
   },
 ];
 

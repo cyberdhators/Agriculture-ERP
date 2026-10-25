@@ -4472,7 +4472,7 @@ administrator holds it; other staff only through the Administrator preset).
   YET IN THE DATABASE CHECK: one combined CHECK migration adds them (the
   owner), so until it lands every settings write is refused rather than
   unlogged.
-- **Phase 2** will cover the remaining subsections of the specification's
+- **Phase 2** (built 2026-10-27: "Settings, phase 2" below) covers the remaining subsections of the specification's
   table: language and region (languages, time-zone display, date formats,
   currencies, units), registration and recovery (verification, sign-in and
   recovery methods, session rules, age eligibility -- self-service registration
@@ -5015,3 +5015,140 @@ account's advice profile, only when that profile is published, and an
 "Approved adviser" badge when the account holds an approved, unrevoked
 authorization (shown whether or not the advice profile is published). Nothing
 else from the advice profile is public.
+
+## Official announcements, templates, preferences and delivery records (2026-10-27)
+
+CORWADO's 16 October specification, Communications: "Official announcements,
+templates, recipient scope, preferences and delivery records. Preview before
+sending; private conversations are not a broadcast resource", and Settings,
+"Notifications and moderation: triggers, channel preferences and templates".
+Migration `20261027110000_communications` (additive: four new tables). Branch
+`feat/communications-settings2`.
+
+- **Before (OBSERVED, reading main at 65e2462).** `POST
+/api/admin/communications` (admin only) emails chosen staff through Resend
+  and texts chosen farmers or officers through Bird; the browser sends record
+  ids. No sent-history table. `notification.channel` is `sms | in_app`; the
+  in-app notices of `lib/api/notify.ts` are fixed sentences. Buyer accounts and
+  email accounts were not reachable. That screen is kept unchanged as the
+  "Direct message" tab.
+- **Recipient scope (DOCUMENTED by the spec; the grouping INFERRED).** All
+  accounts, phone accounts (farmer records), email accounts (buyer accounts,
+  and farmer accounts that also hold a buyer side), one state, one activity
+  (account_profile activities; "farmer" and "buyer" also take every farmer or
+  buyer account), staff (email only) and extension officers (SMS only). An
+  account that is both a farmer and a buyer is ONE recipient on its farmer
+  side, as `notifyAccount` already does. Live records only: farmers with
+  consent granted and not withdrawn, not suspended, not merged; buyers not
+  suspended; active officers and staff. Recipients are resolved in SQL from
+  those tables; no route accepts a list of ids, and nothing reads a
+  conversation or a message (`tests/announcements-scan.test.ts`).
+- **One plan for preview and send.** `PLAN_SQL` decides, per recipient per
+  channel, sent or skipped and why: no inbox (in-app to staff or officers), a
+  preference, no contact (no +211 mobile; no email account), or a shared phone
+  or organisation inbox (the first recipient is sent, the rest skipped, so a
+  handset is billed once and an inbox gets one notice). The preview counts it;
+  the send inserts it. The send must quote the preview's recipient count, or
+  it is refused (`announcement_recipients_changed`) and the preview refreshed.
+- **Preview.** The text rendered with the example name "Amina", the count, and
+  per channel will-send / switched off / no contact / shared. SMS: parts per
+  message (estimated with `{name}` at its 20-character cap), total parts and,
+  when Settings hold a cost per part, a US$ estimate. Bird's invoice is the
+  authority.
+- **Placeholders:** `{name}` (first name, cut to 20 characters, "friend" when
+  none) and `{service_name}`. Anything else in braces is refused.
+- **Categories.** `announcement` respects preferences; `essential` (account,
+  security, service continuity) ignores them -- the only kind a person cannot
+  switch off. INFERRED; OWNER TO CONFIRM who may mark an announcement
+  essential (today: anyone holding the permission, with a warning on the form).
+- **Batches within Vercel limits.** Send = queue only (one statement). The
+  screen then calls `POST .../process` until nothing remains: up to 500 in-app
+  notices per call (set-based), then up to 40 SMS/email, 6 at a time, no new
+  provider call after 30 s, `maxDuration` 60 s. Rows are claimed with SKIP
+  LOCKED, so two tabs never send one delivery twice. Every outcome is written
+  back with an audit row of counts. A closed tab pauses; "Continue sending"
+  resumes. A claim that never finished (function killed) is marked FAILED after
+  10 minutes and never resent automatically -- an SMS may have gone, and a
+  second would be billed; "Retry failed" is a person's decision. Before any
+  provider call the audit CHECK is read, as the direct SMS route does. A
+  provider not configured leaves its deliveries waiting and says so.
+- **Delivery record.** `announcement_delivery`, one row per recipient per
+  channel: status (queued, sending, sent, failed, skipped), skip reason,
+  provider message id (Bird's; Resend's id is now returned by `sendOneEmail`),
+  provider error, attempts. No phone, address or text is stored there or in an
+  audit row; contacts are read at the moment of sending.
+- **In-app.** Each in-app delivery is a row in the existing `notification`
+  table (farmer inbox, or the buyer organisation's), so it appears among the
+  person's notices; a person's own list is `GET /api/account/announcements`
+  (farmer Notifications page; buyer Notifications -> Announcements). The
+  notification text is staff-written official text, the one deliberate
+  exception to "fixed sentences only"; it never carries a message, case or
+  reason.
+- **Email to accounts.** Buyer accounts now receive announcement email (address
+  from Supabase Auth, never stored); `.invalid` identifiers are never used.
+  A footer points to the notification settings, except on essential mail.
+- **Preferences.** `notification_preference`, one row per sign-in, no row =
+  everything on: announcements in-app / SMS / email, and activity updates in
+  the app (`lib/api/notify.ts` now skips message and advice notices for an
+  account that switched them off; adviser decisions and a restored account are
+  essential and always sent). Shown on the farmer's Account page and the
+  buyer's Notifications -> Notification settings, with the essential messages
+  named. SMS/email "updates" have no switch because nothing sends them.
+- **Templates.** `message_template`: per channel (SMS has no title), draft ->
+  active -> archived and back; never deleted (an announcement may name it);
+  only an active template can start an announcement.
+- **Permission.** New key `communications.send`, in the Administrator preset
+  (Super Admin has every key; the legacy admin rule gives it to every existing
+  administrator). Routes are `roles: ['admin']` then `requirePermission`, as
+  settings are; supervisors stay refused (new-routes matrix).
+- **Audit keys (NOT YET IN THE DATABASE CHECK; the owner's combined CHECK
+  migration adds them):** `message_template.created`, `message_template.updated`,
+  `message_template.status_changed`, `announcement.drafted`,
+  `announcement.draft_edited`, `announcement.draft_discarded`,
+  `announcement.queued`, `announcement.batch_sent`, `announcement.retry_queued`,
+  `announcement.completed`, `notification_preference.updated`.
+- **Open:** automatic background sending (a cron) is not built -- the screen
+  drives the batches; WhatsApp stays blocked; buyers' phone numbers are only
+  texted when they are +211 mobiles.
+
+## Settings, phase 2 (2026-10-27)
+
+The remaining subsections of the Settings table, as versioned settings exactly
+like phase 1 (append-only `setting_version`, expected-version saves, history,
+audited as `setting.changed` with the NAMES of changed fields, plus archived
+and restored list values and the new privacy defaults). Migration
+`20261027110100_settings_phase2` widens the known-key CHECK; nothing is seeded,
+and each fallback is what the code did before. RULE (applied throughout): a
+field is offered only where code reads it.
+
+- **Language and region.** Arabic on/off (English always on) -- read by the
+  farmer language choices; a farmer who had chosen Arabic reads English while
+  it is off. Date format (27 Jul 2026 / 27/07/2026 / 2026-07-27) -- read by
+  `formatDate`, handed over by the banner component on every page; INFERRED
+  limitation: text rendered before the settings arrive keeps the default
+  until it re-renders. Time zone Africa/Juba, currency SSP and units are
+  shown as fixed facts, not settings (prices are recorded in SSP; changing
+  currency is a data change). OWNER TO CONFIRM if a configurable currency is
+  wanted.
+- **Registration and recovery.** Sign-up code wait (60 s default; read by the
+  phone-code route), return-session inactivity (30 min; read by the access
+  log), minimum age for farmer self-registration (none by default; from the
+  year of birth, generously: this year minus birth year). There is no switch
+  for self-service registration, deliberately. OWNER TO CONFIRM a minimum age.
+- **Profile privacy.** Defaults for a NEW profile: show phone (off), allow
+  messages (on). Read where the profile row is first created and by the empty
+  profile form; an existing profile is never changed, and the screen says so.
+- **Marketplace and reference lists.** Listing validity (30 days; read wherever
+  a listing or service gets no end date), reminder days (3; the owner's
+  listing, request and service screens mark a post ending within that many
+  days -- no SMS reminder is sent), and archive/restore of listing categories,
+  units and registration crops (commodities). Archived values are left out of
+  new-post and registration forms and refused by the create routes
+  (`reference_value_archived`); every existing record keeps its value. The
+  values are Postgres enums, so nothing is deleted; a whole list cannot be
+  archived. Locations come from the official list, not here.
+- **Notifications and moderation.** SMS cost per part (for the preview),
+  suspension review period (shown in the suspend dialog; a suspension still
+  ends only by a restore) and appeal window (shown on the help page's appeal
+  text). Templates and delivery records link to Communications. OWNER TO
+  CONFIRM both periods (defaults 30 days).

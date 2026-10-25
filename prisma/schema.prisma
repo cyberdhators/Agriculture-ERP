@@ -2247,3 +2247,88 @@ model PostExpiryReminder {
   @@unique([postKind, postId, endsOn], map: "post_expiry_reminder_once")
   @@map("post_expiry_reminder")
 }
+
+// -----------------------------------------------------------------------------
+// 2026-10-27 -- official announcements, message templates, delivery records
+// and notification preferences. Migration 20261027110000_communications. Read
+// and written with raw SQL; the foreign keys (to user, state, notification)
+// are in the migration and deliberately not restated as relations, so no
+// existing model is touched. Status values are TEXT under CHECKs.
+// -----------------------------------------------------------------------------
+
+/// A saved message text for one channel: draft, active or archived. Never deleted.
+model MessageTemplate {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name      String
+  channel   String
+  title     String?
+  body      String
+  status    String   @default("draft")
+  createdBy String   @map("created_by") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedBy String   @map("updated_by") @db.Uuid
+  updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  @@map("message_template")
+}
+
+/// One official announcement: draft, then sending, then completed.
+model Announcement {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title          String
+  body           String
+  smsBody        String?   @map("sms_body")
+  category       String    @default("announcement")
+  channels       String[]
+  scopeKind      String    @map("scope_kind")
+  scopeStateId   String?   @map("scope_state_id")
+  scopeActivity  String?   @map("scope_activity")
+  templateId     String?   @map("template_id") @db.Uuid
+  status         String    @default("draft")
+  recipientCount Int?      @map("recipient_count")
+  createdBy      String    @map("created_by") @db.Uuid
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime  @default(now()) @map("updated_at") @db.Timestamptz(6)
+  sentBy         String?   @map("sent_by") @db.Uuid
+  sentAt         DateTime? @map("sent_at") @db.Timestamptz(6)
+  completedAt    DateTime? @map("completed_at") @db.Timestamptz(6)
+  deletedAt      DateTime? @map("deleted_at") @db.Timestamptz(6)
+  deletedBy      String?   @map("deleted_by") @db.Uuid
+
+  @@map("announcement")
+}
+
+/// One recipient on one channel of one announcement. No contact detail, no text.
+model AnnouncementDelivery {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  announcementId    String    @map("announcement_id") @db.Uuid
+  channel           String
+  recipientKind     String    @map("recipient_kind")
+  recipientId       String    @map("recipient_id") @db.Uuid
+  authUserId        String?   @map("auth_user_id") @db.Uuid
+  status            String    @default("queued")
+  skipReason        String?   @map("skip_reason")
+  providerMessageId String?   @map("provider_message_id")
+  error             String?
+  attempts          Int       @default(0)
+  claimedAt         DateTime? @map("claimed_at") @db.Timestamptz(6)
+  sentAt            DateTime? @map("sent_at") @db.Timestamptz(6)
+  notificationId    String?   @map("notification_id") @db.Uuid
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime  @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([announcementId, channel, recipientKind, recipientId], map: "announcement_delivery_once")
+  @@map("announcement_delivery")
+}
+
+/// What one sign-in account has switched off. No row: everything on.
+model NotificationPreference {
+  authUserId          String   @id @map("auth_user_id") @db.Uuid
+  announcementsInApp  Boolean  @default(true) @map("announcements_in_app")
+  announcementsSms    Boolean  @default(true) @map("announcements_sms")
+  announcementsEmail  Boolean  @default(true) @map("announcements_email")
+  updatesInApp        Boolean  @default(true) @map("updates_in_app")
+  updatedAt           DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  @@map("notification_preference")
+}

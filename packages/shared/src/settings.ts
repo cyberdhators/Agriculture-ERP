@@ -1,5 +1,8 @@
 import { z } from 'zod';
 
+import { LISTING_CATEGORIES, LISTING_UNITS } from './buyer';
+import { PROFILE_CROPS } from './farmer-account';
+
 /**
  * SETTINGS, PHASE 1 (2026-10-25). CORWADO's 16 October specification, the
  * "Settings" tab: "Service configuration, policy versions, security,
@@ -23,7 +26,18 @@ import { z } from 'zod';
 // ---------------------------------------------------------------------------
 
 /** The setting_version_key_known CHECK in migration 20261025100000. */
-export const SETTING_KEYS = ['identity', 'support', 'maintenance', 'reason_codes'] as const;
+export const SETTING_KEYS = [
+  'identity',
+  'support',
+  'maintenance',
+  'reason_codes',
+  // Phase 2 (2026-10-27), migration 20261027110100_settings_phase2.
+  'language_region',
+  'registration_recovery',
+  'profile_privacy',
+  'reference_lists',
+  'notifications_moderation',
+] as const;
 export type SettingKey = (typeof SETTING_KEYS)[number];
 
 export const SETTINGS_LIMITS = {
@@ -56,7 +70,7 @@ const L = SETTINGS_LIMITS;
 // ---------------------------------------------------------------------------
 
 export const SETTINGS_MESSAGES = {
-  settingKeyUnknown: 'Choose identity, support, maintenance or reason codes.',
+  settingKeyUnknown: 'Choose a settings section from the list.',
   expectedVersionInvalid: 'Send the version you loaded, as a whole number.',
   serviceNameInvalid: 'Give a service name of 2 to 80 characters.',
   aboutTooLong: 'Keep the About text to 2000 characters.',
@@ -81,6 +95,17 @@ export const SETTINGS_MESSAGES = {
   noticeVersionInvalid: 'Give the version as v followed by numbers, such as v1.4.',
   noticeBodyInvalid: 'Write the notice in 20 to 20000 characters.',
   noticeEditEmpty: 'Change the version or the text before saving.',
+  // Phase 2 (2026-10-27)
+  languagesInvalid: 'Keep English switched on, with Arabic on or off.',
+  dateFormatUnknown: 'Choose one of the date formats in the list.',
+  wholeNumberInRange: 'Enter a whole number within the range shown.',
+  categoryUnknown: 'Choose categories from the list.',
+  unitUnknown: 'Choose units from the list.',
+  cropUnknown: 'Choose crops from the list.',
+  archiveAll: 'Keep at least one choice in each list available.',
+  reminderAfterValidity:
+    'Send the reminder before the listing ends: fewer days than it stays listed.',
+  smsCostInvalid: 'Enter the cost of one SMS part in US dollars, from 0 to 1, or leave it blank.',
 } as const;
 
 const M = SETTINGS_MESSAGES;
@@ -246,11 +271,149 @@ export const reasonCodesSettingSchema = z
   });
 export type ReasonCodesSetting = z.output<typeof reasonCodesSettingSchema>;
 
+// ---------------------------------------------------------------------------
+// PHASE 2 (2026-10-27) -- the remaining subsections of the Settings table.
+// docs/DECISIONS.md, "Settings, phase 2". Each value is read by the code
+// named beside it; a field with no reader is not offered.
+// ---------------------------------------------------------------------------
+
+/** Every screen's time display: fixed, shown, never edited. */
+export const SERVICE_TIME_ZONE = 'Africa/Juba';
+/** Prices are recorded in South Sudanese pounds (every `price_ssp` column). */
+export const SERVICE_CURRENCY = 'SSP';
+
+export const SERVICE_LANGUAGES = ['en', 'ar'] as const;
+
+/** How the portal writes a date. The first is the design document's "27 Jul 2026". */
+export const DATE_FORMATS = ['d_mmm_yyyy', 'dd_mm_yyyy', 'yyyy_mm_dd'] as const;
+export type DateFormat = (typeof DATE_FORMATS)[number];
+export const DATE_FORMAT_LABELS: Readonly<Record<DateFormat, string>> = {
+  d_mmm_yyyy: '27 Jul 2026',
+  dd_mm_yyyy: '27/07/2026',
+  yyyy_mm_dd: '2026-07-27',
+};
+
+const wholeNumber = (min: number, max: number) =>
+  z
+    .number({ error: () => M.wholeNumberInRange })
+    .int(M.wholeNumberInRange)
+    .min(min, M.wholeNumberInRange)
+    .max(max, M.wholeNumberInRange);
+
+export const PHASE2_RANGES = {
+  codeResendSeconds: [30, 600],
+  sessionInactivityMinutes: [5, 240],
+  minimumAgeYears: [10, 25],
+  listingValidityDays: [7, 180],
+  listingReminderDays: [1, 30],
+  suspensionReviewDays: [1, 365],
+  appealWindowDays: [7, 180],
+} as const;
+const R = PHASE2_RANGES;
+
+/**
+ * Language and region. `enabled_languages` is read by the farmer screens'
+ * language choices; `date_format` by the portal's date display. English is
+ * always on: every text has an English original.
+ */
+export const languageRegionSettingSchema = z.strictObject({
+  enabled_languages: z
+    .array(z.enum(SERVICE_LANGUAGES, { error: () => M.languagesInvalid }), {
+      error: () => M.languagesInvalid,
+    })
+    .transform((v) => SERVICE_LANGUAGES.filter((l) => v.includes(l)))
+    .refine((v) => v.includes('en'), M.languagesInvalid),
+  date_format: z.enum(DATE_FORMATS, { error: () => M.dateFormatUnknown }),
+});
+export type LanguageRegionSetting = z.output<typeof languageRegionSettingSchema>;
+
+/**
+ * Registration and recovery. The code cooldown is read by the sign-up code
+ * route; the inactivity threshold by the access log (a return session); the
+ * minimum age by farmer self-registration (null: no minimum, as before).
+ * There is deliberately no switch for self-service registration: the
+ * specification preserves it.
+ */
+export const registrationRecoverySettingSchema = z.strictObject({
+  code_resend_seconds: wholeNumber(R.codeResendSeconds[0], R.codeResendSeconds[1]),
+  session_inactivity_minutes: wholeNumber(
+    R.sessionInactivityMinutes[0],
+    R.sessionInactivityMinutes[1],
+  ),
+  minimum_age_years: wholeNumber(R.minimumAgeYears[0], R.minimumAgeYears[1]).nullable(),
+});
+export type RegistrationRecoverySetting = z.output<typeof registrationRecoverySettingSchema>;
+
+/**
+ * Profile privacy defaults: what a NEW profile starts with. Read when an
+ * account's profile row is first created; an existing profile is never
+ * changed by a new default, so nobody is exposed silently.
+ */
+export const profilePrivacySettingSchema = z.strictObject({
+  show_phone_default: z.boolean({ error: () => M.switchInvalid }),
+  allow_messages_default: z.boolean({ error: () => M.switchInvalid }),
+});
+export type ProfilePrivacySetting = z.output<typeof profilePrivacySettingSchema>;
+
+const archiveList = <T extends readonly [string, ...string[]]>(values: T, message: string) =>
+  z
+    .array(z.enum(values, { error: () => message }), { error: () => message })
+    .transform((v) => values.filter((x) => (v as string[]).includes(x)) as T[number][])
+    .refine((v) => v.length < values.length, M.archiveAll);
+
+/**
+ * Marketplace and reference lists. The validity is read when a listing or a
+ * service is given no end date. Archived categories and units are left out of
+ * the forms for NEW posts and refused by the routes that create them;
+ * archived crops are left out of the registration form. Every existing record
+ * keeps its value and is shown as before.
+ */
+export const referenceListsSettingSchema = z
+  .strictObject({
+    listing_validity_days: wholeNumber(R.listingValidityDays[0], R.listingValidityDays[1]),
+    listing_reminder_days: wholeNumber(R.listingReminderDays[0], R.listingReminderDays[1]),
+    archived_categories: archiveList(LISTING_CATEGORIES, M.categoryUnknown),
+    archived_units: archiveList(LISTING_UNITS, M.unitUnknown),
+    archived_crops: archiveList(PROFILE_CROPS, M.cropUnknown),
+  })
+  .superRefine((v, ctx) => {
+    if (v.listing_reminder_days >= v.listing_validity_days) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['listing_reminder_days'],
+        message: M.reminderAfterValidity,
+      });
+    }
+  });
+export type ReferenceListsSetting = z.output<typeof referenceListsSettingSchema>;
+
+/**
+ * Notifications and moderation. The SMS cost is read by the announcement
+ * preview; the suspension review period by the suspend dialog; the appeal
+ * window by the help page's appeal text. Templates, channel preferences and
+ * delivery records are in Communications.
+ */
+export const notificationsModerationSettingSchema = z.strictObject({
+  sms_cost_per_segment_usd: z
+    .number({ error: () => M.smsCostInvalid })
+    .min(0, M.smsCostInvalid)
+    .max(1, M.smsCostInvalid)
+    .nullable(),
+  suspension_review_days: wholeNumber(R.suspensionReviewDays[0], R.suspensionReviewDays[1]),
+  appeal_window_days: wholeNumber(R.appealWindowDays[0], R.appealWindowDays[1]),
+});
+export type NotificationsModerationSetting = z.output<typeof notificationsModerationSettingSchema>;
+
 export const SETTING_SCHEMAS = {
   identity: identitySettingSchema,
   support: supportSettingSchema,
   maintenance: maintenanceSettingSchema,
   reason_codes: reasonCodesSettingSchema,
+  language_region: languageRegionSettingSchema,
+  registration_recovery: registrationRecoverySettingSchema,
+  profile_privacy: profilePrivacySettingSchema,
+  reference_lists: referenceListsSettingSchema,
+  notifications_moderation: notificationsModerationSettingSchema,
 } as const;
 
 export interface SettingValues {
@@ -258,6 +421,11 @@ export interface SettingValues {
   support: SupportSetting;
   maintenance: MaintenanceSetting;
   reason_codes: ReasonCodesSetting;
+  language_region: LanguageRegionSetting;
+  registration_recovery: RegistrationRecoverySetting;
+  profile_privacy: ProfilePrivacySetting;
+  reference_lists: ReferenceListsSetting;
+  notifications_moderation: NotificationsModerationSetting;
 }
 
 /**
@@ -310,6 +478,26 @@ export const SETTING_DEFAULTS: SettingValues = {
       },
     ],
   },
+  // Phase 2: each fallback is what the code did before the setting existed.
+  language_region: { enabled_languages: ['en', 'ar'], date_format: 'd_mmm_yyyy' },
+  registration_recovery: {
+    code_resend_seconds: 60,
+    session_inactivity_minutes: 30,
+    minimum_age_years: null,
+  },
+  profile_privacy: { show_phone_default: false, allow_messages_default: true },
+  reference_lists: {
+    listing_validity_days: 30,
+    listing_reminder_days: 3,
+    archived_categories: [],
+    archived_units: [],
+    archived_crops: [],
+  },
+  notifications_moderation: {
+    sms_cost_per_segment_usd: null,
+    suspension_review_days: 30,
+    appeal_window_days: 30,
+  },
 };
 
 /**
@@ -356,6 +544,31 @@ export const settingSaveSchema = z.discriminatedUnion(
       key: z.literal('reason_codes'),
       expected_version: expectedVersion,
       value: reasonCodesSettingSchema,
+    }),
+    z.strictObject({
+      key: z.literal('language_region'),
+      expected_version: expectedVersion,
+      value: languageRegionSettingSchema,
+    }),
+    z.strictObject({
+      key: z.literal('registration_recovery'),
+      expected_version: expectedVersion,
+      value: registrationRecoverySettingSchema,
+    }),
+    z.strictObject({
+      key: z.literal('profile_privacy'),
+      expected_version: expectedVersion,
+      value: profilePrivacySettingSchema,
+    }),
+    z.strictObject({
+      key: z.literal('reference_lists'),
+      expected_version: expectedVersion,
+      value: referenceListsSettingSchema,
+    }),
+    z.strictObject({
+      key: z.literal('notifications_moderation'),
+      expected_version: expectedVersion,
+      value: notificationsModerationSettingSchema,
     }),
   ],
   { error: () => M.settingKeyUnknown },
@@ -511,4 +724,48 @@ export interface PublicSettings {
   about: string;
   support: SupportSetting;
   maintenance: MaintenanceSetting;
+  /** Phase 2 (2026-10-27): what public and account screens read. No staff-only value. */
+  language_region: LanguageRegionSetting;
+  reference_lists: Pick<
+    ReferenceListsSetting,
+    | 'listing_validity_days'
+    | 'listing_reminder_days'
+    | 'archived_categories'
+    | 'archived_units'
+    | 'archived_crops'
+  >;
+  appeal_window_days: number;
+  /** Shown in the suspend dialog; a policy number, not anybody's data. */
+  suspension_review_days: number;
+}
+
+/**
+ * Whether a year of birth meets the minimum age (null: no minimum). Only the
+ * year is recorded, so the age is taken as this year minus that year -- the
+ * most a person can be, so nobody old enough is refused.
+ */
+export function meetsMinimumAge(
+  yearOfBirth: number,
+  minimumAgeYears: number | null,
+  now: Date = new Date(),
+): boolean {
+  if (minimumAgeYears === null) return true;
+  return now.getUTCFullYear() - yearOfBirth >= minimumAgeYears;
+}
+
+/**
+ * Whether a choice may be made for a NEW post: the archived category or unit
+ * it names, or null. An archived value never blocks an existing record.
+ */
+export function archivedChoice(
+  setting: Pick<ReferenceListsSetting, 'archived_categories' | 'archived_units'>,
+  choice: { category?: string | null; unit?: string | null; price_per?: string | null },
+): 'category' | 'unit' | null {
+  if (choice.category && (setting.archived_categories as string[]).includes(choice.category)) {
+    return 'category';
+  }
+  for (const unit of [choice.unit, choice.price_per]) {
+    if (unit && (setting.archived_units as string[]).includes(unit)) return 'unit';
+  }
+  return null;
 }

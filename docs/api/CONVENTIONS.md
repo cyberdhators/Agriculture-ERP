@@ -399,7 +399,7 @@ character.
 | `organization_own_post`                 | This post belongs to your organisation. Its messages come to the organisation's shared inbox.                                 |
 | `organization_use_leave`                | To end your own access, use Leave organisation.                                                                               |
 | Rule                                    | Exact message                                                                                                                 |
-| ----------------------------------      | ----------------------------------------------------------------------------------------------------------------------------- |
+| ---                                     | ---                                                                                                                           |
 | `phone_already_registered`              | That phone number is already registered to another officer.                                                                   |
 | `account_already_exists`                | An account already exists for that address.                                                                                   |
 | `last_admin_cannot_be_removed`          | This is the only administrator account. Create another administrator before removing this one.                                |
@@ -523,6 +523,17 @@ character.
 | `email_code_too_many_tries`             | Too many wrong tries. Ask for a new code.                                                                                     |
 | `email_code_wrong`                      | That code is not right. Check the email and try again.                                                                        |
 | `email_not_verified`                    | Confirm your email address with the emailed code first.                                                                       |
+| `announcement_not_draft`                | Only a draft announcement can be edited, sent or discarded. A sent announcement stays as it was.                              |
+| `announcement_recipients_changed`       | The recipients changed since the preview. Preview again, check the new count, then send.                                      |
+| `announcement_no_recipients`            | Nobody in this scope can be reached on the chosen channels. Change the scope or the channels.                                 |
+| `announcement_not_sending`              | This announcement has nothing waiting to be sent.                                                                             |
+| `announcement_nothing_to_retry`         | No failed deliveries are waiting to be retried.                                                                               |
+| `announcement_state_unknown`            | Choose a state from the list.                                                                                                 |
+| `template_inactive`                     | Choose an active template. A draft or archived template cannot be used to send.                                               |
+| `template_title_mismatch`               | An SMS template has no title, and an in-app or email template needs one.                                                      |
+| `template_sms_too_long`                 | An SMS can be at most 3 parts: 459 plain characters, or 201 with Arabic or special ones.                                      |
+| `minimum_age_not_met`                   | You must be older to register for this service. Ask your extension officer for help.                                          |
+| `reference_value_archived`              | That choice is no longer offered for new entries. Choose another from the list.                                               |
 
 **A route names a rule; it never writes a sentence.** `conflict()` and
 `unprocessable()` take a key from this registry, not a string. That is how the
@@ -702,6 +713,17 @@ change.
 | `account.unblocked`                           |
 | `post.expiry_reminder_sent`                   |
 | `acknowledgement.recorded`                    |
+| `message_template.created`                    |
+| `message_template.updated`                    |
+| `message_template.status_changed`             |
+| `announcement.drafted`                        |
+| `announcement.draft_edited`                   |
+| `announcement.draft_discarded`                |
+| `announcement.queued`                         |
+| `announcement.batch_sent`                     |
+| `announcement.retry_queued`                   |
+| `announcement.completed`                      |
+| `notification_preference.updated`             |
 
 `before` and `after` hold **changed fields only**, never whole rows, and never a
 password, token, authentication identifier, national id, phone, email, given
@@ -1027,7 +1049,7 @@ These are also exact.
 | Advice photo: upload id malformed          | The upload identifier is not in the expected form.                                              |
 | Advice referral: action not on list        | Choose accept, decline or withdraw.                                                             |
 | Advice referral: share not true/false      | Say whether to share your photos: true or false.                                                |
-| Setting: key not on list                   | Choose identity, support, maintenance or reason codes.                                          |
+| Setting: key not on list                   | Choose a settings section from the list.                                                        |
 | Setting: expected version                  | Send the version you loaded, as a whole number.                                                 |
 | Identity: service name length              | Give a service name of 2 to 80 characters.                                                      |
 | Identity: About too long                   | Keep the About text to 2000 characters.                                                         |
@@ -1068,7 +1090,7 @@ These are also exact.
 | Team: public title too long                | Keep the title to 80 characters.                                                                |
 | Team: edit changes nothing                 | Change something before saving.                                                                 |
 | Situation                                  | Exact reason                                                                                    |
-| ---------------------------------------    | ----------------------------------------------------------------------------------------------- |
+| ---                                        | ---                                                                                             |
 | A field the request may not send           | This field is not recognised.                                                                   |
 | The body is not an object at all           | The request was not sent in the expected form.                                                  |
 | Page marker: not text                      | The page marker must be text.                                                                   |
@@ -1357,7 +1379,7 @@ These are also exact.
 | Advice photo: upload id malformed          | The upload identifier is not in the expected form.                                              |
 | Advice referral: action not on list        | Choose accept, decline or withdraw.                                                             |
 | Advice referral: share not true/false      | Say whether to share your photos: true or false.                                                |
-| Setting: key not on list                   | Choose identity, support, maintenance or reason codes.                                          |
+| Setting: key not on list                   | Choose a settings section from the list.                                                        |
 | Setting: expected version                  | Send the version you loaded, as a whole number.                                                 |
 | Identity: service name length              | Give a service name of 2 to 80 characters.                                                      |
 | Identity: About too long                   | Keep the About text to 2000 characters.                                                         |
@@ -1393,6 +1415,38 @@ These are also exact.
 | Email sign-up: language not en or ar       | Choose English or Arabic.                                                                       |
 | Email code: not 6 digits                   | Enter the 6-digit code from the email.                                                          |
 | Email code: verification id malformed      | Ask for a new code.                                                                             |
+| Settings: languages                        | Keep English switched on, with Arabic on or off.                                                |
+| Settings: date format                      | Choose one of the date formats in the list.                                                     |
+| Settings: number out of range              | Enter a whole number within the range shown.                                                    |
+| Settings: category not on list             | Choose categories from the list.                                                                |
+| Settings: unit not on list                 | Choose units from the list.                                                                     |
+| Settings: crop not on list                 | Choose crops from the list.                                                                     |
+| Settings: whole list archived              | Keep at least one choice in each list available.                                                |
+| Settings: reminder after end               | Send the reminder before the listing ends: fewer days than it stays listed.                     |
+| Settings: SMS cost                         | Enter the cost of one SMS part in US dollars, from 0 to 1, or leave it blank.                   |
+| Announcements: templateNameInvalid         | Give the template a name of 3 to 80 characters.                                                 |
+| Announcements: channelUnknown              | Choose in-app, SMS or email.                                                                    |
+| Announcements: channelsRequired            | Choose at least one channel.                                                                    |
+| Announcements: titleInvalid                | Give a title of 3 to 120 characters.                                                            |
+| Announcements: titleNotForSms              | An SMS template has no title.                                                                   |
+| Announcements: bodyInvalid                 | Write the message in 1 to 2000 characters.                                                      |
+| Announcements: smsBodyRequired             | Write the SMS text, or untick SMS.                                                              |
+| Announcements: smsTooLong                  | An SMS can be at most 3 parts: 459 plain characters, or 201 with Arabic or special ones.        |
+| Announcements: placeholderUnknown          | Use only the placeholders {name} and {service_name}.                                            |
+| Announcements: templateStatusUnknown       | Choose draft, active or archived.                                                               |
+| Announcements: templateEditEmpty           | Change something before saving.                                                                 |
+| Announcements: categoryUnknown             | Choose announcement or essential.                                                               |
+| Announcements: scopeUnknown                | Choose all accounts, phone accounts, email accounts, a state, an activity, staff or officers.   |
+| Announcements: scopeStateRequired          | Choose the state.                                                                               |
+| Announcements: scopeActivityRequired       | Choose the activity.                                                                            |
+| Announcements: scopeExtraField             | Only a state scope has a state, and only an activity scope has an activity.                     |
+| Announcements: staffEmailOnly              | Staff are reached by email only: choose email.                                                  |
+| Announcements: officersSmsOnly             | Extension officers are reached by SMS only: choose SMS.                                         |
+| Announcements: templateIdInvalid           | Choose a template from the list.                                                                |
+| Announcements: confirmRequired             | Tick the confirmation before sending.                                                           |
+| Announcements: expectedRecipientsInvalid   | Send the recipient count the preview showed, as a whole number.                                 |
+| Announcements: preferenceInvalid           | Choose on or off.                                                                               |
+| Announcements: deliveryFilterInvalid       | Choose a channel and a status from the lists.                                                   |
 
 The key beside each reason is the field name, per section 4.1. An unrecognised
 field named `nickname` therefore produces `{ "nickname": "This field is not

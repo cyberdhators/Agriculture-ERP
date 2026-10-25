@@ -34,6 +34,7 @@ import {
   ADMIN_OVERVIEW_MESSAGES,
   ADMIN_MARKETPLACE_MESSAGES,
   ADMIN_ACCOUNT_MESSAGES,
+  ANNOUNCEMENT_MESSAGES,
 } from '../src/index';
 
 /**
@@ -205,6 +206,8 @@ describe('the documented field reasons match the ones the code actually sends', 
     ...Object.values(ADMIN_OVERVIEW_MESSAGES),
     ...Object.values(ADMIN_MARKETPLACE_MESSAGES),
     ...Object.values(ADMIN_ACCOUNT_MESSAGES),
+    // ANNOUNCEMENTS (2026-10-27)
+    ...Object.values(ANNOUNCEMENT_MESSAGES),
     ERROR_MESSAGES.unknownField,
     ERROR_MESSAGES.bodyNotExpectedForm,
   ];

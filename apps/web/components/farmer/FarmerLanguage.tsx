@@ -1,6 +1,7 @@
 'use client';
 
 import { useFarmerSession } from '@/lib/farmer-session';
+import { useArabicEnabled } from '@/lib/settings/client';
 import { LANGUAGE_LABELS } from '@/lib/format';
 import { t, type Language } from '@/lib/i18n';
 
@@ -9,6 +10,8 @@ import styles from './farmer.module.css';
 
 export function FarmerLanguage() {
   const { farmer, language, setLanguage } = useFarmerSession();
+  // 2026-10-27: Arabic is offered while Settings say so.
+  const arabic = useArabicEnabled();
   if (!farmer) return null;
 
   function switchLanguage(lang: Language) {
@@ -40,16 +43,18 @@ export function FarmerLanguage() {
             >
               {t('language.name', language)}
             </button>
-            <button
-              type="button"
-              className={`${styles.choice} ${language === 'ar' ? styles.choiceSelected : ''}`}
-              aria-pressed={language === 'ar'}
-              onClick={() => switchLanguage('ar')}
-              dir="rtl"
-              lang="ar"
-            >
-              {t('language.arabicNative', language)}
-            </button>
+            {arabic ? (
+              <button
+                type="button"
+                className={`${styles.choice} ${language === 'ar' ? styles.choiceSelected : ''}`}
+                aria-pressed={language === 'ar'}
+                onClick={() => switchLanguage('ar')}
+                dir="rtl"
+                lang="ar"
+              >
+                {t('language.arabicNative', language)}
+              </button>
+            ) : null}
           </div>
         </section>
       </div>

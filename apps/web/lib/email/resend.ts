@@ -85,6 +85,8 @@ export interface SendOneResult {
   accepted: boolean;
   /** The provider's own message when it refused. Never the key, never a header. */
   error?: string;
+  /** 2026-10-27: Resend's id for an accepted message, when it gave one. Not a delivery receipt. */
+  messageId?: string;
 }
 
 /**
@@ -135,5 +137,8 @@ export async function sendOneEmail(
     };
   }
 
-  return { address, accepted: true };
+  const accepted = (await response.json().catch(() => ({}))) as { id?: unknown };
+  return typeof accepted.id === 'string'
+    ? { address, accepted: true, messageId: accepted.id }
+    : { address, accepted: true };
 }

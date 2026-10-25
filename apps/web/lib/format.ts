@@ -1,5 +1,6 @@
 import type {
   AdviceTopic,
+  DateFormat,
   Crop,
   DirectoryEntryType,
   FinancialProviderClass,
@@ -104,10 +105,38 @@ function dateFormatter(language: Language): Intl.DateTimeFormat {
   return f;
 }
 
-/** "2026-07-27" or an ISO timestamp -> "27 Jul 2026". */
+/**
+ * 2026-10-27 (settings phase 2): the date format chosen in Settings ->
+ * Language and region. Set once the public settings arrive (the site banner
+ * reads them on every page); until then, and on any failure, "27 Jul 2026".
+ */
+let displayDateFormat: DateFormat = 'd_mmm_yyyy';
+
+export function setDisplayDateFormat(format: DateFormat): void {
+  displayDateFormat = format;
+}
+
+const NUMERIC_FORMATTERS = new Map<Language, Intl.DateTimeFormat>();
+function numericFormatter(language: Language): Intl.DateTimeFormat {
+  let f = NUMERIC_FORMATTERS.get(language);
+  if (!f) {
+    f = new Intl.DateTimeFormat(language === 'ar' ? 'ar' : 'en-GB', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      timeZone: 'UTC',
+    });
+    NUMERIC_FORMATTERS.set(language, f);
+  }
+  return f;
+}
+
+/** "2026-07-27" or an ISO timestamp -> "27 Jul 2026" (or the format Settings chose). */
 export function formatDate(iso: string, language: Language = 'en'): string {
   const date = new Date(iso.length === 10 ? `${iso}T00:00:00Z` : iso);
   if (Number.isNaN(date.getTime())) return iso;
+  if (displayDateFormat === 'yyyy_mm_dd') return date.toISOString().slice(0, 10);
+  if (displayDateFormat === 'dd_mm_yyyy') return numericFormatter(language).format(date);
   return dateFormatter(language).format(date);
 }
 

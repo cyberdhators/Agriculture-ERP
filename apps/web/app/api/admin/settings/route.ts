@@ -3,6 +3,7 @@ import {
   droppedReasonCodes,
   settingSaveSchema,
   type ReasonCodesSetting,
+  type ReferenceListsSetting,
   type SettingSaveInput,
 } from '@agri-erp/shared';
 
@@ -80,6 +81,19 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
             .map((c) => c.code);
         }
         if (body.key === 'maintenance') after.enabled = body.value.enabled;
+        // Phase 2 (2026-10-27): what was archived or restored, and the new
+        // privacy defaults -- list values and switches, never anyone's data.
+        if (body.key === 'reference_lists') {
+          const before = current.value as ReferenceListsSetting;
+          for (const list of ['archived_categories', 'archived_units', 'archived_crops'] as const) {
+            const was = new Set<string>(before[list]);
+            const now = new Set<string>(body.value[list]);
+            const archived = [...now].filter((v) => !was.has(v));
+            const restored = [...was].filter((v) => !now.has(v));
+            if (archived.length || restored.length) after[list] = { archived, restored };
+          }
+        }
+        if (body.key === 'profile_privacy') after.defaults = body.value;
 
         await tx.$executeRawUnsafe(
           `INSERT INTO public.setting_version (key, version, value, changed_by)

@@ -7,6 +7,7 @@ import {
 } from '@agri-erp/shared';
 
 import { prisma } from '../db';
+import { cachedSettingValue } from './settings';
 import { type Authenticated } from './require-role';
 
 /**
@@ -101,11 +102,16 @@ async function recordVisitUnsafe(auth: Authenticated, request: Request): Promise
     previous = row ?? { first_sign_in_at: null, last_seen_at: null };
   }
 
+  // 2026-10-27 (settings phase 2): the threshold is Registration and
+  // recovery's setting, remembered for a minute; thirty minutes until saved.
+  const inactivityMinutes = (await cachedSettingValue('registration_recovery'))
+    .session_inactivity_minutes;
   const event = classifyVisit({
     firstSignInAt: previous.first_sign_in_at,
     lastSeenAt: previous.last_seen_at,
     now: new Date(),
     signInAnnounced,
+    inactivityMs: inactivityMinutes * 60_000,
   });
   if (!event) return;
 

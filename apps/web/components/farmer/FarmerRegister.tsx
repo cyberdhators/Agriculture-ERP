@@ -27,7 +27,7 @@ import { maxBirthYear, validateFarmer, type FarmerFormValues } from '@/lib/farme
 import { COUNTIES, PAYAMS, STATES } from '@/lib/fixtures/p1';
 import { farmerApi, FarmerApiError, useFarmerSession } from '@/lib/farmer-session';
 import { t, type Language } from '@/lib/i18n';
-import { useConsentText } from '@/lib/settings/client';
+import { offered, useArchivedLists, useConsentText } from '@/lib/settings/client';
 
 import styles from './farmer.module.css';
 
@@ -290,6 +290,7 @@ export function FarmerRegister() {
   const [village, setVillage] = useState('');
   const [villageError, setVillageError] = useState<string | undefined>();
   const [farm, setFarm] = useState<FarmAnswers>(EMPTY_FARM);
+  const archivedLists = useArchivedLists();
   const [confirm, setConfirm] = useState('');
   const [confirmError, setConfirmError] = useState<string | undefined>();
   const [errors, setErrors] = useState<Partial<Record<keyof FarmerFormValues, string>>>({});
@@ -806,14 +807,16 @@ export function FarmerRegister() {
           <fieldset className={styles.stack} style={{ border: 0, padding: 0, margin: 0 }}>
             <legend className="small">{w.crops}</legend>
             <div className={styles.choiceRow} style={{ flexWrap: 'wrap' }}>
-              {PROFILE_CROPS.map((c) => (
-                <Checkbox
-                  key={c}
-                  label={w[c] ?? c}
-                  checked={farm.primary_crops.includes(c)}
-                  onChange={() => toggle('primary_crops', c)}
-                />
-              ))}
+              {offered(PROFILE_CROPS, archivedLists?.archived_crops, ...farm.primary_crops).map(
+                (c) => (
+                  <Checkbox
+                    key={c}
+                    label={w[c] ?? c}
+                    checked={farm.primary_crops.includes(c)}
+                    onChange={() => toggle('primary_crops', c)}
+                  />
+                ),
+              )}
             </div>
           </fieldset>
           <Field label={w.land!} optional error={serverErrors.land_size}>

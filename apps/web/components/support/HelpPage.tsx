@@ -8,6 +8,7 @@ import { PageHead } from '@/components/farmer/AccountShell';
 import { Button, Field, Input, Notice, Select, Textarea } from '@/components/ui';
 import { useFarmerSession } from '@/lib/farmer-session';
 import { t, type TKey } from '@/lib/i18n';
+import { usePublicSettings } from '@/lib/settings/client';
 
 import styles from '@/components/farmer/farmer.module.css';
 
@@ -40,6 +41,8 @@ const FAQ: ReadonlyArray<[TKey, TKey]> = [
  */
 export function HelpPage() {
   const { language, farmer } = useFarmerSession();
+  // 2026-10-27 (settings phase 2): the appeal window, from Settings.
+  const publicSettings = usePublicSettings();
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
@@ -223,7 +226,13 @@ export function HelpPage() {
               </Field>
               {/* 2026-10-26: an appeal -- a suspended person is signed out, so their phone finds the account. */}
               {topic === 'appeal' ? (
-                <p className="small muted">{t('help.appealHint', language)}</p>
+                <p className="small muted">
+                  {t('help.appealHint', language)}{' '}
+                  {t('help.appealWindow', language).replace(
+                    '{n}',
+                    String(publicSettings?.appeal_window_days ?? 30),
+                  )}
+                </p>
               ) : null}
               <Field label={t('help.body', language)} error={fields.body}>
                 {(ids) => (

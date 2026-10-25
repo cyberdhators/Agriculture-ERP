@@ -303,6 +303,26 @@ export const RULE_MESSAGES = {
     "Block people from your own messages. In an organisation's inbox, close the conversation instead.",
   conversation_account_blocked:
     'Messages cannot be sent between you and this person. If you blocked them, you can unblock them in Settings.',
+  // ANNOUNCEMENTS AND SETTINGS PHASE 2 (2026-10-27).
+  announcement_not_draft:
+    'Only a draft announcement can be edited, sent or discarded. A sent announcement stays as it was.',
+  announcement_recipients_changed:
+    'The recipients changed since the preview. Preview again, check the new count, then send.',
+  announcement_no_recipients:
+    'Nobody in this scope can be reached on the chosen channels. Change the scope or the channels.',
+  announcement_not_sending: 'This announcement has nothing waiting to be sent.',
+  announcement_nothing_to_retry: 'No failed deliveries are waiting to be retried.',
+  announcement_state_unknown: 'Choose a state from the list.',
+  template_inactive:
+    'Choose an active template. A draft or archived template cannot be used to send.',
+  template_title_mismatch:
+    'An SMS template has no title, and an in-app or email template needs one.',
+  template_sms_too_long:
+    'An SMS can be at most 3 parts: 459 plain characters, or 201 with Arabic or special ones.',
+  minimum_age_not_met:
+    'You must be older to register for this service. Ask your extension officer for help.',
+  reference_value_archived:
+    'That choice is no longer offered for new entries. Choose another from the list.',
 } as const;
 
 export type RuleKey = keyof typeof RULE_MESSAGES;

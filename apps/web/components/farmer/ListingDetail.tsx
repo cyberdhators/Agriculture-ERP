@@ -96,6 +96,7 @@ export function ListingDetail({ listingId }: { listingId: string }) {
         lang={language}
         onAction={act}
         endLabel={t('listingForm.availableUntil', language)}
+        endsOn={listing.available_until}
         sale={{
           remaining,
           remainingLabel: formatQuantity({ quantity: remaining, unit: listing.unit }, unit),

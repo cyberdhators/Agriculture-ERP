@@ -7,10 +7,12 @@ import {
   type SettingKey,
   type SettingValues,
   type StaffNotice,
+  archivedChoice,
   consentTextVersion,
 } from '@agri-erp/shared';
 
 import { prisma } from '../db';
+import { unprocessable } from './errors';
 
 /**
  * SETTINGS, PHASE 1 (2026-10-25): the reads the settings routes share.
@@ -91,6 +93,58 @@ export async function currentSetting<K extends SettingKey>(
 }
 
 /**
+ * PHASE 2 (2026-10-27): one setting's current VALUE, for the code that obeys
+ * it. Never fails: before the migration, or if the read fails, the fallback
+ * is returned, which is what the code did before the setting existed.
+ */
+export async function settingValue<K extends SettingKey>(
+  key: K,
+  client: Queryable = prisma,
+): Promise<SettingValues[K]> {
+  try {
+    if (!(await settingsTablesPresent(client))) return readSetting(key, undefined);
+    return (await currentSetting(key, client)).value;
+  } catch {
+    return readSetting(key, undefined);
+  }
+}
+
+const CACHE_MS = 60_000;
+const cache = new Map<SettingKey, { at: number; value: unknown }>();
+
+/**
+ * The same, remembered for a minute per server instance: for reads on a hot
+ * path (every sign-in visit) where a minute's delay after a save is harmless.
+ */
+export async function cachedSettingValue<K extends SettingKey>(key: K): Promise<SettingValues[K]> {
+  const hit = cache.get(key);
+  if (hit && Date.now() - hit.at < CACHE_MS) return hit.value as SettingValues[K];
+  const value = await settingValue(key);
+  cache.set(key, { at: Date.now(), value });
+  return value;
+}
+
+/**
+ * Refuses a NEW post that names an archived category or unit (Marketplace and
+ * reference lists). Called only where a post is created: an existing record
+ * keeps its value, and editing it is never refused for it.
+ */
+export async function refuseArchivedChoice(choice: {
+  category?: string | null;
+  unit?: string | null;
+  price_per?: string | null;
+}): Promise<void> {
+  if (archivedChoice(await settingValue('reference_lists'), choice)) {
+    throw unprocessable('reference_value_archived');
+  }
+}
+
+/** How long a post stays on the market when no end date is given. */
+export async function listingValidityDays(): Promise<number> {
+  return (await settingValue('reference_lists')).listing_validity_days;
+}
+
+/**
  * What a visitor's page needs: the service name, About, support contacts and
  * help links, and the maintenance banner. A whitelist: no version, no staff
  * name, no reason code.
@@ -101,11 +155,22 @@ export async function publicSettings(): Promise<PublicSettings> {
     readSetting(key, undefined);
   const all = (await settingsTablesPresent()) ? await currentSettings() : [];
   const identity = value(all, 'identity');
+  const lists = value(all, 'reference_lists');
   return {
     service_name: identity.service_name,
     about: identity.about,
     support: value(all, 'support'),
     maintenance: value(all, 'maintenance'),
+    language_region: value(all, 'language_region'),
+    reference_lists: {
+      listing_validity_days: lists.listing_validity_days,
+      listing_reminder_days: lists.listing_reminder_days,
+      archived_categories: lists.archived_categories,
+      archived_units: lists.archived_units,
+      archived_crops: lists.archived_crops,
+    },
+    appeal_window_days: value(all, 'notifications_moderation').appeal_window_days,
+    suspension_review_days: value(all, 'notifications_moderation').suspension_review_days,
   };
 }
 

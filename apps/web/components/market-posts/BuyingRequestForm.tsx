@@ -28,6 +28,7 @@ import {
   type BuyingRequest,
 } from '@/lib/market-posts/api';
 import { renewalDefault } from '@/lib/market-posts/presentation';
+import { offered, useArchivedLists } from '@/lib/settings/client';
 
 import { BuyingRequestDetailBody } from './MarketRequests';
 import styles from './market-posts.module.css';
@@ -123,6 +124,8 @@ export function BuyingRequestForm({
   const [loading, setLoading] = useState(Boolean(id));
   /** 2026-10-28 (user journeys): showing the post as the market will, before it is saved. */
   const [previewing, setPreviewing] = useState(false);
+  // 2026-10-27 (settings phase 2): archived categories and units.
+  const archivedLists = useArchivedLists();
 
   useEffect(() => {
     listStates()
@@ -222,7 +225,13 @@ export function BuyingRequestForm({
   if (loading) return <p className="muted">{t('market.loading', lang)}</p>;
 
   const err = (key: keyof Values) => errors[key] || undefined;
-  const unitOptions = LISTING_UNITS.map((u) => (
+  // 2026-10-27: archived units are not offered for a new request.
+  const unitOptions = offered(
+    LISTING_UNITS,
+    archivedLists?.archived_units,
+    values.unit,
+    values.price_per,
+  ).map((u) => (
     <option key={u} value={u}>
       {t(UNIT_KEY[u], lang)}
     </option>
@@ -327,11 +336,13 @@ export function BuyingRequestForm({
               onChange={(e) => set('category', e.target.value)}
             >
               <option value="">{t('register.select', lang)}</option>
-              {LISTING_CATEGORIES.map((c) => (
-                <option key={c} value={c}>
-                  {t(CATEGORY_KEY[c], lang)}
-                </option>
-              ))}
+              {offered(LISTING_CATEGORIES, archivedLists?.archived_categories, values.category).map(
+                (c) => (
+                  <option key={c} value={c}>
+                    {t(CATEGORY_KEY[c], lang)}
+                  </option>
+                ),
+              )}
             </Select>
           )}
         </Field>

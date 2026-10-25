@@ -23,6 +23,10 @@ export const FALLBACK_PUBLIC_SETTINGS: PublicSettings = {
   about: SETTING_DEFAULTS.identity.about,
   support: SETTING_DEFAULTS.support,
   maintenance: SETTING_DEFAULTS.maintenance,
+  language_region: SETTING_DEFAULTS.language_region,
+  reference_lists: SETTING_DEFAULTS.reference_lists,
+  appeal_window_days: SETTING_DEFAULTS.notifications_moderation.appeal_window_days,
+  suspension_review_days: SETTING_DEFAULTS.notifications_moderation.suspension_review_days,
 };
 
 /** One request per page load, shared by the banner, the footer and /help. */
@@ -103,4 +107,32 @@ export function useNoticeText(
     };
   }, [kind, language, key, fetched]);
   return fetched[key] ?? fallback;
+}
+
+/**
+ * 2026-10-27 (settings phase 2): the values a form offers for a NEW entry --
+ * every value not archived in Marketplace and reference lists, plus any value
+ * the record already holds, so editing an older post never loses it.
+ */
+export function offered<T extends string>(
+  values: readonly T[],
+  archived: readonly string[] | undefined,
+  ...keep: (string | null | undefined)[]
+): T[] {
+  if (!archived || archived.length === 0) return [...values];
+  return values.filter((v) => !archived.includes(v) || keep.includes(v));
+}
+
+/** The archived lists, or none until the public settings arrive. */
+export function useArchivedLists(): PublicSettings['reference_lists'] | null {
+  return usePublicSettings()?.reference_lists ?? null;
+}
+
+/**
+ * 2026-10-27 (settings phase 2): whether Arabic is offered (Language and
+ * region). True until the settings arrive, and on any failure, as before.
+ */
+export function useArabicEnabled(): boolean {
+  const settings = usePublicSettings();
+  return settings?.language_region.enabled_languages.includes('ar') ?? true;
 }

@@ -31,6 +31,8 @@ export const PERMISSION_KEYS = [
   'audit.view',
   'settings.manage',
   'exports.identifiable',
+  // 2026-10-27: official announcements and message templates (Communications).
+  'communications.send',
 ] as const;
 
 export type PermissionKey = (typeof PERMISSION_KEYS)[number];
@@ -63,7 +65,14 @@ export const PRESET_PERMISSIONS: Readonly<Record<StaffPreset, readonly Permissio
   super_admin: PERMISSION_KEYS,
   // "Settings and staff, as assigned": manages staff presets within its scope,
   // the settings, and reads the trail and the reports it needs to do so.
-  administrator: ['staff.manage', 'settings.manage', 'audit.view', 'reports.view'],
+  // 2026-10-27: and official announcements, which reach every account.
+  administrator: [
+    'staff.manage',
+    'settings.manage',
+    'audit.view',
+    'reports.view',
+    'communications.send',
+  ],
   moderator_editor: ['content.moderate', 'content.publish'],
   analyst: ['reports.view'],
   support: ['support.handle'],
@@ -79,7 +88,7 @@ export const PRESET_LABELS: Readonly<Record<StaffPreset, string>> = {
 
 export const PRESET_DESCRIPTIONS: Readonly<Record<StaffPreset, string>> = {
   super_admin: 'Everything, including appointing other Super Admins.',
-  administrator: 'Settings and staff, as assigned.',
+  administrator: 'Settings, staff and official announcements, as assigned.',
   moderator_editor: 'Moderate content and listings.',
   analyst: 'View data and reports.',
   support: 'Assist users and resolve issues.',
@@ -95,6 +104,7 @@ export const PERMISSION_LABELS: Readonly<Record<PermissionKey, string>> = {
   'audit.view': 'View access logs and the audit trail',
   'settings.manage': 'Manage settings',
   'exports.identifiable': 'Export identifiable data',
+  'communications.send': 'Send official announcements and manage message templates',
 };
 
 /**
@@ -434,12 +444,17 @@ export function classifyVisit(input: {
   readonly lastSeenAt: Date | null;
   readonly now: Date;
   readonly signInAnnounced: boolean;
+  /**
+   * 2026-10-27 (settings phase 2): the inactivity threshold from Registration
+   * and recovery. Omitted, the specification's thirty minutes.
+   */
+  readonly inactivityMs?: number;
 }): Exclude<AccessEvent, 'account_created' | 'reauth_failed'> | null {
   if (!input.firstSignInAt) return 'first_sign_in';
   if (input.signInAnnounced) return 'sign_in';
   if (!input.lastSeenAt) return 'return_session';
   const idle = input.now.getTime() - input.lastSeenAt.getTime();
-  return idle > RETURN_SESSION_INACTIVITY_MS ? 'return_session' : null;
+  return idle > (input.inactivityMs ?? RETURN_SESSION_INACTIVITY_MS) ? 'return_session' : null;
 }
 
 /**

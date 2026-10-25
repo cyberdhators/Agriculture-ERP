@@ -7,6 +7,7 @@ import {
 
 import { audited, writeAudit } from '../../../../lib/api/audit';
 import { defineRoutes, ok } from '../../../../lib/api/route';
+import { settingValue } from '../../../../lib/api/settings';
 import { prisma } from '../../../../lib/db';
 
 /**
@@ -74,6 +75,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
     bodySchema: accountProfileSchema,
     handler: async ({ auth, body }) => {
       const authUserId = auth.principal.authUserId;
+      const privacy = await settingValue('profile_privacy');
       const row = await audited(prisma, async (tx) => {
         const [before] = await tx.$queryRawUnsafe<Row[]>(
           `SELECT ${COLUMNS} FROM public.account_profile WHERE auth_user_id = $1::uuid FOR UPDATE`,
@@ -89,9 +91,13 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
           ? (body.show_enterprise_size ?? before?.show_enterprise_size ?? false)
           : false;
         const [after] = await tx.$queryRawUnsafe<Row[]>(
+          // 2026-10-27 (settings phase 2): a NEW profile row takes Profile
+          // privacy's defaults; an existing row's choices are never touched
+          // (the conflict branch does not set them).
           `INSERT INTO public.account_profile
-             (auth_user_id, profile_kind, group_kind, activities, enterprise_size, show_enterprise_size)
-           VALUES ($1::uuid, $2, $3, $4::text[], $5, $6)
+             (auth_user_id, profile_kind, group_kind, activities, enterprise_size,
+              show_enterprise_size, show_phone, allow_messages)
+           VALUES ($1::uuid, $2, $3, $4::text[], $5, $6, $7, $8)
            ON CONFLICT (auth_user_id) DO UPDATE
              SET profile_kind = EXCLUDED.profile_kind, group_kind = EXCLUDED.group_kind,
                  activities = EXCLUDED.activities, enterprise_size = EXCLUDED.enterprise_size,
@@ -103,6 +109,8 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
           body.activities,
           size,
           showSize,
+          privacy.show_phone_default,
+          privacy.allow_messages_default,
         );
         await writeAudit(tx, {
           entityType: 'account_profile',

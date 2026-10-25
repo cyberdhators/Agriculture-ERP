@@ -17,6 +17,7 @@ import { DEFAULT_LANGUAGE, LANG_COOKIE, LANG_STORAGE, isLanguage, type Language 
 import type { Farmer, ProduceListing } from '@/lib/fixtures/farmers';
 import { enqueue, queuedOf, subscribeOutbox } from '@/lib/offline/outbox';
 import { loadWithSnapshot, readSnapshot, saveSnapshot } from '@/lib/offline/snapshot';
+import { useArabicEnabled } from '@/lib/settings/client';
 import { supabaseBrowser } from '@/lib/supabase/browser';
 
 /**
@@ -253,6 +254,13 @@ export function FarmerSessionProvider({
     if (lang) setLanguageState(lang);
     void load().finally(() => setHydrated(true));
   }, [load]);
+
+  // 2026-10-27 (settings phase 2): when Arabic is switched off in Settings,
+  // a farmer who had chosen it reads English.
+  const arabic = useArabicEnabled();
+  useEffect(() => {
+    if (!arabic && language === 'ar') setLanguageState('en');
+  }, [arabic, language]);
 
   const setLanguage = useCallback((lang: Language) => {
     setLanguageState(lang);
