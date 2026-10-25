@@ -22,6 +22,7 @@ import {
   type ReferralRow,
 } from '../../../../../../lib/api/advice';
 import { audited, writeAudit, type AuditTx } from '../../../../../../lib/api/audit';
+import { blockedBetween } from '../../../../../../lib/api/blocks';
 import { conflict, notFound, unprocessable } from '../../../../../../lib/api/errors';
 import { checkId } from '../../../../../../lib/api/market-posts';
 import { actorOf, insertMessage, me } from '../../../../../../lib/api/messaging';
@@ -263,6 +264,9 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
           // accept
           if (current.status === 'closed') throw unprocessable('advice_case_closed');
           const to = checkTarget(await target(tx, proposal.to_provider_id), current);
+          // 2026-10-28: no referral to a provider the requester has a block with.
+          if (await blockedBetween(tx, current.requester_auth_user_id, to.auth_user_id))
+            throw unprocessable('conversation_account_blocked');
 
           // 1. The new case, with the other provider: the topic and the question.
           await tx.$executeRawUnsafe(
