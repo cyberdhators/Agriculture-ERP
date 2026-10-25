@@ -179,13 +179,34 @@ describe('public routes are counted, not trusted', () => {
     expect(source).toMatch(/digest is NOT one|not a security control/);
   });
 
-  it('no API route claims to rate-limit anything', () => {
-    // If a limiter is ever added, this fails and is replaced by tests for what
-    // the limiter actually does — which is the point of writing it now.
-    const limiters = files.filter((file) =>
-      /rateLimit|rate_limit|ratelimit|Ratelimit|throttle/.test(readFileSync(file, 'utf8')),
-    );
-    expect(limiters.map((file) => file.slice(API_DIR.length + 1))).toEqual([]);
+  it('the one API route that rate-limits is the sign-in route, and it limits before signing in', () => {
+    // Replaced, not removed (2026-10-28, lane-security): this used to assert
+    // that NO route claimed to rate-limit, and said a limiter would replace it
+    // with tests for what the limiter does. POST /api/auth/sign-in is that
+    // limiter. What it does: an in-memory per-address brake, then a
+    // per-identifier limit read from sign_in_attempt (5 failures in 15
+    // minutes), both answered 429 with Retry-After BEFORE the password is
+    // sent to the sign-in service. The rule itself is tested in
+    // packages/shared/tests/staff-security.test.ts (signInRateDecision).
+    const limiters = files
+      .filter((file) =>
+        /rateLimit|rate_limit|ratelimit|Ratelimit|throttle/.test(readFileSync(file, 'utf8')),
+      )
+      .map((file) =>
+        file
+          .slice(API_DIR.length + 1)
+          .split(String.fromCharCode(92))
+          .join('/'),
+      );
+    expect(limiters).toEqual(['auth/sign-in/route.ts']);
+    const source = readFileSync(join(API_DIR, 'auth/sign-in/route.ts'), 'utf8');
+    const brake = source.indexOf('addressBrake(');
+    const limit = source.indexOf('identifierWait(');
+    const signIn = source.indexOf('signInWithPassword(');
+    expect(brake).toBeGreaterThan(-1);
+    expect(limit).toBeGreaterThan(brake);
+    expect(signIn).toBeGreaterThan(limit);
+    expect(source.match(/throw rateLimited\(/g)).toHaveLength(2);
   });
 
   it('the public route is the marketplace report submission and nothing else', () => {

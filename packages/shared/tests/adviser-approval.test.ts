@@ -63,8 +63,23 @@ describe('the database checks the same lists as the schemas', () => {
   });
 
   it('the statuses', () => {
-    const body = constraint('adviser_application_status_known');
+    // 2026-10-28: migration 20261028110000 recreates this CHECK with
+    // 'suspended' added; it is the last to do so, so its list is the one a
+    // fresh database ends up with.
+    const later = readFileSync(
+      fileURLToPath(
+        new URL(
+          '../../../prisma/migrations/20261028110000_staff_security_advisory/migration.sql',
+          import.meta.url,
+        ),
+      ),
+      'utf8',
+    );
+    const at = later.indexOf('ADD CONSTRAINT "adviser_application_status_known"');
+    expect(at).toBeGreaterThan(-1);
+    const body = later.slice(at, later.indexOf('));', at));
     for (const s of ADVISER_APPLICATION_STATUSES) expect(body).toContain(`'${s}'`);
+    expect(constraint('adviser_application_status_known')).not.toContain(`'suspended'`);
   });
 
   it('one open application per provider, RLS on, and no audit CHECK', () => {
@@ -137,9 +152,20 @@ describe('a reply and a staff decision', () => {
   });
 
   it('every decision needs a reason of at least 5 characters', () => {
+    // 2026-10-28: approve also records what was checked; suspend, for how long.
+    const extra = (action: string) =>
+      action === 'approve'
+        ? { checks: ['identity'] }
+        : action === 'suspend'
+          ? { suspend_days: 7 }
+          : {};
     for (const action of Object.keys(ADVISER_DECISION_RULES)) {
       expect(
-        adviserDecisionSchema.safeParse({ action, reason: 'Checked the diploma.' }).success,
+        adviserDecisionSchema.safeParse({
+          action,
+          reason: 'Checked the diploma.',
+          ...extra(action),
+        }).success,
       ).toBe(true);
       expect(reasonOf(adviserDecisionSchema.safeParse({ action, reason: ' no ' }), 'reason')).toBe(
         ADVISER_MESSAGES.reasonInvalid,
@@ -150,16 +176,22 @@ describe('a reply and a staff decision', () => {
     }
     expect(
       reasonOf(
-        adviserDecisionSchema.safeParse({ action: 'restore', reason: 'Because.' }),
+        adviserDecisionSchema.safeParse({ action: 'reinstate', reason: 'Because.' }),
         'action',
       ),
     ).toBe(ADVISER_MESSAGES.decisionUnknown);
   });
 
   it('only approval grants; revoke acts only on an approval; nothing reopens a final status', () => {
-    const into = Object.values(ADVISER_DECISION_RULES).map((r) => r.to);
-    expect(into.filter((s) => s === 'approved')).toHaveLength(1);
-    expect(ADVISER_DECISION_RULES.revoke.from).toEqual(['approved']);
+    // 2026-10-28: restore also leads to approved, but only from a suspension
+    // of an approval that already stands; it never approves anything new.
+    const into = Object.entries(ADVISER_DECISION_RULES)
+      .filter(([, r]) => r.to === 'approved')
+      .map(([d]) => d)
+      .sort();
+    expect(into).toEqual(['approve', 'restore']);
+    expect(ADVISER_DECISION_RULES.restore.from).toEqual(['suspended']);
+    expect(ADVISER_DECISION_RULES.revoke.from).toEqual(['approved', 'suspended']);
     for (const rule of Object.values(ADVISER_DECISION_RULES)) {
       for (const final of ['declined', 'revoked', 'withdrawn'] as const) {
         expect(rule.from).not.toContain(final);

@@ -2814,6 +2814,7 @@ DECISIONS: "Organisational profiles and team access (2026-10-27)".
   DECISIONS.
 
 — Alieu-Claude (team access lane)
+
 ### 2026-10-27 — Alieu-Claude (lane-recovery) → both — self-service recovery, enterprise size, correction requests
 
 Branch `feat/recovery-and-moderation`, migration `20261027100000_recovery_size_corrections`.
@@ -2837,3 +2838,26 @@ Branch `feat/recovery-and-moderation`, migration `20261027100000_recovery_size_c
   number on a change of number as an essential message.
 
 — Alieu-Claude
+
+### 2026-10-28 — Alieu-Claude (lane-security) → integrator — staff security, advisory authorization, organisation advice, analytics
+
+Branch `feat/staff-security-advisory`. Migrations `20261028110000_staff_security_advisory`
+and `20261028112000_organisation_advice_cases` (additive; two CHECKs widened, one
+unique constraint replaced by partial unique indexes). Not applied. DECISIONS: the
+six 2026-10-28 entries.
+
+- Staff two-step sign-in (TOTP) with `STAFF_MFA_ENFORCEMENT` (default `verify`;
+  switch to `required` once CORWADO's administrators have enrolled); Super Admin
+  reset; sign-in through `POST /api/auth/sign-in` with failed sign-ins logged and
+  rate-limited; last activity on API calls; staff email invitations with a
+  copyable link when email is not configured.
+- Adviser suspend/restore with duration, what-was-checked, advisory status on the
+  account record, official advisory notes reviewed by staff.
+- Organisation advice profile and shared advice inbox (assign/accept) for
+  `advisory.handle`.
+- Analytics: commodity and actor-type filters, three over-time charts, real
+  editable Excel charts.
+- **The audit CHECK is yours**: 15 new keys (AUDIT_ACTIONS and CONVENTIONS
+  §5.2.2 list them); `audit-check-matches-migrations` fails locally until then.
+
+— Alieu-Claude (lane-security)
