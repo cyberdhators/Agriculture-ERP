@@ -61,16 +61,17 @@ export type AccountSuspendInput = z.infer<typeof accountSuspendSchema>;
 const JUBA_OFFSET_MS = 2 * 60 * 60 * 1000;
 
 /**
- * When a suspension of `days` days made at `now` ends: midnight in Juba at
- * the start of the day `days` days after today's date in Juba. Suspended on
- * 5 November for 7 days, the account is back on 12 November. Null days, no
- * end.
+ * When a suspension of `days` days made at `now` ends: midnight in Juba
+ * after `days` FULL days have passed (the rest of today does not count, so
+ * a suspension is never shorter than asked -- the owner, 2026-10-29).
+ * Suspended on 5 November for 7 days, the account is back on 13 November;
+ * for 1 day, back the day after tomorrow. Null days, no end.
  */
 export function suspensionEndsAt(now: Date, days: number | null | undefined): Date | null {
   if (days === null || days === undefined) return null;
   const juba = new Date(now.getTime() + JUBA_OFFSET_MS);
   const startOfJubaDay = Date.UTC(juba.getUTCFullYear(), juba.getUTCMonth(), juba.getUTCDate());
-  return new Date(startOfJubaDay + days * 86_400_000 - JUBA_OFFSET_MS);
+  return new Date(startOfJubaDay + (days + 1) * 86_400_000 - JUBA_OFFSET_MS);
 }
 
 /**

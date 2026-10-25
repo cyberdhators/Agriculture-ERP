@@ -42,17 +42,17 @@ describe('accountSuspendSchema', () => {
 });
 
 describe('suspensionEndsAt', () => {
-  it('ends at midnight in Juba (22:00 UTC the day before), N days after today in Juba', () => {
+  it('ends at midnight in Juba (22:00 UTC the day before) after N full days', () => {
     // 5 November 2026, 14:00 in Juba.
     const end = suspensionEndsAt(new Date('2026-11-05T12:00:00Z'), 7);
-    expect(end?.toISOString()).toBe('2026-11-11T22:00:00.000Z');
-    expect(suspensionEndDate(end as Date)).toBe('2026-11-12');
+    expect(end?.toISOString()).toBe('2026-11-12T22:00:00.000Z');
+    expect(suspensionEndDate(end as Date)).toBe('2026-11-13');
   });
 
   it("counts from Juba's date, not UTC's, late in the evening", () => {
     // 23:30 UTC on 5 November is already 01:30 on 6 November in Juba.
     const end = suspensionEndsAt(new Date('2026-11-05T23:30:00Z'), 1);
-    expect(suspensionEndDate(end as Date)).toBe('2026-11-07');
+    expect(suspensionEndDate(end as Date)).toBe('2026-11-08');
   });
 
   it('has no end without a number of days', () => {
