@@ -139,29 +139,33 @@ export function FarmerServiceFormPage({ id }: { id?: string }) {
   );
 }
 
-// ---- The buyer's account (English, as the rest of the buyer side) -------------
+// ---- The buyer's account, in the buyer's language (2026-10-29) ---------------
 
 export function BuyerBuyingRequestsPage() {
+  const { language } = useBuyer();
   return (
     <>
       <PageHeader
-        title={t('requests.mineTitle', 'en')}
-        subtitle={t('requests.mineLeadBuyer', 'en')}
-        actions={<ButtonLink href={`${BUYER_REQUESTS}/new`}>{t('requests.new', 'en')}</ButtonLink>}
+        title={t('requests.mineTitle', language)}
+        subtitle={t('requests.mineLeadBuyer', language)}
+        actions={
+          <ButtonLink href={`${BUYER_REQUESTS}/new`}>{t('requests.new', language)}</ButtonLink>
+        }
       />
-      <MyBuyingRequests lang="en" basePath={BUYER_REQUESTS} />
+      <MyBuyingRequests lang={language} basePath={BUYER_REQUESTS} />
     </>
   );
 }
 
 export function BuyerBuyingRequestFormPage({ id }: { id?: string }) {
+  const { language } = useBuyer();
   return (
     <>
       <PageHeader
-        title={t(id ? 'requests.editTitle' : 'requests.newTitle', 'en')}
-        subtitle={t('requests.formLead', 'en')}
+        title={t(id ? 'requests.editTitle' : 'requests.newTitle', language)}
+        subtitle={t('requests.formLead', language)}
       />
-      <BuyingRequestForm lang="en" id={id} listHref={BUYER_REQUESTS} posterType="buyer" />
+      <BuyingRequestForm lang={language} id={id} listHref={BUYER_REQUESTS} posterType="buyer" />
     </>
   );
 }
@@ -172,30 +176,31 @@ export function BuyerBuyingRequestFormPage({ id }: { id?: string }) {
  * does. Inside the buyer shell, so the organisation is known.
  */
 export function BuyerServicesPage() {
+  const { language } = useBuyer();
   return (
     <>
       <PageHeader
-        title={t('svc.mineTitle', 'en')}
-        subtitle={t('svc.mineLead', 'en')}
-        actions={<ButtonLink href={`${BUYER_SERVICES}/new`}>{t('svc.new', 'en')}</ButtonLink>}
+        title={t('svc.mineTitle', language)}
+        subtitle={t('svc.mineLead', language)}
+        actions={<ButtonLink href={`${BUYER_SERVICES}/new`}>{t('svc.new', language)}</ButtonLink>}
       />
-      <MyServices lang="en" basePath={BUYER_SERVICES} />
+      <MyServices lang={language} basePath={BUYER_SERVICES} />
     </>
   );
 }
 
 export function BuyerServiceFormPage({ id }: { id?: string }) {
-  const { profile } = useBuyer();
+  const { profile, language } = useBuyer();
   const org = profile.organization;
   // The organisation's name is the name on the market unless changed.
   return (
     <>
       <PageHeader
-        title={t(id ? 'svc.editTitle' : 'svc.newTitle', 'en')}
-        subtitle={t('svc.formLead', 'en')}
+        title={t(id ? 'svc.editTitle' : 'svc.newTitle', language)}
+        subtitle={t('svc.formLead', language)}
       />
       <ServiceForm
-        lang="en"
+        lang={language}
         id={id}
         listHref={BUYER_SERVICES}
         poster="buyer"

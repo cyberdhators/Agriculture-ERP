@@ -1,10 +1,9 @@
 import type { Metadata } from 'next';
 
-import { AdviceDirectory } from '@/components/advice/AdviceDirectory';
-import { BUYER_ADVICE } from '@/lib/advice/labels';
+import { BuyerAdviceDirectory } from '@/components/buyer/BuyerPages';
 
 export const metadata: Metadata = { title: 'Find advice' };
 
 export default function Page() {
-  return <AdviceDirectory lang="en" base={BUYER_ADVICE.find} />;
+  return <BuyerAdviceDirectory />;
 }

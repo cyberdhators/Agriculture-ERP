@@ -8,12 +8,13 @@ import {
 } from '@agri-erp/shared';
 
 import {
-  CATEGORY_LABELS,
-  MONTH_LABELS,
-  ORG_TYPE_LABELS,
-  PAYMENT_LABELS,
-  UNIT_LABELS,
+  categoryLabel,
+  monthLabels,
+  orgTypeLabel,
+  paymentLabel,
+  unitLabel,
 } from '@/lib/buyer/labels';
+import { t, type Language } from '@/lib/i18n';
 
 import { Checkbox, Field, Input, Select, Textarea } from '../ui';
 import styles from './buyer.module.css';
@@ -121,7 +122,10 @@ export function ProcurementFields({
   states,
   counties,
   individual = false,
+  language = 'en',
 }: {
+  /** 2026-10-29: sign-up and the profile speak the buyer's language. */
+  language?: Language;
   form: OrgForm;
   onChange: (next: OrgForm) => void;
   errors: Record<string, string>;
@@ -133,14 +137,16 @@ export function ProcurementFields({
 }) {
   const set = <K extends keyof OrgForm>(key: K, value: OrgForm[K]) =>
     onChange({ ...form, [key]: value });
+  const w = (key: Parameters<typeof t>[0]) => t(key, language);
+  const optional = w('common.optional');
 
   return (
     <>
       {individual ? null : (
         <fieldset className={styles.fieldset}>
-          <legend className={styles.legend}>Organisation</legend>
+          <legend className={styles.legend}>{w('buyer.pf.organisation')}</legend>
           <div className={styles.formGrid}>
-            <Field label="Organisation name" error={errors.organization_name}>
+            <Field label={w('buyer.pf.orgName')} error={errors.organization_name}>
               {(ids) => (
                 <Input
                   {...ids}
@@ -150,22 +156,26 @@ export function ProcurementFields({
                 />
               )}
             </Field>
-            <Field label="Organisation type" error={errors.organization_type}>
+            <Field label={w('buyer.pf.orgType')} error={errors.organization_type}>
               {(ids) => (
                 <Select
                   {...ids}
                   value={form.organization_type}
                   onChange={(e) => set('organization_type', e.target.value)}
                 >
-                  {BUYER_ORGANIZATION_TYPES.map((t) => (
-                    <option key={t} value={t}>
-                      {ORG_TYPE_LABELS[t]}
+                  {BUYER_ORGANIZATION_TYPES.map((type) => (
+                    <option key={type} value={type}>
+                      {orgTypeLabel(type, language)}
                     </option>
                   ))}
                 </Select>
               )}
             </Field>
-            <Field label="Business registration number" optional error={errors.registration_number}>
+            <Field
+              label={w('buyer.pf.regNo')}
+              optional={optional}
+              error={errors.registration_number}
+            >
               {(ids) => (
                 <Input
                   {...ids}
@@ -174,7 +184,7 @@ export function ProcurementFields({
                 />
               )}
             </Field>
-            <Field label="Tax identification number" optional error={errors.tax_id}>
+            <Field label={w('buyer.pf.taxId')} optional={optional} error={errors.tax_id}>
               {(ids) => (
                 <Input
                   {...ids}
@@ -184,8 +194,8 @@ export function ProcurementFields({
               )}
             </Field>
             <Field
-              label="Country"
-              hint="Two-letter code, e.g. SS, KE, UG"
+              label={w('buyer.pf.country')}
+              hint={w('buyer.pf.countryHint')}
               error={errors.country_code}
             >
               {(ids) => (
@@ -198,14 +208,14 @@ export function ProcurementFields({
               )}
             </Field>
             {states ? (
-              <Field label="State" optional error={errors.state_id}>
+              <Field label={w('buyer.pf.state')} optional={optional} error={errors.state_id}>
                 {(ids) => (
                   <Select
                     {...ids}
                     value={form.state_id}
                     onChange={(e) => onChange({ ...form, state_id: e.target.value, county_id: '' })}
                   >
-                    <option value="">Not in South Sudan / not stated</option>
+                    <option value="">{w('buyer.pf.stateNone')}</option>
                     {states.map((s) => (
                       <option key={s.id} value={s.id}>
                         {s.name}
@@ -216,7 +226,7 @@ export function ProcurementFields({
               </Field>
             ) : null}
             {states && counties ? (
-              <Field label="County" optional error={errors.county_id}>
+              <Field label={w('buyer.pf.county')} optional={optional} error={errors.county_id}>
                 {(ids) => (
                   <Select
                     {...ids}
@@ -224,7 +234,7 @@ export function ProcurementFields({
                     disabled={!form.state_id}
                     onChange={(e) => set('county_id', e.target.value)}
                   >
-                    <option value="">Not stated</option>
+                    <option value="">{w('buyer.pf.countyNone')}</option>
                     {counties
                       .filter((c) => c.state_id === form.state_id)
                       .map((c) => (
@@ -236,12 +246,12 @@ export function ProcurementFields({
                 )}
               </Field>
             ) : null}
-            <Field label="City" optional error={errors.city}>
+            <Field label={w('buyer.pf.city')} optional={optional} error={errors.city}>
               {(ids) => (
                 <Input {...ids} value={form.city} onChange={(e) => set('city', e.target.value)} />
               )}
             </Field>
-            <Field label="Physical address" optional error={errors.address}>
+            <Field label={w('buyer.pf.address')} optional={optional} error={errors.address}>
               {(ids) => (
                 <Input
                   {...ids}
@@ -251,7 +261,7 @@ export function ProcurementFields({
                 />
               )}
             </Field>
-            <Field label="Website" optional error={errors.website}>
+            <Field label={w('buyer.pf.website')} optional={optional} error={errors.website}>
               {(ids) => (
                 <Input
                   {...ids}
@@ -263,7 +273,7 @@ export function ProcurementFields({
               )}
             </Field>
             <div className={styles.formGridFull}>
-              <Field label="About the organisation" optional error={errors.description}>
+              <Field label={w('buyer.pf.about')} optional={optional} error={errors.description}>
                 {(ids) => (
                   <Textarea
                     {...ids}
@@ -279,14 +289,14 @@ export function ProcurementFields({
       )}
 
       <fieldset className={styles.fieldset}>
-        <legend className={styles.legend}>What you buy</legend>
-        <div role="group" aria-label="Product categories you buy">
-          <p className={styles.muted}>Product categories</p>
+        <legend className={styles.legend}>{w('buyer.pf.whatYouBuy')}</legend>
+        <div role="group" aria-label={w('buyer.pf.categoriesAria')}>
+          <p className={styles.muted}>{w('buyer.pf.categories')}</p>
           <div className={styles.checkGrid}>
             {LISTING_CATEGORIES.map((c) => (
               <Checkbox
                 key={c}
-                label={CATEGORY_LABELS[c]}
+                label={categoryLabel(c, language)}
                 checked={form.interested_categories.includes(c)}
                 onChange={() => set('interested_categories', toggle(form.interested_categories, c))}
               />
@@ -295,9 +305,9 @@ export function ProcurementFields({
         </div>
         <div className={styles.formGrid}>
           <Field
-            label="Products"
-            optional
-            hint="Separate with commas: maize, sorghum, sesame"
+            label={w('buyer.pf.products')}
+            optional={optional}
+            hint={w('buyer.pf.productsHint')}
             error={errors.interested_products}
           >
             {(ids) => (
@@ -308,23 +318,23 @@ export function ProcurementFields({
               />
             )}
           </Field>
-          <Field label="Preferred unit" optional error={errors.preferred_unit}>
+          <Field label={w('buyer.pf.unit')} optional={optional} error={errors.preferred_unit}>
             {(ids) => (
               <Select
                 {...ids}
                 value={form.preferred_unit}
                 onChange={(e) => set('preferred_unit', e.target.value)}
               >
-                <option value="">No preference</option>
+                <option value="">{w('buyer.pf.unitNone')}</option>
                 {LISTING_UNITS.map((u) => (
                   <option key={u} value={u}>
-                    {UNIT_LABELS[u]}
+                    {unitLabel(u, language)}
                   </option>
                 ))}
               </Select>
             )}
           </Field>
-          <Field label="Minimum quantity per order" optional error={errors.min_quantity}>
+          <Field label={w('buyer.pf.min')} optional={optional} error={errors.min_quantity}>
             {(ids) => (
               <Input
                 {...ids}
@@ -334,7 +344,7 @@ export function ProcurementFields({
               />
             )}
           </Field>
-          <Field label="Maximum quantity per order" optional error={errors.max_quantity}>
+          <Field label={w('buyer.pf.max')} optional={optional} error={errors.max_quantity}>
             {(ids) => (
               <Input
                 {...ids}
@@ -346,9 +356,9 @@ export function ProcurementFields({
           </Field>
           <div className={styles.formGridFull}>
             <Field
-              label="Delivery locations"
-              optional
-              hint="Separate with commas: Juba, Nimule"
+              label={w('buyer.pf.delivery')}
+              optional={optional}
+              hint={w('buyer.pf.deliveryHint')}
               error={errors.delivery_locations}
             >
               {(ids) => (
@@ -362,8 +372,8 @@ export function ProcurementFields({
           </div>
         </div>
         {states ? (
-          <div role="group" aria-label="Preferred production areas">
-            <p className={styles.muted}>Preferred production areas</p>
+          <div role="group" aria-label={w('buyer.pf.areas')}>
+            <p className={styles.muted}>{w('buyer.pf.areas')}</p>
             <div className={styles.checkGrid}>
               {states.map((s) => (
                 <Checkbox
@@ -378,12 +388,12 @@ export function ProcurementFields({
             </div>
           </div>
         ) : null}
-        <div role="group" aria-label="Months you usually buy">
-          <p className={styles.muted}>Months you usually buy</p>
+        <div role="group" aria-label={w('buyer.pf.months')}>
+          <p className={styles.muted}>{w('buyer.pf.months')}</p>
           <div className={styles.checkGrid}>
-            {MONTH_LABELS.map((m, i) => (
+            {monthLabels(language).map((m, i) => (
               <Checkbox
-                key={m}
+                key={i}
                 label={m}
                 checked={form.purchasing_months.includes(i + 1)}
                 onChange={() => set('purchasing_months', toggle(form.purchasing_months, i + 1))}
@@ -391,13 +401,13 @@ export function ProcurementFields({
             ))}
           </div>
         </div>
-        <div role="group" aria-label="How you prefer to pay">
-          <p className={styles.muted}>How you prefer to pay (recorded only; no payment is taken)</p>
+        <div role="group" aria-label={w('buyer.pf.pay')}>
+          <p className={styles.muted}>{w('buyer.pf.payNote')}</p>
           <div className={styles.checkGrid}>
             {PAYMENT_PREFERENCES.map((p) => (
               <Checkbox
                 key={p}
-                label={PAYMENT_LABELS[p]}
+                label={paymentLabel(p, language)}
                 checked={form.payment_preferences.includes(p)}
                 onChange={() => set('payment_preferences', toggle(form.payment_preferences, p))}
               />

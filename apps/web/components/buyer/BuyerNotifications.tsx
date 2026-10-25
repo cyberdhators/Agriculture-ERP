@@ -8,6 +8,7 @@ import {
 } from '@/components/account/NotificationSettings';
 import { listNotifications, markNotificationRead } from '@/lib/buyer/api';
 import { formatDate } from '@/lib/format';
+import { t } from '@/lib/i18n';
 
 import { Badge, Button, Card, CardBody, EmptyState, PageHeader, Tabs } from '../ui';
 import { LoadingState, Pagination } from '../ui/data';
@@ -21,7 +22,7 @@ import styles from './buyer.module.css';
  * and their progress. Each is a fixed sentence; none names a person.
  */
 export function BuyerNotifications() {
-  const { refreshUnread } = useBuyer();
+  const { refreshUnread, language } = useBuyer();
   const [view, setView] = useState<'all' | 'unread' | 'announcements' | 'settings'>('all');
   const list = useCursorList((cursor) => listNotifications(view === 'unread', cursor), view);
   const [marking, setMarking] = useState<string | null>(null);
@@ -39,36 +40,43 @@ export function BuyerNotifications() {
 
   return (
     <div className={styles.page}>
-      <PageHeader title="Notifications" subtitle="Updates on your account, requests and orders." />
+      <PageHeader
+        title={t('buyer.nav.notifications', language)}
+        subtitle={t('buyer.notif.lead', language)}
+      />
       <Tabs
-        label="Which notifications"
+        label={t('buyer.notif.which', language)}
         value={view}
         onChange={setView}
         items={[
-          { key: 'all', label: 'All' },
-          { key: 'unread', label: 'Unread' },
+          { key: 'all', label: t('buyer.notif.all', language) },
+          { key: 'unread', label: t('buyer.notif.unread', language) },
           // 2026-10-27: official announcements and what this account receives.
-          { key: 'announcements', label: 'Announcements' },
-          { key: 'settings', label: 'Notification settings' },
+          { key: 'announcements', label: t('announcements.title', language) },
+          { key: 'settings', label: t('prefs.title', language) },
         ]}
       />
       {view === 'announcements' ? (
-        <AccountAnnouncements />
+        <AccountAnnouncements language={language} />
       ) : view === 'settings' ? (
-        <NotificationPreferencesCard emailAccount />
+        <NotificationPreferencesCard emailAccount language={language} />
       ) : list.error ? (
         <EmptyState
           error
-          title="Notifications could not be loaded"
+          title={t('buyer.notif.loadFailed', language)}
           body={list.error}
-          actions={<Button onClick={list.reload}>Try again</Button>}
+          actions={<Button onClick={list.reload}>{t('buyer.common.retry', language)}</Button>}
         />
       ) : list.loading ? (
-        <LoadingState rows={4} />
+        <LoadingState rows={4} label={t('buyer.common.loading', language)} />
       ) : list.rows.length === 0 ? (
         <EmptyState
-          title={view === 'unread' ? 'Nothing unread' : 'No notifications yet'}
-          body="You will be told here when a seller answers one of your requests, or when your account is reviewed."
+          title={
+            view === 'unread'
+              ? t('buyer.notif.nothingUnread', language)
+              : t('buyer.notif.none', language)
+          }
+          body={t('buyer.notif.noneBody', language)}
         />
       ) : (
         <>
@@ -78,11 +86,13 @@ export function BuyerNotifications() {
                 <div className={styles.standing}>
                   <div>
                     <p>
-                      <strong>{n.title}</strong>{' '}
-                      {n.read_at ? null : <Badge tone="sorghum">New</Badge>}
+                      <strong dir="auto">{n.title}</strong>{' '}
+                      {n.read_at ? null : (
+                        <Badge tone="sorghum">{t('buyer.notif.new', language)}</Badge>
+                      )}
                     </p>
-                    <p>{n.body}</p>
-                    <p className={styles.muted}>{formatDate(n.created_at)}</p>
+                    <p dir="auto">{n.body}</p>
+                    <p className={styles.muted}>{formatDate(n.created_at, language)}</p>
                   </div>
                   {n.read_at ? null : (
                     <Button
@@ -91,7 +101,7 @@ export function BuyerNotifications() {
                       disabled={marking === n.id}
                       onClick={() => void markRead(n.id)}
                     >
-                      Mark as read
+                      {t('buyer.notif.markRead', language)}
                     </Button>
                   )}
                 </div>
@@ -104,6 +114,7 @@ export function BuyerNotifications() {
             onNext={list.goNext}
             onPrevious={list.goBack}
             canGoBack={list.canGoBack}
+            language={language}
           />
         </>
       )}

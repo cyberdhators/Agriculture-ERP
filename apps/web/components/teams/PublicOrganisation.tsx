@@ -4,7 +4,12 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
 import { ABOUT_LABELS } from '@/components/account/AccountActivities';
+import { LanguageButtons } from '@/components/farmer/LanguageSwitch';
 import { Notice } from '@/components/ui';
+import { DEFAULT_LANGUAGE, isRtl, t, type Language } from '@/lib/i18n';
+import { useDocumentLanguage, useLanguageChoice } from '@/lib/i18n/client';
+
+import { PRESET_WORDS } from './words';
 
 interface Profile {
   id: string;
@@ -28,8 +33,18 @@ interface Profile {
  * shown who did not agree, no contact the organisation did not give.
  * Messages go through its posts, to its shared inbox.
  */
-export function PublicOrganisation({ id }: { id: string }) {
-  const labels = ABOUT_LABELS.en as Record<string, string>;
+export function PublicOrganisation({
+  id,
+  initialLanguage = DEFAULT_LANGUAGE,
+}: {
+  id: string;
+  /** 2026-10-29: from the language cookie; the visitor can switch here too. */
+  initialLanguage?: Language;
+}) {
+  const [language, setLanguage] = useLanguageChoice(initialLanguage);
+  useDocumentLanguage(language);
+  const labels = ABOUT_LABELS[language] as Record<string, string>;
+  const presets = PRESET_WORDS[language] as Record<string, { label: string } | undefined>;
   const [profile, setProfile] = useState<Profile | null | 'missing'>(null);
 
   useEffect(() => {
@@ -41,7 +56,11 @@ export function PublicOrganisation({ id }: { id: string }) {
 
   if (profile === null) return <p className="small muted">…</p>;
   if (profile === 'missing') {
-    return <Notice kind="error">This organisation profile is not available.</Notice>;
+    return (
+      <div dir={isRtl(language) ? 'rtl' : 'ltr'}>
+        <Notice kind="error">{t('org.public.missing', language)}</Notice>
+      </div>
+    );
   }
   const kind = profile.group_kind ? labels[profile.group_kind] : labels[profile.profile_kind];
   const where = [profile.location, profile.state_name].filter(Boolean).join(', ');
@@ -50,7 +69,9 @@ export function PublicOrganisation({ id }: { id: string }) {
     <main
       id="main"
       style={{ maxWidth: 760, margin: '0 auto', padding: '24px 16px', display: 'grid', gap: 16 }}
+      dir={isRtl(language) ? 'rtl' : 'ltr'}
     >
+      <LanguageButtons value={language} onChange={setLanguage} />
       <header>
         <h1 style={{ margin: 0 }} dir="auto">
           {profile.name}
@@ -72,19 +93,23 @@ export function PublicOrganisation({ id }: { id: string }) {
       ) : null}
       {profile.public_phone || profile.public_email ? (
         <section>
-          <h2>Contact</h2>
-          {profile.public_phone ? <p className="mono">{profile.public_phone}</p> : null}
-          {profile.public_email ? <p>{profile.public_email}</p> : null}
+          <h2>{t('org.public.contact', language)}</h2>
+          {profile.public_phone ? (
+            <p className="mono" dir="ltr">
+              {profile.public_phone}
+            </p>
+          ) : null}
+          {profile.public_email ? <p dir="ltr">{profile.public_email}</p> : null}
         </section>
       ) : null}
       {profile.team.length > 0 ? (
         <section>
-          <h2>Team</h2>
+          <h2>{t('org.public.team', language)}</h2>
           <ul>
             {profile.team.map((m, i) => (
               <li key={i} dir="auto">
                 {m.name}
-                {m.title ? ` — ${m.title}` : ''} ({m.role})
+                {m.title ? ` — ${m.title}` : ''} ({presets[m.role]?.label ?? m.role})
               </li>
             ))}
           </ul>
@@ -92,11 +117,14 @@ export function PublicOrganisation({ id }: { id: string }) {
       ) : null}
       {profile.services.length > 0 ? (
         <section>
-          <h2>Services</h2>
+          <h2>{t('org.public.services', language)}</h2>
           <ul>
             {profile.services.map((s) => (
               <li key={s.id}>
-                <Link href={`/market/services/${s.id}`}>{s.title}</Link> · {s.location}
+                <Link href={`/market/services/${s.id}`} dir="auto">
+                  {s.title}
+                </Link>{' '}
+                · <span dir="auto">{s.location}</span>
               </li>
             ))}
           </ul>
@@ -104,20 +132,20 @@ export function PublicOrganisation({ id }: { id: string }) {
       ) : null}
       {profile.buying_requests.length > 0 ? (
         <section>
-          <h2>Buying requests</h2>
+          <h2>{t('org.public.buyingRequests', language)}</h2>
           <ul>
             {profile.buying_requests.map((b) => (
               <li key={b.id}>
-                <Link href={`/market/requests/${b.id}`}>{b.product_name}</Link> · {b.location}
+                <Link href={`/market/requests/${b.id}`} dir="auto">
+                  {b.product_name}
+                </Link>{' '}
+                · <span dir="auto">{b.location}</span>
               </li>
             ))}
           </ul>
         </section>
       ) : null}
-      <p className="small muted">
-        Public profiles are published by their owners. A profile on AgriOne is not an endorsement by
-        CORWADO.
-      </p>
+      <p className="small muted">{t('org.public.disclaimer', language)}</p>
     </main>
   );
 }
