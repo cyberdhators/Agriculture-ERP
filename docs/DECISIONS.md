@@ -4551,3 +4551,109 @@ review appeal and restore".
 - **Open:** channel preferences (essential vs promotional) have no table yet;
   the older listing-withdrawn notice still names the listing and staff's
   reason (left as it was; the notice scan names it as the one exception).
+
+## Organisational profiles and team access (2026-10-27)
+
+CORWADO's 16 October specification, "Organizational continuity", and the
+demonstrations "Team access", "Independent institution" and "Deletion" (the
+organisational part). Infographic 6 ("Organizational Profiles and Team
+Access") was never received: **the specification text governs** (DOCUMENTED:
+the handover table names it; the file is absent from the evidence folder).
+Migration `20261027090000_team_access`.
+
+- **A new `organization` table, not a generalised `buyer_organization`
+  (INFERRED, from the code).** `buyer_organization` is one buyer's procurement
+  record: every buyer registration makes one (`api/buyer/register`,
+  `api/farmer/buying`), `buyer.organization_id` is NOT NULL and one-to-one in
+  practice, it carries staff verification (`verification_status`, the
+  verification queue) and it is joined into `requireRole` for every buyer
+  request. Making it the team profile would put every farmer-only
+  organisation into the buyers' verification queue and tie team access to
+  procurement. The organisational profile is therefore its own table, which
+  any account (phone or email sign-up) may create; it reuses the existing
+  profile kinds (group / business / institution), group kinds and actor types
+  from `account_profile`. No link column to `buyer_organization` was added: a
+  link nothing reads is a column that lies. A buyer whose business should be a
+  team profile creates one with the same name.
+- **Membership** (`organization_member`): the organisation, the member's
+  sign-in (auth user), a preset and granular permissions, status (active /
+  revoked / left), who invited them and when it ended, with a reason. Ending
+  access never removes the row and never touches the person's own account.
+- **Presets and permissions** (pure, `packages/shared/src/organization.ts`,
+  tested): `profile.edit`, `listings.manage`, `inbox.read`, `inbox.reply`,
+  `advisory.handle`, and `team.manage`, which only the Administrator preset
+  carries (a CHECK). Administrator = all; Contributor = listings, inbox
+  read and reply, advisory; Viewer = inbox read. An administrator may narrow
+  or widen a contributor's permissions; a viewer holds read-only permissions
+  only. These are **organisational permissions**: nothing here reads or
+  grants a staff permission, and an organisation administrator cannot award
+  AgriOne verification or advisory approval.
+- **Becoming an administrator always needs the recipient's acceptance**: by
+  invitation, or by an offer to an existing member (`kind = 'transfer'`).
+  The offering administrator chooses what they become on acceptance (stay
+  administrator, contributor, viewer, or leave). A preset change to
+  administrator is refused (`organization_admin_needs_acceptance`).
+- **Invitations**: to a +211 phone or an email address, with the preset and
+  permissions shown to the recipient before they accept; 7 days; only a
+  SHA-256 hash of the 32-byte token is stored. **Authentication**: the
+  recipient must be signed in as that phone (their farmer sign-in phone) or
+  that email (their sign-in email, read from Supabase Auth). **Delivery**:
+  a copyable invitation link is shown to the inviter once, and the recipient
+  also sees the invitation in the app (Settings → Organisations) when signed
+  in as the invited phone or email, plus an in-app notice when an account with
+  that phone already exists. SMS (Bird) or email (Resend) is attempted when
+  configured; its outcome is recorded on the invitation (`delivery`) and a
+  failed send never undoes the invitation.
+- **Acting as** (INFERRED design): the choice is a cookie
+  (`agri_acting_org`, httpOnly, SameSite=Lax), set only by
+  `POST /api/organizations/acting` after the membership is checked, and
+  re-checked on EVERY request that uses it
+  (`lib/api/organizations.ts actingAs`). A revoked member's next request is
+  refused with `organization_access_ended`, never silently treated as
+  personal. Actions and conversations made while acting show the
+  organisation's name; the audit row's actor is always the person.
+- **What honours "acting as" in this pass**: buying requests and service
+  listings (created with `organization_id`, the organisation's name on the
+  market, managed by any member with `listings.manage`), and conversations.
+  Produce listings remain personal (they depend on farmer verification and
+  the farm record) -- a known gap.
+- **Shared inbox**: a conversation side is either a person or an
+  organisation (`owner_organization_id` / `starter_organization_id`). An
+  inquiry to an organisation's post lands in that organisation's inbox, read
+  by members with `inbox.read` and answered by members with `inbox.reply`;
+  the outside party sees the organisation's name, members see which colleague
+  wrote. A person's own inbox shows only personal conversations. The old
+  unique (one conversation per post and starter) became two partial unique
+  indexes with the old meaning for every personal row.
+- **Last administrator**: an organisation always has at least one active
+  administrator while open. The last one cannot leave, be revoked or step
+  down; they transfer (with acceptance) or close the organisation. Closing
+  withdraws the organisation's live posts, closes its conversations, ends
+  every membership and keeps every record.
+- **Personal deletion of the last administrator** (the defined process, no
+  indefinite dependence on anyone): `POST /api/account/delete` lists the
+  organisations the person is the last administrator of and refuses until
+  they choose `close_organizations: true`, which closes them in the same
+  transaction. Where another administrator exists, the person's membership
+  simply ends. Pending transfers they offered are cancelled.
+- **Encourage two administrators**: the team page shows a notice while there
+  is only one.
+- **Public team and contacts**: optional. The profile shows public phone /
+  email only when the organisation gives them, and lists a member only when
+  the organisation turns "show team" on AND that member has agreed
+  (`show_on_profile`, set by the member themself only).
+- **Evidence-based exceptional recovery**: a staff administrator with the
+  `support.handle` permission may make a named person an administrator of an
+  organisation that has none reachable, with a written reason and an
+  evidence reference, re-authenticated by password, audited as
+  `organization.recovered`. OWNER TO CONFIRM: `support.handle` is the
+  permission chosen (no new staff permission key was added).
+- **Audit keys** (new; the CHECK is the integrator's): `organization.created`,
+  `organization.updated`, `organization.published`, `organization.unpublished`,
+  `organization.closed`, `organization.recovered`, `organization_member.joined`,
+  `organization_member.updated`, `organization_member.revoked`,
+  `organization_member.left`, `organization_invitation.created`,
+  `organization_invitation.accepted`, `organization_invitation.declined`,
+  `organization_invitation.cancelled`, `organization_transfer.offered`,
+  `organization_transfer.accepted`, `organization_transfer.declined`,
+  `organization_transfer.cancelled`.

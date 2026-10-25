@@ -1621,6 +1621,9 @@ model BuyingRequest {
   deliveryTerms String?   @map("delivery_terms")
   description   String?
   contactPhone  String    @map("contact_phone")
+  /// 2026-10-27 (migration 20261027090000): posted for an organisation; the
+  /// person acting stays in farmer_id / buyer_id. The FK is in the migration.
+  organizationId String?  @map("organization_id") @db.Uuid
   showPhone     Boolean   @default(false) @map("show_phone")
   status        String    @default("draft")
   createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
@@ -1653,6 +1656,8 @@ model ServiceListing {
   priceUnit        String?   @map("price_unit")
   negotiable       Boolean   @default(false)
   contactPhone     String    @map("contact_phone")
+  /// 2026-10-27 (migration 20261027090000): offered for an organisation.
+  organizationId   String?   @map("organization_id") @db.Uuid
   showPhone        Boolean   @default(false) @map("show_phone")
   status           String    @default("draft")
   createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
@@ -1768,9 +1773,16 @@ model Conversation {
   blockedBy            String?   @map("blocked_by") @db.Uuid
   createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
 
+  /// 2026-10-27 (migration 20261027090000): a side may be an organisation's
+  /// shared inbox. The FKs and the two partial unique indexes that replaced
+  /// conversation_one_per_post_and_starter (personal / per organisation) are
+  /// in the migration; Prisma cannot express a partial unique index.
+  ownerOrganizationId   String? @map("owner_organization_id") @db.Uuid
+  starterOrganizationId String? @map("starter_organization_id") @db.Uuid
+  lastSenderSide        String? @map("last_sender_side")
+
   messages Message[]
 
-  @@unique([postKind, postId, starterAuthUserId], map: "conversation_one_per_post_and_starter")
   @@index([ownerAuthUserId, lastMessageAt(sort: Desc)], map: "conversation_owner_idx")
   @@index([starterAuthUserId, lastMessageAt(sort: Desc)], map: "conversation_starter_idx")
   @@map("conversation")
@@ -1781,6 +1793,8 @@ model Message {
   id               String    @id @db.Uuid
   conversationId   String    @map("conversation_id") @db.Uuid
   senderAuthUserId String    @map("sender_auth_user_id") @db.Uuid
+  /// 2026-10-27: which side wrote it ('owner' | 'starter'); null before then.
+  senderSide       String?   @map("sender_side")
   body             String
   createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   deletedAt        DateTime? @map("deleted_at") @db.Timestamptz(6)
@@ -2003,4 +2017,97 @@ model Notice {
   retirer   User? @relation("NoticeRetiredBy", fields: [retiredBy], references: [id], map: "notice_retired_by_fkey")
 
   @@map("notice")
+}
+
+// TEAM ACCESS LANE (2026-10-27). Migration 20261027090000. Organisational
+// profiles any account may create, their members and invitations. Read and
+// written with raw SQL. The state FK and the partial indexes are in the
+// migration. docs/DECISIONS.md, "Organisational profiles and team access".
+
+/// An organisational profile (group, business or institution). Separate from
+/// BuyerOrganization, which stays a buyer's own procurement record.
+model Organization {
+  id           String    @id(map: "organization_pkey") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name         String
+  profileKind  String    @map("profile_kind")
+  groupKind    String?   @map("group_kind")
+  activities   String[]  @default([])
+  about        String?
+  stateId      String?   @map("state_id")
+  location     String?
+  publicPhone  String?   @map("public_phone")
+  publicEmail  String?   @map("public_email")
+  showTeam     Boolean   @default(false) @map("show_team")
+  status       String    @default("draft")
+  publishedAt  DateTime? @map("published_at") @db.Timestamptz(6)
+  closedAt     DateTime? @map("closed_at") @db.Timestamptz(6)
+  closedBy     String?   @map("closed_by") @db.Uuid
+  closedReason String?   @map("closed_reason")
+  createdBy    String    @map("created_by") @db.Uuid
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime  @default(now()) @map("updated_at") @db.Timestamptz(6)
+  deletedAt    DateTime? @map("deleted_at") @db.Timestamptz(6)
+  deletedBy    String?   @map("deleted_by") @db.Uuid
+
+  members     OrganizationMember[]
+  invitations OrganizationInvitation[]
+
+  @@map("organization")
+}
+
+/// One person's access to one organisation. Ending it keeps the row.
+model OrganizationMember {
+  id             String    @id(map: "organization_member_pkey") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  authUserId     String    @map("auth_user_id") @db.Uuid
+  preset         String
+  permissions    String[]  @default([])
+  status         String    @default("active")
+  showOnProfile  Boolean   @default(false) @map("show_on_profile")
+  publicTitle    String?   @map("public_title")
+  invitationId   String?   @map("invitation_id") @db.Uuid
+  invitedBy      String?   @map("invited_by") @db.Uuid
+  joinedAt       DateTime  @default(now()) @map("joined_at") @db.Timestamptz(6)
+  endedAt        DateTime? @map("ended_at") @db.Timestamptz(6)
+  endedBy        String?   @map("ended_by") @db.Uuid
+  endReason      String?   @map("end_reason")
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime  @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  organization    Organization             @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "organization_member_organization_id_fkey")
+  transferOffers  OrganizationInvitation[] @relation("InvitationTargetMember")
+  invitationsSent OrganizationInvitation[] @relation("InvitationSenderMember")
+
+  @@map("organization_member")
+}
+
+/// An expiring invitation (kind 'member') or an offer of administration to an
+/// existing member (kind 'transfer'). Only the token's hash is stored.
+model OrganizationInvitation {
+  id                String    @id(map: "organization_invitation_pkey") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId    String    @map("organization_id") @db.Uuid
+  kind              String    @default("member")
+  channel           String?
+  target            String?
+  targetMemberId    String?   @map("target_member_id") @db.Uuid
+  preset            String
+  permissions       String[]  @default([])
+  senderAfter       String?   @map("sender_after")
+  tokenHash         String?   @unique(map: "organization_invitation_token_hash_key") @map("token_hash")
+  expiresAt         DateTime  @map("expires_at") @db.Timestamptz(6)
+  status            String    @default("pending")
+  delivery          String    @default("link_only")
+  invitedBy         String    @map("invited_by") @db.Uuid
+  invitedByMemberId String    @map("invited_by_member_id") @db.Uuid
+  respondedBy       String?   @map("responded_by") @db.Uuid
+  respondedAt       DateTime? @map("responded_at") @db.Timestamptz(6)
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime  @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  organization    Organization        @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "organization_invitation_organization_id_fkey")
+  targetMember    OrganizationMember? @relation("InvitationTargetMember", fields: [targetMemberId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "organization_invitation_target_member_id_fkey")
+  invitedByMember OrganizationMember  @relation("InvitationSenderMember", fields: [invitedByMemberId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "organization_invitation_invited_by_member_id_fkey")
+
+  @@index([organizationId, createdAt(sort: Desc)], map: "organization_invitation_org_idx")
+  @@map("organization_invitation")
 }
