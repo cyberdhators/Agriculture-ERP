@@ -61,6 +61,18 @@ async function call<T>(path: string, init?: RequestInit): Promise<T> {
   return body.data;
 }
 
+/** 2026-10-28: the account's advisory authorization, in words. */
+const ADVISORY_WORDS: Record<string, string> = {
+  profile: 'Advice profile, not applied for approval',
+  submitted: 'Applied for approval; waiting for review',
+  clarification_requested: 'Applied; CORWADO asked a question',
+  approved: 'Approved adviser',
+  suspended: 'Approved adviser, suspended',
+  declined: 'Application declined',
+  revoked: 'Approval revoked',
+  withdrawn: 'Application withdrawn',
+};
+
 export function AccountSanction({
   kind,
   id,
@@ -292,6 +304,25 @@ export function AccountSanction({
         {warnings}
       </div>
       {dialog}
+      {/* 2026-10-28: advisory authorization, separate from account standing. */}
+      {standing?.advisory && standing.advisory.status !== 'none' ? (
+        <div style={{ marginTop: 'var(--s-4)' }}>
+          <p className="label" style={{ marginBottom: 'var(--s-2)' }}>
+            Advisory authorization
+          </p>
+          <p className="small">
+            {ADVISORY_WORDS[standing.advisory.status] ?? standing.advisory.status}
+            {standing.advisory.status === 'suspended' && standing.advisory.suspended_until
+              ? ` until ${formatDate(standing.advisory.suspended_until)}`
+              : ''}
+            .{' '}
+            <a href="/admin/advisers">Review in Advisers</a>
+          </p>
+          <p className="small muted">
+            Decided separately: suspending or restoring the account does not change it.
+          </p>
+        </div>
+      ) : null}
       {/* 2026-10-23: the public profile -- status, photo, Remove photo. */}
       <div style={{ marginTop: 'var(--s-4)' }}>
         <ProfileModeration kind={kind} id={id} />

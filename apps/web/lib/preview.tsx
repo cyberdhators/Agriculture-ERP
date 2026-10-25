@@ -87,7 +87,12 @@ export interface Me {
   kind: 'user' | 'officer';
   name: string;
   role: Role;
+  /** 2026-10-28: staff only -- two-step sign-in (packages/shared staffMfaStatus). */
+  mfa?: { verify_now: boolean; enrol_now: boolean };
 }
+
+/** 2026-10-28: where a staff member finishes or sets up two-step sign-in. */
+export const STAFF_SECURITY_PATH = '/admin/sign-in-security';
 
 interface PreviewState {
   role: Role;
@@ -174,6 +179,20 @@ export function PreviewProvider({ children }: { children: ReactNode }) {
           under(window.location.pathname, PORTAL_PREFIXES)
         ) {
           window.location.replace(BUYER_HOME_PATH);
+          return;
+        }
+        // 2026-10-28: TWO-STEP SIGN-IN FIRST. A staff session that has not
+        // passed the code step, or an administrator without an authenticator,
+        // is sent to finish or set it up before anything else. The server
+        // refuses such a session on every other route regardless
+        // (requireRole); this only spares them a portal full of refusals.
+        if (
+          res.ok &&
+          (body.data?.mfa?.verify_now || body.data?.mfa?.enrol_now) &&
+          window.location.pathname !== STAFF_SECURITY_PATH
+        ) {
+          const here = `${window.location.pathname}${window.location.search}`;
+          window.location.replace(`${STAFF_SECURITY_PATH}?next=${encodeURIComponent(here)}`);
           return;
         }
         if (res.ok && body.data) {

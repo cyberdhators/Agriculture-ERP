@@ -10,6 +10,7 @@ import {
 } from '@agri-erp/shared';
 
 import { issueReadLink } from '../supabase/admin';
+import { APPROVAL_SUSPENDED_SQL } from './adviser-approval';
 import { type AuditTx, writeAudit } from './audit';
 import { notFound } from './errors';
 
@@ -75,7 +76,12 @@ export const PROVIDER_PUBLIC_WHERE = `p.deleted_at IS NULL AND p.status = 'publi
 
 export const PROVIDER_COLUMNS = `p.id, p.display_name, p.provider_kind, p.description, p.topics,
   p.languages, p.state_ids, p.delivery_modes, p.availability, p.terms, p.fee_note,
-  p.commercial_interests, p.status, p.created_at, p.updated_at, p.approved_at,
+  p.commercial_interests, p.status, p.created_at, p.updated_at,
+  CASE WHEN ${APPROVAL_SUSPENDED_SQL} THEN NULL ELSE p.approved_at END AS approved_at,
+  CASE WHEN ${APPROVAL_SUSPENDED_SQL} THEN '{}'::text[]
+       ELSE COALESCE((SELECT va.verified_checks FROM public.adviser_application va
+                       WHERE va.id = p.approved_application_id), '{}'::text[])
+  END AS verified_checks,
   COALESCE((SELECT json_agg(json_build_object('id', s.id, 'name', s.name) ORDER BY s.name)
               FROM public.state_active s WHERE s.id = ANY (p.state_ids)), '[]'::json) AS states`;
 
@@ -97,6 +103,8 @@ export interface ProviderRow {
   updated_at: Date;
   /** 2026-10-24: set by an approval, cleared by a revocation. */
   approved_at: Date | null;
+  /** 2026-10-28: what was checked for the standing approval (empty while suspended). */
+  verified_checks: string[];
   states: { id: string; name: string }[];
 }
 
@@ -117,6 +125,8 @@ export const presentProvider = (row: ProviderRow): AdviceProviderPublic => ({
   // The badge and the month it was given; nothing about the review behind it.
   approved_adviser: row.approved_at !== null,
   approved_since: row.approved_at ? row.approved_at.toISOString().slice(0, 7) : null,
+  // 2026-10-28: what CORWADO checked; only while the badge shows.
+  verified_checks: row.approved_at ? row.verified_checks : [],
   updated_at: row.updated_at.toISOString(),
 });
 

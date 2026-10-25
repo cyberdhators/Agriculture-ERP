@@ -4,6 +4,9 @@ import { useEffect, useState } from 'react';
 
 import { ADVICE_ATTACHMENT_LIMITS } from '@agri-erp/shared';
 import type {
+  AdvisoryNoteInput,
+  AdvisoryNoteOwn,
+  AdvisoryNotePublic,
   AdviserApplicationOwn,
   AdviserApplicationState,
   AdviceCaseView,
@@ -109,6 +112,27 @@ export const replyToClarification = (reply: string) =>
 
 export const withdrawApplication = () =>
   call<AdviserApplicationOwn>('/api/advice/my-provider/application/withdraw', send('POST', {}));
+
+/** 2026-10-28: official advisory notes -- an approved adviser's own. */
+export const getMyNotes = () =>
+  call<{ may_submit: boolean; notes: AdvisoryNoteOwn[] }>('/api/advice/my-provider/notes');
+export const submitNote = (input: AdvisoryNoteInput) =>
+  call<AdvisoryNoteOwn>('/api/advice/my-provider/notes', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+export const resubmitNote = (id: string, input: AdvisoryNoteInput) =>
+  call<AdvisoryNoteOwn>(`/api/advice/my-provider/notes/${encodeURIComponent(id)}`, {
+    method: 'PUT',
+    body: JSON.stringify(input),
+  });
+export const withdrawNote = (id: string) =>
+  call<AdvisoryNoteOwn>(`/api/advice/my-provider/notes/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+  });
+/** A provider's published notes, for the public profile. */
+export const getProviderNotes = (providerId: string) =>
+  call<AdvisoryNotePublic[]>(`/api/advice/providers/${encodeURIComponent(providerId)}/notes`);
 
 export const listCases = (role: 'requester' | 'provider') =>
   call<AdviceCaseView[]>(`/api/advice/cases?role=${role}`);

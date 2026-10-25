@@ -3,8 +3,12 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 
 import {
+  ADVISER_CHECKS,
+  ADVISER_CHECK_LABELS,
   ADVISER_DECISION_RULES,
   ADVISER_LIMITS,
+  ADVISER_SUSPENSION_DAYS,
+  type AdviserCheck,
   type AdviserApplicationStaff,
   type AdviserApplicationStatus,
   type AdviserDecision,
@@ -13,7 +17,9 @@ import {
 import {
   Button,
   Card,
+  Checkbox,
   Field,
+  Input,
   Notice,
   Stamp,
   Tabs,
@@ -45,6 +51,7 @@ const TABS: { key: Tab; label: string }[] = [
   { key: 'submitted', label: 'Submitted' },
   { key: 'clarification_requested', label: 'Clarification requested' },
   { key: 'approved', label: 'Approved' },
+  { key: 'suspended', label: 'Suspended' },
   { key: 'declined', label: 'Declined' },
   { key: 'revoked', label: 'Revoked' },
 ];
@@ -56,6 +63,7 @@ const STATUS_LABEL: Record<AdviserApplicationStatus, string> = {
   declined: 'Declined',
   revoked: 'Revoked',
   withdrawn: 'Withdrawn',
+  suspended: 'Suspended',
 };
 
 const STATUS_STAMP: Record<AdviserApplicationStatus, StampKind> = {
@@ -65,6 +73,7 @@ const STATUS_STAMP: Record<AdviserApplicationStatus, StampKind> = {
   declined: 'rejected',
   revoked: 'rejected',
   withdrawn: 'neutral',
+  suspended: 'escalated',
 };
 
 const DECISION: Record<
@@ -108,6 +117,23 @@ const DECISION: Record<
       'The "Approved adviser" badge leaves their profile at once. Restoring a suspended account does not bring it back; only a new approved application does.',
     reasonLabel: 'Reason for revoking',
     destructive: true,
+  },
+  // 2026-10-28: pause an approval for a time, and give it back early.
+  suspend: {
+    button: 'Suspend advisory access',
+    title: 'Suspend this approval for a time?',
+    consequence:
+      'The "Approved adviser" badge and their official notes are hidden until the date you choose, then return by themselves. Their account, buying, selling and ordinary advice profile are unaffected.',
+    reasonLabel: 'Reason for suspending',
+    destructive: true,
+  },
+  restore: {
+    button: 'Restore authorization',
+    title: 'Restore this approval now?',
+    consequence:
+      'The "Approved adviser" badge shows on their profile again at once, before the suspension would have ended.',
+    reasonLabel: 'Reason for restoring',
+    destructive: false,
   },
 };
 
@@ -237,6 +263,9 @@ function ApplicationCard({
   const [reason, setReason] = useState('');
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState<Failure | null>(null);
+  // 2026-10-28: what was checked (approve), and for how long (suspend).
+  const [checks, setChecks] = useState<AdviserCheck[]>([]);
+  const [days, setDays] = useState('30');
 
   const allowed = (Object.keys(ADVISER_DECISION_RULES) as AdviserDecision[]).filter((d) =>
     (ADVISER_DECISION_RULES[d].from as readonly string[]).includes(a.status),
@@ -261,7 +290,12 @@ function ApplicationCard({
         {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ action, reason: trimmed }),
+          body: JSON.stringify({
+            action,
+            reason: trimmed,
+            ...(action === 'approve' ? { checks } : {}),
+            ...(action === 'suspend' ? { suspend_days: Number(days) } : {}),
+          }),
         },
       );
       const what = DECISION[action].button;
@@ -317,6 +351,17 @@ function ApplicationCard({
             <Fact label="Question asked">{a.clarification_request}</Fact>
           ) : null}
           {a.applicant_reply ? <Fact label="Applicant's answer">{a.applicant_reply}</Fact> : null}
+          {a.suspended_until ? (
+            <Fact label="Suspended until">
+              {formatDate(a.suspended_until)}
+              {a.suspension_reason ? ` · ${a.suspension_reason}` : ''}
+            </Fact>
+          ) : null}
+          {a.verified_checks.length > 0 ? (
+            <Fact label="Checked before approval">
+              {a.verified_checks.map((c) => ADVISER_CHECK_LABELS[c]).join(' · ')}
+            </Fact>
+          ) : null}
           {a.decision_reason ? (
             <Fact label="Recorded reason">
               {a.decision_reason}
@@ -336,6 +381,8 @@ function ApplicationCard({
                 }
                 onClick={() => {
                   setReason('');
+                  setChecks([]);
+                  setDays('30');
                   setFailure(null);
                   setAction(d);
                 }}
@@ -359,6 +406,46 @@ function ApplicationCard({
         >
           {failure && !failure.fields.reason ? (
             <Notice kind="error">{failure.message}</Notice>
+          ) : null}
+          {action === 'approve' ? (
+            <fieldset style={{ border: 0, padding: 0, margin: 0, display: 'grid', gap: 4 }}>
+              <legend className="small">
+                What did you check? Shown publicly as &ldquo;what CORWADO checked&rdquo;.
+              </legend>
+              {ADVISER_CHECKS.map((c) => (
+                <Checkbox
+                  key={c}
+                  label={ADVISER_CHECK_LABELS[c]}
+                  checked={checks.includes(c)}
+                  onChange={(e) =>
+                    setChecks((list) =>
+                      e.target.checked ? [...list, c] : list.filter((x) => x !== c),
+                    )
+                  }
+                />
+              ))}
+              {failure?.fields.checks ? (
+                <p className="small" role="alert">
+                  {failure.fields.checks}
+                </p>
+              ) : null}
+            </fieldset>
+          ) : null}
+          {action === 'suspend' ? (
+            <Field
+              label="For how many days?"
+              hint={`${ADVISER_SUSPENSION_DAYS.min} to ${ADVISER_SUSPENSION_DAYS.max}. It ends by itself; you can restore it sooner.`}
+              error={failure?.fields.suspend_days}
+            >
+              {(ids) => (
+                <Input
+                  {...ids}
+                  inputMode="numeric"
+                  value={days}
+                  onChange={(e) => setDays(e.target.value.replace(/\D/g, ''))}
+                />
+              )}
+            </Field>
           ) : null}
           <Field
             label={DECISION[action].reasonLabel}

@@ -1,5 +1,6 @@
 import { MARKET_POST_MESSAGES, SANCTION_KINDS, type SanctionKind } from '@agri-erp/shared';
 
+import { advisoryStandingOf } from '../../../../../lib/api/adviser-approval';
 import { accountOf, standingOf } from '../../../../../lib/api/moderation';
 import { checkId, invalidField } from '../../../../../lib/api/market-posts';
 import { requirePermission } from '../../../../../lib/api/permissions';
@@ -23,7 +24,13 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
         throw invalidField('kind', MARKET_POST_MESSAGES.posterUnknown);
       }
       const id = checkId(params.get('id') ?? undefined);
-      return ok(standingOf(await accountOf(prisma, kind as SanctionKind, id)));
+      const account = await accountOf(prisma, kind as SanctionKind, id);
+      // 2026-10-28: the advisory authorization beside the account standing.
+      // Read only; it is changed at Admin -> Advisers, never by suspend/restore.
+      return ok({
+        ...standingOf(account),
+        advisory: await advisoryStandingOf(prisma, account.authUserId),
+      });
     },
   },
 });

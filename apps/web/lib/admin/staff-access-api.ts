@@ -6,7 +6,10 @@
 import type {
   AccessEvent,
   GrantPresetInput,
+  MfaResetInput,
   PermissionKey,
+  StaffInvitationInput,
+  StaffInvitationView,
   RevokeGrantInput,
   RevokeSessionsInput,
   StaffPreset,
@@ -107,6 +110,27 @@ export const revokeSuperAdmin = (grantId: string, input: SuperAdminRevokeInput) 
 
 export const revokeSessions = (userId: string, input: RevokeSessionsInput) =>
   post(`/api/admin/staff-access/users/${encodeURIComponent(userId)}/revoke-sessions`, input);
+
+/** 2026-10-28: remove another staff member's authenticator (Super Admin, re-authenticated). */
+export const resetMfa = (userId: string, input: MfaResetInput) =>
+  post<{ id: string; factors_removed: number }>(
+    `/api/admin/staff-access/users/${encodeURIComponent(userId)}/mfa-reset`,
+    input,
+  );
+
+/** 2026-10-28: staff invitations. */
+export async function listStaffInvitations(): Promise<StaffInvitationView[]> {
+  return (await call<StaffInvitationView[]>('/api/admin/staff-invitations')).data ?? [];
+}
+
+export async function inviteStaff(input: StaffInvitationInput): Promise<StaffInvitationView> {
+  const body = await post<StaffInvitationView>('/api/admin/staff-invitations', input);
+  if (!body.data) throw new StaffAccessError(500, 'empty', 'No answer from the server.');
+  return body.data;
+}
+
+export const revokeStaffInvitation = (id: string) =>
+  post<StaffInvitationView>(`/api/admin/staff-invitations/${encodeURIComponent(id)}/revoke`, {});
 
 export interface AccessLogEntry {
   id: string;

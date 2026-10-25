@@ -39,4 +39,15 @@ export interface AccountStanding {
   reason: string | null;
   /** Whether the account can sign in at all (an officer-registered farmer may have no sign-in). */
   has_sign_in: boolean;
+  /**
+   * 2026-10-28: the account's ADVISORY authorization, shown beside its
+   * standing and decided separately (the approved-adviser pathway). Absent
+   * from older answers.
+   */
+  advisory?: {
+    status: string;
+    application_id: string | null;
+    suspended_until: string | null;
+    decided_at: string | null;
+  };
 }

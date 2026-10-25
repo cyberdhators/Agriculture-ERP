@@ -455,6 +455,12 @@ export interface AdviceProviderPublic {
   approved_adviser: boolean;
   /** The month of the standing approval, "2026-10"; null when not approved. */
   approved_since: string | null;
+  /**
+   * 2026-10-28: what CORWADO checked before approving (ADVISER_CHECKS), for
+   * the "Approved adviser -- what was checked" panel. Empty when not approved,
+   * and for approvals recorded before the checks were.
+   */
+  verified_checks: string[];
   updated_at: string;
 }
 

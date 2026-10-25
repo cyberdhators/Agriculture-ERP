@@ -19,6 +19,7 @@ import {
   grantSuperAdmin,
   listStaffAccess,
   myAccess,
+  resetMfa,
   revokeGrant,
   revokeSessions,
   revokeSuperAdmin,
@@ -196,7 +197,8 @@ type DialogState =
   | { kind: 'revoke'; staff: StaffWithGrants; grant: Grant }
   | { kind: 'appoint'; staff: StaffWithGrants | null }
   | { kind: 'unappoint'; staff: StaffWithGrants; grant: Grant }
-  | { kind: 'sessions'; staff: StaffWithGrants };
+  | { kind: 'sessions'; staff: StaffWithGrants }
+  | { kind: 'mfa'; staff: StaffWithGrants };
 
 export function StaffAccess() {
   const [me, setMe] = useState<MyAccess | null>(null);
@@ -453,6 +455,11 @@ export function StaffAccess() {
                     Sign out everywhere
                   </Button>
                 ) : null}
+                {me.is_super_admin && s.id !== me.user_id ? (
+                  <Button variant="ghost" size="small" onClick={() => open({ kind: 'mfa', staff: s })}>
+                    Reset two-step sign-in
+                  </Button>
+                ) : null}
               </span>
             ),
           },
@@ -653,6 +660,41 @@ export function StaffAccess() {
           label="I confirm all of this account’s sessions end now."
           checked={confirm}
           onChange={(e) => setConfirm(e.target.checked)}
+        />
+      </ActionDialog>
+
+      {/* 2026-10-28: a lost or replaced phone. Super Admins only, never yourself. */}
+      <ActionDialog
+        open={dialog.kind === 'mfa'}
+        title={dialog.kind === 'mfa' ? `Reset two-step sign-in for ${dialog.staff.name}` : ''}
+        submitLabel="Reset two-step sign-in"
+        danger
+        canSubmit={confirm && password.length > 0}
+        onClose={close}
+        onSubmit={async () => {
+          if (dialog.kind !== 'mfa') return;
+          await resetMfa(dialog.staff.id, {
+            reason,
+            password,
+            confirm: true,
+            ...(code ? { totp_code: code } : {}),
+          });
+        }}
+      >
+        <p className="small">
+          Removes their authenticator app and signs them out everywhere. Next time they sign in
+          they set up a new one. Use this when a phone is lost or replaced, after checking it is
+          really them who is asking.
+        </p>
+        <ReasonField value={reason} onChange={setReason} />
+        <ReauthFields
+          password={password}
+          setPassword={setPassword}
+          code={code}
+          setCode={setCode}
+          confirm={confirm}
+          setConfirm={setConfirm}
+          confirmLabel="I confirm their authenticator is removed and they are signed out."
         />
       </ActionDialog>
     </div>
