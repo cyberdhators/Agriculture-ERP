@@ -5,6 +5,14 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import * as communications from '../apps/web/app/api/admin/communications/route';
 import * as corrections from '../apps/web/app/api/admin/corrections/route';
 import * as adminMarketplace from '../apps/web/app/api/admin/marketplace/route';
+import * as adminAccounts from '../apps/web/app/api/admin/accounts/route';
+import * as adminAccount from '../apps/web/app/api/admin/accounts/[kind]/[id]/route';
+import * as adminAccountReveal from '../apps/web/app/api/admin/accounts/[kind]/[id]/reveal/route';
+import * as adminAccountDisable from '../apps/web/app/api/admin/accounts/disable/route';
+import * as adminAccountReenable from '../apps/web/app/api/admin/accounts/reenable/route';
+import * as adminSupport from '../apps/web/app/api/admin/support/route';
+import * as adminSupportCase from '../apps/web/app/api/admin/support/[id]/route';
+import * as adminSupportEntries from '../apps/web/app/api/admin/support/[id]/entries/route';
 import * as adminMarketplaceRemoved from '../apps/web/app/api/admin/marketplace/removed/route';
 import * as adminMarketplaceItem from '../apps/web/app/api/admin/marketplace/[kind]/[id]/route';
 import * as adminMarketplaceRemove from '../apps/web/app/api/admin/marketplace/[kind]/[id]/remove/route';
@@ -152,6 +160,56 @@ const ADMIN_ROUTES = [
     method: 'POST' as const,
     params: () => ({ kind: 'produce_listing', id: DUMMY_ID }),
     body: () => ({ reason: 'Zztest removal reason' }),
+  },
+  // 2026-10-28: users and organizations (then support.handle or content.moderate;
+  // reveal support.handle; disable content.moderate; re-enable superadmin.grant).
+  { name: 'GET /api/admin/accounts', mod: adminAccounts, method: 'GET' as const },
+  {
+    name: 'GET /api/admin/accounts/:kind/:id',
+    mod: adminAccount,
+    method: 'GET' as const,
+    params: () => ({ kind: 'farmer', id: DUMMY_ID }),
+  },
+  {
+    name: 'POST /api/admin/accounts/:kind/:id/reveal',
+    mod: adminAccountReveal,
+    method: 'POST' as const,
+    params: () => ({ kind: 'farmer', id: DUMMY_ID }),
+    body: () => ({ field: 'phone' }),
+  },
+  {
+    name: 'POST /api/admin/accounts/disable',
+    mod: adminAccountDisable,
+    method: 'POST' as const,
+    body: () => ({ kind: 'farmer', id: DUMMY_ID, reason: 'Zztest disable reason' }),
+  },
+  {
+    name: 'POST /api/admin/accounts/reenable',
+    mod: adminAccountReenable,
+    method: 'POST' as const,
+    body: () => ({ kind: 'farmer', id: DUMMY_ID, reason: 'Zztest re-enable reason' }),
+  },
+  // 2026-10-28: support cases (then support.handle).
+  { name: 'GET /api/admin/support', mod: adminSupport, method: 'GET' as const },
+  {
+    name: 'GET /api/admin/support/:id',
+    mod: adminSupportCase,
+    method: 'GET' as const,
+    params: () => ({ id: DUMMY_ID }),
+  },
+  {
+    name: 'PATCH /api/admin/support/:id',
+    mod: adminSupportCase,
+    method: 'PATCH' as const,
+    params: () => ({ id: DUMMY_ID }),
+    body: () => ({ priority: 'high' }),
+  },
+  {
+    name: 'POST /api/admin/support/:id/entries',
+    mod: adminSupportEntries,
+    method: 'POST' as const,
+    params: () => ({ id: DUMMY_ID }),
+    body: () => ({ kind: 'note', body: 'Zztest note' }),
   },
 ];
 

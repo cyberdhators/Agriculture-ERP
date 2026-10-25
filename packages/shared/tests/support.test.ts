@@ -102,9 +102,9 @@ describe('the staff side: support cases (2026-10-28)', () => {
       SUPPORT_MESSAGES.nothingToChange,
     );
     expect(supportCaseUpdateSchema.parse({ assignee_id: null })).toEqual({ assignee_id: null });
-    expect(
-      supportCaseUpdateSchema.safeParse({ priority: 'asap' }).error?.issues[0]?.message,
-    ).toBe(SUPPORT_MESSAGES.priorityUnknown);
+    expect(supportCaseUpdateSchema.safeParse({ priority: 'asap' }).error?.issues[0]?.message).toBe(
+      SUPPORT_MESSAGES.priorityUnknown,
+    );
     expect(supportCaseUpdateSchema.safeParse({ status: 'new', x: 1 }).success).toBe(false);
   });
 

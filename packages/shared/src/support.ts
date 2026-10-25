@@ -165,10 +165,16 @@ export const supportFilterSchema = z.strictObject({
   priority: z.enum(CASE_PRIORITIES, { error: () => S.priorityUnknown }).optional(),
   /** 'me', 'none' (nobody responsible yet) or a staff member's id. */
   assignee: z
-    .union([z.enum(['me', 'none']), z.string().uuid()], { error: () => S.assigneeMalformed })
+    .union([z.enum(['me', 'none']), z.string().uuid(S.assigneeMalformed)], {
+      error: () => S.assigneeMalformed,
+    })
     .optional(),
   /** A case number ("1045" or "#1045") or part of the sender's name. */
-  q: z.string({ error: () => S.searchLength }).trim().max(120, S.searchLength).optional(),
+  q: z
+    .string({ error: () => S.searchLength })
+    .trim()
+    .max(120, S.searchLength)
+    .optional(),
   limit: z.string().optional(),
   cursor: z.string().optional(),
 });

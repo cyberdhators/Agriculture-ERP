@@ -194,7 +194,9 @@ export function accountListQuery(
     ors.push(`EXISTS (SELECT 1 FROM unnest(r.organisations) n WHERE n ILIKE ${like})`);
     if (s.uuid) ors.push(`r.id = ${push(s.uuid)}::uuid`);
     if (s.digits) {
-      ors.push(`regexp_replace(COALESCE(r.phone, ''), '\\D', '', 'g') LIKE ${push(`%${s.digits}%`)}`);
+      ors.push(
+        `regexp_replace(COALESCE(r.phone, ''), '\\D', '', 'g') LIKE ${push(`%${s.digits}%`)}`,
+      );
     }
     where.push(`(${ors.join(' OR ')})`);
   }
@@ -219,7 +221,10 @@ export function accountRowQuery(kind: AccountDetailKind, id: string): AccountLis
       : kind === 'farmer'
         ? `r.kind <> 'organisation' AND r.farmer_id = $1::uuid`
         : `r.kind <> 'organisation' AND r.buyer_id = $1::uuid`;
-  return { sql: `WITH ${ACCOUNTS_CTE}\nSELECT r.* FROM rows r WHERE ${match} LIMIT 1`, params: [id] };
+  return {
+    sql: `WITH ${ACCOUNTS_CTE}\nSELECT r.* FROM rows r WHERE ${match} LIMIT 1`,
+    params: [id],
+  };
 }
 
 /** One SQL row as the list shows it. The phone is never in it. */

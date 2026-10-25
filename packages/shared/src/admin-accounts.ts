@@ -60,7 +60,11 @@ const date = z
  * and `kind` are the names the Overview's tiles carry (admin-overview.ts).
  */
 export const adminAccountFilterSchema = z.strictObject({
-  q: z.string({ error: () => M.searchLength }).trim().max(100, M.searchLength).optional(),
+  q: z
+    .string({ error: () => M.searchLength })
+    .trim()
+    .max(100, M.searchLength)
+    .optional(),
   kind: z.enum(ACCOUNT_LIST_KINDS, { error: () => M.kindUnknown }).optional(),
   sign_in: z.enum(['yes', 'no'], { error: () => M.signInUnknown }).optional(),
   actor: z.enum(ACTIVITIES, { error: () => M.actorUnknown }).optional(),

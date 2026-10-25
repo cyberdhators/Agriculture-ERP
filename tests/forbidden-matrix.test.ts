@@ -44,6 +44,12 @@ import * as adminMarketplace from '../apps/web/app/api/admin/marketplace/route';
 import * as adminMarketplaceRemoved from '../apps/web/app/api/admin/marketplace/removed/route';
 import * as adminMarketplaceRemove from '../apps/web/app/api/admin/marketplace/[kind]/[id]/remove/route';
 import * as adminOverview from '../apps/web/app/api/admin/overview/route';
+import * as adminAccounts from '../apps/web/app/api/admin/accounts/route';
+import * as adminAccountReveal from '../apps/web/app/api/admin/accounts/[kind]/[id]/reveal/route';
+import * as adminAccountDisable from '../apps/web/app/api/admin/accounts/disable/route';
+import * as adminAccountReenable from '../apps/web/app/api/admin/accounts/reenable/route';
+import * as adminSupport from '../apps/web/app/api/admin/support/route';
+import * as adminSupportEntries from '../apps/web/app/api/admin/support/[id]/entries/route';
 import { randomUUID } from 'node:crypto';
 import {
   FARMER_TEST_FAMILY,
@@ -746,6 +752,52 @@ const ROUTES = [
     allow: ['admin'],
     params: () => ({ kind: 'produce_listing', id: DUMMY_ID }),
     body: () => ({ reason: 'Zztest removal reason' }),
+  },
+  // 2026-10-28: users and organizations, and support cases. Administrators
+  // only (then a permission every administrator holds, except re-enable,
+  // which needs a Super Admin). The single-record GETs are in
+  // new-routes-matrix only: a record that does not exist is rightly 404.
+  {
+    name: 'GET /api/admin/accounts',
+    mod: adminAccounts,
+    method: 'GET' as const,
+    allow: ['admin'],
+  },
+  {
+    name: 'POST /api/admin/accounts/:kind/:id/reveal',
+    mod: adminAccountReveal,
+    method: 'POST' as const,
+    allow: ['admin'],
+    params: () => ({ kind: 'farmer', id: DUMMY_ID }),
+    body: () => ({ field: 'phone' }),
+  },
+  {
+    name: 'POST /api/admin/accounts/disable',
+    mod: adminAccountDisable,
+    method: 'POST' as const,
+    allow: ['admin'],
+    body: () => ({ kind: 'farmer', id: DUMMY_ID, reason: 'Zztest disable reason' }),
+  },
+  {
+    name: 'POST /api/admin/accounts/reenable',
+    mod: adminAccountReenable,
+    method: 'POST' as const,
+    allow: ['admin'],
+    body: () => ({ kind: 'farmer', id: DUMMY_ID, reason: 'Zztest re-enable reason' }),
+  },
+  {
+    name: 'GET /api/admin/support',
+    mod: adminSupport,
+    method: 'GET' as const,
+    allow: ['admin'],
+  },
+  {
+    name: 'POST /api/admin/support/:id/entries',
+    mod: adminSupportEntries,
+    method: 'POST' as const,
+    allow: ['admin'],
+    params: () => ({ id: DUMMY_ID }),
+    body: () => ({ kind: 'note', body: 'Zztest note' }),
   },
 ];
 

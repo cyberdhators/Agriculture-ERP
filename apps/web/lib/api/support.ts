@@ -70,7 +70,7 @@ export const APPEAL_ACCOUNT_COLUMNS = `acct.farmer_id AS appeal_farmer_id,
         acct.buyer_id AS appeal_buyer_id, acct.buyer_standing AS appeal_buyer_standing,
         acct.suspended AS appeal_suspended, acct.matched_by AS appeal_matched_by`;
 
-const accountJoin = (on: string) => `LEFT JOIN LATERAL (
+export const APPEAL_ACCOUNT_JOIN = `LEFT JOIN LATERAL (
     SELECT * FROM (
       SELECT f.id AS farmer_id, NULL::uuid AS buyer_id, NULL::text AS buyer_standing,
              (f.suspended_at IS NOT NULL) AS suspended,
@@ -96,13 +96,12 @@ const accountJoin = (on: string) => `LEFT JOIN LATERAL (
     ) found
     ORDER BY pick
     LIMIT 1
-  ) acct ON ${on}`;
-
-export const APPEAL_ACCOUNT_JOIN = accountJoin(`sm.topic = 'appeal'`);
+  ) acct ON sm.topic = 'appeal'`;
 
 /** Every case: a signed-in sender's own account, or an appeal's matched one. */
-export const CASE_ACCOUNT_JOIN = accountJoin(
-  `(sm.topic = 'appeal' OR sm.from_auth_user_id IS NOT NULL)`,
+export const CASE_ACCOUNT_JOIN = APPEAL_ACCOUNT_JOIN.replace(
+  "acct ON sm.topic = 'appeal'",
+  "acct ON (sm.topic = 'appeal' OR sm.from_auth_user_id IS NOT NULL)",
 );
 
 const accountLink = (row: SupportRow): SupportAccountLink | null => {

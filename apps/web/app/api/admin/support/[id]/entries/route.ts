@@ -64,7 +64,11 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
 
         let statusChange: { from: string; to: string } | null = null;
         if (body.status !== undefined) {
-          const move = caseTransition(current.status, body.status, current.resolution_note !== null);
+          const move = caseTransition(
+            current.status,
+            body.status,
+            current.resolution_note !== null,
+          );
           if (!move.ok) throw unprocessable(move.rule);
           if (!move.same) {
             const handled = move.settles

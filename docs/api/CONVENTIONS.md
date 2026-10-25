@@ -930,6 +930,18 @@ These are also exact.
 | Support case entry: link not a web address | Give a web address starting http:// or https://, at most 500 characters.                        |
 | Support case entry: evidence with no link  | Evidence needs a link.                                                                          |
 | Support list: search too long              | Search with at most 120 characters.                                                             |
+| Overview: actor type not on list           | Choose an actor type from the list.                                                             |
+| Marketplace console: tab not on list       | Choose produce, inputs, buying requests, services or inactive.                                  |
+| Marketplace console: status not on list    | Choose active, paused, expired, withdrawn or completed.                                         |
+| Marketplace console: category not on list  | Choose a category or a service type from the list.                                              |
+| Marketplace console: flag not on list      | Choose reported or correction requested.                                                        |
+| Marketplace console: kind not on list      | Choose a product listing, a buying request or a service.                                        |
+| Marketplace console: search too long       | Search with at most 100 characters.                                                             |
+| Accounts list: kind not on list            | Choose people or organisations.                                                                 |
+| Accounts list: sign-in not yes or no       | Choose yes or no.                                                                               |
+| Accounts list: status not on list          | Choose active, suspended, disabled or closed.                                                   |
+| Accounts list: date not YYYY-MM-DD         | Give the date as YYYY-MM-DD.                                                                    |
+| Account contact reveal: field              | Choose phone or email.                                                                          |
 | Advice profile: name length                | A name for your advice profile is 2 to 120 characters.                                          |
 | Advice profile: kind not on list           | Choose adviser, institute, research or training body, advisory organisation or other.           |
 | Advice profile: description length         | Describe the advice you offer in 10 to 2000 characters.                                         |

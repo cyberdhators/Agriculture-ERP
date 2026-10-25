@@ -81,13 +81,27 @@ export const NAV_SECTIONS: readonly NavSection[] = [
         label: 'Dashboard',
         icon: 'dashboard',
         roles: ALL,
-        because: 'GET /api/reports/summary accepts every role; the server scopes the figures.',
+        because:
+          'Every role has a dashboard. For staff it reads GET /api/admin/overview (admin, ' +
+          'supervisor and read_only, then reports.view, scoped by state); an officer keeps the ' +
+          'caseload overview from GET /api/reports/summary, which accepts every role.',
       },
     ],
   },
   {
     heading: 'Users and organizations',
     items: [
+      {
+        // 2026-10-28: every account in one list, and each account's page.
+        href: '/admin/accounts',
+        label: 'All accounts',
+        icon: 'staff',
+        roles: ['admin'],
+        because:
+          'GET /api/admin/accounts and GET /api/admin/accounts/:kind/:id are administrator-only ' +
+          'and then require support.handle or content.moderate; revealing a contact requires ' +
+          'support.handle, disabling content.moderate, re-enabling superadmin.grant.',
+      },
       {
         href: '/farmers',
         label: 'Farmers',
@@ -124,6 +138,17 @@ export const NAV_SECTIONS: readonly NavSection[] = [
   {
     heading: 'Marketplace',
     items: [
+      {
+        // 2026-10-28: the marketplace console.
+        href: '/admin/marketplace',
+        label: 'Marketplace console',
+        icon: 'directory',
+        roles: ['admin'],
+        because:
+          'GET /api/admin/marketplace, its inspect and removed routes and POST ' +
+          '/api/admin/marketplace/:kind/:id/remove are administrator-only and then require ' +
+          'content.moderate.',
+      },
       {
         // 2026-10-19: the live marketplace, where staff withdraw a listing with
         // a reason (the moderate panel on each product page).
@@ -215,14 +240,16 @@ export const NAV_SECTIONS: readonly NavSection[] = [
           'unread count the queue reads beside it.',
       },
       {
-        // 2026-10-21: "Contact CORWADO" messages from the help page.
+        // 2026-10-21: "Contact CORWADO" messages from the help page; support
+        // cases since 2026-10-28 (the specification's line 103).
         href: '/admin/support',
-        label: 'Support messages',
+        label: 'Support cases',
         icon: 'mail',
         roles: ['admin'],
         because:
-          'GET /api/admin/support and PATCH /api/admin/support/:id are administrator-only and ' +
-          'then require support.handle, which every administrator holds.',
+          'GET /api/admin/support, GET and PATCH /api/admin/support/:id and POST ' +
+          '/api/admin/support/:id/entries are administrator-only and then require ' +
+          'support.handle, which every administrator holds.',
       },
       {
         // 2026-10-27: organisational profiles, their teams, exceptional recovery.
@@ -392,7 +419,11 @@ const SEGMENT_LABELS: Record<string, string> = {
   farms: 'Farms & maps',
   communications: 'Communications',
   'product-reports': 'Product reports',
-  support: 'Support messages',
+  support: 'Support cases',
+  // 2026-10-28: the admin console.
+  accounts: 'Users and organizations',
+  marketplace: 'Marketplace console',
+  programme: 'Farmer verification programme',
   visits: 'Visits',
   reports: 'Reports',
   analytics: 'Marketplace analytics',

@@ -156,7 +156,8 @@ export function MarketplaceConsole() {
       : 'produce'
   ) as MarketplaceTab;
   const q = query.get('q');
-  const stateId = query.get('state_id');
+  // 'state' is the name the Overview's tiles carry.
+  const stateId = query.get('state_id') || query.get('state');
   const category = query.get('category');
   const status = query.get('status');
   const kind = query.get('kind');

@@ -11,6 +11,7 @@ import { t, type TKey } from '@/lib/i18n';
 
 import styles from '@/components/farmer/farmer.module.css';
 
+import { MySupportCases } from './MySupportCases';
 import { SupportContactsCard } from './SupportContacts';
 
 const TOPIC_KEY: Record<SupportTopic, TKey> = {
@@ -48,6 +49,9 @@ export function HelpPage() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
+  // 2026-10-28: the new case's number, and a nudge for "Your messages" to reload.
+  const [caseNumber, setCaseNumber] = useState<number | null>(null);
+  const [sentCount, setSentCount] = useState(0);
 
   useEffect(() => {
     if (farmer) {
@@ -108,6 +112,11 @@ export function HelpPage() {
         setError(json.error?.fields ? null : (json.error?.message ?? t('help.failed', language)));
         return;
       }
+      const created = (await response.json().catch(() => ({}))) as {
+        data?: { case_number?: number };
+      };
+      setCaseNumber(created.data?.case_number ?? null);
+      setSentCount((n) => n + 1);
       setSent(true);
       setBody('');
     } catch {
@@ -143,6 +152,11 @@ export function HelpPage() {
             <>
               <Notice kind="success">
                 <p className="small">{t('help.sent', language)}</p>
+                {caseNumber !== null ? (
+                  <p className="small">
+                    {t('help.caseSent', language)} <strong>#{caseNumber}</strong>.
+                  </p>
+                ) : null}
               </Notice>
               <div>
                 <Button variant="secondary" onClick={() => setSent(false)}>
@@ -229,6 +243,9 @@ export function HelpPage() {
             </form>
           )}
         </section>
+
+        {/* 2026-10-28: the signed-in person's own cases and CORWADO's replies. */}
+        <MySupportCases language={language} refresh={sentCount} />
       </div>
     </>
   );

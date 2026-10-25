@@ -62,9 +62,8 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       const [row] = await prisma.$queryRawUnsafe<SupportRow[]>(SUPPORT_CASE_SELECT, id);
       if (!row) throw notFound();
       const entries = await prisma.$queryRawUnsafe<CaseEntryRow[]>(CASE_ENTRY_SELECT, id);
-      const assignable = await prisma.$queryRawUnsafe<{ id: string; name: string }[]>(
-        ASSIGNABLE_STAFF_SQL,
-      );
+      const assignable =
+        await prisma.$queryRawUnsafe<{ id: string; name: string }[]>(ASSIGNABLE_STAFF_SQL);
       return ok(
         { ...presentSupport(row), entries: entries.map(presentEntry), assignable },
         { 'cache-control': 'no-store' },
@@ -165,10 +164,15 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
             after,
           });
           if (settles && current.from_auth_user_id) {
-            await notifyAccount(tx, { authUserId: current.from_auth_user_id }, 'support_case_updated', {
-              actorType: auth.role,
-              actorId: auth.principal.id,
-            });
+            await notifyAccount(
+              tx,
+              { authUserId: current.from_auth_user_id },
+              'support_case_updated',
+              {
+                actorType: auth.role,
+                actorId: auth.principal.id,
+              },
+            );
           }
         }
 

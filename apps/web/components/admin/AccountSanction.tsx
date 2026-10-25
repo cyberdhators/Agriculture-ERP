@@ -19,7 +19,28 @@ import { ConfirmationDialog } from '../ui/feedback';
  *
  * Compact is the table form: the button and its warnings only, because the
  * row shows its own "Suspended" stamp.
+ *
+ * 2026-10-28: DISABLE beside Suspend -- permanent until a Super Admin
+ * re-enables it with a reason (the routes enforce it; `canReenable` only
+ * decides whether the button is offered). A disabled account shows
+ * "Disabled", and Restore is not offered for it.
  */
+
+type SanctionAction = 'suspend' | 'restore' | 'disable' | 'reenable';
+
+const LABEL: Record<SanctionAction, string> = {
+  suspend: 'Suspend account',
+  restore: 'Restore account',
+  disable: 'Disable account',
+  reenable: 'Re-enable account',
+};
+
+const TITLE: Record<SanctionAction, string> = {
+  suspend: 'Suspend this account?',
+  restore: 'Restore this account?',
+  disable: 'Disable this account permanently?',
+  reenable: 'Re-enable this disabled account?',
+};
 
 const REASON_MIN = 5;
 
@@ -28,7 +49,11 @@ const CONSEQUENCE = {
     'The account cannot sign in or use the app from its next request, and everything it posted leaves the market. It stays on the register, and nothing is deleted.',
   restore:
     'The account can sign in and use the app again, and its posts return to the market as they were.',
-};
+  disable:
+    'Every session ends, the account cannot sign in, and everything it posted leaves the market. Unlike a suspension, only a Super Admin can undo this, with a reason. Nothing is deleted.',
+  reenable:
+    'The disable and the suspension beneath it are lifted. The account can sign in again and its posts return to the market as they were.',
+} satisfies Record<SanctionAction, string>;
 
 interface Failure {
   status: number;
@@ -65,16 +90,19 @@ export function AccountSanction({
   kind,
   id,
   compact = false,
+  canReenable = false,
   onChange,
 }: {
   kind: SanctionKind;
   id: string;
   compact?: boolean;
+  /** 2026-10-28: the caller is a Super Admin, so Re-enable is offered on a disabled account. */
+  canReenable?: boolean;
   /**
    * Told after a suspension or restoration is saved, so a list can reload and
    * say so itself: reloading a table unmounts this box and its warning.
    */
-  onChange?: (done: { action: 'suspend' | 'restore'; signInReached: boolean }) => void;
+  onChange?: (done: { action: SanctionAction; signInReached: boolean }) => void;
 }) {
   const [standing, setStanding] = useState<AccountStanding | null>(null);
   const [hidden, setHidden] = useState(false);
@@ -87,7 +115,8 @@ export function AccountSanction({
   const [prefill, setPrefill] = useState('');
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState<Failure | null>(null);
-  const [signInMissed, setSignInMissed] = useState<'suspend' | 'restore' | null>(null);
+  const [signInMissed, setSignInMissed] = useState<SanctionAction | null>(null);
+  const [action, setAction] = useState<SanctionAction>('suspend');
   const [smsMissed, setSmsMissed] = useState(false);
   // 2026-10-26 (acceptance test): read when the box mounts, so the dialog
   // shows the codes at once; Suspend stays disabled until they have loaded.
@@ -114,7 +143,17 @@ export function AccountSanction({
 
   if (hidden) return null;
 
-  const action = standing?.suspended ? 'restore' : 'suspend';
+  // What the account can have done to it now, in the order the buttons show.
+  const offered: SanctionAction[] = !standing
+    ? []
+    : standing.disabled
+      ? canReenable
+        ? ['reenable']
+        : []
+      : standing.suspended
+        ? ['restore', 'disable']
+        : ['suspend', 'disable'];
+  const asksForCode = action === 'suspend' || action === 'disable';
 
   const decide = async () => {
     const trimmed = reason.trim();
@@ -167,19 +206,28 @@ export function AccountSanction({
   };
 
   const button = standing ? (
-    <Button
-      size={compact ? 'small' : 'default'}
-      variant={action === 'suspend' ? 'danger' : 'secondary'}
-      onClick={() => {
-        setReason('');
-        setReasonCode('');
-        setPrefill('');
-        setFailure(null);
-        setOpen(true);
-      }}
-    >
-      {action === 'suspend' ? 'Suspend account' : 'Restore account'}
-    </Button>
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--s-2)' }}>
+      {offered.map((a) => (
+        <Button
+          key={a}
+          size={compact ? 'small' : 'default'}
+          variant={a === 'suspend' || a === 'disable' ? 'danger' : 'secondary'}
+          onClick={() => {
+            setAction(a);
+            setReason('');
+            setReasonCode('');
+            setPrefill('');
+            setFailure(null);
+            setOpen(true);
+          }}
+        >
+          {LABEL[a]}
+        </Button>
+      ))}
+      {standing.disabled && !canReenable ? (
+        <p className="small muted">Disabled. Only a Super Admin can re-enable this account.</p>
+      ) : null}
+    </div>
   ) : null;
 
   const warnings = (
@@ -195,16 +243,23 @@ export function AccountSanction({
       {smsMissed ? (
         <Notice kind="warn" title="Text message not sent">
           <p className="small">
-            The account was suspended, but the text message telling them so could not be sent. Tell
-            them another way if you can.
+            The account was {action === 'disable' ? 'disabled' : 'suspended'}, but the text message
+            telling them so could not be sent. Tell them another way if you can.
           </p>
         </Notice>
       ) : null}
       {signInMissed ? (
         <Notice kind="warn" title="Sign-in not updated">
           <p className="small">
-            The account was {signInMissed === 'suspend' ? 'suspended' : 'restored'}, but the change
-            did not reach the sign-in service. Try again in a moment.
+            The account was{' '}
+            {signInMissed === 'suspend'
+              ? 'suspended'
+              : signInMissed === 'disable'
+                ? 'disabled'
+                : signInMissed === 'reenable'
+                  ? 're-enabled'
+                  : 'restored'}
+            , but the change did not reach the sign-in service. Try again in a moment.
           </p>
         </Notice>
       ) : null}
@@ -216,15 +271,15 @@ export function AccountSanction({
       open={open}
       onCancel={() => setOpen(false)}
       onConfirm={() => void decide()}
-      title={action === 'suspend' ? 'Suspend this account?' : 'Restore this account?'}
+      title={TITLE[action]}
       consequence={CONSEQUENCE[action]}
-      confirmLabel={action === 'suspend' ? 'Suspend account' : 'Restore account'}
-      destructive={action === 'suspend'}
+      confirmLabel={LABEL[action]}
+      destructive={asksForCode}
       busy={busy}
-      confirmDisabled={action === 'suspend' && codesLoading}
+      confirmDisabled={asksForCode && codesLoading}
     >
       {failure && !failure.fields.reason ? <Notice kind="error">{failure.message}</Notice> : null}
-      {action === 'suspend' ? (
+      {asksForCode ? (
         <ReasonCodeSelect
           target="account"
           value={reasonCode}
@@ -272,7 +327,15 @@ export function AccountSanction({
       <p className="label" style={{ marginBottom: 'var(--s-3)' }}>
         Account
       </p>
-      {standing?.suspended ? (
+      {standing?.disabled ? (
+        <div style={{ marginBottom: 'var(--s-3)' }}>
+          <Stamp kind="rejected">Disabled</Stamp>
+          <p className="small" style={{ marginTop: 'var(--s-2)' }}>
+            {standing.disabled_at ? `Since ${formatDate(standing.disabled_at)}. ` : ''}
+            {standing.disabled_reason ? <span dir="auto">{standing.disabled_reason}</span> : null}
+          </p>
+        </div>
+      ) : standing?.suspended ? (
         <div style={{ marginBottom: 'var(--s-3)' }}>
           <Stamp kind="rejected">Suspended</Stamp>
           <p className="small" style={{ marginTop: 'var(--s-2)' }}>

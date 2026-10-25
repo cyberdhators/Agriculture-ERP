@@ -53,7 +53,10 @@ export function AdminOrganisations() {
   }, []);
 
   useEffect(() => {
-    void load('');
+    // 2026-10-28: opened from Users and organizations with ?q=<name>.
+    const initial = new URLSearchParams(window.location.search).get('q')?.trim() ?? '';
+    if (initial) setQ(initial);
+    void load(initial);
   }, [load]);
 
   return (

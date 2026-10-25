@@ -1,9 +1,6 @@
 import { revealContactSchema, type AccountDetailKind } from '@agri-erp/shared';
 
-import {
-  accountRowQuery,
-  type AccountSqlRow,
-} from '../../../../../../../lib/api/admin-accounts';
+import { accountRowQuery, type AccountSqlRow } from '../../../../../../../lib/api/admin-accounts';
 import { audited, writeAudit } from '../../../../../../../lib/api/audit';
 import { notFound } from '../../../../../../../lib/api/errors';
 import { requirePermission } from '../../../../../../../lib/api/permissions';

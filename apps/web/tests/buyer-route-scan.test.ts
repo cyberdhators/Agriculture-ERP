@@ -114,6 +114,8 @@ const BUYER_OUTSIDE_ITS_TREE = [
   'services/mine',
   // 2026-10-21: "Contact CORWADO" is public; it names the buyer role only to
   // recognise a signed-in sender, and reads nothing but that sender's own phone.
+  // 2026-10-28: GET lists the session's OWN cases (keyed by its sign-in) with
+  // staff replies only -- never a note, evidence, staff name or priority.
   'support',
   // TEAM ACCESS (2026-10-27): organisational profiles any account may create
   // and act for. Every read is keyed by the session's sign-in and its ACTIVE
