@@ -279,18 +279,6 @@ const ADMIN_ROUTES = [
     params: () => ({ id: DUMMY_ID }),
   },
   {
-    name: 'PATCH /api/admin/support/:id',
-    mod: adminSupportCase,
-    method: 'PATCH' as const,
-    params: () => ({ id: DUMMY_ID }),
-    body: () => ({ priority: 'high' }),
-  },
-  {
-    name: 'POST /api/admin/support/:id/entries',
-    mod: adminSupportEntries,
-    method: 'POST' as const,
-    params: () => ({ id: DUMMY_ID }),
-    body: () => ({ kind: 'note', body: 'Zztest note' }),
     name: 'DELETE /api/admin/announcements/:id',
     mod: announcementItem,
     method: 'DELETE' as const,

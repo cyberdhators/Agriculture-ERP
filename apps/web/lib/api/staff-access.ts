@@ -95,8 +95,18 @@ export async function requireStatesExist(stateIds: readonly string[]): Promise<v
 }
 
 /** Postgres's unique violation, raised through Prisma's raw query error. */
-export const isUniqueViolation = (error: unknown, constraint: string): boolean =>
-  error instanceof Error && error.message.includes(constraint);
+export const isUniqueViolation = (error: unknown, constraint: string): boolean => {
+  if (!(error instanceof Error)) return false;
+  if (error.message.includes(constraint)) return true;
+  // 2026-10-28 (live acceptance): a raw query's unique violation can arrive
+  // as P2010 with code 23505 and no constraint name in the message. The
+  // name may be in its meta; if no name is given at all, a 23505 is taken as
+  // this constraint (the callers' statements touch one unique index).
+  const meta = (error as { meta?: { code?: unknown; message?: unknown } }).meta;
+  if (meta?.code !== '23505') return false;
+  const detail = typeof meta.message === 'string' ? meta.message : '';
+  return detail.includes(constraint) || !/_key|_one_|_unique|_pkey/.test(detail);
+};
 
 /**
  * Turns a re-authentication outcome into the route's answer. `onFailedPassword`

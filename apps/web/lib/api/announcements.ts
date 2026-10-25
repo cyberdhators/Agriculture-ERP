@@ -521,7 +521,7 @@ export async function processBatch(
       `UPDATE public.announcement_delivery
           SET status = 'failed', error = $2, updated_at = now()
         WHERE announcement_id = $1::uuid AND status = 'sending'
-          AND claimed_at < now() - make_interval(mins => $3)`,
+          AND claimed_at < now() - make_interval(mins => $3::int)`,
       announcement.id,
       INTERRUPTED,
       ANNOUNCEMENT_LIMITS.staleSendingMinutes,

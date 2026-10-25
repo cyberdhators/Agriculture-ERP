@@ -93,7 +93,7 @@ export async function issuePhoneCode(
     { phone_recent: number; phone_last_s: number | null; system_hour: number }[]
   >(
     `SELECT
-       count(*) FILTER (WHERE phone = $1 AND created_at > now() - make_interval(mins => $2))::int
+       count(*) FILTER (WHERE phone = $1 AND created_at > now() - make_interval(mins => $2::int))::int
          AS phone_recent,
        EXTRACT(EPOCH FROM now() - max(created_at) FILTER (WHERE phone = $1))::int AS phone_last_s,
        count(*) FILTER (WHERE created_at > now() - interval '1 hour')::int AS system_hour
@@ -122,7 +122,7 @@ export async function issuePhoneCode(
   const code = String(randomInt(0, 10 ** PHONE_CODE.length)).padStart(PHONE_CODE.length, '0');
   const [row] = await prisma.$queryRawUnsafe<{ id: string; expires_at: Date }[]>(
     `INSERT INTO public.phone_verification (phone, purpose, code_hash, expires_at, auth_user_id)
-     VALUES ($1, $3, 'pending', now() + make_interval(mins => $2), $4::uuid)
+     VALUES ($1, $3, 'pending', now() + make_interval(mins => $2::int), $4::uuid)
      RETURNING id, expires_at`,
     phone,
     PHONE_CODE.ttlMinutes,
@@ -240,7 +240,7 @@ export async function consumeSignUpVerification(
     `UPDATE public.phone_verification SET consumed_at = now()
       WHERE id = $1::uuid AND phone = $2 AND purpose = 'farmer_sign_up'
         AND verified_at IS NOT NULL AND consumed_at IS NULL
-        AND verified_at > now() - make_interval(mins => $3)
+        AND verified_at > now() - make_interval(mins => $3::int)
       RETURNING id`,
     id,
     phone,
@@ -266,7 +266,7 @@ export async function consumeVerification(
     `UPDATE public.phone_verification SET consumed_at = now()
       WHERE id = $1::uuid AND purpose = $2
         AND verified_at IS NOT NULL AND consumed_at IS NULL
-        AND verified_at > now() - make_interval(mins => $3)
+        AND verified_at > now() - make_interval(mins => $3::int)
         AND ($4::text IS NULL OR phone = $4)
         AND ($5::uuid IS NULL OR auth_user_id = $5::uuid)
       RETURNING phone`,

@@ -5315,6 +5315,22 @@ The owner answered the OWNER TO CONFIRM items of "Official announcements" and
 - **SMS cost: US$0.221 per part.** The fallback of
   `notifications_moderation.sms_cost_per_segment_usd` is now 0.221, so the
   announcement preview estimates cost; still changeable in Settings.
-- **Currency: to be configurable** -- what that means is being confirmed
-  (a display currency with a rate, or recording prices in another currency);
-  not built yet.
+- **Currency: SSP, as it is.** The owner, 2026-10-28: "just leave as it is, SSP ok".
+  Prices stay recorded and shown in South Sudanese pounds; no currency setting.
+
+## Live acceptance fixes for release #214 (2026-10-28)
+
+Found by review on production (OBSERVED, the live acceptance run of 2026-10-28,
+evidence in qa-evidence-2026-10-28):
+
+- **Announcements never delivered.** `make_interval(mins => $n)` received a
+  bigint parameter, for which Postgres has no `make_interval`, so processing
+  answered 500. Every `make_interval(mins => $n)` now casts `$n::int`
+  (announcements, email and phone verification). The phone paths had worked
+  since #178; the cast is added there too so the class is closed, not the
+  route (INFERRED from one failing instance and the identical pattern).
+- **A duplicate staff invitation answered 500, not 409.** The unique violation
+  arrived as P2010 with code 23505 and no constraint name in the message;
+  `isUniqueViolation` now also reads the error's meta.
+- **Minimum age with an optional year of birth.** A skipped year is not
+  refused: the minimum applies to a year that is given (sign-up stays open).

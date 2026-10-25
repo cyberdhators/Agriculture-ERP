@@ -71,7 +71,7 @@ export async function sendEmailSignUpCode(
     { address_recent: number; address_last_s: number | null; system_hour: number }[]
   >(
     `SELECT
-       count(*) FILTER (WHERE email = $1 AND created_at > now() - make_interval(mins => $2))::int
+       count(*) FILTER (WHERE email = $1 AND created_at > now() - make_interval(mins => $2::int))::int
          AS address_recent,
        EXTRACT(EPOCH FROM now() - max(created_at) FILTER (WHERE email = $1))::int AS address_last_s,
        count(*) FILTER (WHERE created_at > now() - interval '1 hour')::int AS system_hour
@@ -101,7 +101,7 @@ export async function sendEmailSignUpCode(
   const code = String(randomInt(0, 10 ** EMAIL_CODE.length)).padStart(EMAIL_CODE.length, '0');
   const [row] = await prisma.$queryRawUnsafe<{ id: string; expires_at: Date }[]>(
     `INSERT INTO public.email_verification (email, purpose, code_hash, expires_at)
-     VALUES ($1, 'sign_up', 'pending', now() + make_interval(mins => $2))
+     VALUES ($1, 'sign_up', 'pending', now() + make_interval(mins => $2::int))
      RETURNING id, expires_at`,
     email,
     EMAIL_CODE.ttlMinutes,
@@ -176,7 +176,7 @@ export async function consumeEmailSignUpVerification(
     `UPDATE public.email_verification SET consumed_at = now()
       WHERE id = $1::uuid AND email = $2 AND purpose = 'sign_up'
         AND verified_at IS NOT NULL AND consumed_at IS NULL
-        AND verified_at > now() - make_interval(mins => $3)
+        AND verified_at > now() - make_interval(mins => $3::int)
       RETURNING id`,
     id,
     email,
