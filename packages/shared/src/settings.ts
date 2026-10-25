@@ -478,12 +478,14 @@ export const SETTING_DEFAULTS: SettingValues = {
       },
     ],
   },
-  // Phase 2: each fallback is what the code did before the setting existed.
+  // Phase 2: each fallback is what the code did before the setting existed,
+  // except the owner's decisions of 2026-10-28 (minimum age, SMS cost).
   language_region: { enabled_languages: ['en', 'ar'], date_format: 'd_mmm_yyyy' },
   registration_recovery: {
     code_resend_seconds: 60,
     session_inactivity_minutes: 30,
-    minimum_age_years: null,
+    // The owner's decision, 2026-10-28: farmers register themselves from 18.
+    minimum_age_years: 18,
   },
   profile_privacy: { show_phone_default: false, allow_messages_default: true },
   reference_lists: {
@@ -494,7 +496,9 @@ export const SETTING_DEFAULTS: SettingValues = {
     archived_crops: [],
   },
   notifications_moderation: {
-    sms_cost_per_segment_usd: null,
+    // The owner's figures, 2026-10-28: US$0.221 an SMS part; 30-day review
+    // period and appeal window.
+    sms_cost_per_segment_usd: 0.221,
     suspension_review_days: 30,
     appeal_window_days: 30,
   },
