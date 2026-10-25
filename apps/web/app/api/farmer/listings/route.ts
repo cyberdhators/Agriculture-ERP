@@ -22,6 +22,7 @@ import { invalidField, todayUtc } from '../../../../lib/api/market-posts';
 import { created, defineRoutes, ok } from '../../../../lib/api/route';
 import { farmerScope } from '../../../../lib/api/scope';
 import { prisma } from '../../../../lib/db';
+import { listingValidityDays, refuseArchivedChoice } from '../../../../lib/api/settings';
 
 /**
  * GET and POST /api/farmer/listings -- the farmer's own produce. B14.
@@ -82,7 +83,14 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       const status = listingStoredStatus(canonical);
       // No end date given: thirty days on the market (owner, 2026-10-19).
       const today = todayUtc();
-      const availableUntil = defaultEndDate(body.available_until, body.available_from, today);
+      // 2026-10-27 (settings phase 2): the validity and the archived lists.
+      await refuseArchivedChoice(body);
+      const availableUntil = defaultEndDate(
+        body.available_until,
+        body.available_from,
+        today,
+        await listingValidityDays(),
+      );
       if (availableUntil < body.available_from) {
         throw invalidField('available_until', MARKET_POST_MESSAGES.untilBeforeFrom);
       }

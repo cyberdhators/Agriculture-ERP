@@ -10,6 +10,7 @@ import { Button, Field, Notice, PasswordInput, PrefixedInput } from '@/component
 import { validatePassword } from '@/lib/farmers/schema';
 import { farmerPayamName } from '@/lib/fixtures/farmers';
 import { useFarmerSession } from '@/lib/farmer-session';
+import { useArabicEnabled } from '@/lib/settings/client';
 import { t, type Language } from '@/lib/i18n';
 import { formatPhone } from '@/lib/format';
 
@@ -28,6 +29,8 @@ export function FarmerAccount() {
   const { farmer, language, setLanguage, signOut, changePassword, changePhone } =
     useFarmerSession();
   const router = useRouter();
+  // 2026-10-27: Arabic is offered while Settings say so.
+  const arabic = useArabicEnabled();
 
   const [panel, setPanel] = useState<Panel>(null);
   const [done, setDone] = useState<'password' | 'phone' | null>(null);
@@ -169,16 +172,18 @@ export function FarmerAccount() {
             >
               {t('language.name', language)}
             </button>
-            <button
-              type="button"
-              className={`${styles.choice} ${language === 'ar' ? styles.choiceSelected : ''}`}
-              aria-pressed={language === 'ar'}
-              onClick={() => switchLanguage('ar')}
-              dir="rtl"
-              lang="ar"
-            >
-              {t('language.arabicNative', language)}
-            </button>
+            {arabic ? (
+              <button
+                type="button"
+                className={`${styles.choice} ${language === 'ar' ? styles.choiceSelected : ''}`}
+                aria-pressed={language === 'ar'}
+                onClick={() => switchLanguage('ar')}
+                dir="rtl"
+                lang="ar"
+              >
+                {t('language.arabicNative', language)}
+              </button>
+            ) : null}
           </div>
         </section>
 

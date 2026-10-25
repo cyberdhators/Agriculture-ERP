@@ -273,7 +273,7 @@ export const RULE_MESSAGES = {
   minimum_age_not_met:
     'You must be older to register for this service. Ask your extension officer for help.',
   reference_value_archived:
-    'That category or unit is no longer offered for new posts. Choose another from the list.',
+    'That choice is no longer offered for new entries. Choose another from the list.',
 } as const;
 
 export type RuleKey = keyof typeof RULE_MESSAGES;

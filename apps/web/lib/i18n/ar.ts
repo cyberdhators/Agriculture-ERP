@@ -1122,6 +1122,9 @@ export const ar: Partial<Record<TKey, string>> = {
   // 2026-10-24 (acceptance QA): the price is needed unless the service is negotiable.
   'svc.priceHint': 'اكتب سعراً، أو ضع علامة على «قابل للتفاوض» أدناه.',
   // 2026-10-27: notification preferences and announcements.
+  'help.appealWindow': 'يُقبل الاعتراض خلال {n} يوماً من القرار.',
+  'lifecycle.endsSoon': 'ينتهي خلال {n} أيام. جدّده ليبقى في السوق.',
+  'lifecycle.endsToday': 'ينتهي اليوم. جدّده ليبقى في السوق.',
   'prefs.title': 'إعدادات الإشعارات',
   'prefs.lead': 'اختر كيف ترسل إليك كوروادو الإعلانات والتحديثات.',
   'prefs.announcements': 'الإعلانات الرسمية',

@@ -393,7 +393,7 @@ character.
 | `template_title_mismatch` | An SMS template has no title, and an in-app or email template needs one. |
 | `template_sms_too_long` | An SMS can be at most 3 parts: 459 plain characters, or 201 with Arabic or special ones. |
 | `minimum_age_not_met` | You must be older to register for this service. Ask your extension officer for help. |
-| `reference_value_archived` | That category or unit is no longer offered for new posts. Choose another from the list. |
+| `reference_value_archived` | That choice is no longer offered for new entries. Choose another from the list. |
 
 **A route names a rule; it never writes a sentence.** `conflict()` and
 `unprocessable()` take a key from this registry, not a string. That is how the

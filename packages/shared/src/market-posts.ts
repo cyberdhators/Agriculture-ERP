@@ -181,14 +181,18 @@ export function addDays(date: string, days: number): string {
   return d.toISOString().slice(0, 10);
 }
 
-/** The end date given, or thirty days from the later of the start and today. */
+/**
+ * The end date given, or `days` (thirty unless Settings say otherwise,
+ * 2026-10-27) from the later of the start and today.
+ */
 export function defaultEndDate(
   given: string | null | undefined,
   from: string,
   today: string,
+  days: number = DEFAULT_VALIDITY_DAYS,
 ): string {
   if (given) return given;
-  return addDays(from > today ? from : today, DEFAULT_VALIDITY_DAYS);
+  return addDays(from > today ? from : today, days);
 }
 
 // ---------------------------------------------------------------------------

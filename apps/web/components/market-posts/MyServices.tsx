@@ -110,6 +110,7 @@ export function MyServices({ lang, basePath }: { lang: Language; basePath: strin
                 lang={lang}
                 onAction={(input) => act(s, input)}
                 endLabel={t('listingForm.availableUntil', lang)}
+                endsOn={s.available_until}
               />
               <div className={styles.cardFoot}>
                 <Link href={`${basePath}/${s.id}/edit`} className="small">

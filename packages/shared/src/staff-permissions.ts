@@ -444,12 +444,17 @@ export function classifyVisit(input: {
   readonly lastSeenAt: Date | null;
   readonly now: Date;
   readonly signInAnnounced: boolean;
+  /**
+   * 2026-10-27 (settings phase 2): the inactivity threshold from Registration
+   * and recovery. Omitted, the specification's thirty minutes.
+   */
+  readonly inactivityMs?: number;
 }): Exclude<AccessEvent, 'account_created' | 'reauth_failed'> | null {
   if (!input.firstSignInAt) return 'first_sign_in';
   if (input.signInAnnounced) return 'sign_in';
   if (!input.lastSeenAt) return 'return_session';
   const idle = input.now.getTime() - input.lastSeenAt.getTime();
-  return idle > RETURN_SESSION_INACTIVITY_MS ? 'return_session' : null;
+  return idle > (input.inactivityMs ?? RETURN_SESSION_INACTIVITY_MS) ? 'return_session' : null;
 }
 
 /**

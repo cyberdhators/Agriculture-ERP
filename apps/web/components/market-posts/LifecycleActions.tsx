@@ -6,11 +6,13 @@ import { lifecycleActions, type LifecycleAction, type LifecycleStage } from '@ag
 
 import { Button, Checkbox, Dialog, Field, Input, Notice, Stamp } from '@/components/ui';
 import { t, type Language } from '@/lib/i18n';
+import { usePublicSettings } from '@/lib/settings/client';
 import {
   ACTION_KEY,
   CONFIRMED_ACTIONS,
   STAGE_EXPLAIN_KEY,
   STAGE_KEY,
+  endsWithin,
   renewalDefault,
   stageStamp,
   todayLocal,
@@ -48,7 +50,12 @@ export function LifecycleActions({
   saleNeedsSignal?: boolean;
   /** "Available until" or "Needed by", for the renew dialog. */
   endLabel: string;
+  /** 2026-10-27: the post's end date, for the "ends soon" reminder. */
+  endsOn?: string | null;
 }) {
+  const settings = usePublicSettings();
+  const reminderDays = settings?.reference_lists.listing_reminder_days ?? 3;
+  const daysLeft = endsWithin(stage, endsOn, reminderDays);
   const actions = lifecycleActions(stage, { sales: Boolean(sale) });
   const [open, setOpen] = useState<LifecycleAction | null>(null);
   const [date, setDate] = useState(renewalDefault());
@@ -98,6 +105,15 @@ export function LifecycleActions({
         <Stamp kind={stageStamp(stage)}>{t(STAGE_KEY[stage], lang)}</Stamp>
       </div>
       <p className="small muted">{t(STAGE_EXPLAIN_KEY[stage], lang)}</p>
+      {daysLeft !== null ? (
+        <Notice kind="warn">
+          <p className="small">
+            {daysLeft === 0
+              ? t('lifecycle.endsToday', lang)
+              : t('lifecycle.endsSoon', lang).replace('{n}', String(daysLeft))}
+          </p>
+        </Notice>
+      ) : null}
       {sale ? (
         <p className="small">
           {t('lifecycle.remaining', lang)} <strong className="mono">{sale.remainingLabel}</strong>

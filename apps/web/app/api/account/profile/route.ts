@@ -2,6 +2,7 @@ import { BUYER_ROLE, FARMER_ROLE, accountProfileSchema } from '@agri-erp/shared'
 
 import { audited, writeAudit } from '../../../../lib/api/audit';
 import { defineRoutes, ok } from '../../../../lib/api/route';
+import { settingValue } from '../../../../lib/api/settings';
 import { prisma } from '../../../../lib/db';
 
 /**
@@ -49,6 +50,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
     bodySchema: accountProfileSchema,
     handler: async ({ auth, body }) => {
       const authUserId = auth.principal.authUserId;
+      const privacy = await settingValue('profile_privacy');
       const row = await audited(prisma, async (tx) => {
         const [before] = await tx.$queryRawUnsafe<Row[]>(
           `SELECT profile_kind, group_kind, activities, updated_at
@@ -56,8 +58,12 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
           authUserId,
         );
         const [after] = await tx.$queryRawUnsafe<Row[]>(
-          `INSERT INTO public.account_profile (auth_user_id, profile_kind, group_kind, activities)
-           VALUES ($1::uuid, $2, $3, $4::text[])
+          // 2026-10-27 (settings phase 2): a NEW profile row takes Profile
+          // privacy's defaults; an existing row's choices are never touched
+          // (the conflict branch does not set them).
+          `INSERT INTO public.account_profile
+             (auth_user_id, profile_kind, group_kind, activities, show_phone, allow_messages)
+           VALUES ($1::uuid, $2, $3, $4::text[], $5, $6)
            ON CONFLICT (auth_user_id) DO UPDATE
              SET profile_kind = EXCLUDED.profile_kind, group_kind = EXCLUDED.group_kind,
                  activities = EXCLUDED.activities, updated_at = now()
@@ -66,6 +72,8 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
           body.profile_kind,
           body.group_kind ?? null,
           body.activities,
+          privacy.show_phone_default,
+          privacy.allow_messages_default,
         );
         await writeAudit(tx, {
           entityType: 'account_profile',

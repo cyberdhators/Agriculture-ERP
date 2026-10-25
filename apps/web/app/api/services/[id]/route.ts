@@ -26,6 +26,7 @@ import {
 } from '../../../../lib/api/market-posts';
 import { defineRoutes, ok } from '../../../../lib/api/route';
 import { prisma } from '../../../../lib/db';
+import { listingValidityDays } from '../../../../lib/api/settings';
 
 /**
  * /api/services/:id. LISTINGS LANE (2026-10-19).
@@ -84,6 +85,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
             null,
             body.available_from ?? current.available_from,
             today,
+            await listingValidityDays(),
           );
         }
         const endChanged =

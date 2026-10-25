@@ -1175,6 +1175,9 @@ export const en = {
   // 2026-10-24 (acceptance QA): the price is needed unless the service is negotiable.
   'svc.priceHint': 'Give a price, or tick Negotiable below.',
   // 2026-10-27: notification preferences and announcements.
+  'help.appealWindow': 'An appeal is accepted within {n} days of the decision.',
+  'lifecycle.endsSoon': 'Ends in {n} days. Renew it to keep it on the market.',
+  'lifecycle.endsToday': 'Ends today. Renew it to keep it on the market.',
   'prefs.title': 'Notification settings',
   'prefs.lead': 'Choose how CORWADO may send you announcements and updates.',
   'prefs.announcements': 'Official announcements',

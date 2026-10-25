@@ -727,9 +727,29 @@ export interface PublicSettings {
   language_region: LanguageRegionSetting;
   reference_lists: Pick<
     ReferenceListsSetting,
-    'listing_validity_days' | 'archived_categories' | 'archived_units' | 'archived_crops'
+    | 'listing_validity_days'
+    | 'listing_reminder_days'
+    | 'archived_categories'
+    | 'archived_units'
+    | 'archived_crops'
   >;
   appeal_window_days: number;
+  /** Shown in the suspend dialog; a policy number, not anybody's data. */
+  suspension_review_days: number;
+}
+
+/**
+ * Whether a year of birth meets the minimum age (null: no minimum). Only the
+ * year is recorded, so the age is taken as this year minus that year -- the
+ * most a person can be, so nobody old enough is refused.
+ */
+export function meetsMinimumAge(
+  yearOfBirth: number,
+  minimumAgeYears: number | null,
+  now: Date = new Date(),
+): boolean {
+  if (minimumAgeYears === null) return true;
+  return now.getUTCFullYear() - yearOfBirth >= minimumAgeYears;
 }
 
 /**

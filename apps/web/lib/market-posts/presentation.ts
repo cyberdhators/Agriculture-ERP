@@ -86,5 +86,23 @@ export const todayLocal = (): string => {
 export const renewalDefault = (today: string = todayLocal()): string =>
   addDays(today, DEFAULT_VALIDITY_DAYS);
 
+/**
+ * 2026-10-27 (settings phase 2): the whole days left before an ACTIVE post's
+ * end date when that is within the reminder period (Marketplace and reference
+ * lists), else null. Zero means it ends today.
+ */
+export function endsWithin(
+  stage: LifecycleStage,
+  endDate: string | null | undefined,
+  reminderDays: number,
+  today: string = todayLocal(),
+): number | null {
+  if (stage !== 'active' || !endDate) return null;
+  const left = Math.round(
+    (Date.parse(`${endDate.slice(0, 10)}T00:00:00Z`) - Date.parse(`${today}T00:00:00Z`)) / 86_400_000,
+  );
+  return left >= 0 && left <= reminderDays ? left : null;
+}
+
 /** A destructive or final move asks first. */
 export const CONFIRMED_ACTIONS: ReadonlySet<LifecycleAction> = new Set(['withdraw', 'complete']);

@@ -33,6 +33,7 @@ import {
 } from '../../../lib/api/market-posts';
 import { created, defineRoutes, ok, paged } from '../../../lib/api/route';
 import { prisma } from '../../../lib/db';
+import { refuseArchivedChoice } from '../../../lib/api/settings';
 
 /**
  * /api/buying-requests -- "I need X of Y in Z by date". LISTINGS LANE
@@ -117,6 +118,8 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
         return ok(presentOwnBuyingRequest(await loadOwnBuyingRequest(prisma, poster, id)));
       }
 
+      // 2026-10-27 (settings phase 2): no archived category or unit on a new request.
+      await refuseArchivedChoice(body);
       if (body.needed_by < todayUtc()) {
         throw invalidField('needed_by', MARKET_POST_MESSAGES.dateInPast);
       }

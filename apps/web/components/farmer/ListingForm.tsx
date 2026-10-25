@@ -36,6 +36,7 @@ import {
   type ListingFormValues,
 } from '@/lib/farmers/listings';
 import { t } from '@/lib/i18n';
+import { offered, useArchivedLists } from '@/lib/settings/client';
 
 import { PageHead } from './AccountShell';
 import styles from './farmer.module.css';
@@ -63,6 +64,8 @@ export function ListingForm({ listingId }: { listingId?: string }) {
   const isEdit = Boolean(listingId);
 
   const [saveError, setSaveError] = useState<string | null>(null);
+  // 2026-10-27 (settings phase 2): archived categories and units.
+  const archivedLists = useArchivedLists();
   const [values, setValues] = useState<ListingFormValues>(() =>
     own
       ? listingToValues(own)
@@ -198,7 +201,8 @@ export function ListingForm({ listingId }: { listingId?: string }) {
   const status = own?.status ?? 'draft';
   const full = photos.length >= LISTING_MAX_PHOTOS;
   const err = (key: ListingField) => (errors[key] ? t(errors[key]!, language) : undefined);
-  const unitOptions = LISTING_UNITS.map((u) => (
+  // 2026-10-27: archived units are not offered for a new listing.
+  const unitOptions = offered(LISTING_UNITS, archivedLists?.archived_units, values.unit, values.price_per).map((u) => (
     <option key={u} value={u}>
       {t(UNIT_KEY[u], language)}
     </option>
@@ -375,7 +379,7 @@ export function ListingForm({ listingId }: { listingId?: string }) {
                     onBlur={() => blur('category')}
                   >
                     <option value="">{t('register.select', language)}</option>
-                    {LISTING_CATEGORIES.map((c) => (
+                    {offered(LISTING_CATEGORIES, archivedLists?.archived_categories, values.category).map((c) => (
                       <option key={c} value={c}>
                         {t(CATEGORY_KEY[c], language)}
                       </option>

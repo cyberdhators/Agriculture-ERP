@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
-import { farmerAuthIdentifier, farmerSelfRegisterSchema } from '@agri-erp/shared';
+import { farmerAuthIdentifier, farmerSelfRegisterSchema, meetsMinimumAge } from '@agri-erp/shared';
 
 import { audited, writeAuditOutcome } from '../../../../lib/api/audit';
 import { authUnavailable, conflict, unprocessable } from '../../../../lib/api/errors';
@@ -9,6 +9,7 @@ import {
   phoneVerificationRequired,
 } from '../../../../lib/api/phone-verification';
 import { createSelfFarmer, placeInPayam } from '../../../../lib/api/self-farmer';
+import { settingValue } from '../../../../lib/api/settings';
 import { created, defineRoutes } from '../../../../lib/api/route';
 import { prisma } from '../../../../lib/db';
 import {
@@ -46,6 +47,18 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
     bodySchema: farmerSelfRegisterSchema,
     handler: async ({ body }) => {
       if (body.consent.granted !== true) throw unprocessable('consent_required');
+
+      // 2026-10-27 (settings phase 2): Registration and recovery's minimum age
+      // (none until one is saved), and the crops still offered on the form.
+      // Registration itself stays open: there is no switch to close it.
+      const registration = await settingValue('registration_recovery');
+      if (!meetsMinimumAge(body.year_of_birth, registration.minimum_age_years)) {
+        throw unprocessable('minimum_age_not_met');
+      }
+      const lists = await settingValue('reference_lists');
+      if (body.primary_crops.some((c) => (lists.archived_crops as string[]).includes(c))) {
+        throw unprocessable('reference_value_archived');
+      }
 
       // The payam is checked before any account exists, so a typo costs the
       // farmer a 422 and costs the system nothing to undo.

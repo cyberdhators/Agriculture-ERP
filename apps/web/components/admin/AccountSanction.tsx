@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from 'react';
 import type { AccountStanding, SanctionKind } from '@agri-erp/shared';
 
 import { formatDate } from '@/lib/format';
+import { usePublicSettings } from '@/lib/settings/client';
 
 import { ProfileModeration } from './ProfileModeration';
 import { ReasonCodeSelect, useReasonCodes } from './ReasonCodeSelect';
@@ -81,6 +82,8 @@ export function AccountSanction({
   const [loadError, setLoadError] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState('');
+  // 2026-10-27 (settings phase 2): the review period and appeal window.
+  const publicSettings = usePublicSettings();
   // 2026-10-25: the reason code chosen from Settings' list, and the text it
   // pre-filled, so choosing another code replaces only an untouched pre-fill.
   const [reasonCode, setReasonCode] = useState('');
@@ -224,6 +227,13 @@ export function AccountSanction({
       confirmDisabled={action === 'suspend' && codesLoading}
     >
       {failure && !failure.fields.reason ? <Notice kind="error">{failure.message}</Notice> : null}
+      {action === 'suspend' ? (
+        <p className="small muted">
+          The account stays suspended until it is restored. Review it within{' '}
+          {publicSettings?.suspension_review_days ?? 30} days; an appeal is accepted for{' '}
+          {publicSettings?.appeal_window_days ?? 30} days (Settings, Notifications and moderation).
+        </p>
+      ) : null}
       {action === 'suspend' ? (
         <ReasonCodeSelect
           target="account"
