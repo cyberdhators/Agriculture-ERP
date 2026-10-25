@@ -4839,8 +4839,8 @@ conversation with the other or send a message; the refusal never says who
 blocked. Blocking while acting for an organisation is refused (the shared
 inbox closes conversations instead). Unblock ends the row; history stays.
 Settings list "Blocked accounts" in both shells. Audited `account.blocked` /
-`account.unblocked`. Gap: starting an advice case with a blocked person is not
-checked (its messages are).
+`account.unblocked`. Starting an advice case with, or accepting a referral
+to, a provider across a live block is refused the same way.
 
 **Expiry reminders (OBSERVED existing scheduler, INFERRED rest).** The
 scheduler in use is Supabase pg_cron (weather, 2026-10-08), so the daily job
@@ -4853,3 +4853,35 @@ get one fixed in-app notice (no title in it), once per post per end date
 (`post_expiry_reminder`, unique; insert first, notify only if inserted); an
 edited end date earns a new reminder. Suspended or removed posters get none.
 Batch of 500. **OWNER: run the install script once against production.**
+
+**Preview before publishing (DOCUMENTED, spec line 72; infographic no. 7).**
+Produce listings (also a new, unsaved one), buying requests and services have
+a Preview button: the form is checked with the shared schema and the post is
+shown as the market shows it (without profile link, Message, phone or
+Report), with Edit / Save draft / Publish. No server change.
+
+**A listing's place (INFERRED).** A new produce listing takes an optional
+`payam_id` (checked against the payam list); without one the account's own is
+used; with neither it is refused ("Choose where the produce is: state, county
+and payam."). The form shows the picker when the account has no place. A
+listing's payam is not changed after creation (gap). A new service from a
+phone account with no place shows a state picker; an edit never sends one.
+
+**Produce posted as an organisation (INFERRED, following 20261027090000).**
+`produce_listing.organization_id` is set when the person acts for an
+organisation and holds `listings.manage`; personal and organisation listings
+are kept apart; the person stays in `farmer_id` and in the audit row; the
+listing shows the organisation's name and its messages go to the
+organisation's shared inbox. Only phone accounts can post organisation produce
+(`farmer_id` is NOT NULL). Gaps: such produce leaves the market if the posting
+farmer is suspended or removed (the market joins the farmer), unlike buying
+requests and services; the card names the organisation without a link.
+
+**Organisation state field.** A state picker on the organisation create and
+edit forms (the column, routes and public page already carried it).
+
+**Public profile expertise (INFERRED, infographic no. 5).** The topics of the
+account's advice profile, only when that profile is published, and an
+"Approved adviser" badge when the account holds an approved, unrevoked
+authorization (shown whether or not the advice profile is published). Nothing
+else from the advice profile is public.

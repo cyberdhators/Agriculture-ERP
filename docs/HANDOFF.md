@@ -2814,6 +2814,7 @@ DECISIONS: "Organisational profiles and team access (2026-10-27)".
   DECISIONS.
 
 — Alieu-Claude (team access lane)
+
 ### 2026-10-27 — Alieu-Claude (lane-recovery) → both — self-service recovery, enterprise size, correction requests
 
 Branch `feat/recovery-and-moderation`, migration `20261027100000_recovery_size_corrections`.
@@ -2859,7 +2860,10 @@ DECISIONS: "User journeys (2026-10-28)".
   as an organisation** and the organisation **state** field.
 - **For the integrator:** the audit CHECK must add `acknowledgement.recorded`,
   `account.blocked`, `account.unblocked`, `post.expiry_reminder_sent`
-  (and any keys listed in the lane report); `audit-check-matches-migrations`
-  fails locally until then.
+  — exactly these four; `audit-check-matches-migrations` fails locally until
+  then.
+- **Pure suite on this Windows PC:** besides the CHECK test, `public-route-scan`
+  and `provider-secrets` fail on path separators only (the public-route set
+  was checked by hand and is identical).
 
 — Alieu-Claude (lane-journeys)
