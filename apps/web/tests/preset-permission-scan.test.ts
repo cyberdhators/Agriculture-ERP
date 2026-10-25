@@ -46,7 +46,8 @@ interface Handler {
 /** Each method block of each route file, with its roles line and its text. */
 const handlers: Handler[] = routeFiles(api).flatMap((full) => {
   const file = relative(api, full).replace(/\\/g, '/');
-  const text = readFileSync(full, 'utf8');
+  // CRLF in a Windows checkout would otherwise hide a roles line from the match.
+  const text = readFileSync(full, 'utf8').replace(/\r\n/g, '\n');
   const parts = text.split(/\n {2}(GET|POST|PUT|PATCH|DELETE): \{/);
   const out: Handler[] = [];
   for (let i = 1; i < parts.length; i += 2) {
