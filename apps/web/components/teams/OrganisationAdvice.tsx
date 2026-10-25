@@ -358,9 +358,7 @@ function Inbox({ base, language }: { base: string; language: Language }) {
     if (!response?.ok) {
       setMessage({
         ok: false,
-        text: response
-          ? await errorText(response, w.notMade)
-          : w.unreachableShort,
+        text: response ? await errorText(response, w.notMade) : w.unreachableShort,
       });
       return;
     }
@@ -403,9 +401,7 @@ function Inbox({ base, language }: { base: string; language: Language }) {
             <strong>{topicLabel(c.topic, language)}</strong>
             <span style={row}>
               {c.unread ? <Badge tone="sorghum">{w.newMessage}</Badge> : null}
-              <Badge tone={c.status === 'closed' ? 'neutral' : 'leaf'}>
-                {w.status[c.status]}
-              </Badge>
+              <Badge tone={c.status === 'closed' ? 'neutral' : 'leaf'}>{w.status[c.status]}</Badge>
             </span>
           </div>
           <p className="small muted" style={{ margin: 0 }}>
@@ -519,9 +515,7 @@ function CaseThread({
       () => null,
     );
     if (!response?.ok) {
-      setFailure(
-        response ? await errorText(response, w.notOpened) : w.offline,
-      );
+      setFailure(response ? await errorText(response, w.notOpened) : w.offline);
       return;
     }
     setDetail(await readData<Detail>(response));
@@ -545,9 +539,7 @@ function CaseThread({
     ).catch(() => null);
     setBusy(false);
     if (!response?.ok) {
-      setFailure(
-        response ? await errorText(response, w.notSent) : w.notSentOffline,
-      );
+      setFailure(response ? await errorText(response, w.notSent) : w.notSentOffline);
       return;
     }
     setText('');
@@ -620,11 +612,7 @@ function CaseThread({
           </div>
         </div>
       ) : c.status !== 'closed' ? (
-        <p className="small muted">
-          {c.assigned_to?.is_me
-            ? w.acceptToReply
-            : w.onlyHandler}
-        </p>
+        <p className="small muted">{c.assigned_to?.is_me ? w.acceptToReply : w.onlyHandler}</p>
       ) : null}
       {c.may.close ? (
         <div style={row}>

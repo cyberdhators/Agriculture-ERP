@@ -42,11 +42,7 @@ import {
  * Each argument is a SQL expression: the profile's activities (text[], may be
  * NULL), and the farmer and buyer record ids (NULL when the account has none).
  */
-export function actorTypesSql(refs: {
-  activities: string;
-  farmer: string;
-  buyer: string;
-}): string {
+export function actorTypesSql(refs: { activities: string; farmer: string; buyer: string }): string {
   return `ARRAY(SELECT DISTINCT a FROM unnest(
               COALESCE(${refs.activities}, '{}'::text[])
               || CASE WHEN ${refs.farmer} IS NOT NULL THEN ARRAY['farmer'] ELSE '{}'::text[] END

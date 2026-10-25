@@ -84,7 +84,9 @@ describe('announcements move on without the page (scheduled job)', () => {
 describe('a suspension may end by itself (daily job)', () => {
   it('the daily cron route also lifts ended suspensions, each half running regardless', () => {
     const route = read('app/api/cron/expiry-reminders/route.ts');
-    expect(route).toMatch(/Promise\.allSettled\(\[\s+runExpiryReminders\(\),\s+liftExpiredSuspensions\(\),/);
+    expect(route).toMatch(
+      /Promise\.allSettled\(\[\s+runExpiryReminders\(\),\s+liftExpiredSuspensions\(\),/,
+    );
   });
 
   it('never lifts a disabled account, and is audited as system with a notice', () => {

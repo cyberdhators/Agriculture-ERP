@@ -74,9 +74,9 @@ describe('suspensionHasEnded', () => {
   });
 
   it('is false before the end, with no end, when disabled, or when not suspended', () => {
-    expect(
-      suspensionHasEnded({ suspendedAt, disabledAt: null, suspensionEnds: future }, now),
-    ).toBe(false);
+    expect(suspensionHasEnded({ suspendedAt, disabledAt: null, suspensionEnds: future }, now)).toBe(
+      false,
+    );
     expect(suspensionHasEnded({ suspendedAt, disabledAt: null, suspensionEnds: null }, now)).toBe(
       false,
     );

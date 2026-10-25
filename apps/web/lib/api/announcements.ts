@@ -785,10 +785,7 @@ export async function processBatch(
  * Marks a sending announcement completed once nothing is queued or in flight,
  * with its audit row. Returns whether it did.
  */
-export async function completeIfDone(
-  by: Authenticated | BatchActor,
-  id: string,
-): Promise<boolean> {
+export async function completeIfDone(by: Authenticated | BatchActor, id: string): Promise<boolean> {
   return audited(prisma, async (tx) => {
     const [row] = await tx.$queryRawUnsafe<{ id: string }[]>(
       `UPDATE public.announcement a

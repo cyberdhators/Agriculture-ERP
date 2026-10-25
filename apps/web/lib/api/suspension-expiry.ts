@@ -73,9 +73,10 @@ async function rebanIfStillSuspended(
 }
 
 export async function liftExpiredSuspensions(): Promise<SuspensionLiftOutcome> {
-  const rows = await prisma.$queryRawUnsafe<
-    { kind: SanctionKind; id: string; auth_user_id: string | null }[]
-  >(DUE_SUSPENSIONS_SQL);
+  const rows =
+    await prisma.$queryRawUnsafe<{ kind: SanctionKind; id: string; auth_user_id: string | null }[]>(
+      DUE_SUSPENSIONS_SQL,
+    );
   const outcome: SuspensionLiftOutcome = {
     due: rows.length,
     lifted: 0,
