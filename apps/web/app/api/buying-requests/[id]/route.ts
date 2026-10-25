@@ -7,6 +7,7 @@ import {
 
 import { audited, writeAudit } from '../../../../lib/api/audit';
 import { notFound } from '../../../../lib/api/errors';
+import { addressCorrections, sentKeys } from '../../../../lib/api/listing-corrections';
 import {
   BUYING_REQUEST_COLUMNS,
   BUYING_REQUEST_FROM,
@@ -115,6 +116,11 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
           before:
             moved || endChanged ? { status: current.status, needed_by: current.needed_by } : null,
           after: changed,
+        });
+        // 2026-10-27: an edit of the content addresses an open correction request.
+        await addressCorrections(tx, 'buying_request', id, sentKeys(body), {
+          actorType: poster.type,
+          actorId: poster.id,
         });
         return loadOwnBuyingRequest(tx, poster, id);
       });

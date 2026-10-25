@@ -15,6 +15,7 @@ import {
   type OwnListingRow,
 } from '../../../../../lib/api/farmer-accounts';
 import { ApiFailure } from '../../../../../lib/api/errors';
+import { addressCorrections, sentKeys } from '../../../../../lib/api/listing-corrections';
 import { checkLifecycle, invalidField, todayUtc } from '../../../../../lib/api/market-posts';
 import { defineRoutes, ok } from '../../../../../lib/api/route';
 import { farmerScope } from '../../../../../lib/api/scope';
@@ -143,6 +144,11 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
               ? { status: current.status, available_until: current.available_until }
               : null,
           after: changed,
+        });
+        // 2026-10-27: an edit of the content addresses an open correction request.
+        await addressCorrections(tx, 'produce_listing', id, sentKeys(body), {
+          actorType: 'farmer',
+          actorId: farmerId,
         });
         return updated!;
       });

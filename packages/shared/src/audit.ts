@@ -191,6 +191,15 @@ export const AUDIT_ACTIONS = [
   'notice.draft_discarded',
   'notice.published',
   'notice.retired',
+  // 2026-10-27: self-service password recovery by SMS code (how, and whether
+  // every other session was ended -- never the password or the number), and a
+  // moderator's correction request on a marketplace post and its being
+  // addressed by the owner's edit (the code, the note, the NAMES of changed
+  // fields). NOT YET IN THE DATABASE CHECK: the integrator's combined CHECK
+  // migration adds them.
+  'account.password_recovered',
+  'listing.correction_requested',
+  'listing.correction_addressed',
 ] as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];

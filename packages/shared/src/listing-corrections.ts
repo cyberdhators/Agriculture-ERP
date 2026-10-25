@@ -29,6 +29,7 @@ export const LISTING_CORRECTION_MESSAGES = {
   targetUnknown: 'Choose a produce listing, a service listing or a buying request.',
   targetIdInvalid: 'That post could not be found.',
   reasonCodeRequired: 'Choose a reason code.',
+  reasonCodeNotOffered: 'Choose a reason code from the list.',
   noteInvalid: `Say what needs correcting, in ${CORRECTION_LIMITS.noteMin} to ${CORRECTION_LIMITS.noteMax} characters.`,
   statusUnknown: 'Choose open or addressed.',
 } as const;

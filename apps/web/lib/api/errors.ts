@@ -251,6 +251,9 @@ export const RULE_MESSAGES = {
     'Choose a version number higher than the one already published for this notice and language.',
   notice_not_draft:
     'Only a draft can be edited, published or discarded. A published or retired notice stays as it was.',
+  // CORRECTIONS (2026-10-27). About a post's state, never a person.
+  correction_already_open:
+    'A correction has already been requested for this post and is waiting for its owner.',
 } as const;
 
 export type RuleKey = keyof typeof RULE_MESSAGES;

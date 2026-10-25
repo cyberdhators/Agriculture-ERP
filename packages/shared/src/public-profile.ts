@@ -242,6 +242,8 @@ export interface PublicProfileView {
   activities: Activity[];
   profile_kind: string;
   group_kind: string | null;
+  /** 2026-10-27: the enterprise size, only when the owner chose to show it; else null. */
+  enterprise_size: string | null;
   location: { state: string | null; payam: string | null };
   about: string | null;
   products: string[];

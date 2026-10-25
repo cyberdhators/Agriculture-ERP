@@ -28,6 +28,8 @@ import {
   ANALYTICS_MESSAGES,
   PUBLIC_PROFILE_MESSAGES,
   SETTINGS_MESSAGES,
+  ACCOUNT_RECOVERY_MESSAGES,
+  LISTING_CORRECTION_MESSAGES,
 } from '../src/index';
 
 /**
@@ -190,6 +192,9 @@ describe('the documented field reasons match the ones the code actually sends', 
     ...Object.values(ADVISER_MESSAGES),
     // SETTINGS, PHASE 1 (2026-10-25)
     ...Object.values(SETTINGS_MESSAGES),
+    // RECOVERY AND CORRECTIONS (2026-10-27)
+    ...Object.values(ACCOUNT_RECOVERY_MESSAGES),
+    ...Object.values(LISTING_CORRECTION_MESSAGES),
     ERROR_MESSAGES.unknownField,
     ERROR_MESSAGES.bodyNotExpectedForm,
   ];
