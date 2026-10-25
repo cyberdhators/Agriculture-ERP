@@ -547,13 +547,16 @@ model Farmer {
   farmerNumber       String             @unique(map: "farmer_farmer_number_key") @map("farmer_number")
   givenName          String             @map("given_name")
   familyName         String             @map("family_name")
-  sex                Sex
-  yearOfBirth        Int                @map("year_of_birth")
+  /// 2026-10-28 (migration 20261028100000): sex, year of birth and the
+  /// location are optional for a self-registered account only
+  /// (farmer_officer_record_complete); a location is whole or absent.
+  sex                Sex?
+  yearOfBirth        Int?               @map("year_of_birth")
   phone              String
   nationalId         String?            @map("national_id")
-  payamId            String             @map("payam_id")
-  countyId           String             @map("county_id")
-  stateId            String             @map("state_id")
+  payamId            String?            @map("payam_id")
+  countyId           String?            @map("county_id")
+  stateId            String?            @map("state_id")
   registeredBy       String?            @map("registered_by") @db.Uuid
   /// Who works this farmer today (C-8R, migration 17). Equals registeredBy
   /// until an administrator reassigns the caseload; it is the column every
@@ -582,9 +585,9 @@ model Farmer {
   suspender       User?     @relation("FarmerSuspendedBy", fields: [suspendedBy], references: [id], map: "farmer_suspended_by_fkey")
   deletedBy          String?            @map("deleted_by") @db.Uuid
 
-  payam        Payam    @relation(fields: [payamId, stateId], references: [id, stateId], map: "farmer_payam_state_consistent_fkey")
-  county       County   @relation(fields: [countyId], references: [id], map: "farmer_county_id_fkey")
-  state        State    @relation(fields: [stateId], references: [id], map: "farmer_state_id_fkey")
+  payam        Payam?   @relation(fields: [payamId, stateId], references: [id, stateId], map: "farmer_payam_state_consistent_fkey")
+  county       County?  @relation(fields: [countyId], references: [id], map: "farmer_county_id_fkey")
+  state        State?   @relation(fields: [stateId], references: [id], map: "farmer_state_id_fkey")
   registrar    Officer? @relation("FarmerRegisteredBy", fields: [registeredBy], references: [id], map: "farmer_registered_by_fkey")
   caseloadOfficer Officer? @relation("FarmerCaseload", fields: [caseloadOfficerId], references: [id], map: "farmer_caseload_officer_id_fkey")
   mergedTarget Farmer?  @relation("FarmerMerge", fields: [mergedInto], references: [id], map: "farmer_merged_into_fkey")
@@ -1101,6 +1104,9 @@ model ProduceListing {
   status             ListingStatus   @default(draft)
   /// 2026-10-20: the phone goes to a buyer only if the farmer chooses (migration 20261020120000).
   showPhone          Boolean         @default(false) @map("show_phone")
+  /// 2026-10-28 (migration 20261028100000): posted for an organisation; the
+  /// person acting stays in farmer_id. The FK is in the migration.
+  organizationId     String?         @map("organization_id") @db.Uuid
   payamId            String          @map("payam_id")
   stateId            String          @map("state_id")
   createdAt          DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
@@ -1372,6 +1378,8 @@ model Buyer {
   suspendedAt     DateTime? @map("suspended_at") @db.Timestamptz(6)
   suspendedReason String?   @map("suspended_reason")
   suspendedBy     String?   @map("suspended_by") @db.Uuid
+  /// 2026-10-28 (migration 20261028100000): the language chosen at sign-up.
+  preferredLanguage Language? @map("preferred_language")
   suspender       User?     @relation("BuyerSuspendedBy", fields: [suspendedBy], references: [id], map: "buyer_suspended_by_fkey")
   deletedBy      String?   @map("deleted_by") @db.Uuid
 
@@ -2141,4 +2149,63 @@ model OrganizationInvitation {
 
   @@index([organizationId, createdAt(sort: Desc)], map: "organization_invitation_org_idx")
   @@map("organization_invitation")
+}
+
+// USER JOURNEYS LANE (2026-10-28). Migration 20261028100000. Read and written
+// with raw SQL; no relation fields, so no existing model is touched.
+
+/// One account blocks another (person level). Unblock ends the row; history stays.
+model AccountBlock {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  blockerAuthUserId String    @map("blocker_auth_user_id") @db.Uuid
+  blockedAuthUserId String    @map("blocked_auth_user_id") @db.Uuid
+  blockedName       String    @map("blocked_name")
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  endedAt           DateTime? @map("ended_at") @db.Timestamptz(6)
+
+  @@map("account_block")
+}
+
+/// An email account's acknowledgement of the terms and privacy notice.
+model AccountAcknowledgement {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  authUserId  String    @map("auth_user_id") @db.Uuid
+  kind        String
+  textVersion String    @map("text_version")
+  language    Language
+  grantedAt   DateTime  @default(now()) @map("granted_at") @db.Timestamptz(6)
+  withdrawnAt DateTime? @map("withdrawn_at") @db.Timestamptz(6)
+
+  @@index([authUserId, grantedAt(sort: Desc)], map: "account_acknowledgement_account_idx")
+  @@map("account_acknowledgement")
+}
+
+/// A code sent to an email address at sign-up (the email twin of phone_verification).
+model EmailVerification {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email      String
+  purpose    String    @default("sign_up")
+  codeHash   String    @map("code_hash")
+  attempts   Int       @default(0) @db.SmallInt
+  expiresAt  DateTime  @map("expires_at") @db.Timestamptz(6)
+  verifiedAt DateTime? @map("verified_at") @db.Timestamptz(6)
+  consumedAt DateTime? @map("consumed_at") @db.Timestamptz(6)
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([email, createdAt(sort: Desc)], map: "email_verification_email_created_idx")
+  @@index([createdAt(sort: Desc)], map: "email_verification_created_idx")
+  @@map("email_verification")
+}
+
+/// One expiry reminder per post per end date (the daily job's idempotency key).
+model PostExpiryReminder {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  postKind  String   @map("post_kind")
+  postId    String   @map("post_id") @db.Uuid
+  endsOn    DateTime @map("ends_on") @db.Date
+  delivered Boolean
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@unique([postKind, postId, endsOn], map: "post_expiry_reminder_once")
+  @@map("post_expiry_reminder")
 }
