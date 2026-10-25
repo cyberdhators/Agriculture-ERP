@@ -5315,6 +5315,5 @@ The owner answered the OWNER TO CONFIRM items of "Official announcements" and
 - **SMS cost: US$0.221 per part.** The fallback of
   `notifications_moderation.sms_cost_per_segment_usd` is now 0.221, so the
   announcement preview estimates cost; still changeable in Settings.
-- **Currency: to be configurable** -- what that means is being confirmed
-  (a display currency with a rate, or recording prices in another currency);
-  not built yet.
+- **Currency: SSP, as it is.** The owner, 2026-10-28: "just leave as it is, SSP ok".
+  Prices stay recorded and shown in South Sudanese pounds; no currency setting.

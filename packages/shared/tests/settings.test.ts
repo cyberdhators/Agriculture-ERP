@@ -392,6 +392,9 @@ describe('settings, phase 2', () => {
     expect(meetsMinimumAge(2008, 18, now)).toBe(true);
     expect(meetsMinimumAge(2009, 18, now)).toBe(false);
     expect(meetsMinimumAge(2020, null, now)).toBe(true);
+    // A skipped year of birth is not a refusal: sign-up stays open.
+    expect(meetsMinimumAge(undefined, 18, now)).toBe(true);
+    expect(meetsMinimumAge(null, 18, now)).toBe(true);
   });
 
   it('the SMS cost is optional and bounded', () => {

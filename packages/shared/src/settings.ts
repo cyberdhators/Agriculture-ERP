@@ -747,13 +747,18 @@ export interface PublicSettings {
  * Whether a year of birth meets the minimum age (null: no minimum). Only the
  * year is recorded, so the age is taken as this year minus that year -- the
  * most a person can be, so nobody old enough is refused.
+ *
+ * 2026-10-28: the year of birth became optional at sign-up (user journeys),
+ * so a person who skips it is not refused: there is nothing to check, and
+ * sign-up must stay open. The minimum applies to a year that is given.
  */
 export function meetsMinimumAge(
-  yearOfBirth: number,
+  yearOfBirth: number | null | undefined,
   minimumAgeYears: number | null,
   now: Date = new Date(),
 ): boolean {
   if (minimumAgeYears === null) return true;
+  if (yearOfBirth === null || yearOfBirth === undefined) return true;
   return now.getUTCFullYear() - yearOfBirth >= minimumAgeYears;
 }
 
