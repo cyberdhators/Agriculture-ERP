@@ -322,7 +322,14 @@ describe('settings, phase 2', () => {
     expect(SETTING_DEFAULTS.registration_recovery).toEqual({
       code_resend_seconds: PHONE_CODE.resendSeconds,
       session_inactivity_minutes: RETURN_SESSION_INACTIVITY_MS / 60_000,
-      minimum_age_years: null,
+      // The owner's decision, 2026-10-28.
+      minimum_age_years: 18,
+    });
+    // The owner's figures, 2026-10-28.
+    expect(SETTING_DEFAULTS.notifications_moderation).toEqual({
+      sms_cost_per_segment_usd: 0.221,
+      suspension_review_days: 30,
+      appeal_window_days: 30,
     });
     expect(SETTING_DEFAULTS.reference_lists.listing_validity_days).toBe(DEFAULT_VALIDITY_DAYS);
     expect(SETTING_DEFAULTS.profile_privacy).toEqual({

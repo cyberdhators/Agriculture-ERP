@@ -5295,3 +5295,26 @@ in that period. OBSERVED: the writer's chart parts read back in the pure tests
 (relationships, content types, sheet references, cached values). NOT observed:
 opening the file in Excel or LibreOffice -- check one real export before
 acceptance. Gap: the commodity filter does not reach services or conversations.
+
+## Owner decisions on announcements and settings (2026-10-28)
+
+The owner answered the OWNER TO CONFIRM items of "Official announcements" and
+"Settings, phase 2" (2026-10-27), in writing in the session.
+
+- **Essential announcements: administrators.** Only administrators reach the
+  announcement routes (`roles: ['admin']` and `communications.send`), so only
+  they can mark one essential. No change in code; recorded as decided.
+- **Minimum age for farmer self-registration: 18.** The fallback of
+  `registration_recovery.minimum_age_years` is now 18 (it was none). It
+  applies from deployment, because no version of that setting had been saved
+  (OBSERVED, read-only query of `setting_version`, 2026-10-28). Read from the
+  year of birth, generously; registrations by an officer are not affected.
+  Still changeable in Settings -> Registration and recovery.
+- **Suspension review period and appeal window: 30 days each**, the defaults
+  already in place.
+- **SMS cost: US$0.221 per part.** The fallback of
+  `notifications_moderation.sms_cost_per_segment_usd` is now 0.221, so the
+  announcement preview estimates cost; still changeable in Settings.
+- **Currency: to be configurable** -- what that means is being confirmed
+  (a display currency with a rate, or recording prices in another currency);
+  not built yet.
