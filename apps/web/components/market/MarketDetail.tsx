@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 
+import { RequestCorrectionButton } from '@/components/admin/Corrections';
 import { ListingCard } from '@/components/listings/ListingCard';
 import { ProductPage } from '@/components/listings/ProductPage';
 import { MessageButton } from '@/components/messages/MessageButton';
@@ -191,9 +192,19 @@ export function MarketDetail({
             <section id="moderate" className={styles.moderation}>
               <span className={styles.moderationTitle}>{t('market.moderate', lang)}</span>
               <p className={styles.moderationBody}>{t('market.moderateNote', lang)}</p>
-              <Button variant="danger" onClick={() => setOpen(true)}>
-                {t('market.withdraw', lang)}
-              </Button>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {/* 2026-10-27: an administrator asks the seller to fix the listing; it stays live. */}
+                {role === 'admin' ? (
+                  <RequestCorrectionButton
+                    targetType="produce_listing"
+                    targetId={currentListing.id}
+                    targetTitle={currentListing.title}
+                  />
+                ) : null}
+                <Button variant="danger" onClick={() => setOpen(true)}>
+                  {t('market.withdraw', lang)}
+                </Button>
+              </div>
             </section>
           ) : (
             // 2026-10-20: ask the seller, without either side's phone.

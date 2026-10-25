@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 
+import { RequestCorrectionButton } from '@/components/admin/Corrections';
 import { ReasonCodeSelect } from '@/components/admin/ReasonCodeSelect';
 import { Button, Field, Notice, Stamp, Textarea } from '@/components/ui';
 import { ConfirmationDialog } from '@/components/ui/feedback';
@@ -177,6 +178,15 @@ export function MarketReports() {
                   <a className="small" href={`/market/p/${r.target_id}`}>
                     View profile
                   </a>
+                ) : null}
+                {/* 2026-10-27: ask the poster to fix it; the post stays live. */}
+                {(r.target_type === 'buying_request' || r.target_type === 'service_listing') &&
+                r.target_title ? (
+                  <RequestCorrectionButton
+                    targetType={r.target_type}
+                    targetId={r.target_id}
+                    targetTitle={r.target_title}
+                  />
                 ) : null}
                 {(ACTIONS[r.status] ?? [])
                   .filter((a) => r.target_type !== 'profile' || a.action !== 'remove_listing')

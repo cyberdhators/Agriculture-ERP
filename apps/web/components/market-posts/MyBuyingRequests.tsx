@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { lifecycleStage, type LifecycleAction } from '@agri-erp/shared';
 
+import { CorrectionNotice, CorrectionStamp, useOpenCorrections } from '@/components/account/Corrections';
 import { ButtonLink, EmptyState, Notice } from '@/components/ui';
 import { CATEGORY_KEY, UNIT_KEY, formatSsp } from '@/lib/farmers/listings';
 import type { ListingCategory, ListingUnit } from '@/lib/fixtures/farmers';
@@ -57,6 +58,8 @@ export function MyBuyingRequests({
 }) {
   const [rows, setRows] = useState<BuyingRequest[] | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
+  // 2026-10-27: a moderator's correction requests on these posts.
+  const corrections = useOpenCorrections('buying_request');
 
   const load = useCallback(() => {
     myBuyingRequests()
@@ -89,6 +92,11 @@ export function MyBuyingRequests({
 
   return (
     <>
+      <CorrectionNotice
+        items={corrections.items}
+        lang={lang}
+        editHref={(id) => `${basePath}/${id}/edit`}
+      />
       {failure ? (
         <Notice kind="error">
           <p className="small">{failure}</p>
@@ -108,6 +116,7 @@ export function MyBuyingRequests({
                 <span className={styles.cardTitle} dir="auto">
                   {needLine(r, lang)}
                 </span>
+              {corrections.ids.has(r.id) ? <CorrectionStamp lang={lang} /> : null}
               </div>
               <div className={styles.meta}>
                 <span>{t(CATEGORY_KEY[r.category as ListingCategory], lang)}</span>

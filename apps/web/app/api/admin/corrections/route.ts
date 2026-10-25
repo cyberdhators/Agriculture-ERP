@@ -4,6 +4,7 @@ import {
   decodeCursor,
   encodeCursor,
   toIso,
+  type CorrectionRequestInput,
 } from '@agri-erp/shared';
 
 import { audited, writeAudit } from '../../../../lib/api/audit';
@@ -99,7 +100,8 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   POST: {
     roles: ['admin'],
     bodySchema: correctionRequestSchema,
-    handler: async ({ auth, body }) => {
+    handler: async ({ auth, body: sent }) => {
+      const body: CorrectionRequestInput = sent;
       await requirePermission(auth, 'content.moderate');
       const setting = await reasonCodesSetting(prisma);
       checkListingReasonCode(setting, body.reason_code);
