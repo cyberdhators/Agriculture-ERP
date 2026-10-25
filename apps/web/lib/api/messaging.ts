@@ -127,8 +127,9 @@ const ORG_ADMIN_SQL = (org: string) => `(SELECT m.auth_user_id FROM public.organ
  * an expired post, or one whose owner was removed, is 404 like a missing one.
  */
 const POST_OWNER_SQL: Record<PostKind, string> = {
+  // 2026-10-28: produce posted for an organisation is answered by its shared inbox.
   listing: `SELECT pl.title, f.auth_user_id AS owner_auth_user_id, pl.trading_name AS owner_name,
-      NULL::uuid AS owner_organization_id
+      pl.organization_id AS owner_organization_id
     ${MARKET_FROM} WHERE pl.id = $1::uuid AND ${MARKET_BASE_WHERE}`,
   buying_request: `SELECT br.product_name AS title,
       COALESCE(f.auth_user_id, b.auth_user_id, ${ORG_ADMIN_SQL('og.id')}) AS owner_auth_user_id,

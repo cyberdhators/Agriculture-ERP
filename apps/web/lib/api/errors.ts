@@ -101,6 +101,9 @@ export const RULE_MESSAGES = {
   transition_not_allowed: 'That decision is not available for this record in its current state.',
   reason_required: 'A rejection must carry a reason.',
   merge_target_not_found: 'The farmer named as the original could not be found.',
+  // 2026-10-28: a self-registered account may have no location yet; reach
+  // figures and visits are by place, so verification and visits wait for one.
+  farmer_location_required: 'This farmer has not given a location yet. Ask them to add one first.',
   merge_target_not_eligible: 'The farmer named as the original cannot receive a merge.',
   merge_across_states: 'A farmer cannot be merged into a record in another state.',
   // B7 (C-7.2). Written for someone standing in a field, never the database's words.
@@ -157,6 +160,11 @@ export const RULE_MESSAGES = {
   phone_code_too_many_tries: 'Too many wrong tries. Ask for a new code.',
   phone_code_wrong: 'That code is not right. Check the SMS and try again.',
   phone_not_verified: 'Confirm your phone number with the SMS code first.',
+  // USER JOURNEYS (2026-10-28): the email twin of the phone code.
+  email_code_expired: 'That code has expired or was replaced. Ask for a new code.',
+  email_code_too_many_tries: 'Too many wrong tries. Ask for a new code.',
+  email_code_wrong: 'That code is not right. Check the email and try again.',
+  email_not_verified: 'Confirm your email address with the emailed code first.',
   // B14 (farmer accounts). About an account or a record, never a person.
   farmer_phone_registered: 'That phone number already has a farmer account. Sign in instead.',
   request_already_answered: 'This request has already been answered.',
@@ -288,6 +296,13 @@ export const RULE_MESSAGES = {
   support_case_no_back_to_new: 'A case cannot go back to new. Choose in progress or waiting.',
   support_case_resolution_required: 'Write a resolution note before resolving or closing a case.',
   support_case_assignee_not_staff: 'That person cannot be made responsible for support cases.',
+  // PERSON-LEVEL BLOCK (2026-10-28). Never says which side blocked.
+  account_block_self: 'You cannot block yourself.',
+  account_block_not_found: 'That block has already been lifted.',
+  account_block_personal_only:
+    "Block people from your own messages. In an organisation's inbox, close the conversation instead.",
+  conversation_account_blocked:
+    'Messages cannot be sent between you and this person. If you blocked them, you can unblock them in Settings.',
 } as const;
 
 export type RuleKey = keyof typeof RULE_MESSAGES;

@@ -232,6 +232,17 @@ export const AUDIT_ACTIONS = [
   'listing.removed',
   'support_case.updated',
   'support_case.replied',
+  // 2026-10-28 (user journeys): one account blocks or unblocks another, person
+  // level (ids only, never a name); the daily job's reminder that a post ends
+  // soon (kind, id, end date). NOT YET IN THE DATABASE CHECK: the integrator's
+  // combined CHECK migration adds them.
+  'account.blocked',
+  'account.unblocked',
+  'post.expiry_reminder_sent',
+  // USER JOURNEYS (2026-10-28): an email account's acknowledgement of the
+  // terms and privacy notice at sign-up (version and language only). NOT YET
+  // IN THE DATABASE CHECK: the integrator's combined CHECK migration adds it.
+  'acknowledgement.recorded',
 ] as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];

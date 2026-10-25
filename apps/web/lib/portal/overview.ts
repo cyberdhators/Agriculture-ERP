@@ -83,11 +83,12 @@ function fixtureBreakdowns(rows: readonly Farmer[]): Summary['by'] {
   };
   const cutoff = new Date();
   return {
-    sex: countBy((f) => f.sex),
-    age_band: countBy((f) => ageBandAt(f.year_of_birth, cutoff)),
-    state: countBy((f) => f.state_id),
-    county: countBy((f) => f.payam_id.split('-').slice(0, 2).join('-')),
-    payam: countBy((f) => f.payam_id),
+    // 2026-10-28: fixture rows always carry these; '' keeps the types honest.
+    sex: countBy((f) => f.sex ?? ''),
+    age_band: countBy((f) => (f.year_of_birth === null ? '' : ageBandAt(f.year_of_birth, cutoff))),
+    state: countBy((f) => f.state_id ?? ''),
+    county: countBy((f) => (f.payam_id ?? '').split('-').slice(0, 2).join('-')),
+    payam: countBy((f) => f.payam_id ?? ''),
     crop: [],
   };
 }
@@ -109,14 +110,14 @@ function fixtureOverview(role: Role, reload: () => void): OverviewData {
       farmer_number: f.farmer_number,
       given_name: f.given_name,
       family_name: f.family_name,
-      payam_id: f.payam_id,
+      payam_id: f.payam_id ?? '',
       registered_by: f.registered_by,
       days: daysWaiting(f),
       escalated: isEscalated(f),
     }));
   const cov = new Map<string, CoverageRow>();
   for (const f of scoped) {
-    if (f.verification_status === 'rejected') continue;
+    if (f.verification_status === 'rejected' || !f.payam_id) continue;
     const row = cov.get(f.payam_id) ?? { payamId: f.payam_id, verified: 0, other: 0 };
     row.other += 1;
     if (f.verification_status === 'verified') row.verified += 1;

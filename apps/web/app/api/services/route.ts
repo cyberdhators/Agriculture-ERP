@@ -119,7 +119,12 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
         return ok(presentOwnService(await loadOwnService(prisma, poster, id)));
       }
 
-      const issue = servicePosterIssue(poster.type, body, true);
+      // 2026-10-28: a phone account that gave no location at sign-up names a
+      // state as an email account does (the location is asked for when it is
+      // needed); one with a location keeps its record's.
+      const farmer = poster.type === 'farmer' ? await loadSelf(prisma, poster.id) : null;
+      const placedFarmer = farmer !== null && farmer.state_id !== null;
+      const issue = servicePosterIssue(placedFarmer || !farmer ? poster.type : 'buyer', body, true);
       if (issue) throw invalidField(issue.field, issue.message);
 
       // Where the service is: the farmer record's payam and state, or the
@@ -127,8 +132,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       let payamId: string | null = null;
       let stateId: string;
       let phone: string;
-      if (poster.type === 'farmer') {
-        const farmer = await loadSelf(prisma, poster.id);
+      if (farmer && farmer.state_id !== null) {
         payamId = farmer.payam_id;
         stateId = farmer.state_id;
         phone = body.contact_phone ?? farmer.phone;
@@ -139,7 +143,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
         );
         if (!state) throw invalidField('state_id', MARKET_POST_MESSAGES.stateUnknown);
         stateId = state.id;
-        phone = body.contact_phone ?? (await posterPhone(prisma, poster));
+        phone = body.contact_phone ?? farmer?.phone ?? (await posterPhone(prisma, poster));
       }
 
       const today = todayUtc();

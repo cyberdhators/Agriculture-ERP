@@ -21,6 +21,7 @@ import {
   type BuyingRequestRow,
   type ServiceRow,
 } from '../../../../../lib/api/market-posts';
+import { expertiseOf } from '../../../../../lib/api/public-profile';
 import { PUBLIC_PROFILE_WHERE } from '../../../../../lib/api/public-profile-sql';
 import { defineRoutes, ok } from '../../../../../lib/api/route';
 import { prisma } from '../../../../../lib/db';
@@ -184,6 +185,8 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
         listings: listings.map(presentMarketListing),
         buying_requests: requests.map(presentBuyingRequest),
         services: services.map(presentService),
+        // 2026-10-28 (infographic no. 5): topics of a published advice profile, and the badge.
+        expertise: await expertiseOf(prisma, account.auth_user_id),
       });
     },
   },

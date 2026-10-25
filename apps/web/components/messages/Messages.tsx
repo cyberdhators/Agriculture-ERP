@@ -19,6 +19,7 @@ import { t, type Language, type TKey } from '@/lib/i18n';
 import {
   MessagesError,
   blockConversation,
+  blockPerson,
   listConversations,
   messagesChanged,
   openConversation,
@@ -184,6 +185,9 @@ function Conversation({
   const [waiting, setWaiting] = useState<ChatMessage[]>([]);
   const [problem, setProblem] = useState<'offline' | 'missing' | null>(null);
   const [draft, setDraft] = useState('');
+  /** 2026-10-28: this person is blocked (person level), or the refusal to say why not. */
+  const [personBlocked, setPersonBlocked] = useState(false);
+  const [blockProblem, setBlockProblem] = useState<string | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
   const latest = useRef<string | null>(null);
 
@@ -263,6 +267,17 @@ function Conversation({
     }
   }
 
+  async function blockThePerson() {
+    if (!conversation || !window.confirm(t('msg.blockPersonConfirm', language))) return;
+    setBlockProblem(null);
+    try {
+      await blockPerson(conversation.id);
+      setPersonBlocked(true);
+    } catch (e) {
+      setBlockProblem(e instanceof Error ? e.message : null);
+    }
+  }
+
   if (problem === 'missing') {
     return (
       <div className={styles.page}>
@@ -303,15 +318,24 @@ function Conversation({
               {aboutLine(conversation, language)}
             </Link>
           </div>
-          {conversation.blocked ? null : (
-            <Button variant="ghost" size="small" onClick={() => void block()}>
-              {t('msg.block', language)}
-            </Button>
-          )}
+          <div>
+            {conversation.blocked ? null : (
+              <Button variant="ghost" size="small" onClick={() => void block()}>
+                {t('msg.block', language)}
+              </Button>
+            )}
+            {personBlocked ? null : (
+              <Button variant="ghost" size="small" onClick={() => void blockThePerson()}>
+                {t('msg.blockPerson', language)}
+              </Button>
+            )}
+          </div>
         </header>
       ) : (
         <Skeleton width="50%" height={28} />
       )}
+      {personBlocked ? <Notice kind="info">{t('msg.personBlocked', language)}</Notice> : null}
+      {blockProblem ? <Notice kind="error">{blockProblem}</Notice> : null}
       {problem === 'offline' ? <Notice kind="warn">{t('msg.offlineRead', language)}</Notice> : null}
       {embedded ? null : <p className={styles.safety}>{t('msg.privacy', language)}</p>}
 

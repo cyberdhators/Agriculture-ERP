@@ -761,6 +761,18 @@ export const en = {
   'msg.block': 'Close conversation',
   'msg.blockConfirm':
     'Close this conversation? Neither of you will be able to send more messages in it.',
+  'msg.blockPerson': 'Block this person',
+  'msg.blockPersonConfirm':
+    'Block this person? Neither of you will be able to message the other, here or about any other post, until you unblock them in Settings.',
+  'msg.personBlocked':
+    'You blocked this person. You can unblock them in Settings, Blocked accounts.',
+  'blocks.title': 'Blocked accounts',
+  'blocks.lead':
+    'People you blocked cannot message you or start a conversation with you, and you cannot message them. Unblocking lets you both message again.',
+  'blocks.empty': 'You have not blocked anyone.',
+  'blocks.unblock': 'Unblock',
+  'blocks.since': 'Blocked on',
+  'blocks.failed': 'The list could not be loaded. Check the connection and try again.',
   'msg.offlineRead': 'No signal. Messages will load when you are back online.',
   'msg.notFound': 'This conversation could not be found.',
   'msg.button': 'Message',
@@ -779,6 +791,15 @@ export const en = {
   'listingForm.showPhone': 'Give my phone number to buyers who send a request',
   'listingForm.showPhoneHint': 'Leave it off and buyers reach you by message in the app.',
   'posts.phonePrivate': 'This person prefers messages. Use the Message button.',
+  // 2026-10-28 (user journeys): preview before publishing; where the produce is.
+  'posts.preview': 'Preview',
+  'posts.previewTitle': 'Preview',
+  'posts.previewLead':
+    'This is how your post will look on the market. It is not published until you press Publish.',
+  'posts.previewEdit': 'Edit',
+  'posts.previewSaved': 'Changes are not saved until you press Save.',
+  'listingForm.where': 'Where is the produce?',
+  'listingForm.whereHint': 'Buyers see the payam, county and state, never more.',
   // 2026-10-21: a suspended (or deleted) account trying to sign in.
   'login.suspended': 'This account is suspended or closed. Contact CORWADO for help.',
   // 2026-10-21: "Contact CORWADO" -- the help page.
@@ -1144,6 +1165,8 @@ export const en = {
   'advice.approvedBadge': 'Approved adviser',
   'advice.approvedSince': 'Approved by CORWADO since',
   'advice.approvedOnly': 'Approved advisers only',
+  // 2026-10-28 (infographic no. 5): expertise on a public profile.
+  'profile.expertise': 'Expertise',
   'adviser.title': 'Approved adviser (optional)',
   'adviser.lead':
     'You can ask CORWADO to review your experience and qualifications. If CORWADO approves, your advice profile shows an "Approved adviser" badge. This is optional: your advice profile, your advice requests, buying and selling all work the same whether you apply or not, during the review and after it.',
@@ -1215,6 +1238,12 @@ export const en = {
   'help.statusWaiting': 'Waiting for you',
   'help.statusResolved': 'Resolved',
   'help.statusClosed': 'Closed',
+  'notice.expiryListing.title': 'One of your product listings ends soon',
+  'notice.expiryListing.body': 'Open your listings to renew it or change its end date.',
+  'notice.expiryBuyingRequest.title': 'One of your buying requests ends soon',
+  'notice.expiryBuyingRequest.body': 'Open your buying requests to renew it or change its date.',
+  'notice.expiryService.title': 'One of your services ends soon',
+  'notice.expiryService.body': 'Open your services to renew it or change its end date.',
   'login.forgotLink': 'Reset it with a code by SMS',
   'recover.title': 'Reset your password',
   'recover.lead':

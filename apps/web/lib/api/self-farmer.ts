@@ -3,7 +3,12 @@ import { type FarmerSelfRegister } from '@agri-erp/shared';
 import { type AuditTx, writeAudit } from './audit';
 import { unprocessable } from './errors';
 import { insertProfile } from './farmer-accounts';
-import { allocateFarmerNumber, findDuplicates, recordDuplicates } from './farmers';
+import {
+  allocateFarmerNumber,
+  allocateUnplacedFarmerNumber,
+  findDuplicates,
+  recordDuplicates,
+} from './farmers';
 import { prisma } from '../db';
 
 /**
@@ -17,12 +22,18 @@ import { prisma } from '../db';
 export type SelfFarmerInput = Omit<FarmerSelfRegister, 'password' | 'confirm_password'>;
 
 export interface PlacedPayam {
-  payam: { id: string; county_id: string; state_id: string };
+  /** 2026-10-28: null when the account gave no location at sign-up. */
+  payam: { id: string; county_id: string; state_id: string } | null;
   officerId: string | null;
 }
 
-/** The payam must exist; an officer there, if any, takes the farmer for later verification. */
-export async function placeInPayam(payamId: string): Promise<PlacedPayam> {
+/**
+ * The payam must exist; an officer there, if any, takes the farmer for later
+ * verification. No payam (2026-10-28, optional at sign-up): no location and no
+ * officer -- the account is registered and trades all the same.
+ */
+export async function placeInPayam(payamId: string | null | undefined): Promise<PlacedPayam> {
+  if (!payamId) return { payam: null, officerId: null };
   const [payam] = await prisma.$queryRawUnsafe<
     { id: string; county_id: string; state_id: string }[]
   >('SELECT id, county_id, state_id FROM public.payam_active WHERE id = $1', payamId);
@@ -55,7 +66,9 @@ export async function createSelfFarmer(
 ): Promise<string> {
   const { farmerId, consentId, authUserId, placed, body } = args;
   const { payam, officerId } = placed;
-  const number = await allocateFarmerNumber(tx, payam.county_id);
+  const number = payam
+    ? await allocateFarmerNumber(tx, payam.county_id)
+    : await allocateUnplacedFarmerNumber(tx);
   await tx.$executeRawUnsafe(
     `INSERT INTO public.farmer
        (id, farmer_number, given_name, family_name, sex, year_of_birth, phone, national_id,
@@ -67,17 +80,17 @@ export async function createSelfFarmer(
     number,
     body.given_name,
     body.family_name,
-    body.sex,
-    body.year_of_birth,
+    body.sex ?? null,
+    body.year_of_birth ?? null,
     body.phone,
     // The farmer record's national id keeps its strict shape (C-5.2); any
     // other document lives on the profile.
     body.id_type === 'national_id' && body.id_number && /^[0-9A-Z]{6,20}$/.test(body.id_number)
       ? body.id_number
       : null,
-    payam.id,
-    payam.county_id,
-    payam.state_id,
+    payam?.id ?? null,
+    payam?.county_id ?? null,
+    payam?.state_id ?? null,
     officerId,
     consentId,
     authUserId,
@@ -97,7 +110,7 @@ export async function createSelfFarmer(
     phone: body.phone,
     given_name: body.given_name,
     family_name: body.family_name,
-    payam_id: payam.id,
+    payam_id: payam?.id ?? null,
   });
   if (matches.length > 0) await recordDuplicates(tx, farmerId, matches);
 
@@ -112,9 +125,9 @@ export async function createSelfFarmer(
     after: {
       farmer_number: number,
       registration_source: 'self',
-      payam_id: payam.id,
-      county_id: payam.county_id,
-      state_id: payam.state_id,
+      payam_id: payam?.id ?? null,
+      county_id: payam?.county_id ?? null,
+      state_id: payam?.state_id ?? null,
       caseload_officer_id: officerId,
       ...(args.via === 'buyer_account' ? { from: 'buyer_account' } : {}),
     },

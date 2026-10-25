@@ -1,7 +1,10 @@
 import {
+  ADVICE_TOPICS,
   PROFILE_PHOTO_BUCKET,
   PROFILE_PHOTO_LIMITS,
   type Activity,
+  type AdviceTopic,
+  type PublicExpertise,
   type PublicProfileOwn,
   type PublicProfileStatus,
 } from '@agri-erp/shared';
@@ -188,6 +191,38 @@ export async function postsOf(db: Db, farmerId: string | null, buyerId: string |
     listings: listings.map(presentMarketListing),
     buying_requests: requests.map(presentBuyingRequest),
     services: services.map(presentService),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// EXPERTISE -- from the advice provider profile (2026-10-28, infographic no. 5)
+// ---------------------------------------------------------------------------
+
+/**
+ * What a public profile shows of the account's advice work: the topics of its
+ * PUBLISHED advice provider profile (the provider chose to show them in the
+ * advice directory already), and whether it holds the "Approved adviser"
+ * authorization (approved_at, set by an approval and cleared by a revocation,
+ * never by suspension). A whitelist: nothing else of the provider profile or
+ * of any application -- no qualifications, fees, cases or reviewer's reason.
+ * Topics are filtered to the known list. Public visibility is not endorsement.
+ */
+export async function expertiseOf(db: Db, authUserId: string | null): Promise<PublicExpertise> {
+  if (!authUserId) return { topics: [], approved_adviser: false };
+  const [row] = await db.$queryRawUnsafe<
+    { topics: string[]; published: boolean; approved: boolean }[]
+  >(
+    `SELECT p.topics, (p.status = 'published') AS published,
+            (p.approved_at IS NOT NULL) AS approved
+       FROM public.advice_provider p
+      WHERE p.auth_user_id = $1::uuid AND p.deleted_at IS NULL`,
+    authUserId,
+  );
+  if (!row) return { topics: [], approved_adviser: false };
+  const known = new Set<string>(ADVICE_TOPICS);
+  return {
+    topics: row.published ? (row.topics.filter((x) => known.has(x)) as AdviceTopic[]) : [],
+    approved_adviser: row.approved,
   };
 }
 

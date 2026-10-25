@@ -388,6 +388,19 @@ export {
   type PurchaseRequestPatch,
   type PurchaseRequestStatus,
   type RequestDecision,
+  // USER JOURNEYS (2026-10-28): email sign-up.
+  ACCOUNT_LANGUAGES,
+  EMAIL_CODE,
+  accountLanguageSchema,
+  emailCodeMessage,
+  emailCodeRequestSchema,
+  emailCodeVerifySchema,
+  termsAcknowledgementSchema,
+  type AccountLanguage,
+  type EmailCodeRequest,
+  type EmailCodeSent,
+  type EmailCodeVerify,
+  type TermsAcknowledgement,
 } from './buyer';
 
 // B14 (2026-10-07): farmer accounts, the registration-form profile, farmer-owned

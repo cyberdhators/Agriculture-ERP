@@ -155,6 +155,22 @@ export const ACCOUNT_NOTICES = {
     body: 'You can sign in and use AgriOne again.',
     key: 'notice.accountReenabled',
   },
+  // 2026-10-28: the daily reminder that a post ends soon. Never its title.
+  expiry_listing: {
+    title: 'One of your product listings ends soon',
+    body: 'Open your listings to renew it or change its end date.',
+    key: 'notice.expiryListing',
+  },
+  expiry_buying_request: {
+    title: 'One of your buying requests ends soon',
+    body: 'Open your buying requests to renew it or change its date.',
+    key: 'notice.expiryBuyingRequest',
+  },
+  expiry_service: {
+    title: 'One of your services ends soon',
+    body: 'Open your services to renew it or change its end date.',
+    key: 'notice.expiryService',
+  },
 } as const;
 
 export type AccountNotice = keyof typeof ACCOUNT_NOTICES;
@@ -211,5 +227,8 @@ export function noticeHref(title: string): string | null {
   if (title === n.listing_correction_requested.title) return '/farmer/account/listings';
   if (title === n.listing_removed.title) return '/help';
   if (title === n.support_case_updated.title) return '/help#my-messages';
+  if (title === n.expiry_listing.title) return '/farmer/account/listings';
+  if (title === n.expiry_buying_request.title) return '/farmer/account/buying-requests';
+  if (title === n.expiry_service.title) return '/farmer/account/my-services';
   return null;
 }

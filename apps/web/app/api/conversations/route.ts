@@ -1,6 +1,7 @@
 import { BUYER_ROLE, FARMER_ROLE, startConversationSchema } from '@agri-erp/shared';
 
 import { audited, writeAudit } from '../../../lib/api/audit';
+import { blockedBetween } from '../../../lib/api/blocks';
 import { notFound, unprocessable } from '../../../lib/api/errors';
 import {
   CONVERSATION_COLUMNS,
@@ -94,6 +95,15 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
         }
       }
 
+      // 2026-10-28 (person-level block): either side's live block stops a new
+      // conversation and any message in an existing one. Never says who blocked.
+      if (
+        post.owner_auth_user_id &&
+        (await blockedBetween(prisma, sender, post.owner_auth_user_id))
+      ) {
+        throw unprocessable('conversation_account_blocked');
+      }
+
       const result = await audited(prisma, async (tx) => {
         const findId = async () =>
           (
@@ -161,6 +171,15 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
         if (!conversationId) throw notFound();
         const conversation = await loadConversation(tx, conversationId, viewer, true);
         if (conversation.blocked_at) throw unprocessable('conversation_blocked');
+        if (
+          await blockedBetween(
+            tx,
+            conversation.owner_auth_user_id,
+            conversation.starter_auth_user_id,
+          )
+        ) {
+          throw unprocessable('conversation_account_blocked');
+        }
         const { row: message, fresh } = await insertMessage(tx, {
           id: body.message_id,
           conversationId: conversation.id,

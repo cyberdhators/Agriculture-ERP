@@ -117,6 +117,7 @@ export const FARMER_ACCOUNT_MESSAGES = {
   phoneChangesNothing: 'That is already your phone number.',
   passwordTooShort: 'Choose 6 or more characters you will remember.',
   withdrawReasonInvalid: 'Give the reason the farmer will see, 3 to 300 characters.',
+  detailsEmpty: 'Give at least one detail to save.',
 } as const;
 
 const M = FARMER_ACCOUNT_MESSAGES;
@@ -275,16 +276,25 @@ export const PROFILE_FIELD_NAMES = Object.keys(
 // SELF-REGISTRATION -- POST /api/farmer/register
 // ---------------------------------------------------------------------------
 
+/**
+ * 2026-10-28 (user journeys; the specification, line 38-39): account creation
+ * asks for name, mobile number, password, language and the notice -- nothing
+ * more. Sex, year of birth, location and village are OPTIONAL here: the
+ * optional setup asks for them, and a listing asks where the produce is when
+ * the account has no location. Given at sign-up, they are still captured.
+ * Officer-registered farmers keep every field required (createFarmerSchema;
+ * migration 20261028100000, farmer_officer_record_complete).
+ */
 export const farmerSelfRegisterSchema = z
   .strictObject({
     given_name: givenNameSchema,
     family_name: familyNameSchema,
-    sex: sexSchema,
-    year_of_birth: yearOfBirthSchema,
+    sex: sexSchema.nullable().optional(),
+    year_of_birth: yearOfBirthSchema.nullable().optional(),
     phone: phoneSchema,
     password: farmerPasswordSchema,
     confirm_password: z.string({ error: () => BUYER_MESSAGES.passwordsDiffer }),
-    payam_id: locationCodeSchema,
+    payam_id: locationCodeSchema.nullable().optional(),
     consent: consentInputSchema,
     /**
      * 2026-10-19: the phone-code verification that proves this phone, when
@@ -296,6 +306,7 @@ export const farmerSelfRegisterSchema = z
       .regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
       .optional(),
     ...farmerProfileFields,
+    village: optionalText(120),
   })
   .superRefine((value, ctx) => {
     if (value.password !== value.confirm_password) {
@@ -307,6 +318,24 @@ export const farmerSelfRegisterSchema = z
     }
   });
 export type FarmerSelfRegister = z.infer<typeof farmerSelfRegisterSchema>;
+
+/**
+ * 2026-10-28: the details sign-up no longer asks for, given later in the
+ * optional setup (PATCH /api/farmer/me/details). Each is optional; a field
+ * left out is left as it is. A location, once given, is changed rather than
+ * removed (a farmer record's location is whole or absent).
+ */
+export const farmerDetailsSchema = z
+  .strictObject({
+    sex: sexSchema.optional(),
+    year_of_birth: yearOfBirthSchema.optional(),
+    payam_id: locationCodeSchema.optional(),
+    village: optionalText(120),
+  })
+  .refine((v) => Object.values(v).some((x) => x !== undefined && x !== null), {
+    message: FARMER_ACCOUNT_MESSAGES.detailsEmpty,
+  });
+export type FarmerDetails = z.infer<typeof farmerDetailsSchema>;
 
 /**
  * A buyer starts selling on the same account (2026-10-19, "one account, many
@@ -407,6 +436,12 @@ export const farmerListingSchema = z
   .strictObject({
     id: z.string().uuid(BUYER_MESSAGES.identifierMalformed).optional(),
     ...listingFields,
+    /**
+     * 2026-10-28 (user journeys): where the produce is. Optional; the route
+     * requires it when the farmer record has no location (sign-up no longer
+     * asks for one) and otherwise uses the record's. Create only.
+     */
+    payam_id: locationCodeSchema.optional(),
   })
   .superRefine((value, ctx) => {
     if (value.min_order_quantity != null && value.min_order_quantity > value.quantity) {

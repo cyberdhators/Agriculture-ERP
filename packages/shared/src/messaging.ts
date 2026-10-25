@@ -109,3 +109,25 @@ export function shortName(given: string, family: string): string {
   const f = family.trim();
   return f ? `${g} ${f.charAt(0).toUpperCase()}.` : g;
 }
+
+// ---------------------------------------------------------------------------
+// PERSON-LEVEL BLOCK (2026-10-28, CORWADO's specification: "Provide report,
+// block and support functions"; infographic 7, "Block user").
+// ---------------------------------------------------------------------------
+
+/**
+ * Block the other person in a conversation the caller is part of. The account
+ * to block is never named by the client: it is read from the conversation.
+ */
+export const blockAccountSchema = z.strictObject({
+  conversation_id: idSchema,
+});
+export type BlockAccountInput = z.infer<typeof blockAccountSchema>;
+
+/** One account the caller has blocked, as the settings list shows it. */
+export interface BlockedAccount {
+  id: string;
+  /** The name the caller saw in the conversation. Never a phone or an id. */
+  name: string;
+  blocked_at: string;
+}

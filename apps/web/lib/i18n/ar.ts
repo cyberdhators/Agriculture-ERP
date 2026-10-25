@@ -712,6 +712,17 @@ export const ar: Partial<Record<TKey, string>> = {
   'msg.placeholder': 'اكتب رسالة',
   'msg.send': 'إرسال',
   'msg.waiting': 'في انتظار الشبكة',
+  'msg.blockPerson': 'حظر هذا الشخص',
+  'msg.blockPersonConfirm':
+    'هل تريد حظر هذا الشخص؟ لن يتمكن أي منكما من مراسلة الآخر، هنا أو بخصوص أي منشور آخر، حتى تلغي الحظر من الإعدادات.',
+  'msg.personBlocked': 'لقد حظرت هذا الشخص. يمكنك إلغاء الحظر من الإعدادات، الحسابات المحظورة.',
+  'blocks.title': 'الحسابات المحظورة',
+  'blocks.lead':
+    'لا يستطيع من حظرتهم مراسلتك أو بدء محادثة معك، ولا يمكنك مراسلتهم. إلغاء الحظر يتيح لكما المراسلة من جديد.',
+  'blocks.empty': 'لم تحظر أحداً.',
+  'blocks.unblock': 'إلغاء الحظر',
+  'blocks.since': 'محظور منذ',
+  'blocks.failed': 'تعذّر تحميل القائمة. تحقق من الاتصال وحاول مرة أخرى.',
   'msg.blocked': 'أُغلقت هذه المحادثة. لا يمكن إرسال رسائل أخرى فيها.',
   'msg.block': 'إغلاق المحادثة',
   'msg.blockConfirm': 'هل تريد إغلاق هذه المحادثة؟ لن يتمكن أي منكما من إرسال رسائل أخرى فيها.',
@@ -733,6 +744,14 @@ export const ar: Partial<Record<TKey, string>> = {
   'listingForm.showPhone': 'أعطِ رقم هاتفي للمشترين الذين يرسلون طلباً',
   'listingForm.showPhoneHint': 'اتركه مغلقاً ليتواصل معك المشترون بالرسائل داخل التطبيق.',
   'posts.phonePrivate': 'يفضّل هذا الشخص الرسائل. استخدم زر المراسلة.',
+  // 2026-10-28 (user journeys): preview before publishing; where the produce is.
+  'posts.preview': 'معاينة',
+  'posts.previewTitle': 'معاينة',
+  'posts.previewLead': 'هكذا سيظهر منشورك في السوق. لن يُنشر حتى تضغط "انشر".',
+  'posts.previewEdit': 'تعديل',
+  'posts.previewSaved': 'لا تُحفظ التغييرات حتى تضغط "احفظ".',
+  'listingForm.where': 'أين المنتج؟',
+  'listingForm.whereHint': 'يرى المشترون البايام والمقاطعة والولاية فقط، لا أكثر.',
   // 2026-10-21: a suspended (or deleted) account trying to sign in.
   'login.suspended': 'هذا الحساب موقوف أو مغلق. تواصل مع كوروادو للمساعدة.',
   // 2026-10-21: "Contact CORWADO" -- the help page.
@@ -1091,6 +1110,8 @@ export const ar: Partial<Record<TKey, string>> = {
   'advice.approvedBadge': 'مستشار معتمد',
   'advice.approvedSince': 'معتمد من كوروادو منذ',
   'advice.approvedOnly': 'المستشارون المعتمدون فقط',
+  // 2026-10-28 (infographic no. 5): expertise on a public profile.
+  'profile.expertise': 'مجالات الخبرة',
   'adviser.title': 'مستشار معتمد (اختياري)',
   'adviser.lead':
     'يمكنك أن تطلب من كوروادو مراجعة خبرتك ومؤهلاتك. إذا وافقت كوروادو، يظهر على ملفك الاستشاري شعار "مستشار معتمد". هذا اختياري: ملفك الاستشاري وطلبات الاستشارة والبيع والشراء تعمل كما هي سواء قدّمت أم لا، أثناء المراجعة وبعدها.',
@@ -1159,6 +1180,12 @@ export const ar: Partial<Record<TKey, string>> = {
   'help.statusWaiting': 'بانتظارك',
   'help.statusResolved': 'تم الحل',
   'help.statusClosed': 'مغلقة',
+  'notice.expiryListing.title': 'أحد إعلانات منتجاتك ينتهي قريباً',
+  'notice.expiryListing.body': 'افتح إعلاناتك لتجديده أو تغيير تاريخ انتهائه.',
+  'notice.expiryBuyingRequest.title': 'أحد طلبات الشراء الخاصة بك ينتهي قريباً',
+  'notice.expiryBuyingRequest.body': 'افتح طلبات الشراء لتجديده أو تغيير تاريخه.',
+  'notice.expiryService.title': 'إحدى خدماتك تنتهي قريباً',
+  'notice.expiryService.body': 'افتح خدماتك لتجديدها أو تغيير تاريخ انتهائها.',
   'login.forgotLink': 'أعد تعيينها برمز عبر الرسائل القصيرة',
   'recover.title': 'إعادة تعيين كلمة المرور',
   'recover.lead':

@@ -153,6 +153,8 @@ const SERVER_OWNED = new Set([
   'quantity_sold',
   // The phone's own marker for an unsent change, never a field of the listing.
   'pending',
+  // 2026-10-28: set by the server from the acting organisation, never sent.
+  'organization_id',
 ]);
 
 export function FarmerSessionProvider({
@@ -395,6 +397,8 @@ export function FarmerSessionProvider({
         Object.entries(listing).filter(([k, v]) => !SERVER_OWNED.has(k) && v !== undefined),
       );
       if (onServer) delete (body as Record<string, unknown>).id;
+      // 2026-10-28: the place goes with a create only; an edit keeps the listing's.
+      if (onServer) delete (body as Record<string, unknown>).payam_id;
       const path = onServer ? `/api/farmer/listings/${listing.id}` : '/api/farmer/listings';
       const method = onServer ? 'PATCH' : 'POST';
 

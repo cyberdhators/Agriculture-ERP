@@ -14,9 +14,11 @@ import {
   OWN_LISTING_COLUMNS,
   loadOwnListing,
   loadSelf,
+  ownListingWhere,
   presentOwnListing,
   type OwnListingRow,
 } from '../../../../lib/api/farmer-accounts';
+import { actingWith } from '../../../../lib/api/organizations';
 import { conflict, unprocessable } from '../../../../lib/api/errors';
 import { invalidField, todayUtc } from '../../../../lib/api/market-posts';
 import { created, defineRoutes, ok } from '../../../../lib/api/route';
@@ -35,17 +37,29 @@ import { prisma } from '../../../../lib/db';
  * Every listing, every status: a farmer sees their drafts and their sold
  * produce too. Newest change first. A farmer's own produce is a short list,
  * so it is returned whole.
+ *
+ * 2026-10-28 (user journeys):
+ *   - ACTING FOR AN ORGANISATION (team access follow-up). With the acting
+ *     cookie and listings.manage in that organisation (actingWith re-checks
+ *     both on every request), a new listing is posted for it -- its
+ *     organization_id set and the organisation's name on the market -- and the
+ *     list is the organisation's listings. The person stays in farmer_id and
+ *     in the audit row, as buying requests and services do.
+ *   - WHERE THE PRODUCE IS. Sign-up no longer asks for a location, so a
+ *     record may have none: the body's payam_id is then required. Given, it
+ *     is used (and checked); absent, the record's payam is.
  */
 export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   GET: {
     roles: [FARMER_ROLE],
-    handler: async ({ auth }) => {
+    handler: async ({ auth, request }) => {
       const { farmerId } = farmerScope(auth);
+      const acting = await actingWith(prisma, request, auth, 'listings.manage');
       const rows = await prisma.$queryRawUnsafe<OwnListingRow[]>(
         `SELECT ${OWN_LISTING_COLUMNS} FROM public.produce_listing
-          WHERE farmer_id = $1::uuid AND deleted_at IS NULL
+          WHERE ${ownListingWhere(acting?.organizationId ?? null, '$1')} AND deleted_at IS NULL
           ORDER BY updated_at DESC, id DESC LIMIT 200`,
-        farmerId,
+        acting?.organizationId ?? farmerId,
       );
       return ok(rows.map(presentOwnListing));
     },
@@ -54,9 +68,11 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   POST: {
     roles: [FARMER_ROLE],
     bodySchema: farmerListingSchema,
-    handler: async ({ auth, body }) => {
+    handler: async ({ auth, body, request }) => {
       const { farmerId } = farmerScope(auth);
       const farmer = await loadSelf(prisma, farmerId);
+      const acting = await actingWith(prisma, request, auth, 'listings.manage');
+      const organizationId = acting?.organizationId ?? null;
       const id = body.id ?? randomUUID();
       const [existing] = await prisma.$queryRawUnsafe<{ farmer_id: string }[]>(
         'SELECT farmer_id FROM public.produce_listing WHERE id = $1::uuid',
@@ -68,8 +84,24 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
         // Its current state is returned; nothing is written twice. An id that
         // belongs to another farmer is still a conflict.
         if (existing.farmer_id !== farmerId) throw conflict('farmer_already_exists');
-        return ok(presentOwnListing(await loadOwnListing(prisma, farmerId, id)));
+        return ok(
+          presentOwnListing(await loadOwnListing(prisma, farmerId, id, false, organizationId)),
+        );
       }
+
+      // Where the produce is: the body's payam (checked), else the record's.
+      let place: { payam_id: string; state_id: string } | null = null;
+      if (body.payam_id) {
+        const [payam] = await prisma.$queryRawUnsafe<{ id: string; state_id: string }[]>(
+          'SELECT id, state_id FROM public.payam_active WHERE id = $1',
+          body.payam_id,
+        );
+        if (!payam) throw invalidField('payam_id', MARKET_POST_MESSAGES.stateUnknown);
+        place = { payam_id: payam.id, state_id: payam.state_id };
+      } else if (farmer.payam_id && farmer.state_id) {
+        place = { payam_id: farmer.payam_id, state_id: farmer.state_id };
+      }
+      if (!place) throw invalidField('payam_id', MARKET_POST_MESSAGES.payamRequired);
 
       // LISTINGS LANE (2026-10-19): no verification gate. The owner dropped
       // #127 -- a farmer's listing goes live without staff verification; the
@@ -96,15 +128,16 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
              (id, farmer_id, trading_name, title, category, product_name, description, quantity,
               unit, price_ssp, price_per, negotiable, delivery_available, available_from,
               available_until, harvest_season, pickup_notes, contact_phone, status, payam_id,
-              state_id, quality_grade, min_order_quantity, show_phone)
+              state_id, quality_grade, min_order_quantity, show_phone, organization_id)
            VALUES ($1::uuid, $2::uuid, $3, $4, $5::public.listing_category, $6, $7, $8,
                    $9::public.listing_unit, $10, $11::public.listing_unit, $12, $13, $14::date,
                    $15::date, $16, $17, $18, $19::public.listing_status, $20, $21,
-                   $22::public.listing_grade, $23, $24)
+                   $22::public.listing_grade, $23, $24, $25::uuid)
            RETURNING ${OWN_LISTING_COLUMNS}`,
           id,
           farmerId,
-          body.trading_name,
+          // For an organisation, the market shows the organisation's name.
+          acting?.name ?? body.trading_name,
           body.title,
           body.category,
           body.product_name,
@@ -121,11 +154,12 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
           body.pickup_notes ?? null,
           body.contact_phone ?? farmer.phone,
           status,
-          farmer.payam_id,
-          farmer.state_id,
+          place.payam_id,
+          place.state_id,
           body.quality_grade ?? null,
           body.min_order_quantity ?? null,
           body.show_phone,
+          organizationId,
         );
         await writeAudit(tx, {
           entityType: 'produce_listing',
@@ -138,6 +172,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
             category: body.category,
             status,
             available_until: availableUntil,
+            ...(organizationId ? { organization_id: organizationId } : {}),
           },
         });
         return inserted!;

@@ -23,7 +23,7 @@ export function correctionFrom(farmer: Farmer): CorrectionValues {
     given_name: farmer.given_name,
     family_name: farmer.family_name,
     sex: farmer.sex,
-    year_of_birth: String(farmer.year_of_birth),
+    year_of_birth: farmer.year_of_birth === null ? '' : String(farmer.year_of_birth),
     phone: farmer.phone,
     national_id: farmer.national_id ?? '',
   };
@@ -39,7 +39,7 @@ export function patchDiff(farmer: Farmer, values: CorrectionValues): PatchFarmer
   const year = Number(values.year_of_birth);
   if (given !== farmer.given_name) out.given_name = given;
   if (family !== farmer.family_name) out.family_name = family;
-  if (values.sex !== farmer.sex) out.sex = values.sex;
+  if (values.sex !== null && values.sex !== farmer.sex) out.sex = values.sex;
   if (values.year_of_birth.trim() !== '' && year !== farmer.year_of_birth) out.year_of_birth = year;
   if (phone !== farmer.phone) out.phone = phone;
   if (nid !== (farmer.national_id ?? null)) out.national_id = nid;

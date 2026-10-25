@@ -244,7 +244,8 @@ export function FarmerDossier({ id }: { id: string }) {
    */
   const canRemove = isAdmin && !farmer.merged_into && status !== 'merged' && !removed;
   const survivor = farmer.merged_into ? farmerById(farmer.merged_into) : null;
-  const age = TODAY_YEAR - farmer.year_of_birth;
+  // 2026-10-28: a self-registered account may not have given its year.
+  const age = farmer.year_of_birth === null ? null : TODAY_YEAR - farmer.year_of_birth;
   const showActions = hydrated && canReview(role) && status === 'pending';
   const actionsLive = live && LIVE_VERIFICATION;
 
@@ -345,7 +346,8 @@ export function FarmerDossier({ id }: { id: string }) {
         title={`${farmer.given_name} ${farmer.family_name}`}
         subtitle={
           <span className="mono">
-            {farmer.farmer_number} · {STATE_NAMES[farmer.state_id] ?? farmer.state_id}
+            {farmer.farmer_number} ·{' '}
+            {farmer.state_id ? (STATE_NAMES[farmer.state_id] ?? farmer.state_id) : 'No location'}
           </span>
         }
         actions={
@@ -551,12 +553,15 @@ export function FarmerDossier({ id }: { id: string }) {
               items={[
                 { term: 'Given name', value: <span dir="auto">{farmer.given_name}</span> },
                 { term: 'Family name', value: <span dir="auto">{farmer.family_name}</span> },
-                { term: 'Sex', value: farmer.sex === 'f' ? 'Female' : 'Male' },
+                {
+                  term: 'Sex',
+                  value: farmer.sex === null ? 'Not given' : farmer.sex === 'f' ? 'Female' : 'Male',
+                },
                 {
                   term: 'Year of birth',
                   value: (
                     <span className="mono">
-                      {farmer.year_of_birth} · {age} yrs
+                      {age === null ? 'Not given' : `${farmer.year_of_birth} · ${age} yrs`}
                     </span>
                   ),
                 },
@@ -571,7 +576,9 @@ export function FarmerDossier({ id }: { id: string }) {
                 ...(nationalIdRow(farmer) ? [nationalIdRow(farmer)!] : []),
                 {
                   term: 'Location',
-                  value: `${STATE_NAMES[farmer.state_id] ?? farmer.state_id} › Juba › ${farmerPayamName(farmer.payam_id)}`,
+                  value: farmer.state_id
+                    ? `${STATE_NAMES[farmer.state_id] ?? farmer.state_id} › Juba › ${farmerPayamName(farmer.payam_id)}`
+                    : 'Not given yet',
                 },
                 {
                   term: 'Registration source',
@@ -1208,7 +1215,7 @@ export function FarmerDossier({ id }: { id: string }) {
               {(ids) => (
                 <Select
                   {...ids}
-                  value={correction.sex}
+                  value={correction.sex ?? ''}
                   onChange={(e) =>
                     setCorrection({ ...correction, sex: e.target.value as Farmer['sex'] })
                   }

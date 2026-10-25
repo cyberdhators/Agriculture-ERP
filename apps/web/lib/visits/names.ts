@@ -53,10 +53,10 @@ export function useVisitNames(): VisitNames {
               .map((f) => ({
                 id: f.id,
                 name: `${f.given_name} ${f.family_name}`,
-                payam_id: f.payam_id,
+                payam_id: f.payam_id ?? '',
                 // The route derives county from the farmer row; the form never sends it.
                 county_id: '',
-                state_id: f.state_id,
+                state_id: f.state_id ?? '',
               })),
             ...waiting
               .filter((w) => !known.has(w.id))

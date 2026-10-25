@@ -17,6 +17,8 @@ import {
   buyerPhoneSchema,
   buyerProfilePatchSchema,
   buyerRegistrationSchema,
+  emailCodeRequestSchema,
+  emailCodeVerifySchema,
   canMoveBuyer,
   createOrderSchema,
   marketplaceFilterSchema,
@@ -50,6 +52,7 @@ const validRegistration = () => ({
   organization_name: 'Demo Grain Traders',
   organization_type: 'trader',
   country_code: 'ss',
+  acknowledgement: { text_version: 'terms:v1.0-en;privacy:v1.0-en', language: 'en', granted: true },
 });
 
 describe('buyer registration', () => {
@@ -355,5 +358,48 @@ describe('creating an order (staff)', () => {
     ]) {
       expect(createOrderSchema.safeParse({ ...base, ...extra }).success).toBe(false);
     }
+  });
+});
+
+describe('email sign-up: notice, language and code (2026-10-28)', () => {
+  it('refuses a sign-up whose notice box was not ticked', () => {
+    const body: Record<string, unknown> = { ...validRegistration() };
+    delete body.acknowledgement;
+    expect(fieldsOf(buyerRegistrationSchema.safeParse(body))).toMatchObject({
+      acknowledgement: BUYER_MESSAGES.acknowledgementRequired,
+    });
+    const unticked = buyerRegistrationSchema.safeParse({
+      ...validRegistration(),
+      acknowledgement: { text_version: 'v1.0-en', language: 'en', granted: false },
+    });
+    expect(unticked.success).toBe(false);
+  });
+
+  it('defaults the language to English and refuses an unknown one', () => {
+    expect(buyerRegistrationSchema.parse(validRegistration()).preferred_language).toBe('en');
+    expect(
+      fieldsOf(
+        buyerRegistrationSchema.safeParse({ ...validRegistration(), preferred_language: 'fr' }),
+      ),
+    ).toMatchObject({ preferred_language: BUYER_MESSAGES.languageUnknown });
+  });
+
+  it('takes a six-digit code and a well-formed verification id', () => {
+    const id = '0b6f8a52-4b8a-4c2e-9d55-0f6a1d3e2c11';
+    expect(emailCodeVerifySchema.safeParse({ verification_id: id, code: '123456' }).success).toBe(
+      true,
+    );
+    expect(
+      fieldsOf(emailCodeVerifySchema.safeParse({ verification_id: id, code: '12345' })),
+    ).toMatchObject({ code: BUYER_MESSAGES.emailCodeShape });
+    expect(
+      fieldsOf(emailCodeVerifySchema.safeParse({ verification_id: 'x', code: '123456' })),
+    ).toMatchObject({ verification_id: BUYER_MESSAGES.emailCodeIdInvalid });
+  });
+
+  it('lower-cases the address a code is sent to', () => {
+    expect(emailCodeRequestSchema.parse({ email: 'Buyer@Example.Invalid' }).email).toBe(
+      'buyer@example.invalid',
+    );
   });
 });

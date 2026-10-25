@@ -22,7 +22,7 @@ export function WeatherTile({
   language,
   forecastOpen = false,
 }: {
-  payamId: string;
+  payamId: string | null;
   language: Language;
   forecastOpen?: boolean;
 }) {

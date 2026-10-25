@@ -10,6 +10,8 @@ import { useFarmerSession } from '@/lib/farmer-session';
 import { t, type Language } from '@/lib/i18n';
 import { formatPhone } from '@/lib/format';
 
+import { BlockedAccounts } from '@/components/account/BlockedAccounts';
+
 import { PageHead } from './AccountShell';
 import { ChangePhone } from './ChangePhone';
 import styles from './farmer.module.css';
@@ -235,6 +237,11 @@ export function FarmerAccount() {
               />
             ) : null}
           </div>
+        </section>
+
+        {/* 2026-10-28: person-level blocks, with Unblock. */}
+        <section className={styles.settingCard}>
+          <BlockedAccounts language={language} />
         </section>
 
         <section className={styles.settingCard}>

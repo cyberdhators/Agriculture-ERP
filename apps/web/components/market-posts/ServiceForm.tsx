@@ -34,6 +34,7 @@ import {
 } from '@/lib/market-posts/api';
 import { PRICE_UNIT_KEY, SERVICE_TYPE_KEY, todayLocal } from '@/lib/market-posts/presentation';
 
+import { ServiceDetailBody } from './MarketServices';
 import styles from './market-posts.module.css';
 
 interface Values {
@@ -87,6 +88,8 @@ export function ServiceForm({
   defaultLocation = '',
   poster = 'farmer',
   defaultStateId = '',
+  farmerNeedsState = false,
+  payamName = null,
 }: {
   lang: Language;
   id?: string;
@@ -96,8 +99,16 @@ export function ServiceForm({
   /** Who is offering it: a buyer account also chooses a state. */
   poster?: ServicePosterType;
   defaultStateId?: string;
+  /**
+   * 2026-10-28 (user journeys): a phone account whose record has no location
+   * yet names a state for a NEW service, as an email account does (the route
+   * applies the buyer's rule to it). An existing service keeps its state.
+   */
+  farmerNeedsState?: boolean;
+  /** The farmer record's payam, for the preview only. */
+  payamName?: string | null;
 }) {
-  const choosesState = poster === 'buyer';
+  const choosesState = poster === 'buyer' || (farmerNeedsState && !id);
   const router = useRouter();
   const [values, setValues] = useState<Values>({
     trading_name: defaultName,
@@ -120,13 +131,15 @@ export function ServiceForm({
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(Boolean(id));
   const [states, setStates] = useState<{ id: string; name: string }[]>([]);
+  /** 2026-10-28 (user journeys): showing the post as the market will, before it is saved. */
+  const [previewing, setPreviewing] = useState(false);
 
+  // Read for the state picker, and for the preview's state name.
   useEffect(() => {
-    if (!choosesState) return;
     listStates()
       .then(setStates)
       .catch(() => setStates([]));
-  }, [choosesState]);
+  }, []);
 
   useEffect(() => {
     if (!id) return;
@@ -166,21 +179,37 @@ export function ServiceForm({
     return out;
   }
 
+  /** The shared schema's verdict on the form as it stands; errors shown. */
+  function check(payload: Record<string, unknown>): boolean {
+    const schema = choosesState ? buyerServiceListingSchema : farmerServiceListingSchema;
+    const result = schema.safeParse(payload);
+    if (result.success) return true;
+    const next: Record<string, string> = {};
+    for (const issue of result.error.issues) {
+      const key = String(issue.path[0] ?? '');
+      if (key && !next[key]) next[key] = issue.message;
+    }
+    setErrors(next);
+    return false;
+  }
+
+  function openPreview() {
+    setFailure(null);
+    // An edit is checked as a whole new post would be, so the preview is complete.
+    if (!check(body('active'))) {
+      setPreviewing(false);
+      return;
+    }
+    setPreviewing(true);
+    if (typeof window !== 'undefined') window.scrollTo({ top: 0 });
+  }
+
   async function submit(status?: 'draft' | 'active') {
     setFailure(null);
     const payload = body(status);
-    if (!id) {
-      const schema = choosesState ? buyerServiceListingSchema : farmerServiceListingSchema;
-      const check = schema.safeParse(payload);
-      if (!check.success) {
-        const next: Record<string, string> = {};
-        for (const issue of check.error.issues) {
-          const key = String(issue.path[0] ?? '');
-          if (key && !next[key]) next[key] = issue.message;
-        }
-        setErrors(next);
-        return;
-      }
+    if (!id && !check(payload)) {
+      setPreviewing(false);
+      return;
     }
     if (typeof navigator !== 'undefined' && !navigator.onLine) {
       setFailure(t('requests.needsSignal', lang));
@@ -196,6 +225,7 @@ export function ServiceForm({
         setErrors(e.fields);
         setFailure(e.message);
       } else setFailure(t('lifecycle.failed', lang));
+      setPreviewing(false);
     } finally {
       setBusy(false);
     }
@@ -203,6 +233,68 @@ export function ServiceForm({
 
   if (loading) return <p className="muted">{t('market.loading', lang)}</p>;
   const err = (key: keyof Values) => errors[key] || undefined;
+
+  if (previewing) {
+    const now = new Date().toISOString();
+    const row: ServiceListing = {
+      id: id ?? 'preview',
+      poster_type: poster,
+      trading_name: values.trading_name,
+      poster_verified: false,
+      farmer_verified: false,
+      service_type: values.service_type,
+      title: values.title,
+      description: values.description,
+      location: values.location,
+      payam_name: poster === 'farmer' && !choosesState ? payamName : null,
+      state_id: values.state_id,
+      state_name: states.find((s) => s.id === values.state_id)?.name ?? '',
+      available_from: values.available_from,
+      available_until: values.available_until === '' ? null : values.available_until,
+      availability_note: values.availability_note.trim() || null,
+      price_ssp: values.price_ssp === '' ? null : Number(values.price_ssp),
+      price_unit: values.price_ssp === '' ? null : values.price_unit || null,
+      negotiable: values.negotiable,
+      phone_shared: values.show_phone,
+      status: 'active',
+      created_at: now,
+      updated_at: now,
+    };
+    return (
+      <section aria-label={t('posts.previewTitle', lang)}>
+        <Notice kind="info" title={t('posts.previewTitle', lang)}>
+          <p className="small">{t(id ? 'posts.previewSaved' : 'posts.previewLead', lang)}</p>
+        </Notice>
+        {failure ? (
+          <Notice kind="error">
+            <p className="small">{failure}</p>
+          </Notice>
+        ) : null}
+        <div className={styles.detail}>
+          <ServiceDetailBody row={row} lang={lang} preview />
+        </div>
+        <div className={styles.formActions}>
+          <Button variant="ghost" disabled={busy} onClick={() => setPreviewing(false)}>
+            {t('posts.previewEdit', lang)}
+          </Button>
+          {id ? (
+            <Button disabled={busy} onClick={() => void submit()}>
+              {t('listingForm.save', lang)}
+            </Button>
+          ) : (
+            <>
+              <Button variant="secondary" disabled={busy} onClick={() => void submit('draft')}>
+                {t('listingForm.saveDraft', lang)}
+              </Button>
+              <Button disabled={busy} onClick={() => void submit('active')}>
+                {t('lifecycle.publish', lang)}
+              </Button>
+            </>
+          )}
+        </div>
+      </section>
+    );
+  }
 
   return (
     <form
@@ -425,6 +517,9 @@ export function ServiceForm({
         <Link href={listHref} className="small">
           {t('listingForm.cancel', lang)}
         </Link>
+        <Button variant="ghost" disabled={busy} onClick={openPreview}>
+          {t('posts.preview', lang)}
+        </Button>
         {id ? (
           <Button type="submit" disabled={busy}>
             {t('listingForm.save', lang)}

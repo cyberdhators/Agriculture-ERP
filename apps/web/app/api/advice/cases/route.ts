@@ -15,6 +15,7 @@ import {
   type CaseRow,
 } from '../../../../lib/api/advice';
 import { audited, writeAudit, type AuditTx } from '../../../../lib/api/audit';
+import { blockedBetween } from '../../../../lib/api/blocks';
 import { conflict, notFound, unprocessable } from '../../../../lib/api/errors';
 import { parseQuery } from '../../../../lib/api/market-posts';
 import { actorOf, insertMessage, me, myName } from '../../../../lib/api/messaging';
@@ -111,6 +112,10 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       if (!provider) throw notFound();
       if (provider.auth_user_id === requester) throw unprocessable('advice_own_provider');
       if (!provider.open) throw unprocessable('advice_provider_not_published');
+      // 2026-10-28: a person-level block stops an advice case as it stops a
+      // conversation (either side's block; the refusal never says whose).
+      if (await blockedBetween(prisma, requester, provider.auth_user_id))
+        throw unprocessable('conversation_account_blocked');
 
       const row = await audited(prisma, async (tx) => {
         if (await casesToday(tx, requester)) throw unprocessable('advice_case_limit_reached');
