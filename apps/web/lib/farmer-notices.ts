@@ -97,6 +97,23 @@ export const ACCOUNT_NOTICES = {
     body: 'Open Advice to accept or decline the suggestion.',
     key: 'notice.adviceReferral',
   },
+  // 2026-10-27: self-service recovery and a verified change of number.
+  password_recovered: {
+    title: 'Your AgriOne password was changed',
+    body: 'It was reset with a code sent to your phone. If this was not you, contact CORWADO.',
+    key: 'notice.passwordRecovered',
+  },
+  phone_changed: {
+    title: 'The phone number on your account was changed',
+    body: 'Sign in with the new number from now on. If this was not you, contact CORWADO.',
+    key: 'notice.phoneChanged',
+  },
+  // 2026-10-27: a moderator asks for a correction. The note is on the post, never here.
+  listing_correction_requested: {
+    title: 'CORWADO asked you to correct one of your posts',
+    body: 'Open your listings to see what to change. The post stays on the market meanwhile.',
+    key: 'notice.correctionRequested',
+  },
 } as const;
 
 export type AccountNotice = keyof typeof ACCOUNT_NOTICES;
@@ -139,5 +156,9 @@ export function noticeHref(title: string): string | null {
     return '/farmer/account/advice/requests';
   }
   if (title === n.advice_work_updated.title) return '/farmer/account/advice/work';
+  if (title === n.password_recovered.title || title === n.phone_changed.title) {
+    return '/farmer/account/security';
+  }
+  if (title === n.listing_correction_requested.title) return '/farmer/account/listings';
   return null;
 }

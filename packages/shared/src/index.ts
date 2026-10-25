@@ -426,3 +426,7 @@ export * from './public-profile';
 export * from './adviser-approval';
 // 2026-10-25: settings, phase 1 -- versioned settings, notices, reason codes.
 export * from './settings';
+// 2026-10-27: self-service password recovery and a verified change of number.
+export * from './account-recovery';
+// 2026-10-27: a moderator asks for a correction to a marketplace post.
+export * from './listing-corrections';

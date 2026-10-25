@@ -1559,6 +1559,9 @@ model PhoneVerification {
   verifiedAt DateTime? @map("verified_at") @db.Timestamptz(6)
   consumedAt DateTime? @map("consumed_at") @db.Timestamptz(6)
   createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  /// 2026-10-27 (migration 20261027100000): the account a change-of-number
+  /// code was issued to; set for purpose phone_change only.
+  authUserId String?   @map("auth_user_id") @db.Uuid
 
   @@index([phone, createdAt(sort: Desc)], map: "phone_verification_phone_created_idx")
   @@index([createdAt(sort: Desc)], map: "phone_verification_created_idx")
@@ -1591,6 +1594,10 @@ model AccountProfile {
   allowMessages  Boolean   @default(true) @map("allow_messages")
   status         String    @default("draft")
   publishedAt    DateTime? @map("published_at") @db.Timestamptz(6)
+  /// 2026-10-27 (migration 20261027100000): optional enterprise size (micro,
+  /// small, medium, large; null = not stated), shown publicly only if chosen.
+  enterpriseSize     String?  @map("enterprise_size")
+  showEnterpriseSize Boolean  @default(false) @map("show_enterprise_size")
 
   @@map("account_profile")
 }
@@ -1661,6 +1668,30 @@ model ServiceListing {
   deletedBy        String?   @map("deleted_by") @db.Uuid
 
   @@map("service_listing")
+}
+
+/// 2026-10-27 (migration 20261027100000): a moderator asks the owner of a
+/// produce listing, service listing or buying request to correct it. Exactly
+/// one target id, the one targetType names (foreign keys in the migration).
+/// The post stays live; status open -> addressed when the owner edits it.
+model ListingCorrection {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  targetType       String    @map("target_type")
+  produceListingId String?   @map("produce_listing_id") @db.Uuid
+  serviceListingId String?   @map("service_listing_id") @db.Uuid
+  buyingRequestId  String?   @map("buying_request_id") @db.Uuid
+  reasonCode       String    @map("reason_code")
+  note             String
+  status           String    @default("open")
+  requestedBy      String    @map("requested_by") @db.Uuid
+  requestedAt      DateTime  @default(now()) @map("requested_at") @db.Timestamptz(6)
+  addressedAt      DateTime? @map("addressed_at") @db.Timestamptz(6)
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime  @default(now()) @map("updated_at") @db.Timestamptz(6)
+  deletedAt        DateTime? @map("deleted_at") @db.Timestamptz(6)
+  deletedBy        String?   @map("deleted_by") @db.Uuid
+
+  @@map("listing_correction")
 }
 
 /// A report about a buying request or a service listing. No reporter identity.

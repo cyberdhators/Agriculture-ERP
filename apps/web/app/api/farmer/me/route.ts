@@ -2,15 +2,24 @@ import {
   FARMER_ACCOUNT_MESSAGES,
   FARMER_ROLE,
   farmerAuthIdentifier,
-  farmerPhoneChangeSchema,
+  verifiedPhoneChangeSchema,
 } from '@agri-erp/shared';
 
 import { recordVisit } from '../../../../lib/api/access-log';
+import { sendNumberChangedSms, smsLanguage } from '../../../../lib/api/account-recovery';
 import { audited, writeAudit } from '../../../../lib/api/audit';
 import { ApiFailure, conflict } from '../../../../lib/api/errors';
 import { loadSelf } from '../../../../lib/api/farmer-accounts';
+import { notifyAccount } from '../../../../lib/api/notify';
+import {
+  consumeVerification,
+  phoneVerificationRequired,
+  releaseVerification,
+} from '../../../../lib/api/phone-verification';
+import { reauthenticate } from '../../../../lib/api/reauth';
 import { defineRoutes, ok } from '../../../../lib/api/route';
 import { farmerScope } from '../../../../lib/api/scope';
+import { requireReauth } from '../../../../lib/api/staff-access';
 import { prisma } from '../../../../lib/db';
 import { setAuthIdentifier } from '../../../../lib/supabase/admin';
 
@@ -19,8 +28,15 @@ import { setAuthIdentifier } from '../../../../lib/supabase/admin';
  *
  * No id in the address: the record is the session's. The PATCH changes the
  * phone number, which is also the sign-in identifier, so the identifier moves
- * with it. The screen asks for the password and checks it by signing in
- * before calling this; the route changes only what the session owns.
+ * with it. The route changes only what the session owns.
+ *
+ * VERIFIED CHANGE OF NUMBER (2026-10-27, CORWADO's specification). The
+ * password is now checked HERE (reauthenticate, on a throwaway session),
+ * not only in the browser; and when this deployment sends codes, the change
+ * needs a verified code sent to the NEW number (POST /api/farmer/me/phone-code
+ * and its /verify), bound to this account. The OLD number is told by SMS, the
+ * account gets an in-app notice, and the audit row records how it was
+ * verified and whether the SMS went -- never either number.
  */
 export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   GET: {
@@ -37,19 +53,30 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
 
   PATCH: {
     roles: [FARMER_ROLE],
-    bodySchema: farmerPhoneChangeSchema,
-    handler: async ({ auth, body }) => {
+    bodySchema: verifiedPhoneChangeSchema,
+    handler: async ({ auth, body, request }) => {
       const { farmerId } = farmerScope(auth);
+      const authUserId = auth.principal.authUserId;
       const current = await loadSelf(prisma, farmerId);
       if (current.phone === body.phone) {
         throw new ApiFailure(400, 'invalid_input', 'Some of the information sent was not valid.', {
           phone: FARMER_ACCOUNT_MESSAGES.phoneChangesNothing,
         });
       }
+      await requireReauth(await reauthenticate(authUserId, body.password), async () => undefined);
+      // The code sent to the new number, for this account, used up here.
+      const verified = phoneVerificationRequired();
+      if (verified) {
+        await consumeVerification(prisma, body.verification_id, 'phone_change', {
+          phone: body.phone,
+          authUserId,
+        });
+      }
       // The identifier first: if the new phone already has an account, nothing changes.
       try {
-        await setAuthIdentifier(auth.principal.authUserId, farmerAuthIdentifier(body.phone));
+        await setAuthIdentifier(authUserId, farmerAuthIdentifier(body.phone));
       } catch {
+        if (verified && body.verification_id) await releaseVerification(body.verification_id);
         throw conflict('farmer_phone_registered');
       }
       await audited(prisma, async (tx) => {
@@ -69,6 +96,10 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
           current.phone,
           body.phone,
         );
+        // The OLD number is told; the outcome goes in the audit row, never the text.
+        const oldNumberSms = verified
+          ? await sendNumberChangedSms(current.phone, smsLanguage(request))
+          : 'not_sent';
         await writeAudit(tx, {
           entityType: 'farmer',
           entityId: farmerId,
@@ -76,7 +107,16 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
           actorId: farmerId,
           action: 'farmer.updated',
           // Which field changed, never its value: a phone never enters the log.
-          after: { changed: ['phone'], listings_updated: moved.length },
+          after: {
+            changed: ['phone'],
+            listings_updated: moved.length,
+            verified_by: verified ? 'password_and_sms_code' : 'password',
+            old_number_sms: oldNumberSms,
+          },
+        });
+        await notifyAccount(tx, { authUserId, farmerId }, 'phone_changed', {
+          actorType: 'farmer',
+          actorId: farmerId,
         });
       });
       return ok(await loadSelf(prisma, farmerId));

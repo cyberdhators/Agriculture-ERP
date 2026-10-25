@@ -31,6 +31,36 @@ export const ACTIVITIES = [
   'buyer',
 ] as const;
 
+/**
+ * ENTERPRISE SIZE (2026-10-27). The specification: "SME is a size
+ * classification, not an alternative to processor, supplier or trader." So it
+ * is a separate, optional answer beside the activities, offered to a group, a
+ * business or an institution. Null is "not stated". No numeric bands (staff,
+ * turnover) are defined by the specification or DECISIONS, so these are labels
+ * only -- an owner decision to confirm (docs/DECISIONS.md, 2026-10-27).
+ */
+export const ENTERPRISE_SIZES = ['micro', 'small', 'medium', 'large'] as const;
+export type EnterpriseSize = (typeof ENTERPRISE_SIZES)[number];
+
+/** The profile kinds that may state a size. An individual is not an enterprise. */
+export const ENTERPRISE_SIZE_KINDS = ['group', 'business', 'institution'] as const;
+
+export const takesEnterpriseSize = (kind: string): boolean =>
+  (ENTERPRISE_SIZE_KINDS as readonly string[]).includes(kind);
+
+/**
+ * The size a public profile shows: only when the owner chose to show it, a
+ * size is stated, and the kind takes one. Otherwise null, and nothing is shown.
+ */
+export function publicEnterpriseSize(
+  kind: string,
+  size: string | null | undefined,
+  show: boolean | null | undefined,
+): EnterpriseSize | null {
+  if (!show || !size || !takesEnterpriseSize(kind)) return null;
+  return (ENTERPRISE_SIZES as readonly string[]).includes(size) ? (size as EnterpriseSize) : null;
+}
+
 export type ProfileKind = (typeof PROFILE_KINDS)[number];
 export type GroupKind = (typeof GROUP_KINDS)[number];
 export type Activity = (typeof ACTIVITIES)[number];
@@ -41,6 +71,8 @@ export const ACCOUNT_PROFILE_MESSAGES = {
   groupKindOnlyForGroups: 'Only a group has a group kind.',
   activityUnknown: 'Choose activities from the list.',
   activitiesDuplicate: 'Each activity once.',
+  sizeUnknown: 'Choose micro, small, medium or large, or leave it not stated.',
+  sizeNotForIndividuals: 'Only a group, business or institution has an enterprise size.',
 } as const;
 
 export const accountProfileSchema = z
@@ -55,6 +87,15 @@ export const accountProfileSchema = z
       .refine((list) => new Set(list).size === list.length, {
         message: ACCOUNT_PROFILE_MESSAGES.activitiesDuplicate,
       }),
+    // 2026-10-27: optional; absent keeps what was saved, null is "not stated".
+    enterprise_size: z
+      .enum(ENTERPRISE_SIZES, { error: () => ACCOUNT_PROFILE_MESSAGES.sizeUnknown })
+      .nullable()
+      .optional(),
+    /** Whether the public profile shows the size. Off unless the owner turns it on. */
+    show_enterprise_size: z
+      .boolean({ error: () => ACCOUNT_PROFILE_MESSAGES.sizeUnknown })
+      .optional(),
   })
   .superRefine((value, ctx) => {
     const hasGroupKind = value.group_kind !== null && value.group_kind !== undefined;
@@ -70,6 +111,13 @@ export const accountProfileSchema = z
         code: 'custom',
         path: ['group_kind'],
         message: ACCOUNT_PROFILE_MESSAGES.groupKindOnlyForGroups,
+      });
+    }
+    if (!takesEnterpriseSize(value.profile_kind) && value.enterprise_size) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['enterprise_size'],
+        message: ACCOUNT_PROFILE_MESSAGES.sizeNotForIndividuals,
       });
     }
   });
