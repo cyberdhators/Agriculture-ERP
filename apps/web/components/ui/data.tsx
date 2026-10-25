@@ -2,6 +2,8 @@
 
 import type { ReactNode } from 'react';
 
+import { t, type Language } from '@/lib/i18n';
+
 import { Button, Field, Input, Skeleton } from './index';
 import { IconChevronLeft, IconChevronRight, IconInfo } from './icons';
 import styles from './data.module.css';
@@ -42,6 +44,8 @@ export interface StatCardProps {
   attention?: boolean;
   /** Why the figure is missing. Required whenever `value` is null. */
   unmeasuredBecause?: string;
+  /** The "Not measured" tag in the reader's language (2026-10-29). */
+  unmeasuredLabel?: string;
   footer?: ReactNode;
 }
 
@@ -51,6 +55,7 @@ export function StatCard({
   note,
   attention = false,
   unmeasuredBecause,
+  unmeasuredLabel = 'Not measured',
   footer,
 }: StatCardProps) {
   const missing = value === null;
@@ -66,7 +71,7 @@ export function StatCard({
       {missing ? (
         <>
           <span className={styles.unmeasuredTag}>
-            <IconInfo size={13} /> Not measured
+            <IconInfo size={13} /> {unmeasuredLabel}
           </span>
           <p className={styles.statNote}>{unmeasuredBecause}</p>
         </>
@@ -291,6 +296,7 @@ export function Pagination({
   onPrevious,
   canGoBack = false,
   busy = false,
+  language = 'en',
 }: {
   shown: number;
   hasMore: boolean;
@@ -298,20 +304,24 @@ export function Pagination({
   onPrevious?: () => void;
   canGoBack?: boolean;
   busy?: boolean;
+  /** 2026-10-29: the buyer screens speak Arabic too; the staff portal is English. */
+  language?: Language;
 }) {
   return (
     <div className={styles.pager}>
       <span className={styles.pagerNote} aria-live="polite">
-        {shown === 0 ? 'No rows' : `${shown.toLocaleString('en')} shown`}
-        {hasMore ? ' · more available' : ''}
+        {shown === 0
+          ? t('pager.none', language)
+          : t('pager.shown', language).replace('{n}', shown.toLocaleString('en'))}
+        {hasMore ? t('pager.more', language) : ''}
       </span>
       {onPrevious ? (
         <Button variant="secondary" size="small" onClick={onPrevious} disabled={!canGoBack || busy}>
-          <IconChevronLeft size={16} /> Previous
+          <IconChevronLeft size={16} /> {t('pager.previous', language)}
         </Button>
       ) : null}
       <Button variant="secondary" size="small" onClick={onNext} disabled={!hasMore || busy}>
-        Next <IconChevronRight size={16} />
+        {t('pager.next', language)} <IconChevronRight size={16} />
       </Button>
     </div>
   );

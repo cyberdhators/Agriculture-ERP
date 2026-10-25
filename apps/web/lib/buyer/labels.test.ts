@@ -23,10 +23,18 @@ import {
   UNIT_LABELS,
   VERIFICATION_LABELS,
   VERIFICATION_MESSAGES,
+  MONTH_LABELS,
+  categoryLabel,
   formatMonth,
   formatQuantity,
   formatSsp,
   labelOf,
+  monthLabels,
+  orgTypeLabel,
+  paymentLabel,
+  unitLabel,
+  verificationLabel,
+  verificationMessage,
 } from './labels';
 
 /** Every stored value has a word, and no word is kept for a value that is gone. */
@@ -74,5 +82,37 @@ describe('figures', () => {
 
   it('formats a month key for a chart axis', () => {
     expect(formatMonth('2026-10')).toBe('Oct 2026');
+  });
+});
+
+/**
+ * 2026-10-29 (Arabic for the email side): the buyer screens read these words
+ * through lib/i18n in the buyer's language. The English there is exactly the
+ * English here, so the staff portal and the buyer read the same word.
+ */
+describe('the buyer words in both languages', () => {
+  it('the i18n English matches the tables, value for value', () => {
+    for (const s of BUYER_VERIFICATION_STATUSES) {
+      expect(verificationLabel(s, 'en')).toBe(VERIFICATION_LABELS[s]);
+      expect(verificationMessage(s, 'en')).toBe(VERIFICATION_MESSAGES[s]);
+    }
+    for (const o of BUYER_ORGANIZATION_TYPES)
+      expect(orgTypeLabel(o, 'en')).toBe(ORG_TYPE_LABELS[o]);
+    for (const p of PAYMENT_PREFERENCES) expect(paymentLabel(p, 'en')).toBe(PAYMENT_LABELS[p]);
+    for (const c of LISTING_CATEGORIES) expect(categoryLabel(c, 'en')).toBe(CATEGORY_LABELS[c]);
+    for (const u of LISTING_UNITS) expect(unitLabel(u, 'en')).toBe(UNIT_LABELS[u]);
+    expect(monthLabels('en')).toEqual([...MONTH_LABELS]);
+  });
+
+  it('every one has its Arabic', () => {
+    const arabic = /[؀-ۿ]/;
+    for (const s of BUYER_VERIFICATION_STATUSES) {
+      expect(verificationLabel(s, 'ar')).toMatch(arabic);
+      expect(verificationMessage(s, 'ar')).toMatch(arabic);
+    }
+    for (const o of BUYER_ORGANIZATION_TYPES) expect(orgTypeLabel(o, 'ar')).toMatch(arabic);
+    for (const p of PAYMENT_PREFERENCES) expect(paymentLabel(p, 'ar')).toMatch(arabic);
+    for (const c of LISTING_CATEGORIES) expect(categoryLabel(c, 'ar')).toMatch(arabic);
+    for (const m of monthLabels('ar')) expect(m).toMatch(arabic);
   });
 });

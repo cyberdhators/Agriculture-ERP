@@ -4,6 +4,7 @@ import { totpCodeSchema } from '@agri-erp/shared';
 import { useState, type FormEvent } from 'react';
 
 import { Button, Field, Input, Notice } from '@/components/ui';
+import { t, type Language } from '@/lib/i18n';
 import { supabaseBrowser } from '@/lib/supabase/browser';
 
 /**
@@ -15,7 +16,16 @@ import { supabaseBrowser } from '@/lib/supabase/browser';
  *
  * Nothing here decides access: it only lets the person finish signing in.
  */
-export function MfaCodeStep({ onVerified, intro }: { onVerified: () => void; intro: string }) {
+export function MfaCodeStep({
+  onVerified,
+  intro,
+  language = 'en',
+}: {
+  onVerified: () => void;
+  intro: string;
+  /** 2026-10-29: the email sign-in speaks Arabic too; staff screens stay English. */
+  language?: Language;
+}) {
   const [code, setCode] = useState('');
   const [error, setError] = useState<string | undefined>();
   const [busy, setBusy] = useState(false);
@@ -34,17 +44,17 @@ export function MfaCodeStep({ onVerified, intro }: { onVerified: () => void; int
       const factors = await auth.mfa.listFactors();
       const totp = factors.data?.totp.find((f: { status: string }) => f.status === 'verified');
       if (factors.error || !totp) {
-        setError('Your authenticator could not be found. Sign in again, or ask a Super Admin.');
+        setError(t('mfa.notFound', language));
         return;
       }
       const verified = await auth.mfa.challengeAndVerify({ factorId: totp.id, code: parsed.data });
       if (verified.error) {
-        setError('That code was not accepted. Codes change every 30 seconds: try the new one.');
+        setError(t('mfa.rejected', language));
         return;
       }
       onVerified();
     } catch {
-      setError('The sign-in service could not be reached. Try again in a moment.');
+      setError(t('email.login.unreachable', language));
     } finally {
       setBusy(false);
     }
@@ -54,7 +64,7 @@ export function MfaCodeStep({ onVerified, intro }: { onVerified: () => void; int
     <form onSubmit={onSubmit} noValidate style={{ display: 'grid', gap: 'var(--s-3)' }}>
       <p className="small">{intro}</p>
       {error ? <Notice kind="error">{error}</Notice> : null}
-      <Field label="Six-digit code">
+      <Field label={t('mfa.label', language)}>
         {(ids) => (
           <Input
             {...ids}
@@ -68,7 +78,7 @@ export function MfaCodeStep({ onVerified, intro }: { onVerified: () => void; int
         )}
       </Field>
       <Button type="submit" variant="primary" disabled={busy || code.length !== 6}>
-        {busy ? 'Checking…' : 'Continue'}
+        {busy ? t('mfa.checking', language) : t('language.continue', language)}
       </Button>
     </form>
   );

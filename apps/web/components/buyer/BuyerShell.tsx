@@ -8,13 +8,22 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
 
 import { BUYER_HOME_PATH, HOME_PATH, LOGIN_PATH } from '@/lib/auth/paths';
-import { BuyerApiError, getProfile, listNotifications, type BuyerProfile } from '@/lib/buyer/api';
-import { VERIFICATION_LABELS, VERIFICATION_STAMPS } from '@/lib/buyer/labels';
+import {
+  BuyerApiError,
+  getProfile,
+  listNotifications,
+  updateProfile,
+  type BuyerProfile,
+} from '@/lib/buyer/api';
+import { VERIFICATION_STAMPS, verificationLabel } from '@/lib/buyer/labels';
+import { DEFAULT_LANGUAGE, isRtl, t, type Language, type TKey } from '@/lib/i18n';
+import { useDocumentLanguage, useLanguageChoice } from '@/lib/i18n/client';
 import { setCartOwner, useCart } from '@/lib/buyer/cart';
 import { useUnreadMessages } from '@/lib/messages/client';
 import { supabaseBrowser } from '@/lib/supabase/browser';
@@ -36,6 +45,7 @@ import {
   IconSignOut,
   IconStaff,
 } from '../ui/icons';
+import { LanguageButtons } from '../farmer/LanguageSwitch';
 import styles from './buyer.module.css';
 import { ActingAsBar } from '../teams/ActingAsBar';
 
@@ -62,6 +72,12 @@ interface BuyerContextValue {
   refresh: () => Promise<void>;
   unread: number | null;
   refreshUnread: () => void;
+  /**
+   * 2026-10-29: the language the buyer screens speak -- the account's
+   * preferred_language, then this browser's choice; the switch saves both.
+   */
+  language: Language;
+  setLanguage: (lang: Language) => void;
 }
 
 const BuyerContext = createContext<BuyerContextValue | null>(null);
@@ -74,45 +90,56 @@ export function useBuyer(): BuyerContextValue {
 
 const NAV: ReadonlyArray<{
   href: string;
-  label: string;
+  label: TKey;
   icon: (p: { size?: number }) => ReactNode;
 }> = [
-  { href: BUYER_HOME_PATH, label: 'Dashboard', icon: IconDashboard },
-  { href: '/buyer/marketplace', label: 'Marketplace', icon: IconSearch },
+  { href: BUYER_HOME_PATH, label: 'buyer.nav.dashboard', icon: IconDashboard },
+  { href: '/buyer/marketplace', label: 'buyer.nav.marketplace', icon: IconSearch },
   // B14: a buyer deals with the farmer directly, so the cart and the requests
   // are the whole of buying; orders and deliveries are no longer offered.
-  { href: '/buyer/cart', label: 'Cart', icon: IconReports },
-  { href: '/buyer/purchase-requests', label: 'My requests', icon: IconEdit },
+  { href: '/buyer/cart', label: 'buyer.nav.cart', icon: IconReports },
+  { href: '/buyer/purchase-requests', label: 'buyer.nav.myRequests', icon: IconEdit },
   // LISTINGS LANE (2026-10-19): public buying requests ("I need X"), not the
   // requests above, which go to one listing.
-  { href: '/buyer/buying-requests', label: 'Buying requests', icon: IconReports },
+  { href: '/buyer/buying-requests', label: 'buyer.nav.buyingRequests', icon: IconReports },
   // 2026-10-26: any account offers services -- an institute, college,
   // research body, advisory organisation or adviser as well as a farmer.
-  { href: '/buyer/services', label: 'My services', icon: IconEdit },
+  { href: '/buyer/services', label: 'buyer.nav.myServices', icon: IconEdit },
   // 2026-10-20: in-app messaging about posts.
-  { href: '/buyer/messages', label: 'Messages', icon: IconChat },
+  { href: '/buyer/messages', label: 'buyer.nav.messages', icon: IconChat },
   // 2026-10-22: independent advice -- find a provider and ask, or offer it.
   // 2026-10-24 (acceptance QA): My Advisory Work is in the menu too, as on the
   // farmer side; without a profile its page says to offer advice first.
-  { href: '/buyer/advice', label: 'Find advice', icon: IconSearch },
-  { href: '/buyer/advice/requests', label: 'My advice requests', icon: IconChat },
-  { href: '/buyer/advice/offer', label: 'Offer advice', icon: IconStaff },
-  { href: '/buyer/advice/work', label: 'My Advisory Work', icon: IconReports },
-  { href: '/buyer/notifications', label: 'Notifications', icon: IconMail },
-  { href: '/buyer/profile', label: 'Profile', icon: IconStaff },
+  { href: '/buyer/advice', label: 'buyer.nav.findAdvice', icon: IconSearch },
+  { href: '/buyer/advice/requests', label: 'buyer.nav.myAdviceRequests', icon: IconChat },
+  { href: '/buyer/advice/offer', label: 'buyer.nav.offerAdvice', icon: IconStaff },
+  { href: '/buyer/advice/work', label: 'buyer.nav.advisoryWork', icon: IconReports },
+  { href: '/buyer/notifications', label: 'buyer.nav.notifications', icon: IconMail },
+  { href: '/buyer/profile', label: 'buyer.nav.profile', icon: IconStaff },
   // 2026-10-23: public profiles v2 -- draft, preview, publish, photo.
-  { href: '/buyer/public-profile', label: 'My public profile', icon: IconStaff },
+  { href: '/buyer/public-profile', label: 'buyer.nav.publicProfile', icon: IconStaff },
   // 2026-10-19: one account buys and sells (CORWADO).
-  { href: '/buyer/sell', label: 'Sell produce', icon: IconDashboard },
-  { href: '/buyer/about', label: 'About you', icon: IconStaff },
+  { href: '/buyer/sell', label: 'buyer.nav.sell', icon: IconDashboard },
+  { href: '/buyer/about', label: 'buyer.nav.about', icon: IconStaff },
   // 2026-10-27: organisational profiles and team access.
-  { href: '/buyer/organisations', label: 'Organisations', icon: IconStaff },
+  { href: '/buyer/organisations', label: 'buyer.nav.organisations', icon: IconStaff },
   // 2026-10-21: "Contact CORWADO" -- FAQs and a message form (public page).
-  { href: '/help', label: 'Help', icon: IconInfo },
+  { href: '/help', label: 'buyer.nav.help', icon: IconInfo },
 ];
 
-export function BuyerShell({ children }: { children: ReactNode }) {
+export function BuyerShell({
+  children,
+  initialLanguage = DEFAULT_LANGUAGE,
+}: {
+  children: ReactNode;
+  /** From the language cookie, read on the server, so the first paint is in it. */
+  initialLanguage?: Language;
+}) {
   const pathname = usePathname();
+  const [language, chooseLanguage] = useLanguageChoice(initialLanguage);
+  useDocumentLanguage(language);
+  const rtl = isRtl(language);
+  const adopted = useRef(false);
   const [profile, setProfile] = useState<BuyerProfile | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
   const [unread, setUnread] = useState<number | null>(null);
@@ -125,6 +152,12 @@ export function BuyerShell({ children }: { children: ReactNode }) {
       const loaded = await getProfile();
       // The cart is this buyer's, not this browser's (B14).
       setCartOwner(loaded.person.id);
+      // The account's own choice wins once, on arrival; the switch keeps the
+      // two in step from then on.
+      if (!adopted.current) {
+        adopted.current = true;
+        if (loaded.person.preferred_language) chooseLanguage(loaded.person.preferred_language);
+      }
       setProfile(loaded);
       setFailure(null);
     } catch (error) {
@@ -137,9 +170,19 @@ export function BuyerShell({ children }: { children: ReactNode }) {
         window.location.replace(HOME_PATH);
         return;
       }
-      setFailure(error instanceof Error ? error.message : 'Your account could not be loaded.');
+      setFailure(error instanceof Error ? error.message : t('buyer.shell.loadFailed', language));
     }
-  }, [pathname]);
+  }, [pathname, chooseLanguage, language]);
+
+  const setLanguage = useCallback(
+    (lang: Language) => {
+      chooseLanguage(lang);
+      // Saved on the account, so codes and notices follow it too. Best effort:
+      // the screen has already changed.
+      void updateProfile({ preferred_language: lang }).catch(() => undefined);
+    },
+    [chooseLanguage],
+  );
 
   const refreshUnread = useCallback(() => {
     listNotifications(true)
@@ -174,8 +217,8 @@ export function BuyerShell({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo(
-    () => (profile ? { profile, refresh, unread, refreshUnread } : null),
-    [profile, refresh, unread, refreshUnread],
+    () => (profile ? { profile, refresh, unread, refreshUnread, language, setLanguage } : null),
+    [profile, refresh, unread, refreshUnread, language, setLanguage],
   );
 
   const active = NAV.map((n) => n.href)
@@ -184,14 +227,14 @@ export function BuyerShell({ children }: { children: ReactNode }) {
 
   return (
     <ToastProvider>
-      <div className={shell.shell}>
+      <div className={shell.shell} dir={rtl ? 'rtl' : 'ltr'}>
         <a href="#main" className="skip-link">
-          Skip to content
+          {t('shell.skip', language)}
         </a>
 
         <nav
           id="buyer-rail"
-          aria-label="Buyer"
+          aria-label={t('buyer.shell.rail', language)}
           className={[shell.rail, drawerOpen ? shell.railOpen : ''].filter(Boolean).join(' ')}
         >
           <div className={shell.railHead}>
@@ -200,7 +243,7 @@ export function BuyerShell({ children }: { children: ReactNode }) {
             </span>
           </div>
           <div className={shell.railNav}>
-            <h2 className={shell.sectionHeading}>Procurement</h2>
+            <h2 className={shell.sectionHeading}>{t('buyer.shell.procurement', language)}</h2>
             <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
               {NAV.map((item) => {
                 const Icon = item.icon;
@@ -215,19 +258,37 @@ export function BuyerShell({ children }: { children: ReactNode }) {
                       <span className={shell.itemIcon}>
                         <Icon size={19} />
                       </span>
-                      <span className={shell.itemLabel}>{item.label}</span>
+                      <span className={shell.itemLabel}>{t(item.label, language)}</span>
                       {item.href === '/buyer/cart' && cart.length > 0 ? (
-                        <span className={shell.badge} aria-label={`${cart.length} in the cart`}>
+                        <span
+                          className={shell.badge}
+                          aria-label={t('buyer.shell.inCart', language).replace(
+                            '{n}',
+                            String(cart.length),
+                          )}
+                        >
                           {cart.length}
                         </span>
                       ) : null}
                       {item.href === '/buyer/messages' && unreadMessages > 0 ? (
-                        <span className={shell.badge} aria-label={`${unreadMessages} unread`}>
+                        <span
+                          className={shell.badge}
+                          aria-label={t('buyer.shell.unread', language).replace(
+                            '{n}',
+                            String(unreadMessages),
+                          )}
+                        >
                           {unreadMessages}
                         </span>
                       ) : null}
                       {item.href === '/buyer/notifications' && unread !== null && unread > 0 ? (
-                        <span className={shell.badge} aria-label={`${unread} unread`}>
+                        <span
+                          className={shell.badge}
+                          aria-label={t('buyer.shell.unread', language).replace(
+                            '{n}',
+                            String(unread),
+                          )}
+                        >
                           {unread}
                         </span>
                       ) : null}
@@ -242,11 +303,13 @@ export function BuyerShell({ children }: { children: ReactNode }) {
               {profile ? `${profile.person.given_name} ${profile.person.family_name}` : '…'}
             </span>
             <span className={shell.whoRole} dir="auto">
-              {profile?.organization.name ?? 'Buyer'}
+              {profile?.organization.name ?? t('buyer.shell.buyer', language)}
             </span>
+            {/* 2026-10-29: English / العربية, saved on the account. */}
+            <LanguageButtons value={language} onChange={setLanguage} />
             <button type="button" className={shell.signOut} onClick={() => void signOut()}>
               <IconSignOut size={16} />
-              <span>Sign out</span>
+              <span>{t('account.signOut', language)}</span>
             </button>
           </div>
         </nav>
@@ -255,7 +318,7 @@ export function BuyerShell({ children }: { children: ReactNode }) {
           <button
             type="button"
             className={shell.scrimOpen}
-            aria-label="Close the menu"
+            aria-label={t('buyer.shell.closeMenu', language)}
             onClick={() => setDrawerOpen(false)}
           />
         ) : (
@@ -269,7 +332,7 @@ export function BuyerShell({ children }: { children: ReactNode }) {
               className={shell.menuToggle}
               onClick={() => setDrawerOpen(true)}
               aria-controls="buyer-rail"
-              aria-label="Open the menu"
+              aria-label={t('buyer.shell.openMenu', language)}
             >
               <IconMenu size={20} />
             </button>
@@ -279,14 +342,14 @@ export function BuyerShell({ children }: { children: ReactNode }) {
                   so it never runs under the icons. */}
               <span className={shell.pageTitle} dir="auto">
                 <span className={styles.nameFull}>
-                  {profile?.organization.name ?? 'Buyer account'}
+                  {profile?.organization.name ?? t('buyer.shell.account', language)}
                 </span>
                 <span className={styles.nameShort}>
                   {profile
                     ? profile.organization.account_type === 'individual'
                       ? profile.person.given_name
                       : profile.organization.name
-                    : 'Buyer account'}
+                    : t('buyer.shell.account', language)}
                 </span>
               </span>
               {/* On a phone the standing moves under the name: beside the
@@ -294,13 +357,17 @@ export function BuyerShell({ children }: { children: ReactNode }) {
               {profile ? (
                 <span className={styles.stampUnder}>
                   <Stamp kind={VERIFICATION_STAMPS[profile.verification.status]}>
-                    {VERIFICATION_LABELS[profile.verification.status]}
+                    {verificationLabel(profile.verification.status, language)}
                   </Stamp>
                 </span>
               ) : null}
             </div>
             <div className={`${shell.topbarSide} ${styles.topActions}`}>
-              <Link href="/buyer/messages" aria-label="Messages" className={styles.topIcon}>
+              <Link
+                href="/buyer/messages"
+                aria-label={t('buyer.nav.messages', language)}
+                className={styles.topIcon}
+              >
                 <IconChat size={18} />
                 {unreadMessages > 0 ? (
                   <span className={styles.unreadDot}>{unreadMessages}</span>
@@ -308,7 +375,7 @@ export function BuyerShell({ children }: { children: ReactNode }) {
               </Link>
               <Link
                 href="/buyer/notifications"
-                aria-label="Notifications"
+                aria-label={t('buyer.nav.notifications', language)}
                 className={styles.topIcon}
               >
                 <IconMail size={18} />
@@ -319,7 +386,7 @@ export function BuyerShell({ children }: { children: ReactNode }) {
               {profile ? (
                 <span className={styles.stampSide}>
                   <Stamp kind={VERIFICATION_STAMPS[profile.verification.status]}>
-                    {VERIFICATION_LABELS[profile.verification.status]}
+                    {verificationLabel(profile.verification.status, language)}
                   </Stamp>
                 </span>
               ) : null}
@@ -332,7 +399,7 @@ export function BuyerShell({ children }: { children: ReactNode }) {
                 onClick={() => void signOut()}
               >
                 <IconSignOut size={16} />
-                <span className={styles.signOutLabel}>Sign out</span>
+                <span className={styles.signOutLabel}>{t('account.signOut', language)}</span>
               </button>
             </div>
           </header>
@@ -343,17 +410,19 @@ export function BuyerShell({ children }: { children: ReactNode }) {
             ) : value ? (
               <BuyerContext.Provider value={value}>
                 {/* 2026-10-27: who the buyer acts for, when they belong to an organisation. */}
-                <ActingAsBar language="en" />
+                <ActingAsBar language={language} />
                 {children}
               </BuyerContext.Provider>
             ) : (
-              <LoadingState label="Loading your account" rows={4} />
+              <LoadingState label={t('buyer.shell.loading', language)} rows={4} />
             )}
           </main>
 
           <footer className={`${shell.footer} no-print`}>
             <Wordmark size={16} />
-            <span>© {new Date().getFullYear()} AgriOne South Sudan · CORWADO</span>
+            <span>
+              © {new Date().getFullYear()} {t('buyer.shell.footer', language)}
+            </span>
           </footer>
         </div>
       </div>

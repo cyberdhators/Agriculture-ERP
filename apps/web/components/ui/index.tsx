@@ -283,7 +283,8 @@ interface FieldProps {
   label: string;
   hint?: string;
   error?: string | undefined;
-  optional?: boolean;
+  /** True prints "optional"; a string prints that word instead (2026-10-29: Arabic). */
+  optional?: boolean | string;
   children: (ids: {
     id: string;
     'aria-describedby': string | undefined;
@@ -305,7 +306,11 @@ export function Field({ label, hint, error, optional, children }: FieldProps) {
     <div className={styles.field}>
       <label className={styles.fieldLabel} htmlFor={id}>
         {label}
-        {optional ? <span className={styles.fieldOptional}>optional</span> : null}
+        {optional ? (
+          <span className={styles.fieldOptional}>
+            {typeof optional === 'string' ? optional : 'optional'}
+          </span>
+        ) : null}
       </label>
       {children({
         id,

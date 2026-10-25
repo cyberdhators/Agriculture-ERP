@@ -11,6 +11,7 @@ import type {
 } from '@agri-erp/shared';
 
 import type { StampKind } from '@/components/ui';
+import { t, type Language } from '@/lib/i18n';
 
 /**
  * B13 -- every word the buyer screens print for a stored value. Pure, and
@@ -198,3 +199,38 @@ export const formatMonth = (yyyyMm: string): string => {
   const index = Number(month) - 1;
   return `${MONTH_LABELS[index] ?? month} ${year}`;
 };
+
+/*
+ * 2026-10-29 (Arabic for the email side): the same words in the buyer's
+ * language. The English tables above stay the staff portal's; the i18n keys
+ * carry the same English (lib/buyer/labels.test.ts holds the two together).
+ */
+
+export const verificationLabel = (status: BuyerVerificationStatus, lang: Language = 'en') =>
+  t(`buyer.standing.${status}`, lang);
+
+export const verificationMessage = (status: BuyerVerificationStatus, lang: Language = 'en') =>
+  t(`buyer.standingMsg.${status}`, lang);
+
+export const orgTypeLabel = (type: BuyerOrganizationType, lang: Language = 'en') =>
+  t(`buyer.orgType.${type}`, lang);
+
+export const paymentLabel = (pref: PaymentPreference, lang: Language = 'en') =>
+  t(`buyer.pay.${pref}`, lang);
+
+export const categoryLabel = (category: ListingCategory, lang: Language = 'en') =>
+  t(`buyer.cat.${category}`, lang);
+
+/** A stored category that this build may not know: the raw value, never blank. */
+export const categoryLabelOf = (category: string, lang: Language = 'en') =>
+  category in CATEGORY_LABELS
+    ? categoryLabel(category as ListingCategory, lang)
+    : labelOf(CATEGORY_LABELS, category);
+
+export const unitLabel = (unit: ListingUnit, lang: Language = 'en') => t(`unit.${unit}`, lang);
+
+const MONTH_NUMBERS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] as const;
+
+/** The twelve month names, January first, in the buyer's language. */
+export const monthLabels = (lang: Language = 'en'): string[] =>
+  MONTH_NUMBERS.map((m) => t(`buyer.month.${m}`, lang));

@@ -1,14 +1,14 @@
 import type { Metadata } from 'next';
-import { Suspense } from 'react';
 
-import { Messages } from '@/components/messages/Messages';
+import { BuyerMessages } from '@/components/buyer/BuyerPages';
+import { Suspense } from 'react';
 
 export const metadata: Metadata = { title: 'Messages' };
 
 export default function BuyerMessagesPage() {
   return (
     <Suspense>
-      <Messages language="en" />
+      <BuyerMessages />
     </Suspense>
   );
 }

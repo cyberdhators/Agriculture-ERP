@@ -5,14 +5,25 @@ import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 
 import { Wordmark } from '@/components/brand/Wordmark';
+import { LanguageButtons } from '@/components/farmer/LanguageSwitch';
 import { Button, Card, Field, Input, Notice } from '@/components/ui';
 import { loginIdentifier } from '@/lib/auth/identifier';
 import { BUYER_REGISTER_PATH, homeFor } from '@/lib/auth/paths';
-import { serverSignIn, waitInWords } from '@/lib/auth/server-sign-in';
+import { serverSignIn } from '@/lib/auth/server-sign-in';
+import { DEFAULT_LANGUAGE, isRtl, t, type Language } from '@/lib/i18n';
+import { useDocumentLanguage, useLanguageChoice } from '@/lib/i18n/client';
 
 import { MfaCodeStep } from './MfaCodeStep';
 
 import styles from './auth.module.css';
+
+/** "5 minutes", in the reader's language. */
+function waitWords(seconds: number, language: Language): string {
+  const minutes = Math.max(1, Math.ceil(seconds / 60));
+  return minutes === 1
+    ? t('email.login.minute', language)
+    : t('email.login.minutes', language).replace('{n}', String(minutes));
+}
 
 /**
  * Staff sign-in. Email — or, for an extension officer, a phone number, from
@@ -24,12 +35,19 @@ import styles from './auth.module.css';
 export function LoginForm({
   next,
   audience = 'buyer',
+  initialLanguage = DEFAULT_LANGUAGE,
 }: {
   next: string;
   /** 2026-10-09: /login is the buyer sign-in; /admin/login is the staff sign-in. */
   audience?: 'buyer' | 'staff';
+  /** 2026-10-29: the email sign-in speaks English or Arabic; the staff sign-in English. */
+  initialLanguage?: Language;
 }) {
   const staff = audience === 'staff';
+  const [chosen, setLanguage] = useLanguageChoice(initialLanguage);
+  const language: Language = staff ? 'en' : chosen;
+  useDocumentLanguage(language);
+  const w = (key: Parameters<typeof t>[0]) => t(key, language);
   const router = useRouter();
   const [login, setLogin] = useState('');
   const [password, setPassword] = useState('');
@@ -64,12 +82,15 @@ export function LoginForm({
       if (!outcome.ok) {
         setError(
           outcome.reason === 'suspended'
-            ? 'This account is suspended or closed. Contact CORWADO for help.'
+            ? w('login.suspended')
             : outcome.reason === 'wrong'
-              ? 'That email or phone number and password do not match.'
+              ? w('email.login.wrong')
               : outcome.reason === 'locked'
-                ? `Too many attempts. Wait ${waitInWords(outcome.retryAfterSeconds)} and try again.`
-                : 'The sign-in service could not be reached. Try again in a moment.',
+                ? w('email.login.locked').replace(
+                    '{wait}',
+                    waitWords(outcome.retryAfterSeconds, language),
+                  )
+                : w('email.login.unreachable'),
         );
         return;
       }
@@ -79,20 +100,22 @@ export function LoginForm({
       }
       await finish();
     } catch {
-      setError('Sign-in is not available on this deployment. Tell an administrator.');
+      setError(w('email.login.notAvailable'));
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <main className={styles.wrap}>
+    <main className={styles.wrap} dir={isRtl(language) ? 'rtl' : 'ltr'}>
       <Card padded className={styles.card}>
         <div className={styles.brand}>
           <Wordmark size={28} tagline />
         </div>
+        {/* 2026-10-29: English / العربية on the email sign-in; the choice is kept. */}
+        {staff ? null : <LanguageButtons value={language} onChange={setLanguage} />}
         <div>
-          <h1 className={styles.title}>{staff ? 'Staff sign in' : 'Sign in with email'}</h1>
+          <h1 className={styles.title}>{staff ? 'Staff sign in' : w('email.login.title')}</h1>
           {staff ? (
             <p className={styles.hint}>
               For CORWADO staff and extension officers. Staff sign in with their email address;
@@ -100,8 +123,7 @@ export function LoginForm({
             </p>
           ) : (
             <p className={styles.hint}>
-              Use the email address you created your account with. Created it with a phone number?{' '}
-              <a href="/farmer/login">Sign in with your phone</a>.
+              {w('email.login.hint')} <a href="/farmer/login">{w('email.login.phoneLink')}</a>.
             </p>
           )}
         </div>
@@ -109,18 +131,19 @@ export function LoginForm({
         {codeStep ? (
           <MfaCodeStep
             onVerified={() => void finish()}
-            intro="Your account uses two-step sign-in. Enter the six-digit code from your authenticator app."
+            intro={w('email.login.mfaIntro')}
+            language={language}
           />
         ) : null}
 
         {codeStep ? null : error ? (
-          <Notice kind="error" title="Not signed in">
+          <Notice kind="error" title={w('email.login.notSignedIn')}>
             <p className="small">{error}</p>
           </Notice>
         ) : null}
 
         <form className={styles.form} onSubmit={onSubmit} noValidate hidden={codeStep}>
-          <Field label="Email or phone number">
+          <Field label={w('email.login.identifier')}>
             {(ids) => (
               <Input
                 {...ids}
@@ -133,7 +156,7 @@ export function LoginForm({
               />
             )}
           </Field>
-          <Field label="Password">
+          <Field label={w('login.passwordLabel')}>
             {(ids) => (
               <Input
                 {...ids}
@@ -147,7 +170,7 @@ export function LoginForm({
             )}
           </Field>
           <Button type="submit" variant="primary" disabled={busy || !login || !password}>
-            {busy ? 'Signing in…' : 'Sign in'}
+            {busy ? w('email.login.signingIn') : w('login.submit')}
           </Button>
         </form>
         {staff ? (
@@ -163,11 +186,11 @@ export function LoginForm({
         ) : (
           <>
             <p className={styles.hint}>
-              Forgot your password? <a href="/forgot-password">Reset it by email</a>.
+              {w('login.forgotTitle')} <a href="/forgot-password">{w('email.login.resetLink')}</a>.
             </p>
             <p className={styles.hint}>
-              New here? <a href={BUYER_REGISTER_PATH}>Create an account with email</a>, or{' '}
-              <a href="/farmer/register">with your phone number</a>.
+              {w('login.newHere')} <a href={BUYER_REGISTER_PATH}>{w('email.login.createEmail')}</a>
+              {w('email.login.or')} <a href="/farmer/register">{w('email.login.withPhone')}</a>.
             </p>
           </>
         )}
