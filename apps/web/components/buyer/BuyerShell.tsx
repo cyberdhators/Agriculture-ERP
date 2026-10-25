@@ -14,7 +14,7 @@ import {
 
 import { BUYER_HOME_PATH, HOME_PATH, LOGIN_PATH } from '@/lib/auth/paths';
 import { BuyerApiError, getProfile, listNotifications, type BuyerProfile } from '@/lib/buyer/api';
-import { VERIFICATION_LABELS, VERIFICATION_STAMPS } from '@/lib/buyer/labels';
+import { VERIFICATION_LABELS, VERIFICATION_STAMPS, showsStandingStamp } from '@/lib/buyer/labels';
 import { setCartOwner, useCart } from '@/lib/buyer/cart';
 import { useUnreadMessages } from '@/lib/messages/client';
 import { supabaseBrowser } from '@/lib/supabase/browser';
@@ -291,7 +291,8 @@ export function BuyerShell({ children }: { children: ReactNode }) {
               </span>
               {/* On a phone the standing moves under the name: beside the
                   icons there is no room for it and the name both. */}
-              {profile ? (
+              {profile &&
+              showsStandingStamp(profile.organization.account_type, profile.verification.status) ? (
                 <span className={styles.stampUnder}>
                   <Stamp kind={VERIFICATION_STAMPS[profile.verification.status]}>
                     {VERIFICATION_LABELS[profile.verification.status]}
@@ -316,7 +317,8 @@ export function BuyerShell({ children }: { children: ReactNode }) {
                   <span className={styles.unreadDot}>{unread}</span>
                 ) : null}
               </Link>
-              {profile ? (
+              {profile &&
+              showsStandingStamp(profile.organization.account_type, profile.verification.status) ? (
                 <span className={styles.stampSide}>
                   <Stamp kind={VERIFICATION_STAMPS[profile.verification.status]}>
                     {VERIFICATION_LABELS[profile.verification.status]}

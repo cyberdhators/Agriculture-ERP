@@ -77,15 +77,29 @@ export const ACCOUNT_TYPE_LABELS: Record<BuyerAccountType, string> = {
   business: 'Business',
 };
 
+/**
+ * 2026-10-31: these words are an ORGANISATION's verification -- a badge, never
+ * a gate. An individual sees none of them (BuyerShell shows no stamp for one).
+ */
 export const VERIFICATION_LABELS: Record<BuyerVerificationStatus, string> = {
-  pending: 'Pending review',
-  under_review: 'Under review',
-  verified: 'Verified',
-  rejected: 'Not approved',
+  pending: 'Not yet verified',
+  under_review: 'Being checked',
+  verified: 'Verified organisation',
+  rejected: 'Not verified',
   suspended: 'Suspended',
   // Deliberately not "Verified": an individual was never reviewed.
   not_required: 'Active',
 };
+
+/**
+ * Whether the account wears a standing stamp at all (2026-10-31). An
+ * individual is never verified, so an individual in good standing wears none;
+ * a suspension -- account standing, not verification -- still shows.
+ */
+export const showsStandingStamp = (
+  accountType: BuyerAccountType,
+  status: BuyerVerificationStatus,
+): boolean => accountType !== 'individual' || status === 'suspended';
 
 export const VERIFICATION_STAMPS: Record<BuyerVerificationStatus, StampKind> = {
   pending: 'pending',
@@ -103,16 +117,16 @@ export const VERIFICATION_STAMPS: Record<BuyerVerificationStatus, StampKind> = {
  */
 export const VERIFICATION_MESSAGES: Record<BuyerVerificationStatus, string> = {
   pending:
-    'You can browse and send purchase requests now. CORWADO may check your organisation later and add a Verified badge.',
+    'You can browse and send purchase requests now. CORWADO may check your organisation and add a "Verified organisation" badge.',
   under_review:
-    'Your organisation is currently under review for a Verified badge. You can browse and send purchase requests meanwhile.',
-  verified: 'Your buyer account is verified. You can send purchase requests.',
+    'Your organisation is currently under review for a "Verified organisation" badge, and CORWADO may ask you for more information. You can browse and send purchase requests meanwhile.',
+  verified:
+    'Your organisation is verified: a "Verified organisation" badge shows on its posts and profile.',
   rejected:
-    'Your buyer account was not approved. Your history remains readable; the marketplace is closed to this account. Contact CORWADO if you think this is a mistake.',
+    'CORWADO did not verify your organisation, so it shows no badge. You can still browse and send purchase requests. Contact CORWADO if you think this is a mistake.',
   suspended:
     'Your buyer account is suspended. Your history remains readable; the marketplace is closed until CORWADO restores the account.',
-  not_required:
-    'Your individual buyer account is active. Individual accounts need no review: you can browse and send purchase requests.',
+  not_required: 'Your account is active. You can browse and send purchase requests.',
 };
 
 export const REQUEST_STATUS_LABELS: Record<PurchaseRequestStatus, string> = {

@@ -39,6 +39,9 @@ export const PERMISSION_KEYS = [
   'exports.identifiable',
   // 2026-10-27: official announcements and message templates (Communications).
   'communications.send',
+  // 2026-10-31 (the owner): only organisations are verified, by an
+  // Administrator or a Super Admin. Individual accounts are never verified.
+  'organization.verify',
 ] as const;
 
 export type PermissionKey = (typeof PERMISSION_KEYS)[number];
@@ -78,6 +81,8 @@ export const PRESET_PERMISSIONS: Readonly<Record<StaffPreset, readonly Permissio
     'audit.view',
     'reports.view',
     'communications.send',
+    // 2026-10-31: verify organisations (buyer organisations and organisational profiles).
+    'organization.verify',
   ],
   moderator_editor: ['content.moderate', 'content.publish'],
   analyst: ['reports.view'],
@@ -94,7 +99,7 @@ export const PRESET_LABELS: Readonly<Record<StaffPreset, string>> = {
 
 export const PRESET_DESCRIPTIONS: Readonly<Record<StaffPreset, string>> = {
   super_admin: 'Everything, including appointing other Super Admins.',
-  administrator: 'Settings, staff and official announcements, as assigned.',
+  administrator: 'Settings, staff, official announcements and organisation verification, as assigned.',
   moderator_editor: 'Moderate content and listings.',
   analyst: 'View data and reports.',
   support: 'Assist users and resolve issues.',
@@ -111,6 +116,7 @@ export const PERMISSION_LABELS: Readonly<Record<PermissionKey, string>> = {
   'settings.manage': 'Manage settings',
   'exports.identifiable': 'Export identifiable data',
   'communications.send': 'Send official announcements and manage message templates',
+  'organization.verify': 'Verify organisations',
 };
 
 /**

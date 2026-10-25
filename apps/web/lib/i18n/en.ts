@@ -1160,7 +1160,7 @@ export const en = {
   'pp.tab.requests': 'Buying requests',
   'pp.tab.services': 'Services',
   'pp.featured': 'Featured',
-  'pp.verified': 'Verified',
+  'pp.verified': 'Verified organisation',
   'pp.since': 'Member since',
   'pp.report': 'Report profile',
   'pp.missing': 'This profile is not available.',

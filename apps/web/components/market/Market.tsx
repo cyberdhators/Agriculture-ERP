@@ -5,7 +5,6 @@ import { useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { CategoryGlyph } from '@/components/listings/CategoryGlyph';
-import { VerifiedFarmerBadge } from '@/components/listings/VerifiedFarmerBadge';
 import { ListingCard } from '@/components/listings/ListingCard';
 import { Photo } from '@/components/listings/Photo';
 import {
@@ -524,11 +523,7 @@ export function Market({
                       <td className="num">{formatQuantity(listing, unitLabel)}</td>
                       <td className="num">{formatPrice(listing, unitLabel)}</td>
                       <td>
-                        <span dir="auto">{listing.trading_name}</span>{' '}
-                        <VerifiedFarmerBadge
-                          verified={seller.verification_status === 'verified'}
-                          lang={lang}
-                        />
+                        <span dir="auto">{listing.trading_name}</span>
                       </td>
                       <td>{seller.payam_name}</td>
                       <td className="num">{formatDate(listing.updated_at, lang)}</td>

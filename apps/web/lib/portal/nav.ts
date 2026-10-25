@@ -159,10 +159,10 @@ export const NAV_SECTIONS: readonly NavSection[] = [
         icon: 'staff',
         roles: ['admin'],
         because:
-          'GET and PATCH /api/admin/buyers are administrator-only (B13, C-14B.3) and then ' +
-          'require content.moderate: an administrator holding Moderator + Editor verifies, ' +
-          'rejects or suspends a buyer organisation.',
-        permissions: ['content.moderate'],
+          'GET and PATCH /api/admin/buyers are administrator-only (B13, C-14B.3). 2026-10-31: ' +
+          'a verification decision needs organization.verify (Administrator, Super Admin); ' +
+          'suspending or restoring needs content.moderate (Moderator + Editor).',
+        permissions: ['content.moderate', 'organization.verify'],
       },
     ],
   },
@@ -298,8 +298,9 @@ export const NAV_SECTIONS: readonly NavSection[] = [
         because:
           'GET /api/admin/organizations accepts the staff roles (POST ' +
           '/api/admin/organizations/:id/recover admin and supervisor) and then requires ' +
-          'support.handle.',
-        permissions: ['support.handle'],
+          'support.handle; 2026-10-31: or organization.verify (Administrator, Super Admin) ' +
+          'for POST /api/admin/organizations/:id/verification.',
+        permissions: ['support.handle', 'organization.verify'],
       },
     ],
   },

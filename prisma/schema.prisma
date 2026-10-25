@@ -386,6 +386,8 @@ model User {
   marketPricesDeleted       MarketPrice[]      @relation("MarketPriceDeletedBy")
   // B13 (2026-10-06). Staff review buyers, decide requests and arrange orders.
   buyerOrganizationsVerified BuyerOrganization[] @relation("BuyerOrganizationVerifiedBy")
+  /// 2026-10-31: organisational profiles this staff member verified.
+  organizationsVerified      Organization[]      @relation("OrganizationVerifiedBy")
   buyerOrganizationsDeleted  BuyerOrganization[] @relation("BuyerOrganizationDeletedBy")
   buyersDeleted              Buyer[]             @relation("BuyerDeletedBy")
   purchaseRequestsDecided    PurchaseRequest[]   @relation("PurchaseRequestDecidedBy")
@@ -2229,7 +2231,14 @@ model Organization {
   updatedAt    DateTime  @default(now()) @map("updated_at") @db.Timestamptz(6)
   deletedAt    DateTime? @map("deleted_at") @db.Timestamptz(6)
   deletedBy    String?   @map("deleted_by") @db.Uuid
+  /// 2026-10-31 (migration 20261031090000): staff verification, a badge only.
+  /// 'unverified' | 'verified' (a CHECK in raw SQL); verified_by is a staff user.
+  verificationStatus String    @default("unverified") @map("verification_status")
+  verifiedAt         DateTime? @map("verified_at") @db.Timestamptz(6)
+  verifiedBy         String?   @map("verified_by") @db.Uuid
+  verificationNote   String?   @map("verification_note")
 
+  verifier        User?                    @relation("OrganizationVerifiedBy", fields: [verifiedBy], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "organization_verified_by_fkey")
   members         OrganizationMember[]
   invitations     OrganizationInvitation[]
   /// 2026-10-28: at most one (a partial unique index in raw SQL).

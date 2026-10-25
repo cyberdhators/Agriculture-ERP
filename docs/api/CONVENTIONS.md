@@ -708,6 +708,8 @@ change.
 | `organization.unpublished`                    |
 | `organization.closed`                         |
 | `organization.recovered`                      |
+| `organization.verified`                       |
+| `organization.verification_removed`           |
 | `organization_member.joined`                  |
 | `organization_member.updated`                 |
 | `organization_member.revoked`                 |

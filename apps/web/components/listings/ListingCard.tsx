@@ -21,7 +21,6 @@ import { STAGE_KEY, stageStamp } from '@/lib/market-posts/presentation';
 
 import { CategoryGlyph } from './CategoryGlyph';
 import { Photo } from './Photo';
-import { VerifiedFarmerBadge } from './VerifiedFarmerBadge';
 import styles from './listings.module.css';
 
 /** Two initials for the seller disc — never an icon alone. */
@@ -126,7 +125,6 @@ export function ListingCard({
             <span className={styles.cardSellerName} dir="auto">
               {listing.trading_name}
             </span>
-            <VerifiedFarmerBadge verified={seller.verification_status === 'verified'} lang={lang} />
             <span className={styles.cardSellerPayam}>{seller.payam_name}</span>
           </div>
           <div className={styles.cardContact}>

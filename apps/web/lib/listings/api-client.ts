@@ -3,12 +3,10 @@ import type {
   ListingStatus,
   ListingUnit,
   ProduceListing,
-  VerificationStatus,
 } from '@/lib/fixtures/farmers';
 
 export interface SellerInfo {
   id: string;
-  verification_status: VerificationStatus;
   /** 2026-10-28: null for an account with no location yet. */
   payam_id: string | null;
   payam_name: string;
@@ -37,7 +35,6 @@ export interface ApiListing {
   status: string;
   created_at: string;
   updated_at: string;
-  seller_verification_status?: string;
   seller_payam_id?: string;
   seller_payam_name?: string;
   seller_created_at?: string;
@@ -179,7 +176,6 @@ export function toListing(api: ApiListing): ProduceListing {
 export function toSeller(api: ApiListing): SellerInfo {
   return {
     id: api.farmer_id ?? api.seller_key ?? '',
-    verification_status: (api.seller_verification_status ?? 'pending') as VerificationStatus,
     payam_id: api.seller_payam_id ?? '',
     payam_name: api.seller_payam_name ?? '',
     created_at: api.seller_created_at ?? api.created_at,

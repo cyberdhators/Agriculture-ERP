@@ -15,6 +15,7 @@ import {
   VERIFICATION_LABELS,
   VERIFICATION_MESSAGES,
   VERIFICATION_STAMPS,
+  showsStandingStamp,
 } from '@/lib/buyer/labels';
 
 import { Button, Card, CardBody, CardHeader, Field, Input, Notice, PageHeader, Stamp } from '../ui';
@@ -134,7 +135,9 @@ export function BuyerProfile() {
         <CardHeader
           title="Account standing"
           actions={
-            <Stamp kind={VERIFICATION_STAMPS[standing]}>{VERIFICATION_LABELS[standing]}</Stamp>
+            showsStandingStamp(profile.organization.account_type, standing) ? (
+              <Stamp kind={VERIFICATION_STAMPS[standing]}>{VERIFICATION_LABELS[standing]}</Stamp>
+            ) : null
           }
         />
         <CardBody>

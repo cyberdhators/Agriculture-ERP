@@ -1104,7 +1104,7 @@ export const ar: Partial<Record<TKey, string>> = {
   'pp.tab.requests': 'طلبات الشراء',
   'pp.tab.services': 'الخدمات',
   'pp.featured': 'مميز',
-  'pp.verified': 'موثّق',
+  'pp.verified': 'منظمة موثّقة',
   'pp.since': 'عضو منذ',
   'pp.report': 'الإبلاغ عن الملف',
   'pp.missing': 'هذا الملف غير متاح.',

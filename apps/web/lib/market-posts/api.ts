@@ -130,10 +130,8 @@ export interface ServiceListing {
   /** 2026-10-26: a farmer's or a buyer account's (an organisation). */
   poster_type: 'farmer' | 'buyer';
   trading_name: string;
-  /** The farmer's, or the buyer organisation's, Verified badge. */
+  /** 2026-10-31: the organisation's "Verified organisation" badge; never a person's. */
   poster_verified: boolean;
-  /** True only for a verified farmer. */
-  farmer_verified: boolean;
   service_type: string;
   title: string;
   description: string;

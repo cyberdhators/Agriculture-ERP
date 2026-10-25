@@ -3,12 +3,16 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
+import { VERIFIED_ORGANISATION_LABEL } from '@agri-erp/shared';
+
 import { ABOUT_LABELS } from '@/components/account/AccountActivities';
-import { Notice } from '@/components/ui';
+import { Notice, Stamp } from '@/components/ui';
 
 interface Profile {
   id: string;
   name: string;
+  /** 2026-10-31: verified by CORWADO staff -- a badge only. */
+  verified?: boolean;
   profile_kind: string;
   group_kind: string | null;
   activities: string[];
@@ -55,6 +59,7 @@ export function PublicOrganisation({ id }: { id: string }) {
         <h1 style={{ margin: 0 }} dir="auto">
           {profile.name}
         </h1>
+        {profile.verified ? <Stamp kind="verified">{VERIFIED_ORGANISATION_LABEL}</Stamp> : null}
         <p className="small muted" style={{ margin: 0 }}>
           {kind}
           {where ? ` · ${where}` : ''}

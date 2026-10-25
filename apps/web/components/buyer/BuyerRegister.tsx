@@ -318,11 +318,11 @@ export function BuyerRegister() {
               <div className={styles.checkGrid} role="radiogroup" aria-label="Account type">
                 {(
                   [
-                    ['individual', 'An individual', 'Buying for yourself. No review needed.'],
+                    ['individual', 'An individual', 'Buying for yourself. Start at once.'],
                     [
                       'business',
                       'A business or organisation',
-                      'Buy straight away. CORWADO may check it later and add a Verified badge.',
+                      'Buy straight away. CORWADO may check it later and add a "Verified organisation" badge.',
                     ],
                   ] as const
                 ).map(([value, label, hint]) => (

@@ -30,7 +30,6 @@ import {
   Notice,
   PageHeader,
   Select,
-  Stamp,
 } from '../ui';
 import { MessageButton } from '../messages/MessageButton';
 import { ProfileLink } from '../profiles/PublicProfile';
@@ -41,7 +40,7 @@ import styles from './buyer.module.css';
  * ONE PRODUCT, AS A BUYER MAY SEE IT (C-14B.10).
  *
  * The supplier block is what the route returns about the seller: a trading
- * name, whether the farmer is verified, and the payam, county and state --
+ * name and the payam, county and state (2026-10-31: no farmer verification) --
  * and, once this buyer has sent a request for the product, the farmer's phone
  * (B14: buyer and farmer deal directly). Products go into the cart, and the
  * cart sends one request to each farmer.
@@ -160,15 +159,6 @@ export function BuyerProductDetail({ id }: { id: string }) {
                   {
                     term: 'Trading name',
                     value: <span dir="auto">{listing.supplier.trading_name}</span>,
-                  },
-                  {
-                    term: 'Standing',
-                    // LISTINGS LANE (2026-10-19): a badge when verified, nothing otherwise.
-                    value: listing.supplier.verified ? (
-                      <Stamp kind="verified">Verified farmer</Stamp>
-                    ) : (
-                      '—'
-                    ),
                   },
                   {
                     term: 'Location',
