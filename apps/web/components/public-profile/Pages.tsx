@@ -1,12 +1,13 @@
 'use client';
 
+import { useBuyer } from '@/components/buyer/BuyerShell';
 import { useFarmerSession } from '@/lib/farmer-session';
 
 import { ProfileEditor, type ManageLink } from './ProfileEditor';
 
 /**
  * MY PUBLIC PROFILE, on each side of the app (2026-10-23). The farmer side in
- * the farmer's language; the buyer side in English. Each links to where that
+ * the farmer's language; the buyer side in the buyer's (2026-10-29). Each links to where that
  * side manages its posts, and to Delete account (in settings).
  */
 
@@ -34,5 +35,6 @@ export function FarmerPublicProfilePage() {
 }
 
 export function BuyerPublicProfilePage() {
-  return <ProfileEditor language="en" manage={BUYER_MANAGE} deleteHref="/buyer/profile" />;
+  const { language } = useBuyer();
+  return <ProfileEditor language={language} manage={BUYER_MANAGE} deleteHref="/buyer/profile" />;
 }

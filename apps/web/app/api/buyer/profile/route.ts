@@ -36,6 +36,7 @@ interface ProfileRow {
   given_name: string;
   family_name: string;
   phone: string;
+  preferred_language: string | null;
   organization_id: string;
   account_type: 'individual' | 'business';
   organization_name: string;
@@ -68,6 +69,7 @@ interface ProfileRow {
 async function loadProfile(buyerId: string): Promise<ProfileRow> {
   const [row] = await prisma.$queryRawUnsafe<ProfileRow[]>(
     `SELECT b.id AS buyer_id, b.auth_user_id, b.given_name, b.family_name, b.phone,
+            b.preferred_language::text AS preferred_language,
             o.id AS organization_id, o.account_type::text AS account_type,
             o.name AS organization_name,
             o.organization_type::text AS organization_type, o.registration_number, o.tax_id,
@@ -100,6 +102,9 @@ async function present(row: ProfileRow) {
       family_name: row.family_name,
       email: emails.get(row.auth_user_id) ?? null,
       phone: row.phone,
+      // 2026-10-29: the language the buyer screens speak (null: not chosen).
+      preferred_language:
+        row.preferred_language === 'ar' ? 'ar' : row.preferred_language ? 'en' : null,
     },
     organization: {
       id: row.organization_id,
@@ -233,7 +238,9 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
         if (value === undefined) continue;
         if (PERSON_COLUMNS.has(key)) {
           personParams.push(value);
-          personSets.push(`${key} = $${personParams.length}`);
+          // 2026-10-29: the language is the `language` enum.
+          const cast = key === 'preferred_language' ? '::public.language' : '';
+          personSets.push(`${key} = $${personParams.length}${cast}`);
           personChanged.push(key);
           continue;
         }
@@ -260,7 +267,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
             ...buyerActor(auth),
             action: 'buyer.updated',
             // Which fields changed, never their values: every person field is
-            // a name or a phone, and none of those enter the log (C-14B.21).
+            // a name, a phone or the language, and none of those enter the log (C-14B.21).
             after: { changed: personChanged },
           });
         }

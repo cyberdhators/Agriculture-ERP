@@ -109,6 +109,8 @@ export interface BuyerProfile {
     family_name: string;
     email: string | null;
     phone: string;
+    /** 2026-10-29: the language the buyer screens speak; null when never chosen. */
+    preferred_language?: 'en' | 'ar' | null;
   };
   organization: {
     id: string;

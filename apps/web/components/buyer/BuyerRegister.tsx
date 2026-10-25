@@ -12,6 +12,8 @@ import {
 
 import { BUYER_HOME_PATH, LOGIN_PATH } from '@/lib/auth/paths';
 import { BuyerApiError, registerBuyer, sendEmailCode, verifyEmailCode } from '@/lib/buyer/api';
+import { DEFAULT_LANGUAGE, isRtl, t, type Language, type TKey } from '@/lib/i18n';
+import { useDocumentLanguage, useLanguageChoice } from '@/lib/i18n/client';
 import { useNoticeText, type ConsentText } from '@/lib/settings/client';
 import { supabaseBrowser } from '@/lib/supabase/browser';
 
@@ -88,7 +90,12 @@ const FALLBACK_PRIVACY: Record<AccountLanguage, ConsentText> = {
  * address before the account is made (send again, change the address). The
  * account is active as soon as it is created -- no approval queue.
  */
-export function BuyerRegister() {
+export function BuyerRegister({
+  initialLanguage = DEFAULT_LANGUAGE,
+}: {
+  /** 2026-10-29: from the language cookie; the page then speaks the chosen language. */
+  initialLanguage?: Language;
+} = {}) {
   const [person, setPerson] = useState({
     given_name: '',
     family_name: '',
@@ -103,7 +110,10 @@ export function BuyerRegister() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [failure, setFailure] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [language, setLanguage] = useState<AccountLanguage>('en');
+  // 2026-10-29: the language choice is also the page's language, and is kept.
+  const [language, setLanguage] = useLanguageChoice(initialLanguage);
+  useDocumentLanguage(language);
+  const w = (key: TKey) => t(key, language);
   // Unticked at first, always (the specification, section 6).
   const [agreed, setAgreed] = useState(false);
   const terms = useNoticeText('terms', language, FALLBACK_TERMS[language]);
@@ -138,15 +148,11 @@ export function BuyerRegister() {
   const report = (e: unknown) => {
     if (e instanceof BuyerApiError) {
       setErrors(e.fields);
-      setFailure(
-        e.status === 409
-          ? 'An account already exists for that email address. Sign in instead.'
-          : e.message,
-      );
+      setFailure(e.status === 409 ? w('email.reg.alreadyExists') : e.message);
       // A code that could not be used goes back to the form, with the reason.
       setCodeFor(null);
     } else {
-      setFailure('The application could not be sent.');
+      setFailure(w('email.reg.notSent'));
     }
     setBusy(false);
   };
@@ -182,9 +188,7 @@ export function BuyerRegister() {
           window.location.assign(BUYER_HOME_PATH);
           return;
         }
-        setFailure(
-          'The server took too long to answer and your account was not confirmed. Please try again in a moment.',
-        );
+        setFailure(w('email.reg.timeout'));
         setBusy(false);
         return;
       }
@@ -198,7 +202,7 @@ export function BuyerRegister() {
     const parsed = parse();
     if (!parsed.success) {
       setErrors(zodErrorToApiError(parsed.error).body.error.fields ?? {});
-      setFailure('Some details need attention. They are marked below.');
+      setFailure(w('email.reg.needsAttention'));
       return;
     }
     setErrors({});
@@ -228,7 +232,7 @@ export function BuyerRegister() {
     try {
       await verifyEmailCode(codeFor.id, code.trim());
     } catch (e) {
-      setCodeError(e instanceof BuyerApiError ? e.message : 'The code could not be checked.');
+      setCodeError(e instanceof BuyerApiError ? e.message : w('email.reg.codeCheckFailed'));
       setBusy(false);
       return;
     }
@@ -255,9 +259,9 @@ export function BuyerRegister() {
       const sent = await sendEmailCode({ email: codeFor.email, language });
       if (sent.verification_id) setCodeFor({ id: sent.verification_id, email: codeFor.email });
       setCode('');
-      setCodeNote('A new code is on its way.');
+      setCodeNote(w('email.reg.codeResent'));
     } catch (e) {
-      setCodeError(e instanceof BuyerApiError ? e.message : 'The code could not be sent.');
+      setCodeError(e instanceof BuyerApiError ? e.message : w('email.reg.codeSendFailed'));
     } finally {
       setBusy(false);
     }
@@ -266,36 +270,42 @@ export function BuyerRegister() {
   const ackError = errors.acknowledgement ?? errors['acknowledgement.granted'];
 
   return (
-    <main className={styles.registerWrap}>
+    <main className={styles.registerWrap} dir={isRtl(language) ? 'rtl' : 'ltr'}>
       <div className={styles.registerInner}>
         <Wordmark size={28} tagline />
-        <PageHeader
-          title="Create an account with email"
-          subtitle="One account to buy, sell, offer services and get advice. Your account is ready as soon as your email address is confirmed."
-        />
+        <PageHeader title={w('email.login.createEmail')} subtitle={w('email.reg.subtitle')} />
         <p className="small">
-          Have a South Sudan mobile number?{' '}
-          <a href="/farmer/register">Create your account with your phone</a> instead. Already have
-          an account? <a href="/login?next=/buyer/marketplace">Sign in</a>.
+          {w('email.reg.phoneQ')} <a href="/farmer/register">{w('email.reg.phoneLink')}</a>{' '}
+          {w('email.reg.instead')} {w('email.reg.haveAccount')}{' '}
+          <a href="/login?next=/buyer/marketplace">{w('login.submit')}</a>.
         </p>
         <Card padded>
-          <form className={styles.form} onSubmit={submit} noValidate aria-label="Buyer application">
+          <form
+            className={styles.form}
+            onSubmit={submit}
+            noValidate
+            aria-label={w('email.reg.formAria')}
+          >
             {failure ? (
-              <Notice kind="error" title="Not sent">
+              <Notice kind="error" title={w('email.reg.notSentTitle')}>
                 {failure}
               </Notice>
             ) : null}
 
             <fieldset className={styles.fieldset}>
-              <legend className={styles.legend}>Language</legend>
-              <div className={styles.checkGrid} role="radiogroup" aria-label="Language">
+              <legend className={styles.legend}>{w('account.language')}</legend>
+              <div
+                className={styles.checkGrid}
+                role="radiogroup"
+                aria-label={w('account.language')}
+              >
                 {(
                   [
-                    ['en', 'English'],
-                    ['ar', 'العربية (Arabic)'],
+                    ['en', t('language.name', 'en')],
+                    ['ar', t('language.arabicNative', 'en')],
                   ] as const
                 ).map(([value, label]) => (
-                  <label key={value}>
+                  <label key={value} lang={value} dir={isRtl(value) ? 'rtl' : 'ltr'}>
                     <input
                       type="radio"
                       name="preferred_language"
@@ -307,23 +317,21 @@ export function BuyerRegister() {
                   </label>
                 ))}
               </div>
-              <p className={styles.muted}>
-                Codes and notices from AgriOne use this language where they can.
-              </p>
+              <p className={styles.muted}>{w('email.reg.langNote')}</p>
               {errors.preferred_language ? <p role="alert">{errors.preferred_language}</p> : null}
             </fieldset>
 
             <fieldset className={styles.fieldset}>
-              <legend className={styles.legend}>Who is buying</legend>
-              <div className={styles.checkGrid} role="radiogroup" aria-label="Account type">
+              <legend className={styles.legend}>{w('email.reg.who')}</legend>
+              <div
+                className={styles.checkGrid}
+                role="radiogroup"
+                aria-label={w('email.reg.accountTypeAria')}
+              >
                 {(
                   [
-                    ['individual', 'An individual', 'Buying for yourself. Start at once.'],
-                    [
-                      'business',
-                      'A business or organisation',
-                      'Buy straight away. CORWADO may check it later and add a "Verified organisation" badge.',
-                    ],
+                    ['individual', w('email.reg.individual'), w('email.reg.individualHint')],
+                    ['business', w('email.reg.business'), w('email.reg.businessHint')],
                   ] as const
                 ).map(([value, label, hint]) => (
                   <label key={value} className={styles.form} style={{ gap: 2 }}>
@@ -345,9 +353,9 @@ export function BuyerRegister() {
             </fieldset>
 
             <fieldset className={styles.fieldset}>
-              <legend className={styles.legend}>Your account</legend>
+              <legend className={styles.legend}>{w('email.reg.yourAccount')}</legend>
               <div className={styles.formGrid}>
-                <Field label="First name" error={errors.given_name}>
+                <Field label={w('buyer.field.givenName')} error={errors.given_name}>
                   {(ids) => (
                     <Input
                       {...ids}
@@ -357,7 +365,7 @@ export function BuyerRegister() {
                     />
                   )}
                 </Field>
-                <Field label="Last name" error={errors.family_name}>
+                <Field label={w('buyer.field.familyName')} error={errors.family_name}>
                   {(ids) => (
                     <Input
                       {...ids}
@@ -368,8 +376,8 @@ export function BuyerRegister() {
                   )}
                 </Field>
                 <Field
-                  label="Email"
-                  hint="You will sign in with this. We send a code to confirm it."
+                  label={w('buyer.field.email')}
+                  hint={w('email.reg.emailHint')}
                   error={errors.email}
                 >
                   {(ids) => (
@@ -384,8 +392,8 @@ export function BuyerRegister() {
                   )}
                 </Field>
                 <Field
-                  label="Mobile number"
-                  hint="International form, e.g. +211912345678"
+                  label={w('buyer.field.mobile')}
+                  hint={w('buyer.field.mobileHint')}
                   error={errors.phone}
                 >
                   {(ids) => (
@@ -398,7 +406,11 @@ export function BuyerRegister() {
                     />
                   )}
                 </Field>
-                <Field label="Password" hint="At least 12 characters." error={errors.password}>
+                <Field
+                  label={w('login.passwordLabel')}
+                  hint={w('email.reg.passwordHint')}
+                  error={errors.password}
+                >
                   {(ids) => (
                     <PasswordInput
                       {...ids}
@@ -408,7 +420,7 @@ export function BuyerRegister() {
                     />
                   )}
                 </Field>
-                <Field label="Confirm password" error={errors.confirm_password}>
+                <Field label={w('email.reg.confirmPassword')} error={errors.confirm_password}>
                   {(ids) => (
                     <PasswordInput
                       {...ids}
@@ -426,16 +438,19 @@ export function BuyerRegister() {
               onChange={setOrg}
               errors={errors}
               individual={individual}
+              language={language}
             />
 
             <fieldset className={styles.fieldset}>
-              <legend className={styles.legend}>Terms of use and privacy</legend>
+              <legend className={styles.legend}>{w('email.reg.terms')}</legend>
               <div dir={language === 'ar' ? 'rtl' : 'auto'} className="small">
                 <p>{terms.body}</p>
                 <p>{privacy.body}</p>
               </div>
               <p className={`${styles.muted} mono`}>
-                Terms {terms.text_version} · Privacy {privacy.text_version}
+                {w('email.reg.versions')
+                  .replace('{terms}', terms.text_version)
+                  .replace('{privacy}', privacy.text_version)}
               </p>
               <Checkbox
                 checked={agreed}
@@ -449,20 +464,20 @@ export function BuyerRegister() {
                   });
                 }}
                 aria-invalid={ackError ? true : undefined}
-                label="I agree to the terms of use and the privacy notice."
+                label={w('email.reg.agree')}
               />
               {ackError ? <p role="alert">{ackError}</p> : null}
             </fieldset>
 
             {codeFor ? (
               <fieldset className={styles.fieldset}>
-                <legend className={styles.legend}>Confirm your email address</legend>
+                <legend className={styles.legend}>{w('email.reg.codeTitle')}</legend>
                 <p className="small">
-                  We sent a 6-digit code to <strong>{codeFor.email}</strong>. Type it here. Your
-                  account is ready as soon as the code is confirmed.
+                  {w('email.reg.codeSentBefore')} <strong dir="ltr">{codeFor.email}</strong>
+                  {w('email.reg.codeSentAfter')}
                 </p>
                 {codeNote ? <p className="small">{codeNote}</p> : null}
-                <Field label="Code" error={codeError ?? undefined}>
+                <Field label={w('email.reg.code')} error={codeError ?? undefined}>
                   {(ids) => (
                     <Input
                       {...ids}
@@ -482,7 +497,7 @@ export function BuyerRegister() {
                     disabled={busy}
                     onClick={() => void resendCode()}
                   >
-                    Send the code again
+                    {w('email.reg.resend')}
                   </Button>
                   <Button
                     type="button"
@@ -494,14 +509,14 @@ export function BuyerRegister() {
                       setCodeError(null);
                     }}
                   >
-                    Change the email address
+                    {w('email.reg.changeEmail')}
                   </Button>
                   <Button
                     type="button"
                     disabled={busy || code.length !== 6}
                     onClick={() => void confirmCode()}
                   >
-                    {busy ? 'Checking…' : 'Confirm and create account'}
+                    {busy ? w('mfa.checking') : w('email.reg.confirm')}
                   </Button>
                 </div>
               </fieldset>
@@ -509,10 +524,14 @@ export function BuyerRegister() {
 
             <div className={styles.actions} hidden={Boolean(codeFor)}>
               <a href={LOGIN_PATH} className="small">
-                Already have an account? Sign in
+                {w('email.reg.alreadySignIn')}
               </a>
               <Button type="submit" disabled={busy}>
-                {busy ? 'Sending…' : individual ? 'Create account' : 'Send application'}
+                {busy
+                  ? w('email.reg.sending')
+                  : individual
+                    ? w('login.register')
+                    : w('email.reg.sendApplication')}
               </Button>
             </div>
           </form>

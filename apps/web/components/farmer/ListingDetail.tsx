@@ -47,7 +47,6 @@ export function ListingDetail({ listingId }: { listingId: string }) {
   const live = listingsFor(farmer.id).filter((l) => l.status === 'listed').length;
   const sellerInfo: SellerInfo = {
     id: farmer.id,
-    verification_status: farmer.verification_status,
     payam_id: farmer.payam_id,
     payam_name: farmerPayamName(farmer.payam_id),
     created_at: farmer.created_at,

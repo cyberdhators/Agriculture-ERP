@@ -737,6 +737,8 @@ export const buyerProfilePatchSchema = z
     given_name: personName(BUYER_MESSAGES.givenNameRequired).optional(),
     family_name: personName(BUYER_MESSAGES.familyNameRequired).optional(),
     phone: buyerPhoneSchema.optional(),
+    // 2026-10-29: the language the buyer screens speak (buyer.preferred_language).
+    preferred_language: accountLanguageSchema.optional(),
     organization_name: organizationFields.organization_name.optional(),
     organization_type: organizationFields.organization_type.optional(),
     registration_number: organizationFields.registration_number,
@@ -767,7 +769,12 @@ export const buyerProfilePatchSchema = z
 export type BuyerProfilePatch = z.infer<typeof buyerProfilePatchSchema>;
 
 /** The profile fields that live on the person; the rest are the organisation's. */
-export const BUYER_PERSON_FIELDS = ['given_name', 'family_name', 'phone'] as const;
+export const BUYER_PERSON_FIELDS = [
+  'given_name',
+  'family_name',
+  'phone',
+  'preferred_language',
+] as const;
 
 // ---------------------------------------------------------------------------
 // MARKETPLACE -- GET /api/buyer/marketplace (C-14B.7, C-14B.9)

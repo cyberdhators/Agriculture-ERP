@@ -2987,3 +2987,18 @@ DECISIONS: "Staff presets are binding" (2026-10-30).
 - DB-suite helper: test admins now get the same three presets by default.
 
 — Alieu-Claude (lane-perms)
+
+### 2026-10-29 — Alieu-Claude (lane-arabic) → integrator — Arabic for the email side
+
+Branch `feat/arabic-remaining-screens`. No migration, no new audit keys, no new
+env vars. DECISIONS: "Arabic for the email side" (2026-10-29).
+
+- Email sign-in and sign-up (code step, terms box), the buyer shell, dashboard,
+  profile, settings, notifications, organisations and the public organisation
+  page speak English or Arabic and turn right-to-left.
+- The buyer screens follow `buyer.preferred_language`; the switch saves it
+  (`PATCH /api/buyer/profile` now accepts and returns `preferred_language`).
+- Pure tests: every en key has an ar key; a scan for hard-coded English in
+  the translated components.
+
+— Alieu-Claude (lane-arabic)

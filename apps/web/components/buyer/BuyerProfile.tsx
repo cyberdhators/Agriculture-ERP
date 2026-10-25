@@ -12,15 +12,17 @@ import {
   type Locations,
 } from '@/lib/buyer/api';
 import {
-  VERIFICATION_LABELS,
-  VERIFICATION_MESSAGES,
   VERIFICATION_STAMPS,
   showsStandingStamp,
+  verificationLabel,
+  verificationMessage,
 } from '@/lib/buyer/labels';
+import { t } from '@/lib/i18n';
 
 import { Button, Card, CardBody, CardHeader, Field, Input, Notice, PageHeader, Stamp } from '../ui';
 import { BlockedAccounts } from '../account/BlockedAccounts';
 import { DeleteAccount } from '../account/DeleteAccount';
+import { LanguageButtons } from '../farmer/LanguageSwitch';
 import { useToast } from '../ui/feedback';
 import { useBuyer } from './BuyerShell';
 import { ProcurementFields, toOrganizationBody, type OrgForm } from './ProcurementFields';
@@ -63,7 +65,7 @@ const fromProfile = (p: Profile): OrgForm => ({
 
 export function BuyerProfile() {
   const toast = useToast();
-  const { profile, refresh } = useBuyer();
+  const { profile, refresh, language, setLanguage } = useBuyer();
   const [person, setPerson] = useState({
     given_name: profile.person.given_name,
     family_name: profile.person.family_name,
@@ -99,7 +101,7 @@ export function BuyerProfile() {
       Object.entries(after).filter(([k, v]) => JSON.stringify(v) !== JSON.stringify(before[k])),
     );
     if (Object.keys(changed).length === 0) {
-      toast.show({ kind: 'warn', title: 'Nothing changed' });
+      toast.show({ kind: 'warn', title: t('buyer.profile.nothingChanged', language) });
       return;
     }
     const parsed = buyerProfilePatchSchema.safeParse(changed);
@@ -112,13 +114,13 @@ export function BuyerProfile() {
     try {
       await updateProfile(parsed.data);
       await refresh();
-      toast.show({ kind: 'success', title: 'Profile saved' });
+      toast.show({ kind: 'success', title: t('buyer.profile.saved', language) });
     } catch (e) {
       if (e instanceof BuyerApiError) {
         setErrors(e.fields);
         setFailure(e.message);
       } else {
-        setFailure('The profile could not be saved.');
+        setFailure(t('buyer.profile.saveFailed', language));
       }
     } finally {
       setBusy(false);
@@ -129,36 +131,57 @@ export function BuyerProfile() {
 
   return (
     <div className={styles.page}>
-      <PageHeader title="Organisation profile" subtitle={profile.organization.name} />
+      <PageHeader title={t('buyer.profile.title', language)} subtitle={profile.organization.name} />
 
       <Card>
         <CardHeader
-          title="Account standing"
+          title={t('buyer.profile.standing', language)}
           actions={
             showsStandingStamp(profile.organization.account_type, standing) ? (
-              <Stamp kind={VERIFICATION_STAMPS[standing]}>{VERIFICATION_LABELS[standing]}</Stamp>
+              <Stamp kind={VERIFICATION_STAMPS[standing]}>
+                {verificationLabel(standing, language)}
+              </Stamp>
             ) : null
           }
         />
         <CardBody>
-          <p>{VERIFICATION_MESSAGES[standing]}</p>
+          <p>{verificationMessage(standing, language)}</p>
           {profile.verification.note ? (
-            <p className={styles.muted}>Note from CORWADO: {profile.verification.note}</p>
+            <p className={styles.muted}>
+              {t('buyer.profile.corwadoNote', language)}{' '}
+              <span dir="auto">{profile.verification.note}</span>
+            </p>
           ) : null}
         </CardBody>
       </Card>
 
-      <form className={styles.form} onSubmit={save} noValidate aria-label="Organisation profile">
+      {/* 2026-10-29: the language of the buyer screens, saved on the account. */}
+      <Card>
+        <CardHeader
+          title={t('account.language', language)}
+          subtitle={t('buyer.profile.languageLead', language)}
+        />
+        <CardBody>
+          <LanguageButtons value={language} onChange={setLanguage} />
+        </CardBody>
+      </Card>
+
+      <form
+        className={styles.form}
+        onSubmit={save}
+        noValidate
+        aria-label={t('buyer.profile.title', language)}
+      >
         {failure ? (
-          <Notice kind="error" title="Not saved">
+          <Notice kind="error" title={t('buyer.profile.notSaved', language)}>
             {failure}
           </Notice>
         ) : null}
 
         <fieldset className={styles.fieldset}>
-          <legend className={styles.legend}>You</legend>
+          <legend className={styles.legend}>{t('buyer.profile.you', language)}</legend>
           <div className={styles.formGrid}>
-            <Field label="First name" error={errors.given_name}>
+            <Field label={t('buyer.field.givenName', language)} error={errors.given_name}>
               {(ids) => (
                 <Input
                   {...ids}
@@ -168,7 +191,7 @@ export function BuyerProfile() {
                 />
               )}
             </Field>
-            <Field label="Last name" error={errors.family_name}>
+            <Field label={t('buyer.field.familyName', language)} error={errors.family_name}>
               {(ids) => (
                 <Input
                   {...ids}
@@ -179,8 +202,8 @@ export function BuyerProfile() {
               )}
             </Field>
             <Field
-              label="Mobile number"
-              hint="International form, e.g. +211912345678"
+              label={t('buyer.field.mobile', language)}
+              hint={t('buyer.field.mobileHint', language)}
               error={errors.phone}
             >
               {(ids) => (
@@ -193,7 +216,10 @@ export function BuyerProfile() {
                 />
               )}
             </Field>
-            <Field label="Email" hint="Your sign-in address. Contact CORWADO to change it.">
+            <Field
+              label={t('buyer.field.email', language)}
+              hint={t('buyer.profile.emailHint', language)}
+            >
               {(ids) => <Input {...ids} value={profile.person.email ?? ''} readOnly />}
             </Field>
           </div>
@@ -206,26 +232,27 @@ export function BuyerProfile() {
           states={locations?.states ?? []}
           counties={locations?.counties ?? []}
           individual={profile.organization.account_type === 'individual'}
+          language={language}
         />
 
         <div className={styles.actions}>
           <Button type="submit" disabled={busy}>
-            {busy ? 'Saving…' : 'Save profile'}
+            {busy ? t('common.saving', language) : t('buyer.profile.save', language)}
           </Button>
         </div>
       </form>
 
-      {/* 2026-10-28: person-level blocks, with Unblock. The buyer shell speaks English. */}
+      {/* 2026-10-28: person-level blocks, with Unblock, in the buyer's language. */}
       <Card>
         <CardBody>
-          <BlockedAccounts language="en" />
+          <BlockedAccounts language={language} />
         </CardBody>
       </Card>
 
       {/* 2026-10-20: the account deletes itself (hide now, keep for audit). */}
       <Card>
         <CardBody>
-          <DeleteAccount />
+          <DeleteAccount language={language} />
         </CardBody>
       </Card>
     </div>

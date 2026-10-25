@@ -5553,3 +5553,41 @@ holds moderation only, Demo Support support only, Demo Administrator the
 Administrator preset only. Read-only Viewer and the supervisors are not
 touched: the legacy rule never gave them anything, so they keep exactly what
 their role gives today (the registry, scoped to their state).
+
+## Arabic for the email side (2026-10-29)
+
+Branch `feat/arabic-remaining-screens` (lane-arabic). No migration. Follows
+"Arabic coverage (2026-10-29)", which listed these areas as English only.
+
+- **Translated** (OBSERVED by the pure scan `tests/arabic-email-side-scan.test.ts`
+  and by type check): the email sign-in (`LoginForm`, buyer audience) and its
+  two-step code step; the email sign-up (`BuyerRegister` and the shared
+  `ProcurementFields`), including the code step and the terms box; the buyer
+  shell, dashboard and shortcut hub, profile (with blocked accounts and delete
+  account), notifications with announcements and notification settings; the
+  buyer's organisations, advice, messages, public-profile and posts pages
+  (those components were already bilingual and were pinned to English); and
+  the public organisation page `/organisations/:id`.
+- **Where the language comes from (INFERRED design, following the farmer
+  side):** one choice per browser, the existing `farmer_lang` cookie and local
+  storage (`lib/i18n/client.ts`), read on the server for the first paint. In
+  the buyer shell the account's `buyer.preferred_language` wins once on
+  arrival; the switch (rail foot and the profile's Language card) changes the
+  screen and saves the account's language through `PATCH /api/buyer/profile`
+  (`preferred_language`, Zod in packages/shared, audited as `buyer.updated`
+  with the changed field name only -- no new audit key). The staff sign-in
+  stays English and never turns the page right-to-left.
+- **RTL:** each of these pages sets `<html lang dir>` while shown and restores
+  it on the way out, as the farmer shell does; the portal shell CSS is logical
+  properties throughout, so the rail moves to the right.
+- **Reports:** the report dialogs ordinary users see (`ReportPost`, used for
+  buying requests, services and public profiles) were already bilingual; no
+  screen lists a user's own reports (OBSERVED: none in the code). The product
+  and market report queues are the staff portal's and stay English.
+- **Left in English, on purpose:** sentences the server sends (validation
+  reasons, notification titles and bodies, API errors), the staff portal, and
+  the buyer marketplace, cart and purchase-request screens (not in this brief).
+- **Test:** `lib/i18n/i18n.test.ts` checks that every English key has a
+  non-empty Arabic string with the same placeholders; the new keys are in
+  Arabic script; `lib/buyer/labels.test.ts` holds the i18n English of the
+  buyer labels to the staff tables word for word.

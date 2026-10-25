@@ -275,7 +275,6 @@ export function ListingForm({ listingId }: { listingId?: string }) {
       const payamId = needsPlace ? place.payam_id : (farmer.payam_id ?? '');
       const seller: SellerInfo = {
         id: farmer.id,
-        verification_status: farmer.verification_status,
         payam_id: payamId,
         payam_name: needsPlace
           ? (places.payam(place.payam_id) ?? '')

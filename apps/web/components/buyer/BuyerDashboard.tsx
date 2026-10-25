@@ -4,12 +4,8 @@ import { useEffect, useState } from 'react';
 
 import { getSummary, type BuyerSummary } from '@/lib/buyer/api';
 import { useCart } from '@/lib/buyer/cart';
-import {
-  CATEGORY_LABELS,
-  VERIFICATION_MESSAGES,
-  labelOf,
-  showsStandingStamp,
-} from '@/lib/buyer/labels';
+import { categoryLabelOf, showsStandingStamp, verificationMessage } from '@/lib/buyer/labels';
+import { t } from '@/lib/i18n';
 
 import { ShortcutHub } from '../account/ShortcutHub';
 import { ButtonLink, Notice, PageHeader } from '../ui';
@@ -29,7 +25,7 @@ import styles from './buyer.module.css';
  * bar, so the numbers are read, not inferred from a picture.
  */
 export function BuyerDashboard() {
-  const { profile } = useBuyer();
+  const { profile, language } = useBuyer();
   const [summary, setSummary] = useState<BuyerSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -37,11 +33,14 @@ export function BuyerDashboard() {
     let live = true;
     getSummary()
       .then((s) => live && setSummary(s))
-      .catch((e: unknown) => live && setError(e instanceof Error ? e.message : 'Not loaded.'));
+      .catch(
+        (e: unknown) =>
+          live && setError(e instanceof Error ? e.message : t('buyer.dash.notLoaded', language)),
+      );
     return () => {
       live = false;
     };
-  }, []);
+  }, [language]);
 
   const standing = profile.verification.status;
   const kpis = summary?.kpis;
@@ -51,11 +50,11 @@ export function BuyerDashboard() {
     <div className={styles.page}>
       <PageHeader
         eyebrow={profile.organization.name}
-        title="Dashboard"
-        subtitle={`Welcome, ${profile.person.given_name}.`}
+        title={t('buyer.dash.title', language)}
+        subtitle={t('buyer.dash.welcome', language).replace('{name}', profile.person.given_name)}
         actions={
           profile.verification.capabilities.browse ? (
-            <ButtonLink href="/buyer/marketplace">Browse the marketplace</ButtonLink>
+            <ButtonLink href="/buyer/marketplace">{t('buyer.dash.browse', language)}</ButtonLink>
           ) : null
         }
       />
@@ -66,20 +65,23 @@ export function BuyerDashboard() {
       showsStandingStamp(profile.organization.account_type, standing) ? (
         <Notice
           kind={standing === 'suspended' ? 'error' : 'info'}
-          title="Account status"
+          title={t('buyer.dash.standingTitle', language)}
         >
-          <p>{VERIFICATION_MESSAGES[standing]}</p>
+          <p>{verificationMessage(standing, language)}</p>
           {profile.verification.note ? (
-            <p className="small">Note from the AgriOne team: {profile.verification.note}</p>
+            <p className="small">
+              {t('buyer.dash.teamNote', language)}{' '}
+              <span dir="auto">{profile.verification.note}</span>
+            </p>
           ) : null}
         </Notice>
       ) : null}
 
       {/* 2026-10-28: one home for every ordinary function (infographic no. 4). */}
-      <ShortcutHub shell="buyer" language="en" />
+      <ShortcutHub shell="buyer" language={language} />
 
       {error ? (
-        <Notice kind="error" title="The dashboard could not be loaded">
+        <Notice kind="error" title={t('buyer.dash.loadFailed', language)}>
           {error}
         </Notice>
       ) : !kpis || !summary ? (
@@ -88,23 +90,24 @@ export function BuyerDashboard() {
         <>
           <StatGrid>
             <StatCard
-              label="Requests sent"
+              label={t('buyer.dash.requestsSent', language)}
               value={kpis.active_purchase_requests}
-              note="Waiting for, or answered by, the farmer"
+              note={t('buyer.dash.requestsSentNote', language)}
             />
             <StatCard
-              label="Available products"
+              label={t('buyer.dash.available', language)}
               value={kpis.available_products}
-              note="Listed in the marketplace now"
-              unmeasuredBecause="The marketplace is closed to this account at its current standing."
+              note={t('buyer.dash.availableNote', language)}
+              unmeasuredBecause={t('buyer.dash.availableUnmeasured', language)}
+              unmeasuredLabel={t('buyer.dash.notMeasured', language)}
             />
             <StatCard
-              label="In your cart"
+              label={t('buyer.dash.inCart', language)}
               value={cart.length}
               note={
                 cart.length > 0
-                  ? 'Not yet sent to the farmers'
-                  : 'Add products from the marketplace'
+                  ? t('buyer.dash.inCartNote', language)
+                  : t('buyer.dash.inCartEmpty', language)
               }
               attention={cart.length > 0}
             />
@@ -113,27 +116,27 @@ export function BuyerDashboard() {
           <div className={styles.grid2}>
             {summary.supply ? (
               <ChartCard
-                title="Supply available now"
-                note="Listings in the marketplace, by category"
+                title={t('buyer.dash.supply', language)}
+                note={t('buyer.dash.supplyNote', language)}
                 data={summary.supply.by_category.map((r) => ({
                   key: r.category,
-                  label: labelOf(CATEGORY_LABELS, r.category),
+                  label: categoryLabelOf(r.category, language),
                   value: r.listings,
                 }))}
-                empty="No produce is listed at the moment."
+                empty={t('buyer.dash.noSupply', language)}
               />
             ) : null}
 
             {summary.supply ? (
               <ChartCard
-                title="Where supply is"
-                note="Listings in the marketplace, by state"
+                title={t('buyer.dash.where', language)}
+                note={t('buyer.dash.whereNote', language)}
                 data={summary.supply.by_state.map((r) => ({
                   key: r.state_id,
                   label: r.state,
                   value: r.listings,
                 }))}
-                empty="No produce is listed at the moment."
+                empty={t('buyer.dash.noSupply', language)}
               />
             ) : null}
           </div>
