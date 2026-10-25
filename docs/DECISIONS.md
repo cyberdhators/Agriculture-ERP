@@ -5453,3 +5453,10 @@ English and Arabic words, as the other team pages do. Not translated, because
 their areas are English only today: the email sign-up (`BuyerRegister`), the
 buyer dashboard and profile, the public organisation page, and product and
 market reports. Messages the server sends back stay in English everywhere.
+
+## A suspension of N days lasts at least N full days (2026-10-29)
+
+The owner, 2026-10-29 ("yes fix it"): a suspension made late in the day for
+1 day ended at the next Juba midnight -- hours, not a day (OBSERVED in the
+live re-check). `suspensionEndsAt` now ends at Juba midnight after N FULL
+days; the rest of the day of suspension does not count.
