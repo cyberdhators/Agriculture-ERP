@@ -242,12 +242,7 @@ export function ChangePhone({ language, onDone }: { language: Language; onDone: 
           <Button type="submit" variant="primary" disabled={busy || code.trim().length !== 6}>
             {t('account.phoneConfirm', language)}
           </Button>
-          <ResendCode
-            language={language}
-            wait={wait}
-            busy={busy}
-            onResend={() => void resend()}
-          />
+          <ResendCode language={language} wait={wait} busy={busy} onResend={() => void resend()} />
           <Button
             variant="ghost"
             onClick={() => {

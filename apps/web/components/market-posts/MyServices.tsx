@@ -10,7 +10,11 @@ import {
   type ServiceType,
 } from '@agri-erp/shared';
 
-import { CorrectionNotice, CorrectionStamp, useOpenCorrections } from '@/components/account/Corrections';
+import {
+  CorrectionNotice,
+  CorrectionStamp,
+  useOpenCorrections,
+} from '@/components/account/Corrections';
 import { ButtonLink, EmptyState, Notice } from '@/components/ui';
 import { formatSsp } from '@/lib/farmers/listings';
 import { t, type Language } from '@/lib/i18n';

@@ -1124,17 +1124,22 @@ export const ar: Partial<Record<TKey, string>> = {
   'svc.priceHint': 'اكتب سعراً، أو ضع علامة على «قابل للتفاوض» أدناه.',
   // 2026-10-27: recovery by SMS code, verified number change, corrections, enterprise size.
   'notice.passwordRecovered.title': 'تم تغيير كلمة مرور حسابك في AgriOne',
-  'notice.passwordRecovered.body': 'أُعيد تعيينها برمز أُرسل إلى هاتفك. إذا لم تكن أنت، تواصل مع CORWADO.',
+  'notice.passwordRecovered.body':
+    'أُعيد تعيينها برمز أُرسل إلى هاتفك. إذا لم تكن أنت، تواصل مع CORWADO.',
   'notice.phoneChanged.title': 'تم تغيير رقم الهاتف في حسابك',
-  'notice.phoneChanged.body': 'سجّل الدخول بالرقم الجديد من الآن. إذا لم تكن أنت، تواصل مع CORWADO.',
+  'notice.phoneChanged.body':
+    'سجّل الدخول بالرقم الجديد من الآن. إذا لم تكن أنت، تواصل مع CORWADO.',
   'notice.correctionRequested.title': 'طلبت CORWADO منك تصحيح أحد منشوراتك',
-  'notice.correctionRequested.body': 'افتح إعلاناتك لترى ما يجب تغييره. يبقى المنشور في السوق خلال ذلك.',
+  'notice.correctionRequested.body':
+    'افتح إعلاناتك لترى ما يجب تغييره. يبقى المنشور في السوق خلال ذلك.',
   'login.forgotLink': 'أعد تعيينها برمز عبر الرسائل القصيرة',
   'recover.title': 'إعادة تعيين كلمة المرور',
-  'recover.lead': 'أدخل رقم الهاتف الذي تسجّل الدخول به. إذا كان له حساب في AgriOne، سنرسل إليه رمزاً برسالة قصيرة.',
+  'recover.lead':
+    'أدخل رقم الهاتف الذي تسجّل الدخول به. إذا كان له حساب في AgriOne، سنرسل إليه رمزاً برسالة قصيرة.',
   'recover.send': 'أرسل الرمز',
   'recover.sending': 'جارٍ الإرسال…',
-  'recover.sentLead': 'إذا كان لهذا الرقم حساب في AgriOne، فالرمز في طريقه برسالة قصيرة. صالح لمدة 10 دقائق.',
+  'recover.sentLead':
+    'إذا كان لهذا الرقم حساب في AgriOne، فالرمز في طريقه برسالة قصيرة. صالح لمدة 10 دقائق.',
   'recover.codeLabel': 'الرمز من الرسالة',
   'recover.codeHint': '6 أرقام',
   'recover.verify': 'متابعة',
@@ -1145,9 +1150,11 @@ export const ar: Partial<Record<TKey, string>> = {
   'recover.newPassword': 'كلمة المرور الجديدة',
   'recover.save': 'احفظ كلمة المرور الجديدة',
   'recover.doneTitle': 'تم تغيير كلمة المرور',
-  'recover.done': 'تم تغيير كلمة المرور وتسجيل خروجك من كل الأجهزة الأخرى. سجّل الدخول بكلمة المرور الجديدة.',
+  'recover.done':
+    'تم تغيير كلمة المرور وتسجيل خروجك من كل الأجهزة الأخرى. سجّل الدخول بكلمة المرور الجديدة.',
   'recover.signIn': 'تسجيل الدخول',
-  'recover.unavailable': 'الرموز عبر الرسائل القصيرة غير متاحة الآن. يمكن لمرشدك الزراعي أو CORWADO إعادة تعيين كلمة المرور.',
+  'recover.unavailable':
+    'الرموز عبر الرسائل القصيرة غير متاحة الآن. يمكن لمرشدك الزراعي أو CORWADO إعادة تعيين كلمة المرور.',
   'recover.failed': 'حدث خطأ. حاول مرة أخرى.',
   'recover.back': 'العودة إلى تسجيل الدخول',
   'account.changePhoneCodeNote': 'سنرسل رمزاً إلى الرقم الجديد للتأكد من أنه لك.',

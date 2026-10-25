@@ -5,7 +5,11 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { lifecycleStage, type LifecycleAction } from '@agri-erp/shared';
 
-import { CorrectionNotice, CorrectionStamp, useOpenCorrections } from '@/components/account/Corrections';
+import {
+  CorrectionNotice,
+  CorrectionStamp,
+  useOpenCorrections,
+} from '@/components/account/Corrections';
 import { ButtonLink, EmptyState, Notice } from '@/components/ui';
 import { CATEGORY_KEY, UNIT_KEY, formatSsp } from '@/lib/farmers/listings';
 import type { ListingCategory, ListingUnit } from '@/lib/fixtures/farmers';
@@ -116,7 +120,7 @@ export function MyBuyingRequests({
                 <span className={styles.cardTitle} dir="auto">
                   {needLine(r, lang)}
                 </span>
-              {corrections.ids.has(r.id) ? <CorrectionStamp lang={lang} /> : null}
+                {corrections.ids.has(r.id) ? <CorrectionStamp lang={lang} /> : null}
               </div>
               <div className={styles.meta}>
                 <span>{t(CATEGORY_KEY[r.category as ListingCategory], lang)}</span>

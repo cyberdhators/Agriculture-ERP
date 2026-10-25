@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import * as communications from '../apps/web/app/api/admin/communications/route';
+import * as corrections from '../apps/web/app/api/admin/corrections/route';
 import * as smsFarmers from '../apps/web/app/api/admin/communications/farmers/route';
 import * as adminQueue from '../apps/web/app/api/admin/product-reports/route';
 import * as adminDetail from '../apps/web/app/api/admin/product-reports/[id]/route';
@@ -99,6 +100,19 @@ const ADMIN_ROUTES = [
     body: () => ({ action: 'mark_reviewing' }),
   },
   { name: 'GET /api/admin/product-reports/unread-count', mod: unreadCount, method: 'GET' as const },
+  // 2026-10-27: correction requests on marketplace posts (then content.moderate).
+  { name: 'GET /api/admin/corrections', mod: corrections, method: 'GET' as const },
+  {
+    name: 'POST /api/admin/corrections',
+    mod: corrections,
+    method: 'POST' as const,
+    body: () => ({
+      target_type: 'produce_listing',
+      target_id: DUMMY_ID,
+      reason_code: 'misleading_listing',
+      note: 'Zztest correction note',
+    }),
+  },
 ];
 
 describe('no session reaches any administrator route', () => {

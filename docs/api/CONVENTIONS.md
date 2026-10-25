@@ -383,7 +383,7 @@ character.
 | `notice_version_exists`            | That version already exists for this notice and language. Choose a new version number.                                        |
 | `notice_version_not_newer`         | Choose a version number higher than the one already published for this notice and language.                                   |
 | `notice_not_draft`                 | Only a draft can be edited, published or discarded. A published or retired notice stays as it was.                            |
-| `correction_already_open`          | A correction has already been requested for this post and is waiting for its owner. |
+| `correction_already_open`          | A correction has already been requested for this post and is waiting for its owner.                                           |
 
 **A route names a rule; it never writes a sentence.** `conflict()` and
 `unprocessable()` take a key from this registry, not a string. That is how the
@@ -860,14 +860,14 @@ These are also exact.
 | Notice: version malformed               | Give the version as v followed by numbers, such as v1.4.                                        |
 | Notice: text length                     | Write the notice in 20 to 20000 characters.                                                     |
 | Notice: edit changes nothing            | Change the version or the text before saving.                                                   |
-| Recovery: verification id missing or malformed | Ask for a new code. |
-| Change of number: password missing | Enter your current password to confirm. |
-| Correction: post type unknown | Choose a produce listing, a service listing or a buying request. |
-| Correction: post id malformed | That post could not be found. |
-| Correction: reason code missing | Choose a reason code. |
-| Correction: reason code not offered for listings | Choose a reason code from the list. |
-| Correction: note too short or too long | Say what needs correcting, in 5 to 500 characters. |
-| Correction list: status unknown | Choose open or addressed. |
+| Recovery: verification id malformed     | Ask for a new code.                                                                             |
+| Change of number: password missing      | Enter your current password to confirm.                                                         |
+| Correction: post type unknown           | Choose a produce listing, a service listing or a buying request.                                |
+| Correction: post id malformed           | That post could not be found.                                                                   |
+| Correction: reason code missing         | Choose a reason code.                                                                           |
+| Correction: reason code not offered     | Choose a reason code from the list.                                                             |
+| Correction: note length                 | Say what needs correcting, in 5 to 500 characters.                                              |
+| Correction list: status unknown         | Choose open or addressed.                                                                       |
 
 The key beside each reason is the field name, per section 4.1. An unrecognised
 field named `nickname` therefore produces `{ "nickname": "This field is not

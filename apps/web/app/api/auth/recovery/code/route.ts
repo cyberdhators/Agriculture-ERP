@@ -2,7 +2,10 @@ import { PHONE_CODE, recoveryCodeRequestSchema, type RecoveryCodeSent } from '@a
 
 import { recoverableAccount, smsLanguage } from '../../../../../lib/api/account-recovery';
 import { defineRoutes, ok } from '../../../../../lib/api/route';
-import { issuePhoneCode, phoneVerificationRequired } from '../../../../../lib/api/phone-verification';
+import {
+  issuePhoneCode,
+  phoneVerificationRequired,
+} from '../../../../../lib/api/phone-verification';
 
 /**
  * POST /api/auth/recovery/code -- "Forgot your password?" for a phone account

@@ -23,8 +23,7 @@ type Panel = 'password' | 'phone' | null;
  * on a two-column grid.
  */
 export function FarmerAccount() {
-  const { farmer, language, setLanguage, signOut, changePassword } =
-    useFarmerSession();
+  const { farmer, language, setLanguage, signOut, changePassword } = useFarmerSession();
   const router = useRouter();
 
   const [panel, setPanel] = useState<Panel>(null);

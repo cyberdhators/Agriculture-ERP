@@ -198,12 +198,7 @@ export function FarmerForgotPassword() {
             </Field>
           </div>
           <div className={styles.actions}>
-            <Button
-              type="submit"
-              variant="primary"
-              className={styles.blockButton}
-              disabled={busy}
-            >
+            <Button type="submit" variant="primary" className={styles.blockButton} disabled={busy}>
               {busy ? t('recover.sending', language) : t('recover.send', language)}
             </Button>
           </div>
@@ -242,12 +237,7 @@ export function FarmerForgotPassword() {
               {t('recover.verify', language)}
             </Button>
           </div>
-          <ResendCode
-            language={language}
-            wait={wait}
-            busy={busy}
-            onResend={() => void resend()}
-          />
+          <ResendCode language={language} wait={wait} busy={busy} onResend={() => void resend()} />
           <Button variant="ghost" onClick={startOver} disabled={busy}>
             {t('recover.otherNumber', language)}
           </Button>
@@ -287,12 +277,7 @@ export function FarmerForgotPassword() {
             </Field>
           </div>
           <div className={styles.actions}>
-            <Button
-              type="submit"
-              variant="primary"
-              className={styles.blockButton}
-              disabled={busy}
-            >
+            <Button type="submit" variant="primary" className={styles.blockButton} disabled={busy}>
               {t('recover.save', language)}
             </Button>
           </div>

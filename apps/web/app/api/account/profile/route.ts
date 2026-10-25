@@ -36,7 +36,8 @@ interface Row {
   updated_at: Date;
 }
 
-const COLUMNS = 'profile_kind, group_kind, activities, enterprise_size, show_enterprise_size, updated_at';
+const COLUMNS =
+  'profile_kind, group_kind, activities, enterprise_size, show_enterprise_size, updated_at';
 
 const present = (row: Row | undefined) =>
   row

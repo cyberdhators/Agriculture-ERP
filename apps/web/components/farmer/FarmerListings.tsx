@@ -5,7 +5,11 @@ import { useEffect, useState } from 'react';
 
 import { lifecycleStage, type LifecycleStage } from '@agri-erp/shared';
 
-import { CorrectionNotice, CorrectionStamp, useOpenCorrections } from '@/components/account/Corrections';
+import {
+  CorrectionNotice,
+  CorrectionStamp,
+  useOpenCorrections,
+} from '@/components/account/Corrections';
 import { ListingCard } from '@/components/listings/ListingCard';
 import { ButtonLink, EmptyState, Tabs } from '@/components/ui';
 import type { ProduceListing } from '@/lib/fixtures/farmers';
