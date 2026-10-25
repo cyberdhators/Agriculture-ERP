@@ -4657,3 +4657,26 @@ Migration `20261027090000_team_access`.
   `organization_invitation.cancelled`, `organization_transfer.offered`,
   `organization_transfer.accepted`, `organization_transfer.declined`,
   `organization_transfer.cancelled`.
+
+- **Posts outlive the person who made them (INFERRED, from "organizational
+  continuity").** A buying request or service made for an OPEN organisation
+  stays on the market when the person who posted it leaves, is removed or
+  deletes their account: the market's live-poster rule is now "the farmer, the
+  buyer, or an open organisation" (`og` join, filtering closed and removed
+  organisations; `tests/suspension-scan.test.ts` holds the new form). Personal
+  deletion withdraws only PERSONAL posts and closes only PERSONAL
+  conversations. A conversation about such a post whose poster has gone is
+  held by the organisation's longest-serving administrator's sign-in (the
+  column is NOT NULL); the inbox is the organisation's either way. OWNER TO
+  CONFIRM: a suspended person's organisation posts stay visible (the
+  suspension is of the person, not the organisation).
+- **Known gaps (this pass):** produce listings and advisory cases are not yet
+  made "as" an organisation (`advisory.handle` exists and is granted but no
+  advice route reads it); the shared inbox's read mark is shared by the team;
+  in-app notices for organisation conversations go to at most twenty members
+  with `inbox.read`; invitation SMS/email is attempted only when Bird/Resend are
+  configured, otherwise the link is copied by hand (OBSERVED in code, not
+  exercised against either service); the organisation's state is not on the
+  forms yet (the API accepts it); no route or screen was run end-to-end
+  (`next dev` and DB tests are not run on this machine) -- the pure suite,
+  type check and lint are what was run.
