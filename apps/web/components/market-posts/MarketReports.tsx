@@ -7,6 +7,7 @@ import { ReasonCodeSelect } from '@/components/admin/ReasonCodeSelect';
 import { Button, Field, Notice, Stamp, Textarea } from '@/components/ui';
 import { ConfirmationDialog } from '@/components/ui/feedback';
 import { formatDate } from '@/lib/format';
+import { useHolds } from '@/lib/admin/use-permission';
 import { usePreview } from '@/lib/preview';
 import { reasonLabel, statusLabel, statusTone } from '@/components/product-reports/presentation';
 
@@ -54,8 +55,11 @@ const ACTIONS: Record<string, ReadonlyArray<{ action: string; label: string }>> 
  * no reporter identity exists to show.
  */
 export function MarketReports() {
-  const { role, hydrated } = usePreview();
-  const isAdmin = hydrated && role === 'admin';
+  const { hydrated } = usePreview();
+  // 2026-10-30 (presets are binding): offered to whoever holds content.moderate, on any
+  // staff role; the route asks for the same permission.
+  const holds = useHolds('content.moderate');
+  const isAdmin = hydrated && holds === true;
   const [rows, setRows] = useState<MarketReport[] | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
@@ -132,6 +136,7 @@ export function MarketReports() {
     }
   }
 
+  if (holds === null) return null;
   if (!isAdmin) return null;
 
   return (

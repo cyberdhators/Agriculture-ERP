@@ -64,7 +64,7 @@ const SET: Record<LearningAction, string> = {
 
 export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   POST: {
-    roles: ['admin'],
+    roles: ['admin', 'supervisor'],
     bodySchema: learningTransitionSchema,
     handler: async ({ auth, body, params }) => {
       requireWriter(auth);

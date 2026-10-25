@@ -82,7 +82,6 @@ export interface StaffWithGrants {
   role: string;
   state_id: string | null;
   last_activity_at: string | null;
-  legacy_admin: boolean;
   grants: Grant[];
 }
 

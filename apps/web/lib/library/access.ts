@@ -17,9 +17,10 @@ import { LIVE_LIBRARY } from './api';
  * GET /api/admin/staff-access/me, so a screen does not offer what the server
  * will refuse.
  *
- * Only an administrator reaches the library's write routes at all. In the
- * preview (fixtures, NEXT_PUBLIC_USE_LIVE_LIBRARY off) an administrator holds
- * both, as every administrator does today under the legacy rule.
+ * Administrators and supervisors reach the library's write routes, and then
+ * only with the permission (2026-10-30: presets are binding; the role alone
+ * grants neither). In the preview (fixtures, NEXT_PUBLIC_USE_LIVE_LIBRARY off)
+ * the preview's administrator holds both, as before.
  */
 export interface ContentAccessView {
   readonly write: boolean;
@@ -34,12 +35,12 @@ export function useContentAccess(): ContentAccessView {
   const [access, setAccess] = useState<ContentAccessView>(NONE);
 
   useEffect(() => {
-    if (!hydrated || role !== 'admin') {
+    if (!hydrated || (role !== 'admin' && role !== 'supervisor')) {
       setAccess(NONE);
       return;
     }
     if (!LIVE_LIBRARY) {
-      setAccess(BOTH);
+      setAccess(role === 'admin' ? BOTH : NONE);
       return;
     }
     if (!me) return;

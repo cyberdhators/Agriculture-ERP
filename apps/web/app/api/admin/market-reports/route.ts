@@ -7,6 +7,7 @@ import {
   parseQuery,
   type MarketReportRow,
 } from '../../../../lib/api/market-posts';
+import { requirePermission } from '../../../../lib/api/permissions';
 import { defineRoutes, paged } from '../../../../lib/api/route';
 import { prisma } from '../../../../lib/db';
 
@@ -22,8 +23,9 @@ import { prisma } from '../../../../lib/db';
 
 export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   GET: {
-    roles: ['admin'],
-    handler: async ({ request }) => {
+    roles: ['admin', 'supervisor', 'read_only'],
+    handler: async ({ auth, request }) => {
+      await requirePermission(auth, 'content.moderate');
       const filter = parseQuery(request, productReportFilterSchema);
       const limit = pageLimit(filter.limit);
       const params: unknown[] = [];

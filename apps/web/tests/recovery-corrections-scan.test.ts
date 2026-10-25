@@ -101,8 +101,10 @@ describe('a change of number is verified on the server', () => {
 describe('a correction request', () => {
   const route = read('app/api/admin/corrections/route.ts');
 
-  it('is for administrators holding content.moderate, asked before any data, on both methods', () => {
-    expect(route.match(/roles: \['admin'\]/g)?.length).toBe(2);
+  it('is for staff holding content.moderate, asked before any data, on both methods', () => {
+    // 2026-10-30: reads admit read-only accounts, the write does not.
+    expect(route.match(/roles: \['admin', 'supervisor', 'read_only'\]/g)?.length).toBe(1);
+    expect(route.match(/roles: \['admin', 'supervisor'\]/g)?.length).toBe(1);
     expect(route.match(/await requirePermission\(auth, 'content\.moderate'\)/g)?.length).toBe(2);
   });
 

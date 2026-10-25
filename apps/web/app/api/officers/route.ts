@@ -10,6 +10,7 @@ import {
 
 import { audited, writeAudit, writeAuditOutcome } from '../../../lib/api/audit';
 import { authUnavailable, conflict, invalidCursor, unprocessable } from '../../../lib/api/errors';
+import { requirePermission } from '../../../lib/api/permissions';
 import { created, defineRoutes, paged } from '../../../lib/api/route';
 import { requireWriter } from '../../../lib/api/scope';
 import { prisma } from '../../../lib/db';
@@ -116,6 +117,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
     roles: ['admin'],
     bodySchema: createOfficerSchema,
     handler: async ({ auth, body }) => {
+      await requirePermission(auth, 'staff.manage');
       requireWriter(auth);
 
       // The payam must exist, and it supplies the state so the two cannot

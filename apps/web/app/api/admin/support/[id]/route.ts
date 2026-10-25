@@ -54,7 +54,7 @@ interface LockedCase {
 
 export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   GET: {
-    roles: ['admin'],
+    roles: ['admin', 'supervisor', 'read_only'],
     handler: async ({ auth, params }) => {
       await requirePermission(auth, 'support.handle');
       const id = params.id ?? '';
@@ -72,7 +72,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   },
 
   PATCH: {
-    roles: ['admin'],
+    roles: ['admin', 'supervisor'],
     bodySchema: supportCaseUpdateSchema,
     handler: async ({ auth, body, params }) => {
       await requirePermission(auth, 'support.handle');

@@ -77,7 +77,7 @@ const NOTICE: Record<AdviserDecision, AccountNotice> = {
 
 export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   POST: {
-    roles: ['admin'],
+    roles: ['admin', 'supervisor'],
     bodySchema: adviserDecisionSchema,
     handler: async ({ auth, body: raw, params }) => {
       await requirePermission(auth, 'content.moderate');

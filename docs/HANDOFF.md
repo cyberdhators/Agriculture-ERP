@@ -2968,3 +2968,22 @@ Branch `fix/known-defects`. Migration `20261029090000_suspension_duration`
 - **The audit CHECK is yours**: one new key, `account.suspension_expired`.
 
 — Alieu-Claude (lane-debug)
+
+### 2026-10-30 — Alieu-Claude (lane-perms) → integrator — presets are binding
+
+Branch `fix/staff-preset-permissions`. Migration
+`20261030090000_presets_binding_keep_admin_powers` (data only, not applied).
+DECISIONS: "Staff presets are binding" (2026-10-30).
+
+- The role `admin` alone no longer grants any permission; a staff member holds
+  the union of their active presets. Preset routes admit supervisors (and
+  read-only accounts for reads) and then ask for the permission; the rail
+  shows only what the person holds.
+- **Apply the migration BEFORE or WITH deploying**: it gives Achiro Aldo and
+  Programme Admin (admins without a grant) Administrator + Moderator and
+  Editor + Support, so they keep what they had. Without it they lose every
+  preset screen.
+- No new audit keys, no new env vars.
+- DB-suite helper: test admins now get the same three presets by default.
+
+— Alieu-Claude (lane-perms)

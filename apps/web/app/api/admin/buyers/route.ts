@@ -12,6 +12,7 @@ import {
 } from '@agri-erp/shared';
 
 import { ApiFailure, invalidCursor } from '../../../../lib/api/errors';
+import { requirePermission } from '../../../../lib/api/permissions';
 import { defineRoutes, paged } from '../../../../lib/api/route';
 import { prisma } from '../../../../lib/db';
 import { adminAuthEmails } from '../../../../lib/supabase/admin';
@@ -54,7 +55,8 @@ interface OrgRow {
 export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   GET: {
     roles: ['admin'],
-    handler: async ({ request }) => {
+    handler: async ({ auth, request }) => {
+      await requirePermission(auth, 'content.moderate');
       const parsed = buyerListFilterSchema.safeParse(
         Object.fromEntries(new URL(request.url).searchParams),
       );

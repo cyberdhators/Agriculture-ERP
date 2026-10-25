@@ -22,4 +22,7 @@ import type { Role } from '@/lib/preview';
  * it against a route with the identical mismatch, and Directory is out of
  * scope for this work — reported rather than changed.
  */
+// 2026-10-30 (presets are binding): the library screen no longer asks this.
+// Drafts are served to whoever may write guides (lib/api/learning.ts
+// contentAccess), and the screen asks useContentAccess. Kept for its test.
 export const canSeeUnpublished = (role: Role): boolean => role === 'admin';

@@ -170,7 +170,8 @@ async function call<T>(path: string, init?: RequestInit): Promise<T> {
 
 export function AdviserReview() {
   const { role, hydrated } = usePreview();
-  const isAdmin = hydrated && role === 'admin';
+  // 2026-10-30: any staff role; the route decides by permission (a 403 shows the refusal).
+  const isAdmin = hydrated && role !== 'officer';
   const [tab, setTab] = useState<Tab>('submitted');
   const [rows, setRows] = useState<AdviserApplicationStaff[] | null>(null);
   const [failure, setFailure] = useState<Failure | null>(null);

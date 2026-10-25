@@ -312,7 +312,7 @@ export function StaffAccess() {
       <PageHeader
         eyebrow="Governance"
         title="Staff and permissions"
-        subtitle="Presets add permissions on top of a staff member's role. Every change is recorded with its reason in the audit trail."
+        subtitle="A staff member can do exactly what their presets allow; the role alone grants no permission. Every change is recorded with its reason in the audit trail."
       />
 
       {/* ---- Your own access ------------------------------------------- */}
@@ -400,9 +400,7 @@ export function StaffAccess() {
             header: 'Presets',
             render: (s) =>
               s.grants.length === 0 ? (
-                <span className="muted">
-                  {s.legacy_admin ? 'Administrator role (all but Super Admin)' : 'None'}
-                </span>
+                <span className="muted">None (the role alone grants no permission)</span>
               ) : (
                 <ul className={styles.grantList}>
                   {s.grants.map((g) => (

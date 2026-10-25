@@ -33,7 +33,7 @@ const lockDraft = async (
 
 export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   PATCH: {
-    roles: ['admin'],
+    roles: ['admin', 'supervisor'],
     bodySchema: noticeEditSchema,
     handler: async ({ auth, body: raw, params }) => {
       await requirePermission(auth, 'settings.manage');
@@ -93,7 +93,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   },
 
   DELETE: {
-    roles: ['admin'],
+    roles: ['admin', 'supervisor'],
     handler: async ({ auth, params }) => {
       await requirePermission(auth, 'settings.manage');
       const id = checkId(params.id);

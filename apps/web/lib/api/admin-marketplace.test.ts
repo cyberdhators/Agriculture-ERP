@@ -119,9 +119,10 @@ describe('the console’s routes', () => {
     'app/api/admin/marketplace/[kind]/[id]/remove/route.ts',
   ];
   for (const file of routes) {
-    it(`${file} is administrator-only and then asks for content.moderate`, () => {
+    it(`${file} admits the staff roles and then asks for content.moderate`, () => {
       const text = read(file);
-      expect(text).toMatch(/roles: \['admin'\]/);
+      // 2026-10-30 (presets are binding): the permission is the control.
+      expect(text).toMatch(/roles: \['admin', 'supervisor'(, 'read_only')?\]/);
       expect(text).toMatch(/requirePermission\(auth, 'content\.moderate'\)/);
     });
   }

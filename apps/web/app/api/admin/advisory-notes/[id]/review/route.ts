@@ -41,7 +41,7 @@ const AUDIT: Record<AdvisoryNoteReviewInput['action'], AuditAction> = {
 
 export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   POST: {
-    roles: ['admin'],
+    roles: ['admin', 'supervisor'],
     bodySchema: advisoryNoteReviewSchema,
     handler: async ({ auth, body: raw, params }) => {
       const body = raw as AdvisoryNoteReviewInput;

@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState, type ReactNode } from 'react';
 
-import { navFor, activeHref, type IconKey } from '@/lib/portal/nav';
+import { navFor, activeHref, type HeldPermissions, type IconKey } from '@/lib/portal/nav';
 import { getUnreadReportCount } from '@/lib/product-reports/api';
 import { ROLE_LABELS, type Role } from '@/lib/preview';
 
@@ -70,6 +70,11 @@ export interface SidebarProps {
   onSignOut: () => void;
   /** 2026-10-19: shown instead of the role's own label, e.g. "Super Admin". */
   roleLabel?: string;
+  /**
+   * 2026-10-30: what the person holds (GET /api/admin/staff-access/me); null
+   * while unknown, which hides every permission-gated destination.
+   */
+  held: HeldPermissions | null;
 }
 
 export function Sidebar({
@@ -81,9 +86,12 @@ export function Sidebar({
   onToggleCollapsed,
   onSignOut,
   roleLabel,
+  held,
 }: SidebarProps) {
-  const sections = navFor(role);
-  const active = activeHref(pathname, role);
+  const sections = navFor(role, held);
+  const active = activeHref(pathname, role, held);
+  // The badge's route requires content.moderate platform-wide.
+  const moderates = held?.get('content.moderate')?.platform === true;
 
   /**
    * THE PRODUCT-REPORTS BADGE, AND ITS ONLY PERMITTED SOURCE.
@@ -97,7 +105,10 @@ export function Sidebar({
   const [unread, setUnread] = useState<number | null>(null);
 
   useEffect(() => {
-    if (role !== 'admin') return;
+    if (!moderates) {
+      setUnread(null);
+      return;
+    }
     let live = true;
     getUnreadReportCount()
       .then((count) => live && setUnread(count.unread))
@@ -105,7 +116,7 @@ export function Sidebar({
     return () => {
       live = false;
     };
-  }, [role, pathname]);
+  }, [moderates, pathname]);
 
   return (
     <nav

@@ -26,7 +26,7 @@ const OPEN = new Set(['submitted', 'clarification_requested']);
 
 export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   GET: {
-    roles: ['admin'],
+    roles: ['admin', 'supervisor', 'read_only'],
     handler: async ({ auth, request }) => {
       await requirePermission(auth, 'content.moderate');
       const filter = parseQuery(request, adviserQueueFilterSchema);

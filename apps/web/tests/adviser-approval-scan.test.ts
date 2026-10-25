@@ -23,9 +23,12 @@ describe('only moderators review adviser applications', () => {
     'app/api/admin/advisers/[id]/route.ts',
     'app/api/admin/advisers/[id]/decision/route.ts',
   ]) {
-    it(`${route} is administrator-only and asks for content.moderate before any data`, () => {
+    it(`${route} admits the staff roles and asks for content.moderate before any data`, () => {
       const text = read(route);
-      expect(text).toMatch(/roles: \['admin'\]/);
+      // 2026-10-30 (presets are binding): any staff role that can hold the
+      // preset; the permission is the control.
+      expect(text).toMatch(/roles: \['admin', 'supervisor'(, 'read_only')?\]/);
+      expect(text).not.toMatch(/roles: \['admin'\]/);
       expect(text).not.toMatch(/BUYER_ROLE|FARMER_ROLE|'public'/);
       const handlers = text.split('handler: async').slice(1);
       expect(handlers.length).toBeGreaterThan(0);

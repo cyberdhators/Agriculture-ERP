@@ -53,12 +53,19 @@ describe('private conversations are not a broadcast resource', () => {
   });
 });
 
-describe('administrators holding communications.send, enforced in the route', () => {
+describe('staff holding communications.send, enforced in the route', () => {
   it.each(ADMIN_ROUTES.map((f) => [f]))('%s', (file) => {
     const text = read(file);
     const handlers = text.match(/roles: \[[^\]]*\]/g) ?? [];
     expect(handlers.length, 'no handler found').toBeGreaterThan(0);
-    for (const roles of handlers) expect(roles).toBe("roles: ['admin']");
+    // 2026-10-30 (presets are binding): every staff role that can hold the
+    // Administrator preset; reads admit read-only accounts, writes do not.
+    for (const roles of handlers) {
+      expect([
+        "roles: ['admin', 'supervisor', 'read_only']",
+        "roles: ['admin', 'supervisor']",
+      ]).toContain(roles);
+    }
     const checks = text.match(/await requirePermission\(auth, 'communications\.send'\)/g) ?? [];
     expect(checks.length).toBe(handlers.length);
   });

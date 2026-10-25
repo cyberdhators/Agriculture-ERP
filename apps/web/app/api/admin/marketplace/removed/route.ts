@@ -23,7 +23,7 @@ import { prisma } from '../../../../../lib/db';
  */
 export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   GET: {
-    roles: ['admin'],
+    roles: ['admin', 'supervisor', 'read_only'],
     handler: async ({ auth, request }) => {
       await requirePermission(auth, 'content.moderate');
       const search = new URL(request.url).searchParams;

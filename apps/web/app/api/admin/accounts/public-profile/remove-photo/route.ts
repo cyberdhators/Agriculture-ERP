@@ -24,7 +24,7 @@ import { removeStoredObject } from '../../../../../../lib/supabase/admin';
  */
 export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   POST: {
-    roles: ['admin'],
+    roles: ['admin', 'supervisor'],
     bodySchema: accountSanctionSchema,
     handler: async ({ auth, body }) => {
       await requirePermission(auth, 'content.moderate');

@@ -24,6 +24,7 @@ import {
   type OrderRow,
 } from '../../../../lib/api/buyers';
 import { ApiFailure, invalidCursor, unprocessable } from '../../../../lib/api/errors';
+import { requirePermission } from '../../../../lib/api/permissions';
 import { created, defineRoutes, paged } from '../../../../lib/api/route';
 import { prisma } from '../../../../lib/db';
 
@@ -44,7 +45,8 @@ type AdminOrderRow = OrderRow & { organization_id: string; organization_name: st
 export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   GET: {
     roles: ['admin'],
-    handler: async ({ request }) => {
+    handler: async ({ auth, request }) => {
+      await requirePermission(auth, 'content.moderate');
       const parsed = buyerListFilterSchema.safeParse(
         Object.fromEntries(new URL(request.url).searchParams),
       );
@@ -110,6 +112,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
     roles: ['admin'],
     bodySchema: createOrderSchema,
     handler: async ({ auth, body }) => {
+      await requirePermission(auth, 'content.moderate');
       const actor = { actorType: 'admin' as const, actorId: auth.principal.id };
 
       const id = await audited(prisma, async (tx) => {

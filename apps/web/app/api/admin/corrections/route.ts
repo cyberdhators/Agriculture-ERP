@@ -44,7 +44,7 @@ import { prisma } from '../../../../lib/db';
  */
 export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   GET: {
-    roles: ['admin'],
+    roles: ['admin', 'supervisor', 'read_only'],
     handler: async ({ auth, request }) => {
       await requirePermission(auth, 'content.moderate');
       const filter = parseQuery(request, correctionListQuerySchema);
@@ -98,7 +98,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   },
 
   POST: {
-    roles: ['admin'],
+    roles: ['admin', 'supervisor'],
     bodySchema: correctionRequestSchema,
     handler: async ({ auth, body: sent }) => {
       const body: CorrectionRequestInput = sent;

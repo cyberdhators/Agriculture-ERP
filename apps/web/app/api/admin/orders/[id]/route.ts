@@ -11,6 +11,7 @@ import {
   type OrderRow,
 } from '../../../../../lib/api/buyers';
 import { notFound, unprocessable } from '../../../../../lib/api/errors';
+import { requirePermission } from '../../../../../lib/api/permissions';
 import { defineRoutes, ok } from '../../../../../lib/api/route';
 import { prisma } from '../../../../../lib/db';
 
@@ -27,6 +28,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
     roles: ['admin'],
     bodySchema: orderStatusSchema,
     handler: async ({ auth, body, params }) => {
+      await requirePermission(auth, 'content.moderate');
       const id = params.id ?? '';
       if (!UUID_PATTERN.test(id)) throw notFound();
       const actor = { actorType: 'admin' as const, actorId: auth.principal.id };

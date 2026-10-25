@@ -21,7 +21,7 @@ import { prisma } from '../../../../../../lib/db';
  */
 export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   POST: {
-    roles: ['admin'],
+    roles: ['admin', 'supervisor'],
     handler: async ({ auth, params }) => {
       requireWriter(auth);
       const id = checkId(params.id);

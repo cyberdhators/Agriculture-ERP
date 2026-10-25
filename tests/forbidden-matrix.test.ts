@@ -797,8 +797,8 @@ const ROUTES = [
       note: 'Zztest correction note',
     }),
   }, // 2026-10-28: the administration overview. Staff roles, then reports.view,
-  // which only an administrator holds without a grant -- so the test's
-  // supervisor and read-only principals (no grants) are refused.
+  // which the test administrator holds through its presets (2026-10-30) -- so the
+  // test's supervisor and read-only principals (no grants) are refused.
   {
     name: 'GET /api/admin/overview',
     mod: adminOverview,

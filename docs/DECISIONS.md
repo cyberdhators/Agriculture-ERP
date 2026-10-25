@@ -3859,7 +3859,8 @@ NOT applied by the session that wrote them.
   Admin only, so platform-wide moderation never implies Super Admin, security
   changes or sensitive exports (a test asserts it). Each grant is platform-wide
   or for named states; one person may hold several presets.
-- **The legacy rule.** An existing `admin` holds every key except
+- **The legacy rule** (SUPERSEDED 2026-10-30: presets are binding, see that
+  entry). An existing `admin` holds every key except
   `superadmin.grant`, platform-wide, with no grant row, so nothing that works
   today stops working. DECIDED HERE, OPEN TO THE OWNER: this stays true after
   a Super Admin exists (the brief's "until a Super Admin exists" was read as
@@ -5460,3 +5461,95 @@ The owner, 2026-10-29 ("yes fix it"): a suspension made late in the day for
 1 day ended at the next Juba midnight -- hours, not a day (OBSERVED in the
 live re-check). `suspensionEndsAt` now ends at Juba midnight after N FULL
 days; the rest of the day of suspension does not count.
+
+## Staff presets are binding: the role `admin` alone grants no permission (2026-10-30)
+
+Branch `fix/staff-preset-permissions` (lane-perms). Migration
+`20261030090000_presets_binding_keep_admin_powers` (DATA ONLY, not applied).
+
+**The defect (OBSERVED on production, client acceptance with the demo
+accounts, 2026-10-24).** Every account with the role `admin` held every
+permission except Super Admin without any grant (the "legacy rule" of
+2026-10-19, above), so Demo Moderator, Demo Support and Demo Administrator
+could do the same things: the presets restricted nothing. And the moderation
+and support routes declared `roles: ['admin']`, so a supervisor given those
+presets was refused at the door. The specification (lines 109-112): presets,
+combined roles, "platform-wide moderation/editing does not automatically grant
+Super Admin appointment, security changes or sensitive exports", "enforce
+permissions in the underlying service, not only by hiding menu items".
+
+**Decided.**
+
+- **Permissions = the union of the person's ACTIVE preset grants**, nothing
+  else (`effectivePermissions`, packages/shared). The role still decides which
+  routes a person may knock on and, for a supervisor or read-only account, the
+  state their data is limited to. A Super Admin grant still counts only on an
+  `admin` account. Super Admin keeps every key.
+- **Preset routes admit every staff role that can hold the preset, then ask
+  for the permission**: reads `admin, supervisor, read_only`; writes
+  `admin, supervisor` (read-only accounts create no records, C-3.9). Accounts,
+  advisers and advisory notes, announcements and templates, communications,
+  corrections, the marketplace console and removed list, product and market
+  reports, reason codes, notices and settings, organisations, support cases,
+  staff invitations and the audit trail. Routes that asked for nothing before
+  now ask: `/api/audit` audit.view; `/api/admin/communications` and its farmer
+  picker communications.send; product reports, market reports, buyer review,
+  buying requests and orders content.moderate; creating, changing or removing
+  a staff or officer account (`/api/users`, `/api/officers` writes)
+  staff.manage. Platform-wide routes ask for platform-wide coverage, so a
+  state-limited grant does not open them (state scoping intact).
+- **Kept to the role `admin`, with the permission on top (INFERRED, open to
+  the owner):** the Super Admin routes (superadmin.grant only counts there);
+  buyer review, buying requests and orders (the B13 state machines record the
+  actor as `admin`; widening them is a separate change); staff and officer
+  account writes (national accounts).
+- **Kept to the role alone, no preset (INFERRED, OPEN TO THE OWNER):** the
+  farmer-registry operations that predate the presets and that no preset
+  describes -- reassigning or removing a farmer, removing a farm or a visit,
+  directory entries -- plus the role-based programme routes shared with
+  supervisors and officers (farmer register, visits, programme reports and the
+  farmer-number-only export, live-marketplace withdrawal, market prices).
+  Changing any of them would take supervisors' current powers away, which the
+  brief said must not happen. `apps/web/tests/preset-permission-scan.test.ts`
+  lists the admin-only ones with reasons; a new admin-only route that asks for
+  no permission fails it.
+- **The nav shows only what the person holds.** Each preset destination
+  carries the permissions its routes ask for; the rail reads GET
+  /api/admin/staff-access/me for every staff role and hides those destinations
+  until the answer arrives. Screens that refused anyone but `admin` now ask
+  the same question (`useHolds`).
+- **Assignable support staff** are those holding support.handle platform-wide
+  (a Support grant, or Super Admin on an admin account), no longer every admin.
+- **The library's drafts** are served to whoever may write guides
+  (content.moderate or content.publish), no longer to every admin.
+
+**Verified (OBSERVED in code, pure tests).** The Administrator preset is
+staff.manage, settings.manage, audit.view, reports.view, communications.send:
+no superadmin.grant (appointing Super Admins, resetting two-step sign-in,
+ending sessions, re-enabling accounts) and no exports.identifiable. Only
+Super Admin carries exports.identifiable, and NO route offers an identifiable
+export today: the programme export carries farmer numbers only (C-10.11) and
+the analytics workbook aggregates. Any future identifiable export must ask for
+that key.
+
+**The rollout, so nobody loses access.** Migration 20261030090000 gives every
+ACTIVE administrator with NO active grant three presets, platform-wide:
+Administrator + Moderator and Editor + Support -- together exactly what the
+legacy rule gave them, less exports.identifiable, which no route asks for (a
+pure test asserts the equality). The brief named the Administrator preset;
+Administrator alone would have taken moderation, publishing and support away
+from them, so all three are given (DECIDED HERE; revoke any of them on Staff
+permissions). `granted_by` is the administrator themself (the convention the
+Super Admin bootstrap already uses), reason "Kept their powers when presets
+became binding (2026-10-30)", each with a `staff.permission_granted` audit row
+by `system`. Idempotent. Apply it BEFORE or WITH the code: under the old code
+the rows change nothing.
+
+**Who it changes (INFERRED from the staff list in the brief; the database was
+not read):** Achiro Aldo and Programme Admin (admin, no grant) each receive the
+three presets. Okech Aldo (Super Admin grant) and the demo administrators
+(each holding a preset already) are left as they are, so Demo Moderator now
+holds moderation only, Demo Support support only, Demo Administrator the
+Administrator preset only. Read-only Viewer and the supervisors are not
+touched: the legacy rule never gave them anything, so they keep exactly what
+their role gives today (the registry, scoped to their state).

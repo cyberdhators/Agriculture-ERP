@@ -36,7 +36,7 @@ import { prisma } from '../../../../../../../lib/db';
  */
 export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   POST: {
-    roles: ['admin'],
+    roles: ['admin', 'supervisor'],
     bodySchema: marketplaceRemoveSchema,
     handler: async ({ auth, body, params }) => {
       await requirePermission(auth, 'content.moderate');

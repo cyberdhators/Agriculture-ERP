@@ -73,9 +73,6 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
           role: s.role,
           state_id: s.scope_state_id,
           last_activity_at: s.last_seen_at ? toIso(s.last_seen_at) : null,
-          // The legacy rule, made visible: an administrator holds every
-          // permission except appointing a Super Admin, with no grant row.
-          legacy_admin: s.role === 'admin',
           grants: byUser.get(s.id) ?? [],
         })),
         { cursor: null, hasMore: staff.length >= STAFF_CEILING },

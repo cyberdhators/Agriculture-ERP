@@ -11,6 +11,7 @@ import {
 } from '@agri-erp/shared';
 
 import { ApiFailure, invalidCursor } from '../../../lib/api/errors';
+import { requirePermission } from '../../../lib/api/permissions';
 import { defineRoutes, paged } from '../../../lib/api/route';
 import { prisma } from '../../../lib/db';
 
@@ -49,8 +50,9 @@ const present = (row: AuditRow) => ({
  */
 export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   GET: {
-    roles: ['admin'],
-    handler: async ({ request }) => {
+    roles: ['admin', 'supervisor', 'read_only'],
+    handler: async ({ auth, request }) => {
+      await requirePermission(auth, 'audit.view');
       const url = new URL(request.url);
       const raw = Object.fromEntries(url.searchParams.entries());
       const parsed = auditFilterSchema.safeParse(raw);

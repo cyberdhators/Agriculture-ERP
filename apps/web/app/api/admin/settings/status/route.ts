@@ -14,7 +14,7 @@ import { integrationStatus, staffMfaStatus } from '../../../../../lib/api/settin
  */
 export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   GET: {
-    roles: ['admin'],
+    roles: ['admin', 'supervisor', 'read_only'],
     handler: async ({ auth }) => {
       await requirePermission(auth, 'settings.manage');
       return ok({

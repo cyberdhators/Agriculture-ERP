@@ -15,6 +15,7 @@ import {
 import { LIVE_ADMIN, listOfficers, listStaff, type Officer, type StaffUser } from '@/lib/admin/api';
 import { ROLE_LABELS } from '@/lib/admin/account-rules';
 import { ServiceNotConnectedError, sendCommunication } from '@/lib/communications/api';
+import { useHolds } from '@/lib/admin/use-permission';
 import { usePreview } from '@/lib/preview';
 
 import { Button, Checkbox, Dialog, Field, Input, Notice, PageHeader, Textarea } from '../ui';
@@ -70,8 +71,11 @@ interface Candidate {
 }
 
 export function Communications() {
-  const { role, hydrated } = usePreview();
-  const isAdmin = hydrated && role === 'admin';
+  const { hydrated } = usePreview();
+  // 2026-10-30 (presets are binding): offered to whoever holds communications.send, on any
+  // staff role; the route asks for the same permission.
+  const holds = useHolds('communications.send');
+  const isAdmin = hydrated && holds === true;
 
   const [channel, setChannel] = useState<CommunicationChannel>('email');
   const [recipientType, setRecipientType] = useState<RecipientType>('staff');
@@ -208,13 +212,15 @@ export function Communications() {
   }, [channel, recipientType, selected, subject, body]);
 
   if (!hydrated) return null;
+  if (holds === null) return null;
 
   if (!isAdmin) {
     return (
       <div className={styles.stack}>
         <PageHeader eyebrow="Communications" title="Communications" />
-        <UnavailableState title="Communications is not available to your role">
-          Sending messages from the portal is reserved to administrators.
+        <UnavailableState title="Communications is not available to you">
+          Sending messages from the portal needs the Administrator preset. Ask an administrator who
+          manages staff permissions.
         </UnavailableState>
       </div>
     );

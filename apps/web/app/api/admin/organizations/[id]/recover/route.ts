@@ -32,7 +32,7 @@ import { prisma } from '../../../../../../lib/db';
  */
 export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   POST: {
-    roles: ['admin'],
+    roles: ['admin', 'supervisor'],
     bodySchema: recoverOrganizationSchema,
     handler: async ({ auth, params, body, request }) => {
       await requirePermission(auth, 'support.handle');
