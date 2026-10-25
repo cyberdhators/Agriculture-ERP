@@ -26,6 +26,46 @@ import {
  * when the caller may search by contact. It never leaves the server in clear.
  */
 
+/**
+ * AN ACCOUNT'S ACTOR TYPES -- ONE RULE, TWO SCREENS (2026-10-29).
+ * docs/DECISIONS.md, "An account's actor types are its declared activities
+ * plus the records it holds".
+ *
+ * The activities the account declares on its profile (account_profile.
+ * activities), PLUS 'farmer' when it holds a live farmer record and 'buyer'
+ * when it holds a live buyer record. So a new account that has not filled in
+ * its profile is still a farmer or a buyer, and a farmer an officer
+ * registered (no sign-in, no profile) is a farmer. The accounts list shows
+ * these and filters by them; the overview's actor filter counts by the same
+ * expression (lib/api/admin-overview.ts), so the two cannot disagree.
+ *
+ * Each argument is a SQL expression: the profile's activities (text[], may be
+ * NULL), and the farmer and buyer record ids (NULL when the account has none).
+ */
+export function actorTypesSql(refs: {
+  activities: string;
+  farmer: string;
+  buyer: string;
+}): string {
+  return `ARRAY(SELECT DISTINCT a FROM unnest(
+              COALESCE(${refs.activities}, '{}'::text[])
+              || CASE WHEN ${refs.farmer} IS NOT NULL THEN ARRAY['farmer'] ELSE '{}'::text[] END
+              || CASE WHEN ${refs.buyer} IS NOT NULL THEN ARRAY['buyer'] ELSE '{}'::text[] END) a
+            ORDER BY a)`;
+}
+
+/** The same rule in code, for the tests and any screen that has the parts in hand. */
+export function actorTypesOf(parts: {
+  activities: readonly string[] | null;
+  hasFarmer: boolean;
+  hasBuyer: boolean;
+}): string[] {
+  const all = new Set(parts.activities ?? []);
+  if (parts.hasFarmer) all.add('farmer');
+  if (parts.hasBuyer) all.add('buyer');
+  return [...all].sort();
+}
+
 const ACCOUNTS_CTE = `
   ids AS (
     SELECT auth_user_id FROM public.farmer
@@ -58,11 +98,7 @@ const ACCOUNTS_CTE = `
            WHEN f.id IS NOT NULL THEN 'phone' ELSE 'email' END AS sign_in,
       f.farmer_number,
       COALESCE(f.phone, b.phone) AS phone,
-      ARRAY(SELECT DISTINCT a FROM unnest(
-              COALESCE(ap.activities, '{}'::text[])
-              || CASE WHEN f.id IS NOT NULL THEN ARRAY['farmer'] ELSE '{}'::text[] END
-              || CASE WHEN b.id IS NOT NULL THEN ARRAY['buyer'] ELSE '{}'::text[] END) a
-            ORDER BY a) AS actor_types,
+      ${actorTypesSql({ activities: 'ap.activities', farmer: 'f.id', buyer: 'b.id' })} AS actor_types,
       (CASE WHEN bo.id IS NOT NULL THEN ARRAY[bo.name] ELSE '{}'::text[] END)
         || COALESCE((SELECT array_agg(o.name ORDER BY o.name)
                        FROM public.organization_member m

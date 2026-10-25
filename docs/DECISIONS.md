@@ -5334,3 +5334,122 @@ evidence in qa-evidence-2026-10-28):
   `isUniqueViolation` now also reads the error's meta.
 - **Minimum age with an optional year of birth.** A skipped year is not
   refused: the minimum applies to a year that is given (sign-up stays open).
+
+## A raw-query number is a bigint: cast it where a function wants int (2026-10-29)
+
+Found by damage on production (OBSERVED, reported by the integrator from the
+live app): `POST /api/admin/announcements/:id/process` still answered 500 after
+#216, with `function left(text, bigint) does not exist` at the in-app batch's
+`left(btrim(...), $6)`. Prisma's `$queryRawUnsafe`/`$executeRawUnsafe` send a
+JavaScript integer as a bigint parameter (OBSERVED twice: `make_interval` in
+#216, `left` here), and Postgres has no implicit bigint-to-integer cast, so any
+function whose argument is `integer` has no overload to match.
+
+- The `left` call now casts `$6::int`. A sweep of `apps/web/lib`, `apps/web/app`
+  and `scripts` found no other uncast parameter to such a function
+  (`make_interval`, `left`, `right`, `substr`, `lpad`, `rpad`, `repeat`,
+  `generate_series`, `split_part`, `round`, `trunc` and the others listed in the
+  scan). `to_timestamp($n)` is left alone: bigint casts implicitly to double
+  precision (DOCUMENTED, Postgres implicit casts; not exercised here).
+- `apps/web/tests/sql-int-params-scan.test.ts` reads every server source file
+  and fails when one of those functions receives a `$n` not cast on the spot, so
+  the class stays closed rather than the route. It reads calls across lines and
+  is tested against itself. The rest of the process path (claim, write-back,
+  completion) was read: every other parameter is text, uuid, an explicitly cast
+  array, or a LIMIT, which accepts bigint (INFERRED from reading; this lane did
+  not run the process route against the database).
+
+## Announcements are sent by a scheduled job as well as by the screen (2026-10-29)
+
+Until now an announcement moved on only while an administrator kept its page
+open (OBSERVED in code: the page looped `POST .../process`). Now a CRON_SECRET
+route, `POST /api/cron/announcements` (fails closed, Bearer secret compared in
+constant time, as the weather and expiry-reminder routes), runs the SAME
+`processBatch` for every announcement still `sending`, oldest first, one batch
+each in turn, starting no batch after 12 seconds of the run (60-second limit:
+12 s + the batch's 30 s budget + one 10 s provider call), at most 40 batches.
+An announcement whose batch moved nothing (a provider not configured) is not
+asked again that run.
+
+- Safe beside the page and beside itself: deliveries are claimed with
+  `FOR UPDATE SKIP LOCKED`, and completion is a conditional update (INFERRED
+  from the existing claim logic; not exercised concurrently here).
+- Audited as actor `system` (`announcement.batch_sent`, `announcement.completed`;
+  no new keys).
+- Installed by `node --env-file=<env> scripts/announcements-cron-install.mjs`:
+  pg_cron every two minutes, secret in Vault as `announcements_cron_secret`,
+  `vault.update_secret` executed rather than queried (it returns void), as in
+  the other installers.
+- The page still drives its own batches ("Continue sending" goes faster); it
+  now says sending continues while it is closed.
+
+## A suspension may end by itself (2026-10-29)
+
+CORWADO's Settings line "reason codes, suspension duration and appeals"
+(DOCUMENTED, spec.txt line 132). Before this, a suspension had no end, and the
+review period and appeal window were only shown (OBSERVED in code).
+
+- **Optional duration when suspending**: `suspend_days`, a whole number from 1
+  to 365; empty means no end (the old behaviour). Stored as
+  `suspension_ends_at` on the account's farmer and buyer records (migration
+  `20261029090000_suspension_duration`, additive; a CHECK refuses an end on a
+  disabled or unsuspended record). The end is midnight in Juba at the start of
+  the day N days after today in Juba, so "7 days" from 5 November ends on 12
+  November.
+- **Shown to the person and to staff**: the suspension text message reads
+  "suspended until 2026-11-12" (the reason label shortens so it stays one SMS);
+  the staff account box shows the end date or "No end date".
+- **Lifted daily** by the existing daily job (`POST /api/cron/expiry-reminders`;
+  one job, one installer): every account whose end has passed, never a
+  disabled one, is restored as staff restore one. Both records are cleared, one
+  `account.suspension_expired` audit row is written per record with actor
+  `system`, one fixed in-app notice goes out (`suspension_ended`, English and
+  Arabic), and the sign-in ban is lifted. The ban is lifted FIRST: while the
+  records still say suspended every request is refused anyway, so a half-done
+  lift is the safe half; if the sign-in service does not answer, nothing is
+  cleared and the next day retries. A record that changed meanwhile is left
+  alone, and its ban is put back if it is still suspended.
+- Disable clears any end (a disable is permanent); restore and re-enable clear
+  it. The column is named `suspension_ends_at`, not `suspended_until`, so it
+  cannot be confused with an adviser approval's `suspended_until`.
+- New audit key: `account.suspension_expired` (the CHECK is the integrator's).
+- Gap: the review period (`suspension_review_days`) is still a reminder to
+  staff, not a deadline anything enforces.
+
+## An account's actor types are its declared activities plus the records it holds (2026-10-29)
+
+The overview's actor filter (`/api/admin/overview?actor=`) counted only
+accounts whose profile declares the activity (`account_profile.activities`),
+so a new account that had not filled in its profile counted as neither farmer
+nor buyer (OBSERVED in code; reported as 0 on the live overview). The accounts
+list already used a wider rule. One rule now serves both, written once in SQL
+(`actorTypesSql`, `apps/web/lib/api/admin-accounts.ts`):
+
+> An account's actor types are the activities it declares on its profile,
+> plus `farmer` when it holds a live farmer record and `buyer` when it holds a
+> live buyer record. A farmer an officer registered (no sign-in, no profile)
+> is a farmer. A post also counts for its organisation's declared activities.
+
+The accounts list shows and filters by it; the overview counts by it. A pure
+test holds both to the one expression.
+
+## Tests that failed only on Windows (2026-10-29)
+
+Three pure tests compared paths written with forward slashes, or cut text at a
+newline, so on a Windows checkout (backslashes, CRLF) they failed while CI on
+Linux passed (OBSERVED on this machine). They now normalise separators to `/`
+and line endings to LF before comparing: `provider-secrets`,
+`public-route-scan`, and the skip-reason test in
+`packages/shared/tests/announcements.test.ts`.
+
+## Arabic coverage (2026-10-29)
+
+Every key in `apps/web/lib/i18n/en.ts` has an Arabic string in `ar.ts`
+(OBSERVED: 0 missing after this change, counted by script). Of the user-facing
+screens added in #210-#216 in areas that already show Arabic, the
+organisation advice inbox (`components/teams/OrganisationAdvice.tsx`, opened
+from the farmer's organisation pages) was English only; it now carries its own
+English and Arabic words, as the other team pages do. Not translated, because
+their areas are English only today: the email sign-up (`BuyerRegister`), the
+buyer dashboard and profile, the public organisation page, and product and
+market reports. Messages the server sends back stay in English everywhere.

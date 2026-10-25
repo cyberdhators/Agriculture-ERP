@@ -49,7 +49,8 @@ const migration = readFileSync(
     ),
   ),
   'utf8',
-);
+  // LF on every platform: a Windows checkout may hold CRLF, and the slices below cut at a newline.
+).replace(/\r\n/g, '\n');
 
 const checkList = (name: string): string[] => {
   const at = migration.indexOf(`"${name}" CHECK`);

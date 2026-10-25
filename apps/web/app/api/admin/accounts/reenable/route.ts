@@ -38,7 +38,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
             `UPDATE public.${table}
                 SET disabled_at = NULL, disabled_reason = NULL, disabled_by = NULL,
                     suspended_at = NULL, suspended_reason = NULL, suspended_by = NULL,
-                    suspended_until = NULL
+                    suspension_ends_at = NULL
               WHERE id = $1::uuid AND disabled_at IS NOT NULL`,
             id,
           );

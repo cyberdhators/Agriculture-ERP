@@ -14,6 +14,7 @@ import {
 } from '@agri-erp/shared';
 import { type Prisma } from '@prisma/client';
 
+import { actorTypesSql } from './admin-accounts';
 import {
   BUYING_REQUEST_FROM,
   BUYING_REQUEST_MARKET_WHERE,
@@ -37,9 +38,11 @@ import { currentSetting, integrationStatus, settingsTablesPresent } from './sett
  * shows it: the same joins and conditions (lib/api/market-posts.ts, the
  * listings route), so a suspended account's posts are not counted as active.
  *
- * THE ACTOR FILTER reads the activities an account declares on its profile
- * (account_profile.activities), or an organisation on its own. A farmer an
- * officer registered has no sign-in and no profile; they count as a farmer.
+ * THE ACTOR FILTER uses the accounts list's rule (actorTypesSql): the
+ * activities an account declares on its profile, plus farmer or buyer for
+ * the records it holds; or, for a post, its organisation's activities. A
+ * farmer an officer registered has no sign-in and no profile; they count as
+ * a farmer.
  * Cases are not narrowed by actor: a report or a message names no activity.
  */
 
@@ -53,10 +56,31 @@ const inStates = (column: string) => `(w.st IS NULL OR ${column} = ANY(w.st))`;
 const jubaDay = (column: string) =>
   `to_char((${column} AT TIME ZONE '${DISPLAY_TIME_ZONE}')::date, 'YYYY-MM-DD')`;
 
-/** The account (sign-in) declares the actor type; or, for a post, its organisation does. */
-const actorOf = (authUser: string, organization?: string) => `(w.act IS NULL
-  OR EXISTS (SELECT 1 FROM public.account_profile apx
-              WHERE apx.auth_user_id = ${authUser} AND w.act = ANY(apx.activities))
+/**
+ * THE ACTOR FILTER (2026-10-29): the account's actor types by the accounts
+ * list's own rule (actorTypesSql, lib/api/admin-accounts.ts) -- its declared
+ * activities plus 'farmer' or 'buyer' for the records it holds -- or, for a
+ * post, also its organisation's activities. `authUser` is the account's
+ * sign-in (may be NULL); `farmer` and `buyer` are record ids already known to
+ * be its (a post's own farmer, a register row's own record), else NULL and
+ * the account's other records are looked up by its sign-in.
+ */
+const actorOf = (
+  authUser: string,
+  records: { farmer?: string; buyer?: string } = {},
+  organization?: string,
+) => `(w.act IS NULL
+  OR w.act = ANY(${actorTypesSql({
+    activities: `(SELECT apx.activities FROM public.account_profile apx
+                   WHERE apx.auth_user_id = ${authUser})`,
+    farmer: `COALESCE(${records.farmer ?? 'NULL::uuid'},
+               (SELECT fx.id FROM public.farmer fx
+                 WHERE fx.auth_user_id = ${authUser} AND fx.deleted_at IS NULL
+                   AND fx.merged_into IS NULL LIMIT 1))`,
+    buyer: `COALESCE(${records.buyer ?? 'NULL::uuid'},
+              (SELECT bx.id FROM public.buyer_active bx
+                WHERE bx.auth_user_id = ${authUser} LIMIT 1))`,
+  })})
   ${
     organization
       ? `OR EXISTS (SELECT 1 FROM public.organization ogx
@@ -81,8 +105,10 @@ const Q = `p AS (
   q AS (
     SELECT p.* FROM p CROSS JOIN w
      WHERE ${inStates('p.state_id')}
-       AND (${actorOf('p.auth_user_id')}
-            OR (w.act = 'farmer' AND p.kind = 'farmer' AND p.auth_user_id IS NULL))
+       AND ${actorOf('p.auth_user_id', {
+         farmer: `CASE WHEN p.kind = 'farmer' THEN p.id END`,
+         buyer: `CASE WHEN p.kind = 'buyer' THEN p.id END`,
+       })}
   )`;
 
 const SIGNED_IN = `('first_sign_in', 'sign_in', 'return_session')`;
@@ -132,19 +158,19 @@ const SQL = {
       CROSS JOIN w
      WHERE pl.deleted_at IS NULL AND pl.status = 'listed'
        AND (pl.available_until IS NULL OR pl.available_until >= current_date)
-       AND ${inStates('pl.state_id')} AND ${actorOf('f.auth_user_id')}`,
+       AND ${inStates('pl.state_id')} AND ${actorOf('f.auth_user_id', { farmer: 'f.id' })}`,
 
   activeServices: `WITH ${W}
     SELECT count(*)::int AS value ${SERVICE_FROM} CROSS JOIN w
      WHERE ${SERVICE_MARKET_WHERE}
        AND ${inStates('sl.state_id')}
-       AND ${actorOf('COALESCE(f.auth_user_id, b.auth_user_id)', 'sl.organization_id')}`,
+       AND ${actorOf('COALESCE(f.auth_user_id, b.auth_user_id)', { farmer: 'f.id', buyer: 'b.id' }, 'sl.organization_id')}`,
 
   activeBuyingRequests: `WITH ${W}
     SELECT count(*)::int AS value ${BUYING_REQUEST_FROM} CROSS JOIN w
      WHERE ${BUYING_REQUEST_MARKET_WHERE}
        AND ${inStates('br.state_id')}
-       AND ${actorOf('COALESCE(f.auth_user_id, b.auth_user_id)', 'br.organization_id')}`,
+       AND ${actorOf('COALESCE(f.auth_user_id, b.auth_user_id)', { farmer: 'f.id', buyer: 'b.id' }, 'br.organization_id')}`,
 
   // Offers (produce, inputs and services) and buying requests created per Juba day.
   marketByDay: `WITH ${W}, x AS (
@@ -152,7 +178,7 @@ const SQL = {
         FROM public.produce_listing pl
         LEFT JOIN public.farmer f ON f.id = pl.farmer_id CROSS JOIN w
        WHERE pl.deleted_at IS NULL AND ${inWindow('pl.created_at')}
-         AND ${inStates('pl.state_id')} AND ${actorOf('f.auth_user_id')}
+         AND ${inStates('pl.state_id')} AND ${actorOf('f.auth_user_id', { farmer: 'f.id' })}
       UNION ALL
       SELECT ${jubaDay('sv.created_at')}, 1, 0
         FROM public.service_listing sv
@@ -160,7 +186,7 @@ const SQL = {
         LEFT JOIN public.buyer b ON b.id = sv.buyer_id CROSS JOIN w
        WHERE sv.deleted_at IS NULL AND ${inWindow('sv.created_at')}
          AND ${inStates('sv.state_id')}
-         AND ${actorOf('COALESCE(f.auth_user_id, b.auth_user_id)', 'sv.organization_id')}
+         AND ${actorOf('COALESCE(f.auth_user_id, b.auth_user_id)', { farmer: 'f.id', buyer: 'b.id' }, 'sv.organization_id')}
       UNION ALL
       SELECT ${jubaDay('r.created_at')}, 0, 1
         FROM public.buying_request r
@@ -168,7 +194,7 @@ const SQL = {
         LEFT JOIN public.buyer b ON b.id = r.buyer_id CROSS JOIN w
        WHERE r.deleted_at IS NULL AND ${inWindow('r.created_at')}
          AND ${inStates('r.state_id')}
-         AND ${actorOf('COALESCE(f.auth_user_id, b.auth_user_id)', 'r.organization_id')}
+         AND ${actorOf('COALESCE(f.auth_user_id, b.auth_user_id)', { farmer: 'f.id', buyer: 'b.id' }, 'r.organization_id')}
     )
     SELECT day, sum(listings)::int AS listings, sum(buying_requests)::int AS buying_requests
       FROM x GROUP BY day`,

@@ -40,6 +40,7 @@ import {
   SIGN_IN_MESSAGES,
   STAFF_INVITATION_MESSAGES,
   ORG_ADVICE_MESSAGES,
+  SUSPENSION_MESSAGES,
 } from '../src/index';
 
 /**
@@ -219,6 +220,7 @@ describe('the documented field reasons match the ones the code actually sends', 
     ...Object.values(SIGN_IN_MESSAGES),
     ...Object.values(STAFF_INVITATION_MESSAGES),
     ...Object.values(ORG_ADVICE_MESSAGES),
+    ...Object.values(SUSPENSION_MESSAGES),
     ERROR_MESSAGES.unknownField,
     ERROR_MESSAGES.bodyNotExpectedForm,
   ];

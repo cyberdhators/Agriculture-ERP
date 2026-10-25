@@ -73,6 +73,23 @@ export function suspensionEndsAt(now: Date, days: number | null | undefined): Da
   return new Date(startOfJubaDay + days * 86_400_000 - JUBA_OFFSET_MS);
 }
 
+/**
+ * Whether a suspension has ended by itself and may be lifted by the daily
+ * job: suspended, NOT disabled (a disable never ends by itself), with an end
+ * that has passed. A suspension with no end never has.
+ */
+export function suspensionHasEnded(
+  account: { suspendedAt: Date | null; disabledAt: Date | null; suspensionEnds: Date | null },
+  now: Date,
+): boolean {
+  return (
+    account.suspendedAt !== null &&
+    account.disabledAt === null &&
+    account.suspensionEnds !== null &&
+    account.suspensionEnds.getTime() <= now.getTime()
+  );
+}
+
 /** The end date as the person reads it, in Juba: "2026-11-12". */
 export function suspensionEndDate(endsAt: Date): string {
   return new Date(endsAt.getTime() + JUBA_OFFSET_MS).toISOString().slice(0, 10);
@@ -97,7 +114,7 @@ export interface AccountStanding {
    * 2026-10-29: when a suspension with a duration ends (the daily job lifts
    * it then); null for one with no end. Absent from older answers.
    */
-  suspended_until?: string | null;
+  suspension_ends_at?: string | null;
   /**
    * 2026-10-28: the account's ADVISORY authorization, shown beside its
    * standing and decided separately (the approved-adviser pathway). Absent

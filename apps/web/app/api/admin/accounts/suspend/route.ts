@@ -46,7 +46,7 @@ import { suspensionSmsText } from '../../../../../lib/suspension-sms';
  * (sessions_ended, sign_in_blocked).
  *
  * 2026-10-29: an optional DURATION (suspend_days, 1 to 365). Without it the
- * suspension has no end, as before. With it, suspended_until is set to the
+ * suspension has no end, as before. With it, suspension_ends_at is set to the
  * start of the end day in Juba, the text message names that date, and the
  * daily job (POST /api/cron/expiry-reminders) lifts it then.
  */
@@ -69,7 +69,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
           await tx.$executeRawUnsafe(
             `UPDATE public.${table}
                 SET suspended_at = now(), suspended_reason = $2, suspended_by = $3::uuid,
-                    suspended_until = $4::timestamptz
+                    suspension_ends_at = $4::timestamptz
               WHERE id = $1::uuid AND suspended_at IS NULL`,
             id,
             body.reason,
@@ -99,7 +99,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
               // 2026-10-25: the reason code chosen from the list, if any.
               ...(body.reason_code ? { reason_code: body.reason_code } : {}),
               // 2026-10-29: when it ends by itself; null for no end.
-              suspended_until: until?.toISOString() ?? null,
+              suspension_ends_at: until?.toISOString() ?? null,
               // 2026-10-26: what happened to the text message; never its text or the number.
               notice_sms: sms,
             },

@@ -425,8 +425,8 @@ export function AccountSanction({
           <Stamp kind="rejected">Suspended</Stamp>
           <p className="small" style={{ marginTop: 'var(--s-2)' }}>
             {standing.suspended_at ? `Since ${formatDate(standing.suspended_at)}. ` : ''}
-            {standing.suspended_until
-              ? `Ends by itself on ${formatDate(suspensionEndDate(new Date(standing.suspended_until)))}. `
+            {standing.suspension_ends_at
+              ? `Ends by itself on ${formatDate(suspensionEndDate(new Date(standing.suspension_ends_at)))}. `
               : 'No end date: lasts until restored. '}
             {standing.reason ? <span dir="auto">{standing.reason}</span> : null}
           </p>

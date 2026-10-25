@@ -11,25 +11,25 @@
 -- No audit CHECK change here: the integrator owns the CHECK
 -- (account.suspension_expired is listed in the lane report).
 
-ALTER TABLE "public"."farmer" ADD COLUMN "suspended_until" TIMESTAMPTZ;
+ALTER TABLE "public"."farmer" ADD COLUMN "suspension_ends_at" TIMESTAMPTZ;
 ALTER TABLE "public"."farmer"
-    ADD CONSTRAINT "farmer_suspended_until_needs_suspension" CHECK (
-        "suspended_until" IS NULL
+    ADD CONSTRAINT "farmer_suspension_ends_at_needs_suspension" CHECK (
+        "suspension_ends_at" IS NULL
         OR ("suspended_at" IS NOT NULL AND "disabled_at" IS NULL)
     );
 
-ALTER TABLE "public"."buyer" ADD COLUMN "suspended_until" TIMESTAMPTZ;
+ALTER TABLE "public"."buyer" ADD COLUMN "suspension_ends_at" TIMESTAMPTZ;
 ALTER TABLE "public"."buyer"
-    ADD CONSTRAINT "buyer_suspended_until_needs_suspension" CHECK (
-        "suspended_until" IS NULL
+    ADD CONSTRAINT "buyer_suspension_ends_at_needs_suspension" CHECK (
+        "suspension_ends_at" IS NULL
         OR ("suspended_at" IS NOT NULL AND "disabled_at" IS NULL)
     );
 
 -- The daily job reads only the few rows with an end.
-CREATE INDEX "farmer_suspended_until_idx" ON "public"."farmer" ("suspended_until")
-    WHERE "suspended_until" IS NOT NULL;
-CREATE INDEX "buyer_suspended_until_idx" ON "public"."buyer" ("suspended_until")
-    WHERE "suspended_until" IS NOT NULL;
+CREATE INDEX "farmer_suspension_ends_at_idx" ON "public"."farmer" ("suspension_ends_at")
+    WHERE "suspension_ends_at" IS NOT NULL;
+CREATE INDEX "buyer_suspension_ends_at_idx" ON "public"."buyer" ("suspension_ends_at")
+    WHERE "suspension_ends_at" IS NOT NULL;
 
 -- The views read `SELECT *`, which froze their column lists when they were
 -- made; recreated with the same definitions so they carry the new column

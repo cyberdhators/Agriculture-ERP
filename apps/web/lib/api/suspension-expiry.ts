@@ -1,4 +1,4 @@
-import type { SanctionKind } from '@agri-erp/shared';
+import { suspensionHasEnded, type SanctionKind } from '@agri-erp/shared';
 
 import { prisma } from '../db';
 import { disableAuthAccount, enableAuthAccount } from '../supabase/admin';
@@ -12,7 +12,7 @@ import { notifyAccount } from './notify';
  * suspension may end by itself".
  *
  * Once a day (POST /api/cron/expiry-reminders): every account whose
- * suspension carries an end (suspended_until) that has passed is restored,
+ * suspension carries an end (suspension_ends_at) that has passed is restored,
  * exactly as staff restore one -- both of its records cleared, one audit row
  * per record (`account.suspension_expired`, actor 'system'), one fixed in-app
  * notice ('suspension_ended'), and the sign-in ban lifted.
@@ -49,32 +49,19 @@ export interface SuspensionLiftOutcome {
 export const DUE_SUSPENSIONS_SQL = `
   SELECT DISTINCT ON (account) kind, id, auth_user_id FROM (
     SELECT 'farmer'::text AS kind, f.id, f.auth_user_id,
-           COALESCE(f.auth_user_id::text, f.id::text) AS account, f.suspended_until
+           COALESCE(f.auth_user_id::text, f.id::text) AS account, f.suspension_ends_at
       FROM public.farmer f
-     WHERE f.suspended_until IS NOT NULL AND f.suspended_until <= now()
+     WHERE f.suspension_ends_at IS NOT NULL AND f.suspension_ends_at <= now()
        AND f.suspended_at IS NOT NULL AND f.disabled_at IS NULL AND f.deleted_at IS NULL
     UNION ALL
     SELECT 'buyer'::text, b.id, b.auth_user_id,
-           COALESCE(b.auth_user_id::text, b.id::text), b.suspended_until
+           COALESCE(b.auth_user_id::text, b.id::text), b.suspension_ends_at
       FROM public.buyer b
-     WHERE b.suspended_until IS NOT NULL AND b.suspended_until <= now()
+     WHERE b.suspension_ends_at IS NOT NULL AND b.suspension_ends_at <= now()
        AND b.suspended_at IS NOT NULL AND b.disabled_at IS NULL AND b.deleted_at IS NULL
   ) due
-  ORDER BY account, suspended_until
+  ORDER BY account, suspension_ends_at
   LIMIT ${SUSPENSION_LIFT_BATCH}`;
-
-/** Whether a record read under lock is still due: suspended, not disabled, its end passed. */
-export function stillDue(
-  account: { suspendedAt: Date | null; disabledAt: Date | null; suspendedUntil: Date | null },
-  now: Date,
-): boolean {
-  return (
-    account.suspendedAt !== null &&
-    account.disabledAt === null &&
-    account.suspendedUntil !== null &&
-    account.suspendedUntil.getTime() <= now.getTime()
-  );
-}
 
 async function rebanIfStillSuspended(
   kind: SanctionKind,
@@ -112,7 +99,7 @@ export async function liftExpiredSuspensions(): Promise<SuspensionLiftOutcome> {
       // 2. The records, under lock, re-checked; one transaction per account.
       const lifted = await audited(prisma, async (tx) => {
         const found = await accountOf(tx, row.kind, row.id, true);
-        if (!stillDue(found, new Date())) return false;
+        if (!suspensionHasEnded(found, new Date())) return false;
         for (const [table, id] of [
           ['farmer', found.farmerId],
           ['buyer', found.buyerId],
@@ -121,7 +108,7 @@ export async function liftExpiredSuspensions(): Promise<SuspensionLiftOutcome> {
           const changed = await tx.$executeRawUnsafe(
             `UPDATE public.${table}
                 SET suspended_at = NULL, suspended_reason = NULL, suspended_by = NULL,
-                    suspended_until = NULL
+                    suspension_ends_at = NULL
               WHERE id = $1::uuid AND suspended_at IS NOT NULL AND disabled_at IS NULL`,
             id,
           );
@@ -131,7 +118,7 @@ export async function liftExpiredSuspensions(): Promise<SuspensionLiftOutcome> {
             entityId: id,
             ...system,
             action: 'account.suspension_expired',
-            before: { suspended: true, suspended_until: found.suspendedUntil?.toISOString() },
+            before: { suspended: true, suspension_ends_at: found.suspensionEnds?.toISOString() },
             after: { suspended: false },
           });
         }
