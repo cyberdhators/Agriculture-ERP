@@ -677,6 +677,12 @@ change.
 | `account.password_recovered`                  |
 | `listing.correction_requested`                |
 | `listing.correction_addressed`                |
+| `account.disabled`                            |
+| `account.reenabled`                           |
+| `account.contact_revealed`                    |
+| `listing.removed`                             |
+| `support_case.updated`                        |
+| `support_case.replied`                        |
 
 `before` and `after` hold **changed fields only**, never whole rows, and never a
 password, token, authentication identifier, national id, phone, email, given

@@ -1,0 +1,180 @@
+-- 2026-10-28 -- THE ADMIN CONSOLE (CORWADO's 16 October specification, section
+-- 4 "Administrative navigation and permissions", lines 95-111; the infographic
+-- "AgriOne Admin Portal -- 1 of 3"). docs/DECISIONS.md, "Admin console:
+-- overview, accounts, marketplace, support cases (2026-10-28)".
+--
+-- ADDITIVE: columns on farmer, buyer and support_message; two CHECKs on
+-- support_message replaced by wider ones (every earlier value is still
+-- accepted, so no existing row can fail them); one new table; three views
+-- refreshed because a `SELECT *` view freezes its column list. Nothing is
+-- dropped, renamed or retyped, and no existing row is changed.
+--
+-- The audit CHECK for the new action keys is NOT in this migration: the
+-- integrator writes one combined CHECK migration (lane-briefs/COMMON.md).
+
+-- =============================================================================
+-- 1. DISABLE AN ACCOUNT ("Contact, suspend, disable and restore with reasons")
+-- =============================================================================
+-- A permanent stop, distinct from a suspension: only a Super Admin lifts it,
+-- with a reason. Like a suspension it belongs to the ACCOUNT, so both of an
+-- account's records (farmer and buyer) carry it. A disabled account is also
+-- suspended (the route sets both), so every place that already hides a
+-- suspended account's posts and refuses its sign-in keeps doing so without a
+-- change; disabled_at is what says it cannot be restored the ordinary way.
+
+ALTER TABLE "public"."farmer"
+    ADD COLUMN "disabled_at"     TIMESTAMPTZ,
+    ADD COLUMN "disabled_reason" TEXT,
+    ADD COLUMN "disabled_by"     UUID;
+ALTER TABLE "public"."farmer"
+    ADD CONSTRAINT "farmer_disabled_by_fkey"
+        FOREIGN KEY ("disabled_by") REFERENCES "public"."user"("id"),
+    ADD CONSTRAINT "farmer_disabled_whole" CHECK (
+        ("disabled_at" IS NULL) = ("disabled_reason" IS NULL)
+        AND ("disabled_at" IS NULL) = ("disabled_by" IS NULL)
+    ),
+    -- Disabled is always suspended as well (see above).
+    ADD CONSTRAINT "farmer_disabled_is_suspended" CHECK (
+        "disabled_at" IS NULL OR "suspended_at" IS NOT NULL
+    );
+
+ALTER TABLE "public"."buyer"
+    ADD COLUMN "disabled_at"     TIMESTAMPTZ,
+    ADD COLUMN "disabled_reason" TEXT,
+    ADD COLUMN "disabled_by"     UUID;
+ALTER TABLE "public"."buyer"
+    ADD CONSTRAINT "buyer_disabled_by_fkey"
+        FOREIGN KEY ("disabled_by") REFERENCES "public"."user"("id"),
+    ADD CONSTRAINT "buyer_disabled_whole" CHECK (
+        ("disabled_at" IS NULL) = ("disabled_reason" IS NULL)
+        AND ("disabled_at" IS NULL) = ("disabled_by" IS NULL)
+    ),
+    ADD CONSTRAINT "buyer_disabled_is_suspended" CHECK (
+        "disabled_at" IS NULL OR "suspended_at" IS NOT NULL
+    );
+
+-- The views read `SELECT *`, which froze their column lists when they were
+-- made; recreated with the same definitions so they carry the new columns
+-- (tests/views-track-tables.test.ts). Definitions as in 20261021090000.
+CREATE OR REPLACE VIEW "public"."farmer_active" WITH (security_invoker = true) AS
+    SELECT * FROM "public"."farmer" WHERE "deleted_at" IS NULL;
+
+CREATE OR REPLACE VIEW "public"."farmer_verified_v" WITH (security_invoker = true) AS
+    SELECT * FROM "public"."farmer"
+    WHERE "deleted_at" IS NULL AND "verification_status" = 'verified';
+
+CREATE OR REPLACE VIEW "public"."buyer_active" WITH (security_invoker = true) AS
+    SELECT b.* FROM "public"."buyer" b
+    JOIN "public"."buyer_organization" o ON o."id" = b."organization_id"
+    WHERE b."deleted_at" IS NULL AND o."deleted_at" IS NULL;
+
+-- =============================================================================
+-- 2. SUPPORT CASES ("Case IDs, responsible staff, evidence, status, dates and
+--    resolution. Handle technical issues, complaints and appeals.")
+-- =============================================================================
+-- A "Contact CORWADO" message becomes a case. It keeps every column it had.
+--
+-- case_number: the visible case ID ("#1045"). An identity column numbers the
+--   existing rows when it is added and every new row after; staff and the
+--   sender quote it. The uuid stays the address in every route.
+-- case_type: technical / complaint / appeal / enquiry. NULL means "as the
+--   sender's topic implies" (lib: defaultCaseType), so no existing row is
+--   rewritten; staff may set it.
+-- priority: low / normal / high / urgent.
+-- assignee_id: the responsible staff member.
+-- status: new / in_progress / waiting (for the user) / resolved / closed. The
+--   earlier 'done' stays accepted (and reads as resolved), so no row changes.
+-- handled_by / handled_at: who resolved or closed it, and when -- exactly
+--   what they meant for 'done'. Reopening clears them.
+-- resolution_note: what was done, required (by the route) to resolve or close.
+
+ALTER TABLE "public"."support_message"
+    ADD COLUMN "case_number"     BIGINT GENERATED BY DEFAULT AS IDENTITY (START WITH 1001),
+    ADD COLUMN "case_type"       TEXT,
+    ADD COLUMN "priority"        TEXT NOT NULL DEFAULT 'normal',
+    ADD COLUMN "assignee_id"     UUID,
+    ADD COLUMN "resolution_note" TEXT,
+    ADD COLUMN "updated_at"      TIMESTAMPTZ NOT NULL DEFAULT now();
+
+ALTER TABLE "public"."support_message"
+    ADD CONSTRAINT "support_message_case_number_key" UNIQUE ("case_number"),
+    ADD CONSTRAINT "support_message_assignee_id_fkey"
+        FOREIGN KEY ("assignee_id") REFERENCES "public"."user"("id"),
+    ADD CONSTRAINT "support_message_case_type" CHECK (
+        "case_type" IS NULL OR "case_type" IN ('technical', 'complaint', 'appeal', 'enquiry')
+    ),
+    ADD CONSTRAINT "support_message_priority" CHECK (
+        "priority" IN ('low', 'normal', 'high', 'urgent')
+    ),
+    ADD CONSTRAINT "support_message_resolution_note_length" CHECK (
+        "resolution_note" IS NULL OR char_length("resolution_note") BETWEEN 1 AND 2000
+    );
+
+-- Wider status CHECK: every earlier value ('new', 'done') is kept.
+ALTER TABLE "public"."support_message"
+    DROP CONSTRAINT "support_message_status";
+ALTER TABLE "public"."support_message"
+    ADD CONSTRAINT "support_message_status" CHECK (
+        "status" IN ('new', 'in_progress', 'waiting', 'resolved', 'closed', 'done')
+    );
+
+-- "Done always says by whom and when; new never does" becomes: a settled case
+-- (resolved, closed, or the earlier done) says by whom and when; an open one
+-- never does. Every existing row is 'new' without them or 'done' with them,
+-- so every existing row satisfies it.
+ALTER TABLE "public"."support_message"
+    DROP CONSTRAINT "support_message_done_is_handled";
+ALTER TABLE "public"."support_message"
+    ADD CONSTRAINT "support_message_settled_is_handled" CHECK (
+        ("status" IN ('resolved', 'closed', 'done'))
+            = ("handled_at" IS NOT NULL AND "handled_by" IS NOT NULL)
+    );
+
+-- The case list filters open cases by assignee.
+CREATE INDEX "support_message_assignee_open_idx"
+    ON "public"."support_message" ("assignee_id", "created_at" DESC)
+    WHERE "deleted_at" IS NULL AND "status" IN ('new', 'in_progress', 'waiting');
+
+-- -----------------------------------------------------------------------------
+-- support_case_entry: what staff add to a case, newest last.
+--   reply    -- a message TO the person, shown to them in the app (Help page)
+--               after a fixed in-app notice; never the notice's text.
+--   note     -- internal, staff only.
+--   evidence -- internal: a link to evidence (a screenshot, a post, a
+--               document), with a line saying what it is.
+-- Soft delete only; nothing here is ever removed.
+-- -----------------------------------------------------------------------------
+CREATE TABLE "public"."support_case_entry" (
+    "id"                 UUID        NOT NULL DEFAULT gen_random_uuid(),
+    "support_message_id" UUID        NOT NULL,
+    "kind"               TEXT        NOT NULL,
+    "body"               TEXT        NOT NULL,
+    "link"               TEXT,
+    "author_id"          UUID        NOT NULL,
+    "created_at"         TIMESTAMPTZ NOT NULL DEFAULT now(),
+    "deleted_at"         TIMESTAMPTZ,
+    "deleted_by"         UUID,
+
+    CONSTRAINT "support_case_entry_pkey" PRIMARY KEY ("id"),
+    CONSTRAINT "support_case_entry_message_fkey"
+        FOREIGN KEY ("support_message_id") REFERENCES "public"."support_message"("id"),
+    CONSTRAINT "support_case_entry_author_fkey"
+        FOREIGN KEY ("author_id") REFERENCES "public"."user"("id"),
+    CONSTRAINT "support_case_entry_deleted_by_fkey"
+        FOREIGN KEY ("deleted_by") REFERENCES "public"."user"("id"),
+    CONSTRAINT "support_case_entry_kind" CHECK ("kind" IN ('reply', 'note', 'evidence')),
+    CONSTRAINT "support_case_entry_body_length" CHECK (char_length("body") BETWEEN 1 AND 2000),
+    CONSTRAINT "support_case_entry_link_shape" CHECK (
+        "link" IS NULL OR (char_length("link") <= 500 AND "link" ~ '^https?://')
+    ),
+    -- Evidence is a link; a reply or a note may carry one too.
+    CONSTRAINT "support_case_entry_evidence_has_link" CHECK (
+        "kind" <> 'evidence' OR "link" IS NOT NULL
+    )
+);
+
+CREATE INDEX "support_case_entry_message_idx"
+    ON "public"."support_case_entry" ("support_message_id", "created_at");
+
+-- Deny by default: only the server (which bypasses RLS) reads or writes it.
+ALTER TABLE "public"."support_case_entry" ENABLE ROW LEVEL SECURITY;

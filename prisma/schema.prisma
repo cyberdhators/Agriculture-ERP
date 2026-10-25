@@ -580,6 +580,12 @@ model Farmer {
   suspendedReason String?   @map("suspended_reason")
   suspendedBy     String?   @map("suspended_by") @db.Uuid
   suspender       User?     @relation("FarmerSuspendedBy", fields: [suspendedBy], references: [id], map: "farmer_suspended_by_fkey")
+  /// 2026-10-28 (migration 20261028090000): disabled by staff -- permanent,
+  /// lifted by a Super Admin only. A disabled record is also suspended. The
+  /// foreign key to user is in the migration, not restated as a relation.
+  disabledAt      DateTime? @map("disabled_at") @db.Timestamptz(6)
+  disabledReason  String?   @map("disabled_reason")
+  disabledBy      String?   @map("disabled_by") @db.Uuid
   deletedBy          String?            @map("deleted_by") @db.Uuid
 
   payam        Payam    @relation(fields: [payamId, stateId], references: [id, stateId], map: "farmer_payam_state_consistent_fkey")
@@ -1373,6 +1379,10 @@ model Buyer {
   suspendedReason String?   @map("suspended_reason")
   suspendedBy     String?   @map("suspended_by") @db.Uuid
   suspender       User?     @relation("BuyerSuspendedBy", fields: [suspendedBy], references: [id], map: "buyer_suspended_by_fkey")
+  /// 2026-10-28 (migration 20261028090000): disabled by staff, as on farmer.
+  disabledAt      DateTime? @map("disabled_at") @db.Timestamptz(6)
+  disabledReason  String?   @map("disabled_reason")
+  disabledBy      String?   @map("disabled_by") @db.Uuid
   deletedBy      String?   @map("deleted_by") @db.Uuid
 
   organization     BuyerOrganization @relation(fields: [organizationId], references: [id], map: "buyer_organization_id_fkey")
@@ -1855,11 +1865,39 @@ model SupportMessage {
   handledAt      DateTime? @map("handled_at") @db.Timestamptz(6)
   createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   deletedAt      DateTime? @map("deleted_at") @db.Timestamptz(6)
+  /// 2026-10-28 (migration 20261028090000): the message is a support CASE.
+  /// Visible case ID, type (null: as the topic implies), priority, the
+  /// responsible staff member (FK in the migration), resolution, last change.
+  /// status gains in_progress, waiting, resolved, closed ('done' still reads).
+  caseNumber     BigInt    @unique(map: "support_message_case_number_key") @default(autoincrement()) @map("case_number")
+  caseType       String?   @map("case_type")
+  priority       String    @default("normal")
+  assigneeId     String?   @map("assignee_id") @db.Uuid
+  resolutionNote String?   @map("resolution_note")
+  updatedAt      DateTime  @default(now()) @map("updated_at") @db.Timestamptz(6)
 
   handler User? @relation("SupportMessageHandledBy", fields: [handledBy], references: [id], map: "support_message_handled_by_fkey")
 
   @@index([status, createdAt(sort: Desc)], map: "support_message_status_created_idx")
   @@map("support_message")
+}
+
+/// 2026-10-28 (migration 20261028090000): what staff add to a support case --
+/// a reply to the person (shown to them in the app), an internal note, or a
+/// link to evidence. Foreign keys in the migration. Read and written with raw SQL.
+model SupportCaseEntry {
+  id               String    @id(map: "support_case_entry_pkey") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  supportMessageId String    @map("support_message_id") @db.Uuid
+  kind             String
+  body             String
+  link             String?
+  authorId         String    @map("author_id") @db.Uuid
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  deletedAt        DateTime? @map("deleted_at") @db.Timestamptz(6)
+  deletedBy        String?   @map("deleted_by") @db.Uuid
+
+  @@index([supportMessageId, createdAt], map: "support_case_entry_message_idx")
+  @@map("support_case_entry")
 }
 
 /// 2026-10-22: an account's public advice profile (one per account). Published

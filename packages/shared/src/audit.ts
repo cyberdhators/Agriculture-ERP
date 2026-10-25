@@ -219,6 +219,19 @@ export const AUDIT_ACTIONS = [
   'account.password_recovered',
   'listing.correction_requested',
   'listing.correction_addressed',
+  // 2026-10-28 (admin console lane): a permanent DISABLE of an account
+  // (distinct from suspend; lifted only by a Super Admin, with a reason), a
+  // staff member revealing an account's private contact (which field, never
+  // the value), a staff removal of a marketplace post from the console (not
+  // through a report), and support CASES: a change of status, type, priority,
+  // assignee, evidence or resolution, and a staff reply to the person. NOT
+  // YET IN THE DATABASE CHECK: the integrator's combined CHECK migration adds them.
+  'account.disabled',
+  'account.reenabled',
+  'account.contact_revealed',
+  'listing.removed',
+  'support_case.updated',
+  'support_case.replied',
 ] as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];
