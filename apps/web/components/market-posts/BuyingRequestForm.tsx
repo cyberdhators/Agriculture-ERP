@@ -204,7 +204,12 @@ export function BuyingRequestForm({
 
   const err = (key: keyof Values) => errors[key] || undefined;
   // 2026-10-27: archived units are not offered for a new request.
-  const unitOptions = offered(LISTING_UNITS, archivedLists?.archived_units, values.unit, values.price_per).map((u) => (
+  const unitOptions = offered(
+    LISTING_UNITS,
+    archivedLists?.archived_units,
+    values.unit,
+    values.price_per,
+  ).map((u) => (
     <option key={u} value={u}>
       {t(UNIT_KEY[u], lang)}
     </option>
@@ -249,11 +254,13 @@ export function BuyingRequestForm({
               onChange={(e) => set('category', e.target.value)}
             >
               <option value="">{t('register.select', lang)}</option>
-              {offered(LISTING_CATEGORIES, archivedLists?.archived_categories, values.category).map((c) => (
-                <option key={c} value={c}>
-                  {t(CATEGORY_KEY[c], lang)}
-                </option>
-              ))}
+              {offered(LISTING_CATEGORIES, archivedLists?.archived_categories, values.category).map(
+                (c) => (
+                  <option key={c} value={c}>
+                    {t(CATEGORY_KEY[c], lang)}
+                  </option>
+                ),
+              )}
             </Select>
           )}
         </Field>

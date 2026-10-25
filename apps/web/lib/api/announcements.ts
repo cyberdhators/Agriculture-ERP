@@ -208,7 +208,10 @@ export interface PlanSummary {
 }
 
 /** What a send would do, counted. Reads only. */
-export async function planSummary(input: PlanInput, client: Queryable = prisma): Promise<PlanSummary> {
+export async function planSummary(
+  input: PlanInput,
+  client: Queryable = prisma,
+): Promise<PlanSummary> {
   const rows = await client.$queryRawUnsafe<
     { channel: string | null; reason: string | null; n: number; recipients: number }[]
   >(
@@ -410,7 +413,10 @@ export async function loadAnnouncement(
   return row ?? null;
 }
 
-export async function deliveryCounts(id: string, client: Queryable = prisma): Promise<DeliveryCounts> {
+export async function deliveryCounts(
+  id: string,
+  client: Queryable = prisma,
+): Promise<DeliveryCounts> {
   const rows = await client.$queryRawUnsafe<{ channel: string; status: string; n: number }[]>(
     `SELECT channel, status, count(*)::int AS n FROM public.announcement_delivery
       WHERE announcement_id = $1::uuid GROUP BY 1, 2`,

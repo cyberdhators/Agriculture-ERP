@@ -258,12 +258,9 @@ export const RULE_MESSAGES = {
     'The recipients changed since the preview. Preview again, check the new count, then send.',
   announcement_no_recipients:
     'Nobody in this scope can be reached on the chosen channels. Change the scope or the channels.',
-  announcement_not_sending:
-    'This announcement has nothing waiting to be sent.',
-  announcement_nothing_to_retry:
-    'No failed deliveries are waiting to be retried.',
-  announcement_state_unknown:
-    'Choose a state from the list.',
+  announcement_not_sending: 'This announcement has nothing waiting to be sent.',
+  announcement_nothing_to_retry: 'No failed deliveries are waiting to be retried.',
+  announcement_state_unknown: 'Choose a state from the list.',
   template_inactive:
     'Choose an active template. A draft or archived template cannot be used to send.',
   template_title_mismatch:

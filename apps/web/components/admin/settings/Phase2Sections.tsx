@@ -17,7 +17,17 @@ import {
   type SettingValues,
 } from '@agri-erp/shared';
 
-import { Button, Card, CardBody, CardHeader, Checkbox, Field, Input, Notice, Select } from '@/components/ui';
+import {
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
+  Checkbox,
+  Field,
+  Input,
+  Notice,
+  Select,
+} from '@/components/ui';
 
 import { asFailure, saveSetting, valueFields, type CurrentSetting, type Failure } from './api';
 import { SettingHistory, VersionLine } from './common';
@@ -35,7 +45,8 @@ import { SettingHistory, VersionLine } from './common';
 
 function issues(error: { issues: { path: PropertyKey[]; message: string }[] }) {
   const out: Record<string, string> = {};
-  for (const issue of error.issues) out[issue.path.map(String).join('.') || 'body'] ??= issue.message;
+  for (const issue of error.issues)
+    out[issue.path.map(String).join('.') || 'body'] ??= issue.message;
   return out;
 }
 
@@ -176,7 +187,11 @@ export function LanguageRegionSection({
         <>
           <fieldset style={{ border: 0, padding: 0, margin: 0 }}>
             <legend className="label">Languages offered</legend>
-            <Checkbox label="English (always on: every text has an English original)" checked disabled />
+            <Checkbox
+              label="English (always on: every text has an English original)"
+              checked
+              disabled
+            />
             <Checkbox
               label="Arabic"
               checked={value.enabled_languages.includes('ar')}
@@ -191,7 +206,9 @@ export function LanguageRegionSection({
               Read by the farmer screens&apos; language choices. Someone who already chose Arabic
               sees English once it is switched off.
             </p>
-            {fields.enabled_languages ? <p className="small error">{fields.enabled_languages}</p> : null}
+            {fields.enabled_languages ? (
+              <p className="small error">{fields.enabled_languages}</p>
+            ) : null}
           </fieldset>
           <Field
             label="Date format"
@@ -229,8 +246,8 @@ export function LanguageRegionSection({
             <div>
               <dt className="label">Units</dt>
               <dd>
-                Quantities use the listing units (kg, bags, crates, litres and others) and land
-                the unit the farmer gives (feddan, acre or hectare). Units can be archived under
+                Quantities use the listing units (kg, bags, crates, litres and others) and land the
+                unit the farmer gives (feddan, acre or hectare). Units can be archived under
                 Marketplace and reference lists.
               </dd>
             </div>
@@ -332,7 +349,9 @@ export function ProfilePrivacySection({
             onChange={(e) => set({ ...value, allow_messages_default: e.target.checked })}
           />
           {fields.show_phone_default || fields.allow_messages_default ? (
-            <p className="small error">{fields.show_phone_default ?? fields.allow_messages_default}</p>
+            <p className="small error">
+              {fields.show_phone_default ?? fields.allow_messages_default}
+            </p>
           ) : null}
           <p className="small muted">
             Discoverability: a new profile is always a draft until its owner publishes it, and
@@ -387,7 +406,13 @@ function ArchiveList<T extends string>({
   return (
     <fieldset style={{ border: 0, padding: 0, margin: 0 }}>
       <legend className="label">{legend}</legend>
-      <div style={{ display: 'grid', gap: 4, gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))' }}>
+      <div
+        style={{
+          display: 'grid',
+          gap: 4,
+          gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
+        }}
+      >
         {values.map((v) => (
           <Checkbox
             key={v}
@@ -443,8 +468,8 @@ export function ReferenceListsSection({
           <Notice kind="info" title="Archiving keeps every record">
             <p className="small">
               Untick a value to archive it: it is no longer offered for NEW posts or registrations,
-              and new posts naming it are refused. Every existing listing, request and profile
-              keeps its value and is shown as before. Tick it again to restore it.
+              and new posts naming it are refused. Every existing listing, request and profile keeps
+              its value and is shown as before. Tick it again to restore it.
             </p>
           </Notice>
           <ArchiveList
@@ -518,11 +543,16 @@ export function NotificationsModerationSection({
                 step="0.001"
                 min={0}
                 max={1}
-                value={value.sms_cost_per_segment_usd === null ? '' : String(value.sms_cost_per_segment_usd)}
+                value={
+                  value.sms_cost_per_segment_usd === null
+                    ? ''
+                    : String(value.sms_cost_per_segment_usd)
+                }
                 onChange={(e) =>
                   set({
                     ...value,
-                    sms_cost_per_segment_usd: e.target.value.trim() === '' ? null : Number(e.target.value),
+                    sms_cost_per_segment_usd:
+                      e.target.value.trim() === '' ? null : Number(e.target.value),
                   })
                 }
               />

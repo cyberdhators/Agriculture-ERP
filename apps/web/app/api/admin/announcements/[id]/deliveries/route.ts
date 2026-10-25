@@ -85,21 +85,19 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       const page = rows.slice(0, limit);
       const last = page[page.length - 1];
       return paged(
-        page.map(
-          (r): AnnouncementDelivery => ({
-            id: r.id,
-            channel: r.channel,
-            recipient_kind: r.recipient_kind,
-            recipient_name: r.recipient_name,
-            status: r.status,
-            skip_reason: r.skip_reason,
-            provider_message_id: r.provider_message_id,
-            error: r.error,
-            attempts: r.attempts,
-            sent_at: r.sent_at?.toISOString() ?? null,
-            updated_at: r.updated_at.toISOString(),
-          }),
-        ),
+        page.map((r): AnnouncementDelivery => ({
+          id: r.id,
+          channel: r.channel,
+          recipient_kind: r.recipient_kind,
+          recipient_name: r.recipient_name,
+          status: r.status,
+          skip_reason: r.skip_reason,
+          provider_message_id: r.provider_message_id,
+          error: r.error,
+          attempts: r.attempts,
+          sent_at: r.sent_at?.toISOString() ?? null,
+          updated_at: r.updated_at.toISOString(),
+        })),
         {
           cursor:
             hasMore && last

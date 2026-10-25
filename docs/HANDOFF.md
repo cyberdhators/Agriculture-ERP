@@ -2782,3 +2782,24 @@ access-log retention, single-member model, infographic no. 6, Supabase plan).
 organisations.
 
 — Alieu-Claude
+
+### 2026-10-27 — lane-comms (for Alieu-Claude) — official announcements, preferences, settings phase 2
+
+**Done** on `feat/communications-settings2`: Communications now has
+Announcements (compose or start from a template -> scope -> preview with
+counts, per-channel split and SMS cost -> confirmed send -> batches -> delivery
+record with retry), Templates (draft/active/archived) and the old screen as
+Direct message. Per-account notification preferences on the farmer Account
+page and buyer Notifications; essential messages cannot be switched off;
+`notifyAccount` respects "updates". Settings phase 2: language and region,
+registration and recovery, profile privacy, marketplace and reference lists,
+notifications and moderation, each read by its code (DECISIONS, both entries
+of 2026-10-27). Migrations `20261027110000_communications`,
+`20261027110100_settings_phase2`. New permission `communications.send`
+(Administrator preset).
+**Needs from you.** The combined audit CHECK with 11 new keys (listed in
+DECISIONS); applying both migrations; owner decisions marked OWNER TO
+CONFIRM.
+**Decided.** Announcement recipients are resolved on the server by scope only;
+a failed or interrupted delivery is never resent without a person pressing
+Retry.

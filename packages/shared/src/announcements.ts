@@ -190,7 +190,9 @@ export function renderMessage(text: string, values: RenderValues): string {
  * itself needs Unicode, which the preview states.
  */
 export function smsEstimate(text: string, serviceName: string) {
-  return smsLength(renderMessage(text, { name: 'x'.repeat(L.nameInMessageMax), service_name: serviceName }));
+  return smsLength(
+    renderMessage(text, { name: 'x'.repeat(L.nameInMessageMax), service_name: serviceName }),
+  );
 }
 
 /** The service name used for estimates in the schema, where the setting is not known. */
@@ -201,7 +203,11 @@ const ESTIMATE_SERVICE_NAME = 'x'.repeat(80);
 // ---------------------------------------------------------------------------
 
 const text = (min: number, max: number, message: string) =>
-  z.string({ error: () => message }).trim().min(min, message).max(max, message);
+  z
+    .string({ error: () => message })
+    .trim()
+    .min(min, message)
+    .max(max, message);
 
 const placeholdersOk = (v: string) => unknownPlaceholders(v).length === 0;
 
@@ -213,8 +219,7 @@ const bodySchema = text(L.bodyMin, L.bodyMax, M.bodyInvalid).refine(
   placeholdersOk,
   M.placeholderUnknown,
 );
-const smsTooLong = (v: string) =>
-  smsEstimate(v, ESTIMATE_SERVICE_NAME).segments > L.smsSegmentsMax;
+const smsTooLong = (v: string) => smsEstimate(v, ESTIMATE_SERVICE_NAME).segments > L.smsSegmentsMax;
 
 const uuid = (message: string) =>
   z
@@ -336,7 +341,10 @@ export const announcementDraftSchema = z
       .max(ANNOUNCEMENT_CHANNELS.length, M.channelsRequired)
       .transform((v) => ANNOUNCEMENT_CHANNELS.filter((c) => v.includes(c))),
     scope: announcementScopeSchema,
-    template_id: uuid(M.templateIdInvalid).nullable().optional().transform((v) => v ?? null),
+    template_id: uuid(M.templateIdInvalid)
+      .nullable()
+      .optional()
+      .transform((v) => v ?? null),
   })
   .superRefine((v, ctx) => {
     const sms = v.channels.includes('sms');
@@ -416,7 +424,13 @@ export interface AnnouncementPreview {
   };
   channels: Record<
     AnnouncementChannel,
-    { selected: boolean; will_send: number; skipped_preference: number; skipped_no_contact: number; skipped_duplicate: number }
+    {
+      selected: boolean;
+      will_send: number;
+      skipped_preference: number;
+      skipped_no_contact: number;
+      skipped_duplicate: number;
+    }
   >;
   sms: {
     segments_per_message: number;

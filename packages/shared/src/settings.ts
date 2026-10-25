@@ -103,7 +103,8 @@ export const SETTINGS_MESSAGES = {
   unitUnknown: 'Choose units from the list.',
   cropUnknown: 'Choose crops from the list.',
   archiveAll: 'Keep at least one choice in each list available.',
-  reminderAfterValidity: 'Send the reminder before the listing ends: fewer days than it stays listed.',
+  reminderAfterValidity:
+    'Send the reminder before the listing ends: fewer days than it stays listed.',
   smsCostInvalid: 'Enter the cost of one SMS part in US dollars, from 0 to 1, or leave it blank.',
 } as const;
 

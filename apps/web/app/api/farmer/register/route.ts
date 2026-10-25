@@ -56,7 +56,11 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
         throw unprocessable('minimum_age_not_met');
       }
       const lists = await settingValue('reference_lists');
-      if ((body.primary_crops as string[]).some((c: string) => (lists.archived_crops as string[]).includes(c))) {
+      if (
+        (body.primary_crops as string[]).some((c: string) =>
+          (lists.archived_crops as string[]).includes(c),
+        )
+      ) {
         throw unprocessable('reference_value_archived');
       }
 

@@ -43,7 +43,10 @@ import {
 
 const migration = readFileSync(
   fileURLToPath(
-    new URL('../../../prisma/migrations/20261027110000_communications/migration.sql', import.meta.url),
+    new URL(
+      '../../../prisma/migrations/20261027110000_communications/migration.sql',
+      import.meta.url,
+    ),
   ),
   'utf8',
 );
@@ -183,9 +186,7 @@ describe('an announcement draft', () => {
   });
 
   it('orders and de-duplicates the channels', () => {
-    const parsed = announcementDraftSchema.parse(
-      draft({ channels: ['email', 'in_app', 'email'] }),
-    );
+    const parsed = announcementDraftSchema.parse(draft({ channels: ['email', 'in_app', 'email'] }));
     expect(parsed.channels).toEqual(['in_app', 'email']);
   });
 
@@ -212,7 +213,9 @@ describe('an announcement draft', () => {
       reasonOf(announcementDraftSchema.safeParse(draft({ scope: { kind: 'activity' } }))),
     ).toBe(M.scopeActivityRequired);
     expect(
-      reasonOf(announcementDraftSchema.safeParse(draft({ scope: { kind: 'all', state_id: 'CE' } }))),
+      reasonOf(
+        announcementDraftSchema.safeParse(draft({ scope: { kind: 'all', state_id: 'CE' } })),
+      ),
     ).toBe(M.scopeExtraField);
     expect(
       announcementDraftSchema.safeParse(draft({ scope: { kind: 'state', state_id: 'CE' } }))
@@ -246,9 +249,9 @@ describe('sending', () => {
     expect(
       reasonOf(announcementSendSchema.safeParse({ confirm: true, expected_recipients: 1.5 })),
     ).toBe(M.expectedRecipientsInvalid);
-    expect(announcementSendSchema.safeParse({ confirm: true, expected_recipients: 3 }).success).toBe(
-      true,
-    );
+    expect(
+      announcementSendSchema.safeParse({ confirm: true, expected_recipients: 3 }).success,
+    ).toBe(true);
   });
 });
 
@@ -256,15 +259,24 @@ describe('templates', () => {
   it('an SMS template has no title; in-app and email need one', () => {
     expect(
       reasonOf(
-        templateCreateSchema.safeParse({ name: 'Sms', channel: 'sms', title: 'Hello there', body: 'Hi' }),
+        templateCreateSchema.safeParse({
+          name: 'Sms',
+          channel: 'sms',
+          title: 'Hello there',
+          body: 'Hi',
+        }),
       ),
     ).toBe(M.titleNotForSms);
     expect(
       reasonOf(templateCreateSchema.safeParse({ name: 'Email', channel: 'email', body: 'Hi' })),
     ).toBe(M.titleInvalid);
     expect(
-      templateCreateSchema.safeParse({ name: 'Email', channel: 'email', title: 'Hello', body: 'Hi' })
-        .success,
+      templateCreateSchema.safeParse({
+        name: 'Email',
+        channel: 'email',
+        title: 'Hello',
+        body: 'Hi',
+      }).success,
     ).toBe(true);
   });
 
@@ -301,7 +313,9 @@ describe('preferences', () => {
   it('the preferences body has exactly the four switches, each on or off', () => {
     expect(notificationPreferencesSchema.safeParse(DEFAULT_PREFERENCES).success).toBe(true);
     expect(
-      reasonOf(notificationPreferencesSchema.safeParse({ ...DEFAULT_PREFERENCES, updates_in_app: 'no' })),
+      reasonOf(
+        notificationPreferencesSchema.safeParse({ ...DEFAULT_PREFERENCES, updates_in_app: 'no' }),
+      ),
     ).toBe(M.preferenceInvalid);
     expect(
       notificationPreferencesSchema.safeParse({ ...DEFAULT_PREFERENCES, essential: false }).success,

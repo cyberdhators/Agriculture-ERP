@@ -91,7 +91,10 @@ export async function notifyAccount(
   const farmerId = target?.farmer_id ?? null;
   const organizationId = farmerId ? null : (target?.buyer_organization_id ?? null);
   if (!farmerId && !organizationId) return false;
-  if (UPDATE_NOTICES.has(notice) && (await updatesSwitchedOff(tx, recipient.authUserId, farmerId))) {
+  if (
+    UPDATE_NOTICES.has(notice) &&
+    (await updatesSwitchedOff(tx, recipient.authUserId, farmerId))
+  ) {
     return false;
   }
 

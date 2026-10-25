@@ -1186,7 +1186,8 @@ export const en = {
   'prefs.email': 'By email',
   'prefs.emailNone': 'Email reaches accounts that sign in with an email address.',
   'prefs.updates': 'Updates about your messages and advice, in the app',
-  'prefs.essential': 'Essential and security messages are always sent: decisions about your account, a suspension, sign-in codes and announcements marked essential. They cannot be switched off.',
+  'prefs.essential':
+    'Essential and security messages are always sent: decisions about your account, a suspension, sign-in codes and announcements marked essential. They cannot be switched off.',
   'prefs.save': 'Save notification settings',
   'prefs.saved': 'Saved.',
   'prefs.failed': 'The settings could not be saved. Check the connection and try again.',

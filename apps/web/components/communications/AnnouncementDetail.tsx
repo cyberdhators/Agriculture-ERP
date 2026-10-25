@@ -15,7 +15,16 @@ import {
   type StaffAnnouncement,
 } from '@agri-erp/shared';
 
-import { Badge, Button, Card, CardBody, CardHeader, Notice, PageHeader, Select } from '@/components/ui';
+import {
+  Badge,
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
+  Notice,
+  PageHeader,
+  Select,
+} from '@/components/ui';
 import { ConfirmationDialog } from '@/components/ui/feedback';
 import { DataTable, Pagination } from '@/components/ui/data';
 import { formatDate } from '@/lib/format';
@@ -103,8 +112,12 @@ export function AnnouncementDetail({ id }: { id: string }) {
         const progressed =
           !!b &&
           b.in_app_sent +
-            b.sms.sent + b.sms.failed + b.sms.skipped +
-            b.email.sent + b.email.failed + b.email.skipped >
+            b.sms.sent +
+            b.sms.failed +
+            b.sms.skipped +
+            b.email.sent +
+            b.email.failed +
+            b.email.skipped >
             0;
         setWaiting(b?.waiting_for_configuration ?? []);
         if (fresh.remaining === 0 || fresh.announcement.status !== 'sending') break;
@@ -336,8 +349,8 @@ export function AnnouncementDetail({ id }: { id: string }) {
           preview ? (
             <>
               <p>
-                It goes to {preview.recipients} {preview.recipients === 1 ? 'recipient' : 'recipients'}
-                :{' '}
+                It goes to {preview.recipients}{' '}
+                {preview.recipients === 1 ? 'recipient' : 'recipients'}:{' '}
                 {ANNOUNCEMENT_CHANNELS.filter((c) => preview.channels[c].selected)
                   .map((c) => `${preview.channels[c].will_send} ${CHANNEL_LABELS[c].toLowerCase()}`)
                   .join(', ')}
@@ -393,11 +406,36 @@ function PreviewView({ preview }: { preview: AnnouncementPreview }) {
       <DataTable
         caption="Who receives it, per channel"
         columns={[
-          { key: 'channel', header: 'Channel', rowHeader: true, render: (c: AnnouncementChannel) => CHANNEL_LABELS[c] },
-          { key: 'send', header: 'Will be sent', numeric: true, render: (c) => preview.channels[c].will_send },
-          { key: 'pref', header: 'Switched off', numeric: true, render: (c) => preview.channels[c].skipped_preference },
-          { key: 'none', header: 'No address or inbox', numeric: true, render: (c) => preview.channels[c].skipped_no_contact },
-          { key: 'dup', header: 'Shared phone or inbox', numeric: true, render: (c) => preview.channels[c].skipped_duplicate },
+          {
+            key: 'channel',
+            header: 'Channel',
+            rowHeader: true,
+            render: (c: AnnouncementChannel) => CHANNEL_LABELS[c],
+          },
+          {
+            key: 'send',
+            header: 'Will be sent',
+            numeric: true,
+            render: (c) => preview.channels[c].will_send,
+          },
+          {
+            key: 'pref',
+            header: 'Switched off',
+            numeric: true,
+            render: (c) => preview.channels[c].skipped_preference,
+          },
+          {
+            key: 'none',
+            header: 'No address or inbox',
+            numeric: true,
+            render: (c) => preview.channels[c].skipped_no_contact,
+          },
+          {
+            key: 'dup',
+            header: 'Shared phone or inbox',
+            numeric: true,
+            render: (c) => preview.channels[c].skipped_duplicate,
+          },
         ]}
         rows={ANNOUNCEMENT_CHANNELS.filter((c) => preview.channels[c].selected)}
         rowKey={(c) => c}
@@ -422,7 +460,12 @@ function CountsTable({ state }: { state: AnnouncementState }) {
     <DataTable
       caption="Deliveries by channel and status"
       columns={[
-        { key: 'channel', header: 'Channel', rowHeader: true, render: (c: AnnouncementChannel) => CHANNEL_LABELS[c] },
+        {
+          key: 'channel',
+          header: 'Channel',
+          rowHeader: true,
+          render: (c: AnnouncementChannel) => CHANNEL_LABELS[c],
+        },
         ...DELIVERY_STATUSES.map((s) => ({
           key: s,
           header: STATUS_LABELS[s],
@@ -509,14 +552,21 @@ function DeliveryRecord({ id, refresh }: { id: string; refresh: number }) {
         <DataTable
           caption="Delivery record"
           columns={[
-            { key: 'who', header: 'Recipient', rowHeader: true, render: (r: AnnouncementDelivery) => r.recipient_name ?? '—' },
+            {
+              key: 'who',
+              header: 'Recipient',
+              rowHeader: true,
+              render: (r: AnnouncementDelivery) => r.recipient_name ?? '—',
+            },
             { key: 'kind', header: 'Kind', render: (r) => r.recipient_kind },
             { key: 'channel', header: 'Channel', render: (r) => CHANNEL_LABELS[r.channel] },
             {
               key: 'status',
               header: 'Status',
               render: (r) => (
-                <Badge tone={r.status === 'sent' ? 'leaf' : r.status === 'failed' ? 'clay' : 'neutral'}>
+                <Badge
+                  tone={r.status === 'sent' ? 'leaf' : r.status === 'failed' ? 'clay' : 'neutral'}
+                >
                   {STATUS_LABELS[r.status]}
                 </Badge>
               ),
@@ -533,7 +583,11 @@ function DeliveryRecord({ id, refresh }: { id: string; refresh: number }) {
                       ? `Provider id ${r.provider_message_id}`
                       : '',
             },
-            { key: 'when', header: 'Sent', render: (r) => (r.sent_at ? formatDate(r.sent_at) : '') },
+            {
+              key: 'when',
+              header: 'Sent',
+              render: (r) => (r.sent_at ? formatDate(r.sent_at) : ''),
+            },
           ]}
           rows={rows}
           rowKey={(r) => r.id}

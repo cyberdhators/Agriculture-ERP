@@ -36,15 +36,13 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
         organizationId,
       );
       return ok(
-        rows.map(
-          (r): AccountAnnouncement => ({
-            id: r.id,
-            title: r.title,
-            body: r.body,
-            category: r.category,
-            sent_at: r.sent_at.toISOString(),
-          }),
-        ),
+        rows.map((r): AccountAnnouncement => ({
+          id: r.id,
+          title: r.title,
+          body: r.body,
+          category: r.category,
+          sent_at: r.sent_at.toISOString(),
+        })),
       );
     },
   },

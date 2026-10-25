@@ -13,7 +13,18 @@ import {
   type TemplateStatus,
 } from '@agri-erp/shared';
 
-import { Badge, Button, Card, CardBody, CardHeader, Field, Input, Notice, Select, Textarea } from '@/components/ui';
+import {
+  Badge,
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
+  Field,
+  Input,
+  Notice,
+  Select,
+  Textarea,
+} from '@/components/ui';
 import { formatDate } from '@/lib/format';
 import {
   asFailure,
@@ -38,7 +49,8 @@ const STATUS_LABEL: Record<TemplateStatus, string> = {
 
 function issues(error: { issues: { path: PropertyKey[]; message: string }[] }) {
   const out: Record<string, string> = {};
-  for (const issue of error.issues) out[issue.path.map(String).join('.') || 'body'] ??= issue.message;
+  for (const issue of error.issues)
+    out[issue.path.map(String).join('.') || 'body'] ??= issue.message;
   return out;
 }
 
@@ -114,12 +126,20 @@ export function TemplatesPanel() {
                   Edit
                 </Button>
                 {t.status !== 'active' ? (
-                  <Button size="small" variant="secondary" onClick={() => void setStatus(t, 'active')}>
+                  <Button
+                    size="small"
+                    variant="secondary"
+                    onClick={() => void setStatus(t, 'active')}
+                  >
                     {t.status === 'archived' ? 'Restore' : 'Make active'}
                   </Button>
                 ) : null}
                 {t.status !== 'archived' ? (
-                  <Button size="small" variant="ghost" onClick={() => void setStatus(t, 'archived')}>
+                  <Button
+                    size="small"
+                    variant="ghost"
+                    onClick={() => void setStatus(t, 'archived')}
+                  >
                     Archive
                   </Button>
                 ) : null}
@@ -142,7 +162,13 @@ export function TemplatesPanel() {
   );
 }
 
-function TemplateForm({ template, onDone }: { template: MessageTemplate | null; onDone: () => void }) {
+function TemplateForm({
+  template,
+  onDone,
+}: {
+  template: MessageTemplate | null;
+  onDone: () => void;
+}) {
   const [name, setName] = useState(template?.name ?? '');
   const [channel, setChannel] = useState<AnnouncementChannel>(template?.channel ?? 'in_app');
   const [title, setTitle] = useState(template?.title ?? '');
@@ -198,7 +224,11 @@ function TemplateForm({ template, onDone }: { template: MessageTemplate | null; 
             />
           )}
         </Field>
-        <Field label="Channel" hint={template ? 'A template keeps its channel.' : undefined} error={fields.channel}>
+        <Field
+          label="Channel"
+          hint={template ? 'A template keeps its channel.' : undefined}
+          error={fields.channel}
+        >
           {(ids) => (
             <Select
               {...ids}
@@ -229,7 +259,11 @@ function TemplateForm({ template, onDone }: { template: MessageTemplate | null; 
         ) : null}
         <Field
           label="Text"
-          hint={sms ? `${sms.segments} SMS part${sms.segments === 1 ? '' : 's'} per person, at most 3.` : undefined}
+          hint={
+            sms
+              ? `${sms.segments} SMS part${sms.segments === 1 ? '' : 's'} per person, at most 3.`
+              : undefined
+          }
           error={fields.body}
         >
           {(ids) => (

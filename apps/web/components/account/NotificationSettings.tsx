@@ -34,7 +34,10 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return body.data;
 }
 
-const ANNOUNCEMENT_SWITCHES: { field: PreferenceField; key: 'prefs.inApp' | 'prefs.sms' | 'prefs.email' }[] = [
+const ANNOUNCEMENT_SWITCHES: {
+  field: PreferenceField;
+  key: 'prefs.inApp' | 'prefs.sms' | 'prefs.email';
+}[] = [
   { field: 'announcements_in_app', key: 'prefs.inApp' },
   { field: 'announcements_sms', key: 'prefs.sms' },
   { field: 'announcements_email', key: 'prefs.email' },
@@ -94,8 +97,7 @@ export function NotificationPreferencesCard({
   };
 
   const shown = prefs ?? DEFAULT_PREFERENCES;
-  const set = (field: PreferenceField, value: boolean) =>
-    setPrefs({ ...shown, [field]: value });
+  const set = (field: PreferenceField, value: boolean) => setPrefs({ ...shown, [field]: value });
 
   return (
     <Card>

@@ -383,17 +383,17 @@ character.
 | `notice_version_exists`            | That version already exists for this notice and language. Choose a new version number.                                        |
 | `notice_version_not_newer`         | Choose a version number higher than the one already published for this notice and language.                                   |
 | `notice_not_draft`                 | Only a draft can be edited, published or discarded. A published or retired notice stays as it was.                            |
-| `announcement_not_draft` | Only a draft announcement can be edited, sent or discarded. A sent announcement stays as it was. |
-| `announcement_recipients_changed` | The recipients changed since the preview. Preview again, check the new count, then send. |
-| `announcement_no_recipients` | Nobody in this scope can be reached on the chosen channels. Change the scope or the channels. |
-| `announcement_not_sending` | This announcement has nothing waiting to be sent. |
-| `announcement_nothing_to_retry` | No failed deliveries are waiting to be retried. |
-| `announcement_state_unknown` | Choose a state from the list. |
-| `template_inactive` | Choose an active template. A draft or archived template cannot be used to send. |
-| `template_title_mismatch` | An SMS template has no title, and an in-app or email template needs one. |
-| `template_sms_too_long` | An SMS can be at most 3 parts: 459 plain characters, or 201 with Arabic or special ones. |
-| `minimum_age_not_met` | You must be older to register for this service. Ask your extension officer for help. |
-| `reference_value_archived` | That choice is no longer offered for new entries. Choose another from the list. |
+| `announcement_not_draft`           | Only a draft announcement can be edited, sent or discarded. A sent announcement stays as it was.                              |
+| `announcement_recipients_changed`  | The recipients changed since the preview. Preview again, check the new count, then send.                                      |
+| `announcement_no_recipients`       | Nobody in this scope can be reached on the chosen channels. Change the scope or the channels.                                 |
+| `announcement_not_sending`         | This announcement has nothing waiting to be sent.                                                                             |
+| `announcement_nothing_to_retry`    | No failed deliveries are waiting to be retried.                                                                               |
+| `announcement_state_unknown`       | Choose a state from the list.                                                                                                 |
+| `template_inactive`                | Choose an active template. A draft or archived template cannot be used to send.                                               |
+| `template_title_mismatch`          | An SMS template has no title, and an in-app or email template needs one.                                                      |
+| `template_sms_too_long`            | An SMS can be at most 3 parts: 459 plain characters, or 201 with Arabic or special ones.                                      |
+| `minimum_age_not_met`              | You must be older to register for this service. Ask your extension officer for help.                                          |
+| `reference_value_archived`         | That choice is no longer offered for new entries. Choose another from the list.                                               |
 
 **A route names a rule; it never writes a sentence.** `conflict()` and
 `unprocessable()` take a key from this registry, not a string. That is how the
@@ -542,17 +542,17 @@ change.
 | `notice.draft_discarded`                      |
 | `notice.published`                            |
 | `notice.retired`                              |
-| `message_template.created`                   |
-| `message_template.updated`                   |
-| `message_template.status_changed`            |
-| `announcement.drafted`                       |
-| `announcement.draft_edited`                  |
-| `announcement.draft_discarded`               |
-| `announcement.queued`                        |
-| `announcement.batch_sent`                    |
-| `announcement.retry_queued`                  |
-| `announcement.completed`                     |
-| `notification_preference.updated`            |
+| `message_template.created`                    |
+| `message_template.updated`                    |
+| `message_template.status_changed`             |
+| `announcement.drafted`                        |
+| `announcement.draft_edited`                   |
+| `announcement.draft_discarded`                |
+| `announcement.queued`                         |
+| `announcement.batch_sent`                     |
+| `announcement.retry_queued`                   |
+| `announcement.completed`                      |
+| `notification_preference.updated`             |
 
 `before` and `after` hold **changed fields only**, never whole rows, and never a
 password, token, authentication identifier, national id, phone, email, given
@@ -564,352 +564,352 @@ caller passes (C-4.6, C-4.7).
 The `fields` map carries a reason per failing field, not the message above.
 These are also exact.
 
-| Situation                               | Exact reason                                                                                    |
-| --------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| A field the request may not send        | This field is not recognised.                                                                   |
-| The body is not an object at all        | The request was not sent in the expected form.                                                  |
-| Page marker: not text                   | The page marker must be text.                                                                   |
-| Phone: nothing entered, or not text     | Enter a mobile number.                                                                          |
-| Phone: contains a letter                | A mobile number contains digits only.                                                           |
-| Phone: disallowed punctuation           | A mobile number may contain only digits, spaces and hyphens, and may begin with +.              |
-| Phone: wrong or missing country code    | Enter a South Sudan mobile number starting +211.                                                |
-| Phone: too short                        | A South Sudan mobile number has nine digits after +211. This one has too few.                   |
-| Phone: too long                         | A South Sudan mobile number has nine digits after +211. This one has too many.                  |
-| Page size: not a number, or blank       | The page size must be a number.                                                                 |
-| Page size: has a decimal point          | The page size must be a whole number.                                                           |
-| Page size: below one                    | The page size must be at least 1.                                                               |
-| Farmer id: missing                      | A registration must carry its identifier.                                                       |
-| Farmer id: not a UUID                   | The identifier is not in the expected form.                                                     |
-| Given name: missing or blank            | Enter the given name.                                                                           |
-| Family name: missing or blank           | Enter the family name.                                                                          |
-| Name: over 100 characters               | A name can be at most 100 characters.                                                           |
-| Name: digits, symbols or emoji          | A name contains letters, spaces, apostrophes and hyphens only.                                  |
-| Sex: not f or m                         | Choose f or m.                                                                                  |
-| Year of birth: not a whole number       | The year of birth must be a whole number.                                                       |
-| Year of birth: after this year          | The year of birth cannot be in the future.                                                      |
-| Year of birth: over 120 years back      | The year of birth cannot be more than 120 years ago.                                            |
-| National ID: wrong shape                | A national ID is 6 to 20 characters: digits and capital letters only.                           |
-| Payam: missing                          | Choose a payam.                                                                                 |
-| Registering officer: not a UUID         | The registering officer is not in the expected form.                                            |
-| Consent: not an object                  | Consent must be recorded as an object.                                                          |
-| Consent text version: missing           | Record which consent text was read.                                                             |
-| Consent text version: over 32 chars     | The consent text version can be at most 32 characters.                                          |
-| Consent language: not en or ar          | Choose en or ar for the consent language.                                                       |
-| Consent granted: not true or false      | Say whether consent was granted, true or false.                                                 |
-| Filter: verification status unknown     | Choose pending, verified or rejected.                                                           |
-| Filter: date not ISO 8601               | Give the date as an ISO 8601 timestamp.                                                         |
-| Filter: duplicate flag not true/false   | Choose true or false.                                                                           |
-| Filter: date range inverted             | The end of the date range is before its start.                                                  |
-| Rejection reason: not on the list       | Choose a reason: duplicate, wrong_location, incomplete, not_a_farmer, consent_missing or other. |
-| Note: not text                          | The note must be text.                                                                          |
-| Note: over 280 characters               | A note can be at most 280 characters.                                                           |
-| Note: control characters                | A note contains printable text only.                                                            |
-| Merge target: missing                   | Name the farmer this record is a duplicate of.                                                  |
-| Merge target: not a UUID                | The target is not in the expected form.                                                         |
-| Queue filter: escalated not true/false  | Choose true or false.                                                                           |
-| Farm id: missing                        | A farm must carry its identifier.                                                               |
-| Farm id: not a UUID                     | The farm identifier is not in the expected form.                                                |
-| Season: wrong shape                     | Give the season as a year and a name: 2026-main or 2026-second.                                 |
-| GPS accuracy: missing                   | Record the GPS accuracy in metres at capture.                                                   |
-| GPS accuracy: not a number of metres    | GPS accuracy is a number of metres, zero or more.                                               |
-| Boundary: not a one-ring Polygon        | Send the boundary as a GeoJSON Polygon with one ring.                                           |
-| Boundary point: not a pair              | Each boundary point is a pair: longitude, then latitude.                                        |
-| Boundary point: out of range            | Longitude is between -180 and 180; latitude between -90 and 90.                                 |
-| Boundary: over 2000 points              | A boundary can have at most 2000 points.                                                        |
-| Crop: not on the list                   | Choose a crop from the list: sorghum, groundnut, sesame, maize or cowpea.                       |
-| Crops: repeated                         | Each crop once per season.                                                                      |
-| Crops: not a list                       | Send the crops as a list.                                                                       |
-| Farm name: too long                     | Keep the farm name to 120 characters.                                                           |
-| Farm size: not above zero               | Give the size as a number greater than zero.                                                    |
-| Farm size: unit missing                 | Choose the unit the size is in: feddan, acre or hectare.                                        |
-| Farm size: value missing                | Give the size, or clear the unit.                                                               |
-| Farm tenure: not on the list            | Choose how the land is held: owned, rented, communal or other.                                  |
-| Farm village: too long                  | Keep the village to 120 characters.                                                             |
-| Farm directions: too long               | Keep the directions to 500 characters.                                                          |
-| Farm notes: too long                    | Keep the notes to 2000 characters.                                                              |
-| Farm position: not a point              | Give the location as latitude and longitude.                                                    |
-| Visit: no identifier                    | A visit must carry its identifier.                                                              |
-| Visit: identifier malformed             | The visit identifier is not in the expected form.                                               |
-| Advice: missing or blank                | Write the advice you gave. A visit with no advice is not a visit.                               |
-| Advice: over 4000 characters            | The advice is too long to save. Shorten it to about six hundred words.                          |
-| Observation: over 4000 characters       | The observation is too long to save. Shorten it to about six hundred words.                     |
-| Observation: sent but blank             | Leave the observation out, or write something in it.                                            |
-| Topics: none ticked                     | Tick at least one topic the visit covered.                                                      |
-| Topic: not on the list                  | Choose the topics from the list.                                                                |
-| Topics: repeated                        | Each topic once.                                                                                |
-| Duration: not whole minutes 1–1440      | Give the duration as whole minutes, up to a day.                                                |
-| Attendance: not a whole number 1–10000  | Give the attendance as a whole number of people.                                                |
-| Visited at: not a date and time         | Record when the visit happened as a date and time.                                              |
-| Position: not a GeoJSON Point           | Send the position as a GeoJSON Point: longitude, then latitude.                                 |
-| Position: out of range                  | Longitude is between -180 and 180; latitude between -90 and 90.                                 |
-| GPS accuracy: missing                   | Record the GPS accuracy in metres at capture.                                                   |
-| GPS accuracy: negative or absurd        | GPS accuracy is a number of metres, zero or more.                                               |
-| Follow-up: identifier malformed         | The earlier visit is not in the expected form.                                                  |
-| Correction: changes nothing             | Change at least one thing, or leave the visit as it is.                                         |
-| Attachment: identifier malformed        | The attachment identifier is not in the expected form.                                          |
-| Attachment: kind not photo or audio     | An attachment is a photo or an audio recording.                                                 |
-| Attachment: type not accepted           | Save the photo as JPEG, PNG or WebP, or the recording as M4A, AAC, MP3, OGG or WebM.            |
-| Attachment: type does not match kind    | The file type does not match the kind of attachment.                                            |
-| Attachment: size not whole bytes        | The file size must be a whole number of bytes.                                                  |
-| Photo: over 15 MB                       | This photo is too large to send. Set the camera to a smaller picture size and take it again.    |
-| Audio: over 25 MB                       | This recording is too long to send. Record it again in shorter pieces.                          |
-| Captured at: not a date and time        | Record when the attachment was captured as a date and time.                                     |
-| Visit filter: date malformed            | Give the date as a full date and time with its offset.                                          |
-| Visit filter: officer malformed         | The officer identifier is not in the expected form.                                             |
-| Reassign: no officer named              | Name the officer who will now work with this farmer.                                            |
-| Reassign: officer identifier malformed  | The officer identifier is not in the expected form.                                             |
-| Device header malformed                 | The device identifier is 8 to 64 letters, digits, dots, hyphens or underscores.                 |
-| Farmer captured at: not a date and time | Record when the registration was captured as a date and time.                                   |
-| Farm captured at: not a date and time   | Record when the farm was captured as a date and time.                                           |
-| Boundary: identifier malformed          | The boundary identifier is not in the expected form.                                            |
-| Report cut-off: not a date              | Give the data cut-off as a date: YYYY-MM-DD.                                                    |
-| Report cut-off: in the future           | The data cut-off cannot be after today.                                                         |
-| Report period: malformed                | Give the period start and end as full dates and times with their offset.                        |
-| Report period: ends before it starts    | The period ends before it starts.                                                               |
-| Report season: malformed                | Give the season as a year and a name: 2026-main or 2026-second.                                 |
-| Report type: unknown                    | Choose a report: summary or farmers.                                                            |
-| Buyer first name: missing or blank      | Enter your first name.                                                                          |
-| Buyer last name: missing or blank       | Enter your last name.                                                                           |
-| Buyer name: over 100 characters         | A name can be at most 100 characters.                                                           |
-| Buyer phone: not E.164                  | Enter a mobile number in international form, starting with + and the country code.              |
-| Confirm password: differs               | The two passwords do not match.                                                                 |
-| Organisation name: missing or length    | Enter the organisation name: 2 to 160 characters.                                               |
-| Organisation type: not on the list      | Choose an organisation type from the list.                                                      |
-| Registration or tax number: too long    | A registration or tax number can be at most 64 characters.                                      |
-| Country: not two letters                | Give the country as a two-letter code, such as SS.                                              |
-| County without a state                  | Choose a state before choosing a county.                                                        |
-| City: over 120 characters               | A city can be at most 120 characters.                                                           |
-| Address: over 300 characters            | An address can be at most 300 characters.                                                       |
-| Website: not http(s) or too long        | Enter a website starting with http:// or https://, up to 200 characters.                        |
-| Organisation description: too long      | A description can be at most 1000 characters.                                                   |
-| Listing category: not on the list       | Choose a category from the list.                                                                |
-| A list field: not a list                | Send this as a list.                                                                            |
-| Interested products: over 20            | List at most 20 products.                                                                       |
-| Product name: blank or over 120         | A product name is 1 to 120 characters.                                                          |
-| Production areas: over 20               | Choose at most 20 production areas.                                                             |
-| Delivery locations: over 10             | List at most 10 delivery locations.                                                             |
-| Delivery location: length               | A delivery location is 2 to 200 characters.                                                     |
-| Purchasing month: not 1–12              | Choose purchasing months as numbers from 1 to 12.                                               |
-| Payment preference: not on the list     | Choose a payment preference from the list.                                                      |
-| Quantity: not a positive number         | Give the quantity as a number greater than zero.                                                |
-| Quantity range: inverted                | The maximum quantity is less than the minimum.                                                  |
-| Unit: not on the list                   | Choose a unit from the list.                                                                    |
-| Required by: not a date, or past        | Give the date it is needed by as YYYY-MM-DD, today or later.                                    |
-| Request notes: over 1000 characters     | Notes can be at most 1000 characters.                                                           |
-| Request action: not submit or cancel    | Choose submit or cancel.                                                                        |
-| Buyer change: changes nothing           | Change at least one thing, or leave the profile as it is.                                       |
-| Buyer decision: unknown status          | Choose under_review, verified, rejected, suspended or not_required.                             |
-| Buyer account type: unknown             | Choose individual or business.                                                                  |
-| Decision note: over 500 characters      | A note can be at most 500 characters.                                                           |
-| Request decision: unknown status        | Choose under_review, accepted, rejected, partially_fulfilled or fulfilled.                      |
-| Order status: not on the list           | Choose an order status from the list.                                                           |
-| Unit price: not a number zero or more   | Give the unit price in SSP as a number, zero or more.                                           |
-| Buyer-side identifier: malformed        | The identifier is not in the expected form.                                                     |
-| Grade: not a, b, c or ungraded          | Choose a grade: a, b, c or ungraded.                                                            |
-| Search: over 100 characters             | A search can be at most 100 characters.                                                         |
-| Marketplace number filter: malformed    | Give the number as digits, zero or more.                                                        |
-| Marketplace date filter: malformed      | Give the date as YYYY-MM-DD.                                                                    |
-| Price range: inverted                   | The highest price is less than the lowest.                                                      |
-| Supplier filter: not verified           | Choose verified to see only verified suppliers.                                                 |
-| Order cancellation: no reason           | Say why the order is being cancelled, in up to 300 characters.                                  |
-| Buyer list status filter: unknown       | Choose a status from the list.                                                                  |
-| Farmer ID type: not on the list         | Choose the kind of identity document.                                                           |
-| Farmer ID number: wrong length          | An identity number is 3 to 40 characters.                                                       |
-| Farmer date of birth: malformed         | Give the date of birth as YYYY-MM-DD, or leave it out and give the year.                        |
-| Farmer profile answer: not on list      | Choose an answer from the list.                                                                 |
-| Next of kin: name missing               | Give the name of a next of kin or another person to contact.                                    |
-| Next of kin: relationship missing       | Say how that person is related to you.                                                          |
-| Next of kin phone: not a mobile         | Give the next of kin phone as a South Sudan mobile number.                                      |
-| Village: missing                        | Give your village or boma.                                                                      |
-| Farmer profile text: too long           | This answer is too long.                                                                        |
-| Crops grown: none chosen                | Choose at least one crop you grow.                                                              |
-| Land size: not above zero               | Give the land under cultivation as a number greater than zero.                                  |
-| Land tenure: missing                    | Choose how you hold the land.                                                                   |
-| Years farming: out of range             | Give a number of years from 0 to 100.                                                           |
-| Group membership: no answer             | Say whether you belong to a cooperative or group.                                               |
-| Household count: out of range           | Give a whole number from 0 to 200.                                                              |
-| Services wanted: none chosen            | Choose at least one service you want.                                                           |
-| Farmer listing: trading name            | A farm or stall name is 2 to 120 characters.                                                    |
-| Farmer listing: title                   | A title is 2 to 200 characters.                                                                 |
-| Farmer listing: status not on list      | Choose draft, listed, paused, withdrawn, completed or sold.                                     |
-| Farmer listing: minimum over quantity   | The minimum order cannot be more than the quantity.                                             |
-| Farmer answer: not accept or decline    | Choose accept or decline.                                                                       |
-| Farmer phone change: same number        | That is already your phone number.                                                              |
-| Farmer password: under six characters   | Choose 6 or more characters you will remember.                                                  |
-| Listing withdrawal: reason missing      | Give the reason the farmer will see, 3 to 300 characters.                                       |
-| Cart: no products                       | Add at least one product to the cart.                                                           |
-| Cart: over twenty products              | A cart can hold at most 20 products. Send these first.                                          |
-| Request: more than listed               | This is more than the farmer has listed.                                                        |
-| Request: below minimum order            | This is below the farmer's minimum order.                                                       |
-| Cart: same product twice                | This product is in the cart twice. Keep one line.                                               |
-| Request: one already waiting            | You already have a request waiting for the farmer on this product.                              |
-| Cart: own product                       | This is your own product. Remove it from the cart.                                              |
-| Message: channel not email or SMS       | Choose email or SMS.                                                                            |
-| Message: recipient type not on channel  | That kind of recipient cannot be reached on this channel.                                       |
-| Message: no recipients                  | Choose at least one recipient.                                                                  |
-| Message: over 500 recipients            | A single message reaches at most 500 recipients.                                                |
-| Message: recipient not a record id      | A recipient is identified by its record id.                                                     |
-| Message: email with no subject          | Enter a subject.                                                                                |
-| Message: subject over 200 characters    | A subject has at most 200 characters.                                                           |
-| Message: body missing or blank          | Enter a message.                                                                                |
-| Message: body over 5000 characters      | A message has at most 5000 characters.                                                          |
-| Message: SMS with a subject             | An SMS has no subject.                                                                          |
-| Message: SMS over three parts           | An SMS can be at most 3 parts: 459 plain characters, or 201 with Arabic or special ones.        |
-| SMS farmer picker: search over 100      | A search can be at most 100 characters.                                                         |
-| SMS farmer picker: unknown location     | Choose a location from the list.                                                                |
-| SMS farmer picker: select not `ids`     | Choose ids, or leave the selection mode out.                                                    |
-| Market post: status not on list         | Choose draft, active, paused, withdrawn or completed.                                           |
-| Market post: name for the market        | A name for the market is 2 to 120 characters.                                                   |
-| Market post: location                   | Give a town, payam or village, 2 to 160 characters.                                             |
-| Market post: date already past          | Give a date from today onwards.                                                                 |
-| Market post: end before start           | The end date cannot be before the start date.                                                   |
-| Service: no description                 | Describe the service in a sentence or two.                                                      |
-| Service: type not on list               | Choose tractor hire, transport, processing, storage or other.                                   |
-| Service: price unit not on list         | Choose what the price is for.                                                                   |
-| Market post: no price, not negotiable   | Give a price, or tick negotiable.                                                               |
-| Market post: price with no unit         | Say what the price is for.                                                                      |
-| Listing sale: not above zero            | Give the quantity sold as a number greater than zero.                                           |
-| Listing sale: more than is left         | This is more than the quantity left on the listing.                                             |
-| Listing edit: quantity below sold       | The quantity cannot be less than what you have already sold.                                    |
-| Market post: yes/no not a choice        | Choose yes or no.                                                                               |
-| Buying requests: poster filter          | Choose farmer or buyer.                                                                         |
-| Service: farmer sends a state           | Your location comes from your farmer record.                                                    |
-| Message: kind of post                   | Choose a listing, a buying request or a service.                                                |
-| Message: body missing or blank          | Write a message.                                                                                |
-| Message: over 2000 characters           | A message has at most 2000 characters.                                                          |
-| Conversation: `after` not a time        | Give the time as an ISO date and time.                                                          |
-| Delete account: no password             | Enter your password to confirm.                                                                 |
-| Delete account: not confirmed           | Tick the box to confirm you want to delete your account.                                        |
-| Contact CORWADO: name                   | Give your name, 2 to 120 characters.                                                            |
-| Contact CORWADO: topic not on list      | Choose account, marketplace, messages, technical, appeal or other.                              |
-| Contact CORWADO: message length         | Write your message, 10 to 2000 characters.                                                      |
-| Support list: status not on list        | Choose new or done.                                                                             |
-| Support message: status other than done | A message can only be marked done.                                                              |
-| Advice profile: name length             | A name for your advice profile is 2 to 120 characters.                                          |
-| Advice profile: kind not on list        | Choose adviser, institute, research or training body, advisory organisation or other.           |
-| Advice profile: description length      | Describe the advice you offer in 10 to 2000 characters.                                         |
-| Advice profile: no topic                | Choose at least one topic you advise on.                                                        |
-| Advice topic: not on list               | Choose a topic from the list.                                                                   |
-| Advice profile: no language             | Choose at least one language you give advice in.                                                |
-| Advice language: not on list            | Choose a language from the list.                                                                |
-| Advice profile: states                  | Choose up to 20 states from the list, or none to cover anywhere.                                |
-| Advice profile: no delivery mode        | Choose remote, in person, or both.                                                              |
-| Advice delivery mode: not on list       | Choose remote or in person.                                                                     |
-| Advice profile: availability too long   | Availability can be at most 300 characters.                                                     |
-| Advice profile: terms not on list       | Choose free, paid, or free and paid.                                                            |
-| Advice profile: fee note too long       | A note on fees can be at most 300 characters.                                                   |
-| Advice profile: interests too long      | Commercial interests can be at most 500 characters.                                             |
-| Advice profile: status not on list      | Choose draft, published or unpublished.                                                         |
-| Advice request: question length         | Write your question in 10 to 2000 characters.                                                   |
-| Advice request: contact not on list     | Choose in the app, a phone call or an SMS.                                                      |
-| Advice request: call without sharing    | To be called or sent an SMS, tick the box to share your details with this adviser.              |
-| Advice requests: side not on list       | Choose requester or provider.                                                                   |
-| Advice request change: action           | Choose start, close or feedback.                                                                |
-| Advice request close: outcome           | Choose resolved, referred, closed unresolved or cancelled.                                      |
-| Advice feedback: rating not 1–5         | Give a rating from 1 to 5 stars.                                                                |
-| Advice feedback: comment too long       | A comment can be at most 1000 characters.                                                       |
-| Advice request change: extra field      | This field is not used for that change.                                                         |
-| Guide: no topic                         | Choose at least one topic.                                                                      |
-| Guide: topic not on list                | Choose topics from the list.                                                                    |
-| Guide: more than four topics            | Choose at most 4 topics.                                                                        |
-| Guide: Arabic title over 200            | An Arabic title has at most 200 characters.                                                     |
-| Guide: Arabic summary over 2000         | An Arabic summary has at most 2000 characters.                                                  |
-| Guide move: not on list                 | Choose submit, return, publish or unpublish.                                                    |
-| Guide move: return without a note       | Say what needs to change, in at least 5 characters.                                             |
-| Guide move: note over 1000              | Keep the note under 1000 characters.                                                            |
-| Guide move: note on another move        | Only a guide sent back to draft carries a note.                                                 |
-| Public guides: topic filter             | Choose a topic from the list, or leave it out.                                                  |
-| Public guides: language filter          | Choose English or Arabic, or leave it out.                                                      |
-| Public guides: search over 100          | A search has at most 100 characters.                                                            |
-| Analytics: date not YYYY-MM-DD          | Give the date as YYYY-MM-DD.                                                                    |
-| Analytics: window ends after today      | The window cannot end after today.                                                              |
-| Analytics: window ends before start     | The window ends before it starts.                                                               |
-| Analytics: window over 366 days         | A window can be at most 366 days.                                                               |
-| Analytics: state not a state id         | Choose a state from the list.                                                                   |
-| Public profile: name length             | A name for your public profile is 2 to 120 characters.                                          |
-| Public profile: activity not on list    | Choose what you do from the list.                                                               |
-| Public profile: about too long          | Keep the description to 1000 characters.                                                        |
-| Public profile: state malformed         | Choose your state from the list.                                                                |
-| Public profile: payam malformed         | Choose your payam from the list.                                                                |
-| Public profile: payam without a state   | Choose a state before choosing a payam.                                                         |
-| Public profile: over 10 products        | List at most 10 products.                                                                       |
-| Public profile: over 10 services        | List at most 10 services.                                                                       |
-| Public profile: tag length              | Each one is 1 to 40 characters.                                                                 |
-| Profile photo: type not accepted        | Choose a JPEG, PNG or WebP photo.                                                               |
-| Profile photo: over 2 MB                | A profile photo can be at most 2 MB.                                                            |
-| Profile photo: size not whole bytes     | Give the photo size as a whole number of bytes.                                                 |
-| Profile photo: upload id malformed      | The upload identifier is not in the expected form.                                              |
-| Advice directory: approved filter       | Use approved=1 to show approved advisers only, or leave it out.                                 |
-| Adviser application: no specialty       | Choose at least one subject you specialise in.                                                  |
-| Adviser application: experience         | Describe your experience in 20 to 2000 characters.                                              |
-| Adviser application: qualifications     | Qualifications can be at most 2000 characters.                                                  |
-| Adviser application: affiliation        | An affiliation can be at most 300 characters.                                                   |
-| Adviser application: not ticked         | Tick the box to confirm this statement.                                                         |
-| Adviser clarification: answer           | Write your answer in 5 to 2000 characters.                                                      |
-| Adviser decision: not on list           | Choose request clarification, approve, decline or revoke.                                       |
-| Adviser decision: reason                | Give a reason of 5 to 1000 characters.                                                          |
-| Adviser queue: status not on list       | Choose submitted, clarification requested, approved, declined, revoked or withdrawn.            |
-| Advice photo: type not accepted         | Choose a JPEG, PNG or WebP photo.                                                               |
-| Advice photo: over 2 MB                 | A photo on an advice request can be at most 2 MB.                                               |
-| Advice photo: size not whole bytes      | Give the photo size as a whole number of bytes.                                                 |
-| Advice photo: upload id malformed       | The upload identifier is not in the expected form.                                              |
-| Advice referral: action not on list     | Choose accept, decline or withdraw.                                                             |
-| Advice referral: share not true/false   | Say whether to share your photos: true or false.                                                |
-| Setting: key not on list                | Choose a settings section from the list.                                                        |
-| Setting: expected version               | Send the version you loaded, as a whole number.                                                 |
-| Identity: service name length           | Give a service name of 2 to 80 characters.                                                      |
-| Identity: About too long                | Keep the About text to 2000 characters.                                                         |
-| Support: phone or WhatsApp malformed    | Enter up to 40 digits, spaces and hyphens, starting with + for a country code.                  |
-| Support: email malformed                | Enter an email address such as help@example.org.                                                |
-| Support: opening hours too long         | Keep the opening hours to 200 characters.                                                       |
-| Support: over 10 help links             | List at most 10 help links.                                                                     |
-| Help link: label length                 | Give each link a label of 2 to 80 characters.                                                   |
-| Help link: not an https address         | Give each link a full address starting https://, up to 500 characters.                          |
-| Setting: on/off not true or false       | Choose on or off.                                                                               |
-| Maintenance banner: over 300 characters | Keep the notice to 300 characters.                                                              |
-| Maintenance banner: on with no text     | Write a notice of 5 to 300 characters before switching the banner on.                           |
-| Reason codes: none, or over 50          | Keep between 1 and 50 reason codes.                                                             |
-| Reason code: malformed                  | A code is 2 to 40 lower-case letters, digits and underscores, starting with a letter.           |
-| Reason code: listed twice               | Each code may appear only once.                                                                 |
-| Reason code: label length               | Give each reason a label of 3 to 80 characters.                                                 |
-| Reason code: applies to nothing known   | Choose at least one of listing, account, profile or report.                                     |
-| Notice: kind not on list                | Choose consent, terms or privacy.                                                               |
-| Notice: language not en or ar           | Choose en or ar.                                                                                |
-| Notice: version malformed               | Give the version as v followed by numbers, such as v1.4.                                        |
-| Notice: text length                     | Write the notice in 20 to 20000 characters.                                                     |
-| Notice: edit changes nothing            | Change the version or the text before saving.                                                   |
-| Settings: languages | Keep English switched on, with Arabic on or off. |
-| Settings: date format | Choose one of the date formats in the list. |
-| Settings: number out of range | Enter a whole number within the range shown. |
-| Settings: category not on list | Choose categories from the list. |
-| Settings: unit not on list | Choose units from the list. |
-| Settings: crop not on list | Choose crops from the list. |
-| Settings: whole list archived | Keep at least one choice in each list available. |
-| Settings: reminder after end | Send the reminder before the listing ends: fewer days than it stays listed. |
-| Settings: SMS cost | Enter the cost of one SMS part in US dollars, from 0 to 1, or leave it blank. |
-| Announcements: templateNameInvalid | Give the template a name of 3 to 80 characters. |
-| Announcements: channelUnknown | Choose in-app, SMS or email. |
-| Announcements: channelsRequired | Choose at least one channel. |
-| Announcements: titleInvalid | Give a title of 3 to 120 characters. |
-| Announcements: titleNotForSms | An SMS template has no title. |
-| Announcements: bodyInvalid | Write the message in 1 to 2000 characters. |
-| Announcements: smsBodyRequired | Write the SMS text, or untick SMS. |
-| Announcements: smsTooLong | An SMS can be at most 3 parts: 459 plain characters, or 201 with Arabic or special ones. |
-| Announcements: placeholderUnknown | Use only the placeholders {name} and {service_name}. |
-| Announcements: templateStatusUnknown | Choose draft, active or archived. |
-| Announcements: templateEditEmpty | Change something before saving. |
-| Announcements: categoryUnknown | Choose announcement or essential. |
-| Announcements: scopeUnknown | Choose all accounts, phone accounts, email accounts, a state, an activity, staff or officers. |
-| Announcements: scopeStateRequired | Choose the state. |
-| Announcements: scopeActivityRequired | Choose the activity. |
-| Announcements: scopeExtraField | Only a state scope has a state, and only an activity scope has an activity. |
-| Announcements: staffEmailOnly | Staff are reached by email only: choose email. |
-| Announcements: officersSmsOnly | Extension officers are reached by SMS only: choose SMS. |
-| Announcements: templateIdInvalid | Choose a template from the list. |
-| Announcements: confirmRequired | Tick the confirmation before sending. |
-| Announcements: expectedRecipientsInvalid | Send the recipient count the preview showed, as a whole number. |
-| Announcements: preferenceInvalid | Choose on or off. |
-| Announcements: deliveryFilterInvalid | Choose a channel and a status from the lists. |
+| Situation                                | Exact reason                                                                                    |
+| ---------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| A field the request may not send         | This field is not recognised.                                                                   |
+| The body is not an object at all         | The request was not sent in the expected form.                                                  |
+| Page marker: not text                    | The page marker must be text.                                                                   |
+| Phone: nothing entered, or not text      | Enter a mobile number.                                                                          |
+| Phone: contains a letter                 | A mobile number contains digits only.                                                           |
+| Phone: disallowed punctuation            | A mobile number may contain only digits, spaces and hyphens, and may begin with +.              |
+| Phone: wrong or missing country code     | Enter a South Sudan mobile number starting +211.                                                |
+| Phone: too short                         | A South Sudan mobile number has nine digits after +211. This one has too few.                   |
+| Phone: too long                          | A South Sudan mobile number has nine digits after +211. This one has too many.                  |
+| Page size: not a number, or blank        | The page size must be a number.                                                                 |
+| Page size: has a decimal point           | The page size must be a whole number.                                                           |
+| Page size: below one                     | The page size must be at least 1.                                                               |
+| Farmer id: missing                       | A registration must carry its identifier.                                                       |
+| Farmer id: not a UUID                    | The identifier is not in the expected form.                                                     |
+| Given name: missing or blank             | Enter the given name.                                                                           |
+| Family name: missing or blank            | Enter the family name.                                                                          |
+| Name: over 100 characters                | A name can be at most 100 characters.                                                           |
+| Name: digits, symbols or emoji           | A name contains letters, spaces, apostrophes and hyphens only.                                  |
+| Sex: not f or m                          | Choose f or m.                                                                                  |
+| Year of birth: not a whole number        | The year of birth must be a whole number.                                                       |
+| Year of birth: after this year           | The year of birth cannot be in the future.                                                      |
+| Year of birth: over 120 years back       | The year of birth cannot be more than 120 years ago.                                            |
+| National ID: wrong shape                 | A national ID is 6 to 20 characters: digits and capital letters only.                           |
+| Payam: missing                           | Choose a payam.                                                                                 |
+| Registering officer: not a UUID          | The registering officer is not in the expected form.                                            |
+| Consent: not an object                   | Consent must be recorded as an object.                                                          |
+| Consent text version: missing            | Record which consent text was read.                                                             |
+| Consent text version: over 32 chars      | The consent text version can be at most 32 characters.                                          |
+| Consent language: not en or ar           | Choose en or ar for the consent language.                                                       |
+| Consent granted: not true or false       | Say whether consent was granted, true or false.                                                 |
+| Filter: verification status unknown      | Choose pending, verified or rejected.                                                           |
+| Filter: date not ISO 8601                | Give the date as an ISO 8601 timestamp.                                                         |
+| Filter: duplicate flag not true/false    | Choose true or false.                                                                           |
+| Filter: date range inverted              | The end of the date range is before its start.                                                  |
+| Rejection reason: not on the list        | Choose a reason: duplicate, wrong_location, incomplete, not_a_farmer, consent_missing or other. |
+| Note: not text                           | The note must be text.                                                                          |
+| Note: over 280 characters                | A note can be at most 280 characters.                                                           |
+| Note: control characters                 | A note contains printable text only.                                                            |
+| Merge target: missing                    | Name the farmer this record is a duplicate of.                                                  |
+| Merge target: not a UUID                 | The target is not in the expected form.                                                         |
+| Queue filter: escalated not true/false   | Choose true or false.                                                                           |
+| Farm id: missing                         | A farm must carry its identifier.                                                               |
+| Farm id: not a UUID                      | The farm identifier is not in the expected form.                                                |
+| Season: wrong shape                      | Give the season as a year and a name: 2026-main or 2026-second.                                 |
+| GPS accuracy: missing                    | Record the GPS accuracy in metres at capture.                                                   |
+| GPS accuracy: not a number of metres     | GPS accuracy is a number of metres, zero or more.                                               |
+| Boundary: not a one-ring Polygon         | Send the boundary as a GeoJSON Polygon with one ring.                                           |
+| Boundary point: not a pair               | Each boundary point is a pair: longitude, then latitude.                                        |
+| Boundary point: out of range             | Longitude is between -180 and 180; latitude between -90 and 90.                                 |
+| Boundary: over 2000 points               | A boundary can have at most 2000 points.                                                        |
+| Crop: not on the list                    | Choose a crop from the list: sorghum, groundnut, sesame, maize or cowpea.                       |
+| Crops: repeated                          | Each crop once per season.                                                                      |
+| Crops: not a list                        | Send the crops as a list.                                                                       |
+| Farm name: too long                      | Keep the farm name to 120 characters.                                                           |
+| Farm size: not above zero                | Give the size as a number greater than zero.                                                    |
+| Farm size: unit missing                  | Choose the unit the size is in: feddan, acre or hectare.                                        |
+| Farm size: value missing                 | Give the size, or clear the unit.                                                               |
+| Farm tenure: not on the list             | Choose how the land is held: owned, rented, communal or other.                                  |
+| Farm village: too long                   | Keep the village to 120 characters.                                                             |
+| Farm directions: too long                | Keep the directions to 500 characters.                                                          |
+| Farm notes: too long                     | Keep the notes to 2000 characters.                                                              |
+| Farm position: not a point               | Give the location as latitude and longitude.                                                    |
+| Visit: no identifier                     | A visit must carry its identifier.                                                              |
+| Visit: identifier malformed              | The visit identifier is not in the expected form.                                               |
+| Advice: missing or blank                 | Write the advice you gave. A visit with no advice is not a visit.                               |
+| Advice: over 4000 characters             | The advice is too long to save. Shorten it to about six hundred words.                          |
+| Observation: over 4000 characters        | The observation is too long to save. Shorten it to about six hundred words.                     |
+| Observation: sent but blank              | Leave the observation out, or write something in it.                                            |
+| Topics: none ticked                      | Tick at least one topic the visit covered.                                                      |
+| Topic: not on the list                   | Choose the topics from the list.                                                                |
+| Topics: repeated                         | Each topic once.                                                                                |
+| Duration: not whole minutes 1–1440       | Give the duration as whole minutes, up to a day.                                                |
+| Attendance: not a whole number 1–10000   | Give the attendance as a whole number of people.                                                |
+| Visited at: not a date and time          | Record when the visit happened as a date and time.                                              |
+| Position: not a GeoJSON Point            | Send the position as a GeoJSON Point: longitude, then latitude.                                 |
+| Position: out of range                   | Longitude is between -180 and 180; latitude between -90 and 90.                                 |
+| GPS accuracy: missing                    | Record the GPS accuracy in metres at capture.                                                   |
+| GPS accuracy: negative or absurd         | GPS accuracy is a number of metres, zero or more.                                               |
+| Follow-up: identifier malformed          | The earlier visit is not in the expected form.                                                  |
+| Correction: changes nothing              | Change at least one thing, or leave the visit as it is.                                         |
+| Attachment: identifier malformed         | The attachment identifier is not in the expected form.                                          |
+| Attachment: kind not photo or audio      | An attachment is a photo or an audio recording.                                                 |
+| Attachment: type not accepted            | Save the photo as JPEG, PNG or WebP, or the recording as M4A, AAC, MP3, OGG or WebM.            |
+| Attachment: type does not match kind     | The file type does not match the kind of attachment.                                            |
+| Attachment: size not whole bytes         | The file size must be a whole number of bytes.                                                  |
+| Photo: over 15 MB                        | This photo is too large to send. Set the camera to a smaller picture size and take it again.    |
+| Audio: over 25 MB                        | This recording is too long to send. Record it again in shorter pieces.                          |
+| Captured at: not a date and time         | Record when the attachment was captured as a date and time.                                     |
+| Visit filter: date malformed             | Give the date as a full date and time with its offset.                                          |
+| Visit filter: officer malformed          | The officer identifier is not in the expected form.                                             |
+| Reassign: no officer named               | Name the officer who will now work with this farmer.                                            |
+| Reassign: officer identifier malformed   | The officer identifier is not in the expected form.                                             |
+| Device header malformed                  | The device identifier is 8 to 64 letters, digits, dots, hyphens or underscores.                 |
+| Farmer captured at: not a date and time  | Record when the registration was captured as a date and time.                                   |
+| Farm captured at: not a date and time    | Record when the farm was captured as a date and time.                                           |
+| Boundary: identifier malformed           | The boundary identifier is not in the expected form.                                            |
+| Report cut-off: not a date               | Give the data cut-off as a date: YYYY-MM-DD.                                                    |
+| Report cut-off: in the future            | The data cut-off cannot be after today.                                                         |
+| Report period: malformed                 | Give the period start and end as full dates and times with their offset.                        |
+| Report period: ends before it starts     | The period ends before it starts.                                                               |
+| Report season: malformed                 | Give the season as a year and a name: 2026-main or 2026-second.                                 |
+| Report type: unknown                     | Choose a report: summary or farmers.                                                            |
+| Buyer first name: missing or blank       | Enter your first name.                                                                          |
+| Buyer last name: missing or blank        | Enter your last name.                                                                           |
+| Buyer name: over 100 characters          | A name can be at most 100 characters.                                                           |
+| Buyer phone: not E.164                   | Enter a mobile number in international form, starting with + and the country code.              |
+| Confirm password: differs                | The two passwords do not match.                                                                 |
+| Organisation name: missing or length     | Enter the organisation name: 2 to 160 characters.                                               |
+| Organisation type: not on the list       | Choose an organisation type from the list.                                                      |
+| Registration or tax number: too long     | A registration or tax number can be at most 64 characters.                                      |
+| Country: not two letters                 | Give the country as a two-letter code, such as SS.                                              |
+| County without a state                   | Choose a state before choosing a county.                                                        |
+| City: over 120 characters                | A city can be at most 120 characters.                                                           |
+| Address: over 300 characters             | An address can be at most 300 characters.                                                       |
+| Website: not http(s) or too long         | Enter a website starting with http:// or https://, up to 200 characters.                        |
+| Organisation description: too long       | A description can be at most 1000 characters.                                                   |
+| Listing category: not on the list        | Choose a category from the list.                                                                |
+| A list field: not a list                 | Send this as a list.                                                                            |
+| Interested products: over 20             | List at most 20 products.                                                                       |
+| Product name: blank or over 120          | A product name is 1 to 120 characters.                                                          |
+| Production areas: over 20                | Choose at most 20 production areas.                                                             |
+| Delivery locations: over 10              | List at most 10 delivery locations.                                                             |
+| Delivery location: length                | A delivery location is 2 to 200 characters.                                                     |
+| Purchasing month: not 1–12               | Choose purchasing months as numbers from 1 to 12.                                               |
+| Payment preference: not on the list      | Choose a payment preference from the list.                                                      |
+| Quantity: not a positive number          | Give the quantity as a number greater than zero.                                                |
+| Quantity range: inverted                 | The maximum quantity is less than the minimum.                                                  |
+| Unit: not on the list                    | Choose a unit from the list.                                                                    |
+| Required by: not a date, or past         | Give the date it is needed by as YYYY-MM-DD, today or later.                                    |
+| Request notes: over 1000 characters      | Notes can be at most 1000 characters.                                                           |
+| Request action: not submit or cancel     | Choose submit or cancel.                                                                        |
+| Buyer change: changes nothing            | Change at least one thing, or leave the profile as it is.                                       |
+| Buyer decision: unknown status           | Choose under_review, verified, rejected, suspended or not_required.                             |
+| Buyer account type: unknown              | Choose individual or business.                                                                  |
+| Decision note: over 500 characters       | A note can be at most 500 characters.                                                           |
+| Request decision: unknown status         | Choose under_review, accepted, rejected, partially_fulfilled or fulfilled.                      |
+| Order status: not on the list            | Choose an order status from the list.                                                           |
+| Unit price: not a number zero or more    | Give the unit price in SSP as a number, zero or more.                                           |
+| Buyer-side identifier: malformed         | The identifier is not in the expected form.                                                     |
+| Grade: not a, b, c or ungraded           | Choose a grade: a, b, c or ungraded.                                                            |
+| Search: over 100 characters              | A search can be at most 100 characters.                                                         |
+| Marketplace number filter: malformed     | Give the number as digits, zero or more.                                                        |
+| Marketplace date filter: malformed       | Give the date as YYYY-MM-DD.                                                                    |
+| Price range: inverted                    | The highest price is less than the lowest.                                                      |
+| Supplier filter: not verified            | Choose verified to see only verified suppliers.                                                 |
+| Order cancellation: no reason            | Say why the order is being cancelled, in up to 300 characters.                                  |
+| Buyer list status filter: unknown        | Choose a status from the list.                                                                  |
+| Farmer ID type: not on the list          | Choose the kind of identity document.                                                           |
+| Farmer ID number: wrong length           | An identity number is 3 to 40 characters.                                                       |
+| Farmer date of birth: malformed          | Give the date of birth as YYYY-MM-DD, or leave it out and give the year.                        |
+| Farmer profile answer: not on list       | Choose an answer from the list.                                                                 |
+| Next of kin: name missing                | Give the name of a next of kin or another person to contact.                                    |
+| Next of kin: relationship missing        | Say how that person is related to you.                                                          |
+| Next of kin phone: not a mobile          | Give the next of kin phone as a South Sudan mobile number.                                      |
+| Village: missing                         | Give your village or boma.                                                                      |
+| Farmer profile text: too long            | This answer is too long.                                                                        |
+| Crops grown: none chosen                 | Choose at least one crop you grow.                                                              |
+| Land size: not above zero                | Give the land under cultivation as a number greater than zero.                                  |
+| Land tenure: missing                     | Choose how you hold the land.                                                                   |
+| Years farming: out of range              | Give a number of years from 0 to 100.                                                           |
+| Group membership: no answer              | Say whether you belong to a cooperative or group.                                               |
+| Household count: out of range            | Give a whole number from 0 to 200.                                                              |
+| Services wanted: none chosen             | Choose at least one service you want.                                                           |
+| Farmer listing: trading name             | A farm or stall name is 2 to 120 characters.                                                    |
+| Farmer listing: title                    | A title is 2 to 200 characters.                                                                 |
+| Farmer listing: status not on list       | Choose draft, listed, paused, withdrawn, completed or sold.                                     |
+| Farmer listing: minimum over quantity    | The minimum order cannot be more than the quantity.                                             |
+| Farmer answer: not accept or decline     | Choose accept or decline.                                                                       |
+| Farmer phone change: same number         | That is already your phone number.                                                              |
+| Farmer password: under six characters    | Choose 6 or more characters you will remember.                                                  |
+| Listing withdrawal: reason missing       | Give the reason the farmer will see, 3 to 300 characters.                                       |
+| Cart: no products                        | Add at least one product to the cart.                                                           |
+| Cart: over twenty products               | A cart can hold at most 20 products. Send these first.                                          |
+| Request: more than listed                | This is more than the farmer has listed.                                                        |
+| Request: below minimum order             | This is below the farmer's minimum order.                                                       |
+| Cart: same product twice                 | This product is in the cart twice. Keep one line.                                               |
+| Request: one already waiting             | You already have a request waiting for the farmer on this product.                              |
+| Cart: own product                        | This is your own product. Remove it from the cart.                                              |
+| Message: channel not email or SMS        | Choose email or SMS.                                                                            |
+| Message: recipient type not on channel   | That kind of recipient cannot be reached on this channel.                                       |
+| Message: no recipients                   | Choose at least one recipient.                                                                  |
+| Message: over 500 recipients             | A single message reaches at most 500 recipients.                                                |
+| Message: recipient not a record id       | A recipient is identified by its record id.                                                     |
+| Message: email with no subject           | Enter a subject.                                                                                |
+| Message: subject over 200 characters     | A subject has at most 200 characters.                                                           |
+| Message: body missing or blank           | Enter a message.                                                                                |
+| Message: body over 5000 characters       | A message has at most 5000 characters.                                                          |
+| Message: SMS with a subject              | An SMS has no subject.                                                                          |
+| Message: SMS over three parts            | An SMS can be at most 3 parts: 459 plain characters, or 201 with Arabic or special ones.        |
+| SMS farmer picker: search over 100       | A search can be at most 100 characters.                                                         |
+| SMS farmer picker: unknown location      | Choose a location from the list.                                                                |
+| SMS farmer picker: select not `ids`      | Choose ids, or leave the selection mode out.                                                    |
+| Market post: status not on list          | Choose draft, active, paused, withdrawn or completed.                                           |
+| Market post: name for the market         | A name for the market is 2 to 120 characters.                                                   |
+| Market post: location                    | Give a town, payam or village, 2 to 160 characters.                                             |
+| Market post: date already past           | Give a date from today onwards.                                                                 |
+| Market post: end before start            | The end date cannot be before the start date.                                                   |
+| Service: no description                  | Describe the service in a sentence or two.                                                      |
+| Service: type not on list                | Choose tractor hire, transport, processing, storage or other.                                   |
+| Service: price unit not on list          | Choose what the price is for.                                                                   |
+| Market post: no price, not negotiable    | Give a price, or tick negotiable.                                                               |
+| Market post: price with no unit          | Say what the price is for.                                                                      |
+| Listing sale: not above zero             | Give the quantity sold as a number greater than zero.                                           |
+| Listing sale: more than is left          | This is more than the quantity left on the listing.                                             |
+| Listing edit: quantity below sold        | The quantity cannot be less than what you have already sold.                                    |
+| Market post: yes/no not a choice         | Choose yes or no.                                                                               |
+| Buying requests: poster filter           | Choose farmer or buyer.                                                                         |
+| Service: farmer sends a state            | Your location comes from your farmer record.                                                    |
+| Message: kind of post                    | Choose a listing, a buying request or a service.                                                |
+| Message: body missing or blank           | Write a message.                                                                                |
+| Message: over 2000 characters            | A message has at most 2000 characters.                                                          |
+| Conversation: `after` not a time         | Give the time as an ISO date and time.                                                          |
+| Delete account: no password              | Enter your password to confirm.                                                                 |
+| Delete account: not confirmed            | Tick the box to confirm you want to delete your account.                                        |
+| Contact CORWADO: name                    | Give your name, 2 to 120 characters.                                                            |
+| Contact CORWADO: topic not on list       | Choose account, marketplace, messages, technical, appeal or other.                              |
+| Contact CORWADO: message length          | Write your message, 10 to 2000 characters.                                                      |
+| Support list: status not on list         | Choose new or done.                                                                             |
+| Support message: status other than done  | A message can only be marked done.                                                              |
+| Advice profile: name length              | A name for your advice profile is 2 to 120 characters.                                          |
+| Advice profile: kind not on list         | Choose adviser, institute, research or training body, advisory organisation or other.           |
+| Advice profile: description length       | Describe the advice you offer in 10 to 2000 characters.                                         |
+| Advice profile: no topic                 | Choose at least one topic you advise on.                                                        |
+| Advice topic: not on list                | Choose a topic from the list.                                                                   |
+| Advice profile: no language              | Choose at least one language you give advice in.                                                |
+| Advice language: not on list             | Choose a language from the list.                                                                |
+| Advice profile: states                   | Choose up to 20 states from the list, or none to cover anywhere.                                |
+| Advice profile: no delivery mode         | Choose remote, in person, or both.                                                              |
+| Advice delivery mode: not on list        | Choose remote or in person.                                                                     |
+| Advice profile: availability too long    | Availability can be at most 300 characters.                                                     |
+| Advice profile: terms not on list        | Choose free, paid, or free and paid.                                                            |
+| Advice profile: fee note too long        | A note on fees can be at most 300 characters.                                                   |
+| Advice profile: interests too long       | Commercial interests can be at most 500 characters.                                             |
+| Advice profile: status not on list       | Choose draft, published or unpublished.                                                         |
+| Advice request: question length          | Write your question in 10 to 2000 characters.                                                   |
+| Advice request: contact not on list      | Choose in the app, a phone call or an SMS.                                                      |
+| Advice request: call without sharing     | To be called or sent an SMS, tick the box to share your details with this adviser.              |
+| Advice requests: side not on list        | Choose requester or provider.                                                                   |
+| Advice request change: action            | Choose start, close or feedback.                                                                |
+| Advice request close: outcome            | Choose resolved, referred, closed unresolved or cancelled.                                      |
+| Advice feedback: rating not 1–5          | Give a rating from 1 to 5 stars.                                                                |
+| Advice feedback: comment too long        | A comment can be at most 1000 characters.                                                       |
+| Advice request change: extra field       | This field is not used for that change.                                                         |
+| Guide: no topic                          | Choose at least one topic.                                                                      |
+| Guide: topic not on list                 | Choose topics from the list.                                                                    |
+| Guide: more than four topics             | Choose at most 4 topics.                                                                        |
+| Guide: Arabic title over 200             | An Arabic title has at most 200 characters.                                                     |
+| Guide: Arabic summary over 2000          | An Arabic summary has at most 2000 characters.                                                  |
+| Guide move: not on list                  | Choose submit, return, publish or unpublish.                                                    |
+| Guide move: return without a note        | Say what needs to change, in at least 5 characters.                                             |
+| Guide move: note over 1000               | Keep the note under 1000 characters.                                                            |
+| Guide move: note on another move         | Only a guide sent back to draft carries a note.                                                 |
+| Public guides: topic filter              | Choose a topic from the list, or leave it out.                                                  |
+| Public guides: language filter           | Choose English or Arabic, or leave it out.                                                      |
+| Public guides: search over 100           | A search has at most 100 characters.                                                            |
+| Analytics: date not YYYY-MM-DD           | Give the date as YYYY-MM-DD.                                                                    |
+| Analytics: window ends after today       | The window cannot end after today.                                                              |
+| Analytics: window ends before start      | The window ends before it starts.                                                               |
+| Analytics: window over 366 days          | A window can be at most 366 days.                                                               |
+| Analytics: state not a state id          | Choose a state from the list.                                                                   |
+| Public profile: name length              | A name for your public profile is 2 to 120 characters.                                          |
+| Public profile: activity not on list     | Choose what you do from the list.                                                               |
+| Public profile: about too long           | Keep the description to 1000 characters.                                                        |
+| Public profile: state malformed          | Choose your state from the list.                                                                |
+| Public profile: payam malformed          | Choose your payam from the list.                                                                |
+| Public profile: payam without a state    | Choose a state before choosing a payam.                                                         |
+| Public profile: over 10 products         | List at most 10 products.                                                                       |
+| Public profile: over 10 services         | List at most 10 services.                                                                       |
+| Public profile: tag length               | Each one is 1 to 40 characters.                                                                 |
+| Profile photo: type not accepted         | Choose a JPEG, PNG or WebP photo.                                                               |
+| Profile photo: over 2 MB                 | A profile photo can be at most 2 MB.                                                            |
+| Profile photo: size not whole bytes      | Give the photo size as a whole number of bytes.                                                 |
+| Profile photo: upload id malformed       | The upload identifier is not in the expected form.                                              |
+| Advice directory: approved filter        | Use approved=1 to show approved advisers only, or leave it out.                                 |
+| Adviser application: no specialty        | Choose at least one subject you specialise in.                                                  |
+| Adviser application: experience          | Describe your experience in 20 to 2000 characters.                                              |
+| Adviser application: qualifications      | Qualifications can be at most 2000 characters.                                                  |
+| Adviser application: affiliation         | An affiliation can be at most 300 characters.                                                   |
+| Adviser application: not ticked          | Tick the box to confirm this statement.                                                         |
+| Adviser clarification: answer            | Write your answer in 5 to 2000 characters.                                                      |
+| Adviser decision: not on list            | Choose request clarification, approve, decline or revoke.                                       |
+| Adviser decision: reason                 | Give a reason of 5 to 1000 characters.                                                          |
+| Adviser queue: status not on list        | Choose submitted, clarification requested, approved, declined, revoked or withdrawn.            |
+| Advice photo: type not accepted          | Choose a JPEG, PNG or WebP photo.                                                               |
+| Advice photo: over 2 MB                  | A photo on an advice request can be at most 2 MB.                                               |
+| Advice photo: size not whole bytes       | Give the photo size as a whole number of bytes.                                                 |
+| Advice photo: upload id malformed        | The upload identifier is not in the expected form.                                              |
+| Advice referral: action not on list      | Choose accept, decline or withdraw.                                                             |
+| Advice referral: share not true/false    | Say whether to share your photos: true or false.                                                |
+| Setting: key not on list                 | Choose a settings section from the list.                                                        |
+| Setting: expected version                | Send the version you loaded, as a whole number.                                                 |
+| Identity: service name length            | Give a service name of 2 to 80 characters.                                                      |
+| Identity: About too long                 | Keep the About text to 2000 characters.                                                         |
+| Support: phone or WhatsApp malformed     | Enter up to 40 digits, spaces and hyphens, starting with + for a country code.                  |
+| Support: email malformed                 | Enter an email address such as help@example.org.                                                |
+| Support: opening hours too long          | Keep the opening hours to 200 characters.                                                       |
+| Support: over 10 help links              | List at most 10 help links.                                                                     |
+| Help link: label length                  | Give each link a label of 2 to 80 characters.                                                   |
+| Help link: not an https address          | Give each link a full address starting https://, up to 500 characters.                          |
+| Setting: on/off not true or false        | Choose on or off.                                                                               |
+| Maintenance banner: over 300 characters  | Keep the notice to 300 characters.                                                              |
+| Maintenance banner: on with no text      | Write a notice of 5 to 300 characters before switching the banner on.                           |
+| Reason codes: none, or over 50           | Keep between 1 and 50 reason codes.                                                             |
+| Reason code: malformed                   | A code is 2 to 40 lower-case letters, digits and underscores, starting with a letter.           |
+| Reason code: listed twice                | Each code may appear only once.                                                                 |
+| Reason code: label length                | Give each reason a label of 3 to 80 characters.                                                 |
+| Reason code: applies to nothing known    | Choose at least one of listing, account, profile or report.                                     |
+| Notice: kind not on list                 | Choose consent, terms or privacy.                                                               |
+| Notice: language not en or ar            | Choose en or ar.                                                                                |
+| Notice: version malformed                | Give the version as v followed by numbers, such as v1.4.                                        |
+| Notice: text length                      | Write the notice in 20 to 20000 characters.                                                     |
+| Notice: edit changes nothing             | Change the version or the text before saving.                                                   |
+| Settings: languages                      | Keep English switched on, with Arabic on or off.                                                |
+| Settings: date format                    | Choose one of the date formats in the list.                                                     |
+| Settings: number out of range            | Enter a whole number within the range shown.                                                    |
+| Settings: category not on list           | Choose categories from the list.                                                                |
+| Settings: unit not on list               | Choose units from the list.                                                                     |
+| Settings: crop not on list               | Choose crops from the list.                                                                     |
+| Settings: whole list archived            | Keep at least one choice in each list available.                                                |
+| Settings: reminder after end             | Send the reminder before the listing ends: fewer days than it stays listed.                     |
+| Settings: SMS cost                       | Enter the cost of one SMS part in US dollars, from 0 to 1, or leave it blank.                   |
+| Announcements: templateNameInvalid       | Give the template a name of 3 to 80 characters.                                                 |
+| Announcements: channelUnknown            | Choose in-app, SMS or email.                                                                    |
+| Announcements: channelsRequired          | Choose at least one channel.                                                                    |
+| Announcements: titleInvalid              | Give a title of 3 to 120 characters.                                                            |
+| Announcements: titleNotForSms            | An SMS template has no title.                                                                   |
+| Announcements: bodyInvalid               | Write the message in 1 to 2000 characters.                                                      |
+| Announcements: smsBodyRequired           | Write the SMS text, or untick SMS.                                                              |
+| Announcements: smsTooLong                | An SMS can be at most 3 parts: 459 plain characters, or 201 with Arabic or special ones.        |
+| Announcements: placeholderUnknown        | Use only the placeholders {name} and {service_name}.                                            |
+| Announcements: templateStatusUnknown     | Choose draft, active or archived.                                                               |
+| Announcements: templateEditEmpty         | Change something before saving.                                                                 |
+| Announcements: categoryUnknown           | Choose announcement or essential.                                                               |
+| Announcements: scopeUnknown              | Choose all accounts, phone accounts, email accounts, a state, an activity, staff or officers.   |
+| Announcements: scopeStateRequired        | Choose the state.                                                                               |
+| Announcements: scopeActivityRequired     | Choose the activity.                                                                            |
+| Announcements: scopeExtraField           | Only a state scope has a state, and only an activity scope has an activity.                     |
+| Announcements: staffEmailOnly            | Staff are reached by email only: choose email.                                                  |
+| Announcements: officersSmsOnly           | Extension officers are reached by SMS only: choose SMS.                                         |
+| Announcements: templateIdInvalid         | Choose a template from the list.                                                                |
+| Announcements: confirmRequired           | Tick the confirmation before sending.                                                           |
+| Announcements: expectedRecipientsInvalid | Send the recipient count the preview showed, as a whole number.                                 |
+| Announcements: preferenceInvalid         | Choose on or off.                                                                               |
+| Announcements: deliveryFilterInvalid     | Choose a channel and a status from the lists.                                                   |
 
 The key beside each reason is the field name, per section 4.1. An unrecognised
 field named `nickname` therefore produces `{ "nickname": "This field is not

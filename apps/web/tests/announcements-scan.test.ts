@@ -138,13 +138,15 @@ describe('preview before sending, and a failure is never resent by itself', () =
 describe('preferences are respected', () => {
   it('the plan consults each preference unless the message is essential', () => {
     const lib = read('lib/api/announcements.ts');
-    expect(lib).toMatch(/LEFT JOIN public\.notification_preference p ON p\.auth_user_id = r\.auth_user_id/);
+    expect(lib).toMatch(
+      /LEFT JOIN public\.notification_preference p ON p\.auth_user_id = r\.auth_user_id/,
+    );
     expect(lib).toMatch(/WHEN NOT \$5::boolean AND \(/);
   });
 
   it('activity updates in the app can be switched off; essential notices cannot', () => {
     const notify = read('lib/api/notify.ts');
-    expect(notify).toMatch(/UPDATE_NOTICES\.has\(notice\) && \(await updatesSwitchedOff\(/);
+    expect(notify).toMatch(/UPDATE_NOTICES\.has\(notice\) &&\s+\(await updatesSwitchedOff\(/);
     for (const essential of ['adviser_approved', 'adviser_revoked', 'account_restored']) {
       const set = notify.slice(notify.indexOf('UPDATE_NOTICES'), notify.indexOf(']);'));
       expect(set).not.toContain(`'${essential}'`);
@@ -153,7 +155,7 @@ describe('preferences are respected', () => {
     expect(notify).toMatch(/to_regclass\('public\.notification_preference'\)/);
   });
 
-  it('the preferences routes read and write the caller\'s own row only', () => {
+  it("the preferences routes read and write the caller's own row only", () => {
     const text = read('app/api/account/notification-preferences/route.ts');
     expect(text).toMatch(/const authUserId = auth\.principal\.authUserId;/);
     expect(text).not.toMatch(/params|searchParams/);
@@ -192,7 +194,10 @@ describe('each phase-2 setting is read by the code it governs', () => {
     for (const file of ['app/api/farmer/listings/route.ts', 'app/api/buying-requests/route.ts']) {
       expect(read(file), file).toMatch(/await refuseArchivedChoice\(body\)/);
     }
-    for (const file of ['app/api/farmer/listings/[id]/route.ts', 'app/api/buying-requests/[id]/route.ts']) {
+    for (const file of [
+      'app/api/farmer/listings/[id]/route.ts',
+      'app/api/buying-requests/[id]/route.ts',
+    ]) {
       expect(read(file), file).not.toMatch(/refuseArchivedChoice/);
     }
   });

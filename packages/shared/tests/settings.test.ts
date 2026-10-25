@@ -359,7 +359,9 @@ describe('settings, phase 2', () => {
   it('a reminder comes before the listing ends, and a list cannot be archived entirely', () => {
     const base = SETTING_DEFAULTS.reference_lists;
     expect(
-      reasonOf(save('reference_lists', { ...base, listing_validity_days: 7, listing_reminder_days: 7 })),
+      reasonOf(
+        save('reference_lists', { ...base, listing_validity_days: 7, listing_reminder_days: 7 }),
+      ),
     ).toBe(M.reminderAfterValidity);
     expect(reasonOf(save('reference_lists', { ...base, archived_units: [...LISTING_UNITS] }))).toBe(
       M.archiveAll,
@@ -387,9 +389,9 @@ describe('settings, phase 2', () => {
 
   it('the SMS cost is optional and bounded', () => {
     const base = SETTING_DEFAULTS.notifications_moderation;
-    expect(save('notifications_moderation', { ...base, sms_cost_per_segment_usd: 0.04 }).success).toBe(
-      true,
-    );
+    expect(
+      save('notifications_moderation', { ...base, sms_cost_per_segment_usd: 0.04 }).success,
+    ).toBe(true);
     expect(
       reasonOf(save('notifications_moderation', { ...base, sms_cost_per_segment_usd: 3 })),
     ).toBe(M.smsCostInvalid);

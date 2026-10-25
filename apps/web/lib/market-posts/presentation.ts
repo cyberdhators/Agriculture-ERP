@@ -99,7 +99,8 @@ export function endsWithin(
 ): number | null {
   if (stage !== 'active' || !endDate) return null;
   const left = Math.round(
-    (Date.parse(`${endDate.slice(0, 10)}T00:00:00Z`) - Date.parse(`${today}T00:00:00Z`)) / 86_400_000,
+    (Date.parse(`${endDate.slice(0, 10)}T00:00:00Z`) - Date.parse(`${today}T00:00:00Z`)) /
+      86_400_000,
   );
   return left >= 0 && left <= reminderDays ? left : null;
 }

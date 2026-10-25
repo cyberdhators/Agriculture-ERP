@@ -202,7 +202,12 @@ export function ListingForm({ listingId }: { listingId?: string }) {
   const full = photos.length >= LISTING_MAX_PHOTOS;
   const err = (key: ListingField) => (errors[key] ? t(errors[key]!, language) : undefined);
   // 2026-10-27: archived units are not offered for a new listing.
-  const unitOptions = offered(LISTING_UNITS, archivedLists?.archived_units, values.unit, values.price_per).map((u) => (
+  const unitOptions = offered(
+    LISTING_UNITS,
+    archivedLists?.archived_units,
+    values.unit,
+    values.price_per,
+  ).map((u) => (
     <option key={u} value={u}>
       {t(UNIT_KEY[u], language)}
     </option>
@@ -379,7 +384,11 @@ export function ListingForm({ listingId }: { listingId?: string }) {
                     onBlur={() => blur('category')}
                   >
                     <option value="">{t('register.select', language)}</option>
-                    {offered(LISTING_CATEGORIES, archivedLists?.archived_categories, values.category).map((c) => (
+                    {offered(
+                      LISTING_CATEGORIES,
+                      archivedLists?.archived_categories,
+                      values.category,
+                    ).map((c) => (
                       <option key={c} value={c}>
                         {t(CATEGORY_KEY[c], language)}
                       </option>

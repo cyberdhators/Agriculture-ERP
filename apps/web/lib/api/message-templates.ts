@@ -30,4 +30,3 @@ export const presentTemplate = (r: TemplateRow): MessageTemplate => ({
   updated_at: r.updated_at.toISOString(),
   updated_by: r.updated_by,
 });
-

@@ -18,7 +18,18 @@ import {
   type StaffAnnouncement,
 } from '@agri-erp/shared';
 
-import { Button, Card, CardBody, CardHeader, Checkbox, Field, Input, Notice, Select, Textarea } from '@/components/ui';
+import {
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
+  Checkbox,
+  Field,
+  Input,
+  Notice,
+  Select,
+  Textarea,
+} from '@/components/ui';
 import {
   asFailure,
   createAnnouncement,

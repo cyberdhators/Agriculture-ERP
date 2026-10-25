@@ -770,14 +770,16 @@ export function FarmerRegister() {
           <fieldset className={styles.stack} style={{ border: 0, padding: 0, margin: 0 }}>
             <legend className="small">{w.crops}</legend>
             <div className={styles.choiceRow} style={{ flexWrap: 'wrap' }}>
-              {offered(PROFILE_CROPS, archivedLists?.archived_crops, ...farm.primary_crops).map((c) => (
-                <Checkbox
-                  key={c}
-                  label={w[c] ?? c}
-                  checked={farm.primary_crops.includes(c)}
-                  onChange={() => toggle('primary_crops', c)}
-                />
-              ))}
+              {offered(PROFILE_CROPS, archivedLists?.archived_crops, ...farm.primary_crops).map(
+                (c) => (
+                  <Checkbox
+                    key={c}
+                    label={w[c] ?? c}
+                    checked={farm.primary_crops.includes(c)}
+                    onChange={() => toggle('primary_crops', c)}
+                  />
+                ),
+              )}
             </div>
           </fieldset>
           <Field label={w.land!} optional error={serverErrors.land_size}>
