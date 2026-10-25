@@ -95,7 +95,7 @@ export function FarmerBuyingRequestFormPage({ id }: { id?: string }) {
         id={id}
         listHref={FARMER_REQUESTS}
         defaultName={listingsFor(farmer.id)[0]?.trading_name ?? ''}
-        defaultStateId={farmer.state_id}
+        defaultStateId={farmer.state_id ? farmer.state_id : ''}
       />
     </>
   );
@@ -130,7 +130,10 @@ export function FarmerServiceFormPage({ id }: { id?: string }) {
         id={id}
         listHref={FARMER_SERVICES}
         defaultName={listingsFor(farmer.id)[0]?.trading_name ?? ''}
-        defaultLocation={farmerPayamName(farmer.payam_id)}
+        defaultLocation={farmer.payam_id ? farmerPayamName(farmer.payam_id) : ''}
+        defaultStateId={farmer.state_id ? farmer.state_id : ''}
+        farmerNeedsState={!farmer.state_id}
+        payamName={farmer.payam_id ? farmerPayamName(farmer.payam_id) : null}
       />
     </>
   );
@@ -158,7 +161,7 @@ export function BuyerBuyingRequestFormPage({ id }: { id?: string }) {
         title={t(id ? 'requests.editTitle' : 'requests.newTitle', 'en')}
         subtitle={t('requests.formLead', 'en')}
       />
-      <BuyingRequestForm lang="en" id={id} listHref={BUYER_REQUESTS} />
+      <BuyingRequestForm lang="en" id={id} listHref={BUYER_REQUESTS} posterType="buyer" />
     </>
   );
 }

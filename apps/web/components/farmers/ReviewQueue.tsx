@@ -274,8 +274,12 @@ export function ReviewQueue() {
                         </Link>
                         <span className="small muted">
                           <span className="mono">{farmer.farmer_number}</span> ·{' '}
-                          {farmerPayamName(farmer.payam_id)} · {farmer.sex === 'f' ? 'F' : 'M'}{' '}
-                          <span className="mono">{TODAY_YEAR - farmer.year_of_birth}</span> ·{' '}
+                          {farmerPayamName(farmer.payam_id)} ·{' '}
+                          {farmer.sex === null ? '—' : farmer.sex === 'f' ? 'F' : 'M'}{' '}
+                          <span className="mono">
+                            {farmer.year_of_birth === null ? '—' : TODAY_YEAR - farmer.year_of_birth}
+                          </span>{' '}
+                          ·{' '}
                           {officer
                             ? officer.name
                             : farmer.registration_source === 'self'

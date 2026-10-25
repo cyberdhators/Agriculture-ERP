@@ -49,13 +49,14 @@ interface SelfRow {
   farmer_number: string;
   given_name: string;
   family_name: string;
-  sex: string;
-  year_of_birth: number;
+  // 2026-10-28: null for a self-registered account that has not given them.
+  sex: string | null;
+  year_of_birth: number | null;
   phone: string;
-  payam_id: string;
-  county_id: string;
-  state_id: string;
-  payam_name: string;
+  payam_id: string | null;
+  county_id: string | null;
+  state_id: string | null;
+  payam_name: string | null;
   registration_source: string;
   verification_status: string;
   consent_id: string;
@@ -74,7 +75,7 @@ export async function loadSelf(db: Db, farmerId: string) {
             c.language::text AS consent_language, f.created_at,
             p.village, p.primary_crops
        FROM public.farmer_active f
-       JOIN public.payam pm ON pm.id = f.payam_id
+       LEFT JOIN public.payam pm ON pm.id = f.payam_id
        LEFT JOIN public.consent c ON c.id = f.consent_id
        LEFT JOIN public.farmer_profile p ON p.farmer_id = f.id
       WHERE f.id = $1::uuid`,
@@ -116,7 +117,7 @@ export const OWN_LISTING_COLUMNS = `id, farmer_id, trading_name, title,
   CASE WHEN available_until IS NULL THEN NULL ELSE to_char(available_until, 'YYYY-MM-DD') END AS available_until,
   harvest_season, pickup_notes, contact_phone, show_phone, photo_storage_paths,
   quality_grade::text AS quality_grade, min_order_quantity::text AS min_order_quantity,
-  quantity_sold::text AS quantity_sold,
+  quantity_sold::text AS quantity_sold, organization_id,
   status::text AS status, created_at, updated_at`;
 
 export interface OwnListingRow {
@@ -144,6 +145,8 @@ export interface OwnListingRow {
   min_order_quantity: string | null;
   /** LISTINGS LANE (2026-10-19): sold so far; what is left is quantity - quantity_sold. */
   quantity_sold: string;
+  /** 2026-10-28: the organisation it was posted for, or null for the farmer's own. */
+  organization_id: string | null;
   status: string;
   created_at: Date;
   updated_at: Date;
@@ -160,14 +163,33 @@ export const presentOwnListing = (row: OwnListingRow) => ({
   updated_at: toIso(row.updated_at),
 });
 
-export async function loadOwnListing(db: Db, farmerId: string, id: string, lock = false) {
+/**
+ * 2026-10-28 (user journeys, team access follow-up): which listings are the
+ * caller's own, over the bare produce_listing table with ONE placeholder,
+ * exactly as ownerWhere does for buying requests and services. Acting for an
+ * organisation (with listings.manage, checked by actingWith): that
+ * organisation's listings, whoever posted them. Otherwise: the farmer's own
+ * listings made for themselves. Personal and organisational listings stay apart.
+ */
+export const ownListingWhere = (organizationId: string | null, param: string): string =>
+  organizationId
+    ? `organization_id = ${param}::uuid`
+    : `farmer_id = ${param}::uuid AND organization_id IS NULL`;
+
+export async function loadOwnListing(
+  db: Db,
+  farmerId: string,
+  id: string,
+  lock = false,
+  organizationId: string | null = null,
+) {
   if (!UUID_PATTERN.test(id)) throw notFound();
   const [row] = await db.$queryRawUnsafe<OwnListingRow[]>(
     `SELECT ${OWN_LISTING_COLUMNS} FROM public.produce_listing
-      WHERE id = $1::uuid AND farmer_id = $2::uuid AND deleted_at IS NULL
+      WHERE id = $1::uuid AND ${ownListingWhere(organizationId, '$2')} AND deleted_at IS NULL
       ${lock ? 'FOR UPDATE' : ''}`,
     id,
-    farmerId,
+    organizationId ?? farmerId,
   );
   if (!row) throw notFound();
   return row;

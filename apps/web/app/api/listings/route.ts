@@ -129,7 +129,7 @@ const BROWSE_COLUMNS = `pl.id, pl.trading_name, pl.title,
   pl.status::text AS status,
   pl.created_at::text AS created_at, pl.updated_at::text AS updated_at,
   f.verification_status::text AS seller_verification_status,
-  f.payam_id AS seller_payam_id,
+  pl.payam_id AS seller_payam_id,
   pm.name AS seller_payam_name,
   f.created_at::text AS seller_created_at,
   md5('agrione-seller:' || f.id::text) AS seller_key`;
@@ -224,7 +224,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
          FROM public.produce_listing pl
          JOIN public.farmer f ON f.id = pl.farmer_id AND f.deleted_at IS NULL
            AND f.suspended_at IS NULL
-         JOIN public.payam pm ON pm.id = f.payam_id
+         JOIN public.payam pm ON pm.id = pl.payam_id
          WHERE ${where.join(' AND ')}
          ORDER BY pl.updated_at DESC, pl.id DESC
          LIMIT ${limit + 1}`,

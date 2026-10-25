@@ -190,6 +190,27 @@ export function MarketRequestDetail({ id, lang }: { id: string; lang: Language }
   return (
     <div className={styles.detail}>
       <BackLinkRow href="/market/requests" label={t('requests.marketTitle', lang)} />
+      <BuyingRequestDetailBody row={row} lang={lang} />
+    </div>
+  );
+}
+
+/**
+ * 2026-10-28 (user journeys): what a buying request shows on the market, used
+ * by the public page and by the form's preview. In `preview` the actions that
+ * need a published post (profile, message, phone, report) are left out.
+ */
+export function BuyingRequestDetailBody({
+  row,
+  lang,
+  preview = false,
+}: {
+  row: BuyingRequest;
+  lang: Language;
+  preview?: boolean;
+}) {
+  return (
+    <>
       <div className={styles.cardHead}>
         <Badge tone={row.poster_type === 'buyer' ? 'nile' : 'leaf'}>
           {t(row.poster_type === 'buyer' ? 'requests.byBuyer' : 'requests.byFarmer', lang)}
@@ -222,7 +243,8 @@ export function MarketRequestDetail({ id, lang }: { id: string; lang: Language }
         <div>
           <dt className="small muted">{t('requests.postedBy', lang)}</dt>
           <dd dir="auto">
-            {row.display_name} <ProfileLink kind="buying_request" id={row.id} language={lang} />
+            {row.display_name}{' '}
+            {preview ? null : <ProfileLink kind="buying_request" id={row.id} language={lang} />}
           </dd>
         </div>
       </dl>
@@ -232,6 +254,8 @@ export function MarketRequestDetail({ id, lang }: { id: string; lang: Language }
         </p>
       ) : null}
       <p className="small muted">{t('requests.notInquiry', lang)}</p>
+      {preview ? null : (
+        <>
       <MessageButton
         postKind="buying_request"
         postId={row.id}
@@ -240,6 +264,8 @@ export function MarketRequestDetail({ id, lang }: { id: string; lang: Language }
       />
       {row.phone_shared ? <ContactReveal kind="buying-requests" id={row.id} lang={lang} /> : null}
       <ReportPost kind="buying-requests" id={row.id} lang={lang} />
-    </div>
+        </>
+      )}
+    </>
   );
 }

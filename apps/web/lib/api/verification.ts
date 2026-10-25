@@ -88,6 +88,9 @@ export async function transitionFarmer(
   const from = source.verification_status as VerificationState;
   const to = TARGET_STATE[decision.kind];
   if (!canTransition(from, to)) throw conflict('transition_not_allowed');
+  // 2026-10-28: reach figures count verified farmers by place, so a
+  // self-registered account with no location is verified once it gives one.
+  if (decision.kind === 'verify' && !source.payam_id) throw unprocessable('farmer_location_required');
 
   const target =
     decision.kind === 'merge' ? await checkMergeTarget(tx, source, decision.targetId, auth) : null;

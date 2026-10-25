@@ -1,6 +1,10 @@
 import { buyerRegistrationSchema, initialStanding } from '@agri-erp/shared';
 
 import { audited, writeAudit, writeAuditOutcome } from '../../../../lib/api/audit';
+import {
+  consumeEmailSignUpVerification,
+  emailVerificationRequired,
+} from '../../../../lib/api/email-verification';
 import { authUnavailable, conflict, unprocessable } from '../../../../lib/api/errors';
 import { created, defineRoutes } from '../../../../lib/api/route';
 import { prisma } from '../../../../lib/db';
@@ -41,9 +45,16 @@ import {
  *     behind an administrator; here it is public. Accepted for now because a
  *     sign-up that silently "succeeds" leaves a real buyer unable to sign in
  *     with no explanation. Revisit with the rate limiter.
- *   - The address is not proven to belong to the applicant: the account is
- *     created confirmed, as staff accounts are, because there is no mail
- *     verification flow. The administrator's review is the check.
+ *
+ * USER JOURNEYS (2026-10-28), CORWADO's specification line 38. Sign-up now
+ * records the chosen language (buyer.preferred_language) and the person's
+ * acknowledgement of the terms and privacy notice (account_acknowledgement,
+ * the version and language they saw, audited as acknowledgement.recorded) in
+ * the same transaction. And the address is PROVEN when this deployment sends
+ * mail: a code from POST /api/auth/email-code, verified, is used up here, so
+ * the account is created confirmed and active at once -- contact verification
+ * activates it, no approval queue. With no mail settings or
+ * EMAIL_VERIFICATION=off the address is not proven, exactly as before.
  */
 export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   POST: {
@@ -76,6 +87,10 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
           throw unprocessable('state_not_found');
       }
 
+      // Checked before the sign-in exists, and again (atomically) when used up.
+      const verifyEmail = emailVerificationRequired();
+      if (verifyEmail && !body.verification_id) throw unprocessable('email_not_verified');
+
       let authUserId: string;
       try {
         authUserId = await createAuthAccount(body.email, body.password);
@@ -94,6 +109,9 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
 
       try {
         const result = await audited(prisma, async (tx) => {
+          if (verifyEmail) {
+            await consumeEmailSignUpVerification(tx, body.verification_id, body.email);
+          }
           const [organization] = await tx.$queryRawUnsafe<{ id: string }[]>(
             `INSERT INTO public.buyer_organization
                (name, organization_type, registration_number, tax_id, country_code, state_id,
@@ -131,13 +149,22 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
             standing,
           );
           const [buyer] = await tx.$queryRawUnsafe<{ id: string }[]>(
-            `INSERT INTO public.buyer (auth_user_id, organization_id, given_name, family_name, phone)
-             VALUES ($1::uuid, $2::uuid, $3, $4, $5) RETURNING id`,
+            `INSERT INTO public.buyer
+               (auth_user_id, organization_id, given_name, family_name, phone, preferred_language)
+             VALUES ($1::uuid, $2::uuid, $3, $4, $5, $6::public.language) RETURNING id`,
             authUserId,
             organization!.id,
             body.given_name,
             body.family_name,
             body.phone,
+            body.preferred_language,
+          );
+          const [acknowledgement] = await tx.$queryRawUnsafe<{ id: string }[]>(
+            `INSERT INTO public.account_acknowledgement (auth_user_id, kind, text_version, language)
+             VALUES ($1::uuid, 'terms_privacy', $2, $3::public.language) RETURNING id`,
+            authUserId,
+            body.acknowledgement.text_version,
+            body.acknowledgement.language,
           );
           await writeAudit(tx, {
             entityType: 'buyer_organization',
@@ -154,6 +181,20 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
               country_code: body.country_code,
               state_id: body.state_id ?? null,
               verification_status: standing,
+              preferred_language: body.preferred_language,
+              email_verified: verifyEmail,
+            },
+          });
+          await writeAudit(tx, {
+            entityType: 'account_acknowledgement',
+            entityId: acknowledgement!.id,
+            actorType: 'buyer',
+            actorId: buyer!.id,
+            action: 'acknowledgement.recorded',
+            after: {
+              kind: 'terms_privacy',
+              text_version: body.acknowledgement.text_version,
+              language: body.acknowledgement.language,
             },
           });
           return { buyerId: buyer!.id, organizationId: organization!.id };

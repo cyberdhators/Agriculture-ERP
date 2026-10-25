@@ -24,7 +24,7 @@
 --
 -- ADDITIVE. NOT NULL is relaxed, never tightened, on existing columns; no
 -- type changes, no data rewritten: every existing farmer row already has all
--- five values, so both new CHECKs hold for every existing row. One view is
+-- five values, so both new CHECKs hold for every existing row. Two views are
 -- re-created with CREATE OR REPLACE (a SELECT * view freezes its columns; the
 -- new column is appended). RLS on every new table with no policies (deny by
 -- default). No audit CHECK here: the integrator rebuilds it.
@@ -56,6 +56,13 @@ CREATE SEQUENCE "public"."farmer_number_unplaced_seq" AS BIGINT START 1;
 -- ---------------------------------------------------------------------------
 
 ALTER TABLE "public"."buyer" ADD COLUMN "preferred_language" "public"."language";
+
+-- buyer_active is a b.* view: its column list froze when it was created, so it
+-- is re-created (definition unchanged from 20261021090000) to carry the column.
+CREATE OR REPLACE VIEW "public"."buyer_active" WITH (security_invoker = true) AS
+    SELECT b.* FROM "public"."buyer" b
+    JOIN "public"."buyer_organization" o ON o."id" = b."organization_id"
+    WHERE b."deleted_at" IS NULL AND o."deleted_at" IS NULL;
 
 -- ---------------------------------------------------------------------------
 -- 3. Produce posted for an organisation

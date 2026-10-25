@@ -45,6 +45,11 @@ const EXPECTED_PUBLIC = [
   'auth/recovery/reset',
   'auth/recovery/verify',
   'auth/phone-code/verify',
+  // USER JOURNEYS (2026-10-28): the email twin of the phone code at email
+  // sign-up. Limited per address and system-wide in the database; never says
+  // whether an address has an account.
+  'auth/email-code',
+  'auth/email-code/verify',
   'buyer/register',
   // LISTINGS LANE (2026-10-19): buying requests and service listings are on
   // the public market (read), and may be reported by a visitor, through the
@@ -63,6 +68,9 @@ const EXPECTED_PUBLIC = [
   // 2026-10-08: the hourly weather fetch, called by pg_cron. Public only in that a
   // scheduler has no session: it answers 401 without the CRON_SECRET bearer.
   'cron/weather',
+  // 2026-10-28: the daily expiry reminders, called by pg_cron. Public only in
+  // that a scheduler has no session: 401 without the CRON_SECRET bearer.
+  'cron/expiry-reminders',
   // B14: farmers enrol themselves (CORWADO, 2026-10-07); see docs/DECISIONS.md.
   'farmer/register',
   'listings',

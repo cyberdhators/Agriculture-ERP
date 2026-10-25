@@ -1,6 +1,7 @@
 import { BUYER_ROLE, FARMER_ROLE, sendMessageSchema } from '@agri-erp/shared';
 
 import { audited, writeAudit } from '../../../../../lib/api/audit';
+import { blockedBetween } from '../../../../../lib/api/blocks';
 import { unprocessable } from '../../../../../lib/api/errors';
 import { checkId } from '../../../../../lib/api/market-posts';
 import {
@@ -37,6 +38,16 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       const { message, conversation } = await audited(prisma, async (tx) => {
         const conversation = await loadConversation(tx, id, viewer, true);
         if (conversation.blocked_at) throw unprocessable('conversation_blocked');
+        // 2026-10-28: a person-level block between the two people, either way.
+        if (
+          await blockedBetween(
+            tx,
+            conversation.owner_auth_user_id,
+            conversation.starter_auth_user_id,
+          )
+        ) {
+          throw unprocessable('conversation_account_blocked');
+        }
         const side = sideOf(conversation, viewer);
         const { row, fresh } = await insertMessage(tx, {
           id: body.id,

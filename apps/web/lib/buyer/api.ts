@@ -4,6 +4,8 @@ import type {
   BuyerRegistration,
   BuyerVerificationStatus,
   CreateOrder,
+  EmailCodeRequest,
+  EmailCodeSent,
   OrderStatusChange,
   PurchaseRequestInput,
   PurchaseRequestPatch,
@@ -300,6 +302,17 @@ export interface Locations {
  * the form's sign-in check (BuyerRegister) turns that into a normal arrival.
  */
 export const REGISTER_TIMEOUT_MS = 45_000;
+/** 2026-10-28: send a sign-up code to this address (POST /api/auth/email-code). */
+export const sendEmailCode = (body: EmailCodeRequest) =>
+  one<EmailCodeSent>('/api/auth/email-code', json('POST', body));
+
+/** 2026-10-28: check the code typed at sign-up. */
+export const verifyEmailCode = (verificationId: string, code: string) =>
+  one<{ verified: true }>(
+    '/api/auth/email-code/verify',
+    json('POST', { verification_id: verificationId, code }),
+  );
+
 export const registerBuyer = (body: BuyerRegistration) =>
   one<{
     id: string;

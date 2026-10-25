@@ -9,7 +9,8 @@ import type {
 export interface SellerInfo {
   id: string;
   verification_status: VerificationStatus;
-  payam_id: string;
+  /** 2026-10-28: null for an account with no location yet. */
+  payam_id: string | null;
   payam_name: string;
   created_at: string;
 }

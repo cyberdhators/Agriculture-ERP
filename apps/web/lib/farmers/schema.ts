@@ -117,6 +117,12 @@ const FIELD_ORDER: readonly (keyof FarmerFormValues)[] = [
 export interface ValidateFarmerOptions {
   /** The form creates an account, so the password is required, not optional. */
   requirePassword?: boolean;
+  /**
+   * 2026-10-28 (user journeys): self sign-up. Sex, year of birth and location
+   * are optional -- checked only when given, and a location given in part must
+   * be completed. Officer intake never sets this: there they stay required.
+   */
+  optionalPersonal?: boolean;
 }
 
 export function validateFarmer(
@@ -134,12 +140,14 @@ export function validateFarmer(
   if (family === '') errors.family_name = NAME_MESSAGES.family;
   else if (family.length > NAME_MAX) errors.family_name = NAME_MESSAGES.tooLong;
 
-  if (input.sex !== 'f' && input.sex !== 'm') errors.sex = 'Select female or male.';
+  const optional = options.optionalPersonal === true;
+  if (input.sex !== 'f' && input.sex !== 'm' && !(optional && input.sex === ''))
+    errors.sex = 'Select female or male.';
 
   const yobRaw = input.year_of_birth.trim();
   const ceiling = maxBirthYear(now);
   if (yobRaw === '') {
-    errors.year_of_birth = 'Enter the year of birth.';
+    if (!optional) errors.year_of_birth = 'Enter the year of birth.';
   } else if (!/^\d{4}$/.test(yobRaw)) {
     errors.year_of_birth = 'Enter the year as four digits, for example 1994.';
   } else {
@@ -156,9 +164,13 @@ export function validateFarmer(
   if (nid !== '' && !NATIONAL_ID_RE.test(nid))
     errors.national_id = 'A national id is 4–20 letters, digits or hyphens. Leave blank if none.';
 
-  if (input.state_id.trim() === '') errors.state_id = 'Select a state.';
-  if (input.county_id.trim() === '') errors.county_id = 'Select a county.';
-  if (input.payam_id.trim() === '') errors.payam_id = 'Select a payam.';
+  // Optional location: none at all is fine; a county or payam started is finished.
+  const locationStarted = input.county_id.trim() !== '' || input.payam_id.trim() !== '';
+  if (!optional || locationStarted) {
+    if (input.state_id.trim() === '') errors.state_id = 'Select a state.';
+    if (input.county_id.trim() === '') errors.county_id = 'Select a county.';
+    if (input.payam_id.trim() === '') errors.payam_id = 'Select a payam.';
+  }
 
   const password = input.password ?? '';
   if (options.requirePassword || password !== '') {

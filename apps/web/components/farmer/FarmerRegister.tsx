@@ -58,13 +58,20 @@ function digits(value: string): string {
 type Step = 0 | 1 | 2 | 3 | 4;
 const LAST_STEP: Step = 4;
 const FARM_STEP: Step = 3;
+/**
+ * 2026-10-28 (user journeys; the specification, line 38): account creation
+ * asks for name, language, mobile number, password and the notice. Sex, year
+ * of birth and location moved to the optional "More about you" step -- skip
+ * it and they are asked for later, when a listing needs a place.
+ */
 const STEP_KEYS: Array<(keyof FarmerFormValues)[]> = [
-  ['given_name', 'family_name', 'sex', 'year_of_birth'],
-  ['phone', 'state_id', 'county_id', 'payam_id'],
+  ['given_name', 'family_name'],
+  ['phone'],
   ['password'],
-  [],
+  ['sex', 'year_of_birth', 'state_id', 'county_id', 'payam_id'],
   ['consent_language', 'consent_granted'],
 ];
+const VALIDATE = { requirePassword: true, optionalPersonal: true } as const;
 
 /** The optional "About your farm" answers, from CORWADO's registration form. */
 interface FarmAnswers {
@@ -108,8 +115,12 @@ const W: Record<'en' | 'ar', Record<string, string>> = {
   en: {
     village: 'Village or boma',
     villageHint: 'Where you live or farm.',
-    stepFarm: 'About your farm (optional)',
-    farmLead: 'These help buyers and CORWADO know your farm. You can skip them and add them later.',
+    stepFarm: 'More about you (optional)',
+    farmLead:
+      'These help buyers and CORWADO know you and your farm. You can skip them and add them later.',
+    languageLabel: 'Language',
+    stepPhone: 'Your phone number',
+    placeLead: 'Where you live or farm. A listing asks for this if you skip it now.',
     skip: 'Skip this step',
     crops: 'Crops you grow',
     land: 'Land you farm',
@@ -169,9 +180,12 @@ const W: Record<'en' | 'ar', Record<string, string>> = {
   ar: {
     village: 'القرية أو البوما',
     villageHint: 'المكان الذي تسكن أو تزرع فيه.',
-    stepFarm: 'عن مزرعتك (اختياري)',
+    stepFarm: 'المزيد عنك (اختياري)',
     farmLead:
-      'تساعد هذه المعلومات المشترين وكوروادو على معرفة مزرعتك. يمكنك تخطيها وإضافتها لاحقاً.',
+      'تساعد هذه المعلومات المشترين وكوروادو على معرفتك ومعرفة مزرعتك. يمكنك تخطيها وإضافتها لاحقاً.',
+    languageLabel: 'اللغة',
+    stepPhone: 'رقم هاتفك',
+    placeLead: 'المكان الذي تسكن أو تزرع فيه. يُطلب عند نشر عرض إذا تخطيته الآن.',
     skip: 'تخطي هذه الخطوة',
     crops: 'المحاصيل التي تزرعها',
     land: 'الأرض التي تزرعها',
@@ -234,12 +248,13 @@ const W: Record<'en' | 'ar', Record<string, string>> = {
  * SELF-REGISTRATION (B14, 2026-10-07). Farmers enrol themselves -- CORWADO has
  * no staff to do it -- so the form is short and needs nobody's help:
  *
- *   1. name, sex and year of birth;
- *   2. phone, state, county, payam and village;
+ *   1. name and language;
+ *   2. phone;
  *   3. a password;
- *   4. about the farm -- CORWADO's registration-form questions, all optional,
- *      with a button to skip;
- *   5. consent (v1.2).
+ *   4. more about you -- sex, year of birth, place and CORWADO's
+ *      registration-form questions, all optional, with a button to skip
+ *      (2026-10-28: sex, year and place moved here from steps 1 and 2);
+ *   5. consent.
  *
  * The farmer is created on the server, signed in at once, and can list
  * produce straight away; verification by an officer is optional and shown to
@@ -247,7 +262,7 @@ const W: Record<'en' | 'ar', Record<string, string>> = {
  * the server's own field reasons are shown if it refuses anyway.
  */
 export function FarmerRegister() {
-  const { language, register } = useFarmerSession();
+  const { language, setLanguage, register } = useFarmerSession();
   const router = useRouter();
   const w = W[language === 'ar' ? 'ar' : 'en'];
   const consentLanguage = language === 'ar' ? 'ar' : 'en';
@@ -318,9 +333,7 @@ export function FarmerRegister() {
     }));
 
   function validateStep(current: Step): boolean {
-    const result = validateFarmer({ ...values, consent_language: language }, REFERENCE, {
-      requirePassword: true,
-    });
+    const result = validateFarmer({ ...values, consent_language: language }, REFERENCE, VALIDATE);
     const stepErrors: Partial<Record<keyof FarmerFormValues, string>> = {};
     if (!result.ok) {
       for (const key of STEP_KEYS[current]!) {
@@ -328,14 +341,9 @@ export function FarmerRegister() {
       }
     }
     setErrors(stepErrors);
-    let villageMissing = false;
-    if (current === 1) {
-      villageMissing = village.trim() === '';
-      setVillageError(villageMissing ? 'Give your village or boma.' : undefined);
-    }
     const mismatch = current === 2 && !stepErrors.password && confirm !== values.password;
     setConfirmError(mismatch ? t('register.passwordMismatch', language) : undefined);
-    return Object.keys(stepErrors).length === 0 && !mismatch && !villageMissing;
+    return Object.keys(stepErrors).length === 0 && !mismatch;
   }
 
   function next() {
@@ -393,9 +401,7 @@ export function FarmerRegister() {
   }
 
   async function submit() {
-    const result = validateFarmer({ ...values, consent_language: language }, REFERENCE, {
-      requirePassword: true,
-    });
+    const result = validateFarmer({ ...values, consent_language: language }, REFERENCE, VALIDATE);
     if (!result.ok) {
       setErrors(result.errors);
       const failStep = STEP_KEYS.findIndex((keys) => keys.some((k) => result.errors[k]));
@@ -430,9 +436,7 @@ export function FarmerRegister() {
         method: 'POST',
         body: JSON.stringify({ verification_id: codeFor.id, code: code.trim() }),
       });
-      const result = validateFarmer({ ...values, consent_language: language }, REFERENCE, {
-        requirePassword: true,
-      });
+      const result = validateFarmer({ ...values, consent_language: language }, REFERENCE, VALIDATE);
       if (!result.ok) {
         setCodeFor(null);
         setErrors(result.errors);
@@ -451,16 +455,17 @@ export function FarmerRegister() {
     valid: Extract<ReturnType<typeof validateFarmer>, { ok: true }>['values'],
     verificationId: string | undefined,
   ) {
+    // Optional details go only when given (2026-10-28).
     const created = await register({
       given_name: valid.given_name,
       family_name: valid.family_name,
-      sex: valid.sex,
-      year_of_birth: Number(valid.year_of_birth),
+      ...(valid.sex ? { sex: valid.sex } : {}),
+      ...(values.year_of_birth.trim() ? { year_of_birth: Number(valid.year_of_birth) } : {}),
       phone: valid.phone,
       password: valid.password ?? '',
       confirm_password: valid.password ?? '',
-      payam_id: valid.payam_id,
-      village: village.trim(),
+      ...(valid.payam_id ? { payam_id: valid.payam_id } : {}),
+      ...(village.trim() ? { village: village.trim() } : {}),
       consent: {
         text_version: consent.text_version,
         language: consentLanguage,
@@ -499,7 +504,7 @@ export function FarmerRegister() {
 
   const stepTitle = [
     t('register.stepName', language),
-    t('register.stepContact', language),
+    w.stepPhone,
     t('register.stepPassword', language),
     w.stepFarm,
     t('register.stepConsent', language),
@@ -596,46 +601,33 @@ export function FarmerRegister() {
               />
             )}
           </Field>
-          <Field label={t('register.sex', language)} error={errors.sex}>
+          <Field label={w.languageLabel!}>
             {(ids) => (
               <div
                 className={styles.choiceRow}
                 role="radiogroup"
                 id={ids.id}
-                aria-label={t('register.sex', language)}
-                aria-describedby={ids['aria-describedby']}
-                aria-invalid={ids['aria-invalid']}
+                aria-label={w.languageLabel}
               >
-                {(['f', 'm'] as const).map((s) => (
+                {(
+                  [
+                    ['en', 'English'],
+                    ['ar', 'العربية'],
+                  ] as const
+                ).map(([code, label]) => (
                   <button
-                    key={s}
+                    key={code}
                     type="button"
                     role="radio"
-                    aria-checked={values.sex === s}
-                    className={`${styles.choice} ${values.sex === s ? styles.choiceSelected : ''}`}
-                    onClick={() => set('sex', s)}
+                    lang={code}
+                    aria-checked={language === code}
+                    className={`${styles.choice} ${language === code ? styles.choiceSelected : ''}`}
+                    onClick={() => setLanguage(code)}
                   >
-                    {s === 'f' ? t('register.female', language) : t('register.male', language)}
+                    {label}
                   </button>
                 ))}
               </div>
-            )}
-          </Field>
-          <Field
-            label={t('register.yob', language)}
-            hint={`${t('register.yobHint', language)} ${MAX_YEAR}`}
-            error={errors.year_of_birth}
-          >
-            {(ids) => (
-              <Input
-                {...ids}
-                inputMode="numeric"
-                maxLength={4}
-                placeholder="1994"
-                className="mono"
-                value={values.year_of_birth}
-                onChange={(e) => set('year_of_birth', digits(e.target.value).slice(0, 4))}
-              />
             )}
           </Field>
         </div>
@@ -654,73 +646,6 @@ export function FarmerRegister() {
                 placeholder="9XX XXX XXX"
                 value={values.phone}
                 onChange={(e) => set('phone', e.target.value)}
-              />
-            )}
-          </Field>
-          <Field label={t('register.state', language)} error={errors.state_id}>
-            {(ids) => (
-              <Select
-                {...ids}
-                value={values.state_id}
-                onChange={(e) => set('state_id', e.target.value)}
-              >
-                <option value="">{t('register.select', language)}</option>
-                {STATES.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                  </option>
-                ))}
-              </Select>
-            )}
-          </Field>
-          <Field label={t('register.county', language)} error={errors.county_id}>
-            {(ids) => (
-              <Select
-                {...ids}
-                value={values.county_id}
-                disabled={values.state_id === ''}
-                onChange={(e) => set('county_id', e.target.value)}
-              >
-                <option value="">{t('register.select', language)}</option>
-                {counties.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </Select>
-            )}
-          </Field>
-          <Field label={t('register.payam', language)} error={errors.payam_id}>
-            {(ids) => (
-              <Select
-                {...ids}
-                value={values.payam_id}
-                disabled={values.county_id === ''}
-                onChange={(e) => set('payam_id', e.target.value)}
-              >
-                <option value="">{t('register.select', language)}</option>
-                {payams.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-              </Select>
-            )}
-          </Field>
-          <Field
-            label={w.village!}
-            hint={w.villageHint}
-            error={villageError ?? serverErrors.village}
-          >
-            {(ids) => (
-              <Input
-                {...ids}
-                dir="auto"
-                value={village}
-                onChange={(e) => {
-                  setVillage(e.target.value);
-                  setVillageError(undefined);
-                }}
               />
             )}
           </Field>
@@ -766,6 +691,118 @@ export function FarmerRegister() {
       {step === FARM_STEP ? (
         <div className={styles.stack}>
           <p className="small muted">{w.farmLead}</p>
+          <Field label={t('register.sex', language)} optional error={errors.sex}>
+            {(ids) => (
+              <div
+                className={styles.choiceRow}
+                role="radiogroup"
+                id={ids.id}
+                aria-label={t('register.sex', language)}
+                aria-describedby={ids['aria-describedby']}
+                aria-invalid={ids['aria-invalid']}
+              >
+                {(['f', 'm'] as const).map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    role="radio"
+                    aria-checked={values.sex === s}
+                    className={`${styles.choice} ${values.sex === s ? styles.choiceSelected : ''}`}
+                    onClick={() => set('sex', s)}
+                  >
+                    {s === 'f' ? t('register.female', language) : t('register.male', language)}
+                  </button>
+                ))}
+              </div>
+            )}
+          </Field>
+          <Field
+            label={t('register.yob', language)}
+            optional
+            hint={`${t('register.yobHint', language)} ${MAX_YEAR}`}
+            error={errors.year_of_birth}
+          >
+            {(ids) => (
+              <Input
+                {...ids}
+                inputMode="numeric"
+                maxLength={4}
+                placeholder="1994"
+                className="mono"
+                value={values.year_of_birth}
+                onChange={(e) => set('year_of_birth', digits(e.target.value).slice(0, 4))}
+              />
+            )}
+          </Field>
+          <p className="small muted">{w.placeLead}</p>
+          <Field label={t('register.state', language)} optional error={errors.state_id}>
+            {(ids) => (
+              <Select
+                {...ids}
+                value={values.state_id}
+                onChange={(e) => set('state_id', e.target.value)}
+              >
+                <option value="">{t('register.select', language)}</option>
+                {STATES.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </Select>
+            )}
+          </Field>
+          <Field label={t('register.county', language)} optional error={errors.county_id}>
+            {(ids) => (
+              <Select
+                {...ids}
+                value={values.county_id}
+                disabled={values.state_id === ''}
+                onChange={(e) => set('county_id', e.target.value)}
+              >
+                <option value="">{t('register.select', language)}</option>
+                {counties.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </Select>
+            )}
+          </Field>
+          <Field label={t('register.payam', language)} optional error={errors.payam_id}>
+            {(ids) => (
+              <Select
+                {...ids}
+                value={values.payam_id}
+                disabled={values.county_id === ''}
+                onChange={(e) => set('payam_id', e.target.value)}
+              >
+                <option value="">{t('register.select', language)}</option>
+                {payams.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </Select>
+            )}
+          </Field>
+          <Field
+            label={w.village!}
+            optional
+            hint={w.villageHint}
+            error={villageError ?? serverErrors.village}
+          >
+            {(ids) => (
+              <Input
+                {...ids}
+                dir="auto"
+                value={village}
+                onChange={(e) => {
+                  setVillage(e.target.value);
+                  setVillageError(undefined);
+                }}
+              />
+            )}
+          </Field>
           <fieldset className={styles.stack} style={{ border: 0, padding: 0, margin: 0 }}>
             <legend className="small">{w.crops}</legend>
             <div className={styles.choiceRow} style={{ flexWrap: 'wrap' }}>

@@ -6,6 +6,7 @@ import {
   SETTING_DEFAULTS,
   type CurrentNotice,
   type NoticeLanguage,
+  type PolicyNoticeKind,
   type PublicSettings,
 } from '@agri-erp/shared';
 
@@ -66,11 +67,26 @@ export interface ConsentText {
  * read -- offline, or no notice published. Sign-up never waits on it.
  */
 export function useConsentText(language: NoticeLanguage, fallback: ConsentText): ConsentText {
-  const [fetched, setFetched] = useState<Partial<Record<NoticeLanguage, ConsentText>>>({});
+  return useNoticeText('consent', language, fallback);
+}
+
+/**
+ * 2026-10-28 (user journeys): the same read for any notice kind -- the email
+ * sign-up shows the published terms of use (`terms`). The fallback is shown
+ * until it arrives and whenever it cannot be read; the version shown is the
+ * version recorded.
+ */
+export function useNoticeText(
+  kind: PolicyNoticeKind,
+  language: NoticeLanguage,
+  fallback: ConsentText,
+): ConsentText {
+  const [fetched, setFetched] = useState<Partial<Record<string, ConsentText>>>({});
+  const key = `${kind}:${language}`;
   useEffect(() => {
-    if (fetched[language]) return;
+    if (fetched[key]) return;
     let live = true;
-    fetch(`/api/notices/current?kind=consent&lang=${language}`)
+    fetch(`/api/notices/current?kind=${kind}&lang=${language}`)
       .then(async (res) => {
         if (!res.ok) return;
         const body = (await res.json().catch(() => ({}))) as { data?: CurrentNotice };
@@ -78,13 +94,13 @@ export function useConsentText(language: NoticeLanguage, fallback: ConsentText):
         if (!live || !notice?.body || !notice.text_version) return;
         setFetched((prev) => ({
           ...prev,
-          [language]: { text_version: notice.text_version, body: notice.body },
+          [key]: { text_version: notice.text_version, body: notice.body },
         }));
       })
       .catch(() => undefined);
     return () => {
       live = false;
     };
-  }, [language, fetched]);
-  return fetched[language] ?? fallback;
+  }, [kind, language, key, fetched]);
+  return fetched[key] ?? fallback;
 }

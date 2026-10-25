@@ -14,13 +14,15 @@ export interface FarmerRow {
   farmer_number: string;
   given_name: string;
   family_name: string;
-  sex: string;
-  year_of_birth: number;
+  // 2026-10-28: null only for a self-registered account that has not given
+  // them (farmer_officer_record_complete); a location is whole or absent.
+  sex: string | null;
+  year_of_birth: number | null;
   phone: string;
   national_id: string | null;
-  payam_id: string;
-  county_id: string;
-  state_id: string;
+  payam_id: string | null;
+  county_id: string | null;
+  state_id: string | null;
   registered_by: string | null;
   /** Who works this farmer today: the reassignable pointer (C-8R). registered_by is history. */
   caseload_officer_id: string | null;
@@ -167,7 +169,8 @@ export async function findDuplicates(
     phone: string;
     given_name: string;
     family_name: string;
-    payam_id: string;
+    /** 2026-10-28: null for a self-registered account with no location yet (phone still matches). */
+    payam_id: string | null;
   },
 ): Promise<string[]> {
   const rows = await tx.$queryRawUnsafe<{ id: string }[]>(
@@ -215,6 +218,22 @@ export async function allocateFarmerNumber(tx: AuditTx, countyId: string): Promi
   );
   if (!row) throw new Error('farmer number allocation returned no row');
   return formatFarmerNumber(countyId, row.n);
+}
+
+/**
+ * 2026-10-28 (user journeys): a self-registered account may have no county
+ * yet, and the per-county counter needs one. Such an account is numbered
+ * from its own sequence as `AO-000001` (AgriOne); a county id always carries
+ * a state prefix (`CE-JUB`), so the two forms cannot collide. The number is
+ * stored at insert and never re-derived (C-5.4), so a location given later
+ * does not renumber the account.
+ */
+export async function allocateUnplacedFarmerNumber(tx: AuditTx): Promise<string> {
+  const [row] = await tx.$queryRawUnsafe<{ n: bigint | number }[]>(
+    `SELECT nextval('public.farmer_number_unplaced_seq') AS n`,
+  );
+  if (!row) throw new Error('farmer number allocation returned no row');
+  return formatFarmerNumber('AO', Number(row.n));
 }
 
 /** A raw INSERT that hits farmer_pkey is a repeat of the same client id (C-5.12). Anything else is not ours to hide. */

@@ -291,8 +291,10 @@ export function OfficerDesk() {
               <div>
                 <dt>Sex · age</dt>
                 <dd>
-                  {slip.sex === 'f' ? 'F' : 'M'} ·{' '}
-                  <span className="mono">{TODAY_YEAR - slip.year_of_birth}</span>
+                  {slip.sex === null ? '—' : slip.sex === 'f' ? 'F' : 'M'} ·{' '}
+                  <span className="mono">
+                    {slip.year_of_birth === null ? '—' : TODAY_YEAR - slip.year_of_birth}
+                  </span>
                 </dd>
               </div>
               <div>

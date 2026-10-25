@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 
-import type { ChatMessage, ConversationSummary, PostKind } from '@agri-erp/shared';
+import type { BlockedAccount, ChatMessage, ConversationSummary, PostKind } from '@agri-erp/shared';
 
 import { enqueue, queuedOf, subscribeOutbox } from '@/lib/offline/outbox';
 import { offlineNow } from '@/lib/offline/net';
@@ -61,6 +61,22 @@ export const openConversation = (id: string, after?: string) =>
 export const blockConversation = (id: string) =>
   call<ConversationSummary>(`/api/conversations/${encodeURIComponent(id)}/block`, {
     method: 'POST',
+  });
+
+/** 2026-10-28: block the other person in this conversation (person level). */
+export const blockPerson = (conversationId: string) =>
+  call<BlockedAccount>('/api/account/blocks', {
+    method: 'POST',
+    body: JSON.stringify({ conversation_id: conversationId }),
+  });
+
+/** The accounts the caller has blocked. */
+export const listBlocks = () => call<BlockedAccount[]>('/api/account/blocks');
+
+/** Lift one of the caller's blocks. */
+export const unblock = (id: string) =>
+  call<{ id: string; unblocked: boolean }>(`/api/account/blocks/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
   });
 
 /**

@@ -18,6 +18,7 @@ import {
 } from '@/lib/buyer/labels';
 
 import { Button, Card, CardBody, CardHeader, Field, Input, Notice, PageHeader, Stamp } from '../ui';
+import { BlockedAccounts } from '../account/BlockedAccounts';
 import { DeleteAccount } from '../account/DeleteAccount';
 import { useToast } from '../ui/feedback';
 import { useBuyer } from './BuyerShell';
@@ -210,6 +211,13 @@ export function BuyerProfile() {
           </Button>
         </div>
       </form>
+
+      {/* 2026-10-28: person-level blocks, with Unblock. The buyer shell speaks English. */}
+      <Card>
+        <CardBody>
+          <BlockedAccounts language="en" />
+        </CardBody>
+      </Card>
 
       {/* 2026-10-20: the account deletes itself (hide now, keep for audit). */}
       <Card>
