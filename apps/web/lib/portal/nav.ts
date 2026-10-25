@@ -126,9 +126,10 @@ export const NAV_SECTIONS: readonly NavSection[] = [
         roles: STAFF,
         because:
           'GET /api/admin/accounts and GET /api/admin/accounts/:kind/:id accept the staff roles ' +
-          'and then require support.handle or content.moderate; revealing a contact requires ' +
-          'support.handle, disabling content.moderate, re-enabling superadmin.grant.',
-        permissions: ['support.handle', 'content.moderate'],
+          'and then require support.handle, content.moderate or staff.manage; revealing a ' +
+          'contact requires support.handle, disabling content.moderate, re-enabling ' +
+          'superadmin.grant.',
+        permissions: ['support.handle', 'content.moderate', 'staff.manage'],
       },
       {
         href: '/farmers',
@@ -344,8 +345,8 @@ export const NAV_SECTIONS: readonly NavSection[] = [
         because:
           'GET /api/analytics/summary accepts admin, supervisor and read_only, and then ' +
           'requires reports.view somewhere (Analyst, Administrator or Super Admin preset), ' +
-          'filtered to the states held. POST /api/analytics/export is admin and supervisor ' +
-          'only.',
+          'filtered to the states held. POST /api/analytics/export accepts the same roles ' +
+          'and the same permission.',
         permissions: ['reports.view'],
         statesEnough: true,
       },
