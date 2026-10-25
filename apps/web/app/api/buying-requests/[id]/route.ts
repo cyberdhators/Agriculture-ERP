@@ -15,7 +15,7 @@ import {
   checkLifecycle,
   invalidField,
   loadOwnBuyingRequest,
-  marketPoster,
+  actingPoster,
   presentBuyingRequest,
   presentOwnBuyingRequest,
   todayUtc,
@@ -60,8 +60,9 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   PATCH: {
     roles: [FARMER_ROLE, BUYER_ROLE],
     bodySchema: buyingRequestPatchSchema,
-    handler: async ({ auth, body, params }) => {
-      const poster = marketPoster(auth);
+    handler: async ({ auth, body, params, request }) => {
+      // 2026-10-27: an organisation's post is managed by its members with listings.manage.
+      const poster = await actingPoster(prisma, request, auth);
       const id = checkId(params.id);
       const row = await audited(prisma, async (tx) => {
         const current = await loadOwnBuyingRequest(tx, poster, id, true);

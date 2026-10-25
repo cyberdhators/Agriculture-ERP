@@ -68,6 +68,10 @@ const EXPECTED_PUBLIC = [
   // through a whitelist (app/api/notices/current, lib/api/settings.ts
   // publicSettings): no draft, no staff name, nothing about security.
   'notices/current',
+  // TEAM ACCESS (2026-10-27): an organisation's PUBLIC profile. Read-only;
+  // published, open organisations only, through a whitelist; the team only
+  // with the organisation's switch AND each member's own agreement.
+  'organizations/[id]/profile',
   'settings/public',
   // 2026-10-20: a poster's public profile, reached through one of their posts on
   // the market; read-only, a whitelist of market-facing fields (no phone, no ids).

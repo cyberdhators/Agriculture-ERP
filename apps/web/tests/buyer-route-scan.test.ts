@@ -112,6 +112,24 @@ const BUYER_OUTSIDE_ITS_TREE = [
   // 2026-10-21: "Contact CORWADO" is public; it names the buyer role only to
   // recognise a signed-in sender, and reads nothing but that sender's own phone.
   'support',
+  // TEAM ACCESS (2026-10-27): organisational profiles any account may create
+  // and act for. Every read is keyed by the session's sign-in and its ACTIVE
+  // membership (lib/api/organizations.ts requireMember / actingAs); a
+  // non-member gets 404. Names are "Mary K."; no phone, email or record id
+  // of another person is returned.
+  'organizations',
+  'organizations/acting',
+  'organizations/invitations',
+  'organizations/[id]',
+  'organizations/[id]/close',
+  'organizations/[id]/invitations',
+  'organizations/[id]/invitations/[invitationId]/cancel',
+  'organizations/[id]/leave',
+  'organizations/[id]/members',
+  'organizations/[id]/members/[memberId]',
+  'organizations/[id]/members/[memberId]/revoke',
+  'organizations/[id]/membership',
+  'organizations/[id]/transfer',
 ];
 
 describe('buyer routes are counted, not trusted', () => {

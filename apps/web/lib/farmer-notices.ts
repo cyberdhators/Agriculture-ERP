@@ -97,6 +97,27 @@ export const ACCOUNT_NOTICES = {
     body: 'Open Advice to accept or decline the suggestion.',
     key: 'notice.adviceReferral',
   },
+  // TEAM ACCESS (2026-10-27)
+  organization_invitation: {
+    title: 'You have been invited to join an organisation',
+    body: 'Open Organisations in your account to see the role and accept or decline.',
+    key: 'notice.orgInvitation',
+  },
+  organization_transfer_offered: {
+    title: 'You have been offered administration of an organisation',
+    body: 'Open Organisations in your account to accept or decline.',
+    key: 'notice.orgTransfer',
+  },
+  organization_access_ended: {
+    title: 'Your access to an organisation has ended',
+    body: 'Your own account is not affected. Open Organisations to see your memberships.',
+    key: 'notice.orgAccessEnded',
+  },
+  organization_recovered: {
+    title: 'CORWADO made you an administrator of an organisation',
+    body: 'Open Organisations in your account to manage its team.',
+    key: 'notice.orgRecovered',
+  },
 } as const;
 
 export type AccountNotice = keyof typeof ACCOUNT_NOTICES;
@@ -139,5 +160,13 @@ export function noticeHref(title: string): string | null {
     return '/farmer/account/advice/requests';
   }
   if (title === n.advice_work_updated.title) return '/farmer/account/advice/work';
+  if (
+    title === n.organization_invitation.title ||
+    title === n.organization_transfer_offered.title ||
+    title === n.organization_access_ended.title ||
+    title === n.organization_recovered.title
+  ) {
+    return '/farmer/account/organisations';
+  }
   return null;
 }

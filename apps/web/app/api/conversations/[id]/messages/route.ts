@@ -7,8 +7,9 @@ import {
   actorOf,
   insertMessage,
   loadConversation,
-  me,
   presentMessage,
+  sideOf,
+  viewerOf,
 } from '../../../../../lib/api/messaging';
 import { noticeIfFirstMessage } from '../../../../../lib/api/notify';
 import { created, defineRoutes } from '../../../../../lib/api/route';
@@ -28,17 +29,21 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   POST: {
     roles: [FARMER_ROLE, BUYER_ROLE],
     bodySchema: sendMessageSchema,
-    handler: async ({ auth, body, params }) => {
-      const sender = me(auth);
+    handler: async ({ auth, body, params, request }) => {
+      // 2026-10-27: for an organisation's inbox, `inbox.reply`.
+      const viewer = await viewerOf(prisma, request, auth, 'inbox.reply');
+      const sender = viewer.person;
       const id = checkId(params.id);
-      const message = await audited(prisma, async (tx) => {
-        const conversation = await loadConversation(tx, id, sender, true);
+      const { message, conversation } = await audited(prisma, async (tx) => {
+        const conversation = await loadConversation(tx, id, viewer, true);
         if (conversation.blocked_at) throw unprocessable('conversation_blocked');
+        const side = sideOf(conversation, viewer);
         const { row, fresh } = await insertMessage(tx, {
           id: body.id,
           conversationId: conversation.id,
           sender,
           body: body.body,
+          side,
         });
         if (fresh) {
           await writeAudit(tx, {
@@ -46,14 +51,17 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
             entityId: row.id,
             ...actorOf(auth),
             action: 'message.sent',
-            after: { conversation_id: conversation.id },
+            after: {
+              conversation_id: conversation.id,
+              ...(viewer.org ? { as_organization_id: viewer.org } : {}),
+            },
           });
           // 2026-10-26: the other person is told of this side's FIRST message only.
-          await noticeIfFirstMessage(tx, conversation.id, sender, actorOf(auth));
+          await noticeIfFirstMessage(tx, conversation.id, sender, actorOf(auth), side);
         }
-        return row;
+        return { message: row, conversation };
       });
-      return created(presentMessage(message, sender));
+      return created(presentMessage(message, conversation, viewer));
     },
   },
 });
