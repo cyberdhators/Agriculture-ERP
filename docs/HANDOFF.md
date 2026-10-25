@@ -2814,6 +2814,7 @@ DECISIONS: "Organisational profiles and team access (2026-10-27)".
   DECISIONS.
 
 — Alieu-Claude (team access lane)
+
 ### 2026-10-27 — Alieu-Claude (lane-recovery) → both — self-service recovery, enterprise size, correction requests
 
 Branch `feat/recovery-and-moderation`, migration `20261027100000_recovery_size_corrections`.

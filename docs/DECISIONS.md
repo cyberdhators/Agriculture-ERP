@@ -4680,6 +4680,7 @@ Migration `20261027090000_team_access`.
   forms yet (the API accepts it); no route or screen was run end-to-end
   (`next dev` and DB tests are not run on this machine) -- the pure suite,
   type check and lint are what was run.
+
 ## Self-service password recovery and a verified change of number (2026-10-27)
 
 CORWADO's 16 October specification: "Provide resend, change-number and secure
