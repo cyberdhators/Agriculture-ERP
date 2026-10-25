@@ -71,8 +71,9 @@ export interface Farmer {
   farmer_number: string;
   given_name: string;
   family_name: string;
-  sex: Sex;
-  year_of_birth: number;
+  /** 2026-10-28: null for a self-registered account that has not given it. */
+  sex: Sex | null;
+  year_of_birth: number | null;
   phone: string;
   /**
    * C-5.8. THREE STATES, NOT TWO.
@@ -85,8 +86,9 @@ export interface Farmer {
    * print "none recorded" at a supervisor who was simply not told.
    */
   national_id?: string | null;
-  payam_id: string;
-  state_id: string;
+  /** 2026-10-28: null (both) for a self-registered account with no location yet. */
+  payam_id: string | null;
+  state_id: string | null;
   registered_by: string | null;
   /** Who works this farmer today (C-8R); equals registered_by until an administrator moves it. */
   caseload_officer_id: string | null;
@@ -222,7 +224,9 @@ export const STATE_NAMES: Record<string, string> = {
   WE: 'Western Equatoria',
 };
 
-export function farmerPayamName(id: string): string {
+/** 2026-10-28: a self-registered account may have no location yet. */
+export function farmerPayamName(id: string | null | undefined): string {
+  if (!id) return 'Location not given';
   if (EXTRA_PAYAMS[id]) return EXTRA_PAYAMS[id].name;
   return payamName(id);
 }
@@ -1550,6 +1554,13 @@ export interface ProduceListing {
   status: ListingStatus;
   /** LISTINGS LANE (2026-10-19): sold so far; what is left is quantity - quantity_sold. */
   quantity_sold?: number;
+  /**
+   * 2026-10-28 (user journeys): where the produce is, sent with a NEW listing
+   * when the account has no location yet. Never sent with an edit.
+   */
+  payam_id?: string;
+  /** 2026-10-28: the organisation it was posted for (server-set), or null. */
+  organization_id?: string | null;
   created_at: string;
   updated_at: string;
 }

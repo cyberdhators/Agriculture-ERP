@@ -51,6 +51,8 @@ export const MARKET_POST_MESSAGES = {
   titleInvalid: 'A title is 2 to 200 characters.',
   stateUnknown: 'Choose a location from the list.',
   stateFromFarmerRecord: 'Your location comes from your farmer record.',
+  // 2026-10-28 (user journeys): a listing from an account with no location yet.
+  payamRequired: 'Choose where the produce is: state, county and payam.',
 } as const;
 
 const M = MARKET_POST_MESSAGES;
@@ -498,3 +500,15 @@ export const serviceFilterSchema = z.strictObject({
 /** 2026-10-23: and a published public profile (public profiles v2). */
 export const MARKET_REPORT_TARGETS = ['buying_request', 'service_listing', 'profile'] as const;
 export type MarketReportTarget = (typeof MARKET_REPORT_TARGETS)[number];
+
+/**
+ * EXPIRY REMINDERS (2026-10-28). The daily job reminds a poster this many days
+ * before a post's end date (produce listing's available_until, buying
+ * request's needed_by, service's available_until), once per post per date.
+ * TODO(settings lane): make configurable in Marketplace settings
+ * ("Listing fields, validity and reminders"); a constant until then.
+ */
+export const EXPIRY_REMINDER_DAYS = 3;
+
+/** The most posts one run reminds; the rest wait for the next day's run. */
+export const EXPIRY_REMINDER_BATCH = 500;

@@ -52,6 +52,10 @@ const BUYER_OUTSIDE_ITS_TREE = [
   // 2026-10-27: the open correction requests on the account's own posts, keyed
   // by the session's sign-in (its farmer and buyer records only).
   'account/corrections',
+  // 2026-10-28: person-level blocks -- the caller's own list, block from a
+  // conversation they are part of, and unblock their own (lib/api/blocks.ts).
+  'account/blocks',
+  'account/blocks/[id]',
   // PUBLIC PROFILES V2 (2026-10-23): the account's own public profile -- one
   // per sign-in, shared by its farmer and buyer sides -- with its publish,
   // unpublish and photo steps. Each reads and writes the caller's own row only

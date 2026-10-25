@@ -13,6 +13,7 @@ import {
   PROFILE_FROM,
   PUBLIC_PROFILE_WHERE,
   accountOfSignIn,
+  expertiseOf,
   photoLink,
   postsOf,
   type ProfileRow,
@@ -75,6 +76,8 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       const posts = await postsOf(prisma, account.farmer_id, account.buyer_id);
       const caller = row.show_phone ? await callerOf(request) : null;
 
+      // Read before the whitelist, so the view never names the sign-in.
+      const expertise = await expertiseOf(prisma, row.auth_user_id);
       const view: PublicProfileView = {
         public_id: row.public_id,
         display_name: row.display_name,
@@ -100,6 +103,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
         listings: posts.listings,
         buying_requests: posts.buying_requests,
         service_listings: posts.services,
+        expertise,
       };
       return ok(view);
     },

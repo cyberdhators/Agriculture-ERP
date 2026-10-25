@@ -29,6 +29,7 @@ import {
 } from '@/lib/market-posts/api';
 import { renewalDefault } from '@/lib/market-posts/presentation';
 
+import { BuyingRequestDetailBody } from './MarketRequests';
 import styles from './market-posts.module.css';
 
 interface Values {
@@ -98,12 +99,15 @@ export function BuyingRequestForm({
   listHref,
   defaultName = '',
   defaultStateId = '',
+  posterType = 'farmer',
 }: {
   lang: Language;
   id?: string;
   listHref: string;
   defaultName?: string;
   defaultStateId?: string;
+  /** Who is posting, for the preview's badge only; the server decides. */
+  posterType?: 'farmer' | 'buyer';
 }) {
   const router = useRouter();
   const [values, setValues] = useState<Values>({
@@ -117,6 +121,8 @@ export function BuyingRequestForm({
   const [failure, setFailure] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(Boolean(id));
+  /** 2026-10-28 (user journeys): showing the post as the market will, before it is saved. */
+  const [previewing, setPreviewing] = useState(false);
 
   useEffect(() => {
     listStates()
@@ -163,20 +169,35 @@ export function BuyingRequestForm({
     return out;
   }
 
+  /** The shared schema's verdict on the form as it stands; errors shown. */
+  function check(payload: Record<string, unknown>): boolean {
+    const result = buyingRequestSchema.safeParse(payload);
+    if (result.success) return true;
+    const next: Record<string, string> = {};
+    for (const issue of result.error.issues) {
+      const key = String(issue.path[0] ?? '');
+      if (key && !next[key]) next[key] = issue.message;
+    }
+    setErrors(next);
+    return false;
+  }
+
+  function openPreview() {
+    setFailure(null);
+    if (!check(body('active'))) {
+      setPreviewing(false);
+      return;
+    }
+    setPreviewing(true);
+    if (typeof window !== 'undefined') window.scrollTo({ top: 0 });
+  }
+
   async function submit(status?: 'draft' | 'active') {
     setFailure(null);
     const payload = body(status);
-    if (!id) {
-      const check = buyingRequestSchema.safeParse(payload);
-      if (!check.success) {
-        const next: Record<string, string> = {};
-        for (const issue of check.error.issues) {
-          const key = String(issue.path[0] ?? '');
-          if (key && !next[key]) next[key] = issue.message;
-        }
-        setErrors(next);
-        return;
-      }
+    if (!id && !check(payload)) {
+      setPreviewing(false);
+      return;
     }
     if (typeof navigator !== 'undefined' && !navigator.onLine) {
       setFailure(t('requests.needsSignal', lang));
@@ -192,6 +213,7 @@ export function BuyingRequestForm({
         setErrors(e.fields);
         setFailure(e.message);
       } else setFailure(t('lifecycle.failed', lang));
+      setPreviewing(false);
     } finally {
       setBusy(false);
     }
@@ -205,6 +227,66 @@ export function BuyingRequestForm({
       {t(UNIT_KEY[u], lang)}
     </option>
   ));
+
+  if (previewing) {
+    const row: BuyingRequest = {
+      id: id ?? 'preview',
+      poster_type: posterType,
+      display_name: values.display_name,
+      poster_verified: false,
+      category: values.category,
+      product_name: values.product_name,
+      quantity: Number(values.quantity),
+      unit: values.unit,
+      state_id: values.state_id,
+      state_name: states.find((s) => s.id === values.state_id)?.name ?? '',
+      location: values.location,
+      needed_by: values.needed_by,
+      price_ssp: values.price_ssp === '' ? null : Number(values.price_ssp),
+      price_per: values.price_ssp === '' ? null : values.price_per || null,
+      negotiable: values.negotiable,
+      delivery_terms: values.delivery_terms.trim() || null,
+      description: values.description.trim() || null,
+      phone_shared: values.show_phone,
+      status: 'active',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    return (
+      <section aria-label={t('posts.previewTitle', lang)}>
+        <Notice kind="info" title={t('posts.previewTitle', lang)}>
+          <p className="small">{t(id ? 'posts.previewSaved' : 'posts.previewLead', lang)}</p>
+        </Notice>
+        {failure ? (
+          <Notice kind="error">
+            <p className="small">{failure}</p>
+          </Notice>
+        ) : null}
+        <div className={styles.detail}>
+          <BuyingRequestDetailBody row={row} lang={lang} preview />
+        </div>
+        <div className={styles.formActions}>
+          <Button variant="ghost" disabled={busy} onClick={() => setPreviewing(false)}>
+            {t('posts.previewEdit', lang)}
+          </Button>
+          {id ? (
+            <Button disabled={busy} onClick={() => void submit()}>
+              {t('listingForm.save', lang)}
+            </Button>
+          ) : (
+            <>
+              <Button variant="secondary" disabled={busy} onClick={() => void submit('draft')}>
+                {t('listingForm.saveDraft', lang)}
+              </Button>
+              <Button disabled={busy} onClick={() => void submit('active')}>
+                {t('lifecycle.publish', lang)}
+              </Button>
+            </>
+          )}
+        </div>
+      </section>
+    );
+  }
 
   return (
     <form
@@ -417,6 +499,9 @@ export function BuyingRequestForm({
         <Link href={listHref} className="small">
           {t('listingForm.cancel', lang)}
         </Link>
+        <Button variant="ghost" disabled={busy} onClick={openPreview}>
+          {t('posts.preview', lang)}
+        </Button>
         {id ? (
           <Button type="submit" disabled={busy}>
             {t('listingForm.save', lang)}

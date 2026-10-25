@@ -41,7 +41,8 @@ export function queueRows(items: readonly QueueItem[]): QueueRow[] {
       farmer_number: f.farmer_number,
       given_name: f.given_name,
       family_name: f.family_name,
-      payam_id: f.payam_id,
+      // 2026-10-28: '' for an account with no location yet.
+      payam_id: f.payam_id ?? '',
       registered_by: f.registered_by,
       days: f.days_waiting,
       escalated: f.escalated,

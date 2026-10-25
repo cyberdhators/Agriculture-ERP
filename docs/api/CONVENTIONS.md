@@ -292,6 +292,7 @@ character.
 | `merge_target_not_found`                | The farmer named as the original could not be found.                                                                          |
 | `merge_target_not_eligible`             | The farmer named as the original cannot receive a merge.                                                                      |
 | `merge_across_states`                   | A farmer cannot be merged into a record in another state.                                                                     |
+| `farmer_location_required`              | This farmer has not given a location yet. Ask them to add one first.                                                          |
 | `boundary_not_closed`                   | The boundary does not close: the last point must be the first point again. Go back to where you started and finish the shape. |
 | `boundary_crosses_itself`               | The boundary crosses itself. Walk the edge of the plot in one direction without cutting across it.                            |
 | `boundary_too_few_points`               | A boundary needs at least four corners. Keep walking to the next corner before you finish.                                    |
@@ -508,6 +509,14 @@ character.
 | `notice_version_not_newer`              | Choose a version number higher than the one already published for this notice and language.                                   |
 | `notice_not_draft`                      | Only a draft can be edited, published or discarded. A published or retired notice stays as it was.                            |
 | `correction_already_open`               | A correction has already been requested for this post and is waiting for its owner.                                           |
+| `account_block_self`                    | You cannot block yourself.                                                                                                    |
+| `account_block_not_found`               | That block has already been lifted.                                                                                           |
+| `account_block_personal_only`           | Block people from your own messages. In an organisation's inbox, close the conversation instead.                              |
+| `conversation_account_blocked`          | Messages cannot be sent between you and this person. If you blocked them, you can unblock them in Settings.                   |
+| `email_code_expired`                    | That code has expired or was replaced. Ask for a new code.                                                                    |
+| `email_code_too_many_tries`             | Too many wrong tries. Ask for a new code.                                                                                     |
+| `email_code_wrong`                      | That code is not right. Check the email and try again.                                                                        |
+| `email_not_verified`                    | Confirm your email address with the emailed code first.                                                                       |
 
 **A route names a rule; it never writes a sentence.** `conflict()` and
 `unprocessable()` take a key from this registry, not a string. That is how the
@@ -677,6 +686,10 @@ change.
 | `account.password_recovered`                  |
 | `listing.correction_requested`                |
 | `listing.correction_addressed`                |
+| `account.blocked`                             |
+| `account.unblocked`                           |
+| `post.expiry_reminder_sent`                   |
+| `acknowledgement.recorded`                    |
 
 `before` and `after` hold **changed fields only**, never whole rows, and never a
 password, token, authentication identifier, national id, phone, email, given
@@ -861,6 +874,7 @@ These are also exact.
 | Farmer phone change: same number           | That is already your phone number.                                                              |
 | Farmer password: under six characters      | Choose 6 or more characters you will remember.                                                  |
 | Listing withdrawal: reason missing         | Give the reason the farmer will see, 3 to 300 characters.                                       |
+| Farmer details: nothing given              | Give at least one detail to save.                                                               |
 | Cart: no products                          | Add at least one product to the cart.                                                           |
 | Cart: over twenty products                 | A cart can hold at most 20 products. Send these first.                                          |
 | Request: more than listed                  | This is more than the farmer has listed.                                                        |
@@ -898,6 +912,7 @@ These are also exact.
 | Market post: yes/no not a choice           | Choose yes or no.                                                                               |
 | Buying requests: poster filter             | Choose farmer or buyer.                                                                         |
 | Service: farmer sends a state              | Your location comes from your farmer record.                                                    |
+| Listing: account has no location yet       | Choose where the produce is: state, county and payam.                                           |
 | Message: kind of post                      | Choose a listing, a buying request or a service.                                                |
 | Message: body missing or blank             | Write a message.                                                                                |
 | Message: over 2000 characters              | A message has at most 2000 characters.                                                          |
@@ -1341,6 +1356,11 @@ These are also exact.
 | Correction: reason code not offered        | Choose a reason code from the list.                                                             |
 | Correction: note length                    | Say what needs correcting, in 5 to 500 characters.                                              |
 | Correction list: status unknown            | Choose open or addressed.                                                                       |
+| Email sign-up: notice box not ticked       | Tick the box to agree to the terms of use and the privacy notice.                               |
+| Email sign-up: notice version malformed    | The notice you agreed to could not be recorded. Reload the page and try again.                  |
+| Email sign-up: language not en or ar       | Choose English or Arabic.                                                                       |
+| Email code: not 6 digits                   | Enter the 6-digit code from the email.                                                          |
+| Email code: verification id malformed      | Ask for a new code.                                                                             |
 
 The key beside each reason is the field name, per section 4.1. An unrecognised
 field named `nickname` therefore produces `{ "nickname": "This field is not

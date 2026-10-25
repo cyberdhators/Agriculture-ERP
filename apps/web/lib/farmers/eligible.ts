@@ -13,9 +13,11 @@ export interface CaseloadOfficer {
 
 export function eligibleOfficers(
   officers: readonly { id: string; name: string; payam_id: string; status: string }[],
-  payamId: string,
+  payamId: string | null,
   currentOfficerId: string | null,
 ): CaseloadOfficer[] {
+  // 2026-10-28: an account with no location yet has no officer to move to.
+  if (!payamId) return [];
   return officers
     .filter((o) => o.status === 'active' && o.payam_id === payamId && o.id !== currentOfficerId)
     .map(({ id, name, payam_id }) => ({ id, name, payam_id }))

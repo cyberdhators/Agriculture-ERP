@@ -1,6 +1,6 @@
 import { recordVisitSchema } from '@agri-erp/shared';
 import { audited, writeAudit } from '../../../../../lib/api/audit';
-import { conflict, forbidden } from '../../../../../lib/api/errors';
+import { conflict, forbidden, unprocessable } from '../../../../../lib/api/errors';
 import { inCaseloadOf, loadVisible } from '../../../../../lib/api/farmers';
 import { created, defineRoutes, ok } from '../../../../../lib/api/route';
 import { requireWriter } from '../../../../../lib/api/scope';
@@ -59,8 +59,17 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
         throw conflict('visit_already_exists');
       }
 
+      // 2026-10-28: a visit is recorded where the farmer is; a self-registered
+      // account with no location yet has none to record it against.
+      const { payam_id, county_id, state_id } = farmer;
+      if (!payam_id || !county_id || !state_id) throw unprocessable('farmer_location_required');
+      const placed = { ...farmer, payam_id, county_id, state_id };
       const row = await audited(prisma, async (tx) => {
-        const visit = await insertVisit(tx, { body, farmer, officerId: auth.principal.id });
+        const visit = await insertVisit(tx, {
+          body,
+          farmer: placed,
+          officerId: auth.principal.id,
+        });
         await writeAudit(tx, {
           entityType: 'visit',
           entityId: visit.id,

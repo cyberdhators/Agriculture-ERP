@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 
+import { ShortcutHub } from '@/components/account/ShortcutHub';
 import { Boundary } from '@/components/farmers/Boundary';
 import { ListingCard } from '@/components/listings/ListingCard';
 import { ButtonLink, EmptyState, KpiStrip, Notice, Stamp } from '@/components/ui';
@@ -219,6 +220,25 @@ export function FarmerOverview() {
           </ButtonLink>
         }
       />
+
+      {/* 2026-10-28: one home for every ordinary function (infographic no. 4). */}
+      <ShortcutHub shell="farmer" language={language === 'ar' ? 'ar' : 'en'} />
+
+      {!farmer.payam_id ? (
+        <Notice
+          kind="info"
+          title={language === 'ar' ? 'أضف مكانك متى شئت' : 'Add your place when you are ready'}
+        >
+          <p className="small">
+            {language === 'ar'
+              ? 'لم تُضف مكانك بعد. يُطلب عند نشر عرض، ويجلب لك الطقس والمرشد الزراعي.'
+              : 'You have not given your place yet. A listing asks for it, and it brings your weather and an extension officer.'}{' '}
+            <Link href="/farmer/account/about">
+              {language === 'ar' ? 'أضف التفاصيل' : 'Add your details'}
+            </Link>
+          </p>
+        </Notice>
+      ) : null}
 
       <WeatherTile payamId={farmer.payam_id} language={language} />
 

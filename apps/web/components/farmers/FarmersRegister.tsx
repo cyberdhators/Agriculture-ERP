@@ -156,7 +156,7 @@ export function FarmersRegister() {
     }
     if (filters.status) pool = pool.filter((f) => f.verification_status === filters.status);
     if (filters.payam) pool = pool.filter((f) => f.payam_id === filters.payam);
-    if (filters.county) pool = pool.filter((f) => f.payam_id.startsWith(`${filters.county}-`));
+    if (filters.county) pool = pool.filter((f) => f.payam_id?.startsWith(`${filters.county}-`));
     if (filters.state) pool = pool.filter((f) => f.state_id === filters.state);
     if (filters.sex) pool = pool.filter((f) => f.sex === filters.sex);
     if (filters.registered_from) pool = pool.filter((f) => f.created_at >= filters.registered_from);
@@ -241,11 +241,14 @@ export function FarmersRegister() {
 
   if (!hydrated) return null;
 
-  const county = (f: Farmer) => f.payam_id.split('-').slice(0, 2).join('-');
+  const county = (f: Farmer) => (f.payam_id ?? '').split('-').slice(0, 2).join('-');
+  // 2026-10-28: a self-registered account may have no location yet.
   const placeOf = (f: Farmer) =>
-    [names.state(f.state_id) ?? f.state_id, names.county(county(f)), names.payam(f.payam_id)]
-      .filter(Boolean)
-      .join(' › ');
+    f.payam_id && f.state_id
+      ? [names.state(f.state_id) ?? f.state_id, names.county(county(f)), names.payam(f.payam_id)]
+          .filter(Boolean)
+          .join(' › ')
+      : 'No location yet';
 
   return (
     <div className={styles.registerStack}>

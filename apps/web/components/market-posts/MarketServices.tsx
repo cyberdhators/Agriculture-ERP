@@ -191,6 +191,27 @@ export function MarketServiceDetail({ id, lang }: { id: string; lang: Language }
   return (
     <div className={styles.detail}>
       <BackLinkRow href="/market/services" label={t('svc.marketTitle', lang)} />
+      <ServiceDetailBody row={row} lang={lang} />
+    </div>
+  );
+}
+
+/**
+ * 2026-10-28 (user journeys): what a service shows on the market, used by the
+ * public page and by the form's preview. In `preview` the actions that need a
+ * published post (profile, message, phone, report) are left out.
+ */
+export function ServiceDetailBody({
+  row,
+  lang,
+  preview = false,
+}: {
+  row: ServiceListing;
+  lang: Language;
+  preview?: boolean;
+}) {
+  return (
+    <>
       <div className={styles.cardHead}>
         <Badge tone="sorghum">{serviceTypeLabel(row, lang)}</Badge>
         <ProviderBadge s={row} lang={lang} />
@@ -223,18 +244,23 @@ export function MarketServiceDetail({ id, lang }: { id: string; lang: Language }
         <div>
           <dt className="small muted">{t('svc.provider', lang)}</dt>
           <dd dir="auto">
-            {row.trading_name} <ProfileLink kind="service" id={row.id} language={lang} />
+            {row.trading_name}{' '}
+            {preview ? null : <ProfileLink kind="service" id={row.id} language={lang} />}
           </dd>
         </div>
       </dl>
-      <MessageButton
-        postKind="service"
-        postId={row.id}
-        language={lang}
-        allowed={row.messages_allowed !== false}
-      />
-      {row.phone_shared ? <ContactReveal kind="services" id={row.id} lang={lang} /> : null}
-      <ReportPost kind="services" id={row.id} lang={lang} />
-    </div>
+      {preview ? null : (
+        <>
+          <MessageButton
+            postKind="service"
+            postId={row.id}
+            language={lang}
+            allowed={row.messages_allowed !== false}
+          />
+          {row.phone_shared ? <ContactReveal kind="services" id={row.id} lang={lang} /> : null}
+          <ReportPost kind="services" id={row.id} lang={lang} />
+        </>
+      )}
+    </>
   );
 }

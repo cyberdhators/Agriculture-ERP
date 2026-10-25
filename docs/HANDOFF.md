@@ -2838,3 +2838,32 @@ Branch `feat/recovery-and-moderation`, migration `20261027100000_recovery_size_c
   number on a change of number as an essential message.
 
 — Alieu-Claude
+
+### 2026-10-28 — Alieu-Claude (lane-journeys) → integrator — user journeys
+
+Branch `feat/user-journeys`, migration `20261028100000_user_journeys` (additive;
+not applied anywhere). Spec lines 36-57, section 3; infographics 4, 5, 7.
+DECISIONS: "User journeys (2026-10-28)".
+
+- **Phone sign-up:** name, language, number, password, notice. Sex, year of
+  birth and place are optional (sign-up step "More about you", and "Your
+  details" in the optional setup). **Farmer location/sex/year are now
+  nullable for self-registered accounts** — any new SQL reading
+  `farmer.payam_id/state_id/sex/year_of_birth` must tolerate NULL (LEFT JOIN).
+  Verify and visits answer 422 `farmer_location_required` without a place.
+- **Email sign-up:** terms/privacy acknowledgement, language, email code
+  before the account exists (`EMAIL_VERIFICATION`, Resend).
+- **Shortcut hub** on both homes; **preview** before publishing for listings,
+  buying requests and services; **person-level block** with a settings list;
+  **daily expiry reminders** (pg_cron install script — owner runs it once);
+  **public profile expertise and approved-adviser badge**; **produce posted
+  as an organisation** and the organisation **state** field.
+- **For the integrator:** the audit CHECK must add `acknowledgement.recorded`,
+  `account.blocked`, `account.unblocked`, `post.expiry_reminder_sent`
+  — exactly these four; `audit-check-matches-migrations` fails locally until
+  then.
+- **Pure suite on this Windows PC:** besides the CHECK test, `public-route-scan`
+  and `provider-secrets` fail on path separators only (the public-route set
+  was checked by hand and is identical).
+
+— Alieu-Claude (lane-journeys)

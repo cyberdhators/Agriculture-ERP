@@ -16,6 +16,7 @@ import {
 import { invalidField } from '../../../../../../lib/api/market-posts';
 import { defineRoutes, ok } from '../../../../../../lib/api/route';
 import { farmerScope } from '../../../../../../lib/api/scope';
+import { actingWith } from '../../../../../../lib/api/organizations';
 import { prisma } from '../../../../../../lib/db';
 
 /**
@@ -39,11 +40,19 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   POST: {
     roles: [FARMER_ROLE],
     bodySchema: listingSaleSchema,
-    handler: async ({ auth, body, params }) => {
+    handler: async ({ auth, body, params, request }) => {
       const { farmerId } = farmerScope(auth);
+      // 2026-10-28: an organisation's listing, for its members with listings.manage.
+      const acting = await actingWith(prisma, request, auth, 'listings.manage');
       const id = params.id ?? '';
       const row = await audited(prisma, async (tx) => {
-        const current = await loadOwnListing(tx, farmerId, id, true);
+        const current = await loadOwnListing(
+          tx,
+          farmerId,
+          id,
+          true,
+          acting?.organizationId ?? null,
+        );
         const stage = canonicalStatus(current.status);
         if (stage !== 'active' && stage !== 'paused') throw unprocessable('transition_not_allowed');
 

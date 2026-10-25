@@ -6,6 +6,7 @@ import {
   FARMER_ACCOUNT_MESSAGES,
   cartCheckoutSchema,
   farmerAuthIdentifier,
+  farmerDetailsSchema,
   farmerListingPatchSchema,
   farmerListingSchema,
   farmerRequestAnswerSchema,
@@ -92,10 +93,40 @@ describe('farmer self-registration', () => {
     ).toMatchObject({ confirm_password: BUYER_MESSAGES.passwordsDiffer });
   });
 
-  it('requires the village', () => {
+  // 2026-10-28 (user journeys): the guard is replaced, not removed. Sign-up
+  // asks for name, number, password, language and the notice only; sex, year,
+  // place and village are optional and still checked when given.
+  it('accepts a sign-up without sex, year of birth, place or village', () => {
     const rest: Record<string, unknown> = { ...valid() };
-    delete rest.village;
-    expect(farmerSelfRegisterSchema.safeParse(rest).success).toBe(false);
+    for (const key of ['sex', 'year_of_birth', 'payam_id', 'village']) delete rest[key];
+    expect(farmerSelfRegisterSchema.safeParse(rest).success).toBe(true);
+  });
+
+  it('still checks the optional details when they are given', () => {
+    expect(farmerSelfRegisterSchema.safeParse({ ...valid(), sex: 'x' }).success).toBe(false);
+    expect(farmerSelfRegisterSchema.safeParse({ ...valid(), year_of_birth: 1700 }).success).toBe(
+      false,
+    );
+    expect(
+      farmerSelfRegisterSchema.safeParse({ ...valid(), payam_id: 'not a code!' }).success,
+    ).toBe(false);
+  });
+
+  it('still requires the name, the number and the consent', () => {
+    for (const key of ['given_name', 'phone', 'consent', 'password']) {
+      const rest: Record<string, unknown> = { ...valid() };
+      delete rest[key];
+      expect(farmerSelfRegisterSchema.safeParse(rest).success, key).toBe(false);
+    }
+  });
+
+  it('takes the details later only when at least one is given', () => {
+    expect(farmerDetailsSchema.safeParse({}).success).toBe(false);
+    expect(farmerDetailsSchema.safeParse({ sex: 'm' }).success).toBe(true);
+    expect(
+      farmerDetailsSchema.safeParse({ payam_id: 'CES-JUB-KAT', village: 'Kator' }).success,
+    ).toBe(true);
+    expect(farmerDetailsSchema.safeParse({ phone: '+211912345678' }).success).toBe(false);
   });
 
   it('refuses an answer that is not on the form’s list', () => {

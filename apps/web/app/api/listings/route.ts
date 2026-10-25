@@ -8,7 +8,7 @@ import {
 } from '@agri-erp/shared';
 
 import { audited, writeAudit } from '../../../lib/api/audit';
-import { ApiFailure, invalidCursor } from '../../../lib/api/errors';
+import { ApiFailure, invalidCursor, unprocessable } from '../../../lib/api/errors';
 import { created, defineRoutes, paged } from '../../../lib/api/route';
 import { requireWriter, scopeCondition } from '../../../lib/api/scope';
 import { prisma } from '../../../lib/db';
@@ -129,7 +129,7 @@ const BROWSE_COLUMNS = `pl.id, pl.trading_name, pl.title,
   pl.status::text AS status,
   pl.created_at::text AS created_at, pl.updated_at::text AS updated_at,
   f.verification_status::text AS seller_verification_status,
-  f.payam_id AS seller_payam_id,
+  pl.payam_id AS seller_payam_id,
   pm.name AS seller_payam_name,
   f.created_at::text AS seller_created_at,
   md5('agrione-seller:' || f.id::text) AS seller_key`;
@@ -224,7 +224,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
          FROM public.produce_listing pl
          JOIN public.farmer f ON f.id = pl.farmer_id AND f.deleted_at IS NULL
            AND f.suspended_at IS NULL
-         JOIN public.payam pm ON pm.id = f.payam_id
+         JOIN public.payam pm ON pm.id = pl.payam_id
          WHERE ${where.join(' AND ')}
          ORDER BY pl.updated_at DESC, pl.id DESC
          LIMIT ${limit + 1}`,
@@ -398,7 +398,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       const sc = scopeCondition(auth.scope, 'state_id', 'caseload_officer_id', 2);
       const scopeSql = sc.sql ? ` AND ${sc.sql}` : '';
       const [farmer] = await prisma.$queryRawUnsafe<
-        { id: string; payam_id: string; state_id: string }[]
+        { id: string; payam_id: string | null; state_id: string | null }[]
       >(
         `SELECT id, payam_id, state_id FROM public.farmer
          WHERE id = $1::uuid AND deleted_at IS NULL${scopeSql} LIMIT 1`,
@@ -408,6 +408,10 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       if (!farmer) {
         throw new ApiFailure(404, 'not_found', 'Farmer not found.');
       }
+      // 2026-10-28 (user journeys): a self-registered account may have no
+      // location yet; a listing made here takes the farmer's, so it needs one.
+      if (!farmer.payam_id || !farmer.state_id) throw unprocessable('payam_not_found');
+      const place = { payam_id: farmer.payam_id, state_id: farmer.state_id };
 
       const row = await audited(prisma, async (tx) => {
         const rows = await tx.$queryRawUnsafe<ListingRow[]>(
@@ -439,8 +443,8 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
           pickupNotes,
           contactPhone,
           status,
-          farmer.payam_id,
-          farmer.state_id,
+          place.payam_id,
+          place.state_id,
           qualityGrade,
           minOrderQuantity,
         );

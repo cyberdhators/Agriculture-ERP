@@ -331,6 +331,13 @@ export const BUYER_MESSAGES = {
   requestAlreadyOpen: 'You already have a request waiting for the farmer on this product.',
   // 2026-10-21: every farmer can buy now, so the cart can meet their own listing.
   ownProduct: 'This is your own product. Remove it from the cart.',
+  // USER JOURNEYS (2026-10-28): email sign-up -- notice, language, email code.
+  acknowledgementRequired: 'Tick the box to agree to the terms of use and the privacy notice.',
+  acknowledgementVersionInvalid:
+    'The notice you agreed to could not be recorded. Reload the page and try again.',
+  languageUnknown: 'Choose English or Arabic.',
+  emailCodeShape: 'Enter the 6-digit code from the email.',
+  emailCodeIdInvalid: 'Ask for a new code.',
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -532,6 +539,114 @@ function checkCrossFields(
 // REGISTRATION -- POST /api/buyer/register (C-14B.1, C-14B.2)
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// EMAIL SIGN-UP (USER JOURNEYS, 2026-10-28). CORWADO's specification, line 38:
+// account creation collects language preference and acknowledgement of the
+// terms/privacy notice, and contact verification activates the account
+// automatically. The email twin of the phone code (phone-verification.ts).
+// ---------------------------------------------------------------------------
+
+/** The languages an account may choose (the `language` enum). */
+export const ACCOUNT_LANGUAGES = ['en', 'ar'] as const;
+export type AccountLanguage = (typeof ACCOUNT_LANGUAGES)[number];
+
+export const accountLanguageSchema = z.enum(ACCOUNT_LANGUAGES, {
+  error: () => BUYER_MESSAGES.languageUnknown,
+});
+
+/**
+ * The terms and privacy notice the person ticked. The box starts unticked
+ * (the specification: "Required acknowledgements must be unchecked
+ * initially"), and only `true` is accepted.
+ */
+export const termsAcknowledgementSchema = z.strictObject(
+  {
+    text_version: z
+      .string({ error: () => BUYER_MESSAGES.acknowledgementVersionInvalid })
+      .trim()
+      .min(1, BUYER_MESSAGES.acknowledgementVersionInvalid)
+      .max(40, BUYER_MESSAGES.acknowledgementVersionInvalid),
+    language: accountLanguageSchema,
+    granted: z.literal(true, { error: () => BUYER_MESSAGES.acknowledgementRequired }),
+  },
+  { error: () => BUYER_MESSAGES.acknowledgementRequired },
+);
+export type TermsAcknowledgement = z.infer<typeof termsAcknowledgementSchema>;
+
+export const EMAIL_CODE = {
+  /** Digits in a code. */
+  length: 6,
+  /** How long a code works. */
+  ttlMinutes: 15,
+  /** Wrong tries before a code stops working. */
+  maxAttempts: 5,
+  /** Codes one address may be sent in `windowMinutes`. */
+  perAddress: 3,
+  windowMinutes: 30,
+  /** Seconds before the same address may be sent another code. */
+  resendSeconds: 60,
+  /** Codes the whole system may send in an hour -- a ceiling on the mail bill. */
+  perHourSystem: 200,
+  /** How long after verifying the code the sign-up must be completed. */
+  useWithinMinutes: 30,
+} as const;
+
+const verificationIdSchema = z
+  .string({ error: () => BUYER_MESSAGES.emailCodeIdInvalid })
+  .regex(
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+    BUYER_MESSAGES.emailCodeIdInvalid,
+  );
+
+/** POST /api/auth/email-code -- send a code to this address for sign-up. */
+export const emailCodeRequestSchema = z.strictObject({
+  email: buyerEmailSchema,
+  language: accountLanguageSchema.default('en'),
+});
+
+/** POST /api/auth/email-code/verify -- the code the person typed. */
+export const emailCodeVerifySchema = z.strictObject({
+  verification_id: verificationIdSchema,
+  code: z
+    .string({ error: () => BUYER_MESSAGES.emailCodeShape })
+    .trim()
+    .regex(new RegExp(`^[0-9]{${EMAIL_CODE.length}}$`), BUYER_MESSAGES.emailCodeShape),
+});
+
+export type EmailCodeRequest = z.infer<typeof emailCodeRequestSchema>;
+export type EmailCodeVerify = z.infer<typeof emailCodeVerifySchema>;
+
+/** What POST /api/auth/email-code answers. */
+export interface EmailCodeSent {
+  /** False when this deployment does not verify addresses: sign up without a code. */
+  required: boolean;
+  verification_id?: string;
+  expires_at?: string;
+}
+
+/** The email that carries a sign-up code. Fixed text; the code is the only variable. */
+export function emailCodeMessage(
+  code: string,
+  language: AccountLanguage,
+): { subject: string; text: string } {
+  if (language === 'ar') {
+    return {
+      subject: `رمز أجري ون: ${code}`,
+      text:
+        `رمز التحقق الخاص بك في أجري ون هو ${code}.
+
+` + `ينتهي بعد ${EMAIL_CODE.ttlMinutes} دقيقة. إذا لم تطلب هذا الرمز فتجاهل هذه الرسالة.`,
+    };
+  }
+  return {
+    subject: `Your AgriOne code: ${code}`,
+    text:
+      `Your AgriOne verification code is ${code}.
+
+` + `It works for ${EMAIL_CODE.ttlMinutes} minutes. If you did not ask for it, ignore this email.`,
+  };
+}
+
 /**
  * An individual gives no organisation name or type: the account is named
  * after them and typed `other` by the route. A business must give both.
@@ -559,6 +674,15 @@ export const buyerRegistrationSchema = z
     delivery_locations: procurementFields.delivery_locations.default([]),
     purchasing_months: procurementFields.purchasing_months.default([]),
     payment_preferences: procurementFields.payment_preferences.default([]),
+    // USER JOURNEYS (2026-10-28).
+    preferred_language: accountLanguageSchema.default('en'),
+    acknowledgement: termsAcknowledgementSchema,
+    /**
+     * The email-code verification that proves this address, when the
+     * deployment verifies addresses (POST /api/auth/email-code). The server
+     * decides whether it is required.
+     */
+    verification_id: verificationIdSchema.optional(),
   })
   .superRefine((value, ctx) => {
     if (value.password !== value.confirm_password) {

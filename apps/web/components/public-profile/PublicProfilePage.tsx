@@ -8,6 +8,7 @@ import type { PostKind, PublicProfileView } from '@agri-erp/shared';
 import { ReportPost } from '@/components/market-posts/ContactAndReport';
 import { MessageButton } from '@/components/messages/MessageButton';
 import { postHref } from '@/components/messages/Messages';
+import { Expertise } from '@/components/profiles/Expertise';
 import { Button, EmptyState, Skeleton, Tabs } from '@/components/ui';
 import { useFarmerSession } from '@/lib/farmer-session';
 import { t, type Language } from '@/lib/i18n';
@@ -174,6 +175,7 @@ export function PublicProfileBody({
           member_since: profile.member_since,
         }}
       >
+        <Expertise expertise={profile.expertise} language={language} />
         {profile.phone ? (
           <div className={styles.contact}>
             <span className="small muted">{t('pp.phone', language)}</span>

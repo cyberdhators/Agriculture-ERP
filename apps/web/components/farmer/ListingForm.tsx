@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, type DragEvent } from 'react';
 
 import { Photo } from '@/components/listings/Photo';
+import { ProductPage } from '@/components/listings/ProductPage';
 import {
   Button,
   Checkbox,
@@ -36,6 +37,8 @@ import {
   type ListingFormValues,
 } from '@/lib/farmers/listings';
 import { t } from '@/lib/i18n';
+import type { SellerInfo } from '@/lib/listings/api-client';
+import { useLocationNames } from '@/lib/portal/locations';
 
 import { PageHead } from './AccountShell';
 import styles from './farmer.module.css';
@@ -75,6 +78,16 @@ export function ListingForm({ listingId }: { listingId?: string }) {
   const [errors, setErrors] = useState<ListingErrors>({});
   const [photos, setPhotos] = useState<string[]>(() => own?.photo_storage_paths ?? []);
   const [dragging, setDragging] = useState(false);
+  /** 2026-10-28 (user journeys): the post shown as the market will show it, before saving. */
+  const [previewing, setPreviewing] = useState(false);
+  /**
+   * 2026-10-28: where the produce is, asked only when the account has no
+   * location yet (sign-up no longer asks) and only for a new listing.
+   */
+  const needsPlace = Boolean(farmer && !farmer.payam_id && !own);
+  const places = useLocationNames(needsPlace);
+  const [place, setPlace] = useState({ state_id: '', county_id: '', payam_id: '' });
+  const [placeError, setPlaceError] = useState<string | undefined>();
   const seeded = useRef(Boolean(own));
   const fileInput = useRef<HTMLInputElement>(null);
 
@@ -156,15 +169,40 @@ export function ListingForm({ listingId }: { listingId?: string }) {
     });
   }
 
-  async function persist(status: ListingStatus) {
+  /** The whole form checked, errors shown; the parsed values, or null. */
+  function checked() {
     const result = validateListing(
       values,
       farmer ? { given_name: farmer.given_name, family_name: farmer.family_name } : null,
     );
+    const placeMissing = needsPlace && place.payam_id === '';
+    setPlaceError(placeMissing ? t('listingForm.where', language) : undefined);
     if (!result.ok) {
       setErrors(result.errors);
       const first = Object.keys(result.errors)[0];
       if (first) document.getElementById(`listing-${first}`)?.focus();
+      return null;
+    }
+    if (placeMissing) {
+      document.getElementById('listing-state')?.focus();
+      return null;
+    }
+    return result.values;
+  }
+
+  function openPreview() {
+    if (!checked()) {
+      setPreviewing(false);
+      return;
+    }
+    setPreviewing(true);
+    if (typeof window !== 'undefined') window.scrollTo({ top: 0 });
+  }
+
+  async function persist(status: ListingStatus) {
+    const parsed = checked();
+    if (!parsed) {
+      setPreviewing(false);
       return;
     }
 
@@ -174,7 +212,9 @@ export function ListingForm({ listingId }: { listingId?: string }) {
     const listing: ProduceListing = {
       id: own?.id ?? newListingId(),
       farmer_id: farmer!.id,
-      ...result.values,
+      ...parsed,
+      // Sent with a new listing only: the server takes it when the record has none.
+      ...(needsPlace ? { payam_id: place.payam_id } : {}),
       photo_storage_paths: [],
       status,
       created_at: own?.created_at ?? now,
@@ -192,6 +232,7 @@ export function ListingForm({ listingId }: { listingId?: string }) {
       );
     } catch (error) {
       setSaveError(error instanceof Error ? error.message : 'The listing could not be saved.');
+      setPreviewing(false);
     }
   }
 
@@ -203,6 +244,81 @@ export function ListingForm({ listingId }: { listingId?: string }) {
       {t(UNIT_KEY[u], language)}
     </option>
   ));
+
+  if (previewing) {
+    const parsed = validateListing(values, {
+      given_name: farmer.given_name,
+      family_name: farmer.family_name,
+    });
+    if (parsed.ok) {
+      const now = new Date().toISOString();
+      const shown: ProduceListing = {
+        id: own?.id ?? 'preview',
+        farmer_id: farmer.id,
+        ...parsed.values,
+        // What a buyer sees is what is left.
+        quantity: parsed.values.quantity - (own?.quantity_sold ?? 0),
+        photo_storage_paths: [],
+        status: 'listed',
+        created_at: own?.created_at ?? now,
+        updated_at: now,
+      };
+      const payamId = needsPlace ? place.payam_id : (farmer.payam_id ?? '');
+      const seller: SellerInfo = {
+        id: farmer.id,
+        verification_status: farmer.verification_status,
+        payam_id: payamId,
+        payam_name: needsPlace
+          ? (places.payam(place.payam_id) ?? '')
+          : payamId
+            ? farmerPayamName(payamId)
+            : '',
+        created_at: farmer.created_at,
+      };
+      return (
+        <>
+          <PageHead
+            title={t('posts.previewTitle', language)}
+            lead={t(isEdit ? 'posts.previewSaved' : 'posts.previewLead', language)}
+          />
+          {saveError ? (
+            <Notice kind="error">
+              <p className="small">{saveError}</p>
+            </Notice>
+          ) : null}
+          <ProductPage
+            contact={false}
+            listing={shown}
+            seller={seller}
+            sellerListingCount={listingsFor(farmer.id).filter((l) => l.status === 'listed').length}
+            lang={language}
+            photos={photos}
+            kicker={t('detail.previewNote', language)}
+          />
+          <div className={styles.actionBar}>
+            <Button variant="ghost" onClick={() => setPreviewing(false)}>
+              {t('posts.previewEdit', language)}
+            </Button>
+            <span className="spacer" style={{ flex: 1 }} />
+            {status === 'draft' ? (
+              <>
+                <Button variant="secondary" onClick={() => void persist('draft')}>
+                  {t('listingForm.saveDraft', language)}
+                </Button>
+                <Button variant="primary" onClick={() => void persist('listed')}>
+                  {t('lifecycle.publish', language)}
+                </Button>
+              </>
+            ) : (
+              <Button variant="primary" onClick={() => void persist(status)}>
+                {t('listingForm.save', language)}
+              </Button>
+            )}
+          </div>
+        </>
+      );
+    }
+  }
 
   return (
     <form
@@ -555,8 +671,87 @@ export function ListingForm({ listingId }: { listingId?: string }) {
                 label={t('listingForm.location', language)}
                 hint={t('listingForm.locationHint', language)}
               >
-                {(ids) => <Input {...ids} value={farmerPayamName(farmer.payam_id)} readOnly />}
+                {(ids) => (
+                  <Input
+                    {...ids}
+                    value={
+                      needsPlace
+                        ? (places.payam(place.payam_id) ?? '')
+                        : farmer.payam_id
+                          ? farmerPayamName(farmer.payam_id)
+                          : ''
+                    }
+                    readOnly
+                  />
+                )}
               </Field>
+              {needsPlace ? (
+                <fieldset className={styles.span2} style={{ border: 0, padding: 0, margin: 0 }}>
+                  <legend className="small">{t('listingForm.where', language)}</legend>
+                  <p className="small muted">{t('listingForm.whereHint', language)}</p>
+                  <div className={styles.fieldGrid}>
+                    <Field label={t('register.state', language)} error={placeError}>
+                      {(ids) => (
+                        <Select
+                          {...ids}
+                          id="listing-state"
+                          value={place.state_id}
+                          onChange={(e) => {
+                            setPlace({ state_id: e.target.value, county_id: '', payam_id: '' });
+                            setPlaceError(undefined);
+                          }}
+                        >
+                          <option value="">{t('register.select', language)}</option>
+                          {places.states.map((r) => (
+                            <option key={r.id} value={r.id}>
+                              {r.name}
+                            </option>
+                          ))}
+                        </Select>
+                      )}
+                    </Field>
+                    <Field label={t('register.county', language)}>
+                      {(ids) => (
+                        <Select
+                          {...ids}
+                          value={place.county_id}
+                          disabled={place.state_id === ''}
+                          onChange={(e) =>
+                            setPlace((p) => ({ ...p, county_id: e.target.value, payam_id: '' }))
+                          }
+                        >
+                          <option value="">{t('register.select', language)}</option>
+                          {places.countiesIn(place.state_id).map((r) => (
+                            <option key={r.id} value={r.id}>
+                              {r.name}
+                            </option>
+                          ))}
+                        </Select>
+                      )}
+                    </Field>
+                    <Field label={t('register.payam', language)}>
+                      {(ids) => (
+                        <Select
+                          {...ids}
+                          value={place.payam_id}
+                          disabled={place.county_id === ''}
+                          onChange={(e) => {
+                            setPlace((p) => ({ ...p, payam_id: e.target.value }));
+                            setPlaceError(undefined);
+                          }}
+                        >
+                          <option value="">{t('register.select', language)}</option>
+                          {places.payamsIn(place.state_id, place.county_id).map((r) => (
+                            <option key={r.id} value={r.id}>
+                              {r.name}
+                            </option>
+                          ))}
+                        </Select>
+                      )}
+                    </Field>
+                  </div>
+                </fieldset>
+              ) : null}
               <div className={styles.span2}>
                 <Field
                   label={t('listingForm.pickupNotes', language)}
@@ -615,6 +810,9 @@ export function ListingForm({ listingId }: { listingId?: string }) {
               {t('listingForm.cancel', language)}
             </Link>
             <span className="spacer" style={{ flex: 1 }} />
+            <Button variant="ghost" onClick={openPreview}>
+              {t('posts.preview', language)}
+            </Button>
 
             {status === 'draft' ? (
               <>
