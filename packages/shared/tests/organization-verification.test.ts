@@ -59,12 +59,12 @@ describe('who may verify an organisation', () => {
 
 describe('the decision', () => {
   it('verifies an unverified organisation, and removes the mark from a verified one', () => {
-    expect(orgVerificationDecision({ current: 'unverified', closed: false, verified: true })).toEqual(
-      { allowed: true, to: 'verified' },
-    );
-    expect(orgVerificationDecision({ current: 'verified', closed: false, verified: false })).toEqual(
-      { allowed: true, to: 'unverified' },
-    );
+    expect(
+      orgVerificationDecision({ current: 'unverified', closed: false, verified: true }),
+    ).toEqual({ allowed: true, to: 'verified' });
+    expect(
+      orgVerificationDecision({ current: 'verified', closed: false, verified: false }),
+    ).toEqual({ allowed: true, to: 'unverified' });
   });
 
   it('refuses a decision that changes nothing', () => {
@@ -75,9 +75,10 @@ describe('the decision', () => {
 
   it('refuses a closed organisation either way', () => {
     for (const verified of [true, false]) {
-      expect(
-        orgVerificationDecision({ current: 'unverified', closed: true, verified }),
-      ).toEqual({ allowed: false, reason: 'organization_closed' });
+      expect(orgVerificationDecision({ current: 'unverified', closed: true, verified })).toEqual({
+        allowed: false,
+        reason: 'organization_closed',
+      });
     }
   });
 

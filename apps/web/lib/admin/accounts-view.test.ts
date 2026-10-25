@@ -43,7 +43,11 @@ describe('words for the accounts screens (2026-10-28)', () => {
       verificationLabel({ kind: 'organisation', verification: 'verified', phone_verified: false }),
     ).toBe('Verified organisation');
     expect(
-      verificationLabel({ kind: 'organisation', verification: 'unverified', phone_verified: false }),
+      verificationLabel({
+        kind: 'organisation',
+        verification: 'unverified',
+        phone_verified: false,
+      }),
     ).toBe('Organisation not verified');
     expect(publicationLabel('published')).toBe('Profile published');
     expect(publicationLabel('none')).toBe('No public profile');

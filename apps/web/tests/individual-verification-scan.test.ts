@@ -71,14 +71,19 @@ describe('person-facing screens show no individual verification', () => {
   });
 
   it('the badge that remains is the organisation’s', () => {
-    expect(read('lib/i18n/en.ts')).toContain(`'market.verifiedOrganisation': 'Verified organisation'`);
+    expect(read('lib/i18n/en.ts')).toContain(
+      `'market.verifiedOrganisation': 'Verified organisation'`,
+    );
     expect(read('components/listings/VerifiedOrganisationBadge.tsx')).toContain(
       'market.verifiedOrganisation',
     );
   });
 
   it('the farmer’s own account pages carry no verification KPI or banner', () => {
-    for (const f of ['components/farmer/FarmerOverview.tsx', 'components/farmer/FarmerVerification.tsx']) {
+    for (const f of [
+      'components/farmer/FarmerOverview.tsx',
+      'components/farmer/FarmerVerification.tsx',
+    ]) {
       const text = read(f);
       expect(text, f).not.toMatch(/account\.kpiVerification|whatPendingTitle|whatRejectedBody/);
     }

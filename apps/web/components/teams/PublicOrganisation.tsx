@@ -78,7 +78,9 @@ export function PublicOrganisation({
         <h1 style={{ margin: 0 }} dir="auto">
           {profile.name}
         </h1>
-        {profile.verified ? <Stamp kind="verified">{t('market.verifiedOrganisation', language)}</Stamp> : null}
+        {profile.verified ? (
+          <Stamp kind="verified">{t('market.verifiedOrganisation', language)}</Stamp>
+        ) : null}
         <p className="small muted" style={{ margin: 0 }}>
           {kind}
           {where ? ` · ${where}` : ''}

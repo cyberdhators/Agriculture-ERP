@@ -99,7 +99,8 @@ export const PRESET_LABELS: Readonly<Record<StaffPreset, string>> = {
 
 export const PRESET_DESCRIPTIONS: Readonly<Record<StaffPreset, string>> = {
   super_admin: 'Everything, including appointing other Super Admins.',
-  administrator: 'Settings, staff, official announcements and organisation verification, as assigned.',
+  administrator:
+    'Settings, staff, official announcements and organisation verification, as assigned.',
   moderator_editor: 'Moderate content and listings.',
   analyst: 'View data and reports.',
   support: 'Assist users and resolve issues.',

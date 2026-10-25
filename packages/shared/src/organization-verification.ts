@@ -31,7 +31,8 @@ import {
  */
 
 /** The permission a staff member needs to verify an organisation, or to remove the mark. */
-export const ORGANIZATION_VERIFY_PERMISSION = 'organization.verify' as const satisfies PermissionKey;
+export const ORGANIZATION_VERIFY_PERMISSION =
+  'organization.verify' as const satisfies PermissionKey;
 
 /** An organisational profile's verification. 'unverified' is where every one starts. */
 export const ORG_VERIFICATION_STATUSES = ['unverified', 'verified'] as const;
@@ -73,7 +74,9 @@ export function orgVerificationDecision(input: {
   current: OrgVerificationStatus;
   closed: boolean;
   verified: boolean;
-}): { allowed: true; to: OrgVerificationStatus } | { allowed: false; reason: OrgVerificationRefusal } {
+}):
+  | { allowed: true; to: OrgVerificationStatus }
+  | { allowed: false; reason: OrgVerificationRefusal } {
   if (input.closed) return { allowed: false, reason: 'organization_closed' };
   const to: OrgVerificationStatus = input.verified ? 'verified' : 'unverified';
   if (to === input.current) return { allowed: false, reason: 'transition_not_allowed' };

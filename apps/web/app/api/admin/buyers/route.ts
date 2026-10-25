@@ -63,7 +63,10 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
     roles: ['admin'],
     handler: async ({ auth, request }) => {
       const permissions = await permissionsOf(auth);
-      if (!holdsPermission(permissions, 'content.moderate') && !mayVerifyOrganizations(permissions)) {
+      if (
+        !holdsPermission(permissions, 'content.moderate') &&
+        !mayVerifyOrganizations(permissions)
+      ) {
         throw forbidden();
       }
       const parsed = buyerListFilterSchema.safeParse(
