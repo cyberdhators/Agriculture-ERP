@@ -33,6 +33,8 @@ export interface AccountRecords {
   /** 2026-10-28: disabled (permanent; a Super Admin lifts it). Disabled is also suspended. */
   disabledAt: Date | null;
   disabledReason: string | null;
+  /** 2026-10-29: when a suspension with a duration ends; null for none. */
+  suspendedUntil: Date | null;
 }
 
 /** The account behind one farmer or buyer record, with both its records. */
@@ -49,13 +51,16 @@ export async function accountOf(
       suspended_reason: string | null;
       disabled_at: Date | null;
       disabled_reason: string | null;
+      suspended_until: Date | null;
     }[]
   >(
     kind === 'farmer'
-      ? `SELECT auth_user_id, suspended_at, suspended_reason, disabled_at, disabled_reason
+      ? `SELECT auth_user_id, suspended_at, suspended_reason, disabled_at, disabled_reason,
+                suspended_until
            FROM public.farmer
           WHERE id = $1::uuid AND deleted_at IS NULL ${lock ? 'FOR UPDATE' : ''}`
-      : `SELECT auth_user_id, suspended_at, suspended_reason, disabled_at, disabled_reason
+      : `SELECT auth_user_id, suspended_at, suspended_reason, disabled_at, disabled_reason,
+                suspended_until
            FROM public.buyer
           WHERE id = $1::uuid AND deleted_at IS NULL ${lock ? 'FOR UPDATE' : ''}`,
     id,
@@ -83,6 +88,7 @@ export async function accountOf(
     reason: start.suspended_reason,
     disabledAt: start.disabled_at,
     disabledReason: start.disabled_reason,
+    suspendedUntil: start.suspended_until,
   };
 }
 
@@ -94,6 +100,7 @@ export const standingOf = (account: AccountRecords): AccountStanding => ({
   disabled: account.disabledAt !== null,
   disabled_at: account.disabledAt?.toISOString() ?? null,
   disabled_reason: account.disabledReason,
+  suspended_until: account.suspendedUntil?.toISOString() ?? null,
 });
 
 // ---------------------------------------------------------------------------

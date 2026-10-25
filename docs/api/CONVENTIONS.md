@@ -668,6 +668,7 @@ change.
 | `buyer.soft_deleted`                          |
 | `account.suspended`                           |
 | `account.restored`                            |
+| `account.suspension_expired`                  |
 | `support_message.created`                     |
 | `support_message.done`                        |
 | `advice_provider.saved`                       |
@@ -1531,6 +1532,7 @@ These are also exact.
 | Announcements: expectedRecipientsInvalid   | Send the recipient count the preview showed, as a whole number.                                 |
 | Announcements: preferenceInvalid           | Choose on or off.                                                                               |
 | Announcements: deliveryFilterInvalid       | Choose a channel and a status from the lists.                                                   |
+| Suspension: days not 1 to 365              | Choose a number of days from 1 to 365, or leave it empty for no end date.                       |
 
 The key beside each reason is the field name, per section 4.1. An unrecognised
 field named `nickname` therefore produces `{ "nickname": "This field is not

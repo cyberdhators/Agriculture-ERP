@@ -567,6 +567,9 @@ export const en = {
   'notice.advisoryNoteReviewed.body': 'Open Offer advice to see where it stands.',
   'notice.accountRestored.title': 'Your AgriOne account has been restored',
   'notice.accountRestored.body': 'You can sign in and use AgriOne again.',
+  'notice.suspensionEnded.title': 'Your AgriOne account suspension has ended',
+  'notice.suspensionEnded.body':
+    'The suspension period is over. You can sign in and use AgriOne again.',
   'notice.messageListing.title': 'You have a new message about a product listing',
   'notice.messageListing.body': 'Open Messages to read it.',
   'notice.messageBuyingRequest.title': 'You have a new message about a buying request',

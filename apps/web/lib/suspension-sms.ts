@@ -15,13 +15,18 @@ const LABEL_MAX = 39;
  * name other people or hold notes meant for the file. With no code chosen, no
  * reason is named.
  */
-export function suspensionSmsText(label: string | null): string {
+export function suspensionSmsText(label: string | null, until: string | null = null): string {
+  // 2026-10-29: a suspension with a duration names its end date
+  // ("until 2026-11-12", 17 characters), and the label gives way to it so the
+  // message stays inside one SMS.
+  const ends = until === null ? '' : ` until ${until}`;
+  const max = LABEL_MAX - ends.length;
   const named =
     label === null
       ? ''
-      : ` Reason: ${label.length > LABEL_MAX ? `${label.slice(0, LABEL_MAX - 3)}...` : label}.`;
+      : ` Reason: ${label.length > max ? `${label.slice(0, max - 3)}...` : label}.`;
   return (
-    `AgriOne: your account is suspended.${named} To appeal, visit ${APPEAL_ADDRESS} ` +
+    `AgriOne: your account is suspended${ends}.${named} To appeal, visit ${APPEAL_ADDRESS} ` +
     `and choose 'Appeal a decision'.`
   );
 }

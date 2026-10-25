@@ -591,6 +591,9 @@ model Farmer {
   suspendedReason String?   @map("suspended_reason")
   suspendedBy     String?   @map("suspended_by") @db.Uuid
   suspender       User?     @relation("FarmerSuspendedBy", fields: [suspendedBy], references: [id], map: "farmer_suspended_by_fkey")
+  /// 2026-10-29 (migration 20261029090000): when a suspension with a duration
+  /// ends; NULL for one with no end. The daily job lifts it.
+  suspendedUntil  DateTime? @map("suspended_until") @db.Timestamptz(6)
   /// 2026-10-28 (migration 20261028090000): disabled by staff -- permanent,
   /// lifted by a Super Admin only. A disabled record is also suspended. The
   /// foreign key to user is in the migration, not restated as a relation.
@@ -1395,6 +1398,8 @@ model Buyer {
   /// 2026-10-28 (migration 20261028100000): the language chosen at sign-up.
   preferredLanguage Language? @map("preferred_language")
   suspender       User?     @relation("BuyerSuspendedBy", fields: [suspendedBy], references: [id], map: "buyer_suspended_by_fkey")
+  /// 2026-10-29 (migration 20261029090000): as on farmer.
+  suspendedUntil  DateTime? @map("suspended_until") @db.Timestamptz(6)
   /// 2026-10-28 (migration 20261028090000): disabled by staff, as on farmer.
   disabledAt      DateTime? @map("disabled_at") @db.Timestamptz(6)
   disabledReason  String?   @map("disabled_reason")
