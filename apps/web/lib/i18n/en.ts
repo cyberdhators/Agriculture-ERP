@@ -191,6 +191,7 @@ export const en = {
   'account.tileBuy': 'Buy',
   'account.tileBuySub': 'Inputs and produce, with this same account',
   'account.tabAbout': 'About you',
+  'account.tabOrganisations': 'Organisations',
   'account.tileAi': 'AgriOne AI',
   'account.tileAiSub': 'Ask any farming question, any time',
   'ai.title': 'AgriOne AI',

@@ -177,6 +177,7 @@ export const ar: Partial<Record<TKey, string>> = {
   'account.tileBuy': 'شراء',
   'account.tileBuySub': 'مدخلات ومنتجات، بنفس الحساب',
   'account.tabAbout': 'عنك',
+  'account.tabOrganisations': 'المنظمات',
   'account.tileAi': 'أجري ون AI',
   'account.tileAiSub': 'اسأل أي سؤال زراعي في أي وقت',
   'ai.title': 'أجري ون AI',

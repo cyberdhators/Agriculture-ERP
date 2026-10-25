@@ -123,6 +123,7 @@ describe('who sees which destination', () => {
       '/admin/buyers',
       '/admin/procurement',
       '/admin/advisers',
+      '/admin/organizations',
     ]) {
       const offered = ROLES.filter((role) =>
         navFor(role).some((s) => s.items.some((i) => i.href === href)),

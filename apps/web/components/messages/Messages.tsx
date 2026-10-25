@@ -330,6 +330,8 @@ function Conversation({
                     hour: '2-digit',
                     minute: '2-digit',
                   })}
+              {/* 2026-10-27: in an organisation's shared inbox, which colleague wrote. */}
+              {m.sent_by ? ` · ${m.sent_by}` : ''}
             </span>
           </li>
         ))}

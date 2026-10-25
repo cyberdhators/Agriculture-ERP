@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { Button, Checkbox, Field, Notice, PasswordInput } from '@/components/ui';
 import { clearCacheFor } from '@/lib/offline/db';
@@ -21,6 +21,9 @@ const W = {
     cancel: 'Cancel',
     done: 'Your account has been deleted.',
     failed: 'The account was not deleted. Please try again.',
+    orgs: 'You are the only administrator of these organisations. Hand administration to a colleague first (Organisations), or close them with your account: their posts are taken off the market, their conversations closed and everyone’s access ended. Their records are kept.',
+    closeOrgs: 'Close these organisations with my account.',
+    orgsLeave: 'Where someone else is an administrator, you simply leave the organisation; it carries on without you.',
   },
   ar: {
     title: 'حذف حسابي',
@@ -33,6 +36,9 @@ const W = {
     cancel: 'إلغاء',
     done: 'تم حذف حسابك.',
     failed: 'لم يتم حذف الحساب. حاول مرة أخرى.',
+    orgs: 'أنت المسؤول الوحيد عن هذه المنظمات. سلّم الإدارة لزميل أولاً (المنظمات)، أو أغلقها مع حسابك: تُسحب منشوراتها من السوق وتُغلق محادثاتها وينتهي وصول الجميع. تُحفظ سجلاتها.',
+    closeOrgs: 'أغلق هذه المنظمات مع حسابي.',
+    orgsLeave: 'حيث يوجد مسؤول آخر، تغادر المنظمة فقط وتستمر من دونك.',
   },
 } satisfies Record<Lang, Record<string, string>>;
 
@@ -49,6 +55,22 @@ export function DeleteAccount({ language = 'en' }: { language?: Lang }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fields, setFields] = useState<Record<string, string>>({});
+  // 2026-10-27 (team access): organisations this person is the last administrator of.
+  const [soleOrgs, setSoleOrgs] = useState<{ id: string; name: string }[]>([]);
+  const [hasOrgs, setHasOrgs] = useState(false);
+  const [closeOrgs, setCloseOrgs] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    void fetch('/api/organizations', { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((b: { data?: { id: string; name: string; sole_administrator?: boolean }[] } | null) => {
+        const list = b?.data ?? [];
+        setHasOrgs(list.length > 0);
+        setSoleOrgs(list.filter((o) => o.sole_administrator));
+      })
+      .catch(() => undefined);
+  }, [open]);
 
   async function remove(event: React.FormEvent) {
     event.preventDefault();
@@ -59,7 +81,11 @@ export function DeleteAccount({ language = 'en' }: { language?: Lang }) {
       const response = await fetch('/api/account/delete', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ password, confirm }),
+        body: JSON.stringify({
+          password,
+          confirm,
+          ...(soleOrgs.length > 0 ? { close_organizations: closeOrgs } : {}),
+        }),
       });
       if (!response.ok) {
         const body = (await response.json().catch(() => ({}))) as {
@@ -111,6 +137,28 @@ export function DeleteAccount({ language = 'en' }: { language?: Lang }) {
               />
             )}
           </Field>
+          {soleOrgs.length > 0 ? (
+            <Notice kind="warn">
+              <p className="small">{w.orgs}</p>
+              <ul className="small">
+                {soleOrgs.map((o) => (
+                  <li key={o.id} dir="auto">
+                    {o.name}
+                  </li>
+                ))}
+              </ul>
+              <Checkbox
+                label={w.closeOrgs}
+                checked={closeOrgs}
+                onChange={(e) => setCloseOrgs(e.target.checked)}
+              />
+            </Notice>
+          ) : null}
+          {hasOrgs ? (
+            <p className="small muted" style={{ margin: 0 }}>
+              {w.orgsLeave}
+            </p>
+          ) : null}
           <Checkbox
             label={w.confirm}
             checked={confirm}
@@ -123,7 +171,7 @@ export function DeleteAccount({ language = 'en' }: { language?: Lang }) {
           ) : null}
           {error ? <Notice kind="error">{error}</Notice> : null}
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <Button type="submit" variant="danger" disabled={busy || !confirm || !password}>
+            <Button type="submit" variant="danger" disabled={busy || !confirm || !password || (soleOrgs.length > 0 && !closeOrgs)}>
               {busy ? w.deleting : w.delete}
             </Button>
             <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
