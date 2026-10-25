@@ -4774,3 +4774,133 @@ a reason; listing removal is separate from account action."
 - New table `listing_correction` (soft delete, RLS on, no policies). Audit:
   `listing.correction_requested` (code and note, as a suspension records its
   reason) and `listing.correction_addressed` (the names of the changed fields).
+
+## Admin console: overview, accounts, marketplace, support cases (2026-10-28)
+
+CORWADO's specification of 16 October, section 4 (lines 95-111), and the
+infographics "AgriOne Admin Portal, 1 of 3" (no. 1) and "Profile creation and
+visibility" (no. 5, panel 4). Branch `feat/admin-console`, migration
+`20261028090000_admin_console`. Communications and Settings belong to another
+lane and are not touched.
+
+**Overview.**
+
+- DOCUMENTED (spec line 95; infographic 1, panel 1): staff see a new overview
+  at `/dashboard` from `GET /api/admin/overview` (admin, supervisor and
+  read_only, then `reports.view`, scoped to states like `/api/analytics/summary`).
+  It has tiles, open-case counts, two day-by-day trends (registrations;
+  listings vs buying requests) and system alerts. Its filters (date range,
+  state, actor type) are carried into the links to each queue.
+- INFERRED (one instance: the brief): people, sign-in accounts and
+  organisation profiles are separate tiles. People are live farmers and buyers,
+  one per sign-in, plus farmers with no sign-in. Accounts are distinct
+  sign-ins. Organisations are those not deleted or closed.
+- INFERRED: officers keep the caseload overview at `/dashboard`. Staff find the
+  farmer-verification figures at `/reports/programme`, linked from the new
+  overview. They remain a programme measure but are no longer the headline.
+- INFERRED: "actor type" means the activities on the account profile. Figures
+  narrowed to different actor types overlap. Cases are not narrowed by actor.
+- INFERRED: the alerts are failures in the window (the analytics failure
+  actions, plus suspensions whose text message failed), integrations that are
+  not configured (shown only to holders of `settings.manage`, as the settings
+  status route does), the maintenance banner, and tables not yet in the
+  database. Delivery status in `notification` is not used yet.
+- INFERRED: the charts are inline SVG. No chart library was added.
+
+**Users and organizations.**
+
+- DOCUMENTED (spec line 97): one list at `/admin/accounts`
+  (`GET /api/admin/accounts`). It holds sign-in accounts (phone or email, with
+  their farmer and buyer records together), farmers with no sign-in, and
+  organisational profiles. Columns: actor types, organisations, joined
+  date-time, first sign-in, last active, status, verification, publication and
+  advisory status. Filters: people or organisations, actor type, status,
+  sign-in, state, and joined dates. Administrators only, then
+  `support.handle` or `content.moderate`.
+- INFERRED from the deletion law (CLAUDE.md §4): **deleted accounts are never
+  listed or counted**, so the list has no "deleted" status, although the brief
+  asked for one. **Owner decision:** whether staff need a restricted view of
+  deleted accounts, which would need an exception to the law.
+- INFERRED: "search by contact as permitted" means that digits typed into the
+  search box match a phone only for `support.handle`. Email search is not
+  possible, because an email address lives only in Supabase Auth.
+- DOCUMENTED (infographic 5, panel 4): each account has a page at
+  `/admin/accounts/:kind/:id` showing its profile, contact-verified flags, its
+  phone and email **masked**, its activity (access_log events and its own
+  audit action keys), staff actions on its records (with the written reason),
+  its organisations and its advisory status.
+- **Reveal:** `POST …/reveal` returns one contact in clear, for
+  `support.handle` only. It is audited as `account.contact_revealed`, which
+  names the field and never the value.
+- **Disable** (`POST /api/admin/accounts/disable`, `content.moderate`, reason
+  and code) is distinct from suspend:
+  - A disabled record is also suspended (a database CHECK), so every existing
+    suspension filter applies to it unchanged.
+  - Every session is ended, sign-in is banned, and a text message saying
+    "disabled" is sent, with the code label only.
+  - Restore refuses it with `account_disabled_restore`.
+  - **Re-enable** (`POST /api/admin/accounts/reenable`) needs
+    `superadmin.grant` and a reason. It clears both the disable and the
+    suspension and sends a fixed notice.
+  - Audit keys: `account.disabled` and `account.reenabled`.
+  - INFERRED: re-enable asks for no re-authentication. **Owner decision:**
+    whether it should require the password, as Super Admin delegation does.
+
+**Marketplace console.**
+
+- DOCUMENTED (spec line 99): `/admin/marketplace` has the tabs Produce,
+  Inputs (`seeds_inputs`), Buying requests, Services and Inactive (paused,
+  expired, withdrawn, completed). Each tab has search and filters. Each post
+  can be inspected, have a correction requested (the existing route), or be
+  removed with a reason. Every route requires `content.moderate`.
+- INFERRED from the deletion law: "removed" posts are read from the audit
+  trail's removal records (`listing.removed`,
+  `product_report.listing_removed`), never from the soft-deleted rows. Titles
+  are recorded from now on. Earlier removals show "Title not recorded".
+- OBSERVED in the schema: there is no expired status, so "expired" is
+  computed. A live post past its end date shows as expired, matching what the
+  market already hides.
+- DOCUMENTED (infographic 5, "Draft is private"): drafts are never listed.
+- INFERRED: posts of suspended owners are shown and flagged.
+- INFERRED: removal (audit key `listing.removed`) never touches the account,
+  and it leaves open reports and corrections as they are. The owner gets a
+  fixed notice that does not include the reason.
+- INFERRED: the inspect view omits the contact phone, and counts photos
+  rather than showing them, because the stored paths are not web addresses.
+
+**Support cases. This follows spec line 103 even though an earlier note
+said "no ticketing".**
+
+- DOCUMENTED, spec line 103: "Reports and Support: Case IDs, responsible
+  staff, evidence, status, dates and resolution. Handle technical issues,
+  complaints and appeals." The note of 2026-10-21 ("no tickets, no
+  assignment, no replies") and CLAUDE.md §2's "helpdesk ticketing" exclusion
+  are superseded **for these fields only**. There are still no SLAs, no
+  automatic routing and no email threading. **Owner decision:** confirm this
+  reading of the scope.
+- A "Contact CORWADO" message is a case:
+  - a visible case number (`#1045`, an identity column that also numbered the
+    existing rows);
+  - a type: technical issue, complaint, appeal or enquiry. The default comes
+    from the topic, so no row was rewritten;
+  - a priority and a responsible staff member (staff who hold
+    `support.handle`);
+  - a status: new → in progress → waiting for the person → resolved or
+    closed. The earlier `done` reads as resolved;
+  - a resolution note, required to resolve or close;
+  - dates: opened, last change, and settled.
+- Staff can add three kinds of entry to a case (new table
+  `support_case_entry`):
+  - **replies**, which the person reads on the Help page under "Your messages
+    to CORWADO", after a fixed in-app notice that never carries the text;
+  - **internal notes**;
+  - **evidence links**.
+- A visitor has no inbox, so staff are told to answer them by phone or email.
+- Appeals are cases of type appeal, and the case links to the account, where
+  Restore is.
+- Audit keys: `support_case.updated` and `support_case.replied`. Note and
+  reply text never enters an audit row.
+
+**Not yet in the database CHECK:** `account.disabled`, `account.reenabled`,
+`account.contact_revealed`, `listing.removed`, `support_case.updated`,
+`support_case.replied`. The integrator's combined CHECK migration adds them.

@@ -2838,3 +2838,41 @@ Branch `feat/recovery-and-moderation`, migration `20261027100000_recovery_size_c
   number on a change of number as an essential message.
 
 — Alieu-Claude
+
+### 2026-10-28 — Alieu-Claude (lane-admin) → integrator — admin console: overview, accounts, marketplace, support cases
+
+Branch `feat/admin-console`. Spec section 4 (lines 95-111) and infographics 1 and 5. DECISIONS:
+"Admin console: overview, accounts, marketplace, support cases (2026-10-28)".
+
+- **Migration `20261028090000_admin_console`** (additive, not applied anywhere):
+  - `disabled_*` columns on farmer and buyer, with three views refreshed;
+  - case columns on `support_message`, with the status CHECK widened (`done` kept);
+  - new table `support_case_entry`.
+- **The audit CHECK is yours.** The new keys are `account.disabled`,
+  `account.reenabled`, `account.contact_revealed`, `listing.removed`,
+  `support_case.updated` and `support_case.replied`. They are already in
+  AUDIT_ACTIONS and CONVENTIONS §5.2.2.
+- **What works (in code):**
+  - Staff overview at `/dashboard`. The old one is at `/reports/programme`;
+    officers are unchanged.
+  - `/admin/accounts`, with an account page per account: masked contacts with
+    an audited reveal, activity, staff actions, and Suspend, Disable, Restore
+    and Re-enable (the last for a Super Admin only).
+  - `/admin/marketplace` with five tabs: inspect a post, request a correction,
+    remove it with a reason.
+  - Support cases at `/admin/support` and `/admin/support/:id`. People read
+    staff replies on the Help page.
+- **Lists updated:**
+  - nav (two new items; "Support messages" is now "Support cases");
+  - nav test;
+  - ADMIN_ROUTES and forbidden-matrix ROUTES;
+  - the buyer-route-scan comment;
+  - CONVENTIONS §5.2.1 and §5.2.3;
+  - conventions-match-code imports.
+- **Owner decisions:**
+  - the scope reading for support cases;
+  - no view of deleted accounts;
+  - re-enable without re-authentication;
+  - who may disable (`content.moderate` today).
+
+— Alieu-Claude (lane-admin)

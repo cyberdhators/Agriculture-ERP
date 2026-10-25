@@ -638,19 +638,14 @@ function InspectPanel({
             {post.organization ? ` for ${post.organization.name}` : ''}
             {post.owner.suspended ? ' (account suspended)' : ''}
           </p>
+          {/* The stored photo paths are not web addresses (no signed-link route
+              exists for them here), so the console says how many there are and
+              does not try to show them. */}
           {photos.length > 0 ? (
-            <div style={{ display: 'flex', gap: 'var(--s-2)', flexWrap: 'wrap' }}>
-              {photos.map((src) => (
-                <img
-                  key={src}
-                  src={src}
-                  alt=""
-                  width={96}
-                  height={96}
-                  style={{ objectFit: 'cover', borderRadius: 6 }}
-                />
-              ))}
-            </div>
+            <p className="small muted">
+              {photos.length} photo{photos.length === 1 ? '' : 's'} attached. Open the post on the
+              market to see them.
+            </p>
           ) : null}
           <DefinitionList
             items={Object.entries(post.details)
