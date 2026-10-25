@@ -36,6 +36,11 @@ import * as templateItem from '../apps/web/app/api/admin/message-templates/[id]/
 import { type TestPrincipal, createPrincipal, sweep } from './helpers/principals';
 import { makeTestPrisma, requireTestEnv } from './helpers/db';
 import { call } from './helpers/request';
+import * as staffInvitations from '../apps/web/app/api/admin/staff-invitations/route';
+import * as staffInvitationRevoke from '../apps/web/app/api/admin/staff-invitations/[id]/revoke/route';
+import * as mfaReset from '../apps/web/app/api/admin/staff-access/users/[id]/mfa-reset/route';
+import * as advisoryNotes from '../apps/web/app/api/admin/advisory-notes/route';
+import * as advisoryNoteReview from '../apps/web/app/api/admin/advisory-notes/[id]/review/route';
 
 /**
  * ============================================================================
@@ -81,6 +86,36 @@ const principals = () => ({ admin, supervisor, read_only: readOnly, officer });
 
 /** Every administrator-only route added by Prompt 13. */
 const ADMIN_ROUTES = [
+  // 2026-10-28 (lane-security): staff invitations, two-step sign-in reset,
+  // official advisory notes.
+  { name: 'GET /api/admin/staff-invitations', mod: staffInvitations, method: 'GET' as const },
+  {
+    name: 'POST /api/admin/staff-invitations',
+    mod: staffInvitations,
+    method: 'POST' as const,
+    body: () => ({ name: 'Zztest Invitee', email: 'zztest-invitee@example.org', role: 'admin' }),
+  },
+  {
+    name: 'POST /api/admin/staff-invitations/:id/revoke',
+    mod: staffInvitationRevoke,
+    method: 'POST' as const,
+    params: () => ({ id: DUMMY_ID }),
+  },
+  {
+    name: 'POST /api/admin/staff-access/users/:id/mfa-reset',
+    mod: mfaReset,
+    method: 'POST' as const,
+    params: () => ({ id: DUMMY_ID }),
+    body: () => ({ reason: 'Zztest reason', password: 'zztest-not-a-password', confirm: true }),
+  },
+  { name: 'GET /api/admin/advisory-notes', mod: advisoryNotes, method: 'GET' as const },
+  {
+    name: 'POST /api/admin/advisory-notes/:id/review',
+    mod: advisoryNoteReview,
+    method: 'POST' as const,
+    params: () => ({ id: DUMMY_ID }),
+    body: () => ({ action: 'publish' }),
+  },
   {
     name: 'POST /api/admin/communications',
     mod: communications,

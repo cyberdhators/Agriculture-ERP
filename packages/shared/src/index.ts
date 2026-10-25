@@ -453,3 +453,10 @@ export * from './admin-overview';
 export * from './admin-accounts';
 // 2026-10-27: official announcements, message templates, notification preferences.
 export * from './announcements';
+// 2026-10-28: an organisation's advice profile and its shared advice inbox.
+export * from './organization-advice';
+// 2026-10-28: staff security -- two-step sign-in, server sign-in with failed
+// attempts recorded and limited, last activity, staff invitations.
+export * from './staff-security';
+// 2026-10-28: official advisory notes from approved advisers, reviewed by staff.
+export * from './advisory-notes';

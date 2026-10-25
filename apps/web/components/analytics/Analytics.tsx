@@ -3,7 +3,10 @@
 import { useCallback, useEffect, useId, useMemo, useState } from 'react';
 
 import {
+  ACTIVITIES,
+  ANALYTICS_ACTOR_LABELS,
   ANALYTICS_METRICS,
+  ANALYTICS_SERIES,
   type AnalyticsFilter,
   type AnalyticsMetricValue,
   type AnalyticsSummary,
@@ -13,6 +16,7 @@ import {
   type MetricUnit,
   UNAVAILABLE_TEXT,
   analyticsFilterSchema,
+  LISTING_CATEGORIES,
   jubaToday,
 } from '@agri-erp/shared';
 
@@ -22,7 +26,8 @@ import {
   downloadAnalyticsWorkbook,
   getAnalyticsSummary,
 } from '@/lib/analytics/api';
-import { breakdownLabel } from '@/lib/analytics/workbook';
+import { breakdownLabel, narrowingLabels } from '@/lib/analytics/workbook';
+import { CATEGORY_LABELS } from '@/lib/buyer/labels';
 import { useLocationNames } from '@/lib/portal/locations';
 import { usePreview } from '@/lib/preview';
 import { useQueryState } from '@/lib/query-state';
@@ -30,6 +35,7 @@ import { useQueryState } from '@/lib/query-state';
 import { Button, Card, Field, Notice, PageHeader, Select } from '../ui';
 import { DateRangePicker, LoadingState, StatCard, StatGrid } from '../ui/data';
 import styles from './analytics.module.css';
+import { SeriesChart } from './SeriesChart';
 
 /**
  * MARKETPLACE AND ACCOUNT ANALYTICS (2026-10-22). CORWADO's specification,
@@ -69,7 +75,12 @@ interface Draft {
   from: string;
   to: string;
   state: string;
+  /** 2026-10-28: '' is "all". */
+  commodity: string;
+  actor: string;
 }
+
+const EMPTY_DRAFT: Draft = { from: '', to: '', state: '', commodity: '', actor: '' };
 
 export function Analytics() {
   const { role, hydrated } = usePreview();
@@ -81,14 +92,20 @@ export function Analytics() {
     const from = get('from');
     const to = get('to');
     const state = get('state');
+    const commodity = get('commodity');
+    const actor = get('actor');
     return {
       ...(from ? { from } : {}),
       ...(to ? { to } : {}),
       ...(state ? { state_id: state } : {}),
+      // Unknown values from a hand-edited address are sent as they are and
+      // refused by the shared schema with its own sentence.
+      ...(commodity ? { commodity: commodity as AnalyticsFilter['commodity'] } : {}),
+      ...(actor ? { actor_type: actor as AnalyticsFilter['actor_type'] } : {}),
     };
   }, [get]);
 
-  const [draft, setDraft] = useState<Draft>({ from: '', to: '', state: '' });
+  const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [summary, setSummary] = useState<AnalyticsSummary | null>(null);
   const [loading, setLoading] = useState(true);
@@ -99,7 +116,13 @@ export function Analytics() {
   const canExport = hydrated && (role === 'admin' || role === 'supervisor');
 
   useEffect(() => {
-    setDraft({ from: applied.from ?? '', to: applied.to ?? '', state: applied.state_id ?? '' });
+    setDraft({
+      from: applied.from ?? '',
+      to: applied.to ?? '',
+      state: applied.state_id ?? '',
+      commodity: applied.commodity ?? '',
+      actor: applied.actor_type ?? '',
+    });
   }, [applied]);
 
   const load = useCallback(async (filter: AnalyticsFilter) => {
@@ -127,6 +150,8 @@ export function Analytics() {
       ...(draft.from ? { from: draft.from } : {}),
       ...(draft.to ? { to: draft.to } : {}),
       ...(draft.state ? { state_id: draft.state } : {}),
+      ...(draft.commodity ? { commodity: draft.commodity } : {}),
+      ...(draft.actor ? { actor_type: draft.actor } : {}),
     };
     const parsed = analyticsFilterSchema.safeParse(candidate);
     if (!parsed.success) {
@@ -139,12 +164,18 @@ export function Analytics() {
       return;
     }
     setFieldErrors({});
-    set({ from: draft.from || null, to: draft.to || null, state: draft.state || null });
+    set({
+      from: draft.from || null,
+      to: draft.to || null,
+      state: draft.state || null,
+      commodity: draft.commodity || null,
+      actor: draft.actor || null,
+    });
   }
 
   function reset() {
     setFieldErrors({});
-    set({ from: null, to: null, state: null });
+    set({ from: null, to: null, state: null, commodity: null, actor: null });
   }
 
   async function download() {
@@ -167,9 +198,15 @@ export function Analytics() {
   }
 
   const stateName = (id: string) => names.state(id) ?? id;
-  const filterText = applied.state_id
-    ? `State: ${stateName(applied.state_id)}`
-    : 'All states in scope';
+  const narrowing = narrowingLabels({
+    commodity: summary?.commodity ?? null,
+    actor_type: summary?.actor_type ?? null,
+  });
+  const filterText = [
+    applied.state_id ? `State: ${stateName(applied.state_id)}` : 'All states in scope',
+    narrowing.commodity,
+    narrowing.actorType,
+  ].join(' · ');
   const scopeText = summary?.scope_states
     ? summary.scope_states.map(stateName).join(', ')
     : 'National';
@@ -234,6 +271,38 @@ export function Analytics() {
               </Select>
             )}
           </Field>
+          <Field label="Commodity" optional error={fieldErrors.commodity}>
+            {(ids) => (
+              <Select
+                {...ids}
+                value={draft.commodity}
+                onChange={(e) => setDraft((d) => ({ ...d, commodity: e.target.value }))}
+              >
+                <option value="">All commodities</option>
+                {LISTING_CATEGORIES.map((c) => (
+                  <option key={c} value={c}>
+                    {CATEGORY_LABELS[c]}
+                  </option>
+                ))}
+              </Select>
+            )}
+          </Field>
+          <Field label="Actor type" optional error={fieldErrors.actor_type}>
+            {(ids) => (
+              <Select
+                {...ids}
+                value={draft.actor}
+                onChange={(e) => setDraft((d) => ({ ...d, actor: e.target.value }))}
+              >
+                <option value="">All actor types</option>
+                {ACTIVITIES.map((a) => (
+                  <option key={a} value={a}>
+                    {ANALYTICS_ACTOR_LABELS[a]}
+                  </option>
+                ))}
+              </Select>
+            )}
+          </Field>
           <div className={styles.apply}>
             <Button variant="secondary" onClick={apply}>
               Apply
@@ -284,6 +353,30 @@ export function Analytics() {
             <span>Scope: {scopeText}</span>
             <span>Generated {formatJubaTime(summary.generated_at)}</span>
           </p>
+
+          {summary.commodity || summary.actor_type ? (
+            <Notice kind="info" className="no-print">
+              The commodity and actor-type filters narrow only the figures that can be narrowed;
+              every other figure says &ldquo;Not measured&rdquo; under them rather than show an
+              unfiltered number.
+            </Notice>
+          ) : null}
+
+          <section className={styles.group} aria-labelledby="group-over-time">
+            <h2 id="group-over-time" className={styles.groupTitle}>
+              Over time
+            </h2>
+            <div className={styles.charts}>
+              {ANALYTICS_SERIES.map((def) => (
+                <SeriesChart
+                  key={def.id}
+                  def={def}
+                  bucket={summary.bucket}
+                  value={summary.series.find((v) => v.id === def.id)}
+                />
+              ))}
+            </div>
+          </section>
 
           {METRIC_GROUPS.map((group) => {
             const defs = ANALYTICS_METRICS.filter((m) => m.group === group);

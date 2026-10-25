@@ -30,6 +30,10 @@ export const ERROR_CODES = {
   unprocessable: 'unprocessable',
   internalError: 'internal_error',
   authUnavailable: 'auth_unavailable',
+  // 2026-10-28: two-step sign-in for staff, and the sign-in rate limit.
+  mfaRequired: 'mfa_required',
+  mfaEnrolmentRequired: 'mfa_enrolment_required',
+  rateLimited: 'rate_limited',
 } as const;
 
 export const ERROR_MESSAGES = {
@@ -46,6 +50,9 @@ export const ERROR_MESSAGES = {
   /** Fixed sentence, never varied. CONVENTIONS.md section 5.3. */
   internalError: 'Something went wrong. Please try again.',
   authUnavailable: 'The sign-in service could not be reached. Try again in a moment.',
+  mfaRequired: 'Enter the code from your authenticator app to continue.',
+  mfaEnrolmentRequired: 'Set up two-step sign-in to continue.',
+  rateLimited: 'Too many attempts. Wait a few minutes and try again.',
   /**
    * `unprocessable` (422) deliberately has no entry here. Its sentence is
    * written by the business rule that rejected the request, because a generic

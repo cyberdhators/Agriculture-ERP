@@ -206,11 +206,17 @@ export const CONVERSATION_COLUMNS = `c.id, c.post_kind, c.post_id, c.post_title,
  * themselves, the sides that are theirs and NOT an organisation's (personal
  * messages stay separate); for a person acting for an organisation, that
  * organisation's sides. `person` and `org` are the placeholders to use.
+ *
+ * 2026-10-28: an organisation's ADVICE CASES are not in its general inbox.
+ * They are read and answered only through the shared advice inbox
+ * (/api/organizations/:id/advice-cases), by members holding advisory.handle:
+ * `inbox.read` alone must not open a farmer's question to an adviser.
  */
 export const viewerWhere = (person: string, org: string) => `(CASE WHEN ${org}::uuid IS NULL
     THEN (c.owner_organization_id IS NULL AND c.owner_auth_user_id = ${person}::uuid)
       OR (c.starter_organization_id IS NULL AND c.starter_auth_user_id = ${person}::uuid)
-    ELSE c.owner_organization_id = ${org}::uuid OR c.starter_organization_id = ${org}::uuid END)`;
+    ELSE (c.owner_organization_id = ${org}::uuid AND c.post_kind <> 'advice_case')
+      OR c.starter_organization_id = ${org}::uuid END)`;
 
 /** The viewer's side of a conversation they are part of. */
 export function sideOf(row: ConversationRow, viewer: Viewer): Side {

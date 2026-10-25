@@ -34,7 +34,16 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       const oldestFirst = OPEN.has(filter.status);
 
       const params: unknown[] = [filter.status];
-      const where = ['a.deleted_at IS NULL', 'a.status = $1'];
+      // 2026-10-28: a suspension past its end is an approval again (it
+      // lapsed by itself), so it is listed under Approved, not Suspended.
+      const where = [
+        'a.deleted_at IS NULL',
+        filter.status === 'approved'
+          ? `(a.status = $1 OR (a.status = 'suspended' AND a.suspended_until <= now()))`
+          : filter.status === 'suspended'
+            ? `(a.status = $1 AND a.suspended_until > now())`
+            : 'a.status = $1',
+      ];
       if (filter.cursor !== undefined) {
         const cursor = decodeCursor(filter.cursor);
         if (!cursor) throw invalidCursor();

@@ -24,7 +24,13 @@ import { ADVICE_TOPICS, type AdviceTopic } from './advice-topics';
  *   submitted | clarification_requested --(staff: decline)--> declined
  *   submitted | clarification_requested --(applicant: withdraw)--> withdrawn
  *   approved --(staff: revoke)--> revoked
- * Only approval grants the badge. Declined, withdrawn and revoked are final
+ *   2026-10-28 (lane-security), CORWADO's "Suspend advisory access" and
+ *   "Restore authorization", kept apart from account status:
+ *   approved --(staff: suspend, reason, 1-365 days)--> suspended
+ *   suspended --(staff: restore)--> approved
+ *   suspended --(staff: revoke)--> revoked
+ *   A suspension LAPSES by itself at its end date (effectiveAdviserStatus).
+ * Only approval grants the badge, and not while suspended. Declined, withdrawn and revoked are final
  * for that application; the provider may apply again with a new one.
  * Account suspension and restoration never move an application.
  */
@@ -36,13 +42,21 @@ export const ADVISER_APPLICATION_STATUSES = [
   'declined',
   'revoked',
   'withdrawn',
+  'suspended',
 ] as const;
 export type AdviserApplicationStatus = (typeof ADVISER_APPLICATION_STATUSES)[number];
 
 /** Still with CORWADO: one at a time per provider. */
 export const ADVISER_OPEN_STATUSES = ['submitted', 'clarification_requested'] as const;
 
-export const ADVISER_DECISIONS = ['request_clarification', 'approve', 'decline', 'revoke'] as const;
+export const ADVISER_DECISIONS = [
+  'request_clarification',
+  'approve',
+  'decline',
+  'revoke',
+  'suspend',
+  'restore',
+] as const;
 export type AdviserDecision = (typeof ADVISER_DECISIONS)[number];
 
 /** Which application a decision may be made on, and where it leaves it. */
@@ -55,8 +69,54 @@ export const ADVISER_DECISION_RULES: Readonly<
   request_clarification: { from: ['submitted'], to: 'clarification_requested' },
   approve: { from: ['submitted', 'clarification_requested'], to: 'approved' },
   decline: { from: ['submitted', 'clarification_requested'], to: 'declined' },
-  revoke: { from: ['approved'], to: 'revoked' },
+  revoke: { from: ['approved', 'suspended'], to: 'revoked' },
+  suspend: { from: ['approved'], to: 'suspended' },
+  restore: { from: ['suspended'], to: 'approved' },
 };
+
+/**
+ * Where an application stands NOW. A suspension whose end has passed reads as
+ * approved -- it lapsed by itself -- so the badge returns without anyone
+ * writing, and the decision rules see an approval that may be suspended again.
+ */
+export function effectiveAdviserStatus(
+  status: AdviserApplicationStatus,
+  suspendedUntil: Date | string | null,
+  nowMs: number,
+): AdviserApplicationStatus {
+  if (status !== 'suspended') return status;
+  if (suspendedUntil && new Date(suspendedUntil).getTime() > nowMs) return 'suspended';
+  return 'approved';
+}
+
+/**
+ * WHAT CORWADO CHECKED before approving, shown publicly as the verification
+ * panel. The approving staff member ticks what they actually checked; at
+ * least one is required. Nothing here is a document the public can see.
+ */
+export const ADVISER_CHECKS = [
+  'identity',
+  'experience',
+  'qualifications',
+  'affiliation',
+  'service_area',
+  'languages',
+  'interests_disclosed',
+] as const;
+export type AdviserCheck = (typeof ADVISER_CHECKS)[number];
+
+export const ADVISER_CHECK_LABELS: Readonly<Record<AdviserCheck, string>> = {
+  identity: 'Identity confirmed',
+  experience: 'Experience reviewed',
+  qualifications: 'Qualifications reviewed',
+  affiliation: 'Affiliation confirmed',
+  service_area: 'Service area confirmed',
+  languages: 'Languages confirmed',
+  interests_disclosed: 'Commercial interests disclosed',
+};
+
+/** A suspension lasts 1 to 365 days, then lapses by itself. */
+export const ADVISER_SUSPENSION_DAYS = { min: 1, max: 365 } as const;
 
 export const ADVISER_LIMITS = {
   experienceMin: 20,
@@ -83,10 +143,14 @@ export const ADVISER_MESSAGES = {
   affiliationTooLong: 'An affiliation can be at most 300 characters.',
   acknowledgementRequired: 'Tick the box to confirm this statement.',
   replyInvalid: 'Write your answer in 5 to 2000 characters.',
-  decisionUnknown: 'Choose request clarification, approve, decline or revoke.',
+  decisionUnknown: 'Choose request clarification, approve, decline, revoke, suspend or restore.',
+  suspendDaysInvalid: 'Choose how long the suspension lasts: 1 to 365 days.',
+  checksRequired: 'Tick at least one thing you checked before approving.',
+  checkUnknown: 'Choose what was checked from the list.',
+  fieldNotForDecision: 'This field is not used for that decision.',
   reasonInvalid: 'Give a reason of 5 to 1000 characters.',
   statusUnknown:
-    'Choose submitted, clarification requested, approved, declined, revoked or withdrawn.',
+    'Choose submitted, clarification requested, approved, suspended, declined, revoked or withdrawn.',
 } as const;
 
 const M = ADVISER_MESSAGES;
@@ -164,10 +228,40 @@ export const adviserReplySchema = z.strictObject({
  * clarification, the recorded reason for the rest. Which application it may
  * be made on is ADVISER_DECISION_RULES, which the route enforces.
  */
-export const adviserDecisionSchema = z.strictObject({
-  action: z.enum(ADVISER_DECISIONS, { error: () => M.decisionUnknown }),
-  reason: text(L.reasonMin, L.reasonMax, M.reasonInvalid),
-});
+export const adviserDecisionSchema = z
+  .strictObject({
+    action: z.enum(ADVISER_DECISIONS, { error: () => M.decisionUnknown }),
+    reason: text(L.reasonMin, L.reasonMax, M.reasonInvalid),
+    /** suspend only: how many days, 1-365. */
+    suspend_days: z
+      .number({ error: () => M.suspendDaysInvalid })
+      .int(M.suspendDaysInvalid)
+      .min(ADVISER_SUSPENSION_DAYS.min, M.suspendDaysInvalid)
+      .max(ADVISER_SUSPENSION_DAYS.max, M.suspendDaysInvalid)
+      .optional(),
+    /** approve only: what the staff member checked; at least one. */
+    checks: z
+      .array(z.enum(ADVISER_CHECKS, { error: () => M.checkUnknown }), {
+        error: () => M.checksRequired,
+      })
+      .max(ADVISER_CHECKS.length * 2, M.checkUnknown)
+      .transform((list) => [...new Set(list)])
+      .optional(),
+  })
+  .superRefine((value, ctx) => {
+    if (value.action === 'suspend' && value.suspend_days === undefined) {
+      ctx.addIssue({ code: 'custom', path: ['suspend_days'], message: M.suspendDaysInvalid });
+    }
+    if (value.action !== 'suspend' && value.suspend_days !== undefined) {
+      ctx.addIssue({ code: 'custom', path: ['suspend_days'], message: M.fieldNotForDecision });
+    }
+    if (value.action === 'approve' && (value.checks ?? []).length === 0) {
+      ctx.addIssue({ code: 'custom', path: ['checks'], message: M.checksRequired });
+    }
+    if (value.action !== 'approve' && value.checks !== undefined) {
+      ctx.addIssue({ code: 'custom', path: ['checks'], message: M.fieldNotForDecision });
+    }
+  });
 export type AdviserDecisionInput = z.infer<typeof adviserDecisionSchema>;
 
 export const adviserQueueFilterSchema = z.strictObject({
@@ -198,6 +292,11 @@ export interface AdviserApplicationOwn {
   /** The reason recorded with an approval, a decline or a revocation. */
   decision_reason: string | null;
   decided_at: string | null;
+  /** 2026-10-28: while suspended, when it ends by itself, and why. */
+  suspended_until: string | null;
+  suspension_reason: string | null;
+  /** 2026-10-28: what CORWADO checked when approving. */
+  verified_checks: AdviserCheck[];
   created_at: string;
   updated_at: string;
 }
@@ -207,6 +306,8 @@ export interface AdviserApplicationState {
   /** Whether the provider holds the badge now. */
   approved: boolean;
   approved_at: string | null;
+  /** 2026-10-28: the approval is paused until then (the badge is hidden meanwhile). */
+  suspended_until?: string | null;
   /** The newest application, or null when there has never been one. */
   current: AdviserApplicationOwn | null;
   /** Every application, newest first (includes `current`). */

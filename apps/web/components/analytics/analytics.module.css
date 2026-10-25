@@ -156,6 +156,86 @@
   vertical-align: top;
 }
 
+/* Over time (2026-10-28): two series at most, brand green then harvest gold,
+   always with a legend and a table, so colour is never the only key. */
+.seriesA {
+  fill: var(--green);
+  stroke: var(--green);
+}
+
+.seriesB {
+  fill: var(--harvest);
+  stroke: var(--harvest-deep);
+}
+
+.seriesLine {
+  fill: none;
+  stroke-width: 2.5;
+  stroke-linejoin: round;
+}
+
+.grid {
+  stroke: var(--line);
+  stroke-width: 1;
+}
+
+.axisLabel {
+  font-size: 12px;
+  fill: var(--muted);
+}
+
+.seriesLegend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2) var(--s-4);
+  margin: 0 0 var(--s-2);
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-small);
+  color: var(--ink-2);
+}
+
+.seriesLegend li {
+  display: flex;
+  align-items: center;
+  gap: var(--s-1);
+}
+
+.swatch {
+  display: inline-block;
+  inline-size: 12px;
+  block-size: 12px;
+  border-radius: 2px;
+  background: currentColor;
+}
+
+.swatch.seriesA {
+  background: var(--green);
+}
+
+.swatch.seriesB {
+  background: var(--harvest);
+}
+
+.seriesTable {
+  border-collapse: collapse;
+  margin-block-start: var(--s-2);
+  font-size: var(--text-small);
+}
+
+.seriesTable th,
+.seriesTable td {
+  padding: 2px var(--s-2);
+  text-align: end;
+  border-bottom: 1px solid var(--line);
+}
+
+.seriesTable th[scope='row'],
+.seriesTable thead th:first-child {
+  text-align: start;
+  font-weight: 400;
+}
+
 @media print {
   .group,
   .chart {
@@ -168,5 +248,23 @@
 
   .svgBar {
     fill: #333;
+  }
+
+  .seriesA {
+    fill: #333;
+    stroke: #333;
+  }
+
+  .seriesB {
+    fill: #999;
+    stroke: #999;
+  }
+
+  .swatch.seriesA {
+    background: #333;
+  }
+
+  .swatch.seriesB {
+    background: #999;
   }
 }

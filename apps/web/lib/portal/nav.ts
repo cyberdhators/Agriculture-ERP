@@ -325,6 +325,17 @@ export const NAV_SECTIONS: readonly NavSection[] = [
           'GET /api/admin/staff-access requires staff.manage, which every administrator holds; ' +
           'other roles only through the Administrator preset.',
       },
+      {
+        // 2026-10-28: your own two-step sign-in. Every staff role may enrol;
+        // administrators are required to (STAFF_MFA_ENFORCEMENT).
+        href: '/admin/sign-in-security',
+        label: 'Your sign-in security',
+        icon: 'staff',
+        roles: STAFF,
+        because:
+          'GET and POST /api/staff/mfa accept admin, supervisor and read_only, each for their own ' +
+          'account only.',
+      },
     ],
   },
   {
@@ -414,6 +425,7 @@ const SEGMENT_LABELS: Record<string, string> = {
   audit: 'Audit trail',
   'staff-access': 'Staff permissions',
   'access-logs': 'Access logs',
+  'sign-in-security': 'Your sign-in security',
   settings: 'Settings',
   farmers: 'Farmers',
   farms: 'Farms & maps',

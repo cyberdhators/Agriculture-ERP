@@ -10,6 +10,7 @@ import {
 } from '@agri-erp/shared';
 
 import { issueReadLink } from '../supabase/admin';
+import { APPROVAL_SUSPENDED_SQL } from './adviser-approval';
 import { type AuditTx, writeAudit } from './audit';
 import { notFound } from './errors';
 
@@ -41,12 +42,33 @@ type Db = { $queryRawUnsafe: AuditTx['$queryRawUnsafe'] };
  * account's profile leaves the directory and takes no new requests, and comes
  * back as it was if the account is restored.
  */
-export const PROVIDER_ACCOUNT_LIVE = `(
+export const PROVIDER_ACCOUNT_LIVE = `(CASE WHEN p.organization_id IS NULL THEN (
   EXISTS (SELECT 1 FROM public.farmer_active fa
            WHERE fa.auth_user_id = p.auth_user_id AND fa.suspended_at IS NULL)
   OR EXISTS (SELECT 1 FROM public.buyer_active ba
               WHERE ba.auth_user_id = p.auth_user_id AND ba.suspended_at IS NULL)
-)`;
+) ELSE EXISTS (
+  -- 2026-10-28: an ORGANISATION's advice profile is live while the
+  -- organisation is published, open and not deleted, and someone can still
+  -- answer: at least one active member holding advisory.handle.
+  SELECT 1 FROM public.organization o
+   WHERE o.id = p.organization_id AND o.deleted_at IS NULL AND o.closed_at IS NULL
+     AND o.status = 'published'
+     AND EXISTS (SELECT 1 FROM public.organization_member om
+                  WHERE om.organization_id = o.id AND om.status = 'active'
+                    AND (om.preset = 'administrator' OR 'advisory.handle' = ANY (om.permissions)))
+) END)`;
+
+/**
+ * 2026-10-28: whether the profile `p` is the asker's own -- their personal
+ * profile, or an organisation's of which they are an active member. Nobody
+ * asks their own profile or their own organisation's. `person` is a placeholder.
+ */
+export const OWN_PROVIDER_SQL = (person: string) => `(CASE WHEN p.organization_id IS NULL
+  THEN p.auth_user_id = ${person}::uuid
+  ELSE EXISTS (SELECT 1 FROM public.organization_member om
+                WHERE om.organization_id = p.organization_id
+                  AND om.auth_user_id = ${person}::uuid AND om.status = 'active') END)`;
 
 /** What the public directory may show: published, not deleted, account live. */
 export const PROVIDER_PUBLIC_WHERE = `p.deleted_at IS NULL AND p.status = 'published'
@@ -54,7 +76,12 @@ export const PROVIDER_PUBLIC_WHERE = `p.deleted_at IS NULL AND p.status = 'publi
 
 export const PROVIDER_COLUMNS = `p.id, p.display_name, p.provider_kind, p.description, p.topics,
   p.languages, p.state_ids, p.delivery_modes, p.availability, p.terms, p.fee_note,
-  p.commercial_interests, p.status, p.created_at, p.updated_at, p.approved_at,
+  p.commercial_interests, p.status, p.created_at, p.updated_at,
+  CASE WHEN ${APPROVAL_SUSPENDED_SQL} THEN NULL ELSE p.approved_at END AS approved_at,
+  CASE WHEN ${APPROVAL_SUSPENDED_SQL} THEN '{}'::text[]
+       ELSE COALESCE((SELECT va.verified_checks FROM public.adviser_application va
+                       WHERE va.id = p.approved_application_id), '{}'::text[])
+  END AS verified_checks,
   COALESCE((SELECT json_agg(json_build_object('id', s.id, 'name', s.name) ORDER BY s.name)
               FROM public.state_active s WHERE s.id = ANY (p.state_ids)), '[]'::json) AS states`;
 
@@ -76,6 +103,8 @@ export interface ProviderRow {
   updated_at: Date;
   /** 2026-10-24: set by an approval, cleared by a revocation. */
   approved_at: Date | null;
+  /** 2026-10-28: what was checked for the standing approval (empty while suspended). */
+  verified_checks: string[];
   states: { id: string; name: string }[];
 }
 
@@ -96,6 +125,8 @@ export const presentProvider = (row: ProviderRow): AdviceProviderPublic => ({
   // The badge and the month it was given; nothing about the review behind it.
   approved_adviser: row.approved_at !== null,
   approved_since: row.approved_at ? row.approved_at.toISOString().slice(0, 7) : null,
+  // 2026-10-28: what CORWADO checked; only while the badge shows.
+  verified_checks: row.approved_at ? row.verified_checks : [],
   updated_at: row.updated_at.toISOString(),
 });
 
@@ -115,9 +146,27 @@ export async function loadOwnProvider(
 ): Promise<ProviderRow | null> {
   const [row] = await db.$queryRawUnsafe<ProviderRow[]>(
     `SELECT ${PROVIDER_COLUMNS} FROM public.advice_provider p
-      WHERE p.auth_user_id = $1::uuid AND p.deleted_at IS NULL
+      WHERE p.auth_user_id = $1::uuid AND p.organization_id IS NULL AND p.deleted_at IS NULL
       ${lock ? 'FOR UPDATE OF p' : ''}`,
     authUserId,
+  );
+  return row ?? null;
+}
+
+/**
+ * 2026-10-28: an ORGANISATION's advice profile, or null. Kept apart from
+ * every person's own profile: loadOwnProvider never returns it.
+ */
+export async function loadOrganizationProvider(
+  db: Db,
+  organizationId: string,
+  lock = false,
+): Promise<(ProviderRow & { auth_user_id: string }) | null> {
+  const [row] = await db.$queryRawUnsafe<(ProviderRow & { auth_user_id: string })[]>(
+    `SELECT ${PROVIDER_COLUMNS}, p.auth_user_id FROM public.advice_provider p
+      WHERE p.organization_id = $1::uuid AND p.deleted_at IS NULL
+      ${lock ? 'FOR UPDATE OF p' : ''}`,
+    organizationId,
   );
   return row ?? null;
 }
@@ -160,6 +209,11 @@ export interface CaseRow {
   last_sender_auth_user_id: string | null;
   owner_read_at: Date | null;
   starter_read_at: Date | null;
+  /** 2026-10-28: set when the case was asked of an organisation's profile. */
+  provider_organization_id: string | null;
+  assigned_auth_user_id: string | null;
+  assigned_at: Date | null;
+  accepted_at: Date | null;
 }
 
 /** A case with its provider and its conversation, for its two participants only. */
@@ -168,7 +222,8 @@ export const CASE_SELECT = `SELECT ac.id, ac.provider_id, p.display_name AS prov
     ac.topic, ac.question, ac.preferred_contact, ac.share_details, ac.status, ac.outcome,
     ac.closed_at, ac.closed_by, ac.feedback_rating, ac.feedback_comment, ac.created_at,
     ac.updated_at, c.id AS conversation_id, c.last_message_at, c.last_sender_auth_user_id,
-    c.owner_read_at, c.starter_read_at
+    c.owner_read_at, c.starter_read_at, p.organization_id AS provider_organization_id,
+    ac.assigned_auth_user_id, ac.assigned_at, ac.accepted_at
   FROM public.advice_case ac
   JOIN public.advice_provider p ON p.id = ac.provider_id
   LEFT JOIN public.conversation c ON c.post_kind = 'advice_case' AND c.post_id = ac.id`;
@@ -183,7 +238,10 @@ export async function loadCase(
   const [row] = await db.$queryRawUnsafe<CaseRow[]>(
     `${CASE_SELECT}
       WHERE ac.id = $1::uuid AND ac.deleted_at IS NULL
-        AND $2::uuid IN (ac.requester_auth_user_id, p.auth_user_id)
+        AND ($2::uuid = ac.requester_auth_user_id
+             -- 2026-10-28: the provider side only for a PERSONAL profile. An
+             -- organisation's case is read through its shared advice inbox.
+             OR (p.organization_id IS NULL AND $2::uuid = p.auth_user_id))
       ${lock ? 'FOR UPDATE OF ac' : ''}`,
     id,
     authUserId,
@@ -201,7 +259,7 @@ export const sideOf = (row: CaseRow, authUserId: string): 'requester' | 'provide
  * and their phone only when they asked to be called or texted. Read when the
  * provider opens the case, so it is current, and never stored on the case.
  */
-async function sharedDetails(
+export async function sharedDetails(
   db: Db,
   row: CaseRow,
 ): Promise<{ place: string | null; phone: string | null }> {
@@ -237,7 +295,8 @@ function unread(row: CaseRow, authUserId: string): boolean {
 
 /** Whether this sign-in is one of the case's two people: its requester or its provider. */
 export const isParticipant = (row: CaseRow, authUserId: string): boolean =>
-  authUserId === row.requester_auth_user_id || authUserId === row.provider_auth_user_id;
+  authUserId === row.requester_auth_user_id ||
+  (row.provider_organization_id === null && authUserId === row.provider_auth_user_id);
 
 interface AttachmentRow {
   id: string;

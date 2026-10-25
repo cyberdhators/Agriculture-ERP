@@ -79,6 +79,7 @@ describe('the public sees the badge and no more', () => {
       'commercial_interests',
       'approved_adviser',
       'approved_since',
+      'verified_checks',
       'updated_at',
     ]);
     expect(body).not.toMatch(/approved_application_id|auth_user_id|application/);

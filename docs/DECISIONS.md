@@ -5152,3 +5152,146 @@ field is offered only where code reads it.
   ends only by a restore) and appeal window (shown on the help page's appeal
   text). Templates and delivery records link to Communications. OWNER TO
   CONFIRM both periods (defaults 30 days).
+
+## Staff two-step sign-in, with a rollout that cannot lock CORWADO out (2026-10-28)
+
+The specification: "require strong staff authentication"; infographic 2, "Manage
+MFA: require or reset multi-factor authentication". Lane-security.
+
+- TOTP through Supabase Auth MFA (DOCUMENTED: enabled by default on Supabase
+  projects; NOT exercised against the live project -- there is only production).
+  A staff member sets it up at **Administration -> Your sign-in security**
+  (`/admin/sign-in-security`): QR code and key, then a first code. Supabase
+  verifies the code in the browser; `POST /api/staff/mfa` then confirms a
+  verified factor exists (admin API) and audits `staff.mfa_enrolled`.
+- **requireRole enforces it** (`staffMfaGate`, packages/shared): a staff account
+  WITH a verified factor whose session is not `aal2` is refused everywhere
+  (403 `mfa_required`) except `GET /api/me` and `/api/staff/mfa` (`mfaExempt`,
+  pinned by `staff-security-scan.test.ts`). The `aal` claim is read from the
+  token that getUser has just validated (INFERRED safe: getUser verifies it on
+  the server first; the claim is never trusted on its own).
+- **Rollout, `STAFF_MFA_ENFORCEMENT`**: `verify` (default, also for any unknown
+  value) never refuses someone who has not enrolled -- the portal sends
+  administrators to enrol before anything else; `required` also refuses an
+  unenrolled administrator on the server (403 `mfa_enrolment_required`);
+  `off` is the emergency switch. INFERRED: defaulting to `required` could leave
+  CORWADO locked out of the admin API if enrolment failed in production.
+- Sign-in: when the account has a factor the sign-in screen asks for the code.
+- **Reset** (lost phone): Super Admins only (`superadmin.grant`), never on
+  themselves, with re-authentication; removes every factor (DOCUMENTED: deleting
+  a verified factor signs the account out everywhere). Audited `staff.mfa_reset`.
+- Gap: the LAST Super Admin who loses their phone can only be reset from the
+  Supabase dashboard. Owner decision: who holds that dashboard access.
+
+## Sign-in through the server: failed sign-ins and a rate limit (2026-10-28)
+
+- The staff/buyer email sign-in and the farmer phone sign-in now post to
+  `POST /api/auth/sign-in` (public), which signs in with the anon key and writes
+  the session cookie on its own response (DOCUMENTED: @supabase/ssr's
+  route-handler pattern; NOT exercised live). A wrong password for an EXISTING
+  account writes `sign_in_failed` to that account's access log (new value in the
+  access_log CHECK); the account is found via `auth.users` by email (INFERRED:
+  the app's database role may read it -- if not, the failure is simply not logged).
+- Rate limit: 5 failures per identifier in 15 minutes (table `sign_in_attempt`,
+  identifier stored as SHA-256 only, a success clears the count) and 30 attempts
+  per address per 15 minutes per server instance (in memory, never stored).
+  429 `rate_limited` with Retry-After. The answer never says whether an account
+  exists. Gap (DOCUMENTED Supabase behaviour): anyone with the public anon key
+  can still call Supabase Auth directly; those attempts meet Supabase's own
+  limits and are in its auth logs, not ours. The Auth "password verification
+  hook" would close this but is a paid-plan feature (owner decision).
+- The public-route scan's "no route rate-limits" guard was replaced (not
+  removed) by a test of what this limiter does.
+
+## Last activity moves on API calls, throttled (2026-10-28)
+
+- The route wrapper updates `account_activity.last_seen_at` at most once per
+  account per five minutes (in memory per instance, and `last_seen_at < now() -
+5 min` in the statement). Update only: the first row is still written by the
+  "me" visit, which decides first sign-in. A return session is now measured
+  from the last API call. Never throws; gives up after one second.
+
+## Staff are invited by email and choose their own password (2026-10-28)
+
+- `POST /api/admin/staff-invitations` (`staff.manage`, over the state for a
+  state-scoped role): name, email, role, state. A 32-byte token, only its hash
+  stored, valid 7 days, one open invitation per address. Email by Resend; when
+  email is not configured (production today) or the send fails, the answer
+  carries the link once so the inviter can pass it on -- the same degradation
+  as team invitations. The link puts the token after `#`, so it never reaches
+  a server log; `/staff-invite` sends it in a request body.
+- The invitee sets the password (`POST /api/staff-invitations/accept`); the
+  account is created then (same compensating transaction as `POST /api/users`).
+- `POST /api/users` (password typed by someone else) is kept as the **Super
+  Admin fallback**: once any Super Admin exists, only Super Admins may use it;
+  while none exists, any administrator still may (INFERRED: otherwise the
+  platform could not add staff before the first Super Admin is appointed).
+- Lists show the address masked (`a•••@domain`). Audit `staff.invited`,
+  `staff.invitation_revoked`, `staff.invitation_accepted`; never the address.
+
+## Approved advisers: suspend, restore, what was checked, and official notes (2026-10-28)
+
+The specification and infographics 3 and 8: "Suspend advisory access ...
+Restore authorization"; "Account restoration does not automatically restore
+advisory privileges"; "Approved advisory channels, official content
+publication ... require separately assigned permissions"; "Verification states
+-- what was checked".
+
+- New decisions `suspend` (approved -> suspended, reason, 1-365 days) and
+  `restore` (suspended -> approved); revoke also from suspended. A suspension
+  **lapses by itself** at its end (`effectiveAdviserStatus`); the provider's
+  approval columns are not cleared, so no second approval can slip in. Every
+  reader of the badge also asks `APPROVAL_SUSPENDED_SQL`. Audited
+  `adviser_approval.suspended` / `.restored`; fixed-sentence notices.
+- Approval now records **what was checked** (at least one of identity,
+  experience, qualifications, affiliation, service area, languages, interests
+  disclosed), shown publicly on the profile as "Approved adviser: what CORWADO
+  checked". Older approvals say they predate the record.
+- The admin account record (the Suspend/Restore box) shows the **advisory
+  authorization** beside account standing, read-only, with a link to Advisers.
+  Account suspend/restore still never touch it.
+- **Official advisory notes** (new table `advisory_note`): only an approved,
+  unsuspended adviser may submit; staff with `content.moderate` or
+  `content.publish` may return one with a note; only `content.publish` may
+  publish or unpublish (publishing authority is separately assigned). Published
+  notes show on the public profile, "Reviewed by CORWADO", only while the
+  approval is active. INFERRED: a short text note rather than a library file,
+  because library resources require an uploaded file; reviewed at Admin ->
+  Advisers. Audit `advisory_note.*`.
+
+## Organisation advice cases (2026-10-28)
+
+DOCUMENTED: the spec's "Requests go directly to the provider's authorized staff"
+(infographic 8, "Institution shared inbox"). Migration
+`20261028112000_organisation_advice_cases`.
+
+- INFERRED: one advice profile per organisation, kept apart from personal
+  profiles (the one-per-account unique replaced by two partial unique indexes,
+  one with the same personal meaning), edited by members with `profile.edit` or
+  `advisory.handle`.
+- INFERRED: the organisation's shared advice inbox is for `advisory.handle`
+  holders only (the first reader of that permission), not `inbox.read`.
+- INFERRED: any handler may take an unassigned case; only an organisation
+  administrator assigns to someone else; only the accepted assignee or an
+  administrator replies or closes, and sees the requester's shared details.
+  Audit `advice_case.assigned`, `.accepted`, `.released`.
+- INFERRED: a profile counts as live while the organisation is published and
+  open and has at least one handler. Gaps: no photo links for organisation
+  handlers; refer-with-consent not offered from the organisation inbox; inbox
+  copy English only; a suspended member still counts towards "live".
+
+## Analytics: commodity and actor-type filters, figures over time, editable Excel charts (2026-10-28)
+
+DOCUMENTED: spec "Measures and exports" requires filters, graphs and editable
+Excel charts. INFERRED: commodity = listing_category, so it narrows produce
+listings, orders, contact requests and buying requests only; actor type =
+account_profile.activities ("What you do"), which reaches accounts, farmers with
+a sign-in, account holders and post owners (for an organisation's post, the
+person who posted it). Any other figure is served as not measured
+("not_filterable") under a filter, never unfiltered; a test holds each figure's
+filter flags, its SQL and its definition together. INFERRED: period = day up to
+31 days, Monday week up to 184, month beyond; "new" active = first sign-in ever
+in that period. OBSERVED: the writer's chart parts read back in the pure tests
+(relationships, content types, sheet references, cached values). NOT observed:
+opening the file in Excel or LibreOffice -- check one real export before
+acceptance. Gap: the commodity filter does not reach services or conversations.

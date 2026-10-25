@@ -57,6 +57,22 @@ export const ACCOUNT_NOTICES = {
     body: 'Open Offer advice to see the reason.',
     key: 'notice.adviserRevoked',
   },
+  // 2026-10-28: an approval paused, and given back; an official note reviewed.
+  adviser_suspended: {
+    title: 'Your approved-adviser status was suspended for a time',
+    body: 'Open Offer advice to see the reason and when it ends.',
+    key: 'notice.adviserSuspended',
+  },
+  adviser_restored: {
+    title: 'Your approved-adviser status was restored',
+    body: 'Your advice profile shows the approved-adviser badge again.',
+    key: 'notice.adviserRestored',
+  },
+  advisory_note_reviewed: {
+    title: 'CORWADO reviewed one of your advisory notes',
+    body: 'Open Offer advice to see where it stands.',
+    key: 'notice.advisoryNoteReviewed',
+  },
   account_restored: {
     title: 'Your AgriOne account has been restored',
     body: 'You can sign in and use AgriOne again.',
@@ -197,7 +213,10 @@ export function noticeHref(title: string): string | null {
     title === n.adviser_clarification_requested.title ||
     title === n.adviser_approved.title ||
     title === n.adviser_declined.title ||
-    title === n.adviser_revoked.title
+    title === n.adviser_revoked.title ||
+    title === n.adviser_suspended.title ||
+    title === n.adviser_restored.title ||
+    title === n.advisory_note_reviewed.title
   ) {
     return '/farmer/account/advice/offer';
   }

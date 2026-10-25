@@ -80,6 +80,18 @@ const BUYER_OUTSIDE_ITS_TREE = [
   'advice/my-provider/application',
   'advice/my-provider/application/reply',
   'advice/my-provider/application/withdraw',
+  // 2026-10-28: an approved adviser's own official notes, keyed by the
+  // session's sign-in (its personal advice profile only).
+  'advice/my-provider/notes',
+  'advice/my-provider/notes/[id]',
+  // 2026-10-28: an organisation's advice profile and its shared advice inbox,
+  // for members holding advisory.handle (or profile.edit for the profile).
+  'organizations/[id]/advice-provider',
+  'organizations/[id]/advice-cases',
+  'organizations/[id]/advice-cases/handlers',
+  'organizations/[id]/advice-cases/[caseId]',
+  'organizations/[id]/advice-cases/[caseId]/action',
+  'organizations/[id]/advice-cases/[caseId]/messages',
   // ADVICE PHOTOS (2026-10-25): either participant of a case adds or removes
   // a photo; loadCase finds the case for its two participants only.
   'advice/cases/[id]/attachments/[attachmentId]',

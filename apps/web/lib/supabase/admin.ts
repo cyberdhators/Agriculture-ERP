@@ -209,6 +209,38 @@ export async function revokeAllSessions(authUserId: string): Promise<void> {
 }
 
 /**
+ * 2026-10-28: TWO-STEP SIGN-IN. The ids of an account's VERIFIED
+ * authenticator factors (TOTP), read from the authentication service. Used to
+ * confirm an enrolment before it is recorded, and before a reset.
+ * Throws on any failure.
+ */
+export async function verifiedFactorIds(authUserId: string): Promise<string[]> {
+  const { data, error } = await adminClient().auth.admin.mfa.listFactors({ userId: authUserId });
+  if (error || !data) throw new Error('Could not read the authenticators of the account.');
+  return data.factors.filter((f) => f.status === 'verified').map((f) => f.id);
+}
+
+/**
+ * 2026-10-28: removes EVERY authenticator factor of an account (verified or
+ * not), so its owner can enrol a new one. Supabase documents that deleting a
+ * verified factor signs the account out of every session. Returns how many
+ * were removed. Throws on any failure, leaving the rest in place.
+ */
+export async function deleteAllFactors(authUserId: string): Promise<number> {
+  const admin = adminClient();
+  const { data, error } = await admin.auth.admin.mfa.listFactors({ userId: authUserId });
+  if (error || !data) throw new Error('Could not read the authenticators of the account.');
+  for (const factor of data.factors) {
+    const { error: deleteError } = await admin.auth.admin.mfa.deleteFactor({
+      id: factor.id,
+      userId: authUserId,
+    });
+    if (deleteError) throw new Error('Could not remove an authenticator.');
+  }
+  return data.factors.length;
+}
+
+/**
  * Authentication accounts with no application row — the residue of a creation
  * that failed after the account was made and could not be undone.
  *

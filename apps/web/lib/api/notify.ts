@@ -181,10 +181,13 @@ export async function noticeIfFirstMessage(
     const members = await tx.$queryRawUnsafe<{ auth_user_id: string }[]>(
       `SELECT auth_user_id FROM public.organization_member
         WHERE organization_id = $1::uuid AND status = 'active' AND auth_user_id <> $2::uuid
-          AND (preset = 'administrator' OR 'inbox.read' = ANY (permissions))
+          AND (preset = 'administrator' OR $3 = ANY (permissions))
         ORDER BY joined_at LIMIT 20`,
       otherOrganization,
       sender,
+      // 2026-10-28: an advice request reaches the members who handle advice,
+      // not everyone who reads the organisation's inbox.
+      row.post_kind === 'advice_case' ? 'advisory.handle' : 'inbox.read',
     );
     for (const member of members) {
       await notifyAccount(tx, { authUserId: member.auth_user_id }, notice, actor);
@@ -207,10 +210,33 @@ export async function noticeIfFirstMessage(
  */
 export async function noticeCaseChanged(
   tx: AuditTx,
-  advice: { requester_auth_user_id: string; provider_auth_user_id: string },
+  advice: {
+    requester_auth_user_id: string;
+    provider_auth_user_id: string;
+    /** 2026-10-28: an organisation's case, and the member handling it. */
+    provider_organization_id?: string | null;
+    assigned_auth_user_id?: string | null;
+  },
   actedAs: 'requester' | 'provider',
   actor: NoticeActor,
 ): Promise<void> {
+  if (actedAs === 'requester' && advice.provider_organization_id) {
+    // An organisation's case: the member handling it, or -- while nobody is --
+    // the members who handle advice. Never whoever set the profile up.
+    const to = advice.assigned_auth_user_id
+      ? [{ auth_user_id: advice.assigned_auth_user_id }]
+      : await tx.$queryRawUnsafe<{ auth_user_id: string }[]>(
+          `SELECT auth_user_id FROM public.organization_member
+            WHERE organization_id = $1::uuid AND status = 'active'
+              AND (preset = 'administrator' OR 'advisory.handle' = ANY (permissions))
+            ORDER BY joined_at LIMIT 20`,
+          advice.provider_organization_id,
+        );
+    for (const member of to) {
+      await notifyAccount(tx, { authUserId: member.auth_user_id }, 'advice_work_updated', actor);
+    }
+    return;
+  }
   if (actedAs === 'provider') {
     await notifyAccount(
       tx,

@@ -130,6 +130,12 @@ export function OrganisationTeam({
             {w.viewPublic}
           </Link>
         ) : null}
+        {/* 2026-10-28: the shared advice inbox, for members who handle advice. */}
+        {memberMay(self, 'advisory.handle') || memberMay(self, 'profile.edit') ? (
+          <Link href={`${teamBase(side)}/${org.id}/advice`} className="small">
+            {language === 'ar' ? 'طلبات المشورة' : 'Advice requests and advice profile'}
+          </Link>
+        ) : null}
       </header>
 
       {message ? (

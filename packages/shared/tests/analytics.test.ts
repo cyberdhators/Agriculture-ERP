@@ -1,11 +1,17 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
+  ACTIVITIES,
+  ANALYTICS_ACTOR_LABELS,
   ANALYTICS_LIMITATIONS,
   ANALYTICS_MAX_DAYS,
   ANALYTICS_MESSAGES,
   ANALYTICS_METRICS,
+  ANALYTICS_SERIES,
+  LISTING_CATEGORIES,
   METRIC_GROUPS,
+  analyticsBucket,
+  bucketStarts,
   analyticsExportSchema,
   analyticsFilterSchema,
   jubaToday,
@@ -201,5 +207,98 @@ describe('the window', () => {
     expect(w.days).toBe(1);
     expect(w.startsAt.toISOString()).toBe('2026-09-30T22:00:00.000Z');
     expect(w.endsAt.toISOString()).toBe('2026-10-01T22:00:00.000Z');
+  });
+});
+
+describe('the commodity and actor-type filters (2026-10-28)', () => {
+  it('accepts every commodity category and every activity', () => {
+    for (const commodity of LISTING_CATEGORIES) {
+      expect(analyticsFilterSchema.parse({ commodity })).toEqual({ commodity });
+    }
+    for (const actor_type of ACTIVITIES) {
+      expect(analyticsFilterSchema.parse({ actor_type })).toEqual({ actor_type });
+    }
+  });
+
+  it('refuses an unknown commodity or actor type with its own sentence', () => {
+    const r = analyticsFilterSchema.safeParse({ commodity: 'gold', actor_type: 'pirate' });
+    expect(r.success).toBe(false);
+    const by = (f: string) => r.error?.issues.find((i) => i.path[0] === f)?.message;
+    expect(by('commodity')).toBe(ANALYTICS_MESSAGES.commodityInvalid);
+    expect(by('actor_type')).toBe(ANALYTICS_MESSAGES.actorTypeInvalid);
+  });
+
+  it('carries them inside an export request too', () => {
+    expect(
+      analyticsExportSchema.parse({ filters: { commodity: 'fish', actor_type: 'trader' } }),
+    ).toEqual({ filters: { commodity: 'fish', actor_type: 'trader' } });
+  });
+
+  it('labels every activity', () => {
+    expect(Object.keys(ANALYTICS_ACTOR_LABELS).sort()).toEqual([...ACTIVITIES].sort());
+  });
+
+  it('says how each filter applies wherever a figure takes it, and admits the limit', () => {
+    for (const m of ANALYTICS_METRICS) {
+      if (m.commodityRule !== undefined) expect(m.commodityRule.length, m.id).toBeGreaterThan(10);
+      if (m.actorRule !== undefined) expect(m.actorRule.length, m.id).toBeGreaterThan(10);
+    }
+    const text = ANALYTICS_LIMITATIONS.join(' ');
+    expect(text).toMatch(/commodity filter narrows only/);
+    expect(text).not.toMatch(/not editable yet/);
+  });
+});
+
+describe('over time (2026-10-28)', () => {
+  it('chooses the period by the window length', () => {
+    expect(analyticsBucket(1)).toBe('day');
+    expect(analyticsBucket(31)).toBe('day');
+    expect(analyticsBucket(32)).toBe('week');
+    expect(analyticsBucket(184)).toBe('week');
+    expect(analyticsBucket(185)).toBe('month');
+    expect(analyticsBucket(366)).toBe('month');
+  });
+
+  it('lists every day of a short window', () => {
+    expect(bucketStarts({ from: '2026-10-30', to: '2026-11-02' }, 'day')).toEqual([
+      '2026-10-30',
+      '2026-10-31',
+      '2026-11-01',
+      '2026-11-02',
+    ]);
+  });
+
+  it('starts weeks on the Monday on or before the window', () => {
+    // 2026-10-01 is a Thursday; the Monday before is 2026-09-28.
+    expect(bucketStarts({ from: '2026-10-01', to: '2026-10-19' }, 'week')).toEqual([
+      '2026-09-28',
+      '2026-10-05',
+      '2026-10-12',
+      '2026-10-19',
+    ]);
+    expect(bucketStarts({ from: '2026-10-05', to: '2026-10-05' }, 'week')).toEqual(['2026-10-05']);
+  });
+
+  it('starts months on the first and crosses a year', () => {
+    expect(bucketStarts({ from: '2025-11-15', to: '2026-02-03' }, 'month')).toEqual([
+      '2025-11-01',
+      '2025-12-01',
+      '2026-01-01',
+      '2026-02-01',
+    ]);
+  });
+
+  it('defines each series with labelled lines and its rules', () => {
+    expect(ANALYTICS_SERIES.map((s) => s.id)).toEqual([
+      'series.registrations',
+      'series.active_users',
+      'series.market_activity',
+    ]);
+    for (const s of ANALYTICS_SERIES) {
+      expect(Object.keys(s.keys).length, s.id).toBeGreaterThan(0);
+      expect(s.definition.length, s.id).toBeGreaterThan(20);
+    }
+    const market = ANALYTICS_SERIES.find((s) => s.id === 'series.market_activity')!;
+    expect(market.separateMeasures).toBe(true);
   });
 });

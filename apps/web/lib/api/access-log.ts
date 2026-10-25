@@ -155,3 +155,24 @@ export async function recordReauthFailed(auth: Authenticated, request: Request):
     // Best effort, as above.
   }
 }
+
+/**
+ * 2026-10-28: a wrong password at sign-in, for an account that exists. Called
+ * by POST /api/auth/sign-in only. Records the account's kind and id, the
+ * event, the time and the device family -- never what was typed.
+ */
+export async function recordSignInFailed(
+  kind: AccessPrincipalKind,
+  id: string,
+  request: Request,
+): Promise<void> {
+  try {
+    await withDeadline(
+      insertEvent(kind, id, 'sign_in_failed', deviceLabel(request.headers.get('user-agent'))).catch(
+        () => undefined,
+      ),
+    );
+  } catch {
+    // Best effort, as above.
+  }
+}

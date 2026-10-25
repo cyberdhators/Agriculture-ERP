@@ -10,6 +10,7 @@ import {
   adviceCaseCreateSchema,
   type AdviceProviderPublic,
   type AdviceTopic,
+  type AdvisoryNotePublic,
 } from '@agri-erp/shared';
 
 import { BackLinkRow } from '@/components/market-posts/bits';
@@ -29,6 +30,7 @@ import {
   attachPhoto,
   createCase,
   getProvider,
+  getProviderNotes,
   newId,
   shrinkAdvicePhoto,
 } from '@/lib/advice/client';
@@ -42,7 +44,7 @@ import {
   caseHref,
 } from '@/lib/advice/labels';
 import { formatDate } from '@/lib/format';
-import { t, type Language } from '@/lib/i18n';
+import { t, type Language, type TKey } from '@/lib/i18n';
 import { messagesChanged } from '@/lib/messages/client';
 
 import { coverageLine } from './AdviceDirectory';
@@ -105,6 +107,8 @@ export function ProviderDetail({
           {t('advice.approvedSince', lang)} {monthOf(row.approved_since, lang)}
         </p>
       ) : null}
+      {/* 2026-10-28: the verification panel -- what CORWADO checked. */}
+      {row.approved_adviser ? <ApprovalChecks row={row} lang={lang} /> : null}
       <p className={styles.prose} dir="auto">
         {row.description}
       </p>
@@ -364,5 +368,53 @@ function RequestForm({
         </Button>
       </div>
     </form>
+  );
+}
+
+/** 2026-10-28: "Approved adviser -- what CORWADO checked", and its published notes. */
+function ApprovalChecks({ row, lang }: { row: AdviceProviderPublic; lang: Language }) {
+  const [notes, setNotes] = useState<AdvisoryNotePublic[]>([]);
+  useEffect(() => {
+    let on = true;
+    getProviderNotes(row.id)
+      .then((n) => on && setNotes(n))
+      .catch(() => undefined);
+    return () => {
+      on = false;
+    };
+  }, [row.id]);
+  return (
+    <section className={styles.box} aria-labelledby="approval-checks">
+      <h2 id="approval-checks" className="small">
+        {t('advice.checked.title', lang)}
+      </h2>
+      {row.verified_checks.length > 0 ? (
+        <ul className="small">
+          {row.verified_checks.map((c) => (
+            <li key={c}>{t(`advice.checked.${c}` as TKey, lang)}</li>
+          ))}
+        </ul>
+      ) : (
+        <p className="small muted">{t('advice.checked.none', lang)}</p>
+      )}
+      <p className="small muted">{t('advice.checked.note', lang)}</p>
+      {notes.length > 0 ? (
+        <div>
+          <h3 className="small">{t('notes.title', lang)}</h3>
+          {notes.map((n) => (
+            <article key={n.id} style={{ marginTop: 'var(--s-3)' }}>
+              <h4 dir="auto">{n.title}</h4>
+              <p className="small muted">
+                {t('notes.reviewedBy', lang)} · {n.published_at.slice(0, 10)} ·{' '}
+                {n.topics.map((v) => t(TOPIC_KEY[v], lang)).join(' · ')}
+              </p>
+              <p className={styles.prose} dir="auto" style={{ whiteSpace: 'pre-wrap' }}>
+                {n.body}
+              </p>
+            </article>
+          ))}
+        </div>
+      ) : null}
+    </section>
   );
 }

@@ -27,6 +27,7 @@ import { formatDate } from '@/lib/format';
 import { t, type Language, type TKey } from '@/lib/i18n';
 
 import styles from './advice.module.css';
+import { AdvisoryNotes } from './AdvisoryNotes';
 
 const STATUS_KEY: Record<AdviserApplicationStatus, TKey> = {
   submitted: 'adviser.status.submitted',
@@ -35,6 +36,7 @@ const STATUS_KEY: Record<AdviserApplicationStatus, TKey> = {
   declined: 'adviser.status.declined',
   revoked: 'adviser.status.revoked',
   withdrawn: 'adviser.status.withdrawn',
+  suspended: 'adviser.status.suspended',
 };
 
 const STATUS_TONE: Record<AdviserApplicationStatus, Tone> = {
@@ -44,6 +46,7 @@ const STATUS_TONE: Record<AdviserApplicationStatus, Tone> = {
   declined: 'clay',
   revoked: 'clay',
   withdrawn: 'neutral',
+  suspended: 'sorghum',
 };
 
 interface Values {
@@ -188,7 +191,13 @@ export function AdviserApplication({
   const open =
     current !== null &&
     (current.status === 'submitted' || current.status === 'clarification_requested');
-  const mayApply = profile !== null && state !== undefined && !open && !state?.approved;
+  // 2026-10-28: a suspended approval still stands; no new application meanwhile.
+  const mayApply =
+    profile !== null &&
+    state !== undefined &&
+    !open &&
+    !state?.approved &&
+    current?.status !== 'suspended';
 
   const group = (
     key: 'specialties' | 'service_area' | 'languages',
@@ -234,6 +243,22 @@ export function AdviserApplication({
       ) : null}
 
       {state?.approved ? <Notice kind="success">{t('adviser.approvedNow', lang)}</Notice> : null}
+      {current?.status === 'suspended' && current.suspended_until ? (
+        <Notice kind="warn">
+          {t('adviser.suspendedUntil', lang)} {formatDate(current.suspended_until, lang)}
+          {current.suspension_reason ? (
+            <>
+              {' '}
+              · <span dir="auto">{current.suspension_reason}</span>
+            </>
+          ) : null}
+        </Notice>
+      ) : null}
+
+      {/* 2026-10-28: the approved-adviser channel -- official advisory notes. */}
+      {profile && (state?.approved || current?.status === 'suspended') ? (
+        <AdvisoryNotes lang={lang} />
+      ) : null}
 
       {current ? <ApplicationSummary application={current} lang={lang} /> : null}
 
