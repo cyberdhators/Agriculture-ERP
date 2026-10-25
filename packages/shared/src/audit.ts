@@ -219,6 +219,26 @@ export const AUDIT_ACTIONS = [
   'account.password_recovered',
   'listing.correction_requested',
   'listing.correction_addressed',
+  // 2026-10-28 (lane-security): staff invitations (the address is never in a
+  // row), two-step sign-in enrolment and reset, the advisory suspension and
+  // restoration of an approval, official advisory notes, and an organisation's
+  // shared advice inbox (assign, accept, release). NOT YET IN THE DATABASE
+  // CHECK: the integrator's combined CHECK migration adds them.
+  'staff.invited',
+  'staff.invitation_revoked',
+  'staff.invitation_accepted',
+  'staff.mfa_enrolled',
+  'staff.mfa_reset',
+  'adviser_approval.suspended',
+  'adviser_approval.restored',
+  'advisory_note.submitted',
+  'advisory_note.withdrawn',
+  'advisory_note.returned',
+  'advisory_note.published',
+  'advisory_note.unpublished',
+  'advice_case.assigned',
+  'advice_case.accepted',
+  'advice_case.released',
 ] as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];

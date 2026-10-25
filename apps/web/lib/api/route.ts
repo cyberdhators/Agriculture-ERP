@@ -15,6 +15,7 @@ import * as Sentry from '@sentry/nextjs';
 import { NextResponse } from 'next/server';
 import { randomUUID } from 'node:crypto';
 
+import { touchActivity } from './activity';
 import { ApiFailure, failureResponse, internalError } from './errors';
 import { runWithRequestContext } from './request-context';
 import { type Authenticated, requireRole } from './require-role';
@@ -190,6 +191,13 @@ export interface RouteDefinition<TBody = undefined> {
    * for.
    */
   readonly roles: readonly Role[] | 'public';
+  /**
+   * 2026-10-28: true only on the routes a staff session needs in order to
+   * finish two-step sign-in or to enrol (GET /api/me, /api/staff/mfa/**).
+   * apps/web/tests/staff-security-scan.test.ts lists them; any other route
+   * that sets it fails that test.
+   */
+  readonly mfaExempt?: boolean;
   /** Present means a body is expected, validated by this schema before the handler runs. */
   readonly bodySchema?: ZodType<TBody>;
   readonly handler: (ctx: RouteContext<TBody>) => Promise<RouteResult>;
@@ -265,7 +273,14 @@ function wrap<TBody>(definition: RouteDefinition<TBody>): NextRouteHandler {
       const auth =
         definition.roles === 'public'
           ? (null as unknown as Authenticated)
-          : await requireRole(request, definition.roles);
+          : await requireRole(request, definition.roles, {
+              mfaExempt: definition.mfaExempt === true,
+            });
+
+      // 2026-10-28: "last activity" moves on API activity too, at most once
+      // per account per five minutes (lib/api/activity.ts). Never throws,
+      // never waits more than a moment, never changes the answer.
+      if (auth) await touchActivity(auth);
 
       // 2. The body, in the order CONVENTIONS section 9 fixes: what it claims
       //    to be, how big it claims to be, whether it can be read, whether it
@@ -348,6 +363,7 @@ function wrap<TBody>(definition: RouteDefinition<TBody>): NextRouteHandler {
  */
 type AnyRouteDefinition = {
   readonly roles: readonly Role[] | 'public';
+  readonly mfaExempt?: boolean;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   readonly bodySchema?: ZodType<any>;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

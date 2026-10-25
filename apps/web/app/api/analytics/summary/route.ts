@@ -14,7 +14,9 @@ import { prisma } from '../../../../lib/db';
 /**
  * GET /api/analytics/summary -- marketplace and account figures for a window
  * of Juba days (2026-10-22). Query: from, to (YYYY-MM-DD; the last 30 days
- * when omitted, at most 366), state_id.
+ * when omitted, at most 366), state_id, and since 2026-10-28 commodity (a
+ * listing category) and actor_type (an activity under "What you do"). The
+ * answer also carries the over-time series, by day, week or month.
  *
  * Roles: admin, supervisor, read_only (requireRole). Permission: `reports.view`
  * somewhere (every administrator holds it; other staff through the Analyst or
@@ -39,7 +41,11 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
         prisma,
         resolveAnalyticsWindow(parsed.data),
         states,
-        parsed.data.state_id ?? null,
+        {
+          state: parsed.data.state_id ?? null,
+          commodity: parsed.data.commodity ?? null,
+          actorType: parsed.data.actor_type ?? null,
+        },
       );
       return ok(summary, { 'cache-control': 'no-store' });
     },

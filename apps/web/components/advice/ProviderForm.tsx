@@ -84,10 +84,22 @@ export function ProviderForm({
   lang,
   base,
   workHref,
+  source,
 }: {
   lang: Language;
   base: string;
   workHref: string;
+  /**
+   * 2026-10-28: an ORGANISATION's advice profile instead of the account's own.
+   * Loads and saves through the organisation's route; the approved-adviser
+   * pathway, which is a person's, is not offered.
+   */
+  source?: {
+    load: () => Promise<AdviceProviderOwn | null>;
+    save: (body: Record<string, unknown>) => Promise<AdviceProviderOwn>;
+    title: string;
+    lead: string;
+  };
 }) {
   const [profile, setProfile] = useState<AdviceProviderOwn | null | undefined>(undefined);
   const [values, setValues] = useState<Values>(EMPTY);
@@ -98,7 +110,7 @@ export function ProviderForm({
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    getMyProvider()
+    (source ? source.load() : getMyProvider())
       .then((p) => {
         setProfile(p);
         if (p) setValues(fromProfile(p));
@@ -135,7 +147,7 @@ export function ProviderForm({
     }
     setBusy(true);
     try {
-      const got = await saveMyProvider(check.data);
+      const got = await (source ? source.save(check.data) : saveMyProvider(check.data));
       setProfile(got);
       setValues(fromProfile(got));
       setSaved(true);
@@ -184,8 +196,8 @@ export function ProviderForm({
   return (
     <div className={styles.narrow}>
       <header className={styles.head}>
-        <h1>{t('advice.offer', lang)}</h1>
-        <p className="muted small">{t('advice.offerLead', lang)}</p>
+        <h1>{source ? source.title : t('advice.offer', lang)}</h1>
+        <p className="muted small">{source ? source.lead : t('advice.offerLead', lang)}</p>
       </header>
       {profile ? (
         <div className={styles.cardHead}>
@@ -375,12 +387,14 @@ export function ProviderForm({
 
       {/* 2026-10-24: the optional approved-adviser pathway. Keyed by the
           profile so a first save starts the form from the saved lists. */}
-      <AdviserApplication
-        key={profile?.id ?? 'none'}
-        lang={lang}
-        profile={profile}
-        states={states}
-      />
+      {source ? null : (
+        <AdviserApplication
+          key={profile?.id ?? 'none'}
+          lang={lang}
+          profile={profile}
+          states={states}
+        />
+      )}
     </div>
   );
 }

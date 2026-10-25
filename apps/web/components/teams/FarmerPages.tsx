@@ -2,6 +2,7 @@
 
 import { useFarmerSession } from '@/lib/farmer-session';
 
+import { OrganisationAdvice } from './OrganisationAdvice';
 import { OrganisationTeam } from './OrganisationTeam';
 import { Organisations } from './Organisations';
 
@@ -14,4 +15,10 @@ export function FarmerOrganisations() {
 export function FarmerOrganisationTeam({ id }: { id: string }) {
   const { language } = useFarmerSession();
   return <OrganisationTeam id={id} side="farmer" language={language === 'ar' ? 'ar' : 'en'} />;
+}
+
+/** 2026-10-28: the organisation's shared advice inbox and advice profile. */
+export function FarmerOrganisationAdvice({ id }: { id: string }) {
+  const { language } = useFarmerSession();
+  return <OrganisationAdvice id={id} side="farmer" language={language} />;
 }

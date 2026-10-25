@@ -3,10 +3,13 @@ import { describe, expect, it } from 'vitest';
 import {
   SHEET_NAME_MAX,
   buildXlsx,
+  chartProblems,
+  chartXml,
   columnName,
   crc32,
   escapeXml,
   safeSheetName,
+  sheetRef,
   sheetXml,
   zipStored,
 } from './xlsx';
@@ -240,5 +243,96 @@ describe('buildXlsx', () => {
       const root = /<([A-Za-z]+)[\s>]/.exec(xml.slice(xml.indexOf('?>') + 2))?.[1];
       expect(xml.trimEnd().endsWith(`</${root}>`), `${e.name} closes <${root}>`).toBe(true);
     }
+  });
+});
+
+describe('editable charts (2026-10-28)', () => {
+  const chartSheet = {
+    name: "Farmers' sales",
+    rows: [
+      [{ text: 'Over time', bold: true as const }],
+      [],
+      [{ text: 'Day', bold: true as const }, 'Listings', 'Requests'],
+      ['2026-10-01', 3, 1],
+      ['2026-10-02', 5, 0],
+    ],
+    charts: [
+      {
+        kind: 'line' as const,
+        title: 'Listings & requests',
+        headerRow: 2,
+        firstRow: 3,
+        lastRow: 4,
+        categoryCol: 0,
+        valueCols: [1, 2],
+        at: { col: 4, row: 0, cols: 8, rows: 15 },
+      },
+    ],
+  };
+  const plain = { name: 'Plain', rows: [['x']] };
+  const entries = readZip(buildXlsx([plain, chartSheet], new Date(2026, 9, 28)));
+  const names = entries.map((e) => e.name);
+  const part = (name: string) => {
+    const e = entries.find((x) => x.name === name);
+    expect(e, `${name} is in the workbook`).toBeDefined();
+    return decode(e!.data);
+  };
+
+  it('adds a drawing, its chart and every relationship and content type between them', () => {
+    expect(names).toEqual(
+      expect.arrayContaining([
+        'xl/worksheets/_rels/sheet2.xml.rels',
+        'xl/drawings/drawing1.xml',
+        'xl/drawings/_rels/drawing1.xml.rels',
+        'xl/charts/chart1.xml',
+      ]),
+    );
+    expect(names).not.toContain('xl/worksheets/_rels/sheet1.xml.rels');
+    expect(part('xl/worksheets/sheet2.xml')).toContain('<drawing r:id="rId1"/></worksheet>');
+    expect(part('xl/worksheets/sheet1.xml')).not.toContain('<drawing');
+    expect(part('xl/worksheets/_rels/sheet2.xml.rels')).toContain(
+      'Target="../drawings/drawing1.xml"',
+    );
+    expect(part('xl/drawings/drawing1.xml')).toContain('r:id="rId1"');
+    expect(part('xl/drawings/_rels/drawing1.xml.rels')).toContain('Target="../charts/chart1.xml"');
+    const types = part('[Content_Types].xml');
+    expect(types).toContain(
+      'PartName="/xl/charts/chart1.xml" ContentType="application/vnd.openxmlformats-officedocument.drawingml.chart+xml"',
+    );
+    expect(types).toContain(
+      'PartName="/xl/drawings/drawing1.xml" ContentType="application/vnd.openxmlformats-officedocument.drawing+xml"',
+    );
+  });
+
+  it('references the cells on its own sheet, quoted, with the values cached', () => {
+    const chart = part('xl/charts/chart1.xml');
+    expect(chart).toContain('<c:lineChart>');
+    expect(chart).toContain('<c:f>&apos;Farmers&apos;&apos; sales&apos;!$B$4:$B$5</c:f>');
+    expect(chart).toContain('<c:f>&apos;Farmers&apos;&apos; sales&apos;!$A$4:$A$5</c:f>');
+    expect(chart).toContain('<c:f>&apos;Farmers&apos;&apos; sales&apos;!$C$3</c:f>');
+    expect(chart).toContain('<c:pt idx="1"><c:v>5</c:v></c:pt>');
+    expect(chart).toContain('<c:v>Requests</c:v>');
+    expect(chart).toContain('Listings &amp; requests');
+    expect(chart.match(/<c:ser>/g)?.length).toBe(2);
+  });
+
+  it('writes a clustered column chart with its schema order', () => {
+    const col = chartXml('S', chartSheet, { ...chartSheet.charts[0]!, kind: 'column' });
+    expect(col).toContain('<c:barDir val="col"/><c:grouping val="clustered"/>');
+    expect(col).toMatch(/<c:invertIfNegative val="0"\/><c:cat>/);
+  });
+
+  it('refuses a chart over cells that are missing or not numbers', () => {
+    const bad = { ...chartSheet.charts[0]!, lastRow: 9 };
+    expect(chartProblems(chartSheet, bad)).toContain('data rows past the end of the sheet');
+    expect(chartProblems(chartSheet, { ...bad, lastRow: 4, valueCols: [0] })).toContain(
+      'A4 is not a number',
+    );
+    expect(() => buildXlsx([{ ...chartSheet, charts: [bad] }])).toThrow(/past the end/);
+  });
+
+  it('builds sheet references', () => {
+    expect(sheetRef('Summary', 1, 4, 9)).toBe("'Summary'!$B$5:$B$10");
+    expect(sheetRef("It's", 0, 0)).toBe("'It''s'!$A$1");
   });
 });

@@ -208,6 +208,9 @@ Exact. No discretion.
 | 422    | `unprocessable`          | Input was valid but violates a business rule.                                                                            | Yes            |
 | 500    | `internal_error`         | Unexpected.                                                                                                              | Yes            |
 | 503    | `auth_unavailable`       | The sign-in service could not be consulted, so nothing is known about the session. Not a session failure.                | Yes            |
+| 403    | `mfa_required`           | A staff account with an authenticator, on a session that has not passed the code step (2026-10-28).                      | Yes            |
+| 403    | `mfa_enrolment_required` | An administrator without an authenticator, when STAFF_MFA_ENFORCEMENT is `required` (2026-10-28).                        | Yes            |
+| 429    | `rate_limited`           | Too many failed sign-ins for one identifier, or attempts from one address. Carries `Retry-After` (2026-10-28).           | Yes            |
 
 **The "Emitted today?" column is part of the contract.** A code marked _No_ is
 documented, agreed and deliberately unreachable — no route can currently produce
@@ -258,6 +261,9 @@ character for character.
 | `unsupported_media_type` | Send the request as application/json.                                       |
 | `internal_error`         | Something went wrong. Please try again.                                     |
 | `auth_unavailable`       | The sign-in service could not be reached. Try again in a moment.            |
+| `mfa_required`           | Enter the code from your authenticator app to continue.                     |
+| `mfa_enrolment_required` | Set up two-step sign-in to continue.                                        |
+| `rate_limited`           | Too many attempts. Wait a few minutes and try again.                        |
 
 None of these is templated. Nothing is interpolated into any of them.
 
@@ -508,6 +514,14 @@ character.
 | `notice_version_not_newer`              | Choose a version number higher than the one already published for this notice and language.                                   |
 | `notice_not_draft`                      | Only a draft can be edited, published or discarded. A published or retired notice stays as it was.                            |
 | `correction_already_open`               | A correction has already been requested for this post and is waiting for its owner.                                           |
+| `staff_invitation_pending`              | An invitation to that address is already waiting. Withdraw it before sending another.                                         |
+| `staff_invitation_not_pending`          | This invitation has already been used, withdrawn or has expired. Ask CORWADO for a new one.                                   |
+| `staff_direct_create_super_admin_only`  | Only a Super Admin can create a staff account with a password. Send an invitation instead.                                    |
+| `mfa_reset_own`                         | You cannot reset your own two-step sign-in. Ask another Super Admin.                                                          |
+| `mfa_not_enrolled`                      | This account has no authenticator to reset.                                                                                   |
+| `mfa_factor_not_verified`               | No confirmed authenticator was found. Enter a code from the app to confirm it first.                                          |
+| `advisory_note_not_approved`            | Only an approved adviser whose approval is not suspended can submit official advisory notes.                                  |
+| `advisory_note_not_allowed`             | That change cannot be made to this note as it stands. Reload it to see where it is.                                           |
 
 **A route names a rule; it never writes a sentence.** `conflict()` and
 `unprocessable()` take a key from this registry, not a string. That is how the
@@ -677,6 +691,21 @@ change.
 | `account.password_recovered`                  |
 | `listing.correction_requested`                |
 | `listing.correction_addressed`                |
+| `staff.invited`                               |
+| `staff.invitation_revoked`                    |
+| `staff.invitation_accepted`                   |
+| `staff.mfa_enrolled`                          |
+| `staff.mfa_reset`                             |
+| `adviser_approval.suspended`                  |
+| `adviser_approval.restored`                   |
+| `advisory_note.submitted`                     |
+| `advisory_note.withdrawn`                     |
+| `advisory_note.returned`                      |
+| `advisory_note.published`                     |
+| `advisory_note.unpublished`                   |
+| `advice_case.assigned`                        |
+| `advice_case.accepted`                        |
+| `advice_case.released`                        |
 
 `before` and `after` hold **changed fields only**, never whole rows, and never a
 password, token, authentication identifier, national id, phone, email, given
@@ -950,6 +979,8 @@ These are also exact.
 | Analytics: window ends before start        | The window ends before it starts.                                                               |
 | Analytics: window over 366 days            | A window can be at most 366 days.                                                               |
 | Analytics: state not a state id            | Choose a state from the list.                                                                   |
+| Analytics: commodity not on list           | Choose a commodity from the list.                                                               |
+| Analytics: actor type not on list          | Choose an actor type from the list.                                                             |
 | Public profile: name length                | A name for your public profile is 2 to 120 characters.                                          |
 | Public profile: activity not on list       | Choose what you do from the list.                                                               |
 | Public profile: about too long             | Keep the description to 1000 characters.                                                        |
@@ -1281,6 +1312,8 @@ These are also exact.
 | Analytics: window ends before start        | The window ends before it starts.                                                               |
 | Analytics: window over 366 days            | A window can be at most 366 days.                                                               |
 | Analytics: state not a state id            | Choose a state from the list.                                                                   |
+| Analytics: commodity not on list           | Choose a commodity from the list.                                                               |
+| Analytics: actor type not on list          | Choose an actor type from the list.                                                             |
 | Public profile: name length                | A name for your public profile is 2 to 120 characters.                                          |
 | Public profile: activity not on list       | Choose what you do from the list.                                                               |
 | Public profile: about too long             | Keep the description to 1000 characters.                                                        |

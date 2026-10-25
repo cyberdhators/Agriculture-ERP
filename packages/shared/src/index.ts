@@ -432,3 +432,8 @@ export * from './organization';
 export * from './account-recovery';
 // 2026-10-27: a moderator asks for a correction to a marketplace post.
 export * from './listing-corrections';
+// 2026-10-28: an organisation's advice profile and its shared advice inbox.
+export * from './organization-advice';
+// 2026-10-28: staff security -- two-step sign-in, server sign-in with failed
+// attempts recorded and limited, last activity, staff invitations.
+export * from './staff-security';

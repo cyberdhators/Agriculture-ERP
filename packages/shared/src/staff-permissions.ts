@@ -381,9 +381,11 @@ export const scopeOfGrantInput = (input: {
  * database trigger on the account tables; the others by the "me" routes and by
  * the Super Admin re-authentication step.
  *
- * `reauth_failed` is the only failed-password event: staff, farmers and buyers
- * all sign in in the browser, straight to Supabase, so no server sees a failed
- * sign-in. The one password check a server makes is re-authentication.
+ * `reauth_failed` is a wrong password at re-authentication. `sign_in_failed`
+ * (2026-10-28) is a wrong password at sign-in for an account that exists:
+ * the app's sign-in screens now sign in through POST /api/auth/sign-in, so a
+ * server sees each attempt. An identifier with no account is never recorded
+ * here (there is no account to record it against).
  */
 export const ACCESS_EVENTS = [
   'account_created',
@@ -391,6 +393,7 @@ export const ACCESS_EVENTS = [
   'sign_in',
   'return_session',
   'reauth_failed',
+  'sign_in_failed',
 ] as const;
 
 export type AccessEvent = (typeof ACCESS_EVENTS)[number];
@@ -401,6 +404,7 @@ export const ACCESS_EVENT_LABELS: Readonly<Record<AccessEvent, string>> = {
   sign_in: 'Sign-in',
   return_session: 'Return session',
   reauth_failed: 'Failed re-authentication',
+  sign_in_failed: 'Failed sign-in',
 };
 
 export const ACCESS_PRINCIPAL_KINDS = ['user', 'officer', 'buyer', 'farmer'] as const;
@@ -434,7 +438,7 @@ export function classifyVisit(input: {
   readonly lastSeenAt: Date | null;
   readonly now: Date;
   readonly signInAnnounced: boolean;
-}): Exclude<AccessEvent, 'account_created' | 'reauth_failed'> | null {
+}): Exclude<AccessEvent, 'account_created' | 'reauth_failed' | 'sign_in_failed'> | null {
   if (!input.firstSignInAt) return 'first_sign_in';
   if (input.signInAnnounced) return 'sign_in';
   if (!input.lastSeenAt) return 'return_session';

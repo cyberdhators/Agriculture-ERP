@@ -17,7 +17,9 @@ import { prisma } from '../../../../lib/db';
  * POST /api/analytics/export -- the analytics figures as an Excel workbook
  * (2026-10-22): a Summary sheet, one sheet per breakdown and a Definitions
  * sheet carrying the generation time, the filters, the cut-off and the
- * limitations. Body: `{ filters?: { from, to, state_id } }`, the page's own.
+ * limitations. Body: `{ filters?: { from, to, state_id, commodity, actor_type } }`, the
+ * page's own (commodity and actor type 2026-10-28). Over-time sheets carry
+ * editable Excel charts.
  *
  * Roles: admin and supervisor, with `reports.view` -- the same roles as the
  * reports export. Exporting is recorded, and a read-only user creates no
@@ -41,12 +43,11 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       const filters = body.filters ?? {};
       const states = analyticsStates(auth.scope, coverage, filters.state_id, forbidden);
       const window = resolveAnalyticsWindow(filters);
-      const { summary, queries } = await analyticsSummary(
-        prisma,
-        window,
-        states,
-        filters.state_id ?? null,
-      );
+      const { summary, queries } = await analyticsSummary(prisma, window, states, {
+        state: filters.state_id ?? null,
+        commodity: filters.commodity ?? null,
+        actorType: filters.actor_type ?? null,
+      });
 
       const named = states
         ? await prisma.$queryRawUnsafe<{ id: string; name: string }[]>(

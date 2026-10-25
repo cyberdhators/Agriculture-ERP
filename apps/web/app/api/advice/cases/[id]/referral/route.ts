@@ -12,6 +12,7 @@ import {
 } from '@agri-erp/shared';
 
 import {
+  OWN_PROVIDER_SQL,
   PROVIDER_ACCOUNT_LIVE,
   REFERRAL_SELECT,
   caseAttachments,
@@ -71,16 +72,22 @@ interface Target {
   id: string;
   auth_user_id: string;
   display_name: string;
+  /** 2026-10-28: an organisation's profile; the new case goes to its shared advice inbox. */
+  organization_id: string | null;
+  /** The requester's own profile, or their own organisation's. */
+  requester_own: boolean;
   open: boolean;
 }
 
-async function target(db: Pick<AuditTx, '$queryRawUnsafe'>, providerId: string) {
+async function target(db: Pick<AuditTx, '$queryRawUnsafe'>, providerId: string, requester: string) {
   const [row] = await db.$queryRawUnsafe<Target[]>(
-    `SELECT p.id, p.auth_user_id, p.display_name,
+    `SELECT p.id, p.auth_user_id, p.display_name, p.organization_id,
+            ${OWN_PROVIDER_SQL('$2')} AS requester_own,
             (p.status = 'published' AND ${PROVIDER_ACCOUNT_LIVE}) AS open
        FROM public.advice_provider p
       WHERE p.id = $1::uuid AND p.deleted_at IS NULL`,
     providerId,
+    requester,
   );
   return row ?? null;
 }
@@ -91,6 +98,7 @@ function checkTarget(found: Target | null, current: CaseRow): Target {
   if (
     found.id === current.provider_id ||
     found.auth_user_id === current.requester_auth_user_id ||
+    found.requester_own ||
     found.auth_user_id === current.provider_auth_user_id
   ) {
     throw unprocessable('advice_referral_provider_invalid');
@@ -136,7 +144,10 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
           if (already.to_provider_id === body.to_provider_id) return current; // sent again
           throw conflict('advice_referral_open');
         }
-        const to = checkTarget(await target(tx, body.to_provider_id), current);
+        const to = checkTarget(
+          await target(tx, body.to_provider_id, current.requester_auth_user_id),
+          current,
+        );
         const [made] = await tx.$queryRawUnsafe<{ id: string }[]>(
           `INSERT INTO public.advice_referral (from_case_id, to_provider_id, proposed_by)
            VALUES ($1::uuid, $2::uuid, $3::uuid)
@@ -262,7 +273,10 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
 
           // accept
           if (current.status === 'closed') throw unprocessable('advice_case_closed');
-          const to = checkTarget(await target(tx, proposal.to_provider_id), current);
+          const to = checkTarget(
+            await target(tx, proposal.to_provider_id, current.requester_auth_user_id),
+            current,
+          );
 
           // 1. The new case, with the other provider: the topic and the question.
           await tx.$executeRawUnsafe(
@@ -295,8 +309,8 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
           const [conversation] = await tx.$queryRawUnsafe<{ id: string }[]>(
             `INSERT INTO public.conversation
                (post_kind, post_id, post_title, owner_auth_user_id, owner_name,
-                starter_auth_user_id, starter_name)
-             VALUES ('advice_case', $1::uuid, $2, $3::uuid, $4, $5::uuid, $6)
+                starter_auth_user_id, starter_name, owner_organization_id)
+             VALUES ('advice_case', $1::uuid, $2, $3::uuid, $4, $5::uuid, $6, $7::uuid)
              RETURNING id`,
             newCaseId,
             current.topic,
@@ -304,6 +318,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
             to.display_name,
             current.requester_auth_user_id,
             current.requester_name,
+            to.organization_id,
           );
           if (!conversation) throw notFound();
           await writeAudit(tx, {

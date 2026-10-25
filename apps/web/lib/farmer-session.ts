@@ -17,6 +17,7 @@ import { DEFAULT_LANGUAGE, LANG_COOKIE, LANG_STORAGE, isLanguage, type Language 
 import type { Farmer, ProduceListing } from '@/lib/fixtures/farmers';
 import { enqueue, queuedOf, subscribeOutbox } from '@/lib/offline/outbox';
 import { loadWithSnapshot, readSnapshot, saveSnapshot } from '@/lib/offline/snapshot';
+import { serverSignIn } from '@/lib/auth/server-sign-in';
 import { supabaseBrowser } from '@/lib/supabase/browser';
 
 /**
@@ -270,21 +271,11 @@ export function FarmerSessionProvider({
       } catch {
         return { ok: false, reason: 'wrong' };
       }
-      try {
-        const { error } = await supabaseBrowser().auth.signInWithPassword({
-          email: identifier,
-          password,
-        });
-        if (error) {
-          if (error.status === 429) return { ok: false, reason: 'locked' };
-          // 2026-10-21: staff suspended the account, or it was deleted.
-          if (error.code === 'user_banned') return { ok: false, reason: 'suspended' };
-          const refused = error.status !== undefined && [400, 401, 403, 404].includes(error.status);
-          return { ok: false, reason: refused ? 'wrong' : 'unavailable' };
-        }
-      } catch {
-        return { ok: false, reason: 'unavailable' };
-      }
+      // 2026-10-28: through the server, so a failed sign-in is recorded and
+      // limited (POST /api/auth/sign-in). Same reasons as before: too many
+      // attempts is 'locked'; suspended or closed is 'suspended'.
+      const outcome = await serverSignIn(identifier, password);
+      if (!outcome.ok) return { ok: false, reason: outcome.reason };
       // 2026-10-24 (acceptance QA): announce the sign-in, as the staff sign-in
       // does, so the access log records it as a sign-in (the first one as
       // first_sign_in) rather than a return session. Registration signs in

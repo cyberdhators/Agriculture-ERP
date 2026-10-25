@@ -251,6 +251,14 @@ export const RULE_MESSAGES = {
     'Choose a version number higher than the one already published for this notice and language.',
   notice_not_draft:
     'Only a draft can be edited, published or discarded. A published or retired notice stays as it was.',
+  // ORGANISATION ADVICE CASES (2026-10-28). About a case's assignment, never a person.
+  org_advice_admin_only:
+    "Only an administrator of the organisation can give a request to someone else. Take it yourself if it is unassigned.",
+  org_advice_assignee_invalid:
+    'That member cannot take advice requests for this organisation. Choose a member who handles advice.',
+  org_advice_already_assigned: 'Someone else in the organisation has already taken this request.',
+  org_advice_not_assignee: 'This request is being handled by someone else in the organisation.',
+  org_advice_accept_first: 'Accept this request before replying to it or closing it.',
   // TEAM ACCESS (2026-10-27)
   organization_access_ended:
     'You no longer have access to that organisation. Switch back to your own account.',
@@ -280,6 +288,23 @@ export const RULE_MESSAGES = {
   // CORRECTIONS (2026-10-27). About a post's state, never a person.
   correction_already_open:
     'A correction has already been requested for this post and is waiting for its owner.',
+  // STAFF SECURITY AND ADVISORY AUTHORIZATION (2026-10-28, lane-security).
+  staff_invitation_pending:
+    'An invitation to that address is already waiting. Withdraw it before sending another.',
+  staff_invitation_not_pending:
+    'This invitation has already been used, withdrawn or has expired. Ask CORWADO for a new one.',
+  staff_direct_create_super_admin_only:
+    'Only a Super Admin can create a staff account with a password. Send an invitation instead.',
+  mfa_reset_own:
+    'You cannot reset your own two-step sign-in. Ask another Super Admin.',
+  mfa_not_enrolled:
+    'This account has no authenticator to reset.',
+  mfa_factor_not_verified:
+    'No confirmed authenticator was found. Enter a code from the app to confirm it first.',
+  advisory_note_not_approved:
+    'Only an approved adviser whose approval is not suspended can submit official advisory notes.',
+  advisory_note_not_allowed:
+    'That change cannot be made to this note as it stands. Reload it to see where it is.',
 } as const;
 
 export type RuleKey = keyof typeof RULE_MESSAGES;
@@ -326,6 +351,20 @@ export const authUnavailable = () =>
     undefined,
     retryAfter(SYNC_OUTCOME_SPECS.retry_later.retryAfterSeconds),
   );
+/** 2026-10-28: a staff session that has not passed the code step. */
+export const mfaRequired = () =>
+  new ApiFailure(403, ERROR_CODES.mfaRequired, ERROR_MESSAGES.mfaRequired);
+
+/** 2026-10-28: an administrator without an authenticator, in "required" mode. */
+export const mfaEnrolmentRequired = () =>
+  new ApiFailure(403, ERROR_CODES.mfaEnrolmentRequired, ERROR_MESSAGES.mfaEnrolmentRequired);
+
+/** 2026-10-28: too many sign-in attempts; says when to try again. */
+export const rateLimited = (retryAfterSeconds: number) =>
+  new ApiFailure(429, ERROR_CODES.rateLimited, ERROR_MESSAGES.rateLimited, undefined, {
+    'retry-after': String(Math.max(1, Math.ceil(retryAfterSeconds))),
+  });
+
 export const internalError = () =>
   new ApiFailure(
     500,

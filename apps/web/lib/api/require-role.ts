@@ -1,11 +1,24 @@
 import { accountSideFor } from './account-role';
-import { type Role, type Scope } from '@agri-erp/shared';
+import {
+  type MfaFacts,
+  type Role,
+  type Scope,
+  aalOfToken,
+  staffMfaGate,
+  staffMfaMode,
+} from '@agri-erp/shared';
 import { createServerClient } from '@supabase/ssr';
 import { createClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 
 import { prisma } from '../db';
-import { authUnavailable, forbidden, unauthenticated } from './errors';
+import {
+  authUnavailable,
+  forbidden,
+  mfaEnrolmentRequired,
+  mfaRequired,
+  unauthenticated,
+} from './errors';
 
 /**
  * THE ONLY PLACE A SESSION IS READ. CONVENTIONS.md section 2.
@@ -27,6 +40,33 @@ export interface Authenticated {
   readonly principal: Principal;
   readonly role: Role;
   readonly scope: Scope;
+  /**
+   * 2026-10-28: the session's two-step state, for staff only (absent for
+   * officers, buyers and farmers). GET /api/me reports it to the portal.
+   */
+  readonly mfa?: MfaFacts;
+}
+
+/** What the session check learned about the caller. */
+interface SessionFacts {
+  readonly authUserId: string;
+  /** At least one VERIFIED authenticator factor on the account (from getUser). */
+  readonly hasVerifiedFactor: boolean;
+  /** The validated access token's `aal` claim. */
+  readonly aal: 'aal1' | 'aal2' | null;
+}
+
+type FactorList = readonly { readonly status?: string }[] | undefined;
+const hasVerified = (factors: FactorList): boolean =>
+  (factors ?? []).some((f) => f.status === 'verified');
+
+export interface RequireRoleOptions {
+  /**
+   * 2026-10-28: the few routes a staff session needs in order to FINISH
+   * signing in or to enrol in two-step sign-in (GET /api/me and
+   * /api/staff/mfa/**). Every other route leaves this unset.
+   */
+  readonly mfaExempt?: boolean;
 }
 
 /**
@@ -34,7 +74,7 @@ export interface Authenticated {
  * Supabase session cookie, the officer app an Authorization bearer token. A
  * route must never require one form specifically.
  */
-async function resolveAuthUserId(request: Request): Promise<string | null> {
+async function resolveSession(request: Request): Promise<SessionFacts | null> {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !anon) throw new Error('Supabase URL and publishable key must be set.');
@@ -57,7 +97,14 @@ async function resolveAuthUserId(request: Request): Promise<string | null> {
       if (isSessionRefusal(error.status)) return null;
       throw authUnavailable();
     }
-    return data.user ? data.user.id : null;
+    return data.user
+      ? {
+          authUserId: data.user.id,
+          hasVerifiedFactor: hasVerified(data.user.factors),
+          // getUser has just accepted this token, so its claim can be read.
+          aal: aalOfToken(token),
+        }
+      : null;
   }
 
   // Cookie session (the web portal). Outside a request scope cookies() throws;
@@ -69,15 +116,17 @@ async function resolveAuthUserId(request: Request): Promise<string | null> {
     return null;
   }
   let result: Awaited<ReturnType<ReturnType<typeof createServerClient>['auth']['getUser']>>;
+  const client = createServerClient(url, anon, {
+    cookies: {
+      getAll: () => store.getAll(),
+      // A route never writes a session cookie (the sign-in route and the
+      // middleware do); a refresh made here is used for this request only.
+      setAll: () => undefined,
+    },
+    global: { fetch: fetchWithDeadline },
+  });
   try {
-    result = await createServerClient(url, anon, {
-      cookies: {
-        getAll: () => store.getAll(),
-        // A route never writes a session cookie; sign-in does that on the client.
-        setAll: () => undefined,
-      },
-      global: { fetch: fetchWithDeadline },
-    }).auth.getUser();
+    result = await client.auth.getUser();
   } catch {
     throw authUnavailable();
   }
@@ -86,7 +135,20 @@ async function resolveAuthUserId(request: Request): Promise<string | null> {
     if (isSessionRefusal(error.status)) return null;
     throw authUnavailable();
   }
-  return data.user ? data.user.id : null;
+  if (!data.user) return null;
+  // The token getUser just validated is the session's own; its `aal` claim
+  // says whether the code step was passed. Read from memory, no second call.
+  let token: string | null = null;
+  try {
+    token = (await client.auth.getSession()).data.session?.access_token ?? null;
+  } catch {
+    token = null;
+  }
+  return {
+    authUserId: data.user.id,
+    hasVerifiedFactor: hasVerified(data.user.factors),
+    aal: aalOfToken(token),
+  };
 }
 
 /**
@@ -113,9 +175,11 @@ const fetchWithDeadline: typeof fetch = (input, init) =>
 export async function requireRole(
   request: Request,
   allowed: readonly Role[],
+  options: RequireRoleOptions = {},
 ): Promise<Authenticated> {
-  const authUserId = await resolveAuthUserId(request);
-  if (!authUserId) throw unauthenticated();
+  const session = await resolveSession(request);
+  if (!session) throw unauthenticated();
+  const { authUserId } = session;
 
   // Both reads go through the ACTIVE views, which is where C-3.6 lives: a
   // soft-deleted user, or an officer who is soft-deleted OR inactive, has no
@@ -129,6 +193,22 @@ export async function requireRole(
   );
 
   if (staff) {
+    // 2026-10-28: TWO-STEP SIGN-IN, before the role check so a half-signed-in
+    // session learns only that it must finish signing in. staffMfaGate
+    // (packages/shared/src/staff-security.ts) holds the rule and the rollout.
+    const mfa: MfaFacts = {
+      role: staff.role,
+      hasVerifiedFactor: session.hasVerifiedFactor,
+      aal: session.aal,
+    };
+    const gate = staffMfaGate(
+      mfa,
+      staffMfaMode(process.env.STAFF_MFA_ENFORCEMENT),
+      options.mfaExempt === true,
+    );
+    if (gate === 'verify_required') throw mfaRequired();
+    if (gate === 'enrolment_required') throw mfaEnrolmentRequired();
+
     if (!allowed.includes(staff.role)) throw forbidden();
     const scope: Scope =
       staff.role === 'admin'
@@ -140,6 +220,7 @@ export async function requireRole(
       principal: { kind: 'user', id: staff.id, authUserId, name: staff.name },
       role: staff.role,
       scope,
+      mfa,
     };
   }
 

@@ -65,7 +65,9 @@ describe('advice photo read links', () => {
 
   it('refuse anyone who is not the requester or the provider of the case', () => {
     expect(lib).toMatch(
-      /isParticipant = \(row: CaseRow, authUserId: string\): boolean =>\s+authUserId === row\.requester_auth_user_id \|\| authUserId === row\.provider_auth_user_id/,
+      // 2026-10-28: the provider side only for a PERSONAL profile; an
+      // organisation's handlers read its cases elsewhere and get no photo link.
+      /isParticipant = \(row: CaseRow, authUserId: string\): boolean =>\s+authUserId === row\.requester_auth_user_id \|\|\s+\(row\.provider_organization_id === null && authUserId === row\.provider_auth_user_id\)/,
     );
     const guard = linkFn.indexOf('if (!isParticipant(row, authUserId)) return [];');
     expect(guard).toBeGreaterThan(-1);
@@ -76,7 +78,10 @@ describe('advice photo read links', () => {
     const callers = sources.filter((s) => /attachmentLinks\(/.test(s.text));
     expect(callers.map((s) => s.path)).toEqual(['lib/api/advice.ts']);
     // loadCase finds a case only for its two participants.
-    expect(lib).toMatch(/AND \$2::uuid IN \(ac\.requester_auth_user_id, p\.auth_user_id\)/);
+    // 2026-10-28: the provider side only for a personal profile.
+    expect(lib).toMatch(
+      /AND \(\$2::uuid = ac\.requester_auth_user_id[\s\S]{0,200}OR \(p\.organization_id IS NULL AND \$2::uuid = p\.auth_user_id\)\)/,
+    );
     // Every route that presents a case with its photos got the row from loadCase.
     const detailRoutes = sources.filter(
       (s) => s.path.startsWith('app/api/') && /presentCase\([^)]*,\s*true\)/.test(s.text),

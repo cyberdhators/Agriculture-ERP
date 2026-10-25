@@ -3,12 +3,20 @@ import {
   ADVICE_TOPICS,
   ANALYTICS_LIMITATIONS,
   ANALYTICS_METRICS,
+  ANALYTICS_SERIES,
   type AnalyticsSummary,
   type Coverage,
 } from '@agri-erp/shared';
 import { describe, expect, it } from 'vitest';
 
-import { METRIC_SQL, inlineAnalyticsQuery } from '../api/analytics';
+import {
+  METRIC_SQL,
+  SERIES_SQL,
+  fillSeries,
+  inlineAnalyticsQuery,
+  narrowingRefusal,
+  withoutActor,
+} from '../api/analytics';
 import { analyticsStates } from './scope';
 import { analyticsSheets, breakdownLabel } from './workbook';
 
@@ -39,17 +47,26 @@ describe('every figure has its definition and its SQL', () => {
     }
   });
 
-  it('runs every query on the same window and state parameters', () => {
+  it('runs every query on the same window, state, commodity and actor parameters', () => {
     for (const [id, sql] of Object.entries(METRIC_SQL)) {
       for (const q of [sql.total, sql.breakdown].filter(Boolean) as string[]) {
         expect(q, id).toMatch(
-          /^WITH w AS \(SELECT \$1::timestamptz AS s, \$2::timestamptz AS e, \$3::text\[\] AS st\)/,
+          /^WITH w AS \(SELECT \$1::timestamptz AS s, \$2::timestamptz AS e, \$3::text\[\] AS st, \$4::text AS cm, \$5::text AS ac\)/,
         );
         expect(
-          q.match(/\$\d+/g)?.every((p) => ['$1', '$2', '$3'].includes(p)),
+          q.match(/\$\d+/g)?.every((p) => ['$1', '$2', '$3', '$4', '$5'].includes(p)),
           id,
         ).toBe(true);
       }
+    }
+    for (const [id, spec] of Object.entries(SERIES_SQL)) {
+      expect(spec.sql, id).toMatch(
+        /^WITH w AS \(SELECT \$1::timestamptz AS s, \$2::timestamptz AS e, \$3::text\[\] AS st, \$4::text AS cm, \$5::text AS ac, \$6::text AS b\)/,
+      );
+      expect(
+        spec.sql.match(/\$\d+/g)?.every((p) => /^\$[1-6]$/.test(p)),
+        id,
+      ).toBe(true);
     }
   });
 
@@ -186,8 +203,33 @@ describe('the workbook', () => {
   const summary: AnalyticsSummary = {
     window: { from: '2026-09-23', to: '2026-10-22', days: 30, time_zone: 'Africa/Juba' },
     state_id: null,
+    commodity: 'crop',
+    actor_type: null,
     scope_states: null,
     generated_at: '2026-10-22T08:00:00.000Z',
+    bucket: 'week',
+    series: [
+      {
+        id: 'series.registrations',
+        periods: ['2026-09-21', '2026-09-28'],
+        lines: null,
+        unavailable: 'not_filterable',
+      },
+      {
+        id: 'series.active_users',
+        periods: ['2026-09-21', '2026-09-28'],
+        lines: null,
+        unavailable: 'not_filterable',
+      },
+      {
+        id: 'series.market_activity',
+        periods: ['2026-09-21', '2026-09-28'],
+        lines: [
+          { key: 'listings', points: [3, 5] },
+          { key: 'buying_requests', points: [1, 0] },
+        ],
+      },
+    ],
     metrics: ANALYTICS_METRICS.map((m) =>
       m.id === 'participation.activities'
         ? {
@@ -217,10 +259,41 @@ describe('the workbook', () => {
     expect(sheets[sheets.length - 1]?.name).toBe('Definitions');
     expect(sheets.map((s) => s.name)).toEqual([
       'Summary',
+      'Registrations over time',
+      'New and returning over time',
+      'Listings and requests over time',
       'Active accounts by state',
       'What account holders do',
       'Definitions',
     ]);
+  });
+
+  it('draws an editable chart over each over-time table and each breakdown (2026-10-28)', () => {
+    const market = sheets.find((s) => s.name === 'Listings and requests over time')!;
+    const chart = market.charts?.[0];
+    expect(chart?.kind).toBe('line');
+    expect(chart?.valueCols).toEqual([1, 2]);
+    expect(market.rows[chart!.headerRow]?.[1]).toEqual({ text: 'Produce listings', bold: true });
+    expect(market.rows[chart!.firstRow]).toEqual(['2026-09-21', 3, 1]);
+    expect(market.rows[chart!.lastRow]).toEqual(['2026-09-28', 5, 0]);
+    expect(JSON.stringify(market.rows)).toContain('never add the columns together');
+    // Unavailable under the filter: words and the reason, and no chart.
+    const reg = sheets.find((s) => s.name === 'Registrations over time')!;
+    expect(reg.charts).toBeUndefined();
+    expect(JSON.stringify(reg.rows)).toContain('Not measured');
+    const byState = sheets.find((s) => s.name === 'Active accounts by state')!;
+    const bar = byState.charts![0]!;
+    expect(bar.kind).toBe('column');
+    expect(byState.rows[bar.firstRow]).toEqual(['Central Equatoria', 4]);
+    expect(bar.lastRow).toBe(bar.firstRow);
+  });
+
+  it('names the commodity and actor-type filters, and how each figure takes them', () => {
+    expect(flat('Summary')).toContain('Crops & grains');
+    expect(flat('Summary')).toContain('All actor types');
+    const defs = flat('Definitions');
+    expect(defs).toContain('Commodity filter');
+    for (const s of ANALYTICS_SERIES) expect(defs).toContain(s.id);
   });
 
   it('carries the window, cut-off, filters and generation time in Juba time', () => {
@@ -253,5 +326,101 @@ describe('the workbook', () => {
     );
     expect(breakdownLabel(def, { key: 'XX' })).toBe('XX');
     expect(flat('What account holders do')).toContain('overlap');
+  });
+});
+
+describe('the commodity and actor-type filters (2026-10-28)', () => {
+  const all = [
+    ...Object.entries(METRIC_SQL).map(([id, x]) => ({
+      id,
+      spec: x,
+      sql: `${x.total ?? ''}\n${x.breakdown ?? ''}`,
+    })),
+    ...Object.entries(SERIES_SQL).map(([id, x]) => ({ id, spec: x, sql: x.sql })),
+  ];
+
+  it('a figure narrows by a filter exactly when its SQL reads that filter', () => {
+    for (const { id, spec, sql } of all) {
+      expect(sql.includes('w.cm'), `${id}: commodity flag and SQL disagree`).toBe(
+        spec.commodity === true,
+      );
+      expect(sql.includes('w.ac'), `${id}: actor flag and SQL disagree`).toBe(spec.actor === true);
+    }
+  });
+
+  it('the definitions say how each filter applies exactly where the SQL applies it', () => {
+    for (const def of ANALYTICS_METRICS) {
+      const spec = METRIC_SQL[def.id]!;
+      expect(def.commodityRule !== undefined, `${def.id} commodity`).toBe(spec.commodity === true);
+      expect(def.actorRule !== undefined, `${def.id} actor`).toBe(spec.actor === true);
+    }
+    for (const def of ANALYTICS_SERIES) {
+      const spec = SERIES_SQL[def.id]!;
+      expect(spec, def.id).toBeTruthy();
+      expect(def.commodityRule !== undefined, `${def.id} commodity`).toBe(spec.commodity === true);
+      expect(def.actorRule !== undefined, `${def.id} actor`).toBe(spec.actor === true);
+    }
+    expect(Object.keys(SERIES_SQL).sort()).toEqual(ANALYTICS_SERIES.map((s) => s.id).sort());
+  });
+
+  it('refuses rather than serves unfiltered a figure the filter cannot narrow', () => {
+    const present = new Set(['access_log', 'account_profile', 'buying_request']);
+    const none = { commodity: null, actorType: null };
+    const plain = { needs: ['access_log'], located: true };
+    expect(narrowingRefusal(plain, null, none, present)).toBeNull();
+    expect(narrowingRefusal(plain, null, { ...none, commodity: 'crop' }, present)).toBe(
+      'not_filterable',
+    );
+    expect(narrowingRefusal(plain, null, { ...none, actorType: 'trader' }, present)).toBe(
+      'not_filterable',
+    );
+    const both = { ...plain, commodity: true as const, actor: true as const };
+    expect(narrowingRefusal(both, null, { commodity: 'crop', actorType: 'trader' }, present)).toBe(
+      null,
+    );
+    // No account_profile: the actor filter cannot be applied, so not measured.
+    expect(
+      narrowingRefusal(both, null, { ...none, actorType: 'trader' }, new Set(['access_log'])),
+    ).toBe('not_in_database');
+    expect(narrowingRefusal({ needs: [], located: false }, ['CE'], none, present)).toBe(
+      'not_located',
+    );
+  });
+
+  it('neutralises the actor predicate when account_profile is absent', () => {
+    const q = METRIC_SQL['listings.created']!.total!;
+    expect(q).toContain('account_profile');
+    const stripped = withoutActor(q);
+    expect(stripped).not.toContain('account_profile');
+    expect(stripped).toContain('(w.ac IS NULL)');
+    expect(stripped).toContain('w.cm');
+  });
+
+  it('never reads a name or a phone in the over-time queries, and excludes deleted posts', () => {
+    for (const [id, spec] of Object.entries(SERIES_SQL)) {
+      expect(spec.sql, id).not.toMatch(/given_name|family_name|\.body\b|contact_phone/);
+    }
+    const market = SERIES_SQL['series.market_activity']!.sql;
+    expect(market).toContain('l.deleted_at IS NULL');
+    expect(market).toContain('r.deleted_at IS NULL');
+  });
+});
+
+describe('over time (2026-10-28)', () => {
+  it('fills every period of every line, zero where nothing came back', () => {
+    const lines = fillSeries(
+      ['2026-10-01', '2026-10-02', '2026-10-03'],
+      ['new', 'returning'],
+      [
+        { bucket: '2026-10-02', key: 'new', value: 4 },
+        { bucket: '2026-10-03', key: 'returning', value: 1 },
+        { bucket: '2026-09-30', key: 'new', value: 9 },
+        { bucket: '2026-10-01', key: 'other', value: 9 },
+      ],
+    );
+    expect(lines).toEqual([
+      { key: 'new', points: [0, 4, 0] },
+      { key: 'returning', points: [0, 0, 1] },
+    ]);
   });
 });

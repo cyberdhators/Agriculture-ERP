@@ -19,6 +19,8 @@ import { prisma } from '../../../../lib/db';
  * `status`, with no review by anyone: participation is independent, and public
  * visibility is not endorsement. One profile per account, owned by the
  * sign-in, so a farmer and a buyer record on one account share it.
+ * (2026-10-28: an organisation's advice profile is a separate row, managed at
+ * /api/organizations/:id/advice-provider; this route never reads or writes it.)
  *
  * Audited as `advice_provider.saved`, carrying the status and the NAMES of the
  * fields that changed, never their text. A save that changes nothing writes
@@ -94,7 +96,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
                 status)
              VALUES ($1::uuid, $2, $3, $4, $5::text[], $6::text[], $7::text[], $8::text[],
                      $9, $10, $11, $12, $13)
-             ON CONFLICT (auth_user_id) DO NOTHING
+             ON CONFLICT (auth_user_id) WHERE organization_id IS NULL DO NOTHING
              RETURNING id`,
             owner,
             ...values,

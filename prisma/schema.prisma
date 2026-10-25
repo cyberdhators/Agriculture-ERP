@@ -109,6 +109,8 @@ model State {
   marketPrices MarketPrice[]
   /// B13. A buyer organisation in South Sudan may name its state.
   buyerOrganizations BuyerOrganization[]
+  /// 2026-10-28: staff invitations to a state-scoped role.
+  staffInvitations StaffInvitation[]
 
   @@map("state")
 }
@@ -399,6 +401,12 @@ model User {
   noticesCreated             Notice[]             @relation("NoticeCreatedBy")
   noticesPublished           Notice[]             @relation("NoticePublishedBy")
   noticesRetired             Notice[]             @relation("NoticeRetiredBy")
+  // 2026-10-28: staff invitations, and official advisory notes reviewed.
+  staffInvitationsSent       StaffInvitation[]    @relation("StaffInvitationInvitedBy")
+  staffInvitationsRevoked    StaffInvitation[]    @relation("StaffInvitationRevokedBy")
+  staffInvitationAccepted    StaffInvitation[]    @relation("StaffInvitationAcceptedUser")
+  advisoryNotesReviewed      AdvisoryNote[]       @relation("AdvisoryNoteReviewedBy")
+  advisoryNotesPublished     AdvisoryNote[]       @relation("AdvisoryNotePublishedBy")
 
   @@index([role], map: "user_role_idx")
   @@index([scopeStateId], map: "user_scope_state_id_idx")
@@ -1784,6 +1792,45 @@ model AccountActivity {
   @@map("account_activity")
 }
 
+/// 2026-10-28: one password attempt through POST /api/auth/sign-in, for the
+/// rate limit. The identifier is a SHA-256 hash only. A moving window.
+model SignInAttempt {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  identifierHash String   @map("identifier_hash")
+  succeeded      Boolean
+  attemptedAt    DateTime @default(now()) @map("attempted_at") @db.Timestamptz(6)
+
+  @@index([identifierHash, attemptedAt(sort: Desc)], map: "sign_in_attempt_window_idx")
+  @@index([attemptedAt], map: "sign_in_attempt_age_idx")
+  @@map("sign_in_attempt")
+}
+
+/// 2026-10-28: an expiring email invitation to a staff role. Only the token's
+/// SHA-256 hash is stored; the invitee chooses their own password.
+model StaffInvitation {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tokenHash      String    @unique(map: "staff_invitation_token_hash_key") @map("token_hash")
+  email          String
+  name           String
+  role           UserRole
+  scopeStateId   String?   @map("scope_state_id")
+  invitedBy      String    @map("invited_by") @db.Uuid
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  expiresAt      DateTime  @map("expires_at") @db.Timestamptz(6)
+  acceptedAt     DateTime? @map("accepted_at") @db.Timestamptz(6)
+  acceptedUserId String?   @map("accepted_user_id") @db.Uuid
+  revokedAt      DateTime? @map("revoked_at") @db.Timestamptz(6)
+  revokedBy      String?   @map("revoked_by") @db.Uuid
+
+  scopeState   State? @relation(fields: [scopeStateId], references: [id], map: "staff_invitation_scope_state_id_fkey")
+  inviter      User   @relation("StaffInvitationInvitedBy", fields: [invitedBy], references: [id], map: "staff_invitation_invited_by_fkey")
+  revoker      User?  @relation("StaffInvitationRevokedBy", fields: [revokedBy], references: [id], map: "staff_invitation_revoked_by_fkey")
+  acceptedUser User?  @relation("StaffInvitationAcceptedUser", fields: [acceptedUserId], references: [id], map: "staff_invitation_accepted_user_id_fkey")
+
+  @@index([createdAt(sort: Desc), id(sort: Desc)], map: "staff_invitation_created_idx")
+  @@map("staff_invitation")
+}
+
 /// 2026-10-20: in-app messaging -- a conversation about one post between its
 /// owner and one other account. Participants are sign-ins. Migration
 /// 20261020090000. Read and written with raw SQL.
@@ -1866,8 +1913,15 @@ model SupportMessage {
 /// by its owner with no review; the "approved adviser" pathway comes later.
 model AdviceProvider {
   id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  authUserId          String    @unique(map: "advice_provider_one_per_account") @map("auth_user_id") @db.Uuid
-  displayName         String    @map("display_name")
+  /// 2026-10-28 (migration 20261028112000): no longer a plain unique. Two
+  /// partial unique indexes in raw SQL: one PERSONAL profile per account
+  /// (organization_id IS NULL, the old meaning) and one profile per organisation.
+  authUserId          String    @map("auth_user_id") @db.Uuid
+  /// 2026-10-28: set when this is an organisation's advice profile; requests
+  /// to it go to the organisation's shared advice inbox (advisory.handle).
+  organizationId      String?   @map("organization_id") @db.Uuid
+  organization        Organization? @relation(fields: [organizationId], references: [id], map: "advice_provider_organization_id_fkey")
+  displayName        String    @map("display_name")
   providerKind        String    @map("provider_kind")
   description         String
   topics              String[]
@@ -1891,6 +1945,8 @@ model AdviceProvider {
   applications        AdviserApplication[] @relation("AdviserApplicationProvider")
   approvedApplication AdviserApplication?  @relation("AdviceProviderApprovedApplication", fields: [approvedApplicationId], references: [id], map: "advice_provider_approved_application_id_fkey")
   referralsTo         AdviceReferral[]
+  /// 2026-10-28: official advisory notes from an approved adviser.
+  advisoryNotes       AdvisoryNote[]
 
   @@index([topics], map: "advice_provider_topics_idx", type: Gin)
   @@map("advice_provider")
@@ -1919,12 +1975,49 @@ model AdviserApplication {
   createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt            DateTime  @default(now()) @map("updated_at") @db.Timestamptz(6)
   deletedAt            DateTime? @map("deleted_at") @db.Timestamptz(6)
+  /// 2026-10-28: a suspension of the standing approval, which lapses by itself
+  /// at suspended_until; and what the approving staff member checked.
+  suspendedUntil       DateTime? @map("suspended_until") @db.Timestamptz(6)
+  suspensionReason     String?   @map("suspension_reason")
+  verifiedChecks       String[]  @default([]) @map("verified_checks")
 
+  advisoryNotes    AdvisoryNote[]
   provider         AdviceProvider   @relation("AdviserApplicationProvider", fields: [providerId], references: [id], map: "adviser_application_provider_id_fkey")
   decider          User?            @relation("AdviserApplicationDecidedBy", fields: [decidedBy], references: [id], map: "adviser_application_decided_by_fkey")
   approvedProvider AdviceProvider[] @relation("AdviceProviderApprovedApplication")
 
   @@map("adviser_application")
+}
+
+/// 2026-10-28: an official advisory note from an APPROVED adviser, reviewed
+/// and published by staff. Migration 20261028110000. Raw SQL.
+model AdvisoryNote {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  providerId    String    @map("provider_id") @db.Uuid
+  applicationId String    @map("application_id") @db.Uuid
+  authUserId    String    @map("auth_user_id") @db.Uuid
+  title         String
+  topics        String[]
+  language      String
+  body          String
+  status        String    @default("submitted")
+  reviewNote    String?   @map("review_note")
+  reviewedBy    String?   @map("reviewed_by") @db.Uuid
+  reviewedAt    DateTime? @map("reviewed_at") @db.Timestamptz(6)
+  publishedBy   String?   @map("published_by") @db.Uuid
+  publishedAt   DateTime? @map("published_at") @db.Timestamptz(6)
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime  @default(now()) @map("updated_at") @db.Timestamptz(6)
+  deletedAt     DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  provider    AdviceProvider     @relation(fields: [providerId], references: [id], map: "advisory_note_provider_id_fkey")
+  application AdviserApplication @relation(fields: [applicationId], references: [id], map: "advisory_note_application_id_fkey")
+  reviewer    User?              @relation("AdvisoryNoteReviewedBy", fields: [reviewedBy], references: [id], map: "advisory_note_reviewed_by_fkey")
+  publisher   User?              @relation("AdvisoryNotePublishedBy", fields: [publishedBy], references: [id], map: "advisory_note_published_by_fkey")
+
+  @@index([providerId, updatedAt(sort: Desc)], map: "advisory_note_provider_idx")
+  @@index([status, updatedAt, id], map: "advisory_note_queue_idx")
+  @@map("advisory_note")
 }
 
 /// A question to the provider the requester chose. The id is made on the
@@ -1947,6 +2040,12 @@ model AdviceCase {
   createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt            DateTime  @default(now()) @map("updated_at") @db.Timestamptz(6)
   deletedAt            DateTime? @map("deleted_at") @db.Timestamptz(6)
+  /// 2026-10-28: an organisation's case -- the member it is assigned to (a
+  /// sign-in), who assigned it and when, and when the member accepted it.
+  assignedAuthUserId   String?   @map("assigned_auth_user_id") @db.Uuid
+  assignedBy           String?   @map("assigned_by") @db.Uuid
+  assignedAt           DateTime? @map("assigned_at") @db.Timestamptz(6)
+  acceptedAt           DateTime? @map("accepted_at") @db.Timestamptz(6)
 
   provider      AdviceProvider         @relation(fields: [providerId], references: [id], map: "advice_case_provider_id_fkey")
   attachments   AdviceCaseAttachment[]
@@ -2080,8 +2179,10 @@ model Organization {
   deletedAt    DateTime? @map("deleted_at") @db.Timestamptz(6)
   deletedBy    String?   @map("deleted_by") @db.Uuid
 
-  members     OrganizationMember[]
-  invitations OrganizationInvitation[]
+  members         OrganizationMember[]
+  invitations     OrganizationInvitation[]
+  /// 2026-10-28: at most one (a partial unique index in raw SQL).
+  adviceProviders AdviceProvider[]
 
   @@map("organization")
 }

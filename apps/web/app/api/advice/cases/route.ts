@@ -8,6 +8,7 @@ import {
 
 import {
   CASE_SELECT,
+  OWN_PROVIDER_SQL,
   PROVIDER_ACCOUNT_LIVE,
   casesToday,
   loadCase,
@@ -76,7 +77,13 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       const rows = await prisma.$queryRawUnsafe<CaseRow[]>(
         `${CASE_SELECT}
           WHERE ac.deleted_at IS NULL
-            AND ${role === 'provider' ? 'p.auth_user_id' : 'ac.requester_auth_user_id'} = $1::uuid
+            AND ${
+              role === 'provider'
+                ? // 2026-10-28: a PERSONAL profile's cases only; an organisation's
+                  // are read through its shared advice inbox.
+                  'p.organization_id IS NULL AND p.auth_user_id'
+                : 'ac.requester_auth_user_id'
+            } = $1::uuid
           ORDER BY ac.created_at DESC, ac.id DESC
           LIMIT 200`,
         reader,
@@ -100,16 +107,25 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       if (resent) return ok(await presentCase(prisma, resent, requester));
 
       const [provider] = await prisma.$queryRawUnsafe<
-        { id: string; auth_user_id: string; display_name: string; open: boolean }[]
+        {
+          id: string;
+          auth_user_id: string;
+          display_name: string;
+          organization_id: string | null;
+          own: boolean;
+          open: boolean;
+        }[]
       >(
-        `SELECT p.id, p.auth_user_id, p.display_name,
+        `SELECT p.id, p.auth_user_id, p.display_name, p.organization_id,
+                ${OWN_PROVIDER_SQL('$2')} AS own,
                 (p.status = 'published' AND ${PROVIDER_ACCOUNT_LIVE}) AS open
            FROM public.advice_provider p
           WHERE p.id = $1::uuid AND p.deleted_at IS NULL`,
         body.provider_id,
+        requester,
       );
       if (!provider) throw notFound();
-      if (provider.auth_user_id === requester) throw unprocessable('advice_own_provider');
+      if (provider.own) throw unprocessable('advice_own_provider');
       if (!provider.open) throw unprocessable('advice_provider_not_published');
 
       const row = await audited(prisma, async (tx) => {
@@ -156,8 +172,8 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
         const [conversation] = await tx.$queryRawUnsafe<{ id: string }[]>(
           `INSERT INTO public.conversation
              (post_kind, post_id, post_title, owner_auth_user_id, owner_name,
-              starter_auth_user_id, starter_name)
-           VALUES ('advice_case', $1::uuid, $2, $3::uuid, $4, $5::uuid, $6)
+              starter_auth_user_id, starter_name, owner_organization_id)
+           VALUES ('advice_case', $1::uuid, $2, $3::uuid, $4, $5::uuid, $6, $7::uuid)
            RETURNING id`,
           body.id,
           body.topic,
@@ -165,6 +181,10 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
           provider.display_name,
           requester,
           name,
+          // 2026-10-28: an organisation's profile owns the conversation as an
+          // organisation, so it reaches the shared advice inbox (advisory.handle)
+          // and never the personal inbox of whoever set the profile up.
+          provider.organization_id,
         );
         if (!conversation) throw notFound();
         await writeAudit(tx, {

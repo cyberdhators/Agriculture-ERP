@@ -44,7 +44,9 @@ describe('organisation routes are keyed by the signed-in person', () => {
     for (const file of orgRoutes.filter(
       (f) => f.includes('/[id]/') && !f.endsWith('[id]/profile/route.ts'),
     )) {
-      expect(read(file), file).toMatch(/requireMember\(/);
+      // 2026-10-28: requireHandler (lib/api/organization-advice.ts) is
+      // requireMember with advisory.handle; organization-advice-scan holds that.
+      expect(read(file), file).toMatch(/requireMember\(|requireHandler\(/);
     }
   });
 
