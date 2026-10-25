@@ -37,6 +37,9 @@ import * as officerItem from '../apps/web/app/api/officers/[id]/route';
 import * as officers from '../apps/web/app/api/officers/route';
 import * as userItem from '../apps/web/app/api/users/[id]/route';
 import * as users from '../apps/web/app/api/users/route';
+import * as adminOrganizations from '../apps/web/app/api/admin/organizations/route';
+import * as adminOrgRecover from '../apps/web/app/api/admin/organizations/[id]/recover/route';
+import * as corrections from '../apps/web/app/api/admin/corrections/route';
 import { randomUUID } from 'node:crypto';
 import {
   FARMER_TEST_FAMILY,
@@ -669,6 +672,45 @@ const ROUTES = [
     allow: ['admin'],
     params: () => ({ id: DUMMY_ID }),
     body: () => ({ action: 'submit' }),
+  },
+  // TEAM ACCESS (2026-10-27): administrators only, then support.handle.
+  {
+    name: 'GET /api/admin/organizations',
+    mod: adminOrganizations,
+    method: 'GET' as const,
+    allow: ['admin'],
+  },
+  {
+    name: 'POST /api/admin/organizations/:id/recover',
+    mod: adminOrgRecover,
+    method: 'POST' as const,
+    allow: ['admin'],
+    params: () => ({ id: DUMMY_ID }),
+    body: () => ({
+      member_id: DUMMY_ID,
+      reason: 'Zztest reason',
+      evidence: 'Zztest evidence',
+      password: 'zztest-not-a-password',
+    }),
+  },
+  // 2026-10-27: correction requests. An administrator, then content.moderate.
+  {
+    name: 'GET /api/admin/corrections',
+    mod: corrections,
+    method: 'GET' as const,
+    allow: ['admin'],
+  },
+  {
+    name: 'POST /api/admin/corrections',
+    mod: corrections,
+    method: 'POST' as const,
+    allow: ['admin'],
+    body: () => ({
+      target_type: 'produce_listing',
+      target_id: DUMMY_ID,
+      reason_code: 'misleading_listing',
+      note: 'Zztest correction note',
+    }),
   },
 ];
 

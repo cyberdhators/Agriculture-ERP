@@ -14,6 +14,7 @@ import { FARMER_PAGES, keepPagesOffline } from '@/lib/pwa/keep';
 import { t, type TKey } from '@/lib/i18n';
 
 import { SupportContactsLine } from '../support/SupportContacts';
+import { ActingAsBar } from '../teams/ActingAsBar';
 import { ShopMasthead } from './ShopMasthead';
 import styles from './farmer.module.css';
 
@@ -398,6 +399,23 @@ const NAV_GROUPS: readonly NavGroup[] = [
         ),
       },
       {
+        // 2026-10-27: organisational profiles and team access.
+        href: '/farmer/account/organisations',
+        key: 'account.tabOrganisations',
+        glyph: (
+          <svg
+            viewBox="0 0 24 24"
+            width="20"
+            height="20"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+          >
+            <path d="M3 21V8l9-5 9 5v13M9 21v-6h6v6M3 21h18" />
+          </svg>
+        ),
+      },
+      {
         // 2026-10-19: who you are, what you do (optional).
         href: '/farmer/account/about',
         key: 'account.tabAbout',
@@ -661,7 +679,15 @@ export function AccountShell({ children }: { children: ReactNode }) {
         </nav>
 
         <main id="farmer-main" className={styles.main} tabIndex={-1}>
-          {farmer ? children : <WorkspaceSkeleton />}
+          {farmer ? (
+            <>
+              {/* 2026-10-27: who the farmer acts for, when they belong to an organisation. */}
+              <ActingAsBar language={language === 'ar' ? 'ar' : 'en'} />
+              {children}
+            </>
+          ) : (
+            <WorkspaceSkeleton />
+          )}
         </main>
       </div>
 

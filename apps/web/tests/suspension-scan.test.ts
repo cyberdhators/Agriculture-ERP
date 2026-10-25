@@ -67,8 +67,14 @@ describe('a service leaves with its suspended or removed poster, farmer or buyer
   });
 
   it('the market and every own-record read require a live poster', () => {
+    // 2026-10-27 (team access): or an OPEN organisation the service was made
+    // for -- organisational continuity. The organisation join itself filters
+    // closed and removed organisations, which this asserts too.
     expect(posts).toMatch(
-      /export const SERVICE_POSTER_LIVE = `\(f\.id IS NOT NULL OR b\.id IS NOT NULL\)`/,
+      /export const SERVICE_POSTER_LIVE = `\(f\.id IS NOT NULL OR b\.id IS NOT NULL OR og\.id IS NOT NULL\)`/,
+    );
+    expect(posts).toMatch(
+      /LEFT JOIN public\.organization og ON og\.id = sl\.organization_id\s+AND og\.deleted_at IS NULL AND og\.closed_at IS NULL/,
     );
     expect(posts).toMatch(/export const SERVICE_WHERE = SERVICE_POSTER_LIVE;/);
     expect(posts).toMatch(/export const SERVICE_MARKET_WHERE = `[^`]*\$\{SERVICE_POSTER_LIVE\}`/);

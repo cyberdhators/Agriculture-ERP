@@ -81,36 +81,70 @@ const MESSAGE_NOTICE: Record<string, AccountNotice> = {
 };
 
 /**
- * Called after a message is stored. When it is the SENDER'S FIRST message in
- * the conversation -- the one that starts it, or the other person's first
- * reply -- the person it went to is sent one notice naming only the kind of
+ * Called after a message is stored. When it is the SENDER'S SIDE'S FIRST
+ * message in the conversation -- the one that starts it, or the other side's
+ * first reply -- the other side is sent one notice naming only the kind of
  * post. Every later message is left to the unread badge, so a conversation
- * makes at most two notices. The message's text is never read here.
+ * makes at most two rounds of notices. The message's text is never read here.
+ *
+ * 2026-10-27 (team access): a side may be an organisation's shared inbox.
+ * Then the notice goes to its active members who may read the inbox
+ * (administrators, and members holding inbox.read), at most twenty. `side`
+ * is the sender's side; without it, it is read from the sign-in, which is
+ * exact for every personal conversation.
  */
 export async function noticeIfFirstMessage(
   tx: AuditTx,
   conversationId: string,
   sender: string,
   actor: NoticeActor,
+  side?: 'owner' | 'starter',
 ): Promise<void> {
   const [row] = await tx.$queryRawUnsafe<
     {
       post_kind: string;
       owner_auth_user_id: string;
       starter_auth_user_id: string;
+      owner_organization_id: string | null;
+      starter_organization_id: string | null;
+      side: 'owner' | 'starter';
       sent: number;
     }[]
   >(
     `SELECT c.post_kind, c.owner_auth_user_id, c.starter_auth_user_id,
+            c.owner_organization_id, c.starter_organization_id, s.side,
             (SELECT count(*) FROM public.message m
-              WHERE m.conversation_id = c.id AND m.sender_auth_user_id = $2::uuid)::int AS sent
-       FROM public.conversation c WHERE c.id = $1::uuid`,
+              WHERE m.conversation_id = c.id
+                AND COALESCE(m.sender_side,
+                      CASE WHEN m.sender_auth_user_id = c.owner_auth_user_id
+                           THEN 'owner' ELSE 'starter' END) = s.side)::int AS sent
+       FROM public.conversation c
+       CROSS JOIN LATERAL (SELECT COALESCE($3::text,
+              CASE WHEN c.owner_auth_user_id = $2::uuid THEN 'owner' ELSE 'starter' END) AS side) s
+      WHERE c.id = $1::uuid`,
     conversationId,
     sender,
+    side ?? null,
   );
   const notice = row ? MESSAGE_NOTICE[row.post_kind] : undefined;
   if (!row || row.sent !== 1 || !notice) return;
-  const to = row.owner_auth_user_id === sender ? row.starter_auth_user_id : row.owner_auth_user_id;
+  const otherOrganization =
+    row.side === 'owner' ? row.starter_organization_id : row.owner_organization_id;
+  if (otherOrganization) {
+    const members = await tx.$queryRawUnsafe<{ auth_user_id: string }[]>(
+      `SELECT auth_user_id FROM public.organization_member
+        WHERE organization_id = $1::uuid AND status = 'active' AND auth_user_id <> $2::uuid
+          AND (preset = 'administrator' OR 'inbox.read' = ANY (permissions))
+        ORDER BY joined_at LIMIT 20`,
+      otherOrganization,
+      sender,
+    );
+    for (const member of members) {
+      await notifyAccount(tx, { authUserId: member.auth_user_id }, notice, actor);
+    }
+    return;
+  }
+  const to = row.side === 'owner' ? row.starter_auth_user_id : row.owner_auth_user_id;
   if (to === sender) return;
   await notifyAccount(tx, { authUserId: to }, notice, actor);
 }

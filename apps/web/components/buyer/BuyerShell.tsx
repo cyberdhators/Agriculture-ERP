@@ -37,6 +37,7 @@ import {
   IconStaff,
 } from '../ui/icons';
 import styles from './buyer.module.css';
+import { ActingAsBar } from '../teams/ActingAsBar';
 
 /**
  * THE BUYER SHELL (B13). The staff portal's rail and header, a buyer's
@@ -104,6 +105,8 @@ const NAV: ReadonlyArray<{
   // 2026-10-19: one account buys and sells (CORWADO).
   { href: '/buyer/sell', label: 'Sell produce', icon: IconDashboard },
   { href: '/buyer/about', label: 'About you', icon: IconStaff },
+  // 2026-10-27: organisational profiles and team access.
+  { href: '/buyer/organisations', label: 'Organisations', icon: IconStaff },
   // 2026-10-21: "Contact CORWADO" -- FAQs and a message form (public page).
   { href: '/help', label: 'Help', icon: IconInfo },
 ];
@@ -338,7 +341,11 @@ export function BuyerShell({ children }: { children: ReactNode }) {
             {failure ? (
               <p role="alert">{failure}</p>
             ) : value ? (
-              <BuyerContext.Provider value={value}>{children}</BuyerContext.Provider>
+              <BuyerContext.Provider value={value}>
+                {/* 2026-10-27: who the buyer acts for, when they belong to an organisation. */}
+                <ActingAsBar language="en" />
+                {children}
+              </BuyerContext.Provider>
             ) : (
               <LoadingState label="Loading your account" rows={4} />
             )}

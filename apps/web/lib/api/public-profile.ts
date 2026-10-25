@@ -70,6 +70,8 @@ export interface ProfileRow {
   photo_path: string | null;
   show_phone: boolean;
   allow_messages: boolean;
+  enterprise_size: string | null;
+  show_enterprise_size: boolean;
   status: PublicProfileStatus;
   published_at: Date | null;
   updated_at: Date;
@@ -79,7 +81,8 @@ export interface ProfileRow {
 export const PROFILE_COLUMNS = `ap.public_id, ap.profile_kind, ap.group_kind, ap.activities,
   ap.display_name, ap.about, ap.state_id, s.name AS state_name, ap.payam_id,
   pm.name AS payam_name, ap.products, ap.services, ap.photo_path, ap.show_phone,
-  ap.allow_messages, ap.status, ap.published_at, ap.updated_at`;
+  ap.allow_messages, ap.enterprise_size, ap.show_enterprise_size, ap.status, ap.published_at,
+  ap.updated_at`;
 
 export const PROFILE_FROM = `FROM public.account_profile ap
   LEFT JOIN public.state_active s ON s.id = ap.state_id

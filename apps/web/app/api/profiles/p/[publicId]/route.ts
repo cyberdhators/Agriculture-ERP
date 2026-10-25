@@ -1,4 +1,10 @@
-import { BUYER_ROLE, FARMER_ROLE, type Activity, type PublicProfileView } from '@agri-erp/shared';
+import {
+  BUYER_ROLE,
+  FARMER_ROLE,
+  publicEnterpriseSize,
+  type Activity,
+  type PublicProfileView,
+} from '@agri-erp/shared';
 
 import { ApiFailure, notFound } from '../../../../../lib/api/errors';
 import { checkId } from '../../../../../lib/api/market-posts';
@@ -76,6 +82,12 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
         activities: row.activities as Activity[],
         profile_kind: row.profile_kind,
         group_kind: row.group_kind,
+        // 2026-10-27: only if the owner chose to show it (publicEnterpriseSize).
+        enterprise_size: publicEnterpriseSize(
+          row.profile_kind,
+          row.enterprise_size,
+          row.show_enterprise_size,
+        ),
         location: { state: row.state_name, payam: row.payam_name },
         about: row.about,
         products: row.products,

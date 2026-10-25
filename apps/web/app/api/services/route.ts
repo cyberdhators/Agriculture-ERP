@@ -24,7 +24,7 @@ import {
   invalidField,
   likePattern,
   loadOwnService,
-  marketPoster,
+  actingPoster,
   pageLimit,
   parseQuery,
   posterPhone,
@@ -102,8 +102,9 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   POST: {
     roles: [FARMER_ROLE, BUYER_ROLE],
     bodySchema: serviceListingSchema,
-    handler: async ({ auth, body }) => {
-      const poster = marketPoster(auth);
+    handler: async ({ auth, body, request }) => {
+      // 2026-10-27: offered for the organisation the person acts for, if any.
+      const poster = await actingPoster(prisma, request, auth);
       const id = body.id ?? randomUUID();
 
       const [existing] = await prisma.$queryRawUnsafe<
@@ -156,14 +157,15 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
              (id, poster_type, farmer_id, buyer_id, trading_name, service_type, title,
               description, location, payam_id, state_id, available_from, available_until,
               availability_note, price_ssp, price_unit, negotiable, contact_phone, status,
-              show_phone)
+              show_phone, organization_id)
            VALUES ($1::uuid, $2, $3::uuid, $4::uuid, $5, $6, $7, $8, $9, $10, $11,
-                   $12::date, $13::date, $14, $15, $16, $17, $18, $19, $20)`,
+                   $12::date, $13::date, $14, $15, $16, $17, $18, $19, $20, $21::uuid)`,
           id,
           poster.type,
           poster.type === 'farmer' ? poster.id : null,
           poster.type === 'buyer' ? poster.id : null,
-          body.trading_name,
+          // An organisation's service carries the organisation's name on the market.
+          poster.organizationName ?? body.trading_name,
           body.service_type,
           body.title,
           body.description,
@@ -179,6 +181,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
           phone,
           body.status,
           body.show_phone,
+          poster.organizationId,
         );
         await writeAudit(tx, {
           entityType: 'service_listing',
@@ -194,6 +197,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
             state_id: stateId,
             status: body.status,
             available_until: availableUntil,
+            ...(poster.organizationId ? { organization_id: poster.organizationId } : {}),
           },
         });
         return loadOwnService(tx, poster, id);

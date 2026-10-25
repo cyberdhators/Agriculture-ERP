@@ -10,6 +10,11 @@ import {
   type ServiceType,
 } from '@agri-erp/shared';
 
+import {
+  CorrectionNotice,
+  CorrectionStamp,
+  useOpenCorrections,
+} from '@/components/account/Corrections';
 import { ButtonLink, EmptyState, Notice } from '@/components/ui';
 import { formatSsp } from '@/lib/farmers/listings';
 import { t, type Language } from '@/lib/i18n';
@@ -50,6 +55,8 @@ export const serviceTypeLabel = (s: ServiceListing, lang: Language) =>
 export function MyServices({ lang, basePath }: { lang: Language; basePath: string }) {
   const [rows, setRows] = useState<ServiceListing[] | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
+  // 2026-10-27: a moderator's correction requests on these posts.
+  const corrections = useOpenCorrections('service_listing');
 
   const load = useCallback(() => {
     myServices()
@@ -82,6 +89,11 @@ export function MyServices({ lang, basePath }: { lang: Language; basePath: strin
 
   return (
     <>
+      <CorrectionNotice
+        items={corrections.items}
+        lang={lang}
+        editHref={(id) => `${basePath}/${id}/edit`}
+      />
       {failure ? (
         <Notice kind="error">
           <p className="small">{failure}</p>
@@ -100,6 +112,7 @@ export function MyServices({ lang, basePath }: { lang: Language; basePath: strin
               <span className={styles.cardTitle} dir="auto">
                 {s.title}
               </span>
+              {corrections.ids.has(s.id) ? <CorrectionStamp lang={lang} /> : null}
               <div className={styles.meta}>
                 <span>{serviceTypeLabel(s, lang)}</span>
                 <span dir="auto">{s.location}</span>

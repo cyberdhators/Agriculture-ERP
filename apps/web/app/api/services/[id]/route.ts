@@ -10,6 +10,7 @@ import {
 
 import { audited, writeAudit } from '../../../../lib/api/audit';
 import { notFound } from '../../../../lib/api/errors';
+import { addressCorrections, sentKeys } from '../../../../lib/api/listing-corrections';
 import {
   SERVICE_COLUMNS,
   SERVICE_FROM,
@@ -18,7 +19,7 @@ import {
   checkLifecycle,
   invalidField,
   loadOwnService,
-  marketPoster,
+  actingPoster,
   presentOwnService,
   presentService,
   todayUtc,
@@ -62,8 +63,9 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   PATCH: {
     roles: [FARMER_ROLE, BUYER_ROLE],
     bodySchema: serviceListingPatchSchema,
-    handler: async ({ auth, body, params }) => {
-      const poster = marketPoster(auth);
+    handler: async ({ auth, body, params, request }) => {
+      // 2026-10-27: an organisation's post is managed by its members with listings.manage.
+      const poster = await actingPoster(prisma, request, auth);
       const id = checkId(params.id);
       const issue = servicePosterIssue(poster.type, body, false);
       if (issue) throw invalidField(issue.field, issue.message);
@@ -139,6 +141,11 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
               ? { status: current.status, available_until: current.available_until }
               : null,
           after: changed,
+        });
+        // 2026-10-27: an edit of the content addresses an open correction request.
+        await addressCorrections(tx, 'service_listing', id, sentKeys(body), {
+          actorType: poster.type,
+          actorId: poster.id,
         });
         return loadOwnService(tx, poster, id);
       });

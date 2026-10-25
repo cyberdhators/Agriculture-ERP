@@ -7,6 +7,7 @@ import {
 
 import { audited, writeAudit } from '../../../../lib/api/audit';
 import { notFound } from '../../../../lib/api/errors';
+import { addressCorrections, sentKeys } from '../../../../lib/api/listing-corrections';
 import {
   BUYING_REQUEST_COLUMNS,
   BUYING_REQUEST_FROM,
@@ -15,7 +16,7 @@ import {
   checkLifecycle,
   invalidField,
   loadOwnBuyingRequest,
-  marketPoster,
+  actingPoster,
   presentBuyingRequest,
   presentOwnBuyingRequest,
   todayUtc,
@@ -60,8 +61,9 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   PATCH: {
     roles: [FARMER_ROLE, BUYER_ROLE],
     bodySchema: buyingRequestPatchSchema,
-    handler: async ({ auth, body, params }) => {
-      const poster = marketPoster(auth);
+    handler: async ({ auth, body, params, request }) => {
+      // 2026-10-27: an organisation's post is managed by its members with listings.manage.
+      const poster = await actingPoster(prisma, request, auth);
       const id = checkId(params.id);
       const row = await audited(prisma, async (tx) => {
         const current = await loadOwnBuyingRequest(tx, poster, id, true);
@@ -115,6 +117,11 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
           before:
             moved || endChanged ? { status: current.status, needed_by: current.needed_by } : null,
           after: changed,
+        });
+        // 2026-10-27: an edit of the content addresses an open correction request.
+        await addressCorrections(tx, 'buying_request', id, sentKeys(body), {
+          actorType: poster.type,
+          actorId: poster.id,
         });
         return loadOwnBuyingRequest(tx, poster, id);
       });

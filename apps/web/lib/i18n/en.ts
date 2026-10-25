@@ -44,7 +44,8 @@ export const en = {
   'login.locked':
     'Five sign-ins have failed, so this number is locked for now. Your extension officer can reset your password.',
   'login.forgotTitle': 'Forgot your password?',
-  'login.forgotBody': 'Your extension officer or CORWADO can reset it for you.',
+  'login.forgotBody':
+    'Get a code by SMS to set a new one. Your extension officer or CORWADO can also reset it.',
   'login.newHere': 'New here?',
   'login.register': 'Create account',
   'login.otherWays': 'Other ways to sign in (email, staff)',
@@ -191,6 +192,7 @@ export const en = {
   'account.tileBuy': 'Buy',
   'account.tileBuySub': 'Inputs and produce, with this same account',
   'account.tabAbout': 'About you',
+  'account.tabOrganisations': 'Organisations',
   'account.tileAi': 'AgriOne AI',
   'account.tileAiSub': 'Ask any farming question, any time',
   'ai.title': 'AgriOne AI',
@@ -565,6 +567,16 @@ export const en = {
   'notice.messageBuyingRequest.body': 'Open Messages to read it.',
   'notice.messageService.title': 'You have a new message about a service',
   'notice.messageService.body': 'Open Messages to read it.',
+  'notice.orgInvitation.title': 'You have been invited to join an organisation',
+  'notice.orgInvitation.body':
+    'Open Organisations in your account to see the role and accept or decline.',
+  'notice.orgTransfer.title': 'You have been offered administration of an organisation',
+  'notice.orgTransfer.body': 'Open Organisations in your account to accept or decline.',
+  'notice.orgAccessEnded.title': 'Your access to an organisation has ended',
+  'notice.orgAccessEnded.body':
+    'Your own account is not affected. Open Organisations to see your memberships.',
+  'notice.orgRecovered.title': 'CORWADO made you an administrator of an organisation',
+  'notice.orgRecovered.body': 'Open Organisations in your account to manage its team.',
   'notice.messageAdviceCase.title': 'You have a new message about an advice request',
   'notice.messageAdviceCase.body': 'Open Messages to read it.',
   'notice.adviceUpdated.title': 'Your advice request was updated',
@@ -1174,6 +1186,59 @@ export const en = {
   'adviser.sentOn': 'Sent',
   // 2026-10-24 (acceptance QA): the price is needed unless the service is negotiable.
   'svc.priceHint': 'Give a price, or tick Negotiable below.',
+  // 2026-10-27: recovery by SMS code, verified number change, corrections, enterprise size.
+  'notice.passwordRecovered.title': 'Your AgriOne password was changed',
+  'notice.passwordRecovered.body':
+    'It was reset with a code sent to your phone. If this was not you, contact CORWADO.',
+  'notice.phoneChanged.title': 'The phone number on your account was changed',
+  'notice.phoneChanged.body':
+    'Sign in with the new number from now on. If this was not you, contact CORWADO.',
+  'notice.correctionRequested.title': 'CORWADO asked you to correct one of your posts',
+  'notice.correctionRequested.body':
+    'Open your listings to see what to change. The post stays on the market meanwhile.',
+  'login.forgotLink': 'Reset it with a code by SMS',
+  'recover.title': 'Reset your password',
+  'recover.lead':
+    'Enter the phone number you sign in with. If it has an AgriOne account, we will send it a code by SMS.',
+  'recover.send': 'Send code',
+  'recover.sending': 'Sending…',
+  'recover.sentLead':
+    'If this number has an AgriOne account, a code is on its way by SMS. It expires in 10 minutes.',
+  'recover.codeLabel': 'Code from the SMS',
+  'recover.codeHint': '6 digits',
+  'recover.verify': 'Continue',
+  'recover.resend': 'Send the code again',
+  'recover.resendWait': 'You can ask for another code in',
+  'recover.seconds': 'seconds',
+  'recover.otherNumber': 'Use a different number',
+  'recover.newPassword': 'New password',
+  'recover.save': 'Save new password',
+  'recover.doneTitle': 'Password changed',
+  'recover.done':
+    'Your password has been changed and you have been signed out everywhere else. Sign in with your new password.',
+  'recover.signIn': 'Sign in',
+  'recover.unavailable':
+    'Codes by SMS are not available just now. Your extension officer or CORWADO can reset your password.',
+  'recover.failed': 'Something went wrong. Please try again.',
+  'recover.back': 'Back to sign in',
+  'account.changePhoneCodeNote': 'We will send a code to the new number to check that it is yours.',
+  'account.phoneCodeSent':
+    'We sent a code by SMS to the new number. Enter it to finish the change.',
+  'account.phoneConfirm': 'Confirm the new number',
+  'correction.badge': 'Correction requested',
+  'correction.title': 'CORWADO asked you to correct these posts',
+  'correction.lead':
+    'They stay on the market. Edit the post to make the change; the request is then marked as done.',
+  'correction.reason': 'Reason',
+  'correction.edit': 'Edit this post',
+  'correction.kind.produce_listing': 'Product listing',
+  'correction.kind.service_listing': 'Service',
+  'correction.kind.buying_request': 'Buying request',
+  'pp.size': 'Enterprise size',
+  'size.micro': 'Micro',
+  'size.small': 'Small',
+  'size.medium': 'Medium',
+  'size.large': 'Large',
 } as const;
 
 export type TKey = keyof typeof en;

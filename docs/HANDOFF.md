@@ -2782,3 +2782,58 @@ access-log retention, single-member model, infographic no. 6, Supabase plan).
 organisations.
 
 — Alieu-Claude
+
+### 2026-10-27 — Alieu-Claude (team access lane) → integrator — organisational profiles and team access
+
+Branch `feat/team-access`. Spec "Organizational continuity" (lines 24-62) and
+the demonstrations "Team access", "Independent institution", "Deletion"
+(organisational part). Infographic 6 never received: the spec text governs.
+DECISIONS: "Organisational profiles and team access (2026-10-27)".
+
+- **Migration `20261027090000_team_access`** (additive; one unique constraint
+  on `conversation` replaced by two partial unique indexes with the same
+  personal meaning). Not applied anywhere. **The audit CHECK is yours**: 18 new
+  `organization*` keys (AUDIT_ACTIONS and CONVENTIONS §5.2.2 already list them;
+  `audit-check-matches-migrations` fails locally until the CHECK lands).
+- **What works (in code):** create an organisation (any account), invite by
+  phone/email with role + permissions disclosed, accept only when signed in as
+  that phone/email, presets + granular permissions, "Acting as" bar in both
+  shells (cookie re-checked every request), buying requests and services
+  posted/managed for the organisation, shared inbox (personal inbox separate),
+  revoke / leave / handover with acceptance / close, last-administrator
+  protection, second-administrator nudge, member-consented public team on
+  `/organisations/:id`, personal deletion with "close these organisations",
+  staff recovery at Admin → Organisations (`support.handle`, password, reason,
+  evidence).
+- **Lists updated:** EXPECTED_PUBLIC, BUYER_OUTSIDE_ITS_TREE, ADMIN_ROUTES,
+  forbidden-matrix ROUTES, portal nav + nav test, suspension scan (rewritten
+  guard), new `apps/web/tests/team-access-scan.test.ts` and
+  `packages/shared/tests/organization.test.ts`.
+- **Open for the owner:** `support.handle` as the recovery permission;
+  organisation posts of a suspended person stay visible; gaps listed in
+  DECISIONS.
+
+— Alieu-Claude (team access lane)
+### 2026-10-27 — Alieu-Claude (lane-recovery) → both — self-service recovery, enterprise size, correction requests
+
+Branch `feat/recovery-and-moderation`, migration `20261027100000_recovery_size_corrections`.
+
+- **Recovery for phone accounts:** /farmer/forgot-password (number → SMS code →
+  new password; all sessions ended; audited; notice). Never says whether a
+  number has an account. Staff reset kept. Routes `auth/recovery/{code,verify,reset}` (public).
+- **Verified change of number:** code to the new number, password checked on
+  the server, old number told by SMS. Routes `farmer/me/phone-code{,/verify}`;
+  PATCH /api/farmer/me now takes `password` and `verification_id`.
+- **Enterprise size** on "About you" (groups, businesses, institutions), shown
+  publicly only if chosen; one analytics breakdown.
+- **Request a correction** (content.moderate): `admin/corrections` (GET/POST),
+  owner's `account/corrections` (GET); buttons on the report queues and the
+  staff product page; "Correction requests" list on Product reports.
+- **For the integrator:** the audit CHECK migration must add
+  `account.password_recovered`, `listing.correction_requested`,
+  `listing.correction_addressed` (audit-check-matches-migrations fails locally
+  until then).
+- **Owner decisions:** numeric bands for enterprise sizes; SMS to the old
+  number on a change of number as an essential message.
+
+— Alieu-Claude

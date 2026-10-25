@@ -224,6 +224,16 @@ export const NAV_SECTIONS: readonly NavSection[] = [
           'GET /api/admin/support and PATCH /api/admin/support/:id are administrator-only and ' +
           'then require support.handle, which every administrator holds.',
       },
+      {
+        // 2026-10-27: organisational profiles, their teams, exceptional recovery.
+        href: '/admin/organizations',
+        label: 'Organisations',
+        icon: 'staff',
+        roles: ['admin'],
+        because:
+          'GET /api/admin/organizations and POST /api/admin/organizations/:id/recover are ' +
+          'administrator-only and then require support.handle.',
+      },
     ],
   },
   {

@@ -5,6 +5,11 @@ import { useEffect, useState } from 'react';
 
 import { lifecycleStage, type LifecycleStage } from '@agri-erp/shared';
 
+import {
+  CorrectionNotice,
+  CorrectionStamp,
+  useOpenCorrections,
+} from '@/components/account/Corrections';
 import { ListingCard } from '@/components/listings/ListingCard';
 import { ButtonLink, EmptyState, Tabs } from '@/components/ui';
 import type { ProduceListing } from '@/lib/fixtures/farmers';
@@ -32,6 +37,8 @@ export function FarmerListings() {
   const { farmer, language, listingsFor, refresh, isPending } = useFarmerSession();
   const [filter, setFilter] = useState<Filter>('all');
   const [loading, setLoading] = useState(true);
+  // 2026-10-27: a moderator's correction requests on these listings.
+  const corrections = useOpenCorrections('produce_listing');
 
   // The session holds the farmer's own listings (GET /api/farmer/listings);
   // reload on arrival so a listing saved on another device shows here too.
@@ -57,6 +64,12 @@ export function FarmerListings() {
         actions={
           <ButtonLink href="/farmer/account/listings/new">{t('listings.new', language)}</ButtonLink>
         }
+      />
+
+      <CorrectionNotice
+        items={corrections.items}
+        lang={language}
+        editHref={(id) => `/farmer/account/listings/${id}/edit`}
       />
 
       {loading ? (
@@ -99,6 +112,11 @@ export function FarmerListings() {
                   stage={stageOf(listing)}
                   actions={
                     <>
+                      {corrections.ids.has(listing.id) ? (
+                        <>
+                          <CorrectionStamp lang={language} />{' '}
+                        </>
+                      ) : null}
                       <Link href={`/farmer/account/listings/${listing.id}/edit`} className="small">
                         {t('listings.edit', language)}
                       </Link>

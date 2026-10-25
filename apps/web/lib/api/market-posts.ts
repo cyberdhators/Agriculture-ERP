@@ -17,6 +17,7 @@ import { audited, writeAudit, type AuditTx } from './audit';
 import { ApiFailure, forbidden, invalidCursor, notFound, unprocessable } from './errors';
 import { type Authenticated } from './require-role';
 import { UUID_PATTERN } from './buyer-presenters';
+import { actingWith } from './organizations';
 import { PUBLIC_PROFILE_WHERE } from './public-profile-sql';
 import { prisma } from '../db';
 
@@ -91,17 +92,64 @@ export function checkId(id: string | undefined): string {
  * Another session is making one account able to both buy and sell; this is
  * the one place that reads the scope, so that change lands here alone.
  */
-export type Poster =
+export type Poster = (
   | { type: 'farmer'; id: string; column: 'farmer_id' }
-  | { type: 'buyer'; id: string; column: 'buyer_id' };
+  | { type: 'buyer'; id: string; column: 'buyer_id' }
+) & {
+  /**
+   * 2026-10-27 (team access): the organisation the person posts for, or null
+   * for themselves. The person stays in farmer_id / buyer_id and the audit.
+   */
+  organizationId: string | null;
+  organizationName: string | null;
+};
 
 export function marketPoster(auth: Authenticated): Poster {
   if (auth.scope.kind === 'farmer')
-    return { type: 'farmer', id: auth.scope.farmerId, column: 'farmer_id' };
+    return {
+      type: 'farmer',
+      id: auth.scope.farmerId,
+      column: 'farmer_id',
+      organizationId: null,
+      organizationName: null,
+    };
   if (auth.scope.kind === 'buyer')
-    return { type: 'buyer', id: auth.scope.buyerId, column: 'buyer_id' };
+    return {
+      type: 'buyer',
+      id: auth.scope.buyerId,
+      column: 'buyer_id',
+      organizationId: null,
+      organizationName: null,
+    };
   throw forbidden();
 }
+
+/**
+ * 2026-10-27: the poster of THIS request -- the person, or the organisation
+ * they act for when they hold `listings.manage` in it (403 otherwise; a lost
+ * membership is organization_access_ended). Read from the session and the
+ * re-checked acting cookie, never from a body.
+ */
+export async function actingPoster(db: Db, request: Request, auth: Authenticated): Promise<Poster> {
+  const poster = marketPoster(auth);
+  const acting = await actingWith(db, request, auth, 'listings.manage');
+  return acting
+    ? { ...poster, organizationId: acting.organizationId, organizationName: acting.name }
+    : poster;
+}
+
+/**
+ * Which posts are the poster's own, over `alias`, with ONE placeholder: an
+ * organisation's posts (any member with listings.manage manages them), or the
+ * person's own posts made for themselves. Personal and organisational posts
+ * stay apart. Pass `ownerParam(poster)` for the placeholder.
+ */
+export const ownerWhere = (poster: Poster, alias: string, param: string): string =>
+  poster.organizationId
+    ? `${alias}.organization_id = ${param}::uuid`
+    : `${alias}.${poster.column} = ${param}::uuid AND ${alias}.organization_id IS NULL`;
+
+export const ownerParam = (poster: Poster): string => poster.organizationId ?? poster.id;
 
 /** The poster's own phone: the default contact for something they post. */
 export async function posterPhone(db: Db, poster: Poster): Promise<string> {
@@ -165,9 +213,16 @@ export const BUYING_REQUEST_FROM = `FROM public.buying_request_active br
   JOIN public.state s ON s.id = br.state_id
   LEFT JOIN public.farmer_active f ON f.id = br.farmer_id AND f.suspended_at IS NULL
   LEFT JOIN public.buyer_active b ON b.id = br.buyer_id AND b.suspended_at IS NULL
-  LEFT JOIN public.buyer_organization_active o ON o.id = b.organization_id`;
+  LEFT JOIN public.buyer_organization_active o ON o.id = b.organization_id
+  LEFT JOIN public.organization og ON og.id = br.organization_id
+    AND og.deleted_at IS NULL AND og.closed_at IS NULL`;
 
-export const BUYING_REQUEST_POSTER_LIVE = `(f.id IS NOT NULL OR b.id IS NOT NULL)`;
+/**
+ * 2026-10-27 (team access): a post made for an OPEN organisation stays with
+ * the organisation when the person who posted it leaves or deletes their
+ * account -- organisational continuity. Closing the organisation withdraws it.
+ */
+export const BUYING_REQUEST_POSTER_LIVE = `(f.id IS NOT NULL OR b.id IS NOT NULL OR og.id IS NOT NULL)`;
 
 /** On the public market: active, not past its date, its poster still here. */
 export const BUYING_REQUEST_MARKET_WHERE = `br.status = 'active' AND br.needed_by >= current_date
@@ -241,17 +296,17 @@ export async function loadOwnBuyingRequest(db: Db, poster: Poster, id: string, l
   // The row is locked on its table, not through the view and its joins.
   if (lock) {
     await db.$queryRawUnsafe(
-      `SELECT id FROM public.buying_request
-        WHERE id = $1::uuid AND ${poster.column} = $2::uuid FOR UPDATE`,
+      `SELECT id FROM public.buying_request b0
+        WHERE b0.id = $1::uuid AND ${ownerWhere(poster, 'b0', '$2')} FOR UPDATE`,
       id,
-      poster.id,
+      ownerParam(poster),
     );
   }
   const [row] = await db.$queryRawUnsafe<(BuyingRequestRow & { contact_phone: string })[]>(
     `SELECT ${OWN_BUYING_REQUEST_COLUMNS} ${BUYING_REQUEST_FROM}
-      WHERE br.id = $1::uuid AND br.${poster.column} = $2::uuid`,
+      WHERE br.id = $1::uuid AND ${ownerWhere(poster, 'br', '$2')}`,
     id,
-    poster.id,
+    ownerParam(poster),
   );
   if (!row) throw notFound();
   return row;
@@ -286,14 +341,16 @@ export const SERVICE_FROM = `FROM public.service_listing_active sl
   LEFT JOIN public.buyer_active b ON b.id = sl.buyer_id AND b.suspended_at IS NULL
   LEFT JOIN public.buyer_organization_active o ON o.id = b.organization_id
   LEFT JOIN public.payam pm ON pm.id = sl.payam_id
-  JOIN public.state s ON s.id = sl.state_id`;
+  JOIN public.state s ON s.id = sl.state_id
+  LEFT JOIN public.organization og ON og.id = sl.organization_id
+    AND og.deleted_at IS NULL AND og.closed_at IS NULL`;
 
 /**
  * The joins above are LEFT, so this is what takes a removed or suspended
  * poster's services off every read -- the market, the owner's own list, the
  * contact, messaging, profiles and reports all include it.
  */
-export const SERVICE_POSTER_LIVE = `(f.id IS NOT NULL OR b.id IS NOT NULL)`;
+export const SERVICE_POSTER_LIVE = `(f.id IS NOT NULL OR b.id IS NOT NULL OR og.id IS NOT NULL)`;
 
 /** Every read of a service: the poster is live. */
 export const SERVICE_WHERE = SERVICE_POSTER_LIVE;
@@ -375,17 +432,17 @@ export async function loadOwnService(db: Db, poster: Poster, id: string, lock = 
   // The row is locked on its table, not through the view and its joins.
   if (lock) {
     await db.$queryRawUnsafe(
-      `SELECT id FROM public.service_listing
-        WHERE id = $1::uuid AND ${poster.column} = $2::uuid FOR UPDATE`,
+      `SELECT id FROM public.service_listing s0
+        WHERE s0.id = $1::uuid AND ${ownerWhere(poster, 's0', '$2')} FOR UPDATE`,
       id,
-      poster.id,
+      ownerParam(poster),
     );
   }
   const [row] = await db.$queryRawUnsafe<(ServiceRow & { contact_phone: string })[]>(
     `SELECT ${OWN_SERVICE_COLUMNS} ${SERVICE_FROM}
-      WHERE sl.id = $1::uuid AND sl.${poster.column} = $2::uuid AND ${SERVICE_WHERE}`,
+      WHERE sl.id = $1::uuid AND ${ownerWhere(poster, 'sl', '$2')} AND ${SERVICE_WHERE}`,
     id,
-    poster.id,
+    ownerParam(poster),
   );
   if (!row) throw notFound();
   return row;

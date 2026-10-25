@@ -1,0 +1,317 @@
+import type { OrgPermission, OrgPreset, OrgSenderAfter } from '@agri-erp/shared';
+
+/**
+ * TEAM ACCESS, THE WORDS (2026-10-27). English and Arabic, as the farmer's
+ * account area has both; the buyer side is English. Plain language: a person
+ * acts "for" an organisation; a role is a preset; nobody shares a password.
+ */
+export type Lang = 'en' | 'ar';
+
+export const TEAM_WORDS = {
+  en: {
+    title: 'Organisations',
+    lead: 'Create a profile for your group, business or institution, and invite colleagues. Each person signs in with their own account; nobody shares a password.',
+    actingAs: 'Acting as',
+    yourself: 'Yourself',
+    actingNote:
+      'What you post and the messages you send now show this name. Your own account records that you did it.',
+    accessEnded: 'Your access to that organisation has ended. You are acting as yourself.',
+    invitations: 'Invitations for you',
+    noInvitations: 'No invitations are waiting for you.',
+    invitedAs: 'Role offered',
+    handoverOffer: 'You are offered administration of this organisation.',
+    accept: 'Accept',
+    decline: 'Decline',
+    accepted: 'Accepted. You can now act for this organisation.',
+    declined: 'Declined.',
+    yours: 'Your organisations',
+    none: 'You are not a member of any organisation yet.',
+    open: 'Open',
+    closed: 'Closed',
+    draft: 'Draft (not public)',
+    published: 'Published',
+    create: 'Create an organisation profile',
+    name: 'Organisation name',
+    kind: 'It is',
+    groupKind: 'What kind of group',
+    activities: 'What it does (choose any)',
+    about: 'Description',
+    location: 'General location',
+    creating: 'Creating…',
+    created: 'Created. You are its administrator.',
+    failed: 'That did not work. Please try again.',
+    choose: 'Choose…',
+    profile: 'Profile',
+    edit: 'Save profile',
+    saving: 'Saving…',
+    saved: 'Saved.',
+    publicPhone: 'Public phone (optional)',
+    publicEmail: 'Public email (optional)',
+    showTeam: 'Show team members who agree on the public profile',
+    publish: 'Publish profile',
+    unpublish: 'Unpublish',
+    viewPublic: 'View public profile',
+    publicNote: 'A published profile is visible to everyone. It is not an endorsement by CORWADO.',
+    me: 'Your membership',
+    showMe: 'Show me on the public profile (my choice)',
+    myTitle: 'My title (optional)',
+    leave: 'Leave organisation',
+    leaveConfirm: 'Leave this organisation? Your own account is not affected.',
+    team: 'Team',
+    you: 'you',
+    ended: 'Access ended',
+    role: 'Role',
+    permissions: 'What they can do',
+    change: 'Change role',
+    saveRole: 'Save role',
+    revoke: 'Remove access',
+    revokeReason: 'Reason (kept in the organisation’s history)',
+    revokeNote: 'Their own account and everything the organisation has stays as it is.',
+    secondAdmin:
+      'Only one administrator. Add a second administrator so the organisation is never locked out.',
+    handover: 'Hand over or share administration',
+    handoverTo: 'Offer administration to',
+    handoverThen: 'After they accept, I will be',
+    offer: 'Send offer',
+    offered: 'Offer sent. Nothing changes until they accept.',
+    invite: 'Invite a colleague',
+    channel: 'Send to',
+    phone: 'Phone',
+    email: 'Email',
+    target: 'Their phone number or email',
+    sendInvite: 'Create invitation',
+    inviteLink:
+      'Invitation link — copy it and send it to them. It works only when they sign in with that phone or email, and expires in 7 days.',
+    copy: 'Copy link',
+    copied: 'Copied.',
+    delivery: {
+      link_only: 'Link only',
+      sms_sent: 'Sent by SMS',
+      email_sent: 'Sent by email',
+      send_failed: 'Sending failed — share the link',
+      in_app: 'In the app',
+    } as Record<string, string>,
+    sentInvitations: 'Invitations and offers',
+    cancel: 'Withdraw',
+    dismiss: 'Cancel',
+    state: {
+      pending: 'Waiting',
+      expired: 'Expired',
+      accepted: 'Accepted',
+      declined: 'Declined',
+      cancelled: 'Withdrawn',
+    } as Record<string, string>,
+    close: 'Close the organisation',
+    closeLead:
+      'Closing takes its posts off the market, closes its conversations and ends everyone’s access. Its records are kept. This cannot be undone from the app.',
+    closeReason: 'Reason',
+    closeConfirm: 'I understand. Close this organisation.',
+    closeButton: 'Close organisation',
+    closedNote: 'This organisation has been closed.',
+    back: 'All organisations',
+    inviteTitle: 'Invitation to join an organisation',
+    signInFirst:
+      'Sign in with the phone number or email address the invitation was sent to, then open this link again.',
+    signIn: 'Sign in',
+    otherAccount:
+      'This invitation was sent to a different phone number or email address. Sign in with that one to accept it.',
+    notFoundInvite: 'This invitation link is not valid.',
+    expires: 'Expires',
+  },
+  ar: {
+    title: 'المنظمات',
+    lead: 'أنشئ ملفاً لمجموعتك أو شركتك أو مؤسستك وادعُ زملاءك. يسجّل كل شخص الدخول بحسابه الخاص؛ لا أحد يشارك كلمة مرور.',
+    actingAs: 'تتصرف باسم',
+    yourself: 'نفسك',
+    actingNote:
+      'ما تنشره والرسائل التي ترسلها يظهر الآن بهذا الاسم. ويُسجَّل في حسابك أنك من قام بذلك.',
+    accessEnded: 'انتهى وصولك إلى تلك المنظمة. أنت تتصرف باسمك.',
+    invitations: 'دعوات لك',
+    noInvitations: 'لا توجد دعوات بانتظارك.',
+    invitedAs: 'الدور المعروض',
+    handoverOffer: 'عُرضت عليك إدارة هذه المنظمة.',
+    accept: 'قبول',
+    decline: 'رفض',
+    accepted: 'تم القبول. يمكنك الآن التصرف باسم هذه المنظمة.',
+    declined: 'تم الرفض.',
+    yours: 'منظماتك',
+    none: 'لست عضواً في أي منظمة بعد.',
+    open: 'فتح',
+    closed: 'مغلقة',
+    draft: 'مسودة (غير منشورة)',
+    published: 'منشورة',
+    create: 'إنشاء ملف منظمة',
+    name: 'اسم المنظمة',
+    kind: 'هي',
+    groupKind: 'نوع المجموعة',
+    activities: 'ماذا تفعل (اختر ما يناسب)',
+    about: 'الوصف',
+    location: 'الموقع العام',
+    creating: 'جارٍ الإنشاء…',
+    created: 'تم الإنشاء. أنت مسؤولها.',
+    failed: 'لم ينجح ذلك. حاول مرة أخرى.',
+    choose: 'اختر…',
+    profile: 'الملف',
+    edit: 'حفظ الملف',
+    saving: 'جارٍ الحفظ…',
+    saved: 'تم الحفظ.',
+    publicPhone: 'هاتف عام (اختياري)',
+    publicEmail: 'بريد إلكتروني عام (اختياري)',
+    showTeam: 'عرض أعضاء الفريق الموافقين في الملف العام',
+    publish: 'نشر الملف',
+    unpublish: 'إلغاء النشر',
+    viewPublic: 'عرض الملف العام',
+    publicNote: 'الملف المنشور يراه الجميع، ولا يعني ذلك تزكية من كوروادو.',
+    me: 'عضويتك',
+    showMe: 'أظهرني في الملف العام (باختياري)',
+    myTitle: 'لقبي (اختياري)',
+    leave: 'مغادرة المنظمة',
+    leaveConfirm: 'هل تغادر هذه المنظمة؟ حسابك الشخصي لن يتأثر.',
+    team: 'الفريق',
+    you: 'أنت',
+    ended: 'انتهى الوصول',
+    role: 'الدور',
+    permissions: 'ما يمكنه فعله',
+    change: 'تغيير الدور',
+    saveRole: 'حفظ الدور',
+    revoke: 'إزالة الوصول',
+    revokeReason: 'السبب (يُحفظ في سجل المنظمة)',
+    revokeNote: 'حسابه الشخصي وكل ما لدى المنظمة يبقى كما هو.',
+    secondAdmin: 'يوجد مسؤول واحد فقط. أضف مسؤولاً ثانياً حتى لا تُقفل المنظمة أبداً.',
+    handover: 'تسليم الإدارة أو مشاركتها',
+    handoverTo: 'اعرض الإدارة على',
+    handoverThen: 'بعد قبوله سأكون',
+    offer: 'إرسال العرض',
+    offered: 'تم إرسال العرض. لا يتغير شيء حتى يقبله.',
+    invite: 'دعوة زميل',
+    channel: 'أرسل إلى',
+    phone: 'هاتف',
+    email: 'بريد إلكتروني',
+    target: 'رقم هاتفه أو بريده الإلكتروني',
+    sendInvite: 'إنشاء دعوة',
+    inviteLink:
+      'رابط الدعوة — انسخه وأرسله إليه. يعمل فقط عندما يسجّل الدخول بذلك الهاتف أو البريد، وينتهي بعد 7 أيام.',
+    copy: 'نسخ الرابط',
+    copied: 'تم النسخ.',
+    delivery: {
+      link_only: 'رابط فقط',
+      sms_sent: 'أُرسل برسالة نصية',
+      email_sent: 'أُرسل بالبريد',
+      send_failed: 'فشل الإرسال — شارك الرابط',
+      in_app: 'في التطبيق',
+    } as Record<string, string>,
+    sentInvitations: 'الدعوات والعروض',
+    cancel: 'سحب',
+    dismiss: 'إلغاء',
+    state: {
+      pending: 'بالانتظار',
+      expired: 'منتهية',
+      accepted: 'مقبولة',
+      declined: 'مرفوضة',
+      cancelled: 'مسحوبة',
+    } as Record<string, string>,
+    close: 'إغلاق المنظمة',
+    closeLead:
+      'الإغلاق يسحب منشوراتها من السوق ويغلق محادثاتها وينهي وصول الجميع. تُحفظ سجلاتها. لا يمكن التراجع عن ذلك من التطبيق.',
+    closeReason: 'السبب',
+    closeConfirm: 'أفهم ذلك. أغلق هذه المنظمة.',
+    closeButton: 'إغلاق المنظمة',
+    closedNote: 'تم إغلاق هذه المنظمة.',
+    back: 'كل المنظمات',
+    inviteTitle: 'دعوة للانضمام إلى منظمة',
+    signInFirst:
+      'سجّل الدخول بالهاتف أو البريد الذي أُرسلت إليه الدعوة، ثم افتح هذا الرابط مرة أخرى.',
+    signIn: 'تسجيل الدخول',
+    otherAccount: 'أُرسلت هذه الدعوة إلى رقم هاتف أو بريد مختلف. سجّل الدخول به لقبولها.',
+    notFoundInvite: 'رابط الدعوة هذا غير صالح.',
+    expires: 'تنتهي',
+  },
+};
+
+export const PRESET_WORDS: Record<Lang, Record<OrgPreset, { label: string; about: string }>> = {
+  en: {
+    administrator: {
+      label: 'Administrator',
+      about:
+        'Manages the team, edits the profile, posts for the organisation and answers its messages.',
+    },
+    contributor: {
+      label: 'Contributor',
+      about: 'Posts for the organisation and answers its messages. Cannot manage the team.',
+    },
+    viewer: {
+      label: 'Viewer',
+      about: 'Reads the organisation’s messages. Cannot post, reply or change anything.',
+    },
+  },
+  ar: {
+    administrator: {
+      label: 'مسؤول',
+      about: 'يدير الفريق ويعدّل الملف وينشر باسم المنظمة ويرد على رسائلها.',
+    },
+    contributor: {
+      label: 'مساهم',
+      about: 'ينشر باسم المنظمة ويرد على رسائلها. لا يدير الفريق.',
+    },
+    viewer: { label: 'مشاهد', about: 'يقرأ رسائل المنظمة. لا ينشر ولا يرد ولا يغيّر شيئاً.' },
+  },
+};
+
+export const PERMISSION_WORDS: Record<Lang, Record<OrgPermission, string>> = {
+  en: {
+    'profile.edit': 'Edit the organisation profile',
+    'listings.manage': 'Post and manage buying requests and services',
+    'inbox.read': 'Read the shared inbox',
+    'inbox.reply': 'Reply from the shared inbox',
+    'advisory.handle': 'Handle advisory cases',
+    'team.manage': 'Manage the team',
+  },
+  ar: {
+    'profile.edit': 'تعديل ملف المنظمة',
+    'listings.manage': 'نشر طلبات الشراء والخدمات وإدارتها',
+    'inbox.read': 'قراءة البريد المشترك',
+    'inbox.reply': 'الرد من البريد المشترك',
+    'advisory.handle': 'التعامل مع طلبات الاستشارة',
+    'team.manage': 'إدارة الفريق',
+  },
+};
+
+export const SENDER_AFTER_WORDS: Record<Lang, Record<OrgSenderAfter, string>> = {
+  en: {
+    administrator: 'Still an administrator (two administrators)',
+    contributor: 'A contributor',
+    viewer: 'A viewer',
+    leave: 'No longer a member',
+  },
+  ar: {
+    administrator: 'ما زلت مسؤولاً (مسؤولان)',
+    contributor: 'مساهماً',
+    viewer: 'مشاهداً',
+    leave: 'لست عضواً بعد الآن',
+  },
+};
+
+/** Where the organisations pages live on each side of an account. */
+export const teamBase = (side: 'farmer' | 'buyer') =>
+  side === 'farmer' ? '/farmer/account/organisations' : '/buyer/organisations';
+
+/** The API's own sentence for a refusal, or a fallback. */
+export async function errorText(response: Response, fallback: string): Promise<string> {
+  const body = (await response.json().catch(() => ({}))) as {
+    error?: { message?: string; fields?: Record<string, string> };
+  };
+  const fields = body.error?.fields ? Object.values(body.error.fields) : [];
+  return fields[0] ?? body.error?.message ?? fallback;
+}
+
+export async function sendJson(
+  url: string,
+  method: 'POST' | 'PATCH',
+  body?: unknown,
+): Promise<Response> {
+  return fetch(url, {
+    method,
+    headers: body === undefined ? {} : { 'content-type': 'application/json' },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+}

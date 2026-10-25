@@ -37,6 +37,13 @@ const EXPECTED_PUBLIC = [
   // lib/api/phone-verification.ts (a counter in the database, not a request
   // limiter), so a public SMS route cannot run up the bill.
   'auth/phone-code',
+  // 2026-10-27: "Forgot your password?" for a phone account. The code request
+  // answers the same for every number (never whether it has an account), is
+  // limited per number and system-wide, and sends only after the answer; the
+  // reset needs a verified code (lib/api/phone-verification.ts).
+  'auth/recovery/code',
+  'auth/recovery/reset',
+  'auth/recovery/verify',
   'auth/phone-code/verify',
   'buyer/register',
   // LISTINGS LANE (2026-10-19): buying requests and service listings are on
@@ -68,6 +75,10 @@ const EXPECTED_PUBLIC = [
   // through a whitelist (app/api/notices/current, lib/api/settings.ts
   // publicSettings): no draft, no staff name, nothing about security.
   'notices/current',
+  // TEAM ACCESS (2026-10-27): an organisation's PUBLIC profile. Read-only;
+  // published, open organisations only, through a whitelist; the team only
+  // with the organisation's switch AND each member's own agreement.
+  'organizations/[id]/profile',
   'settings/public',
   // 2026-10-20: a poster's public profile, reached through one of their posts on
   // the market; read-only, a whitelist of market-facing fields (no phone, no ids).

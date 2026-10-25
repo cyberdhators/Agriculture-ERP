@@ -7,16 +7,18 @@ import {
   actorOf,
   insertMessage,
   loadConversation,
-  me,
   myName,
   postOwner,
   presentConversation,
   presentMessage,
   refusesMessages,
   startedToday,
+  viewerOf,
+  viewerWhere,
   type ConversationRow,
 } from '../../../lib/api/messaging';
 import { noticeIfFirstMessage } from '../../../lib/api/notify';
+import { activeMembership } from '../../../lib/api/organizations';
 import { created, defineRoutes, paged } from '../../../lib/api/route';
 import { prisma } from '../../../lib/db';
 
@@ -42,12 +44,19 @@ import { prisma } from '../../../lib/db';
  * 2026-10-23 (public profiles v2): an owner who turned "Allow in-app
  * messaging" off on their profile cannot be sent a NEW conversation
  * (`conversation_owner_no_messages`); one already started goes on.
+ *
+ * 2026-10-27 (team access): THE INBOX IS THE VIEWER'S. Acting for themselves,
+ * a person sees only personal conversations; acting for an organisation
+ * (`inbox.read`), that organisation's shared inbox. A message to a post made
+ * for an organisation lands in the organisation's inbox; starting one while
+ * acting for an organisation (`inbox.reply`) speaks in its name. Nobody may
+ * message their own organisation's post (`organization_own_post`).
  */
 export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   GET: {
     roles: [FARMER_ROLE, BUYER_ROLE],
-    handler: async ({ auth }) => {
-      const reader = me(auth);
+    handler: async ({ auth, request }) => {
+      const viewer = await viewerOf(prisma, request, auth, 'inbox.read');
       const rows = await prisma.$queryRawUnsafe<ConversationRow[]>(
         `SELECT ${CONVERSATION_COLUMNS}, last.body AS last_body
            FROM public.conversation c
@@ -56,13 +65,14 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
               WHERE m.conversation_id = c.id AND m.deleted_at IS NULL
               ORDER BY m.created_at DESC LIMIT 1
            ) last ON true
-          WHERE $1::uuid IN (c.owner_auth_user_id, c.starter_auth_user_id)
+          WHERE ${viewerWhere('$1', '$2')}
           ORDER BY c.last_message_at DESC, c.id DESC
           LIMIT 100`,
-        reader,
+        viewer.person,
+        viewer.org,
       );
       return paged(
-        rows.map((row) => presentConversation(row, reader)),
+        rows.map((row) => presentConversation(row, viewer)),
         { cursor: null, hasMore: false },
       );
     },
@@ -70,35 +80,54 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   POST: {
     roles: [FARMER_ROLE, BUYER_ROLE],
     bodySchema: startConversationSchema,
-    handler: async ({ auth, body }) => {
-      const sender = me(auth);
+    handler: async ({ auth, body, request }) => {
+      const viewer = await viewerOf(prisma, request, auth, 'inbox.reply');
+      const sender = viewer.person;
       const post = await postOwner(prisma, body.post_kind, body.post_id);
       if (post.owner_auth_user_id === sender) throw unprocessable('conversation_own_post');
+      if (post.owner_organization_id) {
+        if (
+          viewer.org === post.owner_organization_id ||
+          (await activeMembership(prisma, post.owner_organization_id, sender))
+        ) {
+          throw unprocessable('organization_own_post');
+        }
+      }
 
       const result = await audited(prisma, async (tx) => {
         const findId = async () =>
           (
             await tx.$queryRawUnsafe<{ id: string }[]>(
-              `SELECT id FROM public.conversation
-                WHERE post_kind = $1 AND post_id = $2::uuid AND starter_auth_user_id = $3::uuid`,
+              viewer.org === null
+                ? `SELECT id FROM public.conversation
+                    WHERE post_kind = $1 AND post_id = $2::uuid AND starter_auth_user_id = $3::uuid
+                      AND starter_organization_id IS NULL`
+                : `SELECT id FROM public.conversation
+                    WHERE post_kind = $1 AND post_id = $2::uuid AND starter_organization_id = $3::uuid`,
               body.post_kind,
               body.post_id,
-              sender,
+              viewer.org ?? sender,
             )
           )[0]?.id;
         let conversationId = await findId();
         if (!conversationId) {
-          // 2026-10-23: the owner chose "Allow in-app messaging: off" on their profile.
-          if (post.owner_auth_user_id && (await refusesMessages(tx, post.owner_auth_user_id))) {
+          // 2026-10-23: the owner chose "Allow in-app messaging: off" on their
+          // profile. An organisation's post is answered by its shared inbox.
+          if (
+            !post.owner_organization_id &&
+            post.owner_auth_user_id &&
+            (await refusesMessages(tx, post.owner_auth_user_id))
+          ) {
             throw unprocessable('conversation_owner_no_messages');
           }
           if (await startedToday(tx, sender)) throw unprocessable('conversation_limit_reached');
           const [row] = await tx.$queryRawUnsafe<{ id: string }[]>(
             `INSERT INTO public.conversation
                (post_kind, post_id, post_title, owner_auth_user_id, owner_name,
-                starter_auth_user_id, starter_name)
-             VALUES ($1, $2::uuid, $3, $4::uuid, $5, $6::uuid, $7)
-             ON CONFLICT (post_kind, post_id, starter_auth_user_id) DO NOTHING
+                starter_auth_user_id, starter_name, owner_organization_id,
+                starter_organization_id)
+             VALUES ($1, $2::uuid, $3, $4::uuid, $5, $6::uuid, $7, $8::uuid, $9::uuid)
+             ON CONFLICT DO NOTHING
              RETURNING id`,
             body.post_kind,
             body.post_id,
@@ -106,7 +135,9 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
             post.owner_auth_user_id,
             post.owner_name,
             sender,
-            await myName(tx, sender),
+            viewer.orgName ?? (await myName(tx, sender)),
+            post.owner_organization_id,
+            viewer.org,
           );
           if (row) {
             await writeAudit(tx, {
@@ -114,20 +145,28 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
               entityId: row.id,
               ...actorOf(auth),
               action: 'conversation.started',
-              after: { post_kind: body.post_kind, post_id: body.post_id },
+              after: {
+                post_kind: body.post_kind,
+                post_id: body.post_id,
+                ...(viewer.org ? { as_organization_id: viewer.org } : {}),
+                ...(post.owner_organization_id
+                  ? { to_organization_id: post.owner_organization_id }
+                  : {}),
+              },
             });
           }
           // No row: this account's other send won the race, and its conversation is this one.
           conversationId = row?.id ?? (await findId());
         }
         if (!conversationId) throw notFound();
-        const conversation = await loadConversation(tx, conversationId, sender, true);
+        const conversation = await loadConversation(tx, conversationId, viewer, true);
         if (conversation.blocked_at) throw unprocessable('conversation_blocked');
         const { row: message, fresh } = await insertMessage(tx, {
           id: body.message_id,
           conversationId: conversation.id,
           sender,
           body: body.body,
+          side: 'starter',
         });
         if (fresh) {
           await writeAudit(tx, {
@@ -135,17 +174,18 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
             entityId: message.id,
             ...actorOf(auth),
             action: 'message.sent',
-            after: { conversation_id: conversation.id },
+            after: {
+              conversation_id: conversation.id,
+              ...(viewer.org ? { as_organization_id: viewer.org } : {}),
+            },
           });
           // 2026-10-26: the owner is told of a NEW conversation, never of each message.
-          await noticeIfFirstMessage(tx, conversation.id, sender, actorOf(auth));
+          await noticeIfFirstMessage(tx, conversation.id, sender, actorOf(auth), 'starter');
         }
+        const fresher = await loadConversation(tx, conversation.id, viewer);
         return {
-          conversation: presentConversation(
-            await loadConversation(tx, conversation.id, sender),
-            sender,
-          ),
-          message: presentMessage(message, sender),
+          conversation: presentConversation(fresher, viewer),
+          message: presentMessage(message, fresher, viewer),
         };
       });
       return created(result);

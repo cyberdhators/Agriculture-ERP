@@ -22,7 +22,7 @@ import {
   invalidField,
   likePattern,
   loadOwnBuyingRequest,
-  marketPoster,
+  actingPoster,
   pageLimit,
   parseQuery,
   posterPhone,
@@ -101,8 +101,9 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   POST: {
     roles: [FARMER_ROLE, BUYER_ROLE],
     bodySchema: buyingRequestSchema,
-    handler: async ({ auth, body }) => {
-      const poster = marketPoster(auth);
+    handler: async ({ auth, body, request }) => {
+      // 2026-10-27: posted for the organisation the person acts for, if any.
+      const poster = await actingPoster(prisma, request, auth);
       const id = body.id ?? randomUUID();
 
       const [existing] = await prisma.$queryRawUnsafe<
@@ -126,21 +127,23 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       );
       if (!state) throw invalidField('state_id', MARKET_POST_MESSAGES.stateUnknown);
       const phone = body.contact_phone ?? (await posterPhone(prisma, poster));
+      // An organisation's post carries the organisation's name on the market.
+      const displayName = poster.organizationName ?? body.display_name;
 
       const row = await audited(prisma, async (tx) => {
         await tx.$executeRawUnsafe(
           `INSERT INTO public.buying_request
              (id, poster_type, farmer_id, buyer_id, display_name, category, product_name,
               quantity, unit, state_id, location, needed_by, price_ssp, price_per, negotiable,
-              delivery_terms, description, contact_phone, status, show_phone)
+              delivery_terms, description, contact_phone, status, show_phone, organization_id)
            VALUES ($1::uuid, $2, $3::uuid, $4::uuid, $5, $6::public.listing_category, $7,
                    $8, $9::public.listing_unit, $10, $11, $12::date, $13,
-                   $14::public.listing_unit, $15, $16, $17, $18, $19, $20)`,
+                   $14::public.listing_unit, $15, $16, $17, $18, $19, $20, $21::uuid)`,
           id,
           poster.type,
           poster.type === 'farmer' ? poster.id : null,
           poster.type === 'buyer' ? poster.id : null,
-          body.display_name,
+          displayName,
           body.category,
           body.product_name,
           body.quantity,
@@ -156,6 +159,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
           phone,
           body.status,
           body.show_phone,
+          poster.organizationId,
         );
         await writeAudit(tx, {
           entityType: 'buying_request',
@@ -170,6 +174,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
             quantity: body.quantity,
             needed_by: body.needed_by,
             status: body.status,
+            ...(poster.organizationId ? { organization_id: poster.organizationId } : {}),
           },
         });
         const [saved] = await tx.$queryRawUnsafe<(BuyingRequestRow & { contact_phone: string })[]>(

@@ -1,6 +1,8 @@
 import { createHash, randomInt, timingSafeEqual } from 'node:crypto';
 
-import { PHONE_CODE } from '@agri-erp/shared';
+import { after } from 'next/server';
+
+import { PHONE_CODE, phoneCodeSmsText, type PhoneCodePurpose } from '@agri-erp/shared';
 
 import { type AuditTx } from './audit';
 import { ApiFailure, unprocessable } from './errors';
@@ -42,12 +44,41 @@ const tooMany = (message: string, retryAfterSeconds?: number) =>
     retryAfterSeconds ? { 'retry-after': String(retryAfterSeconds) } : undefined,
   );
 
-/** Send a sign-up code to this phone. Returns the verification id and expiry. */
-export async function sendSignUpCode(
+/**
+ * 2026-10-27: how a code is issued, for each purpose. Sign-up sends at once
+ * and reports a failed send (503), as it always has. Recovery and change of
+ * number may DEFER the send until after the answer has gone (`after` from
+ * next/server), so the answer takes the same time whether or not a message is
+ * sent -- recovery answers the same for every number, account or none.
+ */
+export interface IssueOptions {
+  purpose: PhoneCodePurpose;
+  /** The account a change-of-number code is for. Required for phone_change, else absent. */
+  authUserId?: string | null;
+  /** False: write the row (so limits and the answer are the same) but send nothing. */
+  deliver?: boolean;
+  /** True: send after the answer; a failed send just spends the row. */
+  defer?: boolean;
+}
+
+/** Runs `task` after the response when the runtime allows it; otherwise in the background. */
+function afterResponse(task: () => Promise<void>): void {
+  try {
+    after(task);
+  } catch {
+    // Outside a request (a script, a test): run it without waiting.
+    void task().catch(() => undefined);
+  }
+}
+
+/** Issue a code for this phone and purpose. Returns the verification id and expiry. */
+export async function issuePhoneCode(
   phone: string,
   language: 'en' | 'ar',
+  options: IssueOptions,
 ): Promise<{ id: string; expiresAt: Date }> {
-  let config;
+  const deliver = options.deliver ?? true;
+  let config: ReturnType<typeof smsConfig>;
   try {
     config = smsConfig();
   } catch (failure) {
@@ -86,11 +117,13 @@ export async function sendSignUpCode(
 
   const code = String(randomInt(0, 10 ** PHONE_CODE.length)).padStart(PHONE_CODE.length, '0');
   const [row] = await prisma.$queryRawUnsafe<{ id: string; expires_at: Date }[]>(
-    `INSERT INTO public.phone_verification (phone, purpose, code_hash, expires_at)
-     VALUES ($1, 'farmer_sign_up', 'pending', now() + make_interval(mins => $2))
+    `INSERT INTO public.phone_verification (phone, purpose, code_hash, expires_at, auth_user_id)
+     VALUES ($1, $3, 'pending', now() + make_interval(mins => $2), $4::uuid)
      RETURNING id, expires_at`,
     phone,
     PHONE_CODE.ttlMinutes,
+    options.purpose,
+    options.authUserId ?? null,
   );
   await prisma.$executeRawUnsafe(
     'UPDATE public.phone_verification SET code_hash = $2 WHERE id = $1::uuid',
@@ -98,22 +131,34 @@ export async function sendSignUpCode(
     hashCode(row!.id, code),
   );
 
-  const text =
-    language === 'ar'
-      ? `رمز AgriOne: ${code}. صالح لمدة ${PHONE_CODE.ttlMinutes} دقائق. لا تشاركه مع أحد.`
-      : `AgriOne code: ${code}. It expires in ${PHONE_CODE.ttlMinutes} minutes. Do not share it.`;
-  try {
-    const sent = await sendOneSms(config, phone, text);
-    if (!sent.accepted) throw new SmsUnavailableError();
-  } catch {
-    // Not sent: the row is spent so it cannot be verified, and the farmer is
-    // told plainly rather than left waiting for an SMS that will not come.
-    await prisma
-      .$executeRawUnsafe(
-        `UPDATE public.phone_verification SET expires_at = now() WHERE id = $1::uuid`,
-        row!.id,
-      )
-      .catch(() => undefined);
+  if (!deliver) return { id: row!.id, expiresAt: row!.expires_at };
+
+  const text = phoneCodeSmsText(code, options.purpose, language);
+  const send = async (): Promise<boolean> => {
+    try {
+      const sent = await sendOneSms(config, phone, text);
+      if (!sent.accepted) throw new SmsUnavailableError();
+      return true;
+    } catch {
+      // Not sent: the row is spent so it cannot be verified.
+      await prisma
+        .$executeRawUnsafe(
+          `UPDATE public.phone_verification SET expires_at = now() WHERE id = $1::uuid`,
+          row!.id,
+        )
+        .catch(() => undefined);
+      return false;
+    }
+  };
+
+  if (options.defer) {
+    afterResponse(async () => {
+      await send();
+    });
+    return { id: row!.id, expiresAt: row!.expires_at };
+  }
+  if (!(await send())) {
+    // The farmer is told plainly rather than left waiting for an SMS that will not come.
     throw new ApiFailure(
       503,
       'sms_unavailable',
@@ -123,18 +168,39 @@ export async function sendSignUpCode(
   return { id: row!.id, expiresAt: row!.expires_at };
 }
 
-/** Check the code the farmer typed. Marks the verification verified on success. */
-export async function verifySignUpCode(id: string, code: string): Promise<void> {
+/** Send a sign-up code to this phone. Returns the verification id and expiry. */
+export function sendSignUpCode(
+  phone: string,
+  language: 'en' | 'ar',
+): Promise<{ id: string; expiresAt: Date }> {
+  return issuePhoneCode(phone, language, { purpose: 'farmer_sign_up' });
+}
+
+/**
+ * Check a typed code. Marks the verification verified on success. Since
+ * 2026-10-27 the code must be of the purpose asked about (and, for a change of
+ * number, issued to the same account): a sign-up code cannot be verified as a
+ * recovery code or the reverse.
+ */
+export async function verifyPhoneCode(
+  id: string,
+  code: string,
+  purpose: PhoneCodePurpose,
+  authUserId: string | null = null,
+): Promise<void> {
   // One try is counted before the comparison, atomically, so parallel guesses
   // cannot exceed the limit.
   const [row] = await prisma.$queryRawUnsafe<
     { code_hash: string; attempts: number; expired: boolean; verified: boolean }[]
   >(
     `UPDATE public.phone_verification SET attempts = attempts + 1
-      WHERE id = $1::uuid AND consumed_at IS NULL
+      WHERE id = $1::uuid AND consumed_at IS NULL AND purpose = $2
+        AND auth_user_id IS NOT DISTINCT FROM $3::uuid
       RETURNING code_hash, attempts, (expires_at < now()) AS expired,
                 (verified_at IS NOT NULL) AS verified`,
     id,
+    purpose,
+    authUserId,
   );
   if (!row || row.expired) throw unprocessable('phone_code_expired');
   if (row.verified) return;
@@ -148,6 +214,11 @@ export async function verifySignUpCode(id: string, code: string): Promise<void> 
     'UPDATE public.phone_verification SET verified_at = now() WHERE id = $1::uuid',
     id,
   );
+}
+
+/** Check the code the farmer typed at sign-up. */
+export function verifySignUpCode(id: string, code: string): Promise<void> {
+  return verifyPhoneCode(id, code, 'farmer_sign_up');
 }
 
 /**
@@ -172,4 +243,45 @@ export async function consumeSignUpVerification(
     PHONE_CODE.useWithinMinutes,
   );
   if (!row) throw unprocessable('phone_not_verified');
+}
+
+/**
+ * 2026-10-27. Uses up a verified code of one purpose inside the caller's
+ * transaction and returns its phone, or throws phone_not_verified. A recovery
+ * code is matched by id alone (the number is the row's); a change-of-number
+ * code must be for this new number AND this account.
+ */
+export async function consumeVerification(
+  tx: { $queryRawUnsafe: AuditTx['$queryRawUnsafe'] },
+  id: string | undefined,
+  purpose: Exclude<PhoneCodePurpose, 'farmer_sign_up'>,
+  match: { phone?: string; authUserId?: string } = {},
+): Promise<string> {
+  if (!id) throw unprocessable('phone_not_verified');
+  const [row] = await tx.$queryRawUnsafe<{ phone: string }[]>(
+    `UPDATE public.phone_verification SET consumed_at = now()
+      WHERE id = $1::uuid AND purpose = $2
+        AND verified_at IS NOT NULL AND consumed_at IS NULL
+        AND verified_at > now() - make_interval(mins => $3)
+        AND ($4::text IS NULL OR phone = $4)
+        AND ($5::uuid IS NULL OR auth_user_id = $5::uuid)
+      RETURNING phone`,
+    id,
+    purpose,
+    PHONE_CODE.useWithinMinutes,
+    match.phone ?? null,
+    match.authUserId ?? null,
+  );
+  if (!row) throw unprocessable('phone_not_verified');
+  return row.phone;
+}
+
+/** 2026-10-27. Gives a consumed code back when the change it was for could not be made. */
+export async function releaseVerification(id: string): Promise<void> {
+  await prisma
+    .$executeRawUnsafe(
+      'UPDATE public.phone_verification SET consumed_at = NULL WHERE id = $1::uuid',
+      id,
+    )
+    .catch(() => undefined);
 }

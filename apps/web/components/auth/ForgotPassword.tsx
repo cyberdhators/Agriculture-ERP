@@ -36,8 +36,9 @@ const linkButton = {
  * security scanner cannot use the code up by "clicking" it.
  *
  * Step 1 answers the same whether or not the address has an account, so the
- * page cannot be used to find out who is registered. Farmers and officers sign
- * in with a phone number; their password is set by staff.
+ * page cannot be used to find out who is registered. A phone account resets
+ * its password by SMS code at /farmer/forgot-password (2026-10-27); an
+ * officer's is set by an administrator.
  */
 export function ForgotPassword() {
   const [stage, setStage] = useState<Stage>('email');
@@ -253,7 +254,7 @@ export function ForgotPassword() {
         ) : null}
 
         <p className={styles.hint}>
-          Farmers: your password is reset by your extension officer or CORWADO -- call them.{' '}
+          Sign in with a phone number? <a href="/farmer/forgot-password">Reset it by SMS</a>.{' '}
           <a href="/login">Back to sign in</a>
         </p>
       </Card>

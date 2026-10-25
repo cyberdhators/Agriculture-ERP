@@ -16,8 +16,9 @@ import styles from './farmer.module.css';
  * Sign in by phone and password — the same mechanism as officers (B12 point
  * 2). One form, one submit. A wrong password and an unknown number fail with
  * the same sentence, so the screen never reveals whether a number is on the
- * register; the fifth failure locks the number. Forgotten passwords are reset
- * by an officer or CORWADO: there is no code flow until C-15 exists.
+ * register; the fifth failure locks the number. A forgotten password is
+ * reset with a code by SMS (/farmer/forgot-password, 2026-10-27); an officer
+ * or CORWADO can still set one too.
  */
 export function FarmerLogin() {
   const { language, signIn } = useFarmerSession();
@@ -119,7 +120,8 @@ export function FarmerLogin() {
 
       <p className={styles.helpRow}>
         <span className={styles.helpTitle}>{t('login.forgotTitle', language)}</span>{' '}
-        {t('login.forgotBody', language)}
+        {t('login.forgotBody', language)}{' '}
+        <Link href="/farmer/forgot-password">{t('login.forgotLink', language)}</Link>
       </p>
 
       <p className={styles.linkRow}>

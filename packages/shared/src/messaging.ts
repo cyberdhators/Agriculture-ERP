@@ -89,8 +89,15 @@ export interface ConversationSummary {
 export interface ChatMessage {
   id: string;
   body: string;
+  /** From the reader's side: for an organisation's inbox, a colleague's message is "mine". */
   from_me: boolean;
   created_at: string;
+  /**
+   * 2026-10-27: in an organisation's shared inbox, the colleague who wrote a
+   * message from the organisation's side (null when the reader wrote it).
+   * Absent everywhere else, and never shown to the other party.
+   */
+  sent_by?: string | null;
 }
 
 /**
