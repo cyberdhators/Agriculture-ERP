@@ -383,6 +383,17 @@ character.
 | `notice_version_exists`            | That version already exists for this notice and language. Choose a new version number.                                        |
 | `notice_version_not_newer`         | Choose a version number higher than the one already published for this notice and language.                                   |
 | `notice_not_draft`                 | Only a draft can be edited, published or discarded. A published or retired notice stays as it was.                            |
+| `announcement_not_draft` | Only a draft announcement can be edited, sent or discarded. A sent announcement stays as it was. |
+| `announcement_recipients_changed` | The recipients changed since the preview. Preview again, check the new count, then send. |
+| `announcement_no_recipients` | Nobody in this scope can be reached on the chosen channels. Change the scope or the channels. |
+| `announcement_not_sending` | This announcement has nothing waiting to be sent. |
+| `announcement_nothing_to_retry` | No failed deliveries are waiting to be retried. |
+| `announcement_state_unknown` | Choose a state from the list. |
+| `template_inactive` | Choose an active template. A draft or archived template cannot be used to send. |
+| `template_title_mismatch` | An SMS template has no title, and an in-app or email template needs one. |
+| `template_sms_too_long` | An SMS can be at most 3 parts: 459 plain characters, or 201 with Arabic or special ones. |
+| `minimum_age_not_met` | You must be older to register for this service. Ask your extension officer for help. |
+| `reference_value_archived` | That category or unit is no longer offered for new posts. Choose another from the list. |
 
 **A route names a rule; it never writes a sentence.** `conflict()` and
 `unprocessable()` take a key from this registry, not a string. That is how the
@@ -540,6 +551,7 @@ change.
 | `announcement.queued`                        |
 | `announcement.batch_sent`                    |
 | `announcement.retry_queued`                  |
+| `announcement.completed`                     |
 | `notification_preference.updated`            |
 
 `before` and `after` hold **changed fields only**, never whole rows, and never a

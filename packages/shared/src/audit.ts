@@ -205,6 +205,7 @@ export const AUDIT_ACTIONS = [
   'announcement.queued',
   'announcement.batch_sent',
   'announcement.retry_queued',
+  'announcement.completed',
   'notification_preference.updated',
 ] as const;
 

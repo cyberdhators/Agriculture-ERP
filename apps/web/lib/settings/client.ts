@@ -22,6 +22,9 @@ export const FALLBACK_PUBLIC_SETTINGS: PublicSettings = {
   about: SETTING_DEFAULTS.identity.about,
   support: SETTING_DEFAULTS.support,
   maintenance: SETTING_DEFAULTS.maintenance,
+  language_region: SETTING_DEFAULTS.language_region,
+  reference_lists: SETTING_DEFAULTS.reference_lists,
+  appeal_window_days: SETTING_DEFAULTS.notifications_moderation.appeal_window_days,
 };
 
 /** One request per page load, shared by the banner, the footer and /help. */
