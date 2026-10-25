@@ -63,7 +63,8 @@ const SENTENCE_CALLS =
   /\b(setError|setFailure|setCodeError|setCodeNote|setMessage|setFailed)\(\s*'([^']*[A-Za-z]{2,}[^']*)'/g;
 const TOAST_TITLE = /\btitle:\s*'([^']*[A-Za-z]{2,}[^']*)'/g;
 /** A line that is nothing but words: JSX text, as prettier lays it out. */
-const TEXT_LINE = /^\s*([A-Z][A-Za-z’'",.;:?!()\-]* [A-Za-z’'",.;:?!()<>="/\- ]*[a-z][A-Za-z’'",.;:?!()<>="/\- ]*)$/;
+const TEXT_LINE =
+  /^\s*([A-Z][A-Za-z’'",.;:?!()-]* [A-Za-z’'",.;:?!()<>="/ -]*[a-z][A-Za-z’'",.;:?!()<>="/ -]*)$/;
 const INLINE_TEXT = /(?<![=-])>\s*([A-Z][a-z][A-Za-z ,.'’?!-]*)\s*</g;
 
 function englishIn(path: string): string[] {
