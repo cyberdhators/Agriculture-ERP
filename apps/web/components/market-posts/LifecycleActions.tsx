@@ -40,6 +40,7 @@ export function LifecycleActions({
   sale,
   saleNeedsSignal = false,
   endLabel,
+  endsOn,
 }: {
   stage: LifecycleStage;
   lang: Language;

@@ -855,7 +855,7 @@ These are also exact.
 | Advice photo: upload id malformed       | The upload identifier is not in the expected form.                                              |
 | Advice referral: action not on list     | Choose accept, decline or withdraw.                                                             |
 | Advice referral: share not true/false   | Say whether to share your photos: true or false.                                                |
-| Setting: key not on list                | Choose identity, support, maintenance or reason codes.                                          |
+| Setting: key not on list                | Choose a settings section from the list.                                                        |
 | Setting: expected version               | Send the version you loaded, as a whole number.                                                 |
 | Identity: service name length           | Give a service name of 2 to 80 characters.                                                      |
 | Identity: About too long                | Keep the About text to 2000 characters.                                                         |
@@ -878,6 +878,38 @@ These are also exact.
 | Notice: version malformed               | Give the version as v followed by numbers, such as v1.4.                                        |
 | Notice: text length                     | Write the notice in 20 to 20000 characters.                                                     |
 | Notice: edit changes nothing            | Change the version or the text before saving.                                                   |
+| Settings: languages | Keep English switched on, with Arabic on or off. |
+| Settings: date format | Choose one of the date formats in the list. |
+| Settings: number out of range | Enter a whole number within the range shown. |
+| Settings: category not on list | Choose categories from the list. |
+| Settings: unit not on list | Choose units from the list. |
+| Settings: crop not on list | Choose crops from the list. |
+| Settings: whole list archived | Keep at least one choice in each list available. |
+| Settings: reminder after end | Send the reminder before the listing ends: fewer days than it stays listed. |
+| Settings: SMS cost | Enter the cost of one SMS part in US dollars, from 0 to 1, or leave it blank. |
+| Announcements: templateNameInvalid | Give the template a name of 3 to 80 characters. |
+| Announcements: channelUnknown | Choose in-app, SMS or email. |
+| Announcements: channelsRequired | Choose at least one channel. |
+| Announcements: titleInvalid | Give a title of 3 to 120 characters. |
+| Announcements: titleNotForSms | An SMS template has no title. |
+| Announcements: bodyInvalid | Write the message in 1 to 2000 characters. |
+| Announcements: smsBodyRequired | Write the SMS text, or untick SMS. |
+| Announcements: smsTooLong | An SMS can be at most 3 parts: 459 plain characters, or 201 with Arabic or special ones. |
+| Announcements: placeholderUnknown | Use only the placeholders {name} and {service_name}. |
+| Announcements: templateStatusUnknown | Choose draft, active or archived. |
+| Announcements: templateEditEmpty | Change something before saving. |
+| Announcements: categoryUnknown | Choose announcement or essential. |
+| Announcements: scopeUnknown | Choose all accounts, phone accounts, email accounts, a state, an activity, staff or officers. |
+| Announcements: scopeStateRequired | Choose the state. |
+| Announcements: scopeActivityRequired | Choose the activity. |
+| Announcements: scopeExtraField | Only a state scope has a state, and only an activity scope has an activity. |
+| Announcements: staffEmailOnly | Staff are reached by email only: choose email. |
+| Announcements: officersSmsOnly | Extension officers are reached by SMS only: choose SMS. |
+| Announcements: templateIdInvalid | Choose a template from the list. |
+| Announcements: confirmRequired | Tick the confirmation before sending. |
+| Announcements: expectedRecipientsInvalid | Send the recipient count the preview showed, as a whole number. |
+| Announcements: preferenceInvalid | Choose on or off. |
+| Announcements: deliveryFilterInvalid | Choose a channel and a status from the lists. |
 
 The key beside each reason is the field name, per section 4.1. An unrecognised
 field named `nickname` therefore produces `{ "nickname": "This field is not

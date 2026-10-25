@@ -28,6 +28,8 @@ import * as verificationQueue from '../apps/web/app/api/verification/queue/route
 import * as weather from '../apps/web/app/api/weather/route';
 import * as directoryItem from '../apps/web/app/api/directory-entries/[id]/route';
 import * as directory from '../apps/web/app/api/directory-entries/route';
+import * as announcementsList from '../apps/web/app/api/admin/announcements/route';
+import * as templatesList from '../apps/web/app/api/admin/message-templates/route';
 import * as learningItem from '../apps/web/app/api/learning-resources/[id]/route';
 import * as learningMove from '../apps/web/app/api/learning-resources/[id]/transition/route';
 import * as learning from '../apps/web/app/api/learning-resources/route';
@@ -206,6 +208,19 @@ const principals = () => ({ admin, supervisor, read_only: readOnly, officer });
 
 /** Every route, the roles allowed, and how to call it. */
 const ROUTES = [
+  // 2026-10-27: official announcements and templates -- administrators only.
+  {
+    name: 'GET /api/admin/announcements',
+    mod: announcementsList,
+    method: 'GET' as const,
+    allow: ['admin'],
+  },
+  {
+    name: 'GET /api/admin/message-templates',
+    mod: templatesList,
+    method: 'GET' as const,
+    allow: ['admin'],
+  },
   {
     name: 'GET /api/me',
     mod: me,

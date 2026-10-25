@@ -5,7 +5,13 @@ import { describe, expect, it } from 'vitest';
 
 import {
   AUDIT_ACTIONS,
+  DEFAULT_VALIDITY_DAYS,
+  LISTING_UNITS,
   NOTICE_KINDS,
+  PHONE_CODE,
+  RETURN_SESSION_INACTIVITY_MS,
+  archivedChoice,
+  meetsMinimumAge,
   REASON_TARGETS,
   SETTING_DEFAULTS,
   SETTING_KEYS,
@@ -301,5 +307,97 @@ describe('notices', () => {
     expect(
       noticeCurrentQuerySchema.safeParse({ kind: 'consent', lang: 'en', status: 'draft' }).success,
     ).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// PHASE 2 (2026-10-27)
+// ---------------------------------------------------------------------------
+
+describe('settings, phase 2', () => {
+  const save = (key: string, value: unknown) =>
+    settingSaveSchema.safeParse({ key, expected_version: 0, value });
+
+  it('every fallback is what the code did before the setting existed', () => {
+    expect(SETTING_DEFAULTS.registration_recovery).toEqual({
+      code_resend_seconds: PHONE_CODE.resendSeconds,
+      session_inactivity_minutes: RETURN_SESSION_INACTIVITY_MS / 60_000,
+      minimum_age_years: null,
+    });
+    expect(SETTING_DEFAULTS.reference_lists.listing_validity_days).toBe(DEFAULT_VALIDITY_DAYS);
+    expect(SETTING_DEFAULTS.profile_privacy).toEqual({
+      show_phone_default: false,
+      allow_messages_default: true,
+    });
+    expect(SETTING_DEFAULTS.language_region.enabled_languages).toEqual(['en', 'ar']);
+  });
+
+  it('English cannot be switched off', () => {
+    expect(
+      reasonOf(save('language_region', { enabled_languages: ['ar'], date_format: 'd_mmm_yyyy' })),
+    ).toBe(M.languagesInvalid);
+  });
+
+  it('numbers stay inside their ranges, and the minimum age may be blank', () => {
+    const base = SETTING_DEFAULTS.registration_recovery;
+    expect(reasonOf(save('registration_recovery', { ...base, code_resend_seconds: 5 }))).toBe(
+      M.wholeNumberInRange,
+    );
+    expect(save('registration_recovery', { ...base, minimum_age_years: 18 }).success).toBe(true);
+    expect(save('registration_recovery', { ...base, minimum_age_years: null }).success).toBe(true);
+  });
+
+  it('there is no switch that closes self-service registration', () => {
+    expect(
+      save('registration_recovery', {
+        ...SETTING_DEFAULTS.registration_recovery,
+        self_registration: false,
+      }).success,
+    ).toBe(false);
+  });
+
+  it('a reminder comes before the listing ends, and a list cannot be archived entirely', () => {
+    const base = SETTING_DEFAULTS.reference_lists;
+    expect(
+      reasonOf(save('reference_lists', { ...base, listing_validity_days: 7, listing_reminder_days: 7 })),
+    ).toBe(M.reminderAfterValidity);
+    expect(reasonOf(save('reference_lists', { ...base, archived_units: [...LISTING_UNITS] }))).toBe(
+      M.archiveAll,
+    );
+    expect(reasonOf(save('reference_lists', { ...base, archived_units: ['tonne'] }))).toBe(
+      M.unitUnknown,
+    );
+  });
+
+  it('an archived category or unit is refused for a new post, by name', () => {
+    const lists = { archived_categories: ['fish'], archived_units: ['tin'] } as Parameters<
+      typeof archivedChoice
+    >[0];
+    expect(archivedChoice(lists, { category: 'fish' })).toBe('category');
+    expect(archivedChoice(lists, { category: 'crop', unit: 'kg', price_per: 'tin' })).toBe('unit');
+    expect(archivedChoice(lists, { category: 'crop', unit: 'kg' })).toBeNull();
+  });
+
+  it('the minimum age reads the year of birth generously, and blank means none', () => {
+    const now = new Date('2026-10-27T00:00:00Z');
+    expect(meetsMinimumAge(2008, 18, now)).toBe(true);
+    expect(meetsMinimumAge(2009, 18, now)).toBe(false);
+    expect(meetsMinimumAge(2020, null, now)).toBe(true);
+  });
+
+  it('the SMS cost is optional and bounded', () => {
+    const base = SETTING_DEFAULTS.notifications_moderation;
+    expect(save('notifications_moderation', { ...base, sms_cost_per_segment_usd: 0.04 }).success).toBe(
+      true,
+    );
+    expect(
+      reasonOf(save('notifications_moderation', { ...base, sms_cost_per_segment_usd: 3 })),
+    ).toBe(M.smsCostInvalid);
+  });
+
+  it('the phase-2 migration keeps every phase-1 key, in order', () => {
+    const check = phase2Migration.match(/setting_version_key_known" CHECK \("key" IN \(([^)]*)\)/);
+    const keys = [...(check?.[1] ?? '').matchAll(/'([a-z_]+)'/g)].map((m) => m[1]);
+    expect(keys.slice(0, 4)).toEqual(['identity', 'support', 'maintenance', 'reason_codes']);
   });
 });

@@ -83,6 +83,10 @@ const BUYER_OUTSIDE_ITS_TREE = [
   'advice/cases/[id]/referral',
   // 2026-10-20: an account deletes itself (its own records only).
   'account/delete',
+  // 2026-10-27: the account's own notification preferences (keyed by the
+  // session's sign-in) and the announcements delivered to its own inbox.
+  'account/notification-preferences',
+  'account/announcements',
   // IN-APP MESSAGING (2026-10-20): conversations belong to sign-ins, and every
   // read is filtered to the caller's own (lib/api/messaging.ts).
   'conversations',
