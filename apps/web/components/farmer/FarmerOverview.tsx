@@ -24,47 +24,16 @@ const ACCOUNT_TILES: ReadonlyArray<{
   title: TKey;
   sub: TKey;
   glyph: React.ReactNode;
+  /** Also a tab of the phone's bottom bar: the tile is hidden at phone width. */
+  inBottomBar?: boolean;
 }> = [
-  {
-    href: '/farmer/account/listings/new',
-    title: 'account.tilePost',
-    sub: 'account.tilePostSub',
-    glyph: (
-      <svg
-        viewBox="0 0 24 24"
-        width="26"
-        height="26"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.6"
-      >
-        <circle cx="12" cy="12" r="9" />
-        <path d="M12 8v8M8 12h8" />
-      </svg>
-    ),
-  },
-  {
-    // 2026-10-19: one account buys and sells (CORWADO).
-    href: '/farmer/account/buy',
-    title: 'account.tileBuy',
-    sub: 'account.tileBuySub',
-    glyph: (
-      <svg
-        viewBox="0 0 24 24"
-        width="26"
-        height="26"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.6"
-      >
-        <circle cx="9" cy="20" r="1.5" />
-        <circle cx="18" cy="20" r="1.5" />
-        <path d="M2 3h3l2.5 12h12L22 7H6" />
-      </svg>
-    ),
-  },
+  // 2026-10-31 (owner: duplicate icons on the phone home): "Post produce" and
+  // "Buy" are no longer tiles here. The shortcut hub above already offers both
+  // ("Sell produce" and "Buy", same pages), so the home showed two cart tiles
+  // and two ways to post. tests/duplicate-icons-scan.test.ts keeps it so.
   {
     href: '/market',
+    inBottomBar: true,
     title: 'shell.marketplace',
     sub: 'account.tileMarketSub',
     glyph: (
@@ -118,6 +87,7 @@ const ACCOUNT_TILES: ReadonlyArray<{
   },
   {
     href: '/farmer/account/ai',
+    inBottomBar: true,
     title: 'account.tileAi',
     sub: 'account.tileAiSub',
     glyph: (
@@ -244,7 +214,13 @@ export function FarmerOverview() {
 
       <nav className={styles.acctTiles} aria-label={t('account.tilesTitle', language)}>
         {ACCOUNT_TILES.map((tile) => (
-          <Link key={tile.href} href={tile.href} className={styles.acctTile}>
+          <Link
+            key={tile.href}
+            href={tile.href}
+            className={
+              tile.inBottomBar ? `${styles.acctTile} ${styles.acctTileBottomBar}` : styles.acctTile
+            }
+          >
             <span className={styles.acctTileGlyph} aria-hidden>
               {tile.glyph}
             </span>

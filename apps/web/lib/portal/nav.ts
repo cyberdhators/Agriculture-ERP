@@ -45,7 +45,19 @@ export type IconKey =
   | 'directory'
   | 'library'
   | 'audit'
-  | 'settings';
+  | 'settings'
+  // 2026-10-31: one glyph per destination (the phone menu read as duplicates).
+  | 'users'
+  | 'cart'
+  | 'store'
+  | 'clipboard'
+  | 'lightbulb'
+  | 'help'
+  | 'building'
+  | 'trend'
+  | 'key'
+  | 'shield'
+  | 'clock';
 
 export interface NavItem {
   readonly href: string;
@@ -122,7 +134,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
         // 2026-10-28: every account in one list, and each account's page.
         href: '/admin/accounts',
         label: 'All accounts',
-        icon: 'staff',
+        icon: 'users',
         roles: STAFF,
         because:
           'GET /api/admin/accounts and GET /api/admin/accounts/:kind/:id accept the staff roles ' +
@@ -156,7 +168,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
       {
         href: '/admin/buyers',
         label: 'Buyer accounts',
-        icon: 'staff',
+        icon: 'cart',
         roles: ['admin'],
         because:
           'GET and PATCH /api/admin/buyers are administrator-only (B13, C-14B.3) and then ' +
@@ -186,7 +198,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
         // a reason (the moderate panel on each product page).
         href: '/market',
         label: 'Live marketplace',
-        icon: 'directory',
+        icon: 'store',
         roles: ['admin', 'supervisor'],
         because:
           'POST /api/listings/:id/withdraw accepts admin and supervisor (a supervisor in the ' +
@@ -195,7 +207,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
       {
         href: '/admin/procurement',
         label: 'Buyer requests',
-        icon: 'desk',
+        icon: 'clipboard',
         roles: ['admin'],
         because:
           '/api/admin/purchase-requests and /api/admin/orders are administrator-only (B13) and ' +
@@ -250,7 +262,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
         // 2026-10-24: the optional approved-adviser pathway.
         href: '/admin/advisers',
         label: 'Approved advisers',
-        icon: 'staff',
+        icon: 'lightbulb',
         roles: STAFF,
         because:
           'GET /api/admin/advisers requires content.moderate and GET /api/admin/advisory-notes ' +
@@ -281,7 +293,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
         // cases since 2026-10-28 (the specification's line 103).
         href: '/admin/support',
         label: 'Support cases',
-        icon: 'mail',
+        icon: 'help',
         roles: STAFF,
         because:
           'GET /api/admin/support and GET /api/admin/support/:id accept the staff roles (PATCH ' +
@@ -293,7 +305,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
         // 2026-10-27: organisational profiles, their teams, exceptional recovery.
         href: '/admin/organizations',
         label: 'Organisations',
-        icon: 'staff',
+        icon: 'building',
         roles: STAFF,
         because:
           'GET /api/admin/organizations accepts the staff roles (POST ' +
@@ -340,7 +352,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
       {
         href: '/analytics',
         label: 'Marketplace analytics',
-        icon: 'reports',
+        icon: 'trend',
         roles: STAFF,
         because:
           'GET /api/analytics/summary accepts admin, supervisor and read_only, and then ' +
@@ -365,7 +377,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
       {
         href: '/admin/staff-access',
         label: 'Staff permissions',
-        icon: 'staff',
+        icon: 'key',
         roles: STAFF,
         because:
           'GET /api/admin/staff-access and GET /api/admin/staff-invitations accept the staff ' +
@@ -379,7 +391,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
         // administrators are required to (STAFF_MFA_ENFORCEMENT).
         href: '/admin/sign-in-security',
         label: 'Your sign-in security',
-        icon: 'staff',
+        icon: 'shield',
         roles: STAFF,
         because:
           'GET and POST /api/staff/mfa accept admin, supervisor and read_only, each for their own ' +
@@ -397,7 +409,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
         // offers it to administrators; a granted colleague reaches it by link.
         href: '/admin/access-logs',
         label: 'Access logs',
-        icon: 'audit',
+        icon: 'clock',
         roles: STAFF,
         because:
           'GET /api/admin/access-logs accepts the staff roles and then requires audit.view ' +

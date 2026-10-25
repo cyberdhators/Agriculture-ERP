@@ -59,7 +59,11 @@ const GLYPH: Record<Shortcut, React.ReactNode> = {
       <path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6" />
     </>
   ),
-  organisations: <path d="M3 21h18M5 21V8l7-5 7 5v13M9 21v-5h6v5M9 11h.01M15 11h.01" />,
+  // 2026-10-31: a building, not a house -- the house is "Your farm" on the
+  // same home, and two house tiles read as a duplicate on a phone.
+  organisations: (
+    <path d="M4 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16M16 9h3a1 1 0 0 1 1 1v11M2 21h20M8 7h4M8 11h4M8 15h4" />
+  ),
 };
 
 /**

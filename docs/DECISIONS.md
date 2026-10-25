@@ -5591,3 +5591,28 @@ Branch `feat/arabic-remaining-screens` (lane-arabic). No migration. Follows
   non-empty Arabic string with the same placeholders; the new keys are in
   Arabic script; `lib/buyer/labels.test.ts` holds the i18n English of the
   buyer labels to the staff tables word for word.
+
+## One icon per destination on a phone (2026-10-31)
+
+The owner: "in mobile view, there's duplicate icons on the dashboards".
+
+- **What was seen (OBSERVED, production at 390 and 360 px, demo accounts,
+  screenshots in qa-evidence-2026-10-31/icons/before):** the buyer and
+  organisation menu drew a briefcase for five rows, a bar chart for three, a
+  pencil, a chat bubble and a magnifier for two each, and the dashboard grid
+  for "Sell produce"; the staff menu drew the briefcase for seven rows and
+  repeated the marketplace, desk, mail, chart and document glyphs; the phone
+  account's home showed "Buy" twice (shortcut hub and account tiles, same cart
+  glyph, same page), "Post produce" beside the hub's "Sell produce" (same
+  page), Marketplace and AgriOne AI tiles above the bottom bar's identical
+  tabs, and a house for both "Organisations" and "Your farm". The staff
+  overview, officer desk and adviser pages showed no duplicate.
+- **Fix:** every menu row gets its own glyph (new icons in
+  `components/ui/icons.tsx`; `IconKey` gains eleven keys); the buyer top bar's
+  notifications icon is a bell, as in the menu, instead of an envelope; the
+  home's "Post produce" and "Buy" tiles are removed because the hub above offers
+  the same pages; the Marketplace and AgriOne AI tiles are hidden only at the
+  width where the bottom bar shows them; the hub's Organisations tile draws a
+  building. No destination was removed: every page is still one tap away.
+  Labels and aria-labels are unchanged.
+- **Guard:** `apps/web/tests/duplicate-icons-scan.test.ts` (pure).
