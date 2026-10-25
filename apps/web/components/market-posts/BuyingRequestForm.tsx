@@ -255,9 +255,7 @@ export function BuyingRequestForm({
     return (
       <section aria-label={t('posts.previewTitle', lang)}>
         <Notice kind="info" title={t('posts.previewTitle', lang)}>
-          <p className="small">
-            {t(id ? 'posts.previewSaved' : 'posts.previewLead', lang)}
-          </p>
+          <p className="small">{t(id ? 'posts.previewSaved' : 'posts.previewLead', lang)}</p>
         </Notice>
         {failure ? (
           <Notice kind="error">

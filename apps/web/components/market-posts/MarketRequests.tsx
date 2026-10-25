@@ -256,14 +256,16 @@ export function BuyingRequestDetailBody({
       <p className="small muted">{t('requests.notInquiry', lang)}</p>
       {preview ? null : (
         <>
-      <MessageButton
-        postKind="buying_request"
-        postId={row.id}
-        language={lang}
-        allowed={row.messages_allowed !== false}
-      />
-      {row.phone_shared ? <ContactReveal kind="buying-requests" id={row.id} lang={lang} /> : null}
-      <ReportPost kind="buying-requests" id={row.id} lang={lang} />
+          <MessageButton
+            postKind="buying_request"
+            postId={row.id}
+            language={lang}
+            allowed={row.messages_allowed !== false}
+          />
+          {row.phone_shared ? (
+            <ContactReveal kind="buying-requests" id={row.id} lang={lang} />
+          ) : null}
+          <ReportPost kind="buying-requests" id={row.id} lang={lang} />
         </>
       )}
     </>

@@ -251,14 +251,14 @@ export function ServiceDetailBody({
       </dl>
       {preview ? null : (
         <>
-      <MessageButton
-        postKind="service"
-        postId={row.id}
-        language={lang}
-        allowed={row.messages_allowed !== false}
-      />
-      {row.phone_shared ? <ContactReveal kind="services" id={row.id} lang={lang} /> : null}
-      <ReportPost kind="services" id={row.id} lang={lang} />
+          <MessageButton
+            postKind="service"
+            postId={row.id}
+            language={lang}
+            allowed={row.messages_allowed !== false}
+          />
+          {row.phone_shared ? <ContactReveal kind="services" id={row.id} lang={lang} /> : null}
+          <ReportPost kind="services" id={row.id} lang={lang} />
         </>
       )}
     </>
