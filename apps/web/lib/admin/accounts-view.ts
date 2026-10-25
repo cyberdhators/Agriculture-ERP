@@ -67,14 +67,31 @@ export const statusStamp = (s: AccountStatus): 'verified' | 'pending' | 'rejecte
         ? 'rejected'
         : 'neutral';
 
-/** How a row's verification reads: the register's word for a farmer, a buyer organisation's, or none. */
+/**
+ * How a row's verification reads (2026-10-31: only organisations are
+ * verified). An organisational profile: verified or not verified. A person:
+ * their phone confirmation (contact verification, not account verification)
+ * and, when they buy for a business, that organisation's verification. An
+ * individual has no verification at all, so nothing is printed for one.
+ */
 export function verificationLabel(
-  row: Pick<AdminAccountRow, 'verification' | 'phone_verified'>,
+  row: Pick<AdminAccountRow, 'verification' | 'phone_verified'> & {
+    kind?: AdminAccountRow['kind'];
+  },
 ): string {
+  if (row.kind === 'organisation') {
+    return row.verification === 'verified' ? 'Verified organisation' : 'Organisation not verified';
+  }
   const parts: string[] = [];
-  if (row.phone_verified) parts.push('Phone verified');
-  if (row.verification) parts.push(`Record ${row.verification.replace(/_/g, ' ')}`);
-  return parts.length ? parts.join(' · ') : 'Not verified';
+  if (row.phone_verified) parts.push('Phone confirmed');
+  if (row.verification) {
+    parts.push(
+      row.verification === 'verified'
+        ? 'Buyer organisation verified'
+        : `Buyer organisation ${row.verification.replace(/_/g, ' ')}`,
+    );
+  }
+  return parts.join(' · ');
 }
 
 /** The public profile's state in words. */

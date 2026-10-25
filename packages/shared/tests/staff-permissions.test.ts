@@ -154,6 +154,7 @@ describe('preset resolution: the role alone grants nothing (2026-10-30)', () => 
       [
         'audit.view',
         'communications.send',
+        'organization.verify',
         'reports.view',
         'settings.manage',
         'staff.manage',
