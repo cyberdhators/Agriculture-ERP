@@ -94,7 +94,9 @@ describe('the realtime, match and presence code knows no particular account', ()
       expect(text).not.toMatch(/maize|akello|equatoria|juba county/i);
       expect(text).not.toMatch(/\+211\s?9\d{2}\s?\d{3}\s?\d{3}/);
       // No account, organisation or post id written into code.
-      expect(text).not.toMatch(/['"`][0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}['"`]/i);
+      expect(text).not.toMatch(
+        /['"`][0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}['"`]/i,
+      );
     },
   );
 });
@@ -111,7 +113,10 @@ describe('the Bird webhook', () => {
 
   it('stores no number and no text', () => {
     const migration = read(
-      join(web, '../../prisma/migrations/20261101090000_realtime_receipts_match_alerts/migration.sql'),
+      join(
+        web,
+        '../../prisma/migrations/20261101090000_realtime_receipts_match_alerts/migration.sql',
+      ),
     );
     for (const table of ['bird_webhook_event', 'sms_opt_out', 'marketing_notice']) {
       const block = migration.slice(migration.indexOf(`CREATE TABLE "public"."${table}"`));

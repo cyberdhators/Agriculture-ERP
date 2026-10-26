@@ -74,7 +74,9 @@ describe('the channel rule', () => {
     expect(
       mayJoinChannel(
         name,
-        facts({ memberships: new Map([[ORG, member({ permissions: [], preset: 'administrator' })]]) }),
+        facts({
+          memberships: new Map([[ORG, member({ permissions: [], preset: 'administrator' })]]),
+        }),
       ),
     ).toBe(true);
     expect(

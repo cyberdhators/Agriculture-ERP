@@ -34,7 +34,10 @@ type Db = { $queryRawUnsafe: AuditTx['$queryRawUnsafe'] };
  * to_jsonb so a database without migration 20261101090000 reads every
  * switch as on rather than failing the conversation list.
  */
-export async function showsActivity(db: Db, authUserIds: readonly string[]): Promise<Map<string, boolean>> {
+export async function showsActivity(
+  db: Db,
+  authUserIds: readonly string[],
+): Promise<Map<string, boolean>> {
   const out = new Map<string, boolean>(authUserIds.map((id) => [id, true]));
   if (authUserIds.length === 0) return out;
   const rows = await db.$queryRawUnsafe<{ auth_user_id: string; show: boolean | null }[]>(
@@ -70,7 +73,10 @@ async function lastActive(db: Db, authUserIds: readonly string[]): Promise<Map<s
 export function counterpartOf(
   row: Pick<
     ConversationRow,
-    'owner_auth_user_id' | 'starter_auth_user_id' | 'owner_organization_id' | 'starter_organization_id'
+    | 'owner_auth_user_id'
+    | 'starter_auth_user_id'
+    | 'owner_organization_id'
+    | 'starter_organization_id'
   >,
   viewer: Viewer,
 ): { kind: 'person'; authUserId: string } | { kind: 'organization' } {
@@ -95,9 +101,7 @@ export async function withPresence(
 ): Promise<ConversationSummary[]> {
   try {
     const others = rows.map((r) => counterpartOf(r, viewer));
-    const people = [
-      ...new Set(others.flatMap((o) => (o.kind === 'person' ? [o.authUserId] : []))),
-    ];
+    const people = [...new Set(others.flatMap((o) => (o.kind === 'person' ? [o.authUserId] : [])))];
     if (people.length === 0) return summaries.map((s) => ({ ...s, presence: null }));
     const shows = await showsActivity(db, [viewer.person, ...people]);
     const viewerShows = shows.get(viewer.person) !== false;
@@ -128,9 +132,7 @@ export async function withPresence(
 
 /** The caller's memberships, for the channel rule. */
 export async function membershipsOf(db: Db, authUserId: string): Promise<Map<string, MemberLike>> {
-  const rows = await db.$queryRawUnsafe<
-    (MemberLike & { organization_id: string })[]
-  >(
+  const rows = await db.$queryRawUnsafe<(MemberLike & { organization_id: string })[]>(
     `SELECT m.id, m.organization_id, m.preset, m.permissions, m.status
        FROM public.organization_member m
        JOIN public.organization o ON o.id = m.organization_id

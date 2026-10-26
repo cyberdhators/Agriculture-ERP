@@ -84,7 +84,9 @@ describe('who is told', () => {
   });
 
   it('caps marketing notices per person per day', () => {
-    expect(matchSkipReason(post(), seller({ sent_last_24h: MATCH_ALERT_DAILY_CAP - 1 }))).toBeNull();
+    expect(
+      matchSkipReason(post(), seller({ sent_last_24h: MATCH_ALERT_DAILY_CAP - 1 })),
+    ).toBeNull();
     expect(matchSkipReason(post(), seller({ sent_last_24h: MATCH_ALERT_DAILY_CAP }))).toBe(
       'daily_cap',
     );

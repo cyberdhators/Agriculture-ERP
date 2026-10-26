@@ -37,9 +37,9 @@ describe('Standard Webhooks signature', () => {
     expect(verifyWebhook(secret(), { id: 'msg_1', timestamp: ts, signature }, BODY, NOW).ok).toBe(
       false,
     );
-    expect(
-      verifyWebhook(s, { id: 'msg_1', timestamp: ts, signature }, `${BODY} `, NOW).ok,
-    ).toBe(false);
+    expect(verifyWebhook(s, { id: 'msg_1', timestamp: ts, signature }, `${BODY} `, NOW).ok).toBe(
+      false,
+    );
     expect(verifyWebhook(s, { id: 'msg_2', timestamp: ts, signature }, BODY, NOW).ok).toBe(false);
   });
 
@@ -66,7 +66,12 @@ describe('Standard Webhooks signature', () => {
       false,
     );
     expect(
-      verifyWebhook('not-a-secret!', { id: 'a', timestamp: String(NOW), signature: 'v1,x' }, BODY, NOW),
+      verifyWebhook(
+        'not-a-secret!',
+        { id: 'a', timestamp: String(NOW), signature: 'v1,x' },
+        BODY,
+        NOW,
+      ),
     ).toEqual({ ok: false, reason: 'bad_secret' });
   });
 });

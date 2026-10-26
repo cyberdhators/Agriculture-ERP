@@ -68,9 +68,12 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       }
 
       // 2026-10-26: "Online" / "Active 5 minutes ago" under the name, where both allow it.
-      const [summary] = await withPresence(prisma, viewer, [conversation], [
-        { ...presentConversation(conversation, viewer), unread: false },
-      ]);
+      const [summary] = await withPresence(
+        prisma,
+        viewer,
+        [conversation],
+        [{ ...presentConversation(conversation, viewer), unread: false }],
+      );
       return ok({
         conversation: summary,
         messages: rows.map((row) => presentMessage(row, conversation, viewer)),

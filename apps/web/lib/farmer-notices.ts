@@ -300,5 +300,7 @@ export function popHref(input: {
     if (usual === '/farmer/account/messages') return messages;
     if (usual.startsWith('/farmer/')) return '/buyer/notifications';
   }
-  return usual ?? (input.side === 'buyer' ? '/buyer/notifications' : '/farmer/account/notifications');
+  return (
+    usual ?? (input.side === 'buyer' ? '/buyer/notifications' : '/farmer/account/notifications')
+  );
 }

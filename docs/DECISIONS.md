@@ -5701,3 +5701,138 @@ Branch `feat/organisation-only-verification`; migration
    (built: platform-wide grants only); (c) whether "declined" should exist for
    a buyer organisation at all now that it gates nothing (kept: it records
    that CORWADO looked and did not verify).
+
+## Bird Realtime live updates (2026-10-26) — new provider, approved by the owner
+
+**Approval.** The owner approved a new provider and client library by creating
+the Bird Realtime app on 2026-10-26 (CLAUDE.md §5: a new dependency or paid
+service needs a human decision; this is that decision). Dependencies added:
+`@messagebird/realtime` 0.4.0 (browser client) and `@messagebird/sdk` 0.106.0
+(server SDK: publish and channel signing; the owner's choice, 2026-10-26). The
+server SDK is imported only by `lib/realtime/publish.ts`, which refuses to load
+in a browser; the browser client is loaded on demand (dynamic import), only
+when live updates are configured.
+
+1. **Region eu1 (OBSERVED).** The app's public key connects on
+   `wss://ws-eu1.realtime.platform.bird.com` (`bird:connection_established`)
+   and is refused on us1 (4001, "not in this cluster"); the owner's dashboard
+   snippet says eu1 too. The workspace API key is an eu1 key.
+2. **Publishing needs `realtime:write` (OBSERVED).** A harmless publish to a
+   throwaway public channel with the existing BIRD_API_KEY was refused 403
+   E02035 InsufficientScope. Owner: add that scope to the key, or create a
+   key with it and set BIRD_REALTIME_API_KEY. Until then subscriptions work
+   and nothing is published; every screen keeps polling as before.
+3. **Channels (AgriOne's own names, not Bird's sample "orders").**
+   `private-acct-<auth user uuid>` (one account; only that account),
+   `private-org-<organisation uuid>` (a shared inbox; active members with
+   inbox.read — administrators hold it), `presence-acct-<auth user uuid>`
+   (own only, only while "Show when I'm active" is on). No staff channels
+   (owner, 2026-10-26: realtime covers notifications and chat only). The rule
+   is one pure function, `mayJoinChannel` (packages/shared/src/realtime.ts),
+   applied by POST /api/realtime/auth, which signs with the SDK's
+   `authorizeChannel` (HMAC-SHA256 over `connection_id:channel[:member_data]`,
+   prefixed with the app key — DOCUMENTED in the SDK and Bird's guide).
+4. **Events.** `notification.created` {notification_id, kind, notice,
+   ref_kind?, ref_id?} and `message.created` {conversation_id, message_id,
+   sender}. IDS ONLY: the screen reads any text through the API with its
+   session. `kind` is essential | update | announcement | promotional, so
+   marketing notices need no change to channel authorization. Payloads are
+   stripped to REALTIME_PAYLOAD_FIELDS at run time and held there by
+   apps/web/tests/realtime-scan.test.ts.
+5. **Never in the request's way (INFERRED design).** Events are queued in the
+   request's outbox and published only after the handler returned (its
+   transactions committed) and after the answer has gone (`after()`), with a
+   3-second deadline and no retries. A lost event costs only freshness: every
+   badge and open conversation still polls.
+6. **Scale risk (DOCUMENTED, bird.com).** The Realtime free plan allows 100
+   concurrent connections and 200,000 messages a day across the workspace.
+   Each open signed-in tab is one connection, so a demo room or a busy day can
+   pass 100; new connections are then refused and those screens poll. A paid
+   plan is the owner's decision before wide rollout.
+
+## SMS delivery receipts, opt-outs and paced sending (2026-10-26)
+
+1. **Webhook (DOCUMENTED: Standard Webhooks).** POST /api/webhooks/bird
+   verifies `webhook-signature` (`v1,<base64 HMAC-SHA256>` over
+   `id.timestamp.body`, key = the base64 after `whsec_`, constant-time,
+   five-minute freshness), fails CLOSED (503) without BIRD_WEBHOOK_SECRET,
+   deduplicates on webhook-id (`bird_webhook_event`), and orders receipts by
+   the event's own timestamp: an older receipt never replaces a newer one.
+2. **Receipts** (`sms.delivered/undelivered/failed/rejected/expired`) are
+   written to `announcement_delivery.receipt_status / receipt_reason /
+receipt_at` by Bird's `sms_id`. `status` stays the send outcome, so the
+   announcement page shows "sent" beside "delivered to phone". Announcement
+   deliveries are the only rows that keep Bird message ids (phone codes,
+   invitations and suspension texts keep none), so there is nothing else to
+   update.
+3. **Opt-outs.** `sms_suppression.created`, or an `sms.received` whose whole
+   text is a stop word (English or Arabic), turns off SMS announcements and SMS
+   match alerts for every account with that number; essential messages have no
+   switch and are unaffected. Recorded in `sms_opt_out` (account, source, Bird
+   reference; never the number). Any other reply is recorded as received only.
+4. **Idempotency (DOCUMENTED).** Announcement SMS carry
+   `Idempotency-Key: announcement-delivery-<delivery id>`, so a retried
+   delivery replays Bird's first answer (retained 3 hours) instead of sending
+   twice.
+5. **Pacing (DOCUMENTED).** A 429 with Retry-After of 3 seconds or less is
+   waited out once with the same key; a longer one, or a RateLimit header with
+   nothing remaining, pauses every worker of the batch, and rows that cannot
+   wait inside the time budget go back to the queue (never marked failed). The
+   cron path runs the same batch code.
+6. **Single sends, not Bird's batch endpoint (DOCUMENTED reason).** Bird's
+   `/v1/sms/batches` is all-or-nothing: one invalid item rejects the whole
+   hundred with 422. One send per recipient keeps one bad number from sinking
+   the rest.
+
+## Match alerts (2026-10-26) — marketing notices
+
+When a buying request goes on the market, accounts selling that product — an
+active listing of it, or the product on a public profile whose stated
+activities sell (or that states none) — in the request's state are told "A
+buyer is looking for something you sell"; when a produce listing goes on the
+market, owners of open buying requests for it in its state are told "New
+produce matches your buying request". Driven only by data (product words,
+category, state, listings, profiles, activities); no product, state or account
+is named in code (held by the realtime scan test). Never the poster, never
+across a block, never a suspended account; switches "Match alerts in the app"
+(on by default) and "by SMS" (off by default; SMS carries "Reply STOP");
+at most 2 per person per 24 hours; once per person per post
+(`marketing_notice`). Audited per notice as `notification.created`, as every
+notice is. Runs after the poster's answer, in its own transaction; a failure
+never affects the post. Accounts created before this release have no stored
+preference and read the defaults (no backfill).
+
+## Online status in conversations (2026-10-26)
+
+"Online" with a green dot, or "Active 5 minutes ago / 2 hours ago / yesterday /
+3 days ago" (by Juba's calendar), under the other person's name in a
+conversation, and a dot in the conversation lists (personal and organisation
+inbox). Each account joins only its own presence channel; the server asks Bird
+which presence channels are occupied (one call, cached 10 seconds) and decides
+with `counterpartVisible` (packages/shared/src/presence.ts): reciprocal ("Show
+when I'm active", on by default — hide yours and you see nobody's), never an
+organisation's team to the outside party, never staff, never without a
+session, never on the market or a profile. Last activity is
+`account_activity.last_seen_at` (lane-security; moved at most every five
+minutes, hence "just now" under five minutes).
+
+## Scene 1 — the live demo script (2026-10-26)
+
+Before: the settings in this lane's HANDOFF entry are set; migration
+20261101090000 and the audit CHECK with the two new keys are applied; the
+farmer account has an active listing of the product used below, in the state
+used below (any product and state work: matching is by data).
+
+1. Phone A: sign in as the farmer; leave the app open on any page.
+2. Phone B: sign in as the buyer → Buying requests → New → the same product
+   and state, active → Post.
+3. Phone A, within about two seconds: a card slides down — "A buyer is looking
+   for something you sell" — with a short tone; the bell count rises.
+4. Phone A: tap the card → the buying request opens → Message → write a reply
+   → Send.
+5. Phone B: a card pops — "You have a new message about a buying request" —
+   and the bell rises; tap it → the reply is there, and under the farmer's
+   name the header reads "Online".
+6. Reply from B: it appears on A's open conversation without a refresh.
+   In Arabic (language switch on both phones) the cards and "متصل الآن" read in
+   Arabic.

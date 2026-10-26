@@ -208,7 +208,9 @@ function LivePopInner({ side, language }: LivePopProps) {
         show({
           id: d.notification_id,
           key:
-            d.ref_kind === 'conversation' && d.ref_id ? `conv:${d.ref_id}` : `n:${d.notification_id}`,
+            d.ref_kind === 'conversation' && d.ref_id
+              ? `conv:${d.ref_id}`
+              : `n:${d.notification_id}`,
           icon: popIconFor(d.kind, d.notice),
           title: key ? t(`${key}.title` as TKey, language) : notice.title,
           body: key ? t(`${key}.body` as TKey, language) : notice.body,
@@ -305,12 +307,19 @@ function PopCard({
     start.current = null;
   };
 
-  const ago = Date.now() - pop.at < 60_000 ? t('live.justNow', language) : formatDate(new Date(pop.at).toISOString(), language);
+  const ago =
+    Date.now() - pop.at < 60_000
+      ? t('live.justNow', language)
+      : formatDate(new Date(pop.at).toISOString(), language);
 
   return (
     <div
       className={`${styles.card} ${styles[`icon_${pop.icon}`] ?? ''}`}
-      style={dx ? { transform: `translateX(${dx}px)`, opacity: Math.max(0.2, 1 - Math.abs(dx) / 240) } : undefined}
+      style={
+        dx
+          ? { transform: `translateX(${dx}px)`, opacity: Math.max(0.2, 1 - Math.abs(dx) / 240) }
+          : undefined
+      }
       onPointerDown={down}
       onPointerMove={move}
       onPointerUp={up}
@@ -334,7 +343,15 @@ function PopCard({
           aria-label={t(muted ? 'live.unmute' : 'live.mute', language)}
           title={t(muted ? 'live.unmute' : 'live.mute', language)}
         >
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+          <svg
+            viewBox="0 0 24 24"
+            width="16"
+            height="16"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            aria-hidden
+          >
             <path d="M4 9h4l5-4v14l-5-4H4V9Z" />
             {muted ? <path d="M17 9l4 6M21 9l-4 6" /> : <path d="M17 9a4 4 0 0 1 0 6" />}
           </svg>
@@ -346,7 +363,15 @@ function PopCard({
           aria-label={t('live.close', language)}
           title={t('live.close', language)}
         >
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+          <svg
+            viewBox="0 0 24 24"
+            width="16"
+            height="16"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            aria-hidden
+          >
             <path d="M6 6l12 12M18 6 6 18" />
           </svg>
         </button>

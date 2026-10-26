@@ -1243,7 +1243,8 @@ export const ar: Partial<Record<TKey, string>> = {
   'prefs.matchSms': 'تنبيهات المطابقة برسالة نصية (متوقفة ما لم تشغّلها)',
   'prefs.privacy': 'الخصوصية',
   'prefs.showActivity': 'أظهر متى أكون نشطاً في المحادثات',
-  'prefs.showActivityHint': 'إذا أوقفت هذا، فلن ترى أنت أيضاً متى يكون الآخرون متصلين أو متى كانوا نشطين.',
+  'prefs.showActivityHint':
+    'إذا أوقفت هذا، فلن ترى أنت أيضاً متى يكون الآخرون متصلين أو متى كانوا نشطين.',
   'login.forgotLink': 'أعد تعيينها برمز عبر الرسائل القصيرة',
   'recover.title': 'إعادة تعيين كلمة المرور',
   'recover.lead':

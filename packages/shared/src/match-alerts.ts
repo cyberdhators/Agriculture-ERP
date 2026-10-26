@@ -26,7 +26,8 @@ export const SELLING_ACTIVITIES = ['farmer', 'trader', 'processor', 'input_suppl
 
 /** Whether a profile's stated activities make its products offers. */
 export const profileSells = (activities: readonly string[]): boolean =>
-  activities.length === 0 || activities.some((a) => (SELLING_ACTIVITIES as readonly string[]).includes(a));
+  activities.length === 0 ||
+  activities.some((a) => (SELLING_ACTIVITIES as readonly string[]).includes(a));
 
 /** One post that went on the market. */
 export interface MatchPost {
@@ -96,13 +97,7 @@ export function itemMatches(post: MatchPost, item: MatchItem): boolean {
 }
 
 export type MatchSkip =
-  | 'poster'
-  | 'suspended'
-  | 'blocked'
-  | 'preference'
-  | 'already_told'
-  | 'daily_cap'
-  | 'no_match';
+  'poster' | 'suspended' | 'blocked' | 'preference' | 'already_told' | 'daily_cap' | 'no_match';
 
 /** Why one candidate is not told, or null when they are. */
 export function matchSkipReason(post: MatchPost, c: MatchCandidate): MatchSkip | null {

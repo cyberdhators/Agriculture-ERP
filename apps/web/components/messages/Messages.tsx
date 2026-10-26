@@ -134,7 +134,8 @@ function Inbox({ language }: { language: Language }) {
               >
                 <span className={styles.rowTop}>
                   <span className={styles.rowName}>
-                    {c.other_name} <PresenceLine presence={c.presence} language={language} dotOnly />
+                    {c.other_name}{' '}
+                    <PresenceLine presence={c.presence} language={language} dotOnly />
                   </span>
                   <span className={styles.rowTime}>{formatDate(c.last_message_at, language)}</span>
                 </span>

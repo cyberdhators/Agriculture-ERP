@@ -171,6 +171,10 @@ export class SmsRateLimitedError extends SmsUnavailableError {
   }
 }
 
+/** A response header, or null -- also for a response that carries no headers at all. */
+const headerOf = (response: Response, name: string): string | null =>
+  response.headers?.get?.(name) ?? null;
+
 /** A 429 that asks for no more than this is waited out once, inside the send. */
 export const SMS_INLINE_RETRY_MAX_SECONDS = 3;
 
@@ -226,7 +230,7 @@ export async function sendOneSms(
   // 2026-10-26: a short Retry-After is waited out once, with the same
   // Idempotency-Key and body, so it cannot send twice.
   if (response.status === 429) {
-    const wait = parseRetryAfter(response.headers.get('retry-after'));
+    const wait = parseRetryAfter(headerOf(response, 'retry-after'));
     if (wait !== null && wait <= SMS_INLINE_RETRY_MAX_SECONDS) {
       await new Promise((resolve) => setTimeout(resolve, wait * 1000));
       response = await post();
@@ -239,15 +243,14 @@ export async function sendOneSms(
     );
   }
   if (response.status === 429) {
-    throw new SmsRateLimitedError(parseRetryAfter(response.headers.get('retry-after')));
+    throw new SmsRateLimitedError(parseRetryAfter(headerOf(response, 'retry-after')));
   }
   // 409 E01004: the same key is still being processed (a parallel retry).
   // Not a refusal of the message, so it is treated like an outage: the row
   // goes back to the queue and the next attempt replays the first answer.
   if (response.status === 409 && options.idempotencyKey) {
-    const peek = (await response
-      .clone()
-      .json()
+    const peek = (await Promise.resolve()
+      .then(() => response.clone().json())
       .catch(() => ({}))) as { error?: { code?: unknown } };
     if (peek.error?.code === 'E01004') {
       throw new SmsUnavailableError('The SMS service is still processing this message.');
@@ -256,7 +259,9 @@ export async function sendOneSms(
   if (response.status >= 500) {
     throw new SmsUnavailableError(`The SMS service answered ${response.status}.`);
   }
-  const rateLimit = parseRateLimit(response.headers.get('ratelimit'));
+  const limit = parseRateLimit(headerOf(response, 'ratelimit'));
+  // Present only when Bird sent the header, so callers that compare whole results are unchanged.
+  const rateLimit = limit ? { rateLimit: limit } : {};
 
   const body = (await response.json().catch(() => ({}))) as {
     id?: unknown;
@@ -271,12 +276,12 @@ export async function sendOneSms(
         : typeof body.code === 'string'
           ? body.code
           : `Refused (${response.status}).`;
-    return { accepted: false, error: reason.slice(0, 200), rateLimit };
+    return { accepted: false, error: reason.slice(0, 200), ...rateLimit };
   }
 
   return typeof body.id === 'string'
-    ? { accepted: true, messageId: body.id, rateLimit }
-    : { accepted: true, rateLimit };
+    ? { accepted: true, messageId: body.id, ...rateLimit }
+    : { accepted: true, ...rateLimit };
 }
 
 /** Unavailability part-way through a batch, carrying what went out before it. */

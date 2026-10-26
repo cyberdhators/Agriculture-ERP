@@ -38,10 +38,11 @@ export async function withRealtimeOutbox<T>(
 
 /** Runs `task` after the response when the runtime allows it; otherwise in the background. */
 export function afterResponse(task: () => Promise<unknown>): void {
-  const run = () => task().then(
-    () => undefined,
-    () => undefined,
-  );
+  const run = () =>
+    task().then(
+      () => undefined,
+      () => undefined,
+    );
   try {
     after(run);
   } catch {
