@@ -157,7 +157,12 @@ export async function signChannel(input: {
 }): Promise<{ auth: string; member_data?: string } | null> {
   const signing = realtimeSigningConfig();
   if (!signing) return null;
-  const client = new BirdClient({ realtime: signing });
+  // 2026-11-01 (live test): the SDK refuses to construct a client without an
+  // API key ("Configure `apiKey` for API calls"), even though signing makes no
+  // network call -- every channel authorization answered 500 in production.
+  const apiKey = realtimeConfig()?.apiKey || process.env.BIRD_API_KEY || '';
+  if (!apiKey) return null;
+  const client = new BirdClient({ apiKey, realtime: signing });
   const signed = await client.realtime.authorizeChannel({
     connectionId: input.connectionId,
     channelName: input.channelName,
