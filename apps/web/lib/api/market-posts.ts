@@ -216,7 +216,7 @@ export const BUYING_REQUEST_COLUMNS = `br.id, br.poster_type, br.display_name,
   to_char(br.needed_by, 'YYYY-MM-DD') AS needed_by,
   br.price_ssp::text AS price_ssp, br.price_per::text AS price_per, br.negotiable,
   br.delivery_terms, br.description, br.status, br.created_at, br.updated_at, br.show_phone,
-  ${posterVerifiedSql('br')} AS poster_verified,
+  ${posterVerifiedSql('br')} AS verified_organisation,
   COALESCE((SELECT ap.allow_messages FROM public.account_profile ap
              WHERE ap.auth_user_id = COALESCE(f.auth_user_id, b.auth_user_id)), true)
     AS owner_messages`;
@@ -262,7 +262,7 @@ export interface BuyingRequestRow {
   created_at: Date;
   updated_at: Date;
   show_phone: boolean;
-  poster_verified: boolean;
+  verified_organisation: boolean;
   /** 2026-10-23: the poster's "Allow in-app messaging" (absent: on). */
   owner_messages?: boolean;
 }
@@ -272,7 +272,7 @@ export const presentBuyingRequest = (row: BuyingRequestRow) => ({
   id: row.id,
   poster_type: row.poster_type,
   display_name: row.display_name,
-  poster_verified: row.poster_verified,
+  verified_organisation: row.verified_organisation,
   category: row.category,
   product_name: row.product_name,
   quantity: Number(row.quantity),
@@ -342,7 +342,7 @@ export const SERVICE_COLUMNS = `sl.id, sl.poster_type, sl.trading_name, sl.servi
        ELSE to_char(sl.available_until, 'YYYY-MM-DD') END AS available_until,
   sl.availability_note, sl.price_ssp::text AS price_ssp, sl.price_unit, sl.negotiable,
   sl.status, sl.created_at, sl.updated_at, sl.show_phone,
-  ${posterVerifiedSql('sl')} AS poster_verified,
+  ${posterVerifiedSql('sl')} AS verified_organisation,
   COALESCE((SELECT ap.allow_messages FROM public.account_profile ap
              WHERE ap.auth_user_id = COALESCE(f.auth_user_id, b.auth_user_id)), true)
     AS owner_messages`;
@@ -393,7 +393,7 @@ export interface ServiceRow {
   created_at: Date;
   updated_at: Date;
   show_phone: boolean;
-  poster_verified: boolean;
+  verified_organisation: boolean;
   /** 2026-10-23: the provider's "Allow in-app messaging" (absent: on). */
   owner_messages?: boolean;
 }
@@ -408,7 +408,7 @@ export const presentService = (row: ServiceRow) => ({
   id: row.id,
   poster_type: row.poster_type,
   trading_name: row.trading_name,
-  poster_verified: row.poster_verified,
+  verified_organisation: row.verified_organisation,
   service_type: row.service_type,
   title: row.title,
   description: row.description,

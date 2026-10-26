@@ -430,7 +430,7 @@ export function ProfileEditor({
             about: values.about.trim() || null,
             products: values.products,
             services: values.services,
-            verified: profile.verified,
+            verified_organisation: profile.verified_organisation,
             member_since: profile.member_since,
           }}
         >

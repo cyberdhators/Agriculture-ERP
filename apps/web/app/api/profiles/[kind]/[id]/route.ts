@@ -69,7 +69,7 @@ interface Account {
   farmer_id: string | null;
   buyer_id: string | null;
   auth_user_id: string | null;
-  verified: boolean;
+  verified_organisation: boolean;
   payam_name: string | null;
   state_name: string | null;
   member_since: Date;
@@ -112,7 +112,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
                 COALESCE((SELECT o.account_type::text <> 'individual'
                                  AND o.verification_status::text = 'verified'
                             FROM b JOIN public.buyer_organization_active o ON o.id = b.organization_id),
-                         false) AS verified,
+                         false) AS verified_organisation,
                 (SELECT pm.name FROM f JOIN public.payam pm ON pm.id = f.payam_id) AS payam_name,
                 COALESCE(
                   (SELECT s.name FROM f JOIN public.state s ON s.id = f.state_id),
@@ -174,7 +174,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       return ok({
         profile_id: published?.public_id ?? null,
         name: owner.name,
-        verified: account.verified,
+        verified_organisation: account.verified_organisation,
         place: { payam: account.payam_name, state: account.state_name },
         member_since: account.member_since.toISOString().slice(0, 7),
         about: about

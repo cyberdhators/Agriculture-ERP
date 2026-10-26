@@ -161,7 +161,7 @@ export function MarketRequests({ lang, postHref }: { lang: Language; postHref?: 
               <span className="small muted" dir="auto">
                 {r.display_name}
               </span>
-              <VerifiedOrganisationBadge verified={r.poster_verified} lang={lang} />
+              <VerifiedOrganisationBadge verified={r.verified_organisation} lang={lang} />
             </li>
           ))}
         </ul>
@@ -246,7 +246,7 @@ export function BuyingRequestDetailBody({
           <dt className="small muted">{t('requests.postedBy', lang)}</dt>
           <dd dir="auto">
             {row.display_name}{' '}
-            <VerifiedOrganisationBadge verified={row.poster_verified} lang={lang} />{' '}
+            <VerifiedOrganisationBadge verified={row.verified_organisation} lang={lang} />{' '}
             {preview ? null : <ProfileLink kind="buying_request" id={row.id} language={lang} />}
           </dd>
         </div>

@@ -34,7 +34,7 @@ interface Profile {
   /** 2026-10-23: the owner's PUBLISHED public profile, if any. */
   profile_id: string | null;
   name: string;
-  verified: boolean;
+  verified_organisation: boolean;
   place: { payam: string | null; state: string | null };
   member_since: string;
   about: { profile_kind: string; group_kind: string | null; activities: string[] } | null;
@@ -190,7 +190,7 @@ export function PublicProfile({
         <span className={styles.eyebrow}>{w.title}</span>
         <h1 dir="auto">{profile.name}</h1>
         <div className={styles.facts}>
-          {profile.verified ? <Stamp kind="verified">{w.verified}</Stamp> : null}
+          {profile.verified_organisation ? <Stamp kind="verified">{w.verified}</Stamp> : null}
           {place ? <span>{place}</span> : null}
           <span>
             {w.since} {month}

@@ -222,7 +222,7 @@ export interface PublicProfileOwn {
   show_phone: boolean;
   allow_messages: boolean;
   photo_url: string | null;
-  verified: boolean;
+  verified_organisation: boolean;
   member_since: string | null;
   updated_at: string | null;
 }
@@ -248,7 +248,8 @@ export interface PublicProfileView {
   about: string | null;
   products: string[];
   services: string[];
-  verified: boolean;
+  /** 2026-11-01: a verified ORGANISATION (a person is never verified). */
+  verified_organisation: boolean;
   member_since: string;
   can_message: boolean;
   /** Only when the owner chose to show it AND the caller is signed in. */
