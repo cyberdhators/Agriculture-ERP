@@ -83,6 +83,7 @@ describe('the realtime, match and presence code knows no particular account', ()
     join(web, 'app/api/realtime/channels/route.ts'),
     join(web, 'app/api/webhooks/bird/route.ts'),
     join(web, 'app/api/account/notifications/[id]/route.ts'),
+    join(web, 'app/api/account/presence/bye/route.ts'),
   ];
 
   it.each(files.map((f) => [f.replace(/\\/g, '/').split('/').slice(-3).join('/'), f]))(

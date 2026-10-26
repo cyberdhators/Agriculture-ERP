@@ -5879,3 +5879,32 @@ the event is a fixed ACCOUNT_NOTICES entry is drawn at once from its fixed text
 in the person's language; only a notice without fixed text (an announcement) is
 fetched by id. INFERRED: the card now shows within a frame of the event; not yet
 re-timed on a phone.
+
+## Online status: exact last seen, live in an open chat (2026-11-01)
+
+The owner asked for truly real-time "Online" / "Active ... ago".
+
+- EXACT LAST SEEN. The app sends a beacon to `POST /api/account/presence/bye`
+  on pagehide and when the page becomes hidden (DOCUMENTED: both are the
+  browser events that fire reliably on phones; Bird presence member_removed
+  reaches only clients on the channel, and no Bird presence webhook is wired
+  here, so the beacon is the reliable one). The server keeps that moment in the
+  new `account_activity.presence_seen_at` (migration
+  `20261101100100_presence_seen`, additive), at most once per account per
+  30 seconds (in memory and in the statement). Not audited, exactly as the
+  activity stamp is not: it is a reading, not a change. `lastSeenOf` prefers it
+  over the five-minute activity stamp, unless the stamp is newer (active again
+  since the bye). From an exact time, "just now" means under one minute.
+- LIVE IN AN OPEN CHAT. NOT a client subscription to the other person's
+  presence channel, though that was proposed: the channel rule lets an account
+  join only its OWN presence channel, and joining someone else's would make the
+  viewer a member of it — the server decides "Online" by whether that channel
+  is occupied, so the counterpart would read as online whenever the viewer had
+  the chat open, and the client would learn presence outside the server's
+  reciprocal check. INFERRED from the occupancy code (lib/realtime/publish.ts),
+  not exercised. Instead the open chat's existing five-second poll carries the
+  presence, and the occupancy cache is cut from ten seconds to three: the label
+  flips within about eight seconds, without a reload. The reciprocal "Show when
+  I'm active" rule is unchanged and still decided on the server.
+- A TICKING LABEL. The label re-renders every 30 seconds while in minutes and
+  every minute after (`presenceTickMs`), in English and Arabic.

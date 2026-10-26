@@ -163,6 +163,9 @@ const BUYER_OUTSIDE_ITS_TREE = [
   'realtime/channels',
   'realtime/auth',
   'account/notifications/[id]',
+  // 2026-11-01 (lane-noticelinks): the app says it was closed or hidden, for
+  // an exact "last seen" -- the session's own account only, a time only.
+  'account/presence/bye',
 ];
 
 describe('buyer routes are counted, not trusted', () => {

@@ -3078,3 +3078,10 @@ or conversation".
 - Same branch, from the live Scene 1 test: no notice pop for the conversation
   already open; a fixed notice's pop is drawn at once from its fixed text (no
   fetch). Tests in lib/realtime/toast-queue.test.ts.
+- Same branch, from the owner: exact last seen (beacon on pagehide/hidden →
+  `POST /api/account/presence/bye`; migration `20261101100100_presence_seen`
+  adds `account_activity.presence_seen_at`), a ticking label, occupancy cache
+  3 s. The open chat does not subscribe to the counterpart's presence channel
+  (it would read them online and bypass the reciprocal check); its 5 s poll
+  carries the status. New route: add to the integrator's route lists if any
+  are kept outside the tests (buyer-route-scan updated).
