@@ -5863,3 +5863,19 @@ notices have no ref kind.
 Until the migration is applied the columns are detected as absent (one cannot-fail
 lookup, remembered once present): notices are written without a ref and the
 APIs answer nulls, so nothing fails on a database that has not had it.
+
+## The live pop: not for the open conversation, and at once for fixed notices (2026-11-01)
+
+OBSERVED (live Scene 1 test): with conversation X open, the person still got the
+"You have a new message about a buying request" notice pop for X (only the plain
+message pop was held back). And the event reached the phone 0.88 s after posting
+while the card showed at 2.35 s, because it waited to fetch the stored notice.
+
+Decision: `planNoticePop` (lib/realtime/toast-queue.ts, pure) skips a notice whose
+ref is the conversation open on the page; the bell still counts it (the shells
+listen to the event separately). The app does not mark notices read when a
+conversation is opened, so nothing is marked here either. A notice whose name on
+the event is a fixed ACCOUNT_NOTICES entry is drawn at once from its fixed text
+in the person's language; only a notice without fixed text (an announcement) is
+fetched by id. INFERRED: the card now shows within a frame of the event; not yet
+re-timed on a phone.

@@ -3075,3 +3075,6 @@ or conversation".
 - No new audit keys, no new env vars.
 - Tests: apps/web/tests/notice-links.test.ts (popHref with refs; migration kinds;
   APIs answer the ref; both lists use popHref).
+- Same branch, from the live Scene 1 test: no notice pop for the conversation
+  already open; a fixed notice's pop is drawn at once from its fixed text (no
+  fetch). Tests in lib/realtime/toast-queue.test.ts.

@@ -166,26 +166,29 @@ export async function notifyAccountWithId(
   // opens the exact post or conversation as the live pop does
   // (lib/api/notice-ref.ts). Ids only; none before the migration is applied.
   const keepRef = ref && (await noticeRefStored(tx)) ? ref : null;
-  const [row] = keepRef
-    ? await tx.$queryRawUnsafe<{ id: string }[]>(
-        `INSERT INTO public.notification
-           (farmer_id, buyer_organization_id, channel, title, body, ref_kind, ref_id)
-         VALUES ($1::uuid, $2::uuid, 'in_app', $3, $4, $5, $6::uuid) RETURNING id`,
-        farmerId,
-        organizationId,
-        title,
-        body,
-        keepRef.kind,
-        keepRef.id,
-      )
-    : await tx.$queryRawUnsafe<{ id: string }[]>(
-        `INSERT INTO public.notification (farmer_id, buyer_organization_id, channel, title, body)
-         VALUES ($1::uuid, $2::uuid, 'in_app', $3, $4) RETURNING id`,
-        farmerId,
-        organizationId,
-        title,
-        body,
-      );
+  let row: { id: string } | undefined;
+  if (keepRef) {
+    [row] = await tx.$queryRawUnsafe<{ id: string }[]>(
+      `INSERT INTO public.notification
+         (farmer_id, buyer_organization_id, channel, title, body, ref_kind, ref_id)
+       VALUES ($1::uuid, $2::uuid, 'in_app', $3, $4, $5, $6::uuid) RETURNING id`,
+      farmerId,
+      organizationId,
+      title,
+      body,
+      keepRef.kind,
+      keepRef.id,
+    );
+  } else {
+    [row] = await tx.$queryRawUnsafe<{ id: string }[]>(
+      `INSERT INTO public.notification (farmer_id, buyer_organization_id, channel, title, body)
+       VALUES ($1::uuid, $2::uuid, 'in_app', $3, $4) RETURNING id`,
+      farmerId,
+      organizationId,
+      title,
+      body,
+    );
+  }
   await writeAudit(tx, {
     entityType: 'notification',
     entityId: row!.id,

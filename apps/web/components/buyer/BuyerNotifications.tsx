@@ -98,40 +98,40 @@ export function BuyerNotifications() {
           {list.rows.map((n) => {
             const href = opensAt(n);
             return (
-            <Card key={n.id}>
-              <CardBody>
-                <div className={styles.standing}>
-                  <div>
-                    <p>
-                      <strong dir="auto">{n.title}</strong>{' '}
-                      {n.read_at ? null : (
-                        <Badge tone="sorghum">{t('buyer.notif.new', language)}</Badge>
-                      )}
-                    </p>
-                    <p dir="auto">{n.body}</p>
-                    <p className={styles.muted}>
-                      {formatDate(n.created_at, language)}
-                      {href ? (
-                        <>
-                          {' · '}
-                          <Link href={href}>{language === 'ar' ? 'افتح' : 'Open'} →</Link>
-                        </>
-                      ) : null}
-                    </p>
+              <Card key={n.id}>
+                <CardBody>
+                  <div className={styles.standing}>
+                    <div>
+                      <p>
+                        <strong dir="auto">{n.title}</strong>{' '}
+                        {n.read_at ? null : (
+                          <Badge tone="sorghum">{t('buyer.notif.new', language)}</Badge>
+                        )}
+                      </p>
+                      <p dir="auto">{n.body}</p>
+                      <p className={styles.muted}>
+                        {formatDate(n.created_at, language)}
+                        {href ? (
+                          <>
+                            {' · '}
+                            <Link href={href}>{language === 'ar' ? 'افتح' : 'Open'} →</Link>
+                          </>
+                        ) : null}
+                      </p>
+                    </div>
+                    {n.read_at ? null : (
+                      <Button
+                        variant="secondary"
+                        size="small"
+                        disabled={marking === n.id}
+                        onClick={() => void markRead(n.id)}
+                      >
+                        {t('buyer.notif.markRead', language)}
+                      </Button>
+                    )}
                   </div>
-                  {n.read_at ? null : (
-                    <Button
-                      variant="secondary"
-                      size="small"
-                      disabled={marking === n.id}
-                      onClick={() => void markRead(n.id)}
-                    >
-                      {t('buyer.notif.markRead', language)}
-                    </Button>
-                  )}
-                </div>
-              </CardBody>
-            </Card>
+                </CardBody>
+              </Card>
             );
           })}
           <Pagination

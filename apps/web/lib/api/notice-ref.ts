@@ -49,5 +49,7 @@ export function presentNoticeRef(row: NoticeRefRow): {
   const kind = (NOTICE_REF_KINDS as readonly string[]).includes(row.ref_kind ?? '')
     ? (row.ref_kind as NoticeRefKind)
     : null;
-  return kind && row.ref_id ? { ref_kind: kind, ref_id: row.ref_id } : { ref_kind: null, ref_id: null };
+  return kind && row.ref_id
+    ? { ref_kind: kind, ref_id: row.ref_id }
+    : { ref_kind: null, ref_id: null };
 }
