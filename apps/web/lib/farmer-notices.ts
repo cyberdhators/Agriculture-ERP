@@ -206,6 +206,18 @@ export const ACCOUNT_NOTICES = {
     body: 'Tap to see the listing and message the seller.',
     key: 'notice.matchListing',
   },
+  // 2026-11-03: a SAVED SEARCH matched (lib/api/match-alerts.ts). The same
+  // marketing rules; never the search's words or the post's title.
+  match_saved_listing: {
+    title: 'New produce matches your saved search',
+    body: 'Tap to see the listing and message the seller.',
+    key: 'notice.matchSavedListing',
+  },
+  match_saved_buying_request: {
+    title: 'A new buying request matches your saved search',
+    body: 'Tap to see the buying request and reply in Messages.',
+    key: 'notice.matchSavedBuyingRequest',
+  },
 } as const;
 
 export type AccountNotice = keyof typeof ACCOUNT_NOTICES;
@@ -214,6 +226,8 @@ export type AccountNotice = keyof typeof ACCOUNT_NOTICES;
 export const MATCH_NOTICES: ReadonlySet<AccountNotice> = new Set<AccountNotice>([
   'match_buying_request',
   'match_listing',
+  'match_saved_listing',
+  'match_saved_buying_request',
 ]);
 
 /** The i18n key prefix of a stored notice title, or null for an older notice shown as stored. */
@@ -276,6 +290,8 @@ export function noticeHref(title: string): string | null {
   if (title === n.expiry_service.title) return '/farmer/account/my-services';
   if (title === n.match_buying_request.title) return '/market/requests';
   if (title === n.match_listing.title) return '/market';
+  if (title === n.match_saved_buying_request.title) return '/market/requests';
+  if (title === n.match_saved_listing.title) return '/market';
   return null;
 }
 

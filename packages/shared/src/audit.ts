@@ -291,6 +291,14 @@ export const AUDIT_ACTIONS = [
   // combined CHECK migration adds them.
   'sms_receipt.recorded',
   'sms_opt_out.recorded',
+  // 2026-11-03 (lane-searches): an account's own saved searches -- created,
+  // paused, resumed, deleted (soft). The criteria are recorded (a product
+  // word, a category, a state, a price), never a name or a contact. NOT YET
+  // IN THE DATABASE CHECK: the integrator's combined CHECK migration adds them.
+  'saved_search.created',
+  'saved_search.paused',
+  'saved_search.resumed',
+  'saved_search.deleted',
 ] as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];

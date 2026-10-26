@@ -381,6 +381,24 @@ const NAV_GROUPS: readonly NavGroup[] = [
         ),
       },
       {
+        // 2026-11-03: saved searches -- an alert when something new matches.
+        href: '/farmer/account/saved-searches',
+        key: 'saved.title',
+        glyph: (
+          <svg
+            viewBox="0 0 24 24"
+            width="20"
+            height="20"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+          >
+            <path d="M6 3h12v18l-6-4-6 4V3z" />
+            <circle cx="12" cy="9.5" r="2.5" />
+          </svg>
+        ),
+      },
+      {
         // 2026-10-23: public profiles v2 -- draft, preview, publish, photo.
         href: '/farmer/account/public-profile',
         key: 'pp.menu',

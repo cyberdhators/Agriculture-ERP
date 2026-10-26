@@ -44,6 +44,7 @@ import {
   IconDashboard,
   IconEdit,
   IconEye,
+  IconFlag,
   IconHelp,
   IconInfo,
   IconLightbulb,
@@ -127,6 +128,8 @@ const NAV: ReadonlyArray<{
   { href: '/buyer/advice/offer', label: 'buyer.nav.offerAdvice', icon: IconLightbulb },
   { href: '/buyer/advice/work', label: 'buyer.nav.advisoryWork', icon: IconReports },
   { href: '/buyer/notifications', label: 'buyer.nav.notifications', icon: IconBell },
+  // 2026-11-03: saved searches -- an alert when something new matches.
+  { href: '/buyer/saved-searches', label: 'buyer.nav.savedSearches', icon: IconFlag },
   { href: '/buyer/profile', label: 'buyer.nav.profile', icon: IconUser },
   // 2026-10-23: public profiles v2 -- draft, preview, publish, photo.
   { href: '/buyer/public-profile', label: 'buyer.nav.publicProfile', icon: IconEye },

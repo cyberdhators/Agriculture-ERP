@@ -56,6 +56,11 @@ const BUYER_OUTSIDE_ITS_TREE = [
   // conversation they are part of, and unblock their own (lib/api/blocks.ts).
   'account/blocks',
   'account/blocks/[id]',
+  // 2026-11-03: the account's own saved searches -- list, save, pause/resume,
+  // delete -- every statement keyed by the session's sign-in
+  // (lib/api/saved-searches.ts ownerOf); nothing of another account is read.
+  'account/saved-searches',
+  'account/saved-searches/[id]',
   // PUBLIC PROFILES V2 (2026-10-23): the account's own public profile -- one
   // per sign-in, shared by its farmer and buyer sides -- with its publish,
   // unpublish and photo steps. Each reads and writes the caller's own row only

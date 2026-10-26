@@ -5952,3 +5952,81 @@ optional at phone sign-up.
   longer "optional"). New sign-ups always have a location.
 - INFERRED: `validateFarmer`'s `optionalPersonal` switch is removed; the only
   caller was the sign-up form.
+
+## Saved searches (2026-11-03) — an extra source of match alerts, owner-approved
+
+Any signed-in account (phone or email; one list per sign-in, shared by both
+shells) keeps up to 10 saved searches: produce listings or buying requests, a
+product word or a category (or both), an optional state and, for listings
+only, an optional highest price. "Save this search" sits on the market
+(phone account), the buyer marketplace (email account) and the buying-requests
+page, filled in from the screen's filters; "Saved searches" in both menus
+lists them with Pause / Resume and Delete (soft) and a form to add one, in
+English and Arabic. Table `saved_search` (migration
+`20261103100000_saved_searches_alert_sources`), RLS on, no policies.
+
+- When a listing or buying request goes on the market, the EXISTING match-alert
+  run (`lib/api/match-alerts.ts`) also reads the live, unpaused saved searches
+  it answers. Same rules, unchanged: the match-alert switch (in-app on, SMS
+  opt-in), the cap of 2 marketing notices per person per 24 hours, never the
+  poster, never across a block, never a suspended account, once per post per
+  person (`marketing_notice`), realtime pop with its ref. INFERRED from the
+  brief ("must not dramatically change existing behaviour"): activity matches
+  are chosen first exactly as before; a saved search only ADDS people; a
+  person matched both ways is told once, as the activity match, with the
+  existing sentence. A saved-search alert has its own fixed sentence ("… matches
+  your saved search") and SMS text with "Reply STOP".
+- Matching is pure (`shared/src/saved-searches.ts`, `savedSearchMatches`):
+  shared product word (the existing `productsMatch`), category and state equal
+  when named, listing price ≤ highest price (a listing with no price does not
+  answer a search with a highest price). A highest price on a buying-request
+  search is refused (a request's price is what the buyer offers).
+- Saving the same search again returns the one already saved. Over 10 live is
+  refused with `saved_search_limit`; the count is taken under a per-account
+  advisory lock. Audited: `saved_search.created`, `.paused`, `.resumed`,
+  `.deleted`, criteria only. These keys are NOT in the audit CHECK yet: the
+  integrator's combined CHECK migration adds them; until then those writes
+  fail (500) and nothing changes.
+- Each alert now records its source (`buying_request_match`, `listing_match`,
+  `saved_search`), the saved search that matched and the time the SMS provider
+  accepted its SMS (`marketing_notice.source`, `saved_search_id`,
+  `sms_sent_at`). On a database without the migration the run is exactly as
+  before. OBSERVED only by type check and pure tests; not exercised against a
+  database (the only database is production).
+
+## Match-alert results report (2026-11-03) — staff, Analytics and Exports
+
+`/analytics/match-alerts` (link from Marketplace analytics and in the staff
+menu), `GET /api/analytics/match-alerts` and `POST …/export`: admin,
+supervisor, read_only, then `reports.view`, scoped to the states it reaches —
+exactly as Marketplace analytics. Filters: window (Juba days, ≤ 366), state,
+category, product word, alert source. Counts and rates only; no person, post,
+product or message leaves the database. Every figure's definition,
+denominator, source and window is on the page (cards, print legend) and in
+the workbook (`MATCH_ALERT_METRICS`).
+
+- Alerts sent = `marketing_notice` rows (kind match) sent in the window; in the
+  app = with a notice; by SMS = `sms_sent_at` set (recorded from the migration
+  on; earlier SMS are not counted). Opened = the notice's `read_at` set, of
+  in-app alerts (for an email account the notice is the organisation's, so any
+  member reading it counts — DOCUMENTED by `lib/api/notify.ts`).
+- Conversation = a conversation between the alerted person and the poster
+  (either starting it, any post) created within 7 days after the alert.
+- Deal = within 30 days after the alert, the post recorded completed / sold or
+  a sale recorded on it (the existing completion audit rows, as the analytics
+  "completed" figures read them) AFTER a conversation about that post between
+  the two people; or an order by the alerted person's organisation on that
+  listing delivered or completed. Self-reported except delivered orders.
+  INFERRED: "between them" cannot be proven for a self-reported completion, so
+  a conversation about that post is required.
+- Rates use only alerts whose 7 / 30 days are over as denominators (a fresh
+  alert cannot have converted yet); the counts include newer alerts that
+  already did. A rate with no denominator is "Not measured", never 0.
+- Alerts made before the migration have no source; they are counted from the
+  post kind (a buying request alerts sellers, a listing alerts requesters),
+  which is what they were. Funnel logic is pure and tested
+  (`shared/src/match-alert-report.ts`).
+- Excel: Summary, By source (column chart), Over time (line chart),
+  Definitions with limitations; logged before the file leaves as
+  `analytics.exported` with `report: 'match_alerts'`, the filters, scope,
+  cut-off and the query as it ran (existing key; no new one).

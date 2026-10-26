@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react';
 
 import { LISTING_CATEGORIES, LISTING_GRADES } from '@agri-erp/shared';
 
+import { SaveSearchPanel } from '@/components/account/SavedSearches';
 import { getLocations, listMarket, type Locations, type MarketQuery } from '@/lib/buyer/api';
 import {
   CATEGORY_LABELS,
@@ -47,7 +48,7 @@ const EMPTY: MarketQuery = {
 };
 
 export function BuyerMarketplace() {
-  const { profile } = useBuyer();
+  const { profile, language } = useBuyer();
   const [draft, setDraft] = useState<MarketQuery>(EMPTY);
   const [applied, setApplied] = useState<MarketQuery>(EMPTY);
   const [locations, setLocations] = useState<Locations | null>(null);
@@ -217,6 +218,19 @@ export function BuyerMarketplace() {
           ) : null}
         </div>
       </form>
+
+      {/* 2026-11-03: "tell me when produce like this is listed". */}
+      <SaveSearchPanel
+        lang={language}
+        target="listing"
+        seed={{
+          product_name: applied.q ?? '',
+          category: applied.category ?? '',
+          state_id: applied.state_id ?? '',
+          max_price: applied.max_price ?? '',
+        }}
+        savedHref="/buyer/saved-searches"
+      />
 
       {list.error ? (
         <EmptyState

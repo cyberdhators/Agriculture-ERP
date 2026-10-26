@@ -469,3 +469,7 @@ export * from './realtime';
 export * from './presence';
 // 2026-10-26: match alerts -- who is told when a post goes on the market.
 export * from './match-alerts';
+// 2026-11-03: saved searches -- an extra source of match alerts -- and the
+// staff report on what match alerts led to.
+export * from './saved-searches';
+export * from './match-alert-report';

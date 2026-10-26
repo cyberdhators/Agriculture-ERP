@@ -305,6 +305,8 @@ export const RULE_MESSAGES = {
   support_case_resolution_required: 'Write a resolution note before resolving or closing a case.',
   support_case_assignee_not_staff: 'That person cannot be made responsible for support cases.',
   // PERSON-LEVEL BLOCK (2026-10-28). Never says which side blocked.
+  // SAVED SEARCHES (2026-11-03). SAVED_SEARCH_LIMIT in packages/shared.
+  saved_search_limit: 'You can keep up to 10 saved searches. Delete one to save another.',
   account_block_self: 'You cannot block yourself.',
   account_block_not_found: 'That block has already been lifted.',
   account_block_personal_only:
