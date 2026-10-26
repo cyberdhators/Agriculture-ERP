@@ -7,6 +7,7 @@ import {
 import {
   checkDraftReferences,
   deliveryCounts,
+  smsReceiptCounts,
   idParam,
   loadAnnouncement,
   presentAnnouncement,
@@ -36,11 +37,16 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       await requirePermission(auth, 'communications.send');
       const row = await loadAnnouncement(idParam(params));
       if (!row) throw notFound();
-      const counts = await deliveryCounts(row.id);
+      const [counts, smsReceipts] = await Promise.all([
+        deliveryCounts(row.id),
+        smsReceiptCounts(row.id),
+      ]);
       return ok({
         announcement: presentAnnouncement(row),
         deliveries: counts,
         remaining: remainingDeliveries(counts),
+        // 2026-10-26: "sent" (Bird accepted) beside "delivered to phone" (the carrier said so).
+        sms_receipts: smsReceipts,
       });
     },
   },

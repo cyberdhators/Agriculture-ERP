@@ -65,6 +65,8 @@ export interface AnnouncementState {
   announcement: StaffAnnouncement;
   deliveries: DeliveryCounts;
   remaining: number;
+  /** 2026-10-26: of the SMS Bird accepted, what the carriers reported (detail page only). */
+  sms_receipts?: { sent: number; delivered: number; not_delivered: number; awaiting: number };
   batch?: {
     in_app_sent: number;
     sms: { sent: number; failed: number; skipped: number; requeued: number };

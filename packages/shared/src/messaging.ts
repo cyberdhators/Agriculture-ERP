@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import { BUYER_MESSAGES } from './buyer';
+import type { CounterpartPresence } from './presence';
 
 /**
  * IN-APP MESSAGING (2026-10-20, CORWADO's 16 October specification: "protect
@@ -84,6 +85,12 @@ export interface ConversationSummary {
   last_from_me: boolean;
   unread: boolean;
   blocked: boolean;
+  /**
+   * 2026-10-26: whether the other person has the app open, and when they were
+   * last active -- present only when both sides allow it and the other side
+   * is one person (never an organisation's team, never staff). presence.ts.
+   */
+  presence?: CounterpartPresence | null;
 }
 
 export interface ChatMessage {

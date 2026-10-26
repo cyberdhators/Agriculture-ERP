@@ -116,6 +116,73 @@ export interface SendOneSmsResult {
   messageId?: string;
   /** Bird's own short reason when it refused. Never the key, never a header. */
   error?: string;
+  /** 2026-10-26: Bird's RateLimit header -- sends left and seconds to reset -- when present. */
+  rateLimit?: RateLimitState | null;
+}
+
+/**
+ * RATE LIMITS (2026-10-26, DOCUMENTED: bird.com/docs/guides/rate-limits).
+ * Bird sends `RateLimit: "<policy>";r=<remaining>;t=<seconds to reset>` (IETF
+ * structured fields) on responses, and a 429 with `Retry-After` in seconds
+ * when a policy is exhausted -- or when an abuse or supplier protection
+ * trips, even with capacity left, so Retry-After is what to wait for.
+ */
+export interface RateLimitState {
+  remaining: number;
+  resetSeconds: number;
+}
+
+/** The tightest policy in a RateLimit header, or null when absent or unreadable. */
+export function parseRateLimit(header: string | null | undefined): RateLimitState | null {
+  if (!header) return null;
+  let best: RateLimitState | null = null;
+  for (const item of header.split(',')) {
+    const r = /;\s*r=(\d+)/.exec(item)?.[1];
+    const t = /;\s*t=(\d+)/.exec(item)?.[1];
+    if (r === undefined || t === undefined) continue;
+    const state = { remaining: Number(r), resetSeconds: Number(t) };
+    if (!best || state.remaining < best.remaining) best = state;
+  }
+  return best;
+}
+
+/** Retry-After in whole seconds (delta-seconds or an HTTP date), or null. Capped at an hour. */
+export function parseRetryAfter(
+  header: string | null | undefined,
+  nowMs: number = Date.now(),
+): number | null {
+  if (!header) return null;
+  const trimmed = header.trim();
+  if (/^\d+$/.test(trimmed)) return Math.min(Number(trimmed), 3600);
+  const at = Date.parse(trimmed);
+  if (Number.isNaN(at)) return null;
+  return Math.min(Math.max(0, Math.ceil((at - nowMs) / 1000)), 3600);
+}
+
+/**
+ * Bird refused for rate: wait `retryAfterSeconds` (when it said) before the
+ * next send. A kind of unavailability, so callers that stop on unavailability
+ * still stop; the announcement batch instead pauses and puts the row back.
+ */
+export class SmsRateLimitedError extends SmsUnavailableError {
+  constructor(readonly retryAfterSeconds: number | null) {
+    super('The SMS service asked us to slow down (429).');
+    this.name = 'SmsRateLimitedError';
+  }
+}
+
+/** A 429 that asks for no more than this is waited out once, inside the send. */
+export const SMS_INLINE_RETRY_MAX_SECONDS = 3;
+
+export interface SendOneSmsOptions {
+  /**
+   * 2026-10-26: Bird's Idempotency-Key (bird.com/docs/guides/idempotency):
+   * a retry with the same key and body within three hours replays the first
+   * answer instead of sending again. The announcement batch uses the
+   * delivery row's id, so a delivery is billed once however often it is
+   * retried. At most 255 characters.
+   */
+  idempotencyKey?: string;
 }
 
 /**
@@ -132,22 +199,38 @@ export async function sendOneSms(
   config: SmsConfig,
   to: string,
   text: string,
+  options: SendOneSmsOptions = {},
 ): Promise<SendOneSmsResult> {
-  let response: Response;
-  try {
-    response = await fetch(`${config.baseUrl}/v1/sms/messages`, {
-      method: 'POST',
-      headers: {
-        authorization: `Bearer ${config.apiKey}`,
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({ to, from: config.senderId, text, category: CATEGORY }),
-      signal: AbortSignal.timeout(SMS_DEADLINE_MS),
-    });
-  } catch {
-    // A network failure or the deadline. The provider did not answer at all,
-    // which is different from refusing and different again from accepting.
-    throw new SmsUnavailableError();
+  const post = async (): Promise<Response> => {
+    try {
+      return await fetch(`${config.baseUrl}/v1/sms/messages`, {
+        method: 'POST',
+        headers: {
+          authorization: `Bearer ${config.apiKey}`,
+          'content-type': 'application/json',
+          ...(options.idempotencyKey
+            ? { 'idempotency-key': options.idempotencyKey.slice(0, 255) }
+            : {}),
+        },
+        body: JSON.stringify({ to, from: config.senderId, text, category: CATEGORY }),
+        signal: AbortSignal.timeout(SMS_DEADLINE_MS),
+      });
+    } catch {
+      // A network failure or the deadline. The provider did not answer at all,
+      // which is different from refusing and different again from accepting.
+      throw new SmsUnavailableError();
+    }
+  };
+
+  let response = await post();
+  // 2026-10-26: a short Retry-After is waited out once, with the same
+  // Idempotency-Key and body, so it cannot send twice.
+  if (response.status === 429) {
+    const wait = parseRetryAfter(response.headers.get('retry-after'));
+    if (wait !== null && wait <= SMS_INLINE_RETRY_MAX_SECONDS) {
+      await new Promise((resolve) => setTimeout(resolve, wait * 1000));
+      response = await post();
+    }
   }
 
   if (response.status === 401 || response.status === 403) {
@@ -155,9 +238,25 @@ export async function sendOneSms(
       `The SMS service refused the credential (${response.status}). Check the key and its sms:write scope.`,
     );
   }
-  if (response.status === 429 || response.status >= 500) {
+  if (response.status === 429) {
+    throw new SmsRateLimitedError(parseRetryAfter(response.headers.get('retry-after')));
+  }
+  // 409 E01004: the same key is still being processed (a parallel retry).
+  // Not a refusal of the message, so it is treated like an outage: the row
+  // goes back to the queue and the next attempt replays the first answer.
+  if (response.status === 409 && options.idempotencyKey) {
+    const peek = (await response
+      .clone()
+      .json()
+      .catch(() => ({}))) as { error?: { code?: unknown } };
+    if (peek.error?.code === 'E01004') {
+      throw new SmsUnavailableError('The SMS service is still processing this message.');
+    }
+  }
+  if (response.status >= 500) {
     throw new SmsUnavailableError(`The SMS service answered ${response.status}.`);
   }
+  const rateLimit = parseRateLimit(response.headers.get('ratelimit'));
 
   const body = (await response.json().catch(() => ({}))) as {
     id?: unknown;
@@ -172,10 +271,12 @@ export async function sendOneSms(
         : typeof body.code === 'string'
           ? body.code
           : `Refused (${response.status}).`;
-    return { accepted: false, error: reason.slice(0, 200) };
+    return { accepted: false, error: reason.slice(0, 200), rateLimit };
   }
 
-  return typeof body.id === 'string' ? { accepted: true, messageId: body.id } : { accepted: true };
+  return typeof body.id === 'string'
+    ? { accepted: true, messageId: body.id, rateLimit }
+    : { accepted: true, rateLimit };
 }
 
 /** Unavailability part-way through a batch, carrying what went out before it. */

@@ -155,6 +155,14 @@ const BUYER_OUTSIDE_ITS_TREE = [
   'organizations/[id]/members/[memberId]/revoke',
   'organizations/[id]/membership',
   'organizations/[id]/transfer',
+  // LIVE UPDATES (2026-10-26, lane-realtime): which live channels the
+  // session's own account may subscribe to, the per-subscription channel
+  // authorization (own account channel, an organisation inbox with
+  // inbox.read, own presence only), and one of the account's OWN notices by
+  // id for the live pop (its farmer record's or its buyer organisation's).
+  'realtime/channels',
+  'realtime/auth',
+  'account/notifications/[id]',
 ];
 
 describe('buyer routes are counted, not trusted', () => {

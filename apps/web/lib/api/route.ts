@@ -18,6 +18,7 @@ import { randomUUID } from 'node:crypto';
 import { touchActivity } from './activity';
 import { ApiFailure, failureResponse, internalError } from './errors';
 import { runWithRequestContext } from './request-context';
+import { flushRealtime, withRealtimeOutbox } from '../realtime/outbox';
 import { type Authenticated, requireRole } from './require-role';
 
 /**
@@ -319,12 +320,16 @@ function wrap<TBody>(definition: RouteDefinition<TBody>): NextRouteHandler {
 
       const params = (await context?.params) ?? {};
       // Every audit write inside the handler reads the device from here (C-9.8).
-      return await runWithRequestContext({ correlationId, deviceId }, async () =>
-        respond(
-          await definition.handler({ request, auth, body, params, correlationId, deviceId }),
-          correlationId,
+      // 2026-10-26: live updates the handler queued are published only after
+      // it returned -- its transactions committed -- and after the answer has
+      // gone (lib/realtime/outbox.ts). A handler that throws publishes nothing.
+      const { result, events } = await withRealtimeOutbox(() =>
+        runWithRequestContext({ correlationId, deviceId }, async () =>
+          definition.handler({ request, auth, body, params, correlationId, deviceId }),
         ),
       );
+      flushRealtime(events);
+      return respond(result, correlationId);
     } catch (failure) {
       // A documented outcome for the caller -- 401, 404, 422 and so on. Not an
       // error in our code, so it is NOT reported: an officer's 404 is not an

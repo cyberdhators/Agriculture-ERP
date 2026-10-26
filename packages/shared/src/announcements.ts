@@ -515,6 +515,13 @@ export const PREFERENCE_FIELDS = [
   'announcements_sms',
   'announcements_email',
   'updates_in_app',
+  // 2026-10-26 (lane-realtime, migration 20261101090000): match alerts --
+  // marketing notices about posts that match what a person buys or sells --
+  // in the app (on) and by SMS (off: opt-in); and "show when I'm active" in
+  // conversations (on, reciprocal: shared/src/presence.ts).
+  'match_in_app',
+  'match_sms',
+  'show_activity',
 ] as const;
 export type PreferenceField = (typeof PREFERENCE_FIELDS)[number];
 export type NotificationPreferences = Record<PreferenceField, boolean>;
@@ -524,6 +531,9 @@ export const DEFAULT_PREFERENCES: NotificationPreferences = {
   announcements_sms: true,
   announcements_email: true,
   updates_in_app: true,
+  match_in_app: true,
+  match_sms: false,
+  show_activity: true,
 };
 
 const onOff = z.boolean({ error: () => M.preferenceInvalid });
@@ -534,6 +544,11 @@ export const notificationPreferencesSchema = z.strictObject({
   announcements_sms: onOff,
   announcements_email: onOff,
   updates_in_app: onOff,
+  // 2026-10-26: optional, so a screen that predates them keeps working; an
+  // absent switch keeps its saved value.
+  match_in_app: onOff.optional(),
+  match_sms: onOff.optional(),
+  show_activity: onOff.optional(),
 });
 
 /**

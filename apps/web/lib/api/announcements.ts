@@ -5,6 +5,7 @@ import {
   ANNOUNCEMENT_LIMITS,
   DEFAULT_PREFERENCES,
   NAME_FALLBACK,
+  PREFERENCE_FIELDS,
   renderMessage,
   smsCost,
   smsEstimate,
@@ -20,7 +21,13 @@ import {
 
 import { prisma } from '../db';
 import { MailerNotConfiguredError, mailerConfig, sendOneEmail } from '../email/resend';
-import { SmsNotConfiguredError, SmsUnavailableError, sendOneSms, smsConfig } from '../sms/bird';
+import {
+  SmsNotConfiguredError,
+  SmsRateLimitedError,
+  SmsUnavailableError,
+  sendOneSms,
+  smsConfig,
+} from '../sms/bird';
 import { adminAuthEmails } from '../supabase/admin';
 import { audited, writeAudit, type AuditEntry, type AuditTx } from './audit';
 import { settingValue } from './settings';
@@ -425,6 +432,42 @@ export async function deliveryCounts(
   return tallyDeliveries(rows);
 }
 
+/**
+ * 2026-10-26: WHAT THE HANDSETS GOT. Of the SMS Bird accepted ('sent'), how
+ * many its carriers reported delivered to the phone, how many they reported
+ * not delivered (undelivered, failed, rejected, expired), and how many have
+ * no report yet. From Bird's webhook (lib/api/sms-receipts.ts). Read through
+ * to_jsonb so a database without migration 20261101090000 reads all as
+ * awaiting rather than failing the page.
+ */
+export interface SmsReceiptCounts {
+  sent: number;
+  delivered: number;
+  not_delivered: number;
+  awaiting: number;
+}
+
+export async function smsReceiptCounts(
+  id: string,
+  client: Queryable = prisma,
+): Promise<SmsReceiptCounts> {
+  const rows = await client.$queryRawUnsafe<{ receipt: string | null; n: number }[]>(
+    `SELECT to_jsonb(d) ->> 'receipt_status' AS receipt, count(*)::int AS n
+       FROM public.announcement_delivery d
+      WHERE d.announcement_id = $1::uuid AND d.channel = 'sms' AND d.status = 'sent'
+      GROUP BY 1`,
+    id,
+  );
+  const out: SmsReceiptCounts = { sent: 0, delivered: 0, not_delivered: 0, awaiting: 0 };
+  for (const r of rows) {
+    out.sent += r.n;
+    if (r.receipt === 'delivered') out.delivered += r.n;
+    else if (r.receipt) out.not_delivered += r.n;
+    else out.awaiting += r.n;
+  }
+  return out;
+}
+
 // ---------------------------------------------------------------------------
 // PREFERENCES
 // ---------------------------------------------------------------------------
@@ -433,13 +476,18 @@ export async function preferencesOf(
   authUserId: string,
   client: Queryable = prisma,
 ): Promise<NotificationPreferences & { saved: boolean }> {
-  const [row] = await client.$queryRawUnsafe<(NotificationPreferences & { saved: boolean })[]>(
-    `SELECT announcements_in_app, announcements_sms, announcements_email, updates_in_app,
-            true AS saved
-       FROM public.notification_preference WHERE auth_user_id = $1::uuid`,
+  // 2026-10-26: read through to_jsonb, so the switches added by migration
+  // 20261101090000 read as their defaults on a database without it.
+  const [row] = await client.$queryRawUnsafe<{ p: Record<string, unknown> }[]>(
+    `SELECT to_jsonb(p) AS p FROM public.notification_preference p WHERE p.auth_user_id = $1::uuid`,
     authUserId,
   );
-  return row ?? { ...DEFAULT_PREFERENCES, saved: false };
+  if (!row) return { ...DEFAULT_PREFERENCES, saved: false };
+  const out = { ...DEFAULT_PREFERENCES, saved: true };
+  for (const field of PREFERENCE_FIELDS) {
+    if (typeof row.p[field] === 'boolean') out[field] = row.p[field] as boolean;
+  }
+  return out;
 }
 
 // ---------------------------------------------------------------------------
@@ -676,6 +724,17 @@ export async function processBatch(
 
   const results: Result[] = [];
   let smsStopped = false;
+  /**
+   * 2026-10-26: PACING. When Bird says to slow down -- a 429 with Retry-After,
+   * or a RateLimit header with nothing left -- every worker waits until
+   * `smsPauseUntil` before its next SMS, while the time budget allows; a row
+   * that cannot wait goes back to the queue untouched (never failed), and
+   * the next batch (the screen's, or the two-minute job's) carries on.
+   */
+  let smsPauseUntil = 0;
+  const pauseSms = (seconds: number) => {
+    smsPauseUntil = Math.max(smsPauseUntil, Date.now() + Math.max(1, seconds) * 1000);
+  };
   let emailStopped = false;
   let next = 0;
   const footer = `\n\n--\nYou receive this as an account holder of ${serviceName}. Choose what you receive in your account's notification settings.`;
@@ -689,12 +748,27 @@ export async function processBatch(
       if (!phone || !SOUTH_SUDAN_MOBILE_JS.test(phone)) {
         return { id: row.id, status: 'skipped', skip_reason: 'no_contact' };
       }
+      const wait = smsPauseUntil - Date.now();
+      if (wait > 0) {
+        if (Date.now() + wait - started > TIME_BUDGET_MS) return { id: row.id, status: 'queued' };
+        await new Promise((resolve) => setTimeout(resolve, wait));
+      }
       try {
-        const r = await sendOneSms(sms, phone, renderMessage(announcement.sms_body ?? '', values));
+        // The delivery's own id is the Idempotency-Key: a retried delivery
+        // replays Bird's first answer instead of sending a second SMS.
+        const r = await sendOneSms(sms, phone, renderMessage(announcement.sms_body ?? '', values), {
+          idempotencyKey: `announcement-delivery-${row.id}`,
+        });
+        if (r.rateLimit && r.rateLimit.remaining === 0) pauseSms(r.rateLimit.resetSeconds);
         return r.accepted
           ? { id: row.id, status: 'sent', provider_message_id: r.messageId ?? null }
           : { id: row.id, status: 'failed', error: (r.error ?? 'Refused.').slice(0, 300) };
       } catch (failure) {
+        if (failure instanceof SmsRateLimitedError) {
+          // Not this message's fault: back to the queue, and everyone waits.
+          pauseSms(failure.retryAfterSeconds ?? 5);
+          return { id: row.id, status: 'queued' };
+        }
         if (failure instanceof SmsUnavailableError) {
           smsStopped = true;
           return { id: row.id, status: 'failed', error: failure.message.slice(0, 300) };

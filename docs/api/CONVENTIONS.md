@@ -761,6 +761,8 @@ change.
 | `advice_case.assigned`                        |
 | `advice_case.accepted`                        |
 | `advice_case.released`                        |
+| `sms_receipt.recorded`                        |
+| `sms_opt_out.recorded`                        |
 
 `before` and `after` hold **changed fields only**, never whole rows, and never a
 password, token, authentication identifier, national id, phone, email, given

@@ -12,6 +12,7 @@ import {
 } from '@agri-erp/shared';
 
 import { audited, writeAudit } from '../../../lib/api/audit';
+import { matchAlertsAfter } from '../../../lib/api/match-alerts';
 import { ApiFailure, invalidCursor } from '../../../lib/api/errors';
 import {
   BUYING_REQUEST_COLUMNS,
@@ -186,6 +187,8 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
         );
         return saved!;
       });
+      // 2026-10-26: a request put straight on the market alerts matching sellers.
+      matchAlertsAfter('buying_request', id, false, body.status === 'active');
       return created(presentOwnBuyingRequest(row));
     },
   },

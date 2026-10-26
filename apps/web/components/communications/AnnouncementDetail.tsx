@@ -459,8 +459,10 @@ function PreviewView({ preview }: { preview: AnnouncementPreview }) {
 
 function CountsTable({ state }: { state: AnnouncementState }) {
   const channels = state.announcement.channels;
+  const receipts = channels.includes('sms') ? state.sms_receipts : undefined;
   return (
-    <DataTable
+    <>
+      <DataTable
       caption="Deliveries by channel and status"
       columns={[
         {
@@ -479,6 +481,17 @@ function CountsTable({ state }: { state: AnnouncementState }) {
       rows={channels}
       rowKey={(c) => c}
     />
+      {receipts ? (
+        // 2026-10-26: "Sent" means Bird accepted the SMS; "delivered to phone"
+        // is the carrier's own report, from Bird's delivery webhook.
+        <p className="small" style={{ marginTop: 'var(--s-2)' }}>
+          SMS: <strong>{receipts.sent}</strong> sent ·{' '}
+          <strong>{receipts.delivered}</strong> delivered to phone ·{' '}
+          <strong>{receipts.not_delivered}</strong> not delivered ·{' '}
+          <span className="muted">{receipts.awaiting} awaiting a carrier report</span>
+        </p>
+      ) : null}
+    </>
   );
 }
 

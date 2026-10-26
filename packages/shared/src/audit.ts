@@ -284,6 +284,13 @@ export const AUDIT_ACTIONS = [
   'advice_case.assigned',
   'advice_case.accepted',
   'advice_case.released',
+  // 2026-10-26 (lane-realtime): Bird's SMS webhook -- a carrier receipt
+  // recorded on an announcement delivery (status and Bird's reason code), and
+  // an SMS opt-out (STOP or a suppression) with the account it matched. Never
+  // a number or a text. NOT YET IN THE DATABASE CHECK: the integrator's
+  // combined CHECK migration adds them.
+  'sms_receipt.recorded',
+  'sms_opt_out.recorded',
 ] as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];

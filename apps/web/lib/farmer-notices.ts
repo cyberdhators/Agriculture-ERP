@@ -193,9 +193,28 @@ export const ACCOUNT_NOTICES = {
     body: 'Open your services to renew it or change its end date.',
     key: 'notice.expiryService',
   },
+  // 2026-10-26: MATCH ALERTS, marketing notices (lib/api/match-alerts.ts).
+  // Never the post's title, its quantity or who posted it: tapping opens the
+  // post on the market, where those are shown as they always are.
+  match_buying_request: {
+    title: 'A buyer is looking for something you sell',
+    body: 'Tap to see the buying request and reply in Messages.',
+    key: 'notice.matchBuyingRequest',
+  },
+  match_listing: {
+    title: 'New produce matches your buying request',
+    body: 'Tap to see the listing and message the seller.',
+    key: 'notice.matchListing',
+  },
 } as const;
 
 export type AccountNotice = keyof typeof ACCOUNT_NOTICES;
+
+/** 2026-10-26: the marketing notices: their own switch, a daily cap, never essential. */
+export const MATCH_NOTICES: ReadonlySet<AccountNotice> = new Set<AccountNotice>([
+  'match_buying_request',
+  'match_listing',
+]);
 
 /** The i18n key prefix of a stored notice title, or null for an older notice shown as stored. */
 export function noticeKey(title: string): string | null {
@@ -255,5 +274,31 @@ export function noticeHref(title: string): string | null {
   if (title === n.expiry_listing.title) return '/farmer/account/listings';
   if (title === n.expiry_buying_request.title) return '/farmer/account/buying-requests';
   if (title === n.expiry_service.title) return '/farmer/account/my-services';
+  if (title === n.match_buying_request.title) return '/market/requests';
+  if (title === n.match_listing.title) return '/market';
   return null;
+}
+
+/**
+ * 2026-10-26: where the live pop opens. A notice about one post or one
+ * conversation opens it; otherwise the notice's usual place, for the side
+ * (farmer or buyer) the person is on; otherwise their notifications page.
+ */
+export function popHref(input: {
+  side: 'farmer' | 'buyer';
+  title: string | null;
+  refKind?: string | null;
+  refId?: string | null;
+}): string {
+  const messages = input.side === 'buyer' ? '/buyer/messages' : '/farmer/account/messages';
+  const id = input.refId ? encodeURIComponent(input.refId) : null;
+  if (id && input.refKind === 'buying_request') return `/market/requests/${id}`;
+  if (id && input.refKind === 'listing') return `/market/${id}`;
+  if (id && input.refKind === 'conversation') return `${messages}?c=${id}`;
+  const usual = input.title ? noticeHref(input.title) : null;
+  if (usual && input.side === 'buyer') {
+    if (usual === '/farmer/account/messages') return messages;
+    if (usual.startsWith('/farmer/')) return '/buyer/notifications';
+  }
+  return usual ?? (input.side === 'buyer' ? '/buyer/notifications' : '/farmer/account/notifications');
 }

@@ -316,6 +316,9 @@ describe('preferences', () => {
       announcements_sms: false,
       announcements_email: false,
       updates_in_app: false,
+      match_in_app: false,
+      match_sms: false,
+      show_activity: false,
     };
     for (const c of ANNOUNCEMENT_CHANNELS) expect(preferenceAllows('essential', c, off)).toBe(true);
   });

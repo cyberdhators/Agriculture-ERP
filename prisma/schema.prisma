@@ -2431,6 +2431,12 @@ model AnnouncementDelivery {
   notificationId    String?   @map("notification_id") @db.Uuid
   createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt         DateTime  @default(now()) @map("updated_at") @db.Timestamptz(6)
+  /// 2026-11-01 (migration 20261101090000): the carrier's report from Bird's
+  /// webhook -- delivered, undelivered, failed, rejected or expired -- its
+  /// Bird reason code and the event's time. NULL until a receipt arrives.
+  receiptStatus     String?   @map("receipt_status")
+  receiptReason     String?   @map("receipt_reason")
+  receiptAt         DateTime? @map("receipt_at") @db.Timestamptz(6)
 
   @@unique([announcementId, channel, recipientKind, recipientId], map: "announcement_delivery_once")
   @@map("announcement_delivery")
@@ -2444,6 +2450,50 @@ model NotificationPreference {
   announcementsEmail  Boolean  @default(true) @map("announcements_email")
   updatesInApp        Boolean  @default(true) @map("updates_in_app")
   updatedAt           DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+  /// 2026-11-01 (migration 20261101090000): match alerts in the app (on) and
+  /// by SMS (off: marketing SMS is opt-in); "show when I'm active" (on).
+  matchInApp          Boolean  @default(true) @map("match_in_app")
+  matchSms            Boolean  @default(false) @map("match_sms")
+  showActivity        Boolean  @default(true) @map("show_activity")
 
   @@map("notification_preference")
+}
+
+/// 2026-11-01: one row per Bird webhook-id -- deduplication. No payload.
+model BirdWebhookEvent {
+  webhookId  String    @id @map("webhook_id")
+  eventType  String    @map("event_type")
+  eventAt    DateTime? @map("event_at") @db.Timestamptz(6)
+  outcome    String
+  receivedAt DateTime  @default(now()) @map("received_at") @db.Timestamptz(6)
+
+  @@index([receivedAt(sort: Desc)], map: "bird_webhook_event_received_idx")
+  @@map("bird_webhook_event")
+}
+
+/// 2026-11-01: a STOP reply or a Bird suppression, and the account it matched. No number.
+model SmsOptOut {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  authUserId  String?  @map("auth_user_id") @db.Uuid
+  source      String
+  providerRef String?  @map("provider_ref")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([authUserId, createdAt(sort: Desc)], map: "sms_opt_out_account_idx")
+  @@map("sms_opt_out")
+}
+
+/// 2026-11-01: one match alert to one account about one post (at most once per post).
+model MarketingNotice {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  authUserId     String   @map("auth_user_id") @db.Uuid
+  kind           String   @default("match")
+  postKind       String   @map("post_kind")
+  postId         String   @map("post_id") @db.Uuid
+  notificationId String?  @map("notification_id") @db.Uuid
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@unique([authUserId, postKind, postId], map: "marketing_notice_once")
+  @@index([authUserId, createdAt(sort: Desc)], map: "marketing_notice_recent_idx")
+  @@map("marketing_notice")
 }
