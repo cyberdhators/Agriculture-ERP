@@ -95,7 +95,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
         about: row.about,
         products: row.products,
         services: row.services,
-        verified: account.verified,
+        verified_organisation: account.verified_organisation,
         member_since: (account.member_since ?? new Date()).toISOString().slice(0, 7),
         can_message: row.allow_messages,
         phone: row.show_phone && caller ? account.phone : null,

@@ -118,7 +118,7 @@ export async function loadOwnProfile(
 export interface ProfileAccount {
   farmer_id: string | null;
   buyer_id: string | null;
-  verified: boolean;
+  verified_organisation: boolean;
   member_since: Date | null;
   phone: string | null;
 }
@@ -144,13 +144,19 @@ export async function accountOfSignIn(db: Db, authUserId: string): Promise<Profi
             COALESCE((SELECT o.account_type::text <> 'individual'
                              AND o.verification_status::text = 'verified'
                         FROM b JOIN public.buyer_organization_active o ON o.id = b.organization_id),
-                     false) AS verified,
+                     false) AS verified_organisation,
             LEAST((SELECT created_at FROM f), (SELECT created_at FROM b)) AS member_since,
             COALESCE((SELECT phone FROM f), (SELECT phone FROM b)) AS phone`,
     authUserId,
   );
   return (
-    row ?? { farmer_id: null, buyer_id: null, verified: false, member_since: null, phone: null }
+    row ?? {
+      farmer_id: null,
+      buyer_id: null,
+      verified_organisation: false,
+      member_since: null,
+      phone: null,
+    }
   );
 }
 
@@ -299,7 +305,7 @@ export async function presentOwnProfile(
     show_phone: row ? row.show_phone : (defaults?.show_phone_default ?? false),
     allow_messages: row ? row.allow_messages : (defaults?.allow_messages_default ?? true),
     photo_url: await photoLink(row?.photo_path ?? null),
-    verified: account.verified,
+    verified_organisation: account.verified_organisation,
     member_since: account.member_since ? account.member_since.toISOString().slice(0, 7) : null,
     updated_at: row ? row.updated_at.toISOString() : null,
   };

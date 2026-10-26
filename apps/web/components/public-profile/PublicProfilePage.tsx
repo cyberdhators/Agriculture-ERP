@@ -171,7 +171,7 @@ export function PublicProfileBody({
           about: profile.about,
           products: profile.products,
           services: profile.services,
-          verified: profile.verified,
+          verified_organisation: profile.verified_organisation,
           member_since: profile.member_since,
         }}
       >

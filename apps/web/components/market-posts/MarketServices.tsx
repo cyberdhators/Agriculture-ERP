@@ -34,7 +34,7 @@ function availabilityLine(s: ServiceListing, lang: Language): string {
  * true; never a filter.
  */
 function ProviderBadge({ s, lang }: { s: ServiceListing; lang: Language }) {
-  return <VerifiedOrganisationBadge verified={s.poster_verified} lang={lang} />;
+  return <VerifiedOrganisationBadge verified={s.verified_organisation} lang={lang} />;
 }
 
 /**

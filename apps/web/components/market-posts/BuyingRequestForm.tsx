@@ -242,7 +242,7 @@ export function BuyingRequestForm({
       id: id ?? 'preview',
       poster_type: posterType,
       display_name: values.display_name,
-      poster_verified: false,
+      verified_organisation: false,
       category: values.category,
       product_name: values.product_name,
       quantity: Number(values.quantity),

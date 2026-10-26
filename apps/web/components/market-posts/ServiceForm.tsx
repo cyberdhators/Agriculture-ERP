@@ -240,7 +240,7 @@ export function ServiceForm({
       id: id ?? 'preview',
       poster_type: poster,
       trading_name: values.trading_name,
-      poster_verified: false,
+      verified_organisation: false,
       service_type: values.service_type,
       title: values.title,
       description: values.description,

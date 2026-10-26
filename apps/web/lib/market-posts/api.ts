@@ -81,7 +81,7 @@ export interface BuyingRequest {
   id: string;
   poster_type: 'farmer' | 'buyer';
   display_name: string;
-  poster_verified: boolean;
+  verified_organisation: boolean;
   category: string;
   product_name: string;
   quantity: number;
@@ -131,7 +131,7 @@ export interface ServiceListing {
   poster_type: 'farmer' | 'buyer';
   trading_name: string;
   /** 2026-10-31: the organisation's "Verified organisation" badge; never a person's. */
-  poster_verified: boolean;
+  verified_organisation: boolean;
   service_type: string;
   title: string;
   description: string;
