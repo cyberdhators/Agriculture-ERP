@@ -98,6 +98,7 @@ model State {
 
   counties County[]
   payams   Payam[]
+  savedSearches SavedSearch[]
   /// P1 (migration 6). Every scoped table carries state_id, so every one relates here.
   directoryEntries DirectoryEntry[]
   users    User[]
@@ -2497,8 +2498,40 @@ model MarketingNotice {
   postId         String   @map("post_id") @db.Uuid
   notificationId String?  @map("notification_id") @db.Uuid
   createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  /// 2026-11-03 (migration 20261103100000): where the alert came from
+  /// ('buying_request_match' | 'listing_match' | 'saved_search'; NULL before
+  /// then), the saved search that matched, and when its SMS was accepted.
+  source         String?
+  savedSearchId  String?   @map("saved_search_id") @db.Uuid
+  smsSentAt      DateTime? @map("sms_sent_at") @db.Timestamptz(6)
+
+  savedSearch SavedSearch? @relation(fields: [savedSearchId], references: [id], map: "marketing_notice_saved_search_fkey")
 
   @@unique([authUserId, postKind, postId], map: "marketing_notice_once")
   @@index([authUserId, createdAt(sort: Desc)], map: "marketing_notice_recent_idx")
+  @@index([createdAt], map: "marketing_notice_created_idx")
   @@map("marketing_notice")
+}
+
+/// 2026-11-03 (migration 20261103100000): one account's saved search -- "tell
+/// me when this is posted". At most 10 live per sign-in; a product word or a
+/// category, an optional state and (listings only) highest price. Paused
+/// searches alert nobody. Soft delete only. Read and written with raw SQL.
+model SavedSearch {
+  id          String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  authUserId  String           @map("auth_user_id") @db.Uuid
+  target      String
+  productName String?          @map("product_name")
+  category    ListingCategory?
+  stateId     String?          @map("state_id")
+  maxPriceSsp Decimal?         @map("max_price_ssp") @db.Decimal(12, 2)
+  pausedAt    DateTime?        @map("paused_at") @db.Timestamptz(6)
+  createdAt   DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime         @default(now()) @map("updated_at") @db.Timestamptz(6)
+  deletedAt   DateTime?        @map("deleted_at") @db.Timestamptz(6)
+
+  state   State?            @relation(fields: [stateId], references: [id], map: "saved_search_state_id_fkey")
+  notices MarketingNotice[]
+
+  @@map("saved_search")
 }

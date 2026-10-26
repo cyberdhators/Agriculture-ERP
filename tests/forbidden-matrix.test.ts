@@ -47,6 +47,7 @@ import * as adminMarketplace from '../apps/web/app/api/admin/marketplace/route';
 import * as adminMarketplaceRemoved from '../apps/web/app/api/admin/marketplace/removed/route';
 import * as adminMarketplaceRemove from '../apps/web/app/api/admin/marketplace/[kind]/[id]/remove/route';
 import * as adminOverview from '../apps/web/app/api/admin/overview/route';
+import * as matchAlertReport from '../apps/web/app/api/analytics/match-alerts/route';
 import * as adminAccounts from '../apps/web/app/api/admin/accounts/route';
 import * as adminAccountReveal from '../apps/web/app/api/admin/accounts/[kind]/[id]/reveal/route';
 import * as adminAccountDisable from '../apps/web/app/api/admin/accounts/disable/route';
@@ -812,6 +813,14 @@ const ROUTES = [
   {
     name: 'GET /api/admin/overview',
     mod: adminOverview,
+    method: 'GET' as const,
+    allow: ['admin'],
+  },
+  // 2026-11-03: the match-alert results report. Staff roles, then reports.view,
+  // as the administration overview.
+  {
+    name: 'GET /api/analytics/match-alerts',
+    mod: matchAlertReport,
     method: 'GET' as const,
     allow: ['admin'],
   },

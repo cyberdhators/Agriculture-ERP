@@ -17,7 +17,13 @@ export function MarketPage() {
     <>
       <MarketSections current="produce" lang={language} />
       <PageHead title={t('market.title', language)} lead={t('market.lead', language)} />
-      <Market mode="public" role="read_only" lang={language} detailHref={(id) => `/market/${id}`} />
+      <Market
+        mode="public"
+        role="read_only"
+        lang={language}
+        detailHref={(id) => `/market/${id}`}
+        savedHref="/farmer/account/saved-searches"
+      />
     </>
   );
 }

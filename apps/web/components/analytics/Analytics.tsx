@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useCallback, useEffect, useId, useMemo, useState } from 'react';
 
 import {
@@ -220,6 +221,10 @@ export function Analytics() {
         subtitle="Accounts, participation and marketplace activity in a window of Juba days. Each figure is counted on its own and says what it counts."
         actions={
           <>
+            {/* 2026-11-03: what the match alerts led to, on its own page. */}
+            <Link href="/analytics/match-alerts" className="small no-print">
+              Match-alert results
+            </Link>
             {canExport ? (
               <Button variant="primary" onClick={download} disabled={downloading || !summary}>
                 {downloading ? 'Preparing…' : 'Download Excel'}

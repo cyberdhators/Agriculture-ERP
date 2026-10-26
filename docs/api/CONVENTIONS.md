@@ -553,6 +553,7 @@ character.
 | `org_advice_already_assigned`           | Someone else in the organisation has already taken this request.                                                              |
 | `org_advice_not_assignee`               | This request is being handled by someone else in the organisation.                                                            |
 | `org_advice_accept_first`               | Accept this request before replying to it or closing it.                                                                      |
+| `saved_search_limit`                    | You can keep up to 10 saved searches. Delete one to save another.                                                             |
 
 **A route names a rule; it never writes a sentence.** `conflict()` and
 `unprocessable()` take a key from this registry, not a string. That is how the
@@ -763,6 +764,10 @@ change.
 | `advice_case.released`                        |
 | `sms_receipt.recorded`                        |
 | `sms_opt_out.recorded`                        |
+| `saved_search.created`                        |
+| `saved_search.paused`                         |
+| `saved_search.resumed`                        |
+| `saved_search.deleted`                        |
 
 `before` and `after` hold **changed fields only**, never whole rows, and never a
 password, token, authentication identifier, national id, phone, email, given
@@ -1541,6 +1546,13 @@ These are also exact.
 | Announcements: preferenceInvalid           | Choose on or off.                                                                               |
 | Announcements: deliveryFilterInvalid       | Choose a channel and a status from the lists.                                                   |
 | Suspension: days not 1 to 365              | Choose a number of days from 1 to 365, or leave it empty for no end date.                       |
+| Saved search: kind not on list             | Choose produce listings or buying requests.                                                     |
+| Saved search: product length               | A product is 2 to 80 characters.                                                                |
+| Saved search: highest price                | Enter the highest price as a number above 0.                                                    |
+| Saved search: price on requests            | A highest price applies to produce listings only.                                               |
+| Saved search: no product or category       | Enter a product or choose a category.                                                           |
+| Saved search: paused not true/false        | Say whether the search is paused, true or false.                                                |
+| Match-alert report: source not on list     | Choose an alert source from the list.                                                           |
 
 The key beside each reason is the field name, per section 4.1. An unrecognised
 field named `nickname` therefore produces `{ "nickname": "This field is not

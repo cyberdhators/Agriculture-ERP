@@ -20,6 +20,7 @@ import { ContactReveal, ReportPost } from './ContactAndReport';
 import { MarketSections } from './MarketSections';
 import { needLine, offerLine } from './MyBuyingRequests';
 import styles from './market-posts.module.css';
+import { SaveSearchPanel } from '@/components/account/SavedSearches';
 
 /**
  * LISTINGS LANE (2026-10-19). Buying requests on the public market: what
@@ -27,7 +28,16 @@ import styles from './market-posts.module.css';
  * category, state, who posted) are WHERE clauses on the server; the list is
  * what the route returns, newest change first.
  */
-export function MarketRequests({ lang, postHref }: { lang: Language; postHref?: string }) {
+export function MarketRequests({
+  lang,
+  postHref,
+  savedHref,
+}: {
+  lang: Language;
+  postHref?: string;
+  /** 2026-11-03: where the person's saved searches are managed (their shell's page). */
+  savedHref?: string;
+}) {
   const [q, setQ] = useState('');
   // 2026-10-24: the header search lands here with ?q= (read after mount).
   useEffect(() => {
@@ -124,6 +134,13 @@ export function MarketRequests({ lang, postHref }: { lang: Language; postHref?: 
           anyLabel={t('requests.anyPoster', lang)}
         />
       </div>
+      {/* 2026-11-03: "tell me when a request like this is posted". */}
+      <SaveSearchPanel
+        lang={lang}
+        target="buying_request"
+        seed={{ product_name: query, category, state_id: state }}
+        savedHref={savedHref}
+      />
       {failure ? (
         <Notice kind="error">
           <p className="small">{failure}</p>
