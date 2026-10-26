@@ -1,0 +1,98 @@
+/* Ratings after a completed deal (2026-11-03, lane-trust). Phone first:
+   one column, thumb-sized star buttons. */
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.section h2 {
+  margin: 0;
+  font-size: var(--text-h3, 1.1rem);
+}
+
+.lead {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--text-small);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--card);
+  min-width: 0;
+}
+
+.meta {
+  color: var(--muted);
+  font-size: var(--text-small);
+}
+
+.comment {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.stars {
+  color: var(--amber, #b7791f);
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+
+.average {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.averageValue {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.picker {
+  display: flex;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.star {
+  min-width: 44px;
+  min-height: 44px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--card);
+  color: var(--muted);
+  font-size: 1.4rem;
+  cursor: pointer;
+}
+
+.starOn {
+  color: var(--amber, #b7791f);
+  border-color: var(--amber, #b7791f);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}

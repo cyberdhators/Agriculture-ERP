@@ -157,6 +157,7 @@ describe('who sees which destination', () => {
       '/admin/organizations',
       '/admin/accounts',
       '/admin/marketplace',
+      '/admin/ratings',
       '/admin/staff-access',
       '/admin/access-logs',
     ]) {

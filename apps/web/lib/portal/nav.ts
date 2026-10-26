@@ -58,6 +58,8 @@ export type IconKey =
   | 'key'
   | 'shield'
   | 'clock'
+  // 2026-11-03 (lane-trust): ratings moderation.
+  | 'star'
   // 2026-11-03: match-alert results.
   | 'bell';
 
@@ -193,6 +195,17 @@ export const NAV_SECTIONS: readonly NavSection[] = [
           'GET /api/admin/marketplace, its inspect and removed routes accept the staff roles ' +
           '(POST /api/admin/marketplace/:kind/:id/remove admin and supervisor) and then require ' +
           'content.moderate.',
+        permissions: ['content.moderate'],
+      },
+      {
+        // 2026-11-03 (lane-trust): ratings after completed deals, reported or hidden.
+        href: '/admin/ratings',
+        label: 'Ratings',
+        icon: 'star',
+        roles: STAFF,
+        because:
+          'GET /api/admin/ratings accepts the staff roles (PATCH /api/admin/ratings/:id admin ' +
+          'and supervisor) and then requires content.moderate.',
         permissions: ['content.moderate'],
       },
       {

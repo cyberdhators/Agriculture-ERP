@@ -1890,6 +1890,11 @@ model Conversation {
   starterOrganizationId String? @map("starter_organization_id") @db.Uuid
   lastSenderSide        String? @map("last_sender_side")
 
+  /// 2026-11-03 (migration 20261103090000): "Archive for me", one mark per
+  /// side. A new message clears both.
+  ownerArchivedAt   DateTime? @map("owner_archived_at") @db.Timestamptz(6)
+  starterArchivedAt DateTime? @map("starter_archived_at") @db.Timestamptz(6)
+
   messages Message[]
 
   @@index([ownerAuthUserId, lastMessageAt(sort: Desc)], map: "conversation_owner_idx")
@@ -2511,6 +2516,39 @@ model MarketingNotice {
   @@index([authUserId, createdAt(sort: Desc)], map: "marketing_notice_recent_idx")
   @@index([createdAt], map: "marketing_notice_created_idx")
   @@map("marketing_notice")
+}
+
+/// 2026-11-03 (migration 20261103090000, lane-trust): one side's rating of the
+/// other after a completed deal -- a completed purchase order (sides buyer,
+/// seller) or a conversation about a completed post in which both sides wrote
+/// (sides owner, starter). Once per side (deal_rating_once_per_side). The rated
+/// party is a person or an organisation, never both. Read and written with raw
+/// SQL; the foreign keys, CHECKs and partial indexes are in the migration.
+model DealRating {
+  id                  String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  dealKind            String       @map("deal_kind")
+  dealId              String       @map("deal_id") @db.Uuid
+  raterSide           String       @map("rater_side")
+  raterAuthUserId     String       @map("rater_auth_user_id") @db.Uuid
+  raterOrganizationId String?      @map("rater_organization_id") @db.Uuid
+  rateeAuthUserId     String?      @map("ratee_auth_user_id") @db.Uuid
+  rateeOrganizationId String?      @map("ratee_organization_id") @db.Uuid
+  stars               Int          @db.SmallInt
+  comment             String?
+  completedAt         DateTime     @map("completed_at") @db.Timestamptz(6)
+  reportedAt          DateTime?    @map("reported_at") @db.Timestamptz(6)
+  reportReason        ReportReason? @map("report_reason")
+  reportNote          String?      @map("report_note")
+  hiddenAt            DateTime?    @map("hidden_at") @db.Timestamptz(6)
+  hiddenBy            String?      @map("hidden_by") @db.Uuid
+  hiddenReason        String?      @map("hidden_reason")
+  createdAt           DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime     @default(now()) @map("updated_at") @db.Timestamptz(6)
+  deletedAt           DateTime?    @map("deleted_at") @db.Timestamptz(6)
+  deletedBy           String?      @map("deleted_by") @db.Uuid
+
+  @@unique([dealKind, dealId, raterSide], map: "deal_rating_once_per_side")
+  @@map("deal_rating")
 }
 
 /// 2026-11-03 (migration 20261103100000): one account's saved search -- "tell

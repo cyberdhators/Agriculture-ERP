@@ -84,7 +84,17 @@ export interface ConversationSummary {
   last_message_preview: string | null;
   last_from_me: boolean;
   unread: boolean;
+  /**
+   * A conversation closed before 2026-11-03 ("Close conversation"). Kept as it
+   * was: nobody can write in it. No new one is closed: the button is Archive.
+   */
   blocked: boolean;
+  /**
+   * 2026-11-03: the reader's side archived it ("Archive for me"). It is out
+   * of the reader's main list only; the other side sees no change. A new
+   * message in it brings it back for both sides.
+   */
+  archived: boolean;
   /**
    * 2026-10-26: whether the other person has the app open, and when they were
    * last active -- present only when both sides allow it and the other side

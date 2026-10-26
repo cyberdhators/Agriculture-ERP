@@ -14,6 +14,7 @@ import {
   presentMessage,
   refusesMessages,
   startedToday,
+  viewerArchivedSql,
   viewerOf,
   viewerWhere,
   type ConversationRow,
@@ -30,7 +31,9 @@ import { prisma } from '../../../lib/db';
  *
  * GET is the caller's inbox: every conversation they own or started, newest
  * first, each with a one-line preview and whether it is unread. At most 100;
- * an inbox longer than that is a problem for another day.
+ * an inbox longer than that is a problem for another day. 2026-11-03: the
+ * conversations the caller's side archived are left out, and `?archived=1`
+ * lists only those (the Archived tab).
  *
  * POST starts a conversation about a post on the market, with its first
  * message -- or, when the caller already has one about that post, adds the
@@ -59,6 +62,11 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
     roles: [FARMER_ROLE, BUYER_ROLE],
     handler: async ({ auth, request }) => {
       const viewer = await viewerOf(prisma, request, auth, 'inbox.read');
+      // 2026-11-03: `?archived=1` is the Archived tab; without it, the chats
+      // the viewer's side has not archived.
+      const archived = ['1', 'true'].includes(
+        new URL(request.url).searchParams.get('archived') ?? '',
+      );
       const rows = await prisma.$queryRawUnsafe<ConversationRow[]>(
         `SELECT ${CONVERSATION_COLUMNS}, last.body AS last_body
            FROM public.conversation c
@@ -68,6 +76,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
               ORDER BY m.created_at DESC LIMIT 1
            ) last ON true
           WHERE ${viewerWhere('$1', '$2')}
+            AND ${archived ? '' : 'NOT '}${viewerArchivedSql('$1', '$2')}
           ORDER BY c.last_message_at DESC, c.id DESC
           LIMIT 100`,
         viewer.person,

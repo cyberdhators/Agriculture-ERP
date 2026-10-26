@@ -15,6 +15,7 @@ import {
   type ServiceRow,
 } from '../../../../../lib/api/market-posts';
 import { PERSON_NAME_SQL } from '../../../../../lib/api/organizations';
+import { ratingSummaryOf } from '../../../../../lib/api/ratings';
 import { defineRoutes, ok } from '../../../../../lib/api/route';
 import { prisma } from '../../../../../lib/db';
 
@@ -108,6 +109,8 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
         })),
         services: services.map(presentService),
         buying_requests: requests.map(presentBuyingRequest),
+        // 2026-11-03 (lane-trust): ratings after completed deals, visible ones only.
+        ratings: await ratingSummaryOf(prisma, { authUserId: null, organizationId: org.id }),
       });
     },
   },

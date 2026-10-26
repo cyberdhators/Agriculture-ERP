@@ -523,7 +523,7 @@ character.
 | `support_case_assignee_not_staff`       | That person cannot be made responsible for support cases.                                                                     |
 | `account_block_self`                    | You cannot block yourself.                                                                                                    |
 | `account_block_not_found`               | That block has already been lifted.                                                                                           |
-| `account_block_personal_only`           | Block people from your own messages. In an organisation's inbox, close the conversation instead.                              |
+| `account_block_personal_only`           | Block people from your own messages. In an organisation's inbox, archive the conversation instead.                            |
 | `conversation_account_blocked`          | Messages cannot be sent between you and this person. If you blocked them, you can unblock them in Settings.                   |
 | `email_code_expired`                    | That code has expired or was replaced. Ask for a new code.                                                                    |
 | `email_code_too_many_tries`             | Too many wrong tries. Ask for a new code.                                                                                     |
@@ -553,6 +553,15 @@ character.
 | `org_advice_already_assigned`           | Someone else in the organisation has already taken this request.                                                              |
 | `org_advice_not_assignee`               | This request is being handled by someone else in the organisation.                                                            |
 | `org_advice_accept_first`               | Accept this request before replying to it or closing it.                                                                      |
+| `rating_not_completed`                  | This deal is not completed yet. It can be rated once it is marked completed.                                                  |
+| `rating_already_given`                  | You have already rated this deal. Each side rates a deal once.                                                                |
+| `rating_window_closed`                  | A deal can be rated for 30 days after it is completed. This one is older.                                                     |
+| `rating_account_blocked`                | This deal cannot be rated, because one of you has blocked the other.                                                          |
+| `rating_not_yours`                      | Only the person or organisation that was rated can report a rating.                                                           |
+| `rating_already_reported`               | You have already reported this rating. It is with the programme team.                                                         |
+| `rating_already_hidden`                 | This rating is already hidden.                                                                                                |
+| `rating_not_hidden`                     | This rating is not hidden. There is nothing to restore.                                                                       |
+| `rating_no_report`                      | This rating has no report to dismiss.                                                                                         |
 | `saved_search_limit`                    | You can keep up to 10 saved searches. Delete one to save another.                                                             |
 
 **A route names a rule; it never writes a sentence.** `conflict()` and
@@ -764,6 +773,13 @@ change.
 | `advice_case.released`                        |
 | `sms_receipt.recorded`                        |
 | `sms_opt_out.recorded`                        |
+| `conversation.archived`                       |
+| `conversation.unarchived`                     |
+| `rating.created`                              |
+| `rating.reported`                             |
+| `rating.hidden`                               |
+| `rating.restored`                             |
+| `rating.report_dismissed`                     |
 | `saved_search.created`                        |
 | `saved_search.paused`                         |
 | `saved_search.resumed`                        |
@@ -1546,6 +1562,14 @@ These are also exact.
 | Announcements: preferenceInvalid           | Choose on or off.                                                                               |
 | Announcements: deliveryFilterInvalid       | Choose a channel and a status from the lists.                                                   |
 | Suspension: days not 1 to 365              | Choose a number of days from 1 to 365, or leave it empty for no end date.                       |
+| Rating: deal kind                          | Choose a completed order or a completed conversation to rate.                                   |
+| Rating: stars                              | Choose from 1 to 5 stars.                                                                       |
+| Rating: comment over 300 characters        | A comment has at most 300 characters.                                                           |
+| Rating report: reason                      | Choose why you are reporting this rating.                                                       |
+| Rating: note over 500 characters           | A note has at most 500 characters.                                                              |
+| Rating moderation: action                  | Choose hide, restore or dismiss the report.                                                     |
+| Rating moderation: no reason to hide       | Give the reason for hiding this rating.                                                         |
+| Rating moderation: queue filter            | Choose reported, hidden or all.                                                                 |
 | Saved search: kind not on list             | Choose produce listings or buying requests.                                                     |
 | Saved search: product length               | A product is 2 to 80 characters.                                                                |
 | Saved search: highest price                | Enter the highest price as a number above 0.                                                    |

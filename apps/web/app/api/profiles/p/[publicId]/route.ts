@@ -18,6 +18,7 @@ import {
   postsOf,
   type ProfileRow,
 } from '../../../../../lib/api/public-profile';
+import { ratingSummaryOf } from '../../../../../lib/api/ratings';
 import { requireRole, type Authenticated } from '../../../../../lib/api/require-role';
 import { defineRoutes, ok } from '../../../../../lib/api/route';
 import { prisma } from '../../../../../lib/db';
@@ -44,6 +45,9 @@ import { prisma } from '../../../../../lib/db';
  * Never to an anonymous visitor. The session is read through requireRole (the
  * only place a session is read), as POST /api/support does; no session is a
  * visitor. NEVER a sign-in id, a farmer or buyer id, or a storage path.
+ *
+ * 2026-11-03 (lane-trust): `ratings`, the average, count and latest comments
+ * of the ratings this person received after completed deals (visible ones only).
  *
  * Public, read-only, writes nothing.
  */
@@ -78,6 +82,11 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
 
       // Read before the whitelist, so the view never names the sign-in.
       const expertise = await expertiseOf(prisma, row.auth_user_id);
+      // 2026-11-03: the person's ratings (their own, not an organisation's they act for).
+      const ratings = await ratingSummaryOf(prisma, {
+        authUserId: row.auth_user_id,
+        organizationId: null,
+      });
       const view: PublicProfileView = {
         public_id: row.public_id,
         display_name: row.display_name,
@@ -104,6 +113,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
         buying_requests: posts.buying_requests,
         service_listings: posts.services,
         expertise,
+        ratings,
       };
       return ok(view);
     },

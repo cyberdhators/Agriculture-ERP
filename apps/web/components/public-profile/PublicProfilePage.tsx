@@ -9,6 +9,7 @@ import { ReportPost } from '@/components/market-posts/ContactAndReport';
 import { MessageButton } from '@/components/messages/MessageButton';
 import { postHref } from '@/components/messages/Messages';
 import { Expertise } from '@/components/profiles/Expertise';
+import { RatingsSummaryBlock } from '@/components/ratings/Ratings';
 import { Button, EmptyState, Skeleton, Tabs } from '@/components/ui';
 import { useFarmerSession } from '@/lib/farmer-session';
 import { t, type Language } from '@/lib/i18n';
@@ -188,6 +189,9 @@ export function PublicProfileBody({
         ) : null}
         {profile.can_message ? <MessageChooser posts={all} language={language} /> : null}
       </ProfileCard>
+
+      {/* 2026-11-03 (lane-trust): ratings after completed deals. */}
+      <RatingsSummaryBlock summary={profile.ratings} language={language} />
 
       <Tabs<Tab>
         label={profile.display_name}

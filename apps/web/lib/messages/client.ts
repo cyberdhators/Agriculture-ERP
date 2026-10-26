@@ -2,7 +2,15 @@
 
 import { useEffect, useState } from 'react';
 
-import type { BlockedAccount, ChatMessage, ConversationSummary, PostKind } from '@agri-erp/shared';
+import type {
+  BlockedAccount,
+  ChatMessage,
+  ConversationSummary,
+  MyRatings,
+  PostKind,
+  ReportRatingInput,
+  SubmitRatingInput,
+} from '@agri-erp/shared';
 
 import { enqueue, queuedOf, subscribeOutbox } from '@/lib/offline/outbox';
 import { offlineNow } from '@/lib/offline/net';
@@ -51,16 +59,36 @@ async function call<T>(path: string, init: RequestInit = {}): Promise<T> {
   return body.data as T;
 }
 
-export const listConversations = () => call<ConversationSummary[]>('/api/conversations');
+/** The inbox; with `archived`, the Archived tab (2026-11-03). */
+export const listConversations = (archived = false) =>
+  call<ConversationSummary[]>(`/api/conversations${archived ? '?archived=1' : ''}`);
 
 export const openConversation = (id: string, after?: string) =>
   call<{ conversation: ConversationSummary; messages: ChatMessage[] }>(
     `/api/conversations/${encodeURIComponent(id)}${after ? `?after=${encodeURIComponent(after)}` : ''}`,
   );
 
-export const blockConversation = (id: string) =>
-  call<ConversationSummary>(`/api/conversations/${encodeURIComponent(id)}/block`, {
+/**
+ * 2026-11-03: "Archive for me" -- out of the caller's own list only; a new
+ * message brings it back. `false` brings it back now ("Unarchive").
+ */
+export const archiveConversation = (id: string, archive: boolean) =>
+  call<ConversationSummary>(`/api/conversations/${encodeURIComponent(id)}/archive`, {
+    method: archive ? 'POST' : 'DELETE',
+  });
+
+/** 2026-11-03: the caller's deals to rate, the ratings they received, and their summary. */
+export const myRatings = () => call<MyRatings>('/api/ratings');
+
+/** Rate the other side of one completed deal. Needs signal; never queued. */
+export const submitRating = (input: SubmitRatingInput) =>
+  call<{ id: string }>('/api/ratings', { method: 'POST', body: JSON.stringify(input) });
+
+/** Report a rating the caller received. */
+export const reportRating = (id: string, input: ReportRatingInput) =>
+  call<{ id: string; reported: true }>(`/api/ratings/${encodeURIComponent(id)}/report`, {
     method: 'POST',
+    body: JSON.stringify(input),
   });
 
 /** 2026-10-28: block the other person in this conversation (person level). */

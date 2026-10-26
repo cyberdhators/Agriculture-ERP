@@ -115,6 +115,9 @@ const BUYER_OUTSIDE_ITS_TREE = [
   // read is filtered to the caller's own (lib/api/messaging.ts).
   'conversations',
   'conversations/[id]',
+  // 2026-11-03: "Archive for me" -- the caller's own side of a conversation
+  // they are part of (loadConversation); /block now archives too.
+  'conversations/[id]/archive',
   'conversations/[id]/block',
   'conversations/[id]/messages',
   'conversations/unread',
@@ -171,6 +174,13 @@ const BUYER_OUTSIDE_ITS_TREE = [
   // 2026-11-01 (lane-noticelinks): the app says it was closed or hidden, for
   // an exact "last seen" -- the session's own account only, a time only.
   'account/presence/bye',
+  // RATINGS (2026-11-03, lane-trust): the session's own side's deals to rate
+  // and ratings received (lib/api/ratings.ts, keyed by its sign-in or the
+  // organisation it acts for), rating a deal it is a party to, and reporting
+  // a rating it received. Raters are named only by a public name; no farmer
+  // record, phone or id is returned.
+  'ratings',
+  'ratings/[id]/report',
 ];
 
 describe('buyer routes are counted, not trusted', () => {

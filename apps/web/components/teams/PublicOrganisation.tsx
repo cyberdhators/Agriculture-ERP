@@ -3,8 +3,11 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
+import type { RatingSummary } from '@agri-erp/shared';
+
 import { ABOUT_LABELS } from '@/components/account/AccountActivities';
 import { LanguageButtons } from '@/components/farmer/LanguageSwitch';
+import { RatingsSummaryBlock } from '@/components/ratings/Ratings';
 import { Notice, Stamp } from '@/components/ui';
 import { DEFAULT_LANGUAGE, isRtl, t, type Language } from '@/lib/i18n';
 import { useDocumentLanguage, useLanguageChoice } from '@/lib/i18n/client';
@@ -27,6 +30,8 @@ interface Profile {
   team: { name: string; title: string | null; role: string }[];
   services: { id: string; title: string; location: string }[];
   buying_requests: { id: string; product_name: string; location: string }[];
+  /** 2026-11-03 (lane-trust): ratings after completed deals, visible ones only. */
+  ratings?: RatingSummary;
 }
 
 /**
@@ -107,6 +112,8 @@ export function PublicOrganisation({
           {profile.public_email ? <p dir="ltr">{profile.public_email}</p> : null}
         </section>
       ) : null}
+      <RatingsSummaryBlock summary={profile.ratings} language={language} />
+
       {profile.team.length > 0 ? (
         <section>
           <h2>{t('org.public.team', language)}</h2>

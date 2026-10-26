@@ -5953,6 +5953,90 @@ optional at phone sign-up.
 - INFERRED: `validateFarmer`'s `optionalPersonal` switch is removed; the only
   caller was the sign-up form.
 
+## Archive for me replaces Close conversation (2026-11-03)
+
+DOCUMENTED (the owner's approval of the lane-trust brief): "Close
+conversation" closed a chat for both people for good. It is replaced by
+"Archive" ("Archive for me"); "Block this person" stays the way to stop
+contact.
+
+- PER SIDE. `conversation.owner_archived_at` / `starter_archived_at`
+  (migration `20261103090000_archive_and_deal_ratings`). A side is a person or,
+  for a shared inbox, an organisation: archiving an organisation's chat
+  archives it for the organisation (needs `inbox.reply`, as replying does).
+- POST / DELETE `/api/conversations/:id/archive` archive and unarchive. The
+  inbox (`GET /api/conversations`) leaves out what the viewer's side archived;
+  `?archived=1` lists only those (the Archived tab). Archiving also marks the
+  side read, so an archived chat never holds the unread badge.
+- ARCHIVING NEVER STOPS A MESSAGE. Any new message, from either side, clears
+  BOTH sides' marks (`insertMessage`). INFERRED: the brief says the chat
+  "reappears when the other side sends"; clearing the sender's own mark too
+  means writing in an archived chat also brings it back, which is what a
+  person writing in it expects.
+- NOTHING CHANGES FOR THE OTHER SIDE: no notice, no live event. The live
+  message pop and the inbox's live refresh are unchanged, so a new message
+  pops and the chat is back in the list.
+- OLD CLOSED CONVERSATIONS: kept exactly as they are (no data change); they
+  still refuse new messages (`conversation_blocked`) and show "This
+  conversation is closed". DECIDED: the old `POST /api/conversations/:id/block`
+  route is KEPT for compatibility (an app still holding the old button) but
+  now ARCHIVES for the caller's side instead of closing, so nothing creates a
+  new closed conversation. Audit keys `conversation.archived`,
+  `conversation.unarchived`; `conversation.blocked` stays in the list for
+  history.
+
+## Ratings after a completed deal (2026-11-03)
+
+DOCUMENTED (the owner's approval of the lane-trust brief): after a completed
+deal each party may rate the other once, 1-5 stars and an optional comment of
+at most 300 characters, within 30 days of completion.
+
+- WHAT A DEAL IS. OBSERVED: purchase REQUESTS have no completed state (they
+  end `fulfilled`; their orders are the deals), purchase ORDERS end
+  `completed` (moved by staff), and listings, buying requests and services end
+  `completed` when their owner says so (listings also `sold`, legacy). A
+  completed post records NO counterparty. So two deal kinds:
+  - `purchase_order` completed: sides seller (the farmer the order names) and
+    buyer (a live buyer account of the ordering organisation). The buyer rated
+    is whoever made the purchase request, else the organisation's first buyer
+    account (INFERRED: a buyer organisation has no single public face). Orders
+    are personal: never rated from an organisation's shared inbox.
+  - `conversation` about a completed listing, buying request or service in
+    which BOTH sides wrote (INFERRED: the conversation is the only evidence two
+    accounts traded; a one-sided message is not a deal). Sides owner and
+    starter; an organisation's shared-inbox side rates and is rated as the
+    organisation (writing needs `inbox.reply`). Services are included because
+    they complete the same way (INFERRED).
+- COMPLETED WHEN. An order: its `completed` delivery-update time, else its
+  last change. A post: its `updated_at` once completed (a completed post is
+  final and not edited again). INFERRED; no completion timestamp exists.
+- THE RULE is pure (`ratingRefusal`, packages/shared/src/ratings.ts): a
+  stranger is 404; then not completed, already rated (unique
+  `deal_kind, deal_id, rater_side`), window closed, and -- added -- a live
+  person-level block between the two (INFERRED: rating someone who blocked you
+  would be a way to reach them).
+- PUBLIC: the average (one decimal), count and up to five latest comments on
+  the person's published public profile and on an organisation's public
+  profile. Hidden ratings, removed ones, and ratings by a suspended or
+  disabled account (`suspended_at`, as profiles) are not shown or counted.
+  The rater is named ONLY by a name they already show publicly: their
+  published organisation's name, or their published profile's display name;
+  otherwise "An AgriOne member". The rater's name is not stored.
+- REPORT AND MODERATE. The rated party (or, for an organisation, a member with
+  `inbox.reply`) reports a rating once, with a product-report reason and an
+  optional note (`POST /api/ratings/:id/report`). Staff with content.moderate
+  read the queue (`GET /api/admin/ratings`, page `/admin/ratings`, filter
+  reported / hidden / all) and hide with a reason, restore, or dismiss the
+  report (`PATCH /api/admin/ratings/:id`). Nothing is deleted.
+- NOTICE: "You received a new rating" (activity update, switchable), in-app
+  and live, with ref kind `rating` (new; the notification ref CHECK is
+  widened) which opens Messages → Ratings. Never the stars, comment or rater.
+- WHERE PEOPLE RATE: a Ratings tab in Messages (farmer and buyer): deals to
+  rate, ratings received with Report.
+- AUDIT: `rating.created`, `rating.reported`, `rating.hidden`,
+  `rating.restored`, `rating.report_dismissed`. Ids, stars and reasons; never
+  a comment or a report note.
+
 ## Saved searches (2026-11-03) — an extra source of match alerts, owner-approved
 
 Any signed-in account (phone or email; one list per sign-in, shared by both

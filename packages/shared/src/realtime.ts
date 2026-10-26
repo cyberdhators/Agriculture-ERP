@@ -40,8 +40,11 @@ export type RealtimeEventName = (typeof REALTIME_EVENTS)[number];
 export const LIVE_NOTICE_KINDS = ['essential', 'update', 'announcement', 'promotional'] as const;
 export type LiveNoticeKind = (typeof LIVE_NOTICE_KINDS)[number];
 
-/** What a notice points at, when it points at one post or conversation. */
-export const NOTICE_REF_KINDS = ['buying_request', 'listing', 'conversation'] as const;
+/**
+ * What a notice points at, when it points at one post or conversation --
+ * or (2026-11-03) a rating the account received, which opens the Ratings tab.
+ */
+export const NOTICE_REF_KINDS = ['buying_request', 'listing', 'conversation', 'rating'] as const;
 export type NoticeRefKind = (typeof NOTICE_REF_KINDS)[number];
 
 export interface NotificationCreatedPayload {

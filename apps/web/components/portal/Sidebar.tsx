@@ -37,6 +37,7 @@ import {
   IconSidebarCollapse,
   IconSignOut,
   IconStaff,
+  IconStar,
   IconVisits,
 } from '../ui/icons';
 import styles from './shell.module.css';
@@ -81,6 +82,7 @@ const ICONS: Record<IconKey, (p: { size?: number }) => ReactNode> = {
   key: IconAccessKey,
   shield: IconShield,
   clock: IconClock,
+  star: IconStar,
   // 2026-11-03: match-alert results.
   bell: IconBell,
 };
