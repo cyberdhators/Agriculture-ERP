@@ -1606,6 +1606,14 @@ export const en = {
   'email.reg.alreadySignIn': 'Already have an account? Sign in',
   'email.reg.sending': 'Sending…',
   'email.reg.sendApplication': 'Send application',
+  // 2026-11-02 (owner: "make the registration form compulsory").
+  'email.reg.where': 'Where you are',
+  'email.reg.state': 'State',
+  'email.reg.stateChoose': 'Choose your state…',
+  'email.reg.stateRequired': 'Choose your state.',
+  'email.reg.statesFailed':
+    'The list of states could not be loaded. Check the connection and try again.',
+  'email.reg.accountTypeRequired': 'Choose an individual or a business or organisation.',
   'org.public.missing': 'This organisation profile is not available.',
   'org.public.contact': 'Contact',
   'org.public.team': 'Team',

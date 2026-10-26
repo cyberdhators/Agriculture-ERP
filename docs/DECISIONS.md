@@ -5908,3 +5908,47 @@ The owner asked for truly real-time "Online" / "Active ... ago".
   I'm active" rule is unchanged and still decided on the server.
 - A TICKING LABEL. The label re-renders every 30 seconds while in minutes and
   every minute after (`presenceTickMs`), in English and Arabic.
+
+## Compulsory registration: sign-up details are required (2026-11-02)
+
+DOCUMENTED (the owner, 2026-10-26): "make the registration form compulsory,
+details should be fixed". This reverses the user-journeys choice ("User
+journeys (2026-10-28)", #213) that made sex, year of birth and location
+optional at phone sign-up.
+
+- PHONE SIGN-UP (`farmerSelfRegisterSchema`, POST /api/farmer/register,
+  FarmerRegister): given and family name, phone, password, language (the
+  consent language), the notice, AND sex, year of birth, state, county, payam
+  and village are all required, on a step of their own ("About you and your
+  place") that has no skip. Missing ones are refused with their own reasons
+  (`sexRequired`, `yearOfBirthRequired`, `placeRequired`, `villageRequired`,
+  pinned in CONVENTIONS §5.2.3). The location is a whole chain because the
+  form chooses state, then county, then payam, and the route reads the county
+  and state from the payam row (`placeInPayam`); the payam must exist. The
+  minimum age (Settings, Registration and recovery) therefore always applies
+  to a new sign-up. The form checks the body with the route's own schema
+  before sending it.
+- EMAIL SIGN-UP (`buyerRegistrationSchema`, POST /api/buyer/register,
+  BuyerRegister): name, email, password, language, the terms, the kind of
+  account and the STATE are required; a business also gives its organisation
+  name and type (as before). The kind no longer defaults to business and the
+  language no longer defaults to English: the applicant chooses. The state
+  list comes from a new public, read-only route, GET /api/locations/states
+  (place names and codes from `state_active`; the applicant has no session).
+  The email code verification is unchanged.
+- OBSERVED: the form offers two kinds of account, individual and business (an
+  institution signs up as a business and picks its organisation type). No new
+  kind was added; that would be a database enum change.
+- The spec's "Optional setup follows activation and can be skipped" (line 39)
+  and "can skip optional setup" (line 147) now apply ONLY to the profile
+  extras -- photo, about, activities, products and CORWADO's farm questions --
+  which stay optional and skippable. The owner's instruction governs the rest.
+- NO MIGRATION. The farmer columns stay nullable; existing rows are untouched.
+  Enforcement is in validation. The paths #213 added for an account without a
+  location keep working for the accounts made between 2026-10-28 and now: the
+  unplaced farmer number (`allocateUnplacedFarmerNumber`), the listing's
+  "Where is the produce?" when the account has no place, the overview notice,
+  PATCH /api/farmer/me/details and its screen (now titled "Your details", no
+  longer "optional"). New sign-ups always have a location.
+- INFERRED: `validateFarmer`'s `optionalPersonal` switch is removed; the only
+  caller was the sign-up form.

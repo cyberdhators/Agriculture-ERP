@@ -52,6 +52,15 @@ const prisma = makeTestPrisma();
 
 const PAYAM = 'CE-JUB-MUN';
 const STATE = 'CE';
+/**
+ * 2026-11-02 (owner, 2026-10-26: compulsory registration): email sign-up
+ * requires the kind, the language, the state and the ticked terms.
+ */
+const SIGN_UP_ACKNOWLEDGEMENT = {
+  text_version: 'terms:v1.0-en;privacy:v1.0-en',
+  language: 'en',
+  granted: true,
+} as const;
 const DUMMY_ID = '00000000-0000-4000-8000-000000000000';
 
 type P = TestPrincipal & { password: string };
@@ -176,6 +185,10 @@ describe('a buyer registers, and the account works', () => {
         organization_name: `${TEST_PREFIX}-org-applicant`,
         organization_type: 'processor',
         country_code: 'SS',
+        account_type: 'business',
+        state_id: STATE,
+        preferred_language: 'en',
+        acknowledgement: SIGN_UP_ACKNOWLEDGEMENT,
         verification_status: 'verified',
       },
     });
@@ -196,7 +209,10 @@ describe('a buyer registers, and the account works', () => {
         organization_name: `${TEST_PREFIX}-org-applicant`,
         organization_type: 'processor',
         country_code: 'SS',
+        account_type: 'business',
         state_id: STATE,
+        preferred_language: 'en',
+        acknowledgement: SIGN_UP_ACKNOWLEDGEMENT,
         interested_categories: ['crop'],
       },
     });
@@ -226,6 +242,10 @@ describe('a buyer registers, and the account works', () => {
         organization_name: `${TEST_PREFIX}-org-again`,
         organization_type: 'trader',
         country_code: 'SS',
+        account_type: 'business',
+        state_id: STATE,
+        preferred_language: 'en',
+        acknowledgement: SIGN_UP_ACKNOWLEDGEMENT,
       },
     });
     expect(again.status).toBe(409);
@@ -246,6 +266,9 @@ describe('a buyer registers, and the account works', () => {
         // Named with the prefix so the sweep finds the account it creates.
         organization_name: `${TEST_PREFIX}-org-individual`,
         country_code: 'SS',
+        state_id: STATE,
+        preferred_language: 'en',
+        acknowledgement: SIGN_UP_ACKNOWLEDGEMENT,
       },
     });
     expect(result.status).toBe(201);

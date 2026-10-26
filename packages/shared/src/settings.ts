@@ -748,9 +748,10 @@ export interface PublicSettings {
  * year is recorded, so the age is taken as this year minus that year -- the
  * most a person can be, so nobody old enough is refused.
  *
- * 2026-10-28: the year of birth became optional at sign-up (user journeys),
- * so a person who skips it is not refused: there is nothing to check, and
- * sign-up must stay open. The minimum applies to a year that is given.
+ * 2026-11-02: the year of birth is REQUIRED at sign-up again (owner,
+ * 2026-10-26, compulsory registration), so the minimum always applies there.
+ * A missing year (an account made between 2026-10-28 and then) still passes:
+ * there is nothing to check.
  */
 export function meetsMinimumAge(
   yearOfBirth: number | null | undefined,

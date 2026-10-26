@@ -2,6 +2,8 @@ import { z } from 'zod';
 
 import { BUYER_MESSAGES, LISTING_CATEGORIES, LISTING_GRADES, LISTING_UNITS } from './buyer';
 import {
+  FARMER_MESSAGES,
+  SEXES,
   consentInputSchema,
   familyNameSchema,
   givenNameSchema,
@@ -118,6 +120,11 @@ export const FARMER_ACCOUNT_MESSAGES = {
   passwordTooShort: 'Choose 6 or more characters you will remember.',
   withdrawReasonInvalid: 'Give the reason the farmer will see, 3 to 300 characters.',
   detailsEmpty: 'Give at least one detail to save.',
+  // 2026-11-02 (owner: "make the registration form compulsory"): sign-up's
+  // own reasons when one of these is left out.
+  sexRequired: 'Choose female or male.',
+  yearOfBirthRequired: 'Give your year of birth.',
+  placeRequired: 'Choose your state, county and payam.',
 } as const;
 
 const M = FARMER_ACCOUNT_MESSAGES;
@@ -277,24 +284,41 @@ export const PROFILE_FIELD_NAMES = Object.keys(
 // ---------------------------------------------------------------------------
 
 /**
- * 2026-10-28 (user journeys; the specification, line 38-39): account creation
- * asks for name, mobile number, password, language and the notice -- nothing
- * more. Sex, year of birth, location and village are OPTIONAL here: the
- * optional setup asks for them, and a listing asks where the produce is when
- * the account has no location. Given at sign-up, they are still captured.
- * Officer-registered farmers keep every field required (createFarmerSchema;
- * migration 20261028100000, farmer_officer_record_complete).
+ * COMPULSORY REGISTRATION (owner, 2026-10-26: "make the registration form
+ * compulsory, details should be fixed"). Sign-up asks for the name, phone,
+ * password, language and notice AND the sex, year of birth, state, county,
+ * payam and village -- all required, none skippable. This reverses the user
+ * journeys choice (2026-10-28, #213) that made them optional here. They can
+ * still be changed later (farmerDetailsSchema). The payam carries its county
+ * and state: the route reads both from the payam row, so the chain is always
+ * whole. CORWADO's other form questions (the profile extras) stay optional.
+ * The database columns stay nullable for the accounts made in between.
  */
+const missing = (input: unknown) => input === undefined || input === null;
+const signUpSexSchema = z.enum(SEXES, {
+  error: (issue) => (missing(issue.input) ? M.sexRequired : FARMER_MESSAGES.sexInvalid),
+});
+const signUpYearSchema = z
+  .number({
+    error: (issue) => (missing(issue.input) ? M.yearOfBirthRequired : FARMER_MESSAGES.yearNotWhole),
+  })
+  .pipe(yearOfBirthSchema);
+const signUpPayamSchema = z
+  .string({ error: () => M.placeRequired })
+  .trim()
+  .min(1, M.placeRequired)
+  .pipe(locationCodeSchema);
+
 export const farmerSelfRegisterSchema = z
   .strictObject({
     given_name: givenNameSchema,
     family_name: familyNameSchema,
-    sex: sexSchema.nullable().optional(),
-    year_of_birth: yearOfBirthSchema.nullable().optional(),
+    sex: signUpSexSchema,
+    year_of_birth: signUpYearSchema,
     phone: phoneSchema,
     password: farmerPasswordSchema,
     confirm_password: z.string({ error: () => BUYER_MESSAGES.passwordsDiffer }),
-    payam_id: locationCodeSchema.nullable().optional(),
+    payam_id: signUpPayamSchema,
     consent: consentInputSchema,
     /**
      * 2026-10-19: the phone-code verification that proves this phone, when
@@ -305,8 +329,8 @@ export const farmerSelfRegisterSchema = z
       .string()
       .regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
       .optional(),
+    // The village is required, as farmerProfileFields has it.
     ...farmerProfileFields,
-    village: optionalText(120),
   })
   .superRefine((value, ctx) => {
     if (value.password !== value.confirm_password) {
@@ -320,8 +344,9 @@ export const farmerSelfRegisterSchema = z
 export type FarmerSelfRegister = z.infer<typeof farmerSelfRegisterSchema>;
 
 /**
- * 2026-10-28: the details sign-up no longer asks for, given later in the
- * optional setup (PATCH /api/farmer/me/details). Each is optional; a field
+ * 2026-10-28: the sign-up details, changed later (PATCH /api/farmer/me/details).
+ * Since 2026-11-02 sign-up requires them all; this stays for changing them and
+ * for the accounts made between #213 and then. Each is optional; a field
  * left out is left as it is. A location, once given, is changed rather than
  * removed (a farmer record's location is whole or absent).
  */

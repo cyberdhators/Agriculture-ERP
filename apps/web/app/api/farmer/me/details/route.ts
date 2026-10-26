@@ -13,6 +13,10 @@ import { prisma } from '../../../../../lib/db';
  * follows activation and can be skipped. Collect further details at the point
  * they are needed").
  *
+ * 2026-11-02: sign-up REQUIRES these again (owner, 2026-10-26: "make the
+ * registration form compulsory, details should be fixed"). This route stays,
+ * to change them and for the accounts made between 2026-10-28 and then.
+ *
  * The session's own record only: sex, year of birth, location (payam, with
  * its county and state) and village. Each field is optional; one left out is
  * left as it is. A location given to an account with no officer places it

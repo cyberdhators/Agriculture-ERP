@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 
 import {
+  BUYER_MESSAGES,
   SIGN_IN_ANNOUNCE_HEADER,
   buyerRegistrationSchema,
   zodErrorToApiError,
@@ -11,14 +12,30 @@ import {
 } from '@agri-erp/shared';
 
 import { BUYER_HOME_PATH, LOGIN_PATH } from '@/lib/auth/paths';
-import { BuyerApiError, registerBuyer, sendEmailCode, verifyEmailCode } from '@/lib/buyer/api';
+import {
+  BuyerApiError,
+  listSignUpStates,
+  registerBuyer,
+  sendEmailCode,
+  verifyEmailCode,
+} from '@/lib/buyer/api';
 import { DEFAULT_LANGUAGE, isRtl, t, type Language, type TKey } from '@/lib/i18n';
 import { useDocumentLanguage, useLanguageChoice } from '@/lib/i18n/client';
 import { useNoticeText, type ConsentText } from '@/lib/settings/client';
 import { supabaseBrowser } from '@/lib/supabase/browser';
 
 import { Wordmark } from '../brand/Wordmark';
-import { Button, Card, Checkbox, Field, Input, Notice, PageHeader, PasswordInput } from '../ui';
+import {
+  Button,
+  Card,
+  Checkbox,
+  Field,
+  Input,
+  Notice,
+  PageHeader,
+  PasswordInput,
+  Select,
+} from '../ui';
 import {
   EMPTY_ORG,
   ProcurementFields,
@@ -80,9 +97,11 @@ const FALLBACK_PRIVACY: Record<AccountLanguage, ConsentText> = {
  * taken to the dashboard. Nothing on this page lets an applicant choose their
  * own standing.
  *
- * State and county are not asked here: the location list is read with a
- * session, and an applicant has none yet. They are on the profile, one click
- * from the dashboard.
+ * 2026-11-02 (owner, 2026-10-26: "make the registration form compulsory,
+ * details should be fixed"): the kind of account, the language, the terms and
+ * the STATE are required -- the state from GET /api/locations/states, which
+ * needs no session. The county and the rest stay on the profile. A business
+ * also gives its organisation name and type (as before).
  *
  * 2026-10-28 (user journeys, CORWADO's specification line 38): a language
  * choice; the terms of use and privacy notice with an UNTICKED box that must
@@ -105,8 +124,12 @@ export function BuyerRegister({
     confirm_password: '',
   });
   const [org, setOrg] = useState<OrgForm>(EMPTY_ORG);
-  const [accountType, setAccountType] = useState<'individual' | 'business'>('individual');
+  // 2026-11-02: no kind is chosen for the applicant; they choose one.
+  const [accountType, setAccountType] = useState<'individual' | 'business' | ''>('');
   const individual = accountType === 'individual';
+  const [stateId, setStateId] = useState('');
+  const [states, setStates] = useState<{ id: string; name: string }[] | null>(null);
+  const [statesFailed, setStatesFailed] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [failure, setFailure] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -124,15 +147,30 @@ export function BuyerRegister({
   const [codeError, setCodeError] = useState<string | null>(null);
   const [codeNote, setCodeNote] = useState<string | null>(null);
 
+  useEffect(() => {
+    listSignUpStates()
+      .then(setStates)
+      .catch(() => setStatesFailed(true));
+  }, []);
+
   const setP = (key: keyof typeof person) => (value: string) =>
     setPerson((p) => ({ ...p, [key]: value }));
+
+  /** The schema's reasons for these two, in the page's language. */
+  const said = (field: string): string | undefined => {
+    const reason = errors[field];
+    if (reason === BUYER_MESSAGES.stateRequired) return w('email.reg.stateRequired');
+    if (reason === BUYER_MESSAGES.accountTypeUnknown) return w('email.reg.accountTypeRequired');
+    return reason;
+  };
 
   /** The whole body, validated with the route's own schema. */
   const parse = () =>
     buyerRegistrationSchema.safeParse({
-      account_type: accountType,
+      ...(accountType ? { account_type: accountType } : {}),
       ...person,
-      ...toOrganizationBody(org, false, individual),
+      ...toOrganizationBody(org, false, individual || accountType === ''),
+      ...(stateId ? { state_id: stateId } : {}),
       preferred_language: language,
       ...(agreed
         ? {
@@ -349,7 +387,7 @@ export function BuyerRegister({
                   </label>
                 ))}
               </div>
-              {errors.account_type ? <p role="alert">{errors.account_type}</p> : null}
+              {errors.account_type ? <p role="alert">{said('account_type')}</p> : null}
             </fieldset>
 
             <fieldset className={styles.fieldset}>
@@ -433,13 +471,44 @@ export function BuyerRegister({
               </div>
             </fieldset>
 
-            <ProcurementFields
-              form={org}
-              onChange={setOrg}
-              errors={errors}
-              individual={individual}
-              language={language}
-            />
+            <fieldset className={styles.fieldset}>
+              <legend className={styles.legend}>{w('email.reg.where')}</legend>
+              <Field label={w('email.reg.state')} error={said('state_id')}>
+                {(ids) => (
+                  <Select
+                    {...ids}
+                    value={stateId}
+                    disabled={!states}
+                    onChange={(e) => {
+                      setStateId(e.target.value);
+                      setErrors((prev) => {
+                        const next = { ...prev };
+                        delete next.state_id;
+                        return next;
+                      });
+                    }}
+                  >
+                    <option value="">{w('email.reg.stateChoose')}</option>
+                    {(states ?? []).map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name}
+                      </option>
+                    ))}
+                  </Select>
+                )}
+              </Field>
+              {statesFailed ? <p role="alert">{w('email.reg.statesFailed')}</p> : null}
+            </fieldset>
+
+            {accountType ? (
+              <ProcurementFields
+                form={org}
+                onChange={setOrg}
+                errors={errors}
+                individual={individual}
+                language={language}
+              />
+            ) : null}
 
             <fieldset className={styles.fieldset}>
               <legend className={styles.legend}>{w('email.reg.terms')}</legend>
@@ -529,9 +598,9 @@ export function BuyerRegister({
               <Button type="submit" disabled={busy}>
                 {busy
                   ? w('email.reg.sending')
-                  : individual
-                    ? w('login.register')
-                    : w('email.reg.sendApplication')}
+                  : accountType === 'business'
+                    ? w('email.reg.sendApplication')
+                    : w('login.register')}
               </Button>
             </div>
           </form>

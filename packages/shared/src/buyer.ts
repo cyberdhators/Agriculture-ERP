@@ -347,6 +347,8 @@ export const BUYER_MESSAGES = {
   acknowledgementVersionInvalid:
     'The notice you agreed to could not be recorded. Reload the page and try again.',
   languageUnknown: 'Choose English or Arabic.',
+  // 2026-11-02 (owner: "make the registration form compulsory").
+  stateRequired: 'Choose your state.',
   emailCodeShape: 'Enter the 6-digit code from the email.',
   emailCodeIdInvalid: 'Ask for a new code.',
 } as const;
@@ -664,9 +666,10 @@ export function emailCodeMessage(
  */
 export const buyerRegistrationSchema = z
   .strictObject({
-    account_type: z
-      .enum(BUYER_ACCOUNT_TYPES, { error: () => BUYER_MESSAGES.accountTypeUnknown })
-      .default('business'),
+    // 2026-11-02 (owner, 2026-10-26: "make the registration form compulsory,
+    // details should be fixed"): the kind of account, the language and the
+    // state are REQUIRED -- no default stands in for an answer not given.
+    account_type: z.enum(BUYER_ACCOUNT_TYPES, { error: () => BUYER_MESSAGES.accountTypeUnknown }),
     given_name: personName(BUYER_MESSAGES.givenNameRequired),
     family_name: personName(BUYER_MESSAGES.familyNameRequired),
     email: buyerEmailSchema,
@@ -676,6 +679,11 @@ export const buyerRegistrationSchema = z
     ...organizationFields,
     organization_name: organizationFields.organization_name.optional(),
     organization_type: organizationFields.organization_type.optional(),
+    state_id: z
+      .string({ error: () => BUYER_MESSAGES.stateRequired })
+      .trim()
+      .min(1, BUYER_MESSAGES.stateRequired)
+      .pipe(locationCodeSchema),
     interested_categories: procurementFields.interested_categories.default([]),
     interested_products: procurementFields.interested_products.default([]),
     preferred_state_ids: procurementFields.preferred_state_ids.default([]),
@@ -686,7 +694,7 @@ export const buyerRegistrationSchema = z
     purchasing_months: procurementFields.purchasing_months.default([]),
     payment_preferences: procurementFields.payment_preferences.default([]),
     // USER JOURNEYS (2026-10-28).
-    preferred_language: accountLanguageSchema.default('en'),
+    preferred_language: accountLanguageSchema,
     acknowledgement: termsAcknowledgementSchema,
     /**
      * The email-code verification that proves this address, when the

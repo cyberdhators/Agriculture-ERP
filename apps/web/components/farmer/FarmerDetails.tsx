@@ -11,8 +11,8 @@ import styles from './farmer.module.css';
 
 const W = {
   en: {
-    title: 'Your details (optional)',
-    lead: 'Sign-up did not ask for these. Add them now or later; a listing asks for your place when it needs it.',
+    title: 'Your details',
+    lead: 'Your account was made when sign-up did not ask for these. Please add them now; a listing asks for your place when it needs it.',
     sex: 'Sex',
     female: 'Female',
     male: 'Male',
@@ -27,8 +27,8 @@ const W = {
     failed: 'Your details were not saved.',
   },
   ar: {
-    title: 'تفاصيلك (اختياري)',
-    lead: 'لم يطلبها التسجيل. أضفها الآن أو لاحقاً؛ يُطلب مكانك عند نشر عرض.',
+    title: 'تفاصيلك',
+    lead: 'أُنشئ حسابك حين لم يكن التسجيل يطلب هذه التفاصيل. يُرجى إضافتها الآن؛ يُطلب مكانك عند نشر عرض.',
     sex: 'الجنس',
     female: 'أنثى',
     male: 'ذكر',
@@ -45,9 +45,11 @@ const W = {
 } as const;
 
 /**
- * 2026-10-28 (user journeys): the details phone sign-up no longer asks for --
- * sex, year of birth, place and village -- given later in the optional setup
- * (PATCH /api/farmer/me/details). Shown only while something is missing; a
+ * 2026-10-28 (user journeys): the details phone sign-up did not ask for --
+ * sex, year of birth, place and village -- given later
+ * (PATCH /api/farmer/me/details). Since 2026-11-02 sign-up requires them all
+ * (owner: "make the registration form compulsory"), so only an account made
+ * between those dates sees this. Shown only while something is missing; a
  * field already given is not offered again here (the farmer record keeps it).
  */
 export function FarmerDetails() {

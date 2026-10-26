@@ -90,6 +90,9 @@ const EXPECTED_PUBLIC = [
   'listings/[id]',
   'listings/[id]/contact-requests',
   'listings/[id]/reports',
+  // 2026-11-02 (compulsory registration): the state names and codes, for the
+  // email sign-up form that now requires a state. Read-only, place names only.
+  'locations/states',
   // 2026-10-25 (settings, phase 1): the published consent, terms or privacy
   // text a person signing up must read, and the public settings (service
   // name, support contacts, help links, maintenance banner). Read-only, each

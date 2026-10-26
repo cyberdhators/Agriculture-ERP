@@ -1537,6 +1537,13 @@ export const ar: Partial<Record<TKey, string>> = {
   'email.reg.alreadySignIn': 'لديك حساب بالفعل؟ سجّل الدخول',
   'email.reg.sending': 'جارٍ الإرسال…',
   'email.reg.sendApplication': 'أرسل الطلب',
+  // 2026-11-02 (owner: "make the registration form compulsory").
+  'email.reg.where': 'مكانك',
+  'email.reg.state': 'الولاية',
+  'email.reg.stateChoose': 'اختر ولايتك…',
+  'email.reg.stateRequired': 'اختر ولايتك.',
+  'email.reg.statesFailed': 'تعذّر تحميل قائمة الولايات. تحقق من الاتصال وحاول مرة أخرى.',
+  'email.reg.accountTypeRequired': 'اختر فرداً أو شركة أو منظمة.',
   'org.public.missing': 'ملف هذه المنظمة غير متاح.',
   'org.public.contact': 'التواصل',
   'org.public.team': 'الفريق',

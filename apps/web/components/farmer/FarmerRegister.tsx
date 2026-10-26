@@ -11,6 +11,8 @@ import {
   PHONE_TYPES,
   PROFILE_CROPS,
   SERVICES_WANTED,
+  farmerSelfRegisterSchema,
+  zodErrorToApiError,
 } from '@agri-erp/shared';
 
 import {
@@ -55,23 +57,36 @@ function digits(value: string): string {
   return value.replace(/\D/g, '');
 }
 
-type Step = 0 | 1 | 2 | 3 | 4;
-const LAST_STEP: Step = 4;
-const FARM_STEP: Step = 3;
+type Step = 0 | 1 | 2 | 3 | 4 | 5;
+const LAST_STEP: Step = 5;
+const DETAILS_STEP: Step = 3;
+const FARM_STEP: Step = 4;
 /**
- * 2026-10-28 (user journeys; the specification, line 38): account creation
- * asks for name, language, mobile number, password and the notice. Sex, year
- * of birth and location moved to the optional "More about you" step -- skip
- * it and they are asked for later, when a listing needs a place.
+ * 2026-11-02 (owner, 2026-10-26: "make the registration form compulsory,
+ * details should be fixed"): sex, year of birth, state, county, payam and
+ * village are REQUIRED, on their own step that cannot be skipped. This
+ * reverses 2026-10-28 (user journeys), which had made them optional. Only the
+ * farm questions (step 5) stay optional, with a button to skip.
  */
 const STEP_KEYS: Array<(keyof FarmerFormValues)[]> = [
   ['given_name', 'family_name'],
   ['phone'],
   ['password'],
   ['sex', 'year_of_birth', 'state_id', 'county_id', 'payam_id'],
+  [],
   ['consent_language', 'consent_granted'],
 ];
-const VALIDATE = { requirePassword: true, optionalPersonal: true } as const;
+const VALIDATE = { requirePassword: true } as const;
+
+/** Which step asks for a field the sign-up schema refused. */
+function stepOfField(field: string): Step {
+  if (field === 'given_name' || field === 'family_name') return 0;
+  if (field === 'phone') return 1;
+  if (field === 'password' || field === 'confirm_password') return 2;
+  if (['sex', 'year_of_birth', 'payam_id', 'village'].includes(field)) return DETAILS_STEP;
+  if (field.startsWith('consent')) return LAST_STEP;
+  return FARM_STEP;
+}
 
 /** The optional "About your farm" answers, from CORWADO's registration form. */
 interface FarmAnswers {
@@ -115,12 +130,13 @@ const W: Record<'en' | 'ar', Record<string, string>> = {
   en: {
     village: 'Village or boma',
     villageHint: 'Where you live or farm.',
-    stepFarm: 'More about you (optional)',
-    farmLead:
-      'These help buyers and CORWADO know you and your farm. You can skip them and add them later.',
+    villageRequired: 'Give your village or boma.',
+    stepDetails: 'About you and your place',
+    stepFarm: 'About your farm (optional)',
+    farmLead: 'These help buyers and CORWADO know your farm. You can skip them and add them later.',
     languageLabel: 'Language',
     stepPhone: 'Your phone number',
-    placeLead: 'Where you live or farm. A listing asks for this if you skip it now.',
+    placeLead: 'Where you live or farm.',
     skip: 'Skip this step',
     crops: 'Crops you grow',
     land: 'Land you farm',
@@ -180,12 +196,14 @@ const W: Record<'en' | 'ar', Record<string, string>> = {
   ar: {
     village: 'القرية أو البوما',
     villageHint: 'المكان الذي تسكن أو تزرع فيه.',
-    stepFarm: 'المزيد عنك (اختياري)',
+    villageRequired: 'اكتب قريتك أو البوما.',
+    stepDetails: 'عنك وعن مكانك',
+    stepFarm: 'عن مزرعتك (اختياري)',
     farmLead:
-      'تساعد هذه المعلومات المشترين وكوروادو على معرفتك ومعرفة مزرعتك. يمكنك تخطيها وإضافتها لاحقاً.',
+      'تساعد هذه المعلومات المشترين وكوروادو على معرفة مزرعتك. يمكنك تخطيها وإضافتها لاحقاً.',
     languageLabel: 'اللغة',
     stepPhone: 'رقم هاتفك',
-    placeLead: 'المكان الذي تسكن أو تزرع فيه. يُطلب عند نشر عرض إذا تخطيته الآن.',
+    placeLead: 'المكان الذي تسكن أو تزرع فيه.',
     skip: 'تخطي هذه الخطوة',
     crops: 'المحاصيل التي تزرعها',
     land: 'الأرض التي تزرعها',
@@ -251,15 +269,19 @@ const W: Record<'en' | 'ar', Record<string, string>> = {
  *   1. name and language;
  *   2. phone;
  *   3. a password;
- *   4. more about you -- sex, year of birth, place and CORWADO's
- *      registration-form questions, all optional, with a button to skip
- *      (2026-10-28: sex, year and place moved here from steps 1 and 2);
- *   5. consent.
+ *   4. about you -- sex, year of birth, state, county, payam and village, all
+ *      REQUIRED (2026-11-02, the owner: "make the registration form
+ *      compulsory"; they were optional from 2026-10-28);
+ *   5. about the farm -- CORWADO's registration-form questions, all
+ *      optional, with a button to skip;
+ *   6. consent.
  *
  * The farmer is created on the server, signed in at once, and can list
  * produce straight away; verification by an officer is optional and shown to
  * buyers. The steps validate with the same law the officer intake uses, and
- * the server's own field reasons are shown if it refuses anyway.
+ * the body is checked with the route's own schema (farmerSelfRegisterSchema)
+ * before it is sent; the server's own field reasons are shown if it refuses
+ * anyway.
  */
 export function FarmerRegister() {
   const { language, setLanguage, register } = useFarmerSession();
@@ -344,7 +366,9 @@ export function FarmerRegister() {
     setErrors(stepErrors);
     const mismatch = current === 2 && !stepErrors.password && confirm !== values.password;
     setConfirmError(mismatch ? t('register.passwordMismatch', language) : undefined);
-    return Object.keys(stepErrors).length === 0 && !mismatch;
+    const villageMissing = current === DETAILS_STEP && village.trim() === '';
+    setVillageError(villageMissing ? w.villageRequired : undefined);
+    return Object.keys(stepErrors).length === 0 && !mismatch && !villageMissing;
   }
 
   function next() {
@@ -409,6 +433,11 @@ export function FarmerRegister() {
       if (failStep >= 0) setStep(failStep as Step);
       return;
     }
+    if (village.trim() === '') {
+      setVillageError(w.villageRequired);
+      setStep(DETAILS_STEP);
+      return;
+    }
     setBusy(true);
     setFailure(null);
     setServerErrors({});
@@ -456,17 +485,17 @@ export function FarmerRegister() {
     valid: Extract<ReturnType<typeof validateFarmer>, { ok: true }>['values'],
     verificationId: string | undefined,
   ) {
-    // Optional details go only when given (2026-10-28).
-    const created = await register({
+    // 2026-11-02: every sign-up detail is required and always sent.
+    const body = {
       given_name: valid.given_name,
       family_name: valid.family_name,
-      ...(valid.sex ? { sex: valid.sex } : {}),
-      ...(values.year_of_birth.trim() ? { year_of_birth: Number(valid.year_of_birth) } : {}),
+      sex: valid.sex,
+      year_of_birth: Number(valid.year_of_birth),
       phone: valid.phone,
       password: valid.password ?? '',
       confirm_password: valid.password ?? '',
-      ...(valid.payam_id ? { payam_id: valid.payam_id } : {}),
-      ...(village.trim() ? { village: village.trim() } : {}),
+      payam_id: valid.payam_id,
+      village: village.trim(),
       consent: {
         text_version: consent.text_version,
         language: consentLanguage,
@@ -474,7 +503,19 @@ export function FarmerRegister() {
       },
       ...farmBody(),
       ...(verificationId ? { verification_id: verificationId } : {}),
-    });
+    };
+    // The route's own schema, so the form cannot send what the route refuses.
+    const checked = farmerSelfRegisterSchema.safeParse(body);
+    if (!checked.success) {
+      const fields = zodErrorToApiError(checked.error).body.error.fields ?? {};
+      setServerErrors(fields);
+      if (fields.village) setVillageError(fields.village);
+      const first = Object.keys(fields)[0];
+      if (first) setStep(stepOfField(first));
+      setCodeFor(null);
+      return;
+    }
+    const created = await register(body);
     setDone({ number: created.farmer_number });
   }
 
@@ -507,6 +548,7 @@ export function FarmerRegister() {
     t('register.stepName', language),
     w.stepPhone,
     t('register.stepPassword', language),
+    w.stepDetails,
     w.stepFarm,
     t('register.stepConsent', language),
   ][step];
@@ -547,7 +589,7 @@ export function FarmerRegister() {
           {stepTitle}
         </p>
         <div className={styles.progressTrack} aria-hidden>
-          {[0, 1, 2, 3, 4].map((i) => (
+          {[0, 1, 2, 3, 4, 5].map((i) => (
             <span
               key={i}
               className={`${styles.progressSeg} ${i <= step ? styles.progressSegDone : ''}`}
@@ -689,10 +731,9 @@ export function FarmerRegister() {
         </div>
       ) : null}
 
-      {step === FARM_STEP ? (
+      {step === DETAILS_STEP ? (
         <div className={styles.stack}>
-          <p className="small muted">{w.farmLead}</p>
-          <Field label={t('register.sex', language)} optional error={errors.sex}>
+          <Field label={t('register.sex', language)} error={errors.sex ?? serverErrors.sex}>
             {(ids) => (
               <div
                 className={styles.choiceRow}
@@ -719,9 +760,8 @@ export function FarmerRegister() {
           </Field>
           <Field
             label={t('register.yob', language)}
-            optional
             hint={`${t('register.yobHint', language)} ${MAX_YEAR}`}
-            error={errors.year_of_birth}
+            error={errors.year_of_birth ?? serverErrors.year_of_birth}
           >
             {(ids) => (
               <Input
@@ -736,7 +776,7 @@ export function FarmerRegister() {
             )}
           </Field>
           <p className="small muted">{w.placeLead}</p>
-          <Field label={t('register.state', language)} optional error={errors.state_id}>
+          <Field label={t('register.state', language)} error={errors.state_id}>
             {(ids) => (
               <Select
                 {...ids}
@@ -752,7 +792,7 @@ export function FarmerRegister() {
               </Select>
             )}
           </Field>
-          <Field label={t('register.county', language)} optional error={errors.county_id}>
+          <Field label={t('register.county', language)} error={errors.county_id}>
             {(ids) => (
               <Select
                 {...ids}
@@ -769,7 +809,10 @@ export function FarmerRegister() {
               </Select>
             )}
           </Field>
-          <Field label={t('register.payam', language)} optional error={errors.payam_id}>
+          <Field
+            label={t('register.payam', language)}
+            error={errors.payam_id ?? serverErrors.payam_id}
+          >
             {(ids) => (
               <Select
                 {...ids}
@@ -788,7 +831,6 @@ export function FarmerRegister() {
           </Field>
           <Field
             label={w.village!}
-            optional
             hint={w.villageHint}
             error={villageError ?? serverErrors.village}
           >
@@ -804,6 +846,12 @@ export function FarmerRegister() {
               />
             )}
           </Field>
+        </div>
+      ) : null}
+
+      {step === FARM_STEP ? (
+        <div className={styles.stack}>
+          <p className="small muted">{w.farmLead}</p>
           <fieldset className={styles.stack} style={{ border: 0, padding: 0, margin: 0 }}>
             <legend className="small">{w.crops}</legend>
             <div className={styles.choiceRow} style={{ flexWrap: 'wrap' }}>
@@ -928,7 +976,7 @@ export function FarmerRegister() {
         </div>
       ) : null}
 
-      {step === 4 ? (
+      {step === LAST_STEP ? (
         <div className={styles.stack}>
           <div>
             <p className={styles.progressLabel}>{t('register.consentTitle', language)}</p>
