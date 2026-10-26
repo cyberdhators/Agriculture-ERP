@@ -3085,3 +3085,21 @@ or conversation".
   (it would read them online and bypass the reciprocal check); its 5 s poll
   carries the status. New route: add to the integrator's route lists if any
   are kept outside the tests (buyer-route-scan updated).
+
+### 2026-11-02 — Alieu-Claude (lane-regform) → integrator — compulsory registration
+
+Branch `feat/compulsory-registration`. DECISIONS: "Compulsory registration:
+sign-up details are required". Owner, 2026-10-26: "make the registration form
+compulsory, details should be fixed" (reverses #213's optional details).
+
+- Phone sign-up requires sex, year of birth, state/county/payam and village
+  (new step 4, no skip; farm questions stay optional on step 5). Email sign-up
+  requires the account kind, language and state (plus organisation name and
+  type for a business).
+- New PUBLIC route GET /api/locations/states (state names for the email form;
+  `EXPECTED_PUBLIC` updated). Add it to any route list kept outside the tests.
+- No migration, no new audit keys, no new env vars. New field reasons pinned
+  in CONVENTIONS §5.2.3.
+- tests/buyers.test.ts (DB, not run) still posts registrations without the
+  acknowledgement (since #213) and now also without state/kind/language; it
+  needs those fields before the DB suite is next run.

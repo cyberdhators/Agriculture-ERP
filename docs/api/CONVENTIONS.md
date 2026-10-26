@@ -948,6 +948,10 @@ These are also exact.
 | Farmer password: under six characters      | Choose 6 or more characters you will remember.                                                  |
 | Listing withdrawal: reason missing         | Give the reason the farmer will see, 3 to 300 characters.                                       |
 | Farmer details: nothing given              | Give at least one detail to save.                                                               |
+| Farmer sign-up: sex missing                | Choose female or male.                                                                          |
+| Farmer sign-up: year of birth missing      | Give your year of birth.                                                                        |
+| Farmer sign-up: location missing           | Choose your state, county and payam.                                                            |
+| Email sign-up: state missing               | Choose your state.                                                                              |
 | Cart: no products                          | Add at least one product to the cart.                                                           |
 | Cart: over twenty products                 | A cart can hold at most 20 products. Send these first.                                          |
 | Request: more than listed                  | This is more than the farmer has listed.                                                        |

@@ -318,6 +318,13 @@ export const verifyEmailCode = (verificationId: string, code: string) =>
     json('POST', { verification_id: verificationId, code }),
   );
 
+/**
+ * 2026-11-02: the states for the email sign-up form, which now requires one
+ * (GET /api/locations/states, public: the applicant has no session yet).
+ */
+export const listSignUpStates = async () =>
+  (await one<{ states: { id: string; name: string }[] }>('/api/locations/states')).states;
+
 export const registerBuyer = (body: BuyerRegistration) =>
   one<{
     id: string;

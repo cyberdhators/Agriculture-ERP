@@ -4,6 +4,7 @@ import {
   BUYER_MESSAGES,
   CART_MAX_ITEMS,
   FARMER_ACCOUNT_MESSAGES,
+  FARMER_MESSAGES,
   cartCheckoutSchema,
   farmerAuthIdentifier,
   farmerDetailsSchema,
@@ -93,31 +94,68 @@ describe('farmer self-registration', () => {
     ).toMatchObject({ confirm_password: BUYER_MESSAGES.passwordsDiffer });
   });
 
-  // 2026-10-28 (user journeys): the guard is replaced, not removed. Sign-up
-  // asks for name, number, password, language and the notice only; sex, year,
-  // place and village are optional and still checked when given.
-  it('accepts a sign-up without sex, year of birth, place or village', () => {
+  // 2026-11-02 (owner, 2026-10-26: "make the registration form compulsory,
+  // details should be fixed"). Replaced, not removed: the 2026-10-28 tests
+  // accepted a sign-up without sex, year of birth, place or village. Now each
+  // is refused when missing (or null), with its own reason.
+  it.each([
+    ['sex', FARMER_ACCOUNT_MESSAGES.sexRequired],
+    ['year_of_birth', FARMER_ACCOUNT_MESSAGES.yearOfBirthRequired],
+    ['payam_id', FARMER_ACCOUNT_MESSAGES.placeRequired],
+    ['village', FARMER_ACCOUNT_MESSAGES.villageRequired],
+    ['given_name', FARMER_MESSAGES.givenNameRequired],
+    ['family_name', FARMER_MESSAGES.familyNameRequired],
+  ])('refuses a sign-up without %s', (key, reason) => {
     const rest: Record<string, unknown> = { ...valid() };
-    for (const key of ['sex', 'year_of_birth', 'payam_id', 'village']) delete rest[key];
-    expect(farmerSelfRegisterSchema.safeParse(rest).success).toBe(true);
+    delete rest[key];
+    expect(fieldsOf(farmerSelfRegisterSchema.safeParse(rest))).toMatchObject({ [key]: reason });
+    expect(
+      fieldsOf(farmerSelfRegisterSchema.safeParse({ ...valid(), [key]: null }))[key],
+      `${key}: null`,
+    ).toBeDefined();
   });
 
-  it('still checks the optional details when they are given', () => {
-    expect(farmerSelfRegisterSchema.safeParse({ ...valid(), sex: 'x' }).success).toBe(false);
-    expect(farmerSelfRegisterSchema.safeParse({ ...valid(), year_of_birth: 1700 }).success).toBe(
-      false,
+  it('refuses a blank village or payam, not only a missing one', () => {
+    expect(fieldsOf(farmerSelfRegisterSchema.safeParse({ ...valid(), village: '  ' }))).toMatchObject(
+      { village: FARMER_ACCOUNT_MESSAGES.villageRequired },
     );
+    expect(fieldsOf(farmerSelfRegisterSchema.safeParse({ ...valid(), payam_id: '' }))).toMatchObject(
+      { payam_id: FARMER_ACCOUNT_MESSAGES.placeRequired },
+    );
+  });
+
+  it('still checks the shape of each detail', () => {
+    expect(fieldsOf(farmerSelfRegisterSchema.safeParse({ ...valid(), sex: 'x' }))).toMatchObject({
+      sex: FARMER_MESSAGES.sexInvalid,
+    });
+    expect(
+      fieldsOf(farmerSelfRegisterSchema.safeParse({ ...valid(), year_of_birth: 1700 })),
+    ).toMatchObject({ year_of_birth: FARMER_MESSAGES.yearTooFarBack });
+    expect(
+      fieldsOf(farmerSelfRegisterSchema.safeParse({ ...valid(), year_of_birth: '1990' })),
+    ).toMatchObject({ year_of_birth: FARMER_MESSAGES.yearNotWhole });
     expect(
       farmerSelfRegisterSchema.safeParse({ ...valid(), payam_id: 'not a code!' }).success,
     ).toBe(false);
   });
 
-  it('still requires the name, the number and the consent', () => {
-    for (const key of ['given_name', 'phone', 'consent', 'password']) {
+  it('still requires the number, the password, the language and the consent', () => {
+    for (const key of ['phone', 'consent', 'password']) {
       const rest: Record<string, unknown> = { ...valid() };
       delete rest[key];
       expect(farmerSelfRegisterSchema.safeParse(rest).success, key).toBe(false);
     }
+    const noLanguage = {
+      ...valid(),
+      consent: { text_version: 'v1.2-en', granted: true },
+    };
+    expect(farmerSelfRegisterSchema.safeParse(noLanguage).success).toBe(false);
+  });
+
+  it('keeps the farm questions optional', () => {
+    const parsed = farmerSelfRegisterSchema.safeParse(valid());
+    expect(parsed.success).toBe(true);
+    expect(parsed.data?.land_size).toBeUndefined();
   });
 
   it('takes the details later only when at least one is given', () => {

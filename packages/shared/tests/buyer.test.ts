@@ -43,6 +43,7 @@ const PAST = '2000-01-01';
 const PASSPHRASE = ['plain', 'test', 'words', 'only'].join('-');
 
 const validRegistration = () => ({
+  account_type: 'business',
   given_name: 'Ayen',
   family_name: 'Demo',
   email: 'procurement@example.invalid',
@@ -52,6 +53,8 @@ const validRegistration = () => ({
   organization_name: 'Demo Grain Traders',
   organization_type: 'trader',
   country_code: 'ss',
+  state_id: 'CE',
+  preferred_language: 'en',
   acknowledgement: { text_version: 'terms:v1.0-en;privacy:v1.0-en', language: 'en', granted: true },
 });
 
@@ -93,12 +96,13 @@ describe('buyer registration', () => {
   it('refuses a county without a state, and an inverted quantity range', () => {
     const result = buyerRegistrationSchema.safeParse({
       ...validRegistration(),
+      state_id: null,
       county_id: 'CE-JUB',
       min_quantity: 500,
       max_quantity: 100,
     });
     expect(fieldsOf(result)).toMatchObject({
-      county_id: BUYER_MESSAGES.countyNeedsState,
+      state_id: BUYER_MESSAGES.stateRequired,
       max_quantity: BUYER_MESSAGES.quantityRangeInverted,
     });
   });
@@ -134,6 +138,52 @@ describe('buyer registration', () => {
   });
 });
 
+describe('compulsory email sign-up (owner, 2026-10-26)', () => {
+  it.each([
+    ['given_name', BUYER_MESSAGES.givenNameRequired],
+    ['family_name', BUYER_MESSAGES.familyNameRequired],
+    ['account_type', BUYER_MESSAGES.accountTypeUnknown],
+    ['state_id', BUYER_MESSAGES.stateRequired],
+    ['preferred_language', BUYER_MESSAGES.languageUnknown],
+    ['acknowledgement', BUYER_MESSAGES.acknowledgementRequired],
+    ['organization_name', BUYER_MESSAGES.organizationNameRequired],
+    ['organization_type', BUYER_MESSAGES.organizationTypeUnknown],
+  ])('refuses a sign-up without %s', (key, reason) => {
+    const body: Record<string, unknown> = { ...validRegistration() };
+    delete body[key];
+    expect(fieldsOf(buyerRegistrationSchema.safeParse(body))).toMatchObject({ [key]: reason });
+  });
+
+  it('refuses a sign-up without an email or a password', () => {
+    for (const key of ['email', 'password']) {
+      const body: Record<string, unknown> = { ...validRegistration() };
+      delete body[key];
+      expect(fieldsOf(buyerRegistrationSchema.safeParse(body)), key).toHaveProperty(key);
+    }
+  });
+
+  it('refuses a blank state, and a state that is not a code', () => {
+    expect(
+      fieldsOf(buyerRegistrationSchema.safeParse({ ...validRegistration(), state_id: ' ' })),
+    ).toMatchObject({ state_id: BUYER_MESSAGES.stateRequired });
+    expect(
+      buyerRegistrationSchema.safeParse({ ...validRegistration(), state_id: 'not a code!' })
+        .success,
+    ).toBe(false);
+  });
+
+  it('an individual still gives the state, but no organisation', () => {
+    const body: Record<string, unknown> = { ...validRegistration(), account_type: 'individual' };
+    delete body.organization_name;
+    delete body.organization_type;
+    expect(buyerRegistrationSchema.safeParse(body).success).toBe(true);
+    delete body.state_id;
+    expect(fieldsOf(buyerRegistrationSchema.safeParse(body))).toMatchObject({
+      state_id: BUYER_MESSAGES.stateRequired,
+    });
+  });
+});
+
 describe('individual buyers need no review (owner, 2026-10-06)', () => {
   const individual = (): Record<string, unknown> => {
     const body: Record<string, unknown> = { ...validRegistration(), account_type: 'individual' };
@@ -154,9 +204,15 @@ describe('individual buyers need no review (owner, 2026-10-06)', () => {
     });
   });
 
-  it('an unspecified kind is a business, so review is the default, not the exception', () => {
-    const parsed = buyerRegistrationSchema.parse(validRegistration());
-    expect(parsed.account_type).toBe('business');
+  // 2026-11-02 (owner, 2026-10-26: "make the registration form compulsory,
+  // details should be fixed"). Replaced, not removed: an unspecified kind
+  // used to default to a business. Now the applicant must choose.
+  it('an unspecified kind is refused: the applicant chooses one', () => {
+    const body: Record<string, unknown> = { ...validRegistration() };
+    delete body.account_type;
+    expect(fieldsOf(buyerRegistrationSchema.safeParse(body))).toMatchObject({
+      account_type: BUYER_MESSAGES.accountTypeUnknown,
+    });
   });
 
   it('an individual and a business both start able to request (2026-10-21)', () => {
@@ -395,8 +451,14 @@ describe('email sign-up: notice, language and code (2026-10-28)', () => {
     expect(unticked.success).toBe(false);
   });
 
-  it('defaults the language to English and refuses an unknown one', () => {
+  // 2026-11-02: replaced, not removed -- the language no longer defaults.
+  it('requires the language and refuses an unknown one', () => {
     expect(buyerRegistrationSchema.parse(validRegistration()).preferred_language).toBe('en');
+    const body: Record<string, unknown> = { ...validRegistration() };
+    delete body.preferred_language;
+    expect(fieldsOf(buyerRegistrationSchema.safeParse(body))).toMatchObject({
+      preferred_language: BUYER_MESSAGES.languageUnknown,
+    });
     expect(
       fieldsOf(
         buyerRegistrationSchema.safeParse({ ...validRegistration(), preferred_language: 'fr' }),
