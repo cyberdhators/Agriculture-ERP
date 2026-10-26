@@ -175,7 +175,10 @@ export function MatchAlertResults() {
     setExportNote(undefined);
     try {
       await downloadMatchAlertWorkbook(applied);
-      setExportNote({ ok: true, text: 'The Excel file was downloaded, and the export was recorded.' });
+      setExportNote({
+        ok: true,
+        text: 'The Excel file was downloaded, and the export was recorded.',
+      });
     } catch (e) {
       setExportNote({
         ok: false,

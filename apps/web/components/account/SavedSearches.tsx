@@ -112,7 +112,8 @@ function SearchForm({
     });
     if (!parsed.success) {
       const next: Record<string, string> = {};
-      for (const issue of parsed.error.issues) next[String(issue.path[0] ?? 'product_name')] ??= issue.message;
+      for (const issue of parsed.error.issues)
+        next[String(issue.path[0] ?? 'product_name')] ??= issue.message;
       setErrors(next);
       return;
     }
@@ -172,7 +173,11 @@ function SearchForm({
             />
           )}
         </Field>
-        <Field label={t('saved.category', lang)} optional={t('saved.optional', lang)} error={errors.category}>
+        <Field
+          label={t('saved.category', lang)}
+          optional={t('saved.optional', lang)}
+          error={errors.category}
+        >
           {(ids) => (
             <Select {...ids} value={category} onChange={(e) => setCategory(e.target.value)}>
               <option value="">{t('saved.anyCategory', lang)}</option>
@@ -184,7 +189,11 @@ function SearchForm({
             </Select>
           )}
         </Field>
-        <Field label={t('saved.state', lang)} optional={t('saved.optional', lang)} error={errors.state_id}>
+        <Field
+          label={t('saved.state', lang)}
+          optional={t('saved.optional', lang)}
+          error={errors.state_id}
+        >
           {(ids) => (
             <Select {...ids} value={state} onChange={(e) => setState(e.target.value)}>
               <option value="">{t('saved.anyState', lang)}</option>
@@ -260,7 +269,9 @@ function describe(s: SavedSearch, lang: Language): string {
   return [
     t(s.target === 'listing' ? 'saved.listing' : 'saved.buyingRequest', lang),
     s.product_name,
-    isCategory(s.category ?? undefined) ? t(CATEGORY_KEY[s.category as ListingCategory], lang) : null,
+    isCategory(s.category ?? undefined)
+      ? t(CATEGORY_KEY[s.category as ListingCategory], lang)
+      : null,
     s.state_name ?? t('saved.anyState', lang),
     s.max_price_ssp !== null
       ? `${t('saved.upTo', lang)} ${s.max_price_ssp.toLocaleString('en')} SSP`

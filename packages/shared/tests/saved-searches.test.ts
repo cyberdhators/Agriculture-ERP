@@ -93,9 +93,9 @@ describe('the saved-search form schema', () => {
   });
 
   it('a category alone is enough', () => {
-    expect(savedSearchSchema.safeParse({ target: 'buying_request', category: 'fruit' }).success).toBe(
-      true,
-    );
+    expect(
+      savedSearchSchema.safeParse({ target: 'buying_request', category: 'fruit' }).success,
+    ).toBe(true);
   });
 
   it('refuses a highest price on a buying-request search', () => {
@@ -115,9 +115,9 @@ describe('the saved-search form schema', () => {
     expect(savedSearchSchema.safeParse({ target: 'listing', product_name: 'a' }).success).toBe(
       false,
     );
-    expect(savedSearchSchema.safeParse({ target: 'service', product_name: 'Sorghum' }).success).toBe(
-      false,
-    );
+    expect(
+      savedSearchSchema.safeParse({ target: 'service', product_name: 'Sorghum' }).success,
+    ).toBe(false);
     expect(
       savedSearchSchema.safeParse({ target: 'listing', product_name: 'Sorghum', max_price_ssp: 0 })
         .success,
@@ -139,10 +139,7 @@ describe('a saved search answers a post', () => {
   it('only for its own kind of post', () => {
     expect(savedSearchMatches(listing(), search({ target: 'buying_request' }))).toBe(false);
     expect(
-      savedSearchMatches(
-        listing({ kind: 'buying_request' }),
-        search({ target: 'buying_request' }),
-      ),
+      savedSearchMatches(listing({ kind: 'buying_request' }), search({ target: 'buying_request' })),
     ).toBe(true);
   });
 
@@ -154,9 +151,9 @@ describe('a saved search answers a post', () => {
   });
 
   it('a category-only search answers any product in it', () => {
-    expect(
-      savedSearchMatches(listing(), search({ product_name: null, category: 'crop' })),
-    ).toBe(true);
+    expect(savedSearchMatches(listing(), search({ product_name: null, category: 'crop' }))).toBe(
+      true,
+    );
   });
 
   it('at or under its highest price; a listing with no price does not answer one', () => {
@@ -174,9 +171,11 @@ describe('a saved search answers a post', () => {
 
 describe('who is told: activity matches first, then saved searches, each once', () => {
   it('a saver is told, recorded as a saved-search alert with the search that matched', () => {
-    const out = selectAlertRecipients(listing(), [], [
-      saver({ searches: [{ ...search(), id: 'S1' }] }),
-    ]);
+    const out = selectAlertRecipients(
+      listing(),
+      [],
+      [saver({ searches: [{ ...search(), id: 'S1' }] })],
+    );
     expect(out).toEqual([{ auth_user_id: SAVER, source: 'saved_search', saved_search_id: 'S1' }]);
   });
 

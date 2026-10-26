@@ -333,7 +333,7 @@ export const MATCH_ALERT_METRICS: readonly MatchAlertMetricDefinition[] = [
       'For the rate: alerts whose 30 days are over; the count includes newer alerts that ' +
       'already led to one.',
     source:
-      "audit_event (listing.status_changed to completed or sold, or a sale) and conversation; " +
+      'audit_event (listing.status_changed to completed or sold, or a sale) and conversation; ' +
       'purchase_order with delivery_update (delivered, completed)',
     window: `${IN_WINDOW} Completion from the alert to 30 days after it.`,
   },

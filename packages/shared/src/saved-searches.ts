@@ -158,7 +158,11 @@ export interface SavedSearchCandidate extends MatchFacts {
 }
 
 /** Where an alert came from (marketing_notice.source; the report's filter). */
-export const MATCH_ALERT_SOURCES = ['buying_request_match', 'listing_match', 'saved_search'] as const;
+export const MATCH_ALERT_SOURCES = [
+  'buying_request_match',
+  'listing_match',
+  'saved_search',
+] as const;
 export type MatchAlertSource = (typeof MATCH_ALERT_SOURCES)[number];
 
 /** The source an activity match of a post of this kind is recorded under. */

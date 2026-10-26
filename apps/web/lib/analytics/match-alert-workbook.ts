@@ -76,7 +76,11 @@ const RATES: readonly { key: keyof MatchAlertRates; label: string; of: string }[
     label: 'Led to a conversation (%)',
     of: 'of alerts whose 7 days are over',
   },
-  { key: 'deal_rate', label: 'Led to a completed deal (%)', of: 'of alerts whose 30 days are over' },
+  {
+    key: 'deal_rate',
+    label: 'Led to a completed deal (%)',
+    of: 'of alerts whose 30 days are over',
+  },
 ];
 
 export function matchAlertSheets(report: MatchAlertReport, ctx: WorkbookContext): Sheet[] {
@@ -97,11 +101,7 @@ export function matchAlertSheets(report: MatchAlertReport, ctx: WorkbookContext)
   const sourceHead = sourceIntro.length;
   const sourceRows: Cell[][] = [
     ...sourceIntro,
-    [
-      bold('Source'),
-      ...FIGURES.map((f) => bold(f.label)),
-      ...RATES.map((r) => bold(r.label)),
-    ],
+    [bold('Source'), ...FIGURES.map((f) => bold(f.label)), ...RATES.map((r) => bold(r.label))],
     ...report.by_source.map((line): Cell[] => [
       MATCH_ALERT_SOURCE_LABELS[line.source],
       ...FIGURES.map((f) => line[f.key]),
@@ -158,13 +158,7 @@ export function matchAlertSheets(report: MatchAlertReport, ctx: WorkbookContext)
 
   const definitions: Cell[][] = [
     ...header(report, ctx, 'Definitions'),
-    [
-      bold('Figure'),
-      bold('Definition'),
-      bold('Denominator'),
-      bold('Data source'),
-      bold('Window'),
-    ],
+    [bold('Figure'), bold('Definition'), bold('Denominator'), bold('Data source'), bold('Window')],
     ...MATCH_ALERT_METRICS.map((d): Cell[] => [
       d.label,
       d.definition,
@@ -175,7 +169,10 @@ export function matchAlertSheets(report: MatchAlertReport, ctx: WorkbookContext)
     [],
     [bold('Alert sources')],
     ['Buying-request match', 'A buying request went on the market; people selling it were told.'],
-    ['Listing match', 'A produce listing went on the market; people whose buying requests it answers were told.'],
+    [
+      'Listing match',
+      'A produce listing went on the market; people whose buying requests it answers were told.',
+    ],
     ['Saved search', 'A post went on the market that answers a saved search; its saver was told.'],
     [],
     [bold('Limitations')],

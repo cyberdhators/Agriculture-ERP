@@ -72,14 +72,43 @@ describe('periods', () => {
 
 describe('the funnel from day rows', () => {
   const rows = [
-    row({ day: '2026-10-02', source: 'listing_match', sent: 4, in_app: 4, read: 2, conversations: 1, conversation_due: 4, conversation_due_hit: 1, deals: 1, deal_due: 4, deal_due_hit: 1 }),
-    row({ day: '2026-10-02', source: 'saved_search', sent: 2, in_app: 2, sms: 1, read: 2, conversations: 2, conversation_due: 2, conversation_due_hit: 2 }),
+    row({
+      day: '2026-10-02',
+      source: 'listing_match',
+      sent: 4,
+      in_app: 4,
+      read: 2,
+      conversations: 1,
+      conversation_due: 4,
+      conversation_due_hit: 1,
+      deals: 1,
+      deal_due: 4,
+      deal_due_hit: 1,
+    }),
+    row({
+      day: '2026-10-02',
+      source: 'saved_search',
+      sent: 2,
+      in_app: 2,
+      sms: 1,
+      read: 2,
+      conversations: 2,
+      conversation_due: 2,
+      conversation_due_hit: 2,
+    }),
     row({ day: '2026-10-20', source: 'buying_request_match', sent: 3, in_app: 3, read: 0 }),
   ];
   const f = buildMatchAlertFunnel(rows, WINDOW);
 
   it('totals add every row', () => {
-    expect(f.totals).toMatchObject({ sent: 9, in_app: 9, sms: 1, read: 4, conversations: 3, deals: 1 });
+    expect(f.totals).toMatchObject({
+      sent: 9,
+      in_app: 9,
+      sms: 1,
+      read: 4,
+      conversations: 3,
+      deals: 1,
+    });
     expect(f.totals?.read_rate).toBe(44.4);
     expect(f.totals?.conversation_rate).toBe(50);
     expect(f.totals?.deal_rate).toBe(25);
@@ -122,7 +151,12 @@ describe('the funnel from day rows', () => {
 
   it('nothing sent: counts are 0 and every rate is null', () => {
     const g = buildMatchAlertFunnel([], WINDOW);
-    expect(g.totals).toMatchObject({ sent: 0, read_rate: null, conversation_rate: null, deal_rate: null });
+    expect(g.totals).toMatchObject({
+      sent: 0,
+      read_rate: null,
+      conversation_rate: null,
+      deal_rate: null,
+    });
   });
 });
 

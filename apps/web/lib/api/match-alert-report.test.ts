@@ -36,7 +36,9 @@ describe('the report statement', () => {
   it('a conversation counts within 7 days, a deal within 30, between the two people', () => {
     expect(sql).toMatch(/interval '7 days'/);
     expect(sql).toMatch(/interval '30 days'/);
-    expect(sql).toMatch(/owner_auth_user_id = a\.poster AND c\.starter_auth_user_id = a\.auth_user_id/);
+    expect(sql).toMatch(
+      /owner_auth_user_id = a\.poster AND c\.starter_auth_user_id = a\.auth_user_id/,
+    );
     expect(sql).toMatch(/du\.status::text IN \('delivered', 'completed'\)/);
     expect(sql).toMatch(/ae\.after ->> 'status' IN \('completed', 'sold'\)/);
   });
@@ -86,7 +88,10 @@ describe('the workbook', () => {
       { from: '2026-10-01', to: '2026-10-07', days: 7 },
     ),
   };
-  const sheets = matchAlertSheets(report, { stateLabel: 'All states in scope', scopeLabel: 'National' });
+  const sheets = matchAlertSheets(report, {
+    stateLabel: 'All states in scope',
+    scopeLabel: 'National',
+  });
 
   it('has a summary, sources, a trend with a chart, and the definitions', () => {
     expect(sheets.map((s) => s.name)).toEqual(['Summary', 'By source', 'Over time', 'Definitions']);
