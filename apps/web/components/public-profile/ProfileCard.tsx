@@ -81,7 +81,9 @@ export function ProfileCard({
         <Heading dir="auto">{profile.display_name}</Heading>
         {roles ? <p className={styles.roles}>{roles}</p> : null}
         <div className={styles.facts}>
-          {profile.verified_organisation ? <Stamp kind="verified">{t('pp.verified', language)}</Stamp> : null}
+          {profile.verified_organisation ? (
+            <Stamp kind="verified">{t('pp.verified', language)}</Stamp>
+          ) : null}
           {place ? <span dir="auto">{place}</span> : null}
           {month ? (
             <span>

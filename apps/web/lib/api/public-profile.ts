@@ -150,7 +150,13 @@ export async function accountOfSignIn(db: Db, authUserId: string): Promise<Profi
     authUserId,
   );
   return (
-    row ?? { farmer_id: null, buyer_id: null, verified_organisation: false, member_since: null, phone: null }
+    row ?? {
+      farmer_id: null,
+      buyer_id: null,
+      verified_organisation: false,
+      member_since: null,
+      phone: null,
+    }
   );
 }
 
