@@ -1,5 +1,6 @@
 import {
   counterpartVisible,
+  lastSeenOf,
   memberMay,
   presenceChannel,
   PRESENCE_PREFIX,
@@ -20,11 +21,15 @@ import { type ConversationRow, sideOf, type Viewer } from './messaging';
  * its switch is on; the channel-authorization route refuses otherwise).
  * Nobody subscribes to anyone else's -- so no client ever learns who else is
  * online. The server asks Bird which presence channels are occupied (one
- * request, cached ten seconds) and answers per conversation.
+ * request, cached three seconds since 2026-11-01) and answers per
+ * conversation; an open chat reads it again with every poll.
  *
  * LAST ACTIVE: account_activity.last_seen_at (lane-security), moved at most
  * every five minutes on API calls, read for the farmer and buyer records of
- * the other person's sign-in.
+ * the other person's sign-in. 2026-11-01: preferred over it, the EXACT time
+ * the app was last closed or hidden (presence_seen_at, the client's "bye",
+ * lib/api/presence-bye.ts), by shared `lastSeenOf`. Read through to_jsonb so a
+ * database without migration 20261101100100 reads it as absent.
  */
 
 type Db = { $queryRawUnsafe: AuditTx['$queryRawUnsafe'] };
@@ -49,12 +54,18 @@ export async function showsActivity(
   return out;
 }
 
-/** The newest last-activity of each sign-in, over its farmer and buyer records. */
-async function lastActive(db: Db, authUserIds: readonly string[]): Promise<Map<string, Date>> {
-  const out = new Map<string, Date>();
+/** The last-seen time of each sign-in, over its farmer and buyer records. */
+async function lastActive(
+  db: Db,
+  authUserIds: readonly string[],
+): Promise<Map<string, { at: Date; exact: boolean }>> {
+  const out = new Map<string, { at: Date; exact: boolean }>();
   if (authUserIds.length === 0) return out;
-  const rows = await db.$queryRawUnsafe<{ auth_user_id: string; at: Date | null }[]>(
-    `SELECT x.auth_user_id, max(a.last_seen_at) AS at
+  const rows = await db.$queryRawUnsafe<
+    { auth_user_id: string; at: Date | null; exact_at: Date | null }[]
+  >(
+    `SELECT x.auth_user_id, max(a.last_seen_at) AS at,
+            max((to_jsonb(a) ->> 'presence_seen_at')::timestamptz) AS exact_at
        FROM (SELECT f.auth_user_id, 'farmer'::text AS kind, f.id FROM public.farmer f
               WHERE f.auth_user_id = ANY ($1::uuid[]) AND f.deleted_at IS NULL
              UNION ALL
@@ -65,7 +76,10 @@ async function lastActive(db: Db, authUserIds: readonly string[]): Promise<Map<s
       GROUP BY x.auth_user_id`,
     [...authUserIds],
   );
-  for (const r of rows) if (r.at) out.set(r.auth_user_id, r.at);
+  for (const r of rows) {
+    const seen = lastSeenOf({ presenceSeenAt: r.exact_at, activitySeenAt: r.at });
+    if (seen) out.set(r.auth_user_id, seen);
+  }
   return out;
 }
 
@@ -119,9 +133,11 @@ export async function withPresence(
         counterpartShows: other.kind === 'person' ? shows.get(other.authUserId) !== false : false,
       });
       if (!visible || other.kind !== 'person') return { ...s, presence: null };
+      const last = seen.get(other.authUserId);
       const presence: CounterpartPresence = {
         online: online.has(presenceChannel(other.authUserId)),
-        last_active_at: seen.get(other.authUserId)?.toISOString() ?? null,
+        last_active_at: last?.at.toISOString() ?? null,
+        exact: last?.exact ?? false,
       };
       return { ...s, presence };
     });

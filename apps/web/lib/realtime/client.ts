@@ -97,9 +97,40 @@ async function start(): Promise<void> {
   }
 }
 
+/**
+ * 2026-11-01: tells the server the moment the app is closed or hidden, so
+ * "Active ... ago" is exact (POST /api/account/presence/bye; the server keeps
+ * at most one per account per 30 seconds). A beacon, which survives the page
+ * closing; a keep-alive request where beacons are missing. Best effort.
+ */
+const BYE_URL = '/api/account/presence/bye';
+
+function sayBye(): void {
+  try {
+    const body = new Blob(['{}'], { type: 'application/json' });
+    if (navigator.sendBeacon?.(BYE_URL, body)) return;
+    void fetch(BYE_URL, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: '{}',
+      keepalive: true,
+    }).catch(() => undefined);
+  } catch {
+    // Nothing to do: the five-minute activity stamp still stands.
+  }
+}
+
+function watchBye(): void {
+  window.addEventListener('pagehide', sayBye);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') sayBye();
+  });
+}
+
 /** Opens the tab's live connection once. Safe to call from every shell. */
 export function startLive(): void {
   if (typeof window === 'undefined' || starting) return;
+  watchBye();
   starting = start().catch(() => {
     // No live updates this time; polling carries on. A later page load retries.
   });

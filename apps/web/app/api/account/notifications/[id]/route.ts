@@ -2,6 +2,12 @@ import { BUYER_ROLE, FARMER_ROLE } from '@agri-erp/shared';
 
 import { UUID_PATTERN } from '../../../../../lib/api/buyer-presenters';
 import { notFound } from '../../../../../lib/api/errors';
+import {
+  noticeRefColumns,
+  noticeRefStored,
+  presentNoticeRef,
+  type NoticeRefRow,
+} from '../../../../../lib/api/notice-ref';
 import { defineRoutes, ok } from '../../../../../lib/api/route';
 import { prisma } from '../../../../../lib/db';
 
@@ -16,7 +22,7 @@ import { prisma } from '../../../../../lib/db';
  * account's notice, a removed one, a malformed id -- is 404, so a notice's
  * existence is never told. Reading here does not mark it read.
  */
-interface Row {
+interface Row extends NoticeRefRow {
   id: string;
   title: string;
   body: string;
@@ -30,8 +36,9 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
     handler: async ({ auth, params }) => {
       const id = params.id ?? '';
       if (!UUID_PATTERN.test(id)) throw notFound();
+      const refs = noticeRefColumns(await noticeRefStored(prisma), 'n');
       const [row] = await prisma.$queryRawUnsafe<Row[]>(
-        `SELECT n.id, n.title, n.body, n.read_at, n.created_at
+        `SELECT n.id, n.title, n.body, n.read_at, n.created_at, ${refs}
            FROM public.notification n
           WHERE n.id = $1::uuid AND n.deleted_at IS NULL
             AND (n.farmer_id IN (SELECT f.id FROM public.farmer f
@@ -49,6 +56,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
           body: row.body,
           read_at: row.read_at?.toISOString() ?? null,
           created_at: row.created_at.toISOString(),
+          ...presentNoticeRef(row),
         },
         { 'cache-control': 'no-store' },
       );

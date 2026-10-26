@@ -176,13 +176,18 @@ export async function signChannel(input: {
 }
 
 /**
+ * How long the occupied presence channels are cached. 2026-11-01: three
+ * seconds (was ten), so an open chat's five-second poll flips "Online" and
+ * "Active just now" within seconds of the change.
+ */
+export const ONLINE_CACHE_MS = 3_000;
+let online: { at: number; names: Set<string> } | null = null;
+
+/**
  * The presence channels that are occupied right now: which accounts have the
  * app open. One request, cached for ONLINE_CACHE_MS per server instance, and
  * an empty set on any failure (then everyone simply reads as "last active").
  */
-export const ONLINE_CACHE_MS = 10_000;
-let online: { at: number; names: Set<string> } | null = null;
-
 export async function occupiedPresenceChannels(prefix: string): Promise<Set<string>> {
   const config = realtimeConfig();
   if (!config) return new Set();

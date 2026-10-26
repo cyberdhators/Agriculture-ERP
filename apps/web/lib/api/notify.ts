@@ -3,6 +3,7 @@ import { accountChannel, type LiveNoticeKind, type NoticeRefKind } from '@agri-e
 import { ACCOUNT_NOTICES, MATCH_NOTICES, type AccountNotice } from '../farmer-notices';
 import { emitRealtime } from '../realtime/outbox';
 import { writeAudit, type AuditEntry, type AuditTx } from './audit';
+import { noticeRefStored } from './notice-ref';
 
 /**
  * ONE IN-APP NOTICE TO ONE ACCOUNT (2026-10-26, CORWADO's acceptance test of
@@ -161,14 +162,33 @@ export async function notifyAccountWithId(
     return null;
   }
 
-  const [row] = await tx.$queryRawUnsafe<{ id: string }[]>(
-    `INSERT INTO public.notification (farmer_id, buyer_organization_id, channel, title, body)
-     VALUES ($1::uuid, $2::uuid, 'in_app', $3, $4) RETURNING id`,
-    farmerId,
-    organizationId,
-    title,
-    body,
-  );
+  // 2026-11-01: the row keeps what it points at, so the notifications list
+  // opens the exact post or conversation as the live pop does
+  // (lib/api/notice-ref.ts). Ids only; none before the migration is applied.
+  const keepRef = ref && (await noticeRefStored(tx)) ? ref : null;
+  let row: { id: string } | undefined;
+  if (keepRef) {
+    [row] = await tx.$queryRawUnsafe<{ id: string }[]>(
+      `INSERT INTO public.notification
+         (farmer_id, buyer_organization_id, channel, title, body, ref_kind, ref_id)
+       VALUES ($1::uuid, $2::uuid, 'in_app', $3, $4, $5, $6::uuid) RETURNING id`,
+      farmerId,
+      organizationId,
+      title,
+      body,
+      keepRef.kind,
+      keepRef.id,
+    );
+  } else {
+    [row] = await tx.$queryRawUnsafe<{ id: string }[]>(
+      `INSERT INTO public.notification (farmer_id, buyer_organization_id, channel, title, body)
+       VALUES ($1::uuid, $2::uuid, 'in_app', $3, $4) RETURNING id`,
+      farmerId,
+      organizationId,
+      title,
+      body,
+    );
+  }
   await writeAudit(tx, {
     entityType: 'notification',
     entityId: row!.id,

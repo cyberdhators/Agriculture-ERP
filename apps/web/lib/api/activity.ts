@@ -1,4 +1,4 @@
-import { type AccessPrincipalKind, shouldTouchActivity } from '@agri-erp/shared';
+import { type AccessPrincipalKind, shouldRecordBye, shouldTouchActivity } from '@agri-erp/shared';
 
 import { prisma } from '../db';
 import { type Authenticated } from './require-role';
@@ -61,5 +61,42 @@ export async function touchActivity(auth: Authenticated, nowMs = Date.now()): Pr
     // Best effort by design.
   } finally {
     clearTimeout(timer);
+  }
+}
+
+/**
+ * EXACT LAST SEEN (2026-11-01). docs/DECISIONS.md, "Online status: exact last
+ * seen, live in an open chat". The app calls POST /api/account/presence/bye
+ * when it is closed or hidden; this records that moment in
+ * account_activity.presence_seen_at, which "Active ... ago" prefers over the
+ * five-minute stamp (shared presence.ts lastSeenOf).
+ *
+ * THROTTLED TWICE, as touchActivity: in memory per instance, and in the
+ * statement, to one write per account per PRESENCE_BYE_THROTTLE_MS (30 s).
+ * A time only. Not audited, exactly as the activity stamp is not: it is a
+ * reading of when the app was last open, not a change anybody made. Never
+ * throws; true when a row moved.
+ */
+const lastBye = new Map<string, number>();
+
+export async function recordPresenceBye(auth: Authenticated, nowMs = Date.now()): Promise<boolean> {
+  const kind: AccessPrincipalKind = auth.principal.kind;
+  const key = `${kind}:${auth.principal.id}`;
+  if (!shouldRecordBye(lastBye.get(key), nowMs)) return false;
+  if (lastBye.size >= MAX_TRACKED) lastBye.clear();
+  lastBye.set(key, nowMs);
+  try {
+    const moved = await prisma.$executeRawUnsafe(
+      `UPDATE public.account_activity
+          SET presence_seen_at = now()
+        WHERE principal_kind = $1 AND principal_id = $2::uuid
+          AND (presence_seen_at IS NULL OR presence_seen_at < now() - interval '30 seconds')`,
+      kind,
+      auth.principal.id,
+    );
+    return moved > 0;
+  } catch {
+    // Before migration 20261101100100, or the database is busy: nothing recorded.
+    return false;
   }
 }

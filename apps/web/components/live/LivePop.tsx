@@ -12,6 +12,7 @@ import {
   dismissPop,
   livePops,
   nextExpiry,
+  planNoticePop,
   popIconFor,
   pushPop,
   type Pop,
@@ -26,10 +27,12 @@ import styles from './live.module.css';
  * line, the time. Tapping opens it; it leaves by itself after six seconds,
  * or with a swipe or the close button; at most three stack.
  *
- * The TEXT comes from the stored notice, read by id through the session
- * (GET /api/account/notifications/:id), and is shown in the person's
- * language the way the notifications page shows it. The live event itself
- * carries ids only. A message pop says only "New message".
+ * The TEXT of a fixed notice is drawn at once from its name on the event
+ * (lib/farmer-notices.ts ACCOUNT_NOTICES), in the person's language, as the
+ * notifications page shows it (2026-11-01). Any other notice is read by id
+ * through the session (GET /api/account/notifications/:id). The live event
+ * itself carries ids and the notice's name only. A message pop says only
+ * "New message"; nothing pops for the conversation already open.
  *
  * A short tone (Web Audio, no file) and a vibration on phones, unless muted
  * with the bell on the card (remembered on this device). Respects
@@ -202,9 +205,11 @@ function LivePopInner({ side, language }: LivePopProps) {
   useLiveEvent((e: LiveEvent) => {
     if (e.event === 'notification.created') {
       const d = e.data;
-      void readNotice(d.notification_id).then((notice) => {
-        if (!notice) return;
-        const key = noticeKey(notice.title);
+      // 2026-11-01: not for the conversation already open; at once when the
+      // text is fixed; read by id only for a notice without fixed text.
+      const plan = planNoticePop(d, where.current.openConversation);
+      if (plan.action === 'skip') return;
+      const card = (title: string, body: string, storedTitle: string) =>
         show({
           id: d.notification_id,
           key:
@@ -212,11 +217,27 @@ function LivePopInner({ side, language }: LivePopProps) {
               ? `conv:${d.ref_id}`
               : `n:${d.notification_id}`,
           icon: popIconFor(d.kind, d.notice),
-          title: key ? t(`${key}.title` as TKey, language) : notice.title,
-          body: key ? t(`${key}.body` as TKey, language) : notice.body,
-          href: popHref({ side, title: notice.title, refKind: d.ref_kind, refId: d.ref_id }),
+          title,
+          body,
+          href: popHref({ side, title: storedTitle, refKind: d.ref_kind, refId: d.ref_id }),
           at: Date.now(),
         });
+      if (plan.action === 'fixed') {
+        card(
+          t(`${plan.key}.title` as TKey, language),
+          t(`${plan.key}.body` as TKey, language),
+          plan.title,
+        );
+        return;
+      }
+      void readNotice(d.notification_id).then((notice) => {
+        if (!notice) return;
+        const key = noticeKey(notice.title);
+        card(
+          key ? t(`${key}.title` as TKey, language) : notice.title,
+          key ? t(`${key}.body` as TKey, language) : notice.body,
+          notice.title,
+        );
       });
       return;
     }

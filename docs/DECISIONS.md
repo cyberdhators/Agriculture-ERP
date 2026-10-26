@@ -5836,3 +5836,75 @@ used below (any product and state work: matching is by data).
 6. Reply from B: it appears on A's open conversation without a refresh.
    In Arabic (language switch on both phones) the cards and "متصل الآن" read in
    Arabic.
+
+## A stored notice opens the exact post or conversation (2026-11-01)
+
+OBSERVED (live test): a match alert tapped in the notifications list opened the
+general market page (`/market/requests` or `/market`), while the same notice's
+live pop opened the buying request or listing itself. The live event carries
+`ref_kind`/`ref_id`; the stored row did not.
+
+Decision: `public.notification` gains nullable `ref_kind` (CHECK against
+NOTICE_REF_KINDS: buying_request, listing, conversation) and `ref_id`, both or
+neither (migration `20261101100000_notification_ref`, additive; no view selects
+from the table). `notifyAccountWithId` stores the ref it is given — match alerts
+(the post) and first-message notices (the conversation), the only notices whose
+target is one of those kinds. Every notifications list and detail API answers
+`ref_kind`/`ref_id`; the farmer and buyer lists open a notice through `popHref`,
+exactly as the pop. Older rows (no ref) open where they always did. The buyer
+list, which had no links, now shows "Open →" when a notice has a place other
+than the list itself.
+
+INFERRED: other notices keep no ref on purpose — expiry reminders, correction
+requests and the request-received notice open the owner's own management pages,
+which are more useful than the public post page; advice and organisation
+notices have no ref kind.
+
+Until the migration is applied the columns are detected as absent (one cannot-fail
+lookup, remembered once present): notices are written without a ref and the
+APIs answer nulls, so nothing fails on a database that has not had it.
+
+## The live pop: not for the open conversation, and at once for fixed notices (2026-11-01)
+
+OBSERVED (live Scene 1 test): with conversation X open, the person still got the
+"You have a new message about a buying request" notice pop for X (only the plain
+message pop was held back). And the event reached the phone 0.88 s after posting
+while the card showed at 2.35 s, because it waited to fetch the stored notice.
+
+Decision: `planNoticePop` (lib/realtime/toast-queue.ts, pure) skips a notice whose
+ref is the conversation open on the page; the bell still counts it (the shells
+listen to the event separately). The app does not mark notices read when a
+conversation is opened, so nothing is marked here either. A notice whose name on
+the event is a fixed ACCOUNT_NOTICES entry is drawn at once from its fixed text
+in the person's language; only a notice without fixed text (an announcement) is
+fetched by id. INFERRED: the card now shows within a frame of the event; not yet
+re-timed on a phone.
+
+## Online status: exact last seen, live in an open chat (2026-11-01)
+
+The owner asked for truly real-time "Online" / "Active ... ago".
+
+- EXACT LAST SEEN. The app sends a beacon to `POST /api/account/presence/bye`
+  on pagehide and when the page becomes hidden (DOCUMENTED: both are the
+  browser events that fire reliably on phones; Bird presence member_removed
+  reaches only clients on the channel, and no Bird presence webhook is wired
+  here, so the beacon is the reliable one). The server keeps that moment in the
+  new `account_activity.presence_seen_at` (migration
+  `20261101100100_presence_seen`, additive), at most once per account per
+  30 seconds (in memory and in the statement). Not audited, exactly as the
+  activity stamp is not: it is a reading, not a change. `lastSeenOf` prefers it
+  over the five-minute activity stamp, unless the stamp is newer (active again
+  since the bye). From an exact time, "just now" means under one minute.
+- LIVE IN AN OPEN CHAT. NOT a client subscription to the other person's
+  presence channel, though that was proposed: the channel rule lets an account
+  join only its OWN presence channel, and joining someone else's would make the
+  viewer a member of it — the server decides "Online" by whether that channel
+  is occupied, so the counterpart would read as online whenever the viewer had
+  the chat open, and the client would learn presence outside the server's
+  reciprocal check. INFERRED from the occupancy code (lib/realtime/publish.ts),
+  not exercised. Instead the open chat's existing five-second poll carries the
+  presence, and the occupancy cache is cut from ten seconds to three: the label
+  flips within about eight seconds, without a reload. The reciprocal "Show when
+  I'm active" rule is unchanged and still decided on the server.
+- A TICKING LABEL. The label re-renders every 30 seconds while in minutes and
+  every minute after (`presenceTickMs`), in English and Arabic.

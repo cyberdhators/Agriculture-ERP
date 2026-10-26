@@ -7,6 +7,8 @@
  * while the first is still on screen, so one event never pops twice.
  */
 
+import { ACCOUNT_NOTICES, type AccountNotice } from '../farmer-notices';
+
 export const POP_MAX = 3;
 export const POP_LIFETIME_MS = 6_000;
 
@@ -51,4 +53,39 @@ export function popIconFor(kind: string | undefined, notice: string | undefined)
   if (notice?.startsWith('message_')) return 'message';
   if (kind === 'essential') return 'essential';
   return 'notice';
+}
+
+/**
+ * 2026-11-01 (live Scene 1 test): what to do with a notice's live event.
+ *
+ * - 'skip': the notice is about the conversation the person has open, which
+ *   already shows the message (the plain message pop is held back the same
+ *   way). The bell still counts it: the shells listen to the event apart.
+ * - 'fixed': its name is a fixed notice (ACCOUNT_NOTICES), so the card is
+ *   drawn at once from that text in the person's language -- no request
+ *   first. The event reached the phone 0.88 s after posting and the card
+ *   showed at 2.35 s while it waited for the stored notice.
+ * - 'fetch': any other notice (an announcement): its text is read by id.
+ */
+export type NoticePopPlan =
+  { action: 'skip' } | { action: 'fixed'; key: string; title: string } | { action: 'fetch' };
+
+export function planNoticePop(
+  event: { notice?: string; ref_kind?: string; ref_id?: string },
+  openConversation: string | null,
+): NoticePopPlan {
+  if (
+    event.ref_kind === 'conversation' &&
+    event.ref_id &&
+    openConversation !== null &&
+    event.ref_id === openConversation
+  ) {
+    return { action: 'skip' };
+  }
+  const name = event.notice;
+  if (name && Object.prototype.hasOwnProperty.call(ACCOUNT_NOTICES, name)) {
+    const fixed = ACCOUNT_NOTICES[name as AccountNotice];
+    return { action: 'fixed', key: fixed.key, title: fixed.title };
+  }
+  return { action: 'fetch' };
 }

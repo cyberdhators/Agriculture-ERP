@@ -1,6 +1,12 @@
 import { BUYER_ROLE, DEFAULT_LIMIT, MAX_LIMIT, decodeCursor, encodeCursor } from '@agri-erp/shared';
 
 import { invalidCursor } from '../../../../lib/api/errors';
+import {
+  noticeRefColumns,
+  noticeRefStored,
+  presentNoticeRef,
+  type NoticeRefRow,
+} from '../../../../lib/api/notice-ref';
 import { defineRoutes, paged } from '../../../../lib/api/route';
 import { buyerScope } from '../../../../lib/api/scope';
 import { prisma } from '../../../../lib/db';
@@ -11,9 +17,10 @@ import { prisma } from '../../../../lib/db';
  *
  * The existing notification table, filtered to the session's organisation.
  * A farmer's notification has no organisation and can never match; the
- * staff route joins farmer and so never sees a buyer's.
+ * staff route joins farmer and so never sees a buyer's. 2026-11-01: each with
+ * what it points at (ref_kind, ref_id), so tapping it opens that.
  */
-interface NotificationRow {
+interface NotificationRow extends NoticeRefRow {
   id: string;
   title: string;
   body: string;
@@ -48,9 +55,10 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
         );
       }
 
+      const refs = noticeRefColumns(await noticeRefStored(prisma));
       const [rows, [unread]] = await Promise.all([
         prisma.$queryRawUnsafe<NotificationRow[]>(
-          `SELECT id, title, body, read_at, created_at FROM public.notification
+          `SELECT id, title, body, read_at, created_at, ${refs} FROM public.notification
             WHERE ${where.join(' AND ')}
             ORDER BY created_at DESC, id DESC
             LIMIT ${limit + 1}`,
@@ -72,6 +80,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
           body: row.body,
           read_at: row.read_at?.toISOString() ?? null,
           created_at: row.created_at.toISOString(),
+          ...presentNoticeRef(row),
         })),
         {
           cursor:

@@ -237,6 +237,9 @@ export interface BuyerNotification {
   body: string;
   read_at: string | null;
   created_at: string;
+  /** 2026-11-01: what the notice opens (NOTICE_REF_KINDS); null on older notices. */
+  ref_kind?: string | null;
+  ref_id?: string | null;
 }
 
 export interface BuyerSummary {

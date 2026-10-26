@@ -1239,6 +1239,9 @@ model Notification {
   readAt              DateTime?           @map("read_at") @db.Timestamptz(6)
   createdAt           DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
   deletedAt           DateTime?           @map("deleted_at") @db.Timestamptz(6)
+  /// 2026-11-01: what the notice opens (NOTICE_REF_KINDS), ids only. Migration 20261101100000_notification_ref.
+  refKind             String?             @map("ref_kind")
+  refId               String?             @map("ref_id") @db.Uuid
 
   farmer            Farmer?            @relation(fields: [farmerId], references: [id], map: "notification_farmer_id_fkey")
   buyerOrganization BuyerOrganization? @relation(fields: [buyerOrganizationId], references: [id], map: "notification_buyer_organization_id_fkey")
@@ -1812,6 +1815,8 @@ model AccountActivity {
   firstSignInAt DateTime? @map("first_sign_in_at") @db.Timestamptz(6)
   lastSignInAt  DateTime? @map("last_sign_in_at") @db.Timestamptz(6)
   lastSeenAt    DateTime  @default(now()) @map("last_seen_at") @db.Timestamptz(6)
+  /// 2026-11-01: the exact moment the app was last closed or hidden. Migration 20261101100100_presence_seen.
+  presenceSeenAt DateTime? @map("presence_seen_at") @db.Timestamptz(6)
 
   @@id([principalKind, principalId], map: "account_activity_pkey")
   @@map("account_activity")

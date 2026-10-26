@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 
 import { AccountAnnouncements } from '@/components/account/NotificationSettings';
 import { EmptyState } from '@/components/ui';
-import { noticeHref, noticeKey } from '@/lib/farmer-notices';
+import { noticeKey, popHref } from '@/lib/farmer-notices';
 import { farmerApi, FarmerApiError, useFarmerSession } from '@/lib/farmer-session';
 import { notificationsChanged } from '@/lib/farmer-unread';
 import { loadWithSnapshot } from '@/lib/offline/snapshot';
@@ -21,7 +21,13 @@ interface NotificationRow {
   body: string;
   read_at: string | null;
   created_at: string;
+  /** 2026-11-01: what the notice opens; null on older notices. */
+  ref_kind?: string | null;
+  ref_id?: string | null;
 }
+
+/** This page itself: a notice whose only place is here gets no link. */
+const NOTIFICATIONS_HREF = '/farmer/account/notifications';
 
 /**
  * The farmer's in-app notices (B14): GET /api/farmer/notifications. Opening
@@ -93,7 +99,15 @@ function NotificationCard({
 }) {
   const unread = !notification.read_at;
   // 2026-10-10 (CORWADO): a notice about a request opens the request.
-  const href = noticeHref(notification.title);
+  // 2026-11-01 (live test): a notice about one post or conversation opens
+  // it, exactly as its live pop does; an older notice opens where it did.
+  const opens = popHref({
+    side: 'farmer',
+    title: notification.title,
+    refKind: notification.ref_kind,
+    refId: notification.ref_id,
+  });
+  const href = opens === NOTIFICATIONS_HREF ? null : opens;
   // 2026-10-26: a fixed notice is shown in the farmer's language; an older one as stored.
   const key = noticeKey(notification.title);
   const title = key ? t(`${key}.title` as TKey, language) : notification.title;
