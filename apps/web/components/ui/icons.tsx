@@ -432,6 +432,13 @@ export const IconAccessKey = (p: IconProps) => (
   </Icon>
 );
 
+/** 2026-11-03 (lane-trust): ratings after a completed deal. */
+export const IconStar = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1 6.2L12 17.3l-5.5 2.9 1-6.2L3 9.6l6.2-.9Z" />
+  </Icon>
+);
+
 export const IconClock = (p: IconProps) => (
   <Icon {...p}>
     <circle cx="12" cy="12" r="9" />

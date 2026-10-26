@@ -46,6 +46,8 @@ import * as corrections from '../apps/web/app/api/admin/corrections/route';
 import * as adminMarketplace from '../apps/web/app/api/admin/marketplace/route';
 import * as adminMarketplaceRemoved from '../apps/web/app/api/admin/marketplace/removed/route';
 import * as adminMarketplaceRemove from '../apps/web/app/api/admin/marketplace/[kind]/[id]/remove/route';
+import * as adminRatings from '../apps/web/app/api/admin/ratings/route';
+import * as adminRating from '../apps/web/app/api/admin/ratings/[id]/route';
 import * as adminOverview from '../apps/web/app/api/admin/overview/route';
 import * as adminAccounts from '../apps/web/app/api/admin/accounts/route';
 import * as adminAccountReveal from '../apps/web/app/api/admin/accounts/[kind]/[id]/reveal/route';
@@ -837,6 +839,22 @@ const ROUTES = [
     allow: ['admin'],
     params: () => ({ kind: 'produce_listing', id: DUMMY_ID }),
     body: () => ({ reason: 'Zztest removal reason' }),
+  },
+  // 2026-11-03 (lane-trust): the ratings queue and a moderator's decision.
+  // An administrator, then content.moderate.
+  {
+    name: 'GET /api/admin/ratings',
+    mod: adminRatings,
+    method: 'GET' as const,
+    allow: ['admin'],
+  },
+  {
+    name: 'PATCH /api/admin/ratings/:id',
+    mod: adminRating,
+    method: 'PATCH' as const,
+    allow: ['admin'],
+    params: () => ({ id: DUMMY_ID }),
+    body: () => ({ action: 'restore' }),
   },
   // 2026-10-28: users and organizations, and support cases. Administrators
   // only (then a permission every administrator holds, except re-enable,

@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 import { ACTIVITIES, type Activity } from './account-profile';
 import { MARKET_POST_MESSAGES } from './market-posts';
+import type { RatingSummary } from './ratings';
 
 /**
  * PUBLIC PROFILES, VERSION 2 (2026-10-23). CORWADO's 16 October
@@ -261,6 +262,12 @@ export interface PublicProfileView {
   service_listings: unknown[];
   /** 2026-10-28 (infographic no. 5): expertise from the advice provider profile. */
   expertise: PublicExpertise;
+  /**
+   * 2026-11-03 (lane-trust): ratings after completed deals -- the average, the
+   * count and the latest comments, from visible ratings only. Raters appear
+   * only by a name they already show publicly.
+   */
+  ratings: RatingSummary;
 }
 
 /**

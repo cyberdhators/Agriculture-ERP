@@ -10,7 +10,7 @@ import {
   type PostKind,
 } from '@agri-erp/shared';
 
-import { type AuditTx } from './audit';
+import { writeAudit, type AuditTx } from './audit';
 import { conflict, forbidden, notFound, unprocessable } from './errors';
 import { MARKET_BASE_WHERE, MARKET_FROM } from './buyer-presenters';
 import {
@@ -43,6 +43,13 @@ import { emitRealtime } from '../realtime/outbox';
  *
  * STAFF CANNOT READ CHATS. The routes admit farmer and buyer only; there is no
  * staff read path. Problems reach staff through reports.
+ *
+ * 2026-11-03: "ARCHIVE FOR ME" replaces "Close conversation". Archiving takes
+ * a conversation out of the archiving side's main list only (per side: for an
+ * organisation's shared inbox, for the whole organisation); it never stops a
+ * message, and any new message brings it back (insertMessage). The other side
+ * is not told and sees no change. A conversation closed before then
+ * (blocked_at) stays closed; none is closed any more.
  *
  * NO TEXT LEAVES THE CONVERSATION. Audit rows carry ids; nothing here writes a
  * notification -- the unread badge is the notice.
@@ -196,13 +203,17 @@ export interface ConversationRow {
   owner_organization_id: string | null;
   starter_organization_id: string | null;
   last_sender_side: Side | null;
+  /** 2026-11-03: each side's "Archive for me". Absent on a row read without them. */
+  owner_archived_at?: Date | null;
+  starter_archived_at?: Date | null;
   last_body?: string | null;
 }
 
 export const CONVERSATION_COLUMNS = `c.id, c.post_kind, c.post_id, c.post_title,
   c.owner_auth_user_id, c.owner_name, c.starter_auth_user_id, c.starter_name,
   c.last_message_at, c.last_sender_auth_user_id, c.owner_read_at, c.starter_read_at,
-  c.blocked_at, c.owner_organization_id, c.starter_organization_id, c.last_sender_side`;
+  c.blocked_at, c.owner_organization_id, c.starter_organization_id, c.last_sender_side,
+  c.owner_archived_at, c.starter_archived_at`;
 
 /**
  * THE VIEWER'S CONVERSATIONS, as SQL over alias `c`: for a person acting for
@@ -220,6 +231,23 @@ export const viewerWhere = (person: string, org: string) => `(CASE WHEN ${org}::
       OR (c.starter_organization_id IS NULL AND c.starter_auth_user_id = ${person}::uuid)
     ELSE (c.owner_organization_id = ${org}::uuid AND c.post_kind <> 'advice_case')
       OR c.starter_organization_id = ${org}::uuid END)`;
+
+/**
+ * Whether the viewer holds the OWNER'S side of conversation `c`, as SQL --
+ * the same test as sideOf. Use only beside viewerWhere, with the same
+ * placeholders.
+ */
+export const viewerIsOwnerSql = (person: string, org: string) => `(CASE WHEN ${org}::uuid IS NULL
+      THEN c.owner_organization_id IS NULL AND c.owner_auth_user_id = ${person}::uuid
+      ELSE c.owner_organization_id = ${org}::uuid END)`;
+
+/**
+ * 2026-11-03 ("Archive for me"): whether the VIEWER'S side archived the
+ * conversation, as SQL over alias `c`.
+ */
+export const viewerArchivedSql = (person: string, org: string) =>
+  `(CASE WHEN ${viewerIsOwnerSql(person, org)}
+    THEN c.owner_archived_at ELSE c.starter_archived_at END) IS NOT NULL`;
 
 /** The viewer's side of a conversation they are part of. */
 export function sideOf(row: ConversationRow, viewer: Viewer): Side {
@@ -283,6 +311,7 @@ export function presentConversation(row: ConversationRow, viewer: Viewer): Conve
     last_from_me: lastSide(row) === side,
     unread: isUnread(row, viewer),
     blocked: row.blocked_at !== null,
+    archived: (side === 'owner' ? row.owner_archived_at : row.starter_archived_at) != null,
   };
 }
 
@@ -395,7 +424,9 @@ export async function insertMessage(
       `UPDATE public.conversation c
           SET last_message_at = $2, last_sender_auth_user_id = $3::uuid, last_sender_side = s.side,
               owner_read_at = CASE WHEN s.side = 'owner' THEN $2 ELSE owner_read_at END,
-              starter_read_at = CASE WHEN s.side = 'starter' THEN $2 ELSE starter_read_at END
+              starter_read_at = CASE WHEN s.side = 'starter' THEN $2 ELSE starter_read_at END,
+              -- 2026-11-03: a new message brings an archived conversation back, for both sides.
+              owner_archived_at = NULL, starter_archived_at = NULL
          FROM (SELECT COALESCE($4::text,
                  CASE WHEN owner_auth_user_id = $3::uuid THEN 'owner' ELSE 'starter' END) AS side
                  FROM public.conversation WHERE id = $1::uuid) s
@@ -422,4 +453,46 @@ export async function insertMessage(
     throw conflict('message_already_exists');
   }
   return { row: earlier, fresh: false };
+}
+
+/**
+ * 2026-11-03 ("Archive for me"): archives or brings back the conversation for
+ * the VIEWER'S SIDE only -- for a person, their own list; for an
+ * organisation's shared inbox, the organisation's. Archiving also marks the
+ * side's messages read, so an archived chat never holds the unread badge.
+ * Nothing is sent to the other side and no live event is published: their
+ * screen does not change. A conversation already in the asked state is
+ * returned as it is, unaudited. Inside the caller's audited transaction.
+ */
+export async function setArchived(
+  tx: AuditTx,
+  id: string,
+  viewer: Viewer,
+  auth: Authenticated,
+  archive: boolean,
+): Promise<ConversationRow> {
+  const row = await loadConversation(tx, id, viewer, true);
+  const side = sideOf(row, viewer);
+  const was = (side === 'owner' ? row.owner_archived_at : row.starter_archived_at) != null;
+  if (was === archive) return row;
+  // The column names come from `side`, never from the request.
+  const column = side === 'owner' ? 'owner' : 'starter';
+  await tx.$queryRawUnsafe(
+    archive
+      ? `UPDATE public.conversation
+            SET ${column}_archived_at = now(),
+                ${column}_read_at = GREATEST(${column}_read_at, last_message_at)
+          WHERE id = $1::uuid`
+      : `UPDATE public.conversation SET ${column}_archived_at = NULL WHERE id = $1::uuid`,
+    row.id,
+  );
+  await writeAudit(tx, {
+    entityType: 'conversation',
+    entityId: row.id,
+    ...actorOf(auth),
+    action: archive ? 'conversation.archived' : 'conversation.unarchived',
+    before: { archived: was },
+    after: { archived: archive, ...(viewer.org ? { as_organization_id: viewer.org } : {}) },
+  });
+  return loadConversation(tx, row.id, viewer);
 }

@@ -206,6 +206,13 @@ export const ACCOUNT_NOTICES = {
     body: 'Tap to see the listing and message the seller.',
     key: 'notice.matchListing',
   },
+  // 2026-11-03 (lane-trust): a rating after a completed deal. Never the stars,
+  // the comment or who gave it: the Ratings tab in Messages shows those.
+  rating_received: {
+    title: 'You received a new rating',
+    body: 'Open Messages, then Ratings, to read it.',
+    key: 'notice.ratingReceived',
+  },
 } as const;
 
 export type AccountNotice = keyof typeof ACCOUNT_NOTICES;
@@ -226,6 +233,9 @@ export function noticeKey(title: string): string | null {
 
 /** Where the farmer's requests are shown: the overview, at its requests section. */
 export const FARMER_REQUESTS_HREF = '/farmer/account#requests';
+
+/** 2026-11-03: the Ratings tab of the farmer's Messages. */
+export const RATINGS_HREF = '/farmer/account/messages?tab=ratings';
 
 /** Where tapping a notice goes, or null for a notice that has nowhere to open. */
 export function noticeHref(title: string): string | null {
@@ -276,6 +286,7 @@ export function noticeHref(title: string): string | null {
   if (title === n.expiry_service.title) return '/farmer/account/my-services';
   if (title === n.match_buying_request.title) return '/market/requests';
   if (title === n.match_listing.title) return '/market';
+  if (title === n.rating_received.title) return RATINGS_HREF;
   return null;
 }
 
@@ -295,9 +306,12 @@ export function popHref(input: {
   if (id && input.refKind === 'buying_request') return `/market/requests/${id}`;
   if (id && input.refKind === 'listing') return `/market/${id}`;
   if (id && input.refKind === 'conversation') return `${messages}?c=${id}`;
+  // 2026-11-03: a rating opens the side's own Ratings tab (the id is not needed there).
+  if (id && input.refKind === 'rating') return `${messages}?tab=ratings`;
   const usual = input.title ? noticeHref(input.title) : null;
   if (usual && input.side === 'buyer') {
     if (usual === '/farmer/account/messages') return messages;
+    if (usual === RATINGS_HREF) return `${messages}?tab=ratings`;
     if (usual.startsWith('/farmer/')) return '/buyer/notifications';
   }
   return (

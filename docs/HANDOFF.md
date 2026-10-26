@@ -3103,3 +3103,24 @@ compulsory, details should be fixed" (reverses #213's optional details).
 - tests/buyers.test.ts (DB, not run) still posts registrations without the
   acknowledgement (since #213) and now also without state/kind/language; it
   needs those fields before the DB suite is next run.
+
+### 2026-11-03 — Alieu-Claude (lane-trust) → integrator — archive for me, ratings
+
+Branch `feat/ratings-archive`. DECISIONS: "Archive for me replaces Close
+conversation" and "Ratings after a completed deal". Both owner-approved.
+
+- Migration `20261103090000_archive_and_deal_ratings` (additive): two archive
+  columns on `conversation`, new table `deal_rating` (RLS on, no policies),
+  notification ref kind CHECK widened with `rating`. DEPLOY ORDER MATTERS: the
+  conversation reads now select the archive columns, so apply the migration
+  before the code goes live.
+- NEW AUDIT KEYS (not in the audit CHECK; `audit-check-matches-migrations`
+  fails locally until the integrator's CHECK migration): `conversation.archived`,
+  `conversation.unarchived`, `rating.created`, `rating.reported`,
+  `rating.hidden`, `rating.restored`, `rating.report_dismissed`.
+- New routes: `conversations/[id]/archive` (POST/DELETE), `ratings` (GET/POST),
+  `ratings/[id]/report` (POST) — buyer-route-scan updated; `admin/ratings`
+  (GET) and `admin/ratings/[id]` (PATCH) — forbidden-matrix and
+  new-routes-matrix updated. New staff page `/admin/ratings` (nav, icon `star`).
+- `/api/conversations/:id/block` kept, now archives. No DB test payloads were
+  affected (no DB test calls these routes). No new env vars.

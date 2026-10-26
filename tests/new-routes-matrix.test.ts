@@ -42,6 +42,8 @@ import * as staffInvitationRevoke from '../apps/web/app/api/admin/staff-invitati
 import * as mfaReset from '../apps/web/app/api/admin/staff-access/users/[id]/mfa-reset/route';
 import * as advisoryNotes from '../apps/web/app/api/admin/advisory-notes/route';
 import * as advisoryNoteReview from '../apps/web/app/api/admin/advisory-notes/[id]/review/route';
+import * as adminRatings from '../apps/web/app/api/admin/ratings/route';
+import * as adminRating from '../apps/web/app/api/admin/ratings/[id]/route';
 
 /**
  * ============================================================================
@@ -196,6 +198,15 @@ const ADMIN_ROUTES = [
     }),
   },
   // 2026-10-28: the marketplace console (then content.moderate).
+  // 2026-11-03 (lane-trust): the ratings queue and a moderator's decision.
+  { name: 'GET /api/admin/ratings', mod: adminRatings, method: 'GET' as const },
+  {
+    name: 'PATCH /api/admin/ratings/:id',
+    mod: adminRating,
+    method: 'PATCH' as const,
+    params: () => ({ id: DUMMY_ID }),
+    body: () => ({ action: 'restore' }),
+  },
   { name: 'GET /api/admin/marketplace', mod: adminMarketplace, method: 'GET' as const },
   {
     name: 'GET /api/admin/marketplace/removed',

@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import {
@@ -13,14 +13,15 @@ import {
 } from '@agri-erp/shared';
 
 import { PresenceLine } from '@/components/live/Presence';
-import { Button, EmptyState, Notice, Skeleton } from '@/components/ui';
+import { MyRatingsPanel } from '@/components/ratings/Ratings';
+import { Button, EmptyState, Notice, Skeleton, Tabs } from '@/components/ui';
 import { caseHref, topicLabel } from '@/lib/advice/labels';
 import { formatDate } from '@/lib/format';
 import { t, type Language, type TKey } from '@/lib/i18n';
 import { LIVE_EVENT, useLiveEvent, type LiveEvent } from '@/lib/realtime/client';
 import {
   MessagesError,
-  blockConversation,
+  archiveConversation,
   blockPerson,
   listConversations,
   messagesChanged,
@@ -40,7 +41,15 @@ import styles from './messages.module.css';
  * An open conversation asks for new messages every few seconds while it is on
  * screen. A message written with no signal waits on the phone, marked, and
  * goes when signal returns.
+ *
+ * 2026-11-03 (lane-trust): three tabs, in the address as `?tab=`: Chats,
+ * Archived ("Archive for me" -- only the reader's own list changes, and a new
+ * message brings a chat back) and Ratings (deals to rate, ratings received).
+ * "Close conversation" is gone; "Block this person" still stops contact.
  */
+
+type InboxTab = 'chats' | 'archived' | 'ratings';
+const INBOX_TABS: readonly InboxTab[] = ['chats', 'archived', 'ratings'];
 
 const KIND_LABEL: Record<ConversationKind, TKey> = {
   listing: 'msg.aboutListing',
@@ -74,22 +83,26 @@ function aboutLine(c: ConversationSummary, language: Language): string {
 export function Messages({ language }: { language: Language }) {
   const params = useSearchParams();
   const open = params.get('c');
+  const asked = params.get('tab') as InboxTab | null;
+  const tab: InboxTab = asked && INBOX_TABS.includes(asked) ? asked : 'chats';
   return open ? (
     <Conversation key={open} id={open} language={language} />
   ) : (
-    <Inbox language={language} />
+    <Inbox key={tab} tab={tab} language={language} />
   );
 }
 
-function Inbox({ language }: { language: Language }) {
+function Inbox({ language, tab }: { language: Language; tab: InboxTab }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [rows, setRows] = useState<ConversationSummary[] | null>(null);
   const [offline, setOffline] = useState(false);
 
   const [tick, setTick] = useState(0);
   useEffect(() => {
+    if (tab === 'ratings') return;
     let cancelled = false;
-    listConversations()
+    listConversations(tab === 'archived')
       .then((got) => {
         if (!cancelled) setRows(got);
       })
@@ -101,7 +114,7 @@ function Inbox({ language }: { language: Language }) {
     return () => {
       cancelled = true;
     };
-  }, [tick]);
+  }, [tick, tab]);
   // 2026-10-26: a new message in any of these conversations re-reads the list
   // at once (lib/realtime); without live updates it reads on each visit, as before.
   useLiveEvent((e) => {
@@ -114,14 +127,33 @@ function Inbox({ language }: { language: Language }) {
         <h1>{t('msg.title', language)}</h1>
         <p className={styles.lead}>{t('msg.lead', language)}</p>
       </header>
-      {offline ? <Notice kind="warn">{t('msg.offlineRead', language)}</Notice> : null}
-      {rows === null ? (
+      <Tabs<InboxTab>
+        label={t('msg.title', language)}
+        value={tab}
+        onChange={(next) => router.replace(next === 'chats' ? pathname : `${pathname}?tab=${next}`)}
+        items={[
+          { key: 'chats', label: t('msg.tabChats', language) },
+          { key: 'archived', label: t('msg.tabArchived', language) },
+          { key: 'ratings', label: t('msg.tabRatings', language) },
+        ]}
+      />
+      {tab === 'ratings' ? (
+        <MyRatingsPanel language={language} />
+      ) : offline ? (
+        <Notice kind="warn">{t('msg.offlineRead', language)}</Notice>
+      ) : null}
+      {tab === 'ratings' ? null : rows === null ? (
         <div className={styles.list} aria-busy>
           <Skeleton height={64} />
           <Skeleton height={64} />
         </div>
       ) : rows.length === 0 ? (
-        offline ? null : (
+        offline ? null : tab === 'archived' ? (
+          <EmptyState
+            title={t('msg.archivedEmpty', language)}
+            body={t('msg.archivedEmptyBody', language)}
+          />
+        ) : (
           <EmptyState title={t('msg.empty', language)} body={t('msg.emptyBody', language)} />
         )
       ) : (
@@ -276,14 +308,23 @@ function Conversation({
     }
   }
 
-  async function block() {
-    if (!conversation || !window.confirm(t('msg.blockConfirm', language))) return;
+  /** 2026-11-03: "Archive for me", or bring it back. Nobody else sees a change. */
+  const [archiveProblem, setArchiveProblem] = useState(false);
+  async function toggleArchive() {
+    if (!conversation) return;
+    setArchiveProblem(false);
     try {
-      setConversation(await blockConversation(conversation.id));
+      setConversation(await archiveConversation(conversation.id, !conversation.archived));
     } catch {
       // The button stays; the person can try again.
+      setArchiveProblem(true);
     }
   }
+  const archiveButton = conversation ? (
+    <Button variant="ghost" size="small" onClick={() => void toggleArchive()}>
+      {t(conversation.archived ? 'msg.unarchive' : 'msg.archive', language)}
+    </Button>
+  ) : null;
 
   async function blockThePerson() {
     if (!conversation || !window.confirm(t('msg.blockPersonConfirm', language))) return;
@@ -317,12 +358,10 @@ function Conversation({
         </Link>
       )}
       {embedded ? (
-        conversation && !conversation.blocked ? (
+        conversation ? (
           <div className={styles.chatHead}>
             <span />
-            <Button variant="ghost" size="small" onClick={() => void block()}>
-              {t('msg.block', language)}
-            </Button>
+            {archiveButton}
           </div>
         ) : null
       ) : conversation ? (
@@ -339,11 +378,7 @@ function Conversation({
             </Link>
           </div>
           <div>
-            {conversation.blocked ? null : (
-              <Button variant="ghost" size="small" onClick={() => void block()}>
-                {t('msg.block', language)}
-              </Button>
-            )}
+            {archiveButton}
             {personBlocked ? null : (
               <Button variant="ghost" size="small" onClick={() => void blockThePerson()}>
                 {t('msg.blockPerson', language)}
@@ -355,6 +390,10 @@ function Conversation({
         <Skeleton width="50%" height={28} />
       )}
       {personBlocked ? <Notice kind="info">{t('msg.personBlocked', language)}</Notice> : null}
+      {conversation?.archived ? (
+        <Notice kind="info">{t('msg.archivedNote', language)}</Notice>
+      ) : null}
+      {archiveProblem ? <Notice kind="error">{t('msg.archiveFailed', language)}</Notice> : null}
       {blockProblem ? <Notice kind="error">{blockProblem}</Notice> : null}
       {problem === 'offline' ? <Notice kind="warn">{t('msg.offlineRead', language)}</Notice> : null}
       {embedded ? null : <p className={styles.safety}>{t('msg.privacy', language)}</p>}

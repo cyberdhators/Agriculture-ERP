@@ -41,6 +41,7 @@ import {
   STAFF_INVITATION_MESSAGES,
   ORG_ADVICE_MESSAGES,
   SUSPENSION_MESSAGES,
+  RATING_MESSAGES,
 } from '../src/index';
 
 /**
@@ -221,6 +222,8 @@ describe('the documented field reasons match the ones the code actually sends', 
     ...Object.values(STAFF_INVITATION_MESSAGES),
     ...Object.values(ORG_ADVICE_MESSAGES),
     ...Object.values(SUSPENSION_MESSAGES),
+    // RATINGS AFTER A COMPLETED DEAL (2026-11-03, lane-trust)
+    ...Object.values(RATING_MESSAGES),
     ERROR_MESSAGES.unknownField,
     ERROR_MESSAGES.bodyNotExpectedForm,
   ];

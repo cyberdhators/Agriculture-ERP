@@ -42,6 +42,8 @@ export const UPDATE_NOTICES: ReadonlySet<AccountNotice> = new Set<AccountNotice>
   'advice_request_updated',
   'advice_work_updated',
   'advice_referral_proposed',
+  // 2026-11-03: a rating after a completed deal is an activity update too.
+  'rating_received',
 ]);
 
 /**

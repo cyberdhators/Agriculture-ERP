@@ -469,3 +469,5 @@ export * from './realtime';
 export * from './presence';
 // 2026-10-26: match alerts -- who is told when a post goes on the market.
 export * from './match-alerts';
+// 2026-11-03 (lane-trust): ratings after a completed deal -- eligibility, averages, moderation.
+export * from './ratings';

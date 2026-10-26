@@ -291,6 +291,18 @@ export const AUDIT_ACTIONS = [
   // combined CHECK migration adds them.
   'sms_receipt.recorded',
   'sms_opt_out.recorded',
+  // 2026-11-03 (lane-trust): "Archive for me" on a conversation (one side's
+  // list only), and ratings after a completed deal -- given, reported by the
+  // rated party, hidden or restored by a moderator, a report dismissed. Ids,
+  // stars and reasons only; never a comment's text. NOT YET IN THE DATABASE
+  // CHECK: the integrator's combined CHECK migration adds them.
+  'conversation.archived',
+  'conversation.unarchived',
+  'rating.created',
+  'rating.reported',
+  'rating.hidden',
+  'rating.restored',
+  'rating.report_dismissed',
 ] as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];

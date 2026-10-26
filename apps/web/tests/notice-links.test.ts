@@ -104,11 +104,20 @@ describe('the ref is stored, answered and used (read as text)', () => {
       join(root, 'prisma/migrations/20261101100000_notification_ref/migration.sql'),
       'utf8',
     );
-    const listed = /"ref_kind" IN \(([^)]*)\)/.exec(sql)?.[1] ?? '';
+    // 2026-11-03 (lane-trust): the kinds were widened by one ('rating') in a
+    // later migration, which re-creates the kind CHECK; the latest list rules.
+    const widened = readFileSync(
+      join(root, 'prisma/migrations/20261103090000_archive_and_deal_ratings/migration.sql'),
+      'utf8',
+    );
+    const listed = /"ref_kind" IN \(([^)]*)\)/.exec(widened)?.[1] ?? '';
     const kinds = [...listed.matchAll(/'([a-z_]+)'/g)].map((m) => m[1]);
     expect(kinds.sort()).toEqual([...NOTICE_REF_KINDS].sort());
     expect(sql).toMatch(/\("ref_kind" IS NULL\) = \("ref_id" IS NULL\)/);
     expect(sql).not.toMatch(/\bDROP\b/);
+    // The widening drops and re-adds the kind CHECK only, never the whole-ref one.
+    expect(widened).toMatch(/DROP CONSTRAINT "notification_ref_kind_known";/);
+    expect(widened).not.toMatch(/DROP CONSTRAINT "notification_ref_whole"/);
   });
 
   it('notifyAccountWithId writes the ref it is given into the row', () => {

@@ -308,7 +308,7 @@ export const RULE_MESSAGES = {
   account_block_self: 'You cannot block yourself.',
   account_block_not_found: 'That block has already been lifted.',
   account_block_personal_only:
-    "Block people from your own messages. In an organisation's inbox, close the conversation instead.",
+    "Block people from your own messages. In an organisation's inbox, archive the conversation instead.",
   conversation_account_blocked:
     'Messages cannot be sent between you and this person. If you blocked them, you can unblock them in Settings.',
   // ANNOUNCEMENTS AND SETTINGS PHASE 2 (2026-10-27).
@@ -346,6 +346,17 @@ export const RULE_MESSAGES = {
     'Only an approved adviser whose approval is not suspended can submit official advisory notes.',
   advisory_note_not_allowed:
     'That change cannot be made to this note as it stands. Reload it to see where it is.',
+  // RATINGS AFTER A COMPLETED DEAL (2026-11-03, lane-trust).
+  rating_not_completed:
+    'This deal is not completed yet. It can be rated once it is marked completed.',
+  rating_already_given: 'You have already rated this deal. Each side rates a deal once.',
+  rating_window_closed: 'A deal can be rated for 30 days after it is completed. This one is older.',
+  rating_account_blocked: 'This deal cannot be rated, because one of you has blocked the other.',
+  rating_not_yours: 'Only the person or organisation that was rated can report a rating.',
+  rating_already_reported: 'You have already reported this rating. It is with the programme team.',
+  rating_already_hidden: 'This rating is already hidden.',
+  rating_not_hidden: 'This rating is not hidden. There is nothing to restore.',
+  rating_no_report: 'This rating has no report to dismiss.',
 } as const;
 
 export type RuleKey = keyof typeof RULE_MESSAGES;
