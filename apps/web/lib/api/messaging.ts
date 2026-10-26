@@ -1,4 +1,6 @@
 import {
+  accountChannel,
+  organizationChannel,
   CONVERSATIONS_PER_DAY,
   shortName,
   type ChatMessage,
@@ -19,6 +21,7 @@ import {
 } from './market-posts';
 import { actingWith } from './organizations';
 import { type Authenticated } from './require-role';
+import { emitRealtime } from '../realtime/outbox';
 
 /**
  * IN-APP MESSAGING (2026-10-20). docs/DECISIONS.md, "In-app messaging".
@@ -325,6 +328,46 @@ export const presentMessage = (
 };
 
 /**
+ * 2026-10-26: tells both sides' open screens that the conversation has a new
+ * message (lib/realtime): each personal side's account channel, and an
+ * organisation side's shared-inbox channel. Ids only, never the text.
+ * Published after the transaction commits (lib/realtime/outbox.ts).
+ */
+async function announceMessage(
+  tx: Db,
+  conversationId: string,
+  messageId: string,
+  sender: string,
+): Promise<void> {
+  const [c] = await tx.$queryRawUnsafe<
+    {
+      owner_auth_user_id: string;
+      starter_auth_user_id: string;
+      owner_organization_id: string | null;
+      starter_organization_id: string | null;
+    }[]
+  >(
+    `SELECT owner_auth_user_id, starter_auth_user_id, owner_organization_id, starter_organization_id
+       FROM public.conversation WHERE id = $1::uuid`,
+    conversationId,
+  );
+  if (!c) return;
+  const channels = [
+    c.owner_organization_id
+      ? organizationChannel(c.owner_organization_id)
+      : accountChannel(c.owner_auth_user_id),
+    c.starter_organization_id
+      ? organizationChannel(c.starter_organization_id)
+      : accountChannel(c.starter_auth_user_id),
+  ];
+  emitRealtime({
+    event: 'message.created',
+    channels: [...new Set(channels)],
+    data: { conversation_id: conversationId, message_id: messageId, sender },
+  });
+}
+
+/**
  * Stores one message, idempotent on its phone-made id: the same id with the
  * same text in the same conversation is the earlier send, returned as it was;
  * the same id with anything else is a conflict. Moves the conversation on.
@@ -362,6 +405,7 @@ export async function insertMessage(
       input.sender,
       input.side ?? null,
     );
+    await announceMessage(tx, input.conversationId, inserted.id, input.sender);
     return { row: inserted, fresh: true };
   }
   const [earlier] = await tx.$queryRawUnsafe<(MessageRow & { conversation_id: string })[]>(

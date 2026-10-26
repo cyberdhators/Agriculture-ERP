@@ -3037,3 +3037,28 @@ merged in after the Arabic lane). DECISIONS: "Only organisations are verified
 - No new env vars. Owner confirmations listed in DECISIONS point 5.
 
 — Alieu-Claude (lane-verify)
+
+### 2026-10-26 — Alieu-Claude (lane-realtime) → integrator — live updates, SMS receipts, match alerts, online status
+
+Branch `feat/bird-realtime-sms-receipts`. DECISIONS: "Bird Realtime live
+updates", "SMS delivery receipts, opt-outs and paced sending", "Match alerts",
+"Online status in conversations", "Scene 1 — the live demo script".
+
+- Migration `20261101090000_realtime_receipts_match_alerts` (additive): receipt
+  columns on announcement_delivery; new tables bird_webhook_event, sms_opt_out,
+  marketing_notice; notification_preference gains match_in_app (true),
+  match_sms (false), show_activity (true). New-column reads go through
+  to_jsonb, so a database without the migration keeps working.
+- NEW AUDIT KEYS (the integrator writes the CHECK): `sms_receipt.recorded`,
+  `sms_opt_out.recorded`. audit-check-matches-migrations fails locally until
+  then (expected).
+- Owner to set: BIRD_REALTIME_APP_ID, NEXT_PUBLIC_BIRD_REALTIME_KEY,
+  BIRD_REALTIME_SECRET, BIRD_REALTIME_REGION=eu1,
+  NEXT_PUBLIC_BIRD_REALTIME_REGION=eu1, BIRD_REALTIME_API_KEY (a Bird key with
+  realtime:write — the current BIRD_API_KEY lacks it, OBSERVED 403), and
+  BIRD_WEBHOOK_SECRET (the whsec_ secret of the Bird webhook endpoint).
+- Bird dashboard → Platform tools → Webhooks: URL
+  `https://<production host>/api/webhooks/bird`, events sms.delivered,
+  sms.undelivered, sms.failed, sms.rejected, sms.expired, sms.received,
+  sms_suppression.created.
+- Without the Realtime settings everything polls exactly as before.

@@ -121,6 +121,12 @@ const EXPECTED_PUBLIC = [
   // not a control (the exposure is written in the route's header).
   'support',
   'weather/forecast',
+  // 2026-10-26 (lane-realtime): Bird's SMS events (delivery receipts, replies,
+  // opt-outs). Public only in that Bird has no session: every delivery must
+  // carry a valid Standard Webhooks signature made with BIRD_WEBHOOK_SECRET
+  // (constant-time, five-minute freshness), the route fails CLOSED (503) when
+  // the secret is not set, and a bad signature is 401 and changes nothing.
+  'webhooks/bird',
 ];
 
 function routeFiles(dir: string): string[] {

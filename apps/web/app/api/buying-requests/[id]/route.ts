@@ -6,6 +6,7 @@ import {
 } from '@agri-erp/shared';
 
 import { audited, writeAudit } from '../../../../lib/api/audit';
+import { matchAlertsAfter } from '../../../../lib/api/match-alerts';
 import { notFound } from '../../../../lib/api/errors';
 import { addressCorrections, sentKeys } from '../../../../lib/api/listing-corrections';
 import {
@@ -65,8 +66,10 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       // 2026-10-27: an organisation's post is managed by its members with listings.manage.
       const poster = await actingPoster(prisma, request, auth);
       const id = checkId(params.id);
+      let wasActive = true;
       const row = await audited(prisma, async (tx) => {
         const current = await loadOwnBuyingRequest(tx, poster, id, true);
+        wasActive = current.status === 'active';
         const endChanged = body.needed_by !== undefined && body.needed_by !== current.needed_by;
         checkLifecycle({
           from: current.status,
@@ -125,6 +128,8 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
         });
         return loadOwnBuyingRequest(tx, poster, id);
       });
+      // 2026-10-26: a request that has just gone on the market alerts matching sellers.
+      matchAlertsAfter('buying_request', id, wasActive, row.status === 'active');
       return ok(presentOwnBuyingRequest(row));
     },
   },

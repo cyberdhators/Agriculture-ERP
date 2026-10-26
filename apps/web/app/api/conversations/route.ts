@@ -20,6 +20,7 @@ import {
 } from '../../../lib/api/messaging';
 import { noticeIfFirstMessage } from '../../../lib/api/notify';
 import { activeMembership } from '../../../lib/api/organizations';
+import { withPresence } from '../../../lib/api/presence';
 import { created, defineRoutes, paged } from '../../../lib/api/route';
 import { prisma } from '../../../lib/db';
 
@@ -72,8 +73,14 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
         viewer.person,
         viewer.org,
       );
+      // 2026-10-26: the other person's online dot, where both allow it (lib/api/presence.ts).
       return paged(
-        rows.map((row) => presentConversation(row, viewer)),
+        await withPresence(
+          prisma,
+          viewer,
+          rows,
+          rows.map((row) => presentConversation(row, viewer)),
+        ),
         { cursor: null, hasMore: false },
       );
     },

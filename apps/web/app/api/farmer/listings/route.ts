@@ -10,6 +10,7 @@ import {
 } from '@agri-erp/shared';
 
 import { audited, writeAudit } from '../../../../lib/api/audit';
+import { matchAlertsAfter } from '../../../../lib/api/match-alerts';
 import {
   OWN_LISTING_COLUMNS,
   loadOwnListing,
@@ -185,6 +186,8 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
         });
         return inserted!;
       });
+      // 2026-10-26: a listing put straight on the market alerts matching buyers.
+      matchAlertsAfter('listing', row.id, false, status === 'listed');
       return created(presentOwnListing(row));
     },
   },

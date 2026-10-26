@@ -463,3 +463,9 @@ export * from './organization-advice';
 export * from './staff-security';
 // 2026-10-28: official advisory notes from approved advisers, reviewed by staff.
 export * from './advisory-notes';
+// 2026-10-26: live updates over Bird Realtime -- channels, events, the channel rule.
+export * from './realtime';
+// 2026-10-26: online status and last activity in conversations.
+export * from './presence';
+// 2026-10-26: match alerts -- who is told when a post goes on the market.
+export * from './match-alerts';

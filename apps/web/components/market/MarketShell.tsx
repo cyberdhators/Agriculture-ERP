@@ -7,6 +7,7 @@ import { FarmerShell } from '@/components/farmer/FarmerShell';
 import { ShopMasthead } from '@/components/farmer/ShopMasthead';
 import { SupportContactsLine } from '@/components/support/SupportContacts';
 import { Wordmark } from '@/components/brand/Wordmark';
+import { LivePop } from '@/components/live/LivePop';
 import { useFarmerSession } from '@/lib/farmer-session';
 import { t } from '@/lib/i18n';
 
@@ -32,6 +33,9 @@ export function MarketShell({ children }: { children: ReactNode }) {
     <FarmerShell>
       <div className={farmer.account}>
         <ShopMasthead />
+        {/* 2026-10-26: a signed-in BUYER browsing the market gets the live pop too;
+            for a visitor the channel request answers 401 and nothing starts. */}
+        <LivePop side="buyer" language={language} />
         <main id="farmer-main" className={farmer.main} tabIndex={-1}>
           {children}
         </main>

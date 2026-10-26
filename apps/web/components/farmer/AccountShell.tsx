@@ -7,6 +7,7 @@ import { useEffect, type ReactNode } from 'react';
 import { Wordmark } from '@/components/brand/Wordmark';
 import { Skeleton } from '@/components/ui';
 import { useFarmerSession } from '@/lib/farmer-session';
+import { LivePop } from '@/components/live/LivePop';
 import { useUnreadNotifications } from '@/lib/farmer-unread';
 import { useHasAdviceProfile } from '@/lib/advice/client';
 import { useUnreadMessages } from '@/lib/messages/client';
@@ -640,6 +641,8 @@ export function AccountShell({ children }: { children: ReactNode }) {
   return (
     <div className={styles.account}>
       <ShopMasthead hideStrip />
+      {/* 2026-10-26: the live pop for notices and messages (lib/realtime). */}
+      {farmer ? <LivePop side="farmer" language={language} /> : null}
 
       <div className={styles.workspace}>
         <nav className={styles.sidebar} aria-label={t('account.title', language)}>

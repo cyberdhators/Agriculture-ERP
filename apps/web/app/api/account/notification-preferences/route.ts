@@ -34,10 +34,16 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
     roles: [FARMER_ROLE, BUYER_ROLE],
     bodySchema: notificationPreferencesSchema,
     handler: async ({ auth, body: raw }) => {
-      const body = raw as NotificationPreferences;
+      const sent = raw as Partial<NotificationPreferences>;
       const authUserId = auth.principal.authUserId;
       const saved = await audited(prisma, async (tx) => {
         const before = await preferencesOf(authUserId, tx);
+        // 2026-10-26: the newer switches are optional in the body; an absent
+        // one keeps its saved value.
+        const body: NotificationPreferences = {
+          ...before,
+          ...Object.fromEntries(Object.entries(sent).filter(([, v]) => v !== undefined)),
+        };
         await tx.$executeRawUnsafe(
           `INSERT INTO public.notification_preference
              (auth_user_id, announcements_in_app, announcements_sms, announcements_email,
@@ -55,6 +61,24 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
           body.announcements_email,
           body.updates_in_app,
         );
+        // Match alerts and "show when I'm active" (migration 20261101090000),
+        // written only where the database already has the columns.
+        const [hasNew] = await tx.$queryRawUnsafe<{ present: boolean }[]>(
+          `SELECT EXISTS (SELECT 1 FROM information_schema.columns
+                   WHERE table_schema = 'public' AND table_name = 'notification_preference'
+                     AND column_name = 'show_activity') AS present`,
+        );
+        if (hasNew?.present) {
+          await tx.$executeRawUnsafe(
+            `UPDATE public.notification_preference
+                SET match_in_app = $2, match_sms = $3, show_activity = $4
+              WHERE auth_user_id = $1::uuid`,
+            authUserId,
+            body.match_in_app,
+            body.match_sms,
+            body.show_activity,
+          );
+        }
         const changed = PREFERENCE_FIELDS.filter((k) => before[k] !== body[k]);
         await writeAudit(tx, {
           entityType: 'notification_preference',

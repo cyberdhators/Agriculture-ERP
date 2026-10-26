@@ -1,4 +1,7 @@
-import { ACCOUNT_NOTICES, type AccountNotice } from '../farmer-notices';
+import { accountChannel, type LiveNoticeKind, type NoticeRefKind } from '@agri-erp/shared';
+
+import { ACCOUNT_NOTICES, MATCH_NOTICES, type AccountNotice } from '../farmer-notices';
+import { emitRealtime } from '../realtime/outbox';
 import { writeAudit, type AuditEntry, type AuditTx } from './audit';
 
 /**
@@ -65,12 +68,72 @@ async function updatesSwitchedOff(
   return row?.off === true;
 }
 
+/** How a notice is classed on the live channel (shared/src/realtime.ts LIVE_NOTICE_KINDS). */
+export function noticeKind(notice: AccountNotice): LiveNoticeKind {
+  if (MATCH_NOTICES.has(notice)) return 'promotional';
+  if (UPDATE_NOTICES.has(notice)) return 'update';
+  return 'essential';
+}
+
+/** What a notice points at, for the live pop's link. Ids only. */
+export interface NoticeRef {
+  kind: NoticeRefKind;
+  id: string;
+}
+
+/**
+ * 2026-10-26: tells the recipient's open screens that a notice arrived
+ * (lib/realtime). Ids only -- the screen reads the notice's text from the
+ * API. A buyer organisation's notice reaches every live buyer in it.
+ * Published after the caller's transaction commits (lib/realtime/outbox.ts).
+ */
+async function announceNotice(
+  tx: AuditTx,
+  target: { farmerId: string | null; organizationId: string | null },
+  notificationId: string,
+  notice: AccountNotice,
+  ref: NoticeRef | undefined,
+): Promise<void> {
+  const rows = await tx.$queryRawUnsafe<{ auth_user_id: string }[]>(
+    `SELECT f.auth_user_id FROM public.farmer f
+      WHERE f.id = $1::uuid AND f.auth_user_id IS NOT NULL
+     UNION
+     SELECT b.auth_user_id FROM public.buyer b
+      WHERE $2::uuid IS NOT NULL AND b.organization_id = $2::uuid
+        AND b.auth_user_id IS NOT NULL AND b.deleted_at IS NULL`,
+    target.farmerId,
+    target.organizationId,
+  );
+  emitRealtime({
+    event: 'notification.created',
+    channels: rows.map((r) => accountChannel(r.auth_user_id)),
+    data: {
+      notification_id: notificationId,
+      kind: noticeKind(notice),
+      notice,
+      ...(ref ? { ref_kind: ref.kind, ref_id: ref.id } : {}),
+    },
+  });
+}
+
 export async function notifyAccount(
   tx: AuditTx,
   recipient: NoticeRecipient,
   notice: AccountNotice,
   actor: NoticeActor,
+  ref?: NoticeRef,
 ): Promise<boolean> {
+  return (await notifyAccountWithId(tx, recipient, notice, actor, ref)) !== null;
+}
+
+/** As notifyAccount, returning the stored notification's id (null: none was stored). */
+export async function notifyAccountWithId(
+  tx: AuditTx,
+  recipient: NoticeRecipient,
+  notice: AccountNotice,
+  actor: NoticeActor,
+  ref?: NoticeRef,
+): Promise<string | null> {
   const { title, body } = ACCOUNT_NOTICES[notice];
   const [target] = await tx.$queryRawUnsafe<
     { farmer_id: string | null; buyer_organization_id: string | null }[]
@@ -90,12 +153,12 @@ export async function notifyAccount(
   );
   const farmerId = target?.farmer_id ?? null;
   const organizationId = farmerId ? null : (target?.buyer_organization_id ?? null);
-  if (!farmerId && !organizationId) return false;
+  if (!farmerId && !organizationId) return null;
   if (
     UPDATE_NOTICES.has(notice) &&
     (await updatesSwitchedOff(tx, recipient.authUserId, farmerId))
   ) {
-    return false;
+    return null;
   }
 
   const [row] = await tx.$queryRawUnsafe<{ id: string }[]>(
@@ -113,7 +176,8 @@ export async function notifyAccount(
     action: 'notification.created',
     after: { recipient: farmerId ? 'farmer' : 'buyer_organization', notice },
   });
-  return true;
+  await announceNotice(tx, { farmerId, organizationId }, row!.id, notice, ref);
+  return row!.id;
 }
 
 // ---------------------------------------------------------------------------
@@ -190,13 +254,19 @@ export async function noticeIfFirstMessage(
       row.post_kind === 'advice_case' ? 'advisory.handle' : 'inbox.read',
     );
     for (const member of members) {
-      await notifyAccount(tx, { authUserId: member.auth_user_id }, notice, actor);
+      await notifyAccount(tx, { authUserId: member.auth_user_id }, notice, actor, {
+        kind: 'conversation',
+        id: conversationId,
+      });
     }
     return;
   }
   const to = row.side === 'owner' ? row.starter_auth_user_id : row.owner_auth_user_id;
   if (to === sender) return;
-  await notifyAccount(tx, { authUserId: to }, notice, actor);
+  await notifyAccount(tx, { authUserId: to }, notice, actor, {
+    kind: 'conversation',
+    id: conversationId,
+  });
 }
 
 // ---------------------------------------------------------------------------

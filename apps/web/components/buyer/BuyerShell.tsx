@@ -26,9 +26,11 @@ import { DEFAULT_LANGUAGE, isRtl, t, type Language, type TKey } from '@/lib/i18n
 import { useDocumentLanguage, useLanguageChoice } from '@/lib/i18n/client';
 import { setCartOwner, useCart } from '@/lib/buyer/cart';
 import { useUnreadMessages } from '@/lib/messages/client';
+import { useLiveEvent } from '@/lib/realtime/client';
 import { supabaseBrowser } from '@/lib/supabase/browser';
 
 import { Wordmark } from '../brand/Wordmark';
+import { LivePop } from '../live/LivePop';
 import shell from '../portal/shell.module.css';
 import { Stamp } from '../ui';
 import { LoadingState } from '../ui/data';
@@ -214,6 +216,11 @@ export function BuyerShell({
     setDrawerOpen(false);
   }, [pathname, refreshUnread]);
 
+  // 2026-10-26: a notice arriving live moves the bell at once.
+  useLiveEvent((e) => {
+    if (e.event === 'notification.created') refreshUnread();
+  });
+
   const signOut = useCallback(async () => {
     setCartOwner(null);
     try {
@@ -241,6 +248,8 @@ export function BuyerShell({
         <a href="#main" className="skip-link">
           {t('shell.skip', language)}
         </a>
+        {/* 2026-10-26: the live pop for notices and messages (lib/realtime). */}
+        {profile ? <LivePop side="buyer" language={language} /> : null}
 
         <nav
           id="buyer-rail"

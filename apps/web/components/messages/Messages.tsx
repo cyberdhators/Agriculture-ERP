@@ -12,10 +12,12 @@ import {
   type ConversationSummary,
 } from '@agri-erp/shared';
 
+import { PresenceLine } from '@/components/live/Presence';
 import { Button, EmptyState, Notice, Skeleton } from '@/components/ui';
 import { caseHref, topicLabel } from '@/lib/advice/labels';
 import { formatDate } from '@/lib/format';
 import { t, type Language, type TKey } from '@/lib/i18n';
+import { LIVE_EVENT, useLiveEvent, type LiveEvent } from '@/lib/realtime/client';
 import {
   MessagesError,
   blockConversation,
@@ -84,6 +86,7 @@ function Inbox({ language }: { language: Language }) {
   const [rows, setRows] = useState<ConversationSummary[] | null>(null);
   const [offline, setOffline] = useState(false);
 
+  const [tick, setTick] = useState(0);
   useEffect(() => {
     let cancelled = false;
     listConversations()
@@ -93,12 +96,17 @@ function Inbox({ language }: { language: Language }) {
       .catch((e: unknown) => {
         if (cancelled) return;
         setOffline(e instanceof MessagesError && e.status === 0);
-        setRows([]);
+        setRows((prev) => prev ?? []);
       });
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [tick]);
+  // 2026-10-26: a new message in any of these conversations re-reads the list
+  // at once (lib/realtime); without live updates it reads on each visit, as before.
+  useLiveEvent((e) => {
+    if (e.event === 'message.created') setTick((n) => n + 1);
+  });
 
   return (
     <div className={styles.page}>
@@ -125,7 +133,10 @@ function Inbox({ language }: { language: Language }) {
                 className={`${styles.row} ${c.unread ? styles.rowUnread : ''}`}
               >
                 <span className={styles.rowTop}>
-                  <span className={styles.rowName}>{c.other_name}</span>
+                  <span className={styles.rowName}>
+                    {c.other_name}{' '}
+                    <PresenceLine presence={c.presence} language={language} dotOnly />
+                  </span>
                   <span className={styles.rowTime}>{formatDate(c.last_message_at, language)}</span>
                 </span>
                 <span className={styles.rowAbout}>{aboutLine(c, language)}</span>
@@ -229,11 +240,18 @@ function Conversation({
       refreshWaiting();
       void load();
     });
+    // 2026-10-26: a new message here arrives at once over the live channel.
+    const onLive = (e: Event) => {
+      const live = (e as CustomEvent<LiveEvent>).detail;
+      if (live.event === 'message.created' && live.data.conversation_id === id) void load();
+    };
+    window.addEventListener(LIVE_EVENT, onLive);
     return () => {
       clearInterval(timer);
       off();
+      window.removeEventListener(LIVE_EVENT, onLive);
     };
-  }, [load, refreshWaiting]);
+  }, [load, refreshWaiting, id]);
 
   const shown = merge(
     messages,
@@ -311,6 +329,8 @@ function Conversation({
         <header className={styles.chatHead}>
           <div>
             <h1 className={styles.chatName}>{conversation.other_name}</h1>
+            {/* 2026-10-26: "Online" / "Active 5 minutes ago", where both allow it. */}
+            <PresenceLine presence={conversation.presence} language={language} />
             <Link
               href={postHref(conversation.post_kind, conversation.post_id, side)}
               className={styles.rowAbout}

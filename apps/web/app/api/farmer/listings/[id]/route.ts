@@ -8,6 +8,7 @@ import {
 } from '@agri-erp/shared';
 
 import { audited, writeAudit } from '../../../../../lib/api/audit';
+import { matchAlertsAfter } from '../../../../../lib/api/match-alerts';
 import {
   OWN_LISTING_COLUMNS,
   loadOwnListing,
@@ -75,6 +76,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       // 2026-10-28: an organisation's listing, for its members with listings.manage.
       const acting = await actingWith(prisma, request, auth, 'listings.manage');
       const id = params.id ?? '';
+      let wentLive = false;
       const row = await audited(prisma, async (tx) => {
         const current = await loadOwnListing(
           tx,
@@ -89,6 +91,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
         // Going live with no end date: thirty days on the market (owner, 2026-10-19).
         const today = todayUtc();
         const goesLive = body.status === 'listed' && canonicalStatus(current.status) !== 'active';
+        wentLive = goesLive;
         if (goesLive && (body.available_until ?? current.available_until) == null) {
           body.available_until = defaultEndDate(
             null,
@@ -172,6 +175,8 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
         });
         return updated!;
       });
+      // 2026-10-26: a listing that has just gone on the market alerts matching buyers.
+      matchAlertsAfter('listing', row.id, false, wentLive);
       return ok(presentOwnListing(row));
     },
   },
