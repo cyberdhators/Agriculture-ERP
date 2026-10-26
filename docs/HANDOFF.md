@@ -3124,3 +3124,25 @@ conversation" and "Ratings after a completed deal". Both owner-approved.
   new-routes-matrix updated. New staff page `/admin/ratings` (nav, icon `star`).
 - `/api/conversations/:id/block` kept, now archives. No DB test payloads were
   affected (no DB test calls these routes). No new env vars.
+
+### 2026-11-03 — Alieu-Claude (lane-searches) → integrator — saved searches and match-alert results
+
+Branch `feat/saved-searches-report`. DECISIONS: "Saved searches" and
+"Match-alert results report". Owner-approved scope.
+
+- Migration `20261103100000_saved_searches_alert_sources` (additive): table
+  `saved_search`; `marketing_notice.source`, `.saved_search_id`, `.sms_sent_at`
+  and a created_at index. Code runs as before on a database without it.
+- NEW AUDIT KEYS (not in the CHECK — please add): `saved_search.created`,
+  `saved_search.paused`, `saved_search.resumed`, `saved_search.deleted`.
+  `packages/shared/tests/audit-check-matches-migrations.test.ts` fails locally
+  until the CHECK migration lands (expected).
+- New routes: `/api/account/saved-searches` (GET, POST),
+  `/api/account/saved-searches/[id]` (PATCH, DELETE) — farmer and buyer roles,
+  own rows only (buyer-route-scan updated); `/api/analytics/match-alerts`
+  (GET) and `/export` (POST) — staff + reports.view (forbidden-matrix has the
+  GET). Pages: `/farmer/account/saved-searches`, `/buyer/saved-searches`,
+  `/analytics/match-alerts`.
+- New rule `saved_search_limit`; new field reasons pinned in CONVENTIONS.
+- Did not touch messaging/conversations/profiles files (lane ratings-archive):
+  the report only READS `conversation` in SQL.

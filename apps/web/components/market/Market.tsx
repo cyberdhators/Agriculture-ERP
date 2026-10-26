@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
+import { SaveSearchPanel } from '@/components/account/SavedSearches';
 import { CategoryGlyph } from '@/components/listings/CategoryGlyph';
 import { ListingCard } from '@/components/listings/ListingCard';
 import { Photo } from '@/components/listings/Photo';
@@ -69,11 +70,17 @@ export function Market({
   role,
   lang,
   detailHref,
+  savedHref,
 }: {
   mode: MarketMode;
   role: Role;
   lang: Language;
   detailHref: (id: string) => string;
+  /**
+   * 2026-11-03: when given (a signed-in account's market), "Save this search"
+   * is offered over the results, filled in from the filters.
+   */
+  savedHref?: string;
 }) {
   const { overrides, withdraw } = useMarketModeration();
   const searchParams = useSearchParams();
@@ -395,6 +402,18 @@ export function Market({
         </aside>
 
         <section className={styles.results} aria-label={t('market.results', lang)}>
+          {savedHref ? (
+            <SaveSearchPanel
+              lang={lang}
+              target="listing"
+              seed={{
+                product_name: filters.q,
+                category: filters.category,
+                max_price: filters.priceMax,
+              }}
+              savedHref={savedHref}
+            />
+          ) : null}
           <div className={styles.resultsBar} ref={gridTop}>
             <span className={styles.resultsCount} aria-live="polite">
               {matched.length} {t(matched.length === 1 ? 'market.one' : 'market.many', lang)}

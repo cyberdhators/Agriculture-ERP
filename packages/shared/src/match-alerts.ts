@@ -38,6 +38,12 @@ export interface MatchPost {
   state_id: string | null;
   /** The poster's sign-in, never told about their own post. */
   poster_auth_user_id: string | null;
+  /**
+   * 2026-11-03: the post's price in SSP (a listing's asking price, a request's
+   * offered one), for a saved search's highest price. Optional: the activity
+   * matching above never reads it.
+   */
+  price_ssp?: number | null;
 }
 
 /** Something a candidate offers or wants: a listing, a request, or a profile product. */
@@ -99,14 +105,28 @@ export function itemMatches(post: MatchPost, item: MatchItem): boolean {
 export type MatchSkip =
   'poster' | 'suspended' | 'blocked' | 'preference' | 'already_told' | 'daily_cap' | 'no_match';
 
-/** Why one candidate is not told, or null when they are. */
-export function matchSkipReason(post: MatchPost, c: MatchCandidate): MatchSkip | null {
+/** The marketing facts about one person, whatever made them a candidate. */
+export type MatchFacts = Omit<MatchCandidate, 'items'>;
+
+/**
+ * 2026-11-03: the marketing rules alone -- poster, suspension, block, switch,
+ * once per post, the daily cap -- shared by the activity matches below and
+ * the saved searches (saved-searches.ts), so both obey exactly the same rules.
+ */
+export function factSkipReason(post: MatchPost, c: MatchFacts): MatchSkip | null {
   if (post.poster_auth_user_id && c.auth_user_id === post.poster_auth_user_id) return 'poster';
   if (c.suspended) return 'suspended';
   if (c.blocked) return 'blocked';
   if (!c.match_in_app) return 'preference';
   if (c.already_told) return 'already_told';
   if (c.sent_last_24h >= MATCH_ALERT_DAILY_CAP) return 'daily_cap';
+  return null;
+}
+
+/** Why one candidate is not told, or null when they are. */
+export function matchSkipReason(post: MatchPost, c: MatchCandidate): MatchSkip | null {
+  const facts = factSkipReason(post, c);
+  if (facts) return facts;
   if (!c.items.some((item) => itemMatches(post, item))) return 'no_match';
   return null;
 }

@@ -471,3 +471,7 @@ export * from './presence';
 export * from './match-alerts';
 // 2026-11-03 (lane-trust): ratings after a completed deal -- eligibility, averages, moderation.
 export * from './ratings';
+// 2026-11-03: saved searches -- an extra source of match alerts -- and the
+// staff report on what match alerts led to.
+export * from './saved-searches';
+export * from './match-alert-report';

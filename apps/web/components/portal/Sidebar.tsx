@@ -20,6 +20,7 @@ import {
   IconShield,
   IconStore,
   IconTrend,
+  IconBell,
   IconUsers,
   IconDashboard,
   IconDesk,
@@ -82,6 +83,8 @@ const ICONS: Record<IconKey, (p: { size?: number }) => ReactNode> = {
   shield: IconShield,
   clock: IconClock,
   star: IconStar,
+  // 2026-11-03: match-alert results.
+  bell: IconBell,
 };
 
 export interface SidebarProps {

@@ -562,6 +562,7 @@ character.
 | `rating_already_hidden`                 | This rating is already hidden.                                                                                                |
 | `rating_not_hidden`                     | This rating is not hidden. There is nothing to restore.                                                                       |
 | `rating_no_report`                      | This rating has no report to dismiss.                                                                                         |
+| `saved_search_limit`                    | You can keep up to 10 saved searches. Delete one to save another.                                                             |
 
 **A route names a rule; it never writes a sentence.** `conflict()` and
 `unprocessable()` take a key from this registry, not a string. That is how the
@@ -779,6 +780,10 @@ change.
 | `rating.hidden`                               |
 | `rating.restored`                             |
 | `rating.report_dismissed`                     |
+| `saved_search.created`                        |
+| `saved_search.paused`                         |
+| `saved_search.resumed`                        |
+| `saved_search.deleted`                        |
 
 `before` and `after` hold **changed fields only**, never whole rows, and never a
 password, token, authentication identifier, national id, phone, email, given
@@ -1565,6 +1570,13 @@ These are also exact.
 | Rating moderation: action                  | Choose hide, restore or dismiss the report.                                                     |
 | Rating moderation: no reason to hide       | Give the reason for hiding this rating.                                                         |
 | Rating moderation: queue filter            | Choose reported, hidden or all.                                                                 |
+| Saved search: kind not on list             | Choose produce listings or buying requests.                                                     |
+| Saved search: product length               | A product is 2 to 80 characters.                                                                |
+| Saved search: highest price                | Enter the highest price as a number above 0.                                                    |
+| Saved search: price on requests            | A highest price applies to produce listings only.                                               |
+| Saved search: no product or category       | Enter a product or choose a category.                                                           |
+| Saved search: paused not true/false        | Say whether the search is paused, true or false.                                                |
+| Match-alert report: source not on list     | Choose an alert source from the list.                                                           |
 
 The key beside each reason is the field name, per section 4.1. An unrecognised
 field named `nickname` therefore produces `{ "nickname": "This field is not

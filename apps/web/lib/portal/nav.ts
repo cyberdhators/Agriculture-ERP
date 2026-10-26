@@ -59,7 +59,9 @@ export type IconKey =
   | 'shield'
   | 'clock'
   // 2026-11-03 (lane-trust): ratings moderation.
-  | 'star';
+  | 'star'
+  // 2026-11-03: match-alert results.
+  | 'bell';
 
 export interface NavItem {
   readonly href: string;
@@ -376,6 +378,19 @@ export const NAV_SECTIONS: readonly NavSection[] = [
         permissions: ['reports.view'],
         statesEnough: true,
       },
+      {
+        // 2026-11-03: what match alerts (and saved searches) led to.
+        href: '/analytics/match-alerts',
+        label: 'Match-alert results',
+        icon: 'bell',
+        roles: STAFF,
+        because:
+          'GET /api/analytics/match-alerts and POST .../export accept admin, supervisor and ' +
+          'read_only, then require reports.view somewhere, filtered to the states held -- ' +
+          'exactly as Marketplace analytics.',
+        permissions: ['reports.view'],
+        statesEnough: true,
+      },
     ],
   },
   {
@@ -545,6 +560,7 @@ const SEGMENT_LABELS: Record<string, string> = {
   visits: 'Visits',
   reports: 'Reports',
   analytics: 'Marketplace analytics',
+  'match-alerts': 'Match-alert results',
   directories: 'Directories',
   library: 'Learning library',
   desk: 'Field desk',

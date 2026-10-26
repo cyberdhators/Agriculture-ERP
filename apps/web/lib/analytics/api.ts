@@ -8,8 +8,12 @@
 import {
   type AnalyticsFilter,
   type AnalyticsSummary,
+  type MatchAlertReport,
+  type MatchAlertReportFilter,
   analyticsExportSchema,
   analyticsFilterSchema,
+  matchAlertExportSchema,
+  matchAlertReportFilterSchema,
 } from '@agri-erp/shared';
 
 /** An error carried by an API error body (CONVENTIONS §4), with its status. */
@@ -39,7 +43,7 @@ async function failure(res: Response): Promise<AnalyticsApiError> {
   );
 }
 
-const toQuery = (filter: AnalyticsFilter): string => {
+const toQuery = (filter: Record<string, unknown>): string => {
   const qs = new URLSearchParams();
   for (const [key, value] of Object.entries(filter)) {
     if (value !== undefined && value !== '') qs.set(key, String(value));
@@ -87,6 +91,51 @@ export async function downloadAnalyticsWorkbook(filter: AnalyticsFilter = {}): P
     a.remove();
   } finally {
     // Revoked on the next tick: some browsers start the download asynchronously.
+    setTimeout(() => URL.revokeObjectURL(url), 0);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// MATCH-ALERT RESULTS (2026-11-03): GET /api/analytics/match-alerts and its
+// export, the same way as the figures above.
+// ---------------------------------------------------------------------------
+
+/** What match alerts led to, for a window, within the caller's scope. */
+export async function getMatchAlertReport(
+  filter: MatchAlertReportFilter = {},
+): Promise<MatchAlertReport> {
+  matchAlertReportFilterSchema.parse(filter);
+  const query = toQuery(filter);
+  const res = await fetch(`/api/analytics/match-alerts${query ? `?${query}` : ''}`, {
+    cache: 'no-store',
+  });
+  if (!res.ok) throw await failure(res);
+  const body = (await res.json()) as { data?: MatchAlertReport };
+  if (!body.data) throw new AnalyticsApiError(500, 'empty', 'No figures in the response');
+  return body.data;
+}
+
+/** The match-alert workbook, recorded by the server before it answers. */
+export async function downloadMatchAlertWorkbook(
+  filter: MatchAlertReportFilter = {},
+): Promise<void> {
+  matchAlertExportSchema.parse({ filters: filter });
+  const res = await fetch('/api/analytics/match-alerts/export', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ filters: filter }),
+  });
+  if (!res.ok) throw await failure(res);
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  try {
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileNameOf(res, 'agrione-match-alerts.xlsx');
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  } finally {
     setTimeout(() => URL.revokeObjectURL(url), 0);
   }
 }

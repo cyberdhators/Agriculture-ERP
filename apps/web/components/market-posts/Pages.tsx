@@ -36,6 +36,7 @@ export function MarketRequestsPage() {
     <MarketRequests
       lang={language}
       postHref={farmer ? `${FARMER_REQUESTS}/new` : `${BUYER_REQUESTS}/new`}
+      savedHref={farmer ? '/farmer/account/saved-searches' : '/buyer/saved-searches'}
     />
   );
 }
