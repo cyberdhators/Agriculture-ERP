@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+
 import { describe, expect, it } from 'vitest';
 
 import type { RealtimeConfig } from './config';
@@ -115,5 +118,15 @@ describe('configuration', () => {
       BIRD_API_KEY: ['bk', 'eu1', 'x'].join('_'),
     });
     expect(c?.region).toBe('eu1');
+  });
+});
+
+describe('channel signing (2026-11-01 live test)', () => {
+  it('builds the signing client WITH an API key -- the SDK throws without one', () => {
+    // Observed in production: every /api/realtime/auth answered 500 with
+    // "Configure `apiKey` for API calls", so no private channel subscribed.
+    const src = readFileSync(fileURLToPath(new URL('./publish.ts', import.meta.url)), 'utf8');
+    const sign = src.slice(src.indexOf('export async function signChannel'));
+    expect(sign).toMatch(/new BirdClient\(\{\s*apiKey,\s*realtime: signing\s*\}\)/);
   });
 });
