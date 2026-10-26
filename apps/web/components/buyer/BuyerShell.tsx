@@ -34,16 +34,26 @@ import { Stamp } from '../ui';
 import { LoadingState } from '../ui/data';
 import { ToastProvider } from '../ui/feedback';
 import {
+  IconBell,
+  IconBuilding,
+  IconCart,
   IconChat,
+  IconClipboard,
   IconDashboard,
   IconEdit,
+  IconEye,
+  IconHelp,
   IconInfo,
-  IconMail,
+  IconLightbulb,
   IconMenu,
   IconReports,
   IconSearch,
+  IconSend,
   IconSignOut,
-  IconStaff,
+  IconStore,
+  IconTag,
+  IconTools,
+  IconUser,
 } from '../ui/icons';
 import { LanguageButtons } from '../farmer/LanguageSwitch';
 import styles from './buyer.module.css';
@@ -94,35 +104,35 @@ const NAV: ReadonlyArray<{
   icon: (p: { size?: number }) => ReactNode;
 }> = [
   { href: BUYER_HOME_PATH, label: 'buyer.nav.dashboard', icon: IconDashboard },
-  { href: '/buyer/marketplace', label: 'buyer.nav.marketplace', icon: IconSearch },
+  { href: '/buyer/marketplace', label: 'buyer.nav.marketplace', icon: IconStore },
   // B14: a buyer deals with the farmer directly, so the cart and the requests
   // are the whole of buying; orders and deliveries are no longer offered.
-  { href: '/buyer/cart', label: 'buyer.nav.cart', icon: IconReports },
-  { href: '/buyer/purchase-requests', label: 'buyer.nav.myRequests', icon: IconEdit },
+  { href: '/buyer/cart', label: 'buyer.nav.cart', icon: IconCart },
+  { href: '/buyer/purchase-requests', label: 'buyer.nav.myRequests', icon: IconSend },
   // LISTINGS LANE (2026-10-19): public buying requests ("I need X"), not the
   // requests above, which go to one listing.
-  { href: '/buyer/buying-requests', label: 'buyer.nav.buyingRequests', icon: IconReports },
+  { href: '/buyer/buying-requests', label: 'buyer.nav.buyingRequests', icon: IconClipboard },
   // 2026-10-26: any account offers services -- an institute, college,
   // research body, advisory organisation or adviser as well as a farmer.
-  { href: '/buyer/services', label: 'buyer.nav.myServices', icon: IconEdit },
+  { href: '/buyer/services', label: 'buyer.nav.myServices', icon: IconTools },
   // 2026-10-20: in-app messaging about posts.
   { href: '/buyer/messages', label: 'buyer.nav.messages', icon: IconChat },
   // 2026-10-22: independent advice -- find a provider and ask, or offer it.
   // 2026-10-24 (acceptance QA): My Advisory Work is in the menu too, as on the
   // farmer side; without a profile its page says to offer advice first.
   { href: '/buyer/advice', label: 'buyer.nav.findAdvice', icon: IconSearch },
-  { href: '/buyer/advice/requests', label: 'buyer.nav.myAdviceRequests', icon: IconChat },
-  { href: '/buyer/advice/offer', label: 'buyer.nav.offerAdvice', icon: IconStaff },
+  { href: '/buyer/advice/requests', label: 'buyer.nav.myAdviceRequests', icon: IconHelp },
+  { href: '/buyer/advice/offer', label: 'buyer.nav.offerAdvice', icon: IconLightbulb },
   { href: '/buyer/advice/work', label: 'buyer.nav.advisoryWork', icon: IconReports },
-  { href: '/buyer/notifications', label: 'buyer.nav.notifications', icon: IconMail },
-  { href: '/buyer/profile', label: 'buyer.nav.profile', icon: IconStaff },
+  { href: '/buyer/notifications', label: 'buyer.nav.notifications', icon: IconBell },
+  { href: '/buyer/profile', label: 'buyer.nav.profile', icon: IconUser },
   // 2026-10-23: public profiles v2 -- draft, preview, publish, photo.
-  { href: '/buyer/public-profile', label: 'buyer.nav.publicProfile', icon: IconStaff },
+  { href: '/buyer/public-profile', label: 'buyer.nav.publicProfile', icon: IconEye },
   // 2026-10-19: one account buys and sells (CORWADO).
-  { href: '/buyer/sell', label: 'buyer.nav.sell', icon: IconDashboard },
-  { href: '/buyer/about', label: 'buyer.nav.about', icon: IconStaff },
+  { href: '/buyer/sell', label: 'buyer.nav.sell', icon: IconTag },
+  { href: '/buyer/about', label: 'buyer.nav.about', icon: IconEdit },
   // 2026-10-27: organisational profiles and team access.
-  { href: '/buyer/organisations', label: 'buyer.nav.organisations', icon: IconStaff },
+  { href: '/buyer/organisations', label: 'buyer.nav.organisations', icon: IconBuilding },
   // 2026-10-21: "Contact CORWADO" -- FAQs and a message form (public page).
   { href: '/help', label: 'buyer.nav.help', icon: IconInfo },
 ];
@@ -379,7 +389,7 @@ export function BuyerShell({
                 aria-label={t('buyer.nav.notifications', language)}
                 className={styles.topIcon}
               >
-                <IconMail size={18} />
+                <IconBell size={18} />
                 {unread !== null && unread > 0 ? (
                   <span className={styles.unreadDot}>{unread}</span>
                 ) : null}

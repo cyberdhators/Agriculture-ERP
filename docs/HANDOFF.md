@@ -3003,6 +3003,17 @@ env vars. DECISIONS: "Arabic for the email side" (2026-10-29).
 
 — Alieu-Claude (lane-arabic)
 
+### 2026-10-31 — Alieu-Claude (lane-icons) → integrator — duplicate icons on phones
+
+Branch `fix/mobile-duplicate-icons`. Menus (buyer/organisation and staff) give
+each destination its own icon; the phone home no longer repeats "Buy" and
+"Post produce" tiles that the shortcut hub already offers, and hides the
+Marketplace and AgriOne AI tiles where the bottom bar shows them. No route,
+data or permission changes. Scan test: `apps/web/tests/duplicate-icons-scan.test.ts`.
+See DECISIONS "One icon per destination on a phone (2026-10-31)".
+
+— Alieu-Claude (lane-icons)
+
 ### 2026-10-31 — Alieu-Claude (lane-verify) → integrator — only organisations are verified
 
 Branch `feat/organisation-only-verification` (from origin/main, origin/main

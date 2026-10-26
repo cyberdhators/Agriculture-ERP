@@ -2171,6 +2171,12 @@
     display: none;
   }
 
+  /* 2026-10-31: the bottom bar (shown from this width) already carries these
+     destinations with the same icon; one control per destination. */
+  .acctTileBottomBar {
+    display: none;
+  }
+
   .main {
     padding-bottom: calc(var(--s-10) + 64px);
   }

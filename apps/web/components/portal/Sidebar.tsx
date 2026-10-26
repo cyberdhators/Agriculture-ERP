@@ -10,6 +10,17 @@ import { ROLE_LABELS, type Role } from '@/lib/preview';
 import { Wordmark } from '../brand/Wordmark';
 import {
   IconAudit,
+  IconBuilding,
+  IconCart,
+  IconClipboard,
+  IconClock,
+  IconHelp,
+  IconAccessKey,
+  IconLightbulb,
+  IconShield,
+  IconStore,
+  IconTrend,
+  IconUsers,
   IconDashboard,
   IconDesk,
   IconDirectory,
@@ -58,6 +69,17 @@ const ICONS: Record<IconKey, (p: { size?: number }) => ReactNode> = {
   library: IconLibrary,
   audit: IconAudit,
   settings: IconSettings,
+  users: IconUsers,
+  cart: IconCart,
+  store: IconStore,
+  clipboard: IconClipboard,
+  lightbulb: IconLightbulb,
+  help: IconHelp,
+  building: IconBuilding,
+  trend: IconTrend,
+  key: IconAccessKey,
+  shield: IconShield,
+  clock: IconClock,
 };
 
 export interface SidebarProps {

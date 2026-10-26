@@ -328,3 +328,120 @@ export const IconFlag = (p: IconProps) => (
     <path d="M5 21V4M5 4h11l-2 3.5L16 11H5" />
   </Icon>
 );
+
+/*
+ * 2026-10-31 (owner: "duplicate icons on the dashboards" on a phone): one
+ * glyph per destination. Menus used to reuse a handful of glyphs (a briefcase
+ * for five different items, a bar chart for three), so on a phone, where the
+ * menu is read by its icons, rows looked duplicated. These fill the gaps.
+ */
+
+export const IconCart = (p: IconProps) => (
+  <Icon {...p}>
+    <circle cx="9" cy="20" r="1.5" />
+    <circle cx="18" cy="20" r="1.5" />
+    <path d="M2 3h3l2.5 12h12L22 7H6" />
+  </Icon>
+);
+
+export const IconTag = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M20 12.5 12.5 20a1.5 1.5 0 0 1-2.1 0L3 12.6V3h9.6l7.4 7.4a1.5 1.5 0 0 1 0 2.1Z" />
+    <path d="M7.5 7.5h.01" strokeWidth={2.5} />
+  </Icon>
+);
+
+export const IconStore = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M3 9l1.5-5h15L21 9M3 9v11h18V9M3 9h18M9 20v-6h6v6" />
+  </Icon>
+);
+
+export const IconClipboard = (p: IconProps) => (
+  <Icon {...p}>
+    <rect x="5" y="4" width="14" height="17" rx="2" />
+    <path d="M9 4V3h6v1M9 10h6M9 14h6M9 18h3" />
+  </Icon>
+);
+
+export const IconSend = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M21 3 10 14M21 3l-7 18-4-7-7-4 18-7Z" />
+  </Icon>
+);
+
+export const IconTools = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M14.5 6.5a4 4 0 0 0 5 5L21 13l-8 8-3-3 6.5-6.5M14.5 6.5 13 5a4 4 0 0 0-5.6 5.6L3 15v3h3l4.4-4.4" />
+  </Icon>
+);
+
+export const IconHelp = (p: IconProps) => (
+  <Icon {...p}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6v.6M12 17v.5" />
+  </Icon>
+);
+
+export const IconLightbulb = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3Z" />
+  </Icon>
+);
+
+export const IconBell = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15L6 16Z" />
+    <path d="M10 20.5a2 2 0 0 0 4 0" />
+  </Icon>
+);
+
+export const IconUser = (p: IconProps) => (
+  <Icon {...p}>
+    <circle cx="12" cy="8" r="4" />
+    <path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6" />
+  </Icon>
+);
+
+export const IconBuilding = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M4 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16M16 9h3a1 1 0 0 1 1 1v11M2 21h20" />
+    <path d="M8 7h4M8 11h4M8 15h4" />
+  </Icon>
+);
+
+export const IconShield = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M12 3l7 3v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z" />
+    <path d="M9.5 12l1.8 1.8L15 10" />
+  </Icon>
+);
+
+export const IconUsers = (p: IconProps) => (
+  <Icon {...p}>
+    <circle cx="12" cy="8" r="3.5" />
+    <path d="M5 20a7 7 0 0 1 14 0" />
+    <path d="M18 11.5a3 3 0 0 0 0-6M21.5 19a5.5 5.5 0 0 0-3-4.8M6 11.5a3 3 0 0 1 0-6M2.5 19a5.5 5.5 0 0 1 3-4.8" />
+  </Icon>
+);
+
+export const IconAccessKey = (p: IconProps) => (
+  <Icon {...p}>
+    <circle cx="8" cy="15" r="4" />
+    <path d="m11 12 9-9M17 6l3 3M14.5 8.5l2 2" />
+  </Icon>
+);
+
+export const IconClock = (p: IconProps) => (
+  <Icon {...p}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M12 7v5l3 2" />
+  </Icon>
+);
+
+export const IconTrend = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M3 3v18h18" />
+    <path d="m7 15 4-4 3 3 6-6M16 8h4v4" />
+  </Icon>
+);
