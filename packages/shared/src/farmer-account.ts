@@ -300,8 +300,7 @@ const signUpSexSchema = z.enum(SEXES, {
 });
 const signUpYearSchema = z
   .number({
-    error: (issue) =>
-      missing(issue.input) ? M.yearOfBirthRequired : FARMER_MESSAGES.yearNotWhole,
+    error: (issue) => (missing(issue.input) ? M.yearOfBirthRequired : FARMER_MESSAGES.yearNotWhole),
   })
   .pipe(yearOfBirthSchema);
 const signUpPayamSchema = z

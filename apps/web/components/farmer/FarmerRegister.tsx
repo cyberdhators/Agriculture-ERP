@@ -829,7 +829,11 @@ export function FarmerRegister() {
               </Select>
             )}
           </Field>
-          <Field label={w.village!} hint={w.villageHint} error={villageError ?? serverErrors.village}>
+          <Field
+            label={w.village!}
+            hint={w.villageHint}
+            error={villageError ?? serverErrors.village}
+          >
             {(ids) => (
               <Input
                 {...ids}

@@ -93,16 +93,24 @@ describe('buyer registration', () => {
     }
   });
 
+  // 2026-11-02: replaced, not removed. Sign-up now requires the state, so a
+  // county without one is refused at the state itself; the range rule stands.
   it('refuses a county without a state, and an inverted quantity range', () => {
+    expect(
+      fieldsOf(
+        buyerRegistrationSchema.safeParse({
+          ...validRegistration(),
+          state_id: null,
+          county_id: 'CE-JUB',
+        }),
+      ),
+    ).toMatchObject({ state_id: BUYER_MESSAGES.stateRequired });
     const result = buyerRegistrationSchema.safeParse({
       ...validRegistration(),
-      state_id: null,
-      county_id: 'CE-JUB',
       min_quantity: 500,
       max_quantity: 100,
     });
     expect(fieldsOf(result)).toMatchObject({
-      state_id: BUYER_MESSAGES.stateRequired,
       max_quantity: BUYER_MESSAGES.quantityRangeInverted,
     });
   });

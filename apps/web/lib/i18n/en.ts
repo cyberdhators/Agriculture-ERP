@@ -1611,7 +1611,8 @@ export const en = {
   'email.reg.state': 'State',
   'email.reg.stateChoose': 'Choose your state…',
   'email.reg.stateRequired': 'Choose your state.',
-  'email.reg.statesFailed': 'The list of states could not be loaded. Check the connection and try again.',
+  'email.reg.statesFailed':
+    'The list of states could not be loaded. Check the connection and try again.',
   'email.reg.accountTypeRequired': 'Choose an individual or a business or organisation.',
   'org.public.missing': 'This organisation profile is not available.',
   'org.public.contact': 'Contact',

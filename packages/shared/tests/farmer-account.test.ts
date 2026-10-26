@@ -116,12 +116,12 @@ describe('farmer self-registration', () => {
   });
 
   it('refuses a blank village or payam, not only a missing one', () => {
-    expect(fieldsOf(farmerSelfRegisterSchema.safeParse({ ...valid(), village: '  ' }))).toMatchObject(
-      { village: FARMER_ACCOUNT_MESSAGES.villageRequired },
-    );
-    expect(fieldsOf(farmerSelfRegisterSchema.safeParse({ ...valid(), payam_id: '' }))).toMatchObject(
-      { payam_id: FARMER_ACCOUNT_MESSAGES.placeRequired },
-    );
+    expect(
+      fieldsOf(farmerSelfRegisterSchema.safeParse({ ...valid(), village: '  ' })),
+    ).toMatchObject({ village: FARMER_ACCOUNT_MESSAGES.villageRequired });
+    expect(
+      fieldsOf(farmerSelfRegisterSchema.safeParse({ ...valid(), payam_id: '' })),
+    ).toMatchObject({ payam_id: FARMER_ACCOUNT_MESSAGES.placeRequired });
   });
 
   it('still checks the shape of each detail', () => {
