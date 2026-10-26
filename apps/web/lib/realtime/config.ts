@@ -14,6 +14,8 @@ if (typeof window !== 'undefined') {
   throw new Error('lib/realtime/config is server-only and must never be imported by a client.');
 }
 
+type Env = Record<string, string | undefined>;
+
 export interface RealtimeConfig {
   /** The Realtime app (`rap_…`). */
   appId: string;
@@ -30,7 +32,7 @@ export interface RealtimeConfig {
 const REGION = /^[a-z]{2}[0-9]+$/;
 
 /** The settings that are missing or malformed, by NAME. Empty when configured. */
-export function realtimeProblems(env: NodeJS.ProcessEnv = process.env): string[] {
+export function realtimeProblems(env: Env = process.env): string[] {
   const problems: string[] = [];
   if (!env.BIRD_REALTIME_APP_ID?.startsWith('rap_')) problems.push('BIRD_REALTIME_APP_ID');
   if (!env.NEXT_PUBLIC_BIRD_REALTIME_KEY) problems.push('NEXT_PUBLIC_BIRD_REALTIME_KEY');
@@ -41,14 +43,14 @@ export function realtimeProblems(env: NodeJS.ProcessEnv = process.env): string[]
 }
 
 /** The region: stated, or read from the API key's `bk_<region>_` prefix. */
-function regionOf(env: NodeJS.ProcessEnv): string {
+function regionOf(env: Env): string {
   const stated = (env.BIRD_REALTIME_REGION ?? '').trim();
   if (stated) return stated;
   const key = env.BIRD_REALTIME_API_KEY || env.BIRD_API_KEY || '';
   return /^b[km]_([a-z]{2}[0-9]+)_/.exec(key)?.[1] ?? '';
 }
 
-export function realtimeConfig(env: NodeJS.ProcessEnv = process.env): RealtimeConfig | null {
+export function realtimeConfig(env: Env = process.env): RealtimeConfig | null {
   if (realtimeProblems(env).length > 0) return null;
   return {
     appId: env.BIRD_REALTIME_APP_ID as string,
@@ -66,7 +68,7 @@ export function realtimeConfig(env: NodeJS.ProcessEnv = process.env): RealtimeCo
  * fixed, and polling carries on meanwhile.
  */
 export function realtimeSigningConfig(
-  env: NodeJS.ProcessEnv = process.env,
+  env: Env = process.env,
 ): { key: string; secret: string } | null {
   const key = env.NEXT_PUBLIC_BIRD_REALTIME_KEY ?? '';
   const secret = env.BIRD_REALTIME_SECRET ?? '';

@@ -1,4 +1,4 @@
-import { accountChannel, type NoticeKind, type NoticeRefKind } from '@agri-erp/shared';
+import { accountChannel, type LiveNoticeKind, type NoticeRefKind } from '@agri-erp/shared';
 
 import { ACCOUNT_NOTICES, MATCH_NOTICES, type AccountNotice } from '../farmer-notices';
 import { emitRealtime } from '../realtime/outbox';
@@ -68,8 +68,8 @@ async function updatesSwitchedOff(
   return row?.off === true;
 }
 
-/** How a notice is classed on the live channel (shared/src/realtime.ts NOTICE_KINDS). */
-export function noticeKind(notice: AccountNotice): NoticeKind {
+/** How a notice is classed on the live channel (shared/src/realtime.ts LIVE_NOTICE_KINDS). */
+export function noticeKind(notice: AccountNotice): LiveNoticeKind {
   if (MATCH_NOTICES.has(notice)) return 'promotional';
   if (UPDATE_NOTICES.has(notice)) return 'update';
   return 'essential';

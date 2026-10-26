@@ -11,6 +11,7 @@ import {
   type MessageRow,
 } from '../../../../lib/api/messaging';
 import { PERSON_NAME_SQL } from '../../../../lib/api/organizations';
+import { withPresence } from '../../../../lib/api/presence';
 import { defineRoutes, ok } from '../../../../lib/api/route';
 import { prisma } from '../../../../lib/db';
 
@@ -66,8 +67,12 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
         );
       }
 
+      // 2026-10-26: "Online" / "Active 5 minutes ago" under the name, where both allow it.
+      const [summary] = await withPresence(prisma, viewer, [conversation], [
+        { ...presentConversation(conversation, viewer), unread: false },
+      ]);
       return ok({
-        conversation: { ...presentConversation(conversation, viewer), unread: false },
+        conversation: summary,
         messages: rows.map((row) => presentMessage(row, conversation, viewer)),
       });
     },

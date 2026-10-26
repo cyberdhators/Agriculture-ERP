@@ -60,7 +60,7 @@ export function NotificationPreferencesCard({
     let live = true;
     request<NotificationPreferences>('/api/account/notification-preferences')
       .then((p) => {
-        if (live) setPrefs(p);
+        if (live) setPrefs({ ...DEFAULT_PREFERENCES, ...p });
       })
       .catch(() => {
         if (live) setLoadFailed(true);
@@ -77,6 +77,9 @@ export function NotificationPreferencesCard({
       announcements_sms: prefs.announcements_sms,
       announcements_email: prefs.announcements_email,
       updates_in_app: prefs.updates_in_app,
+      match_in_app: prefs.match_in_app,
+      match_sms: prefs.match_sms,
+      show_activity: prefs.show_activity,
     });
     if (!parsed.success) return;
     setBusy(true);
@@ -129,6 +132,33 @@ export function NotificationPreferencesCard({
             onChange={(e) => set('updates_in_app', e.target.checked)}
           />
         </div>
+        {/* 2026-10-26: match alerts (marketing; SMS off unless turned on). */}
+        <fieldset style={{ border: 0, padding: 0, margin: '12px 0 0', display: 'grid', gap: 8 }}>
+          <legend className="label">{t('prefs.match', language)}</legend>
+          <Checkbox
+            label={t('prefs.matchInApp', language)}
+            checked={shown.match_in_app}
+            disabled={!prefs || busy}
+            onChange={(e) => set('match_in_app', e.target.checked)}
+          />
+          <Checkbox
+            label={t('prefs.matchSms', language)}
+            checked={shown.match_sms}
+            disabled={!prefs || busy}
+            onChange={(e) => set('match_sms', e.target.checked)}
+          />
+        </fieldset>
+        {/* 2026-10-26: online status in conversations, reciprocal. */}
+        <fieldset style={{ border: 0, padding: 0, margin: '12px 0 0', display: 'grid', gap: 8 }}>
+          <legend className="label">{t('prefs.privacy', language)}</legend>
+          <Checkbox
+            label={t('prefs.showActivity', language)}
+            checked={shown.show_activity}
+            disabled={!prefs || busy}
+            onChange={(e) => set('show_activity', e.target.checked)}
+          />
+          <p className="small muted">{t('prefs.showActivityHint', language)}</p>
+        </fieldset>
         <Notice kind="info">
           <p className="small">{t('prefs.essential', language)}</p>
         </Notice>

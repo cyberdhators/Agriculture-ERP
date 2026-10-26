@@ -1,4 +1,5 @@
 import {
+  SELLING_ACTIVITIES,
   matchWords,
   selectMatchRecipients,
   type MatchCandidate,
@@ -91,8 +92,10 @@ async function candidateItems(db: Db, post: MatchPost, patterns: string[]): Prom
          FROM public.account_profile ap
          CROSS JOIN LATERAL unnest(ap.products) AS p(product)
         WHERE p.product ILIKE ANY ($1::text[])
+          AND (cardinality(ap.activities) = 0 OR ap.activities && $2::text[])
         LIMIT 500`,
       patterns,
+      [...SELLING_ACTIVITIES],
     );
   }
   return db.$queryRawUnsafe<ItemRow[]>(

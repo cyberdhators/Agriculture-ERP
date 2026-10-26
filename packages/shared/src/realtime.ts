@@ -37,8 +37,8 @@ export const REALTIME_EVENTS = ['notification.created', 'message.created'] as co
 export type RealtimeEventName = (typeof REALTIME_EVENTS)[number];
 
 /** How a notice is classed. `promotional` is for marketing (match alerts). */
-export const NOTICE_KINDS = ['essential', 'update', 'announcement', 'promotional'] as const;
-export type NoticeKind = (typeof NOTICE_KINDS)[number];
+export const LIVE_NOTICE_KINDS = ['essential', 'update', 'announcement', 'promotional'] as const;
+export type LiveNoticeKind = (typeof LIVE_NOTICE_KINDS)[number];
 
 /** What a notice points at, when it points at one post or conversation. */
 export const NOTICE_REF_KINDS = ['buying_request', 'listing', 'conversation'] as const;
@@ -47,7 +47,7 @@ export type NoticeRefKind = (typeof NOTICE_REF_KINDS)[number];
 export interface NotificationCreatedPayload {
   /** The stored notification's id; the screen reads its text from the API. */
   notification_id: string;
-  kind: NoticeKind;
+  kind: LiveNoticeKind;
   /** The fixed notice name (lib/farmer-notices.ts ACCOUNT_NOTICES), or 'announcement'. */
   notice: string;
   ref_kind?: NoticeRefKind;

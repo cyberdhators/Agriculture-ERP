@@ -17,6 +17,17 @@ export const MATCH_ALERT_DAILY_CAP = 2;
 /** At most this many people are told about one post. */
 export const MATCH_ALERT_MAX_RECIPIENTS = 50;
 
+/**
+ * The activities (account_profile.activities) that SELL produce. A product on
+ * a public profile counts as something the person sells when they state one
+ * of these, or state no activity at all.
+ */
+export const SELLING_ACTIVITIES = ['farmer', 'trader', 'processor', 'input_supplier'] as const;
+
+/** Whether a profile's stated activities make its products offers. */
+export const profileSells = (activities: readonly string[]): boolean =>
+  activities.length === 0 || activities.some((a) => (SELLING_ACTIVITIES as readonly string[]).includes(a));
+
 /** One post that went on the market. */
 export interface MatchPost {
   kind: 'buying_request' | 'listing';
@@ -51,11 +62,12 @@ export interface MatchCandidate {
   already_told: boolean;
 }
 
-/** Lower case, letters and digits only, a trailing plural "s" dropped: "Maize " -> "maize". */
+/** Lower case, letters and digits only, a trailing plural "s" dropped: "Beans " -> "bean". */
 export function normaliseProduct(name: string): string[] {
   return name
     .toLowerCase()
     .normalize('NFKD')
+    .replace(/\p{M}/gu, '')
     .replace(/[^\p{L}\p{N}\s]/gu, ' ')
     .split(/\s+/)
     .filter((w) => w.length >= 3)
@@ -65,8 +77,8 @@ export function normaliseProduct(name: string): string[] {
 const GENERIC = new Set(['fresh', 'white', 'yellow', 'red', 'green', 'dry', 'dried', 'local']);
 
 /**
- * Two product names match when they share a meaningful word: "Maize" and
- * "White maize (dry)", "groundnuts" and "Groundnut". Colour and condition
+ * Two product names match when they share a meaningful word: "Sorghum" and
+ * "Red sorghum (dry)", "groundnuts" and "Groundnut". Colour and condition
  * words alone are not a match.
  */
 export function productsMatch(a: string, b: string): boolean {
