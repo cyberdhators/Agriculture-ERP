@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 
 import { ABOUT_LABELS } from '@/components/account/AccountActivities';
 import { LanguageButtons } from '@/components/farmer/LanguageSwitch';
-import { Notice } from '@/components/ui';
+import { Notice, Stamp } from '@/components/ui';
 import { DEFAULT_LANGUAGE, isRtl, t, type Language } from '@/lib/i18n';
 import { useDocumentLanguage, useLanguageChoice } from '@/lib/i18n/client';
 
@@ -14,6 +14,8 @@ import { PRESET_WORDS } from './words';
 interface Profile {
   id: string;
   name: string;
+  /** 2026-10-31: verified by CORWADO staff -- a badge only. */
+  verified?: boolean;
   profile_kind: string;
   group_kind: string | null;
   activities: string[];
@@ -76,6 +78,9 @@ export function PublicOrganisation({
         <h1 style={{ margin: 0 }} dir="auto">
           {profile.name}
         </h1>
+        {profile.verified ? (
+          <Stamp kind="verified">{t('market.verifiedOrganisation', language)}</Stamp>
+        ) : null}
         <p className="small muted" style={{ margin: 0 }}>
           {kind}
           {where ? ` · ${where}` : ''}

@@ -192,6 +192,20 @@ export function checkLifecycle(input: {
   }
 }
 
+/**
+ * 2026-10-31 (the owner): ONLY ORGANISATIONS ARE VERIFIED. The badge on a
+ * post is its organisation's: the organisational profile it was posted for,
+ * or else the poster's buyer organisation when that is a verified business.
+ * A person's own account -- a farmer, an individual buyer -- never carries
+ * one, and the extension programme's field record of a farmer is not read
+ * here. A badge only: no read filters on it.
+ */
+export const posterVerifiedSql = (post: string): string =>
+  `(CASE WHEN ${post}.organization_id IS NOT NULL
+         THEN COALESCE(og.verification_status = 'verified', false)
+         ELSE COALESCE(o.account_type::text, 'individual') <> 'individual'
+              AND COALESCE(o.verification_status::text, '') = 'verified' END)`;
+
 // ---------------------------------------------------------------------------
 // BUYING REQUESTS
 // ---------------------------------------------------------------------------
@@ -202,8 +216,7 @@ export const BUYING_REQUEST_COLUMNS = `br.id, br.poster_type, br.display_name,
   to_char(br.needed_by, 'YYYY-MM-DD') AS needed_by,
   br.price_ssp::text AS price_ssp, br.price_per::text AS price_per, br.negotiable,
   br.delivery_terms, br.description, br.status, br.created_at, br.updated_at, br.show_phone,
-  (COALESCE(f.verification_status::text, '') = 'verified'
-    OR COALESCE(o.verification_status::text, '') = 'verified') AS poster_verified,
+  ${posterVerifiedSql('br')} AS poster_verified,
   COALESCE((SELECT ap.allow_messages FROM public.account_profile ap
              WHERE ap.auth_user_id = COALESCE(f.auth_user_id, b.auth_user_id)), true)
     AS owner_messages`;
@@ -320,7 +333,7 @@ export async function loadOwnBuyingRequest(db: Db, poster: Poster, id: string, l
  * 2026-10-26: a service is offered by a farmer OR a buyer account (the design
  * of buying requests): `poster_type` with `farmer_id` | `buyer_id`. A buyer's
  * service has a state and no payam. The verified badge is the farmer's, or
- * the buyer's organisation's.
+ * the buyer's organisation's. 2026-10-31: an organisation's only.
  */
 export const SERVICE_COLUMNS = `sl.id, sl.poster_type, sl.trading_name, sl.service_type, sl.title,
   sl.description, sl.location, sl.payam_id, pm.name AS payam_name, sl.state_id, s.name AS state_name,
@@ -329,8 +342,7 @@ export const SERVICE_COLUMNS = `sl.id, sl.poster_type, sl.trading_name, sl.servi
        ELSE to_char(sl.available_until, 'YYYY-MM-DD') END AS available_until,
   sl.availability_note, sl.price_ssp::text AS price_ssp, sl.price_unit, sl.negotiable,
   sl.status, sl.created_at, sl.updated_at, sl.show_phone,
-  (COALESCE(f.verification_status::text, '') = 'verified'
-    OR COALESCE(o.verification_status::text, '') = 'verified') AS poster_verified,
+  ${posterVerifiedSql('sl')} AS poster_verified,
   COALESCE((SELECT ap.allow_messages FROM public.account_profile ap
              WHERE ap.auth_user_id = COALESCE(f.auth_user_id, b.auth_user_id)), true)
     AS owner_messages`;
@@ -389,15 +401,14 @@ export interface ServiceRow {
 /**
  * THE ONLY SHAPE A SERVICE LISTING TAKES ON THE PUBLIC MARKET. A whitelist.
  * 2026-10-26: plus who offers it (farmer or buyer) and the verified badge --
- * a farmer's, or a buyer's organisation's. `farmer_verified` stays for the
- * screens that read it, and is true only for a verified farmer. No ids.
+ * 2026-10-31: an organisation's only (posterVerifiedSql); the farmer badge
+ * `farmer_verified` is gone with individual verification. No ids.
  */
 export const presentService = (row: ServiceRow) => ({
   id: row.id,
   poster_type: row.poster_type,
   trading_name: row.trading_name,
   poster_verified: row.poster_verified,
-  farmer_verified: row.poster_type === 'farmer' && row.poster_verified,
   service_type: row.service_type,
   title: row.title,
   description: row.description,

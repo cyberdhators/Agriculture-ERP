@@ -80,8 +80,7 @@ export const en = {
   'register.next': 'Next',
   'register.submit': 'Create account',
   'register.doneTitle': 'Your account is ready',
-  'register.doneBody':
-    'You can buy, sell, offer services and ask for advice now. An extension officer may check your details later and add a Verified badge.',
+  'register.doneBody': 'You can buy, sell, offer services and ask for advice now.',
   'register.doneNumber': 'Member no.',
   'register.donePending': 'Keep this number. You sign in with your phone number and password.',
   'register.goToAccount': 'Go to my account',
@@ -110,14 +109,13 @@ export const en = {
   'account.tileSecuritySub': 'Password and phone number',
   'account.tileLanguage': 'Language',
   'account.tileLanguageSub': 'The language of your account',
-  'account.tileVerification': 'Your verification',
-  'account.tileVerificationSub': 'Status and what it means',
+  'account.tileVerification': 'Your record',
+  'account.tileVerificationSub': 'Member number and details',
   'account.pending': 'Not verified yet',
   'account.verified': 'Verified',
   'account.rejected': 'Not verified',
   'account.whatPendingTitle': 'Not verified yet',
-  'account.whatPendingBody':
-    'You can buy and sell now. When an extension officer has checked your details, your listings show a Verified badge.',
+  'account.whatPendingBody': 'You can buy and sell now.',
   'account.whatRejectedBody':
     'An officer could not verify your account. Contact your local AgriOne extension officer, or change your details and ask to be checked again.',
   'account.kpiLive': 'Live listings',
@@ -180,7 +178,7 @@ export const en = {
   'account.newPhone': 'New phone number',
   'account.phoneChanged': 'Your phone number has been changed. Sign in with it next time.',
   'account.farmerNumber': 'Member no.',
-  'account.numberPending': 'Assigned when your registration is verified.',
+  'account.numberPending': 'Not assigned yet.',
   'account.back': 'My account',
   'account.signOut': 'Sign out',
   'account.tabLearn': 'Learn',
@@ -439,7 +437,7 @@ export const en = {
   // Marketplace
   'market.title': 'Marketplace',
   'market.lead':
-    'Produce and inputs offered on AgriOne: the price, the quantity, the payam and who to call. A Verified badge marks sellers CORWADO has checked.',
+    'Produce and inputs offered on AgriOne: the price, the quantity, the payam and who to call. A "Verified organisation" badge marks organisations CORWADO has checked.',
   'market.filters': 'Filters',
   'market.category': 'Category',
   'market.allCategories': 'All categories',
@@ -493,7 +491,7 @@ export const en = {
   'market.deliveryAvailable': 'Delivery available',
   'market.featured': 'Fresh this week',
   'market.trust':
-    'Verified badges on checked sellers · Photos on every listing · Contact by call or SMS',
+    'Verified badges on checked organisations · Photos on every listing · Contact by call or SMS',
   'market.emptyFiltered': 'No listings match; clear a filter or try another payam.',
   'market.page': 'Page',
   'market.of': 'of',
@@ -642,9 +640,8 @@ export const en = {
   'lifecycle.completeTitle': 'Mark it completed?',
   'lifecycle.completeBody': 'It comes off the market for good, as fulfilled.',
   'lifecycle.queued': 'Saved on this phone. It will be sent when there is signal.',
-  'listings.verifyBadgeNote':
-    'Your listings go live as soon as you publish them. Once CORWADO verifies your account, buyers also see a "Verified farmer" badge on them.',
-  'market.verifiedFarmer': 'Verified farmer',
+  'listings.verifyBadgeNote': 'Your listings go live as soon as you publish them.',
+  'market.verifiedOrganisation': 'Verified organisation',
   'listingForm.untilDefault': 'Leave it empty and the listing stays on the market for 30 days.',
   'listingForm.alreadySold': 'Already sold:',
   'listingForm.statusOnPage': 'Pause, renew, record a sale or withdraw from the listing page.',
@@ -827,9 +824,9 @@ export const en = {
   'help.q4': 'How do I delete my account?',
   'help.a4':
     'Farmers: open Login & security. Buyers: open Profile. Choose Delete my account, enter your password and tick the box. Your posts are withdrawn and your account is hidden; CORWADO keeps the record for its audit.',
-  'help.q5': 'What is the Verified badge?',
+  'help.q5': 'What is the "Verified organisation" badge?',
   'help.a5':
-    'When an extension officer or CORWADO has checked your details, your listings show a Verified badge. You can buy and sell before that.',
+    'CORWADO checks organisations -- businesses, groups and institutions -- and their posts and profiles then show a "Verified organisation" badge. Individual accounts are not verified, and everyone can buy and sell at once.',
   'help.formTitle': 'Write to CORWADO',
   'help.formLead':
     'Tell us what happened. If you are not signed in, leave a phone number or an email so we can reply.',
@@ -1160,7 +1157,7 @@ export const en = {
   'pp.tab.requests': 'Buying requests',
   'pp.tab.services': 'Services',
   'pp.featured': 'Featured',
-  'pp.verified': 'Verified',
+  'pp.verified': 'Verified organisation',
   'pp.since': 'Member since',
   'pp.report': 'Report profile',
   'pp.missing': 'This profile is not available.',
@@ -1390,23 +1387,24 @@ export const en = {
   'buyer.shell.footer': 'AgriOne South Sudan · CORWADO',
   'buyer.common.retry': 'Try again',
   'buyer.common.loading': 'Loading',
-  'buyer.standing.pending': 'Pending review',
-  'buyer.standing.under_review': 'Under review',
-  'buyer.standing.verified': 'Verified',
-  'buyer.standing.rejected': 'Not approved',
+  'buyer.standing.pending': 'Not yet verified',
+  'buyer.standing.under_review': 'Being checked',
+  'buyer.standing.verified': 'Verified organisation',
+  'buyer.standing.rejected': 'Not verified',
   'buyer.standing.suspended': 'Suspended',
   'buyer.standing.not_required': 'Active',
   'buyer.standingMsg.pending':
-    'You can browse and send purchase requests now. CORWADO may check your organisation later and add a Verified badge.',
+    'You can browse and send purchase requests now. CORWADO may check your organisation and add a "Verified organisation" badge.',
   'buyer.standingMsg.under_review':
-    'Your organisation is currently under review for a Verified badge. You can browse and send purchase requests meanwhile.',
-  'buyer.standingMsg.verified': 'Your buyer account is verified. You can send purchase requests.',
+    'Your organisation is currently under review for a "Verified organisation" badge, and CORWADO may ask you for more information. You can browse and send purchase requests meanwhile.',
+  'buyer.standingMsg.verified':
+    'Your organisation is verified: a "Verified organisation" badge shows on its posts and profile.',
   'buyer.standingMsg.rejected':
-    'Your buyer account was not approved. Your history remains readable; the marketplace is closed to this account. Contact CORWADO if you think this is a mistake.',
+    'CORWADO did not verify your organisation, so it shows no badge. You can still browse and send purchase requests. Contact CORWADO if you think this is a mistake.',
   'buyer.standingMsg.suspended':
     'Your buyer account is suspended. Your history remains readable; the marketplace is closed until CORWADO restores the account.',
   'buyer.standingMsg.not_required':
-    'Your individual buyer account is active. Individual accounts need no review: you can browse and send purchase requests.',
+    'Your account is active. You can browse and send purchase requests.',
   'buyer.orgType.trader': 'Trader',
   'buyer.orgType.aggregator': 'Aggregator',
   'buyer.orgType.processor': 'Processor',
@@ -1566,10 +1564,10 @@ export const en = {
   'email.reg.who': 'Who is buying',
   'email.reg.accountTypeAria': 'Account type',
   'email.reg.individual': 'An individual',
-  'email.reg.individualHint': 'Buying for yourself. No review needed.',
+  'email.reg.individualHint': 'Buying for yourself. Start at once.',
   'email.reg.business': 'A business or organisation',
   'email.reg.businessHint':
-    'Buy straight away. CORWADO may check it later and add a Verified badge.',
+    'Buy straight away. CORWADO may check it later and add a "Verified organisation" badge.',
   'email.reg.yourAccount': 'Your account',
   'email.reg.emailHint': 'You will sign in with this. We send a code to confirm it.',
   'email.reg.passwordHint': 'At least 12 characters.',

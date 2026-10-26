@@ -29,6 +29,9 @@ import { prisma } from '../../../../../lib/db';
  * listed person agreed themselves (show_on_profile). A member is shown as
  * "Mary K." with their title and role; never a phone, an email or an id.
  * Public visibility is not endorsement by CORWADO.
+ *
+ * 2026-10-31: `verified` -- the "Verified organisation" badge, true only when
+ * staff holding organization.verify have verified it. A badge, never a gate.
  */
 interface ProfileRow {
   id: string;
@@ -42,6 +45,7 @@ interface ProfileRow {
   public_phone: string | null;
   public_email: string | null;
   show_team: boolean;
+  verified: boolean;
 }
 
 export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
@@ -51,7 +55,8 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       const id = checkId(params.id);
       const [org] = await prisma.$queryRawUnsafe<ProfileRow[]>(
         `SELECT o.id, o.name, o.profile_kind, o.group_kind, o.activities, o.about,
-                s.name AS state_name, o.location, o.public_phone, o.public_email, o.show_team
+                s.name AS state_name, o.location, o.public_phone, o.public_email, o.show_team,
+                (o.verification_status = 'verified') AS verified
            FROM public.organization o
            LEFT JOIN public.state s ON s.id = o.state_id
           WHERE o.id = $1::uuid AND o.deleted_at IS NULL AND o.closed_at IS NULL
@@ -87,6 +92,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       return ok({
         id: org.id,
         name: org.name,
+        verified: org.verified === true,
         profile_kind: org.profile_kind,
         group_kind: org.group_kind,
         activities: org.activities,

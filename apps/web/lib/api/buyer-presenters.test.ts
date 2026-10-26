@@ -86,6 +86,7 @@ const marketRow = (): MarketRow =>
     min_order_quantity: '100.00',
     trading_name: 'Green Valley Produce',
     updated_at: new Date('2026-10-05T10:00:00Z'),
+    // An old row may still carry the farmer's field record; it never reaches a buyer.
     supplier_verification: 'verified',
     payam_name: 'Munuki',
     county_id: 'CE-JUB',
@@ -105,9 +106,9 @@ describe('the marketplace listing a buyer receives', () => {
     expect(JSON.stringify(presentMarketListing(marketRow()))).not.toMatch(/\+211\d{9}/);
   });
 
-  it('describes the supplier by trading name, standing and location only', () => {
+  it('describes the supplier by trading name and location only -- no farmer verification (2026-10-31)', () => {
     const presented = presentMarketListing(marketRow());
-    expect(presented.supplier).toEqual({ trading_name: 'Green Valley Produce', verified: true });
+    expect(presented.supplier).toEqual({ trading_name: 'Green Valley Produce' });
     expect(presented.location).toEqual({
       payam: 'Munuki',
       county_id: 'CE-JUB',

@@ -1,15 +1,21 @@
 'use client';
 
-import { Notice, Stamp } from '@/components/ui';
 import { useFarmerSession } from '@/lib/farmer-session';
 import { farmerPayamName } from '@/lib/fixtures/farmers';
-import { VERIFICATION_KEY, verificationStamp } from '@/lib/farmers/verification';
 import { formatDate } from '@/lib/format';
 import { t } from '@/lib/i18n';
 
 import { PageHead } from './AccountShell';
 import styles from './farmer.module.css';
 
+/**
+ * /farmer/account/verification -- "Your record" (2026-10-31). The owner:
+ * "remove verification from accounts ... not individual." A person's account is
+ * never verified, so this page shows the record only: member number, name,
+ * payam, date joined. The extension programme's field record (an officer's
+ * check, for programme reports) is not shown to the person as an account
+ * verification and gates nothing. The path is kept so old links still work.
+ */
 export function FarmerVerification() {
   const { farmer, language } = useFarmerSession();
   if (!farmer) return null;
@@ -24,31 +30,6 @@ export function FarmerVerification() {
       />
 
       <div className={styles.settings}>
-        <section className={styles.settingCard}>
-          <h2>{t('account.kpiVerification', language)}</h2>
-          <div style={{ marginTop: 'var(--s-2)', marginBottom: 'var(--s-3)' }}>
-            <Stamp kind={verificationStamp(farmer.verification_status)}>
-              {t(VERIFICATION_KEY[farmer.verification_status], language)}
-            </Stamp>
-          </div>
-
-          {farmer.verification_status === 'pending' ? (
-            <Notice kind="info" title={t('account.whatPendingTitle', language)}>
-              <p className="small">{t('listings.verifyBadgeNote', language)}</p>
-            </Notice>
-          ) : null}
-
-          {farmer.verification_status === 'rejected' ? (
-            <Notice kind="error" title={t('account.rejected', language)}>
-              <p className="small">{t('account.whatRejectedBody', language)}</p>
-            </Notice>
-          ) : null}
-
-          {farmer.verification_status === 'verified' ? (
-            <p className="small muted">{t('account.verified', language)}</p>
-          ) : null}
-        </section>
-
         <section className={styles.settingCard}>
           <h2>{t('account.record', language)}</h2>
           <dl className={styles.recordRows}>

@@ -11,7 +11,12 @@ import {
   type BuyerProfile as Profile,
   type Locations,
 } from '@/lib/buyer/api';
-import { VERIFICATION_STAMPS, verificationLabel, verificationMessage } from '@/lib/buyer/labels';
+import {
+  VERIFICATION_STAMPS,
+  showsStandingStamp,
+  verificationLabel,
+  verificationMessage,
+} from '@/lib/buyer/labels';
 import { t } from '@/lib/i18n';
 
 import { Button, Card, CardBody, CardHeader, Field, Input, Notice, PageHeader, Stamp } from '../ui';
@@ -132,9 +137,11 @@ export function BuyerProfile() {
         <CardHeader
           title={t('buyer.profile.standing', language)}
           actions={
-            <Stamp kind={VERIFICATION_STAMPS[standing]}>
-              {verificationLabel(standing, language)}
-            </Stamp>
+            showsStandingStamp(profile.organization.account_type, standing) ? (
+              <Stamp kind={VERIFICATION_STAMPS[standing]}>
+                {verificationLabel(standing, language)}
+              </Stamp>
+            ) : null
           }
         />
         <CardBody>

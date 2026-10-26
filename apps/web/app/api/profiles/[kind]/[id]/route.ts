@@ -107,10 +107,12 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
          SELECT (SELECT id FROM f) AS farmer_id,
                 (SELECT id FROM b) AS buyer_id,
                 (SELECT auth_user_id FROM me) AS auth_user_id,
-                (COALESCE((SELECT verification_status::text FROM f), '') = 'verified'
-                  OR COALESCE((SELECT o.verification_status::text FROM b
-                                 JOIN public.buyer_organization_active o ON o.id = b.organization_id), '')
-                     = 'verified') AS verified,
+                -- 2026-10-31: only an organisation is verified -- the buyer's
+                -- organisation when it is a verified business; never a person.
+                COALESCE((SELECT o.account_type::text <> 'individual'
+                                 AND o.verification_status::text = 'verified'
+                            FROM b JOIN public.buyer_organization_active o ON o.id = b.organization_id),
+                         false) AS verified,
                 (SELECT pm.name FROM f JOIN public.payam pm ON pm.id = f.payam_id) AS payam_name,
                 COALESCE(
                   (SELECT s.name FROM f JOIN public.state s ON s.id = f.state_id),

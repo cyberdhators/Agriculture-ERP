@@ -21,7 +21,6 @@ import { STAGE_KEY, stageStamp } from '@/lib/market-posts/presentation';
 
 import { CategoryGlyph } from './CategoryGlyph';
 import { Photo } from './Photo';
-import { VerifiedFarmerBadge } from './VerifiedFarmerBadge';
 import styles from './listings.module.css';
 
 /** Two initials for the seller disc — never an icon alone. */
@@ -33,9 +32,8 @@ function initials(seller: Pick<ProduceListing, 'trading_name'>): string {
 /**
  * One product card. On the marketplace (a `seller` is given): a 4:3 cover with
  * a category badge and, when not listed, a status stamp; a Fraunces title, the
- * product and quantity, the price as the hero line, the seller with a
- * "Verified farmer" badge when they are (LISTINGS LANE: shown, never a filter)
- * and their payam, and a "Contact seller" button revealed on
+ * product and quantity, the price as the hero line, the seller (2026-10-31:
+ * no badge -- a farmer's account is never verified) and their payam, and a "Contact seller" button revealed on
  * hover or shown on touch. On the farmer's own list (no seller): the same head
  * with the status stamp and an Edit action in the foot. Staff get a kebab that
  * opens moderation. The whole card links to the product page.
@@ -126,7 +124,6 @@ export function ListingCard({
             <span className={styles.cardSellerName} dir="auto">
               {listing.trading_name}
             </span>
-            <VerifiedFarmerBadge verified={seller.verification_status === 'verified'} lang={lang} />
             <span className={styles.cardSellerPayam}>{seller.payam_name}</span>
           </div>
           <div className={styles.cardContact}>

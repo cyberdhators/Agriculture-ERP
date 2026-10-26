@@ -39,7 +39,6 @@ interface ListingRow {
 }
 
 interface BrowseRow extends ListingRow {
-  seller_verification_status: string;
   seller_payam_id: string;
   seller_payam_name: string;
   seller_created_at: string;
@@ -92,7 +91,6 @@ const presentBrowse = (row: BrowseRow) => ({
   status: row.status,
   created_at: row.created_at,
   updated_at: row.updated_at,
-  seller_verification_status: row.seller_verification_status,
   seller_payam_id: row.seller_payam_id,
   seller_payam_name: row.seller_payam_name,
   seller_created_at: row.seller_created_at,
@@ -100,8 +98,8 @@ const presentBrowse = (row: BrowseRow) => ({
   // seller, so "More from this seller" and the seller's listing count can
   // group them. A one-way hash: the farmer id itself is still never sent.
   seller_key: row.seller_key,
-  // LISTINGS LANE (2026-10-19): a badge, shown only -- never a filter.
-  farmer_verified: row.seller_verification_status === 'verified',
+  // 2026-10-31 (the owner): a person's account is never verified, so neither
+  // the farmer's field-record status nor a "Verified farmer" badge is public.
 });
 
 const RETURNING_COLUMNS = `id, farmer_id, trading_name, title,
@@ -128,7 +126,6 @@ const BROWSE_COLUMNS = `pl.id, pl.trading_name, pl.title,
   pl.harvest_season, pl.pickup_notes, pl.photo_storage_paths,
   pl.status::text AS status,
   pl.created_at::text AS created_at, pl.updated_at::text AS updated_at,
-  f.verification_status::text AS seller_verification_status,
   pl.payam_id AS seller_payam_id,
   pm.name AS seller_payam_name,
   f.created_at::text AS seller_created_at,
@@ -188,7 +185,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       // B14: the public sees only what is in the market -- listed -- whether
       // or not it filters by farmer. A farmer reads their own drafts through
       // /api/farmer/listings. LISTINGS LANE (2026-10-19): no longer only from a
-      // verified farmer (the owner dropped #127); `farmer_verified` is a badge.
+      // verified farmer (the owner dropped #127). 2026-10-31: and no badge either.
       where.push(
         "pl.status = 'listed'",
         // 2026-10-08: an expired listing is out of the market.

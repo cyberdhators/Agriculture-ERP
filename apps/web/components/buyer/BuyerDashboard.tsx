@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 
 import { getSummary, type BuyerSummary } from '@/lib/buyer/api';
 import { useCart } from '@/lib/buyer/cart';
-import { categoryLabelOf, verificationMessage } from '@/lib/buyer/labels';
+import { categoryLabelOf, showsStandingStamp, verificationMessage } from '@/lib/buyer/labels';
 import { t } from '@/lib/i18n';
 
 import { ShortcutHub } from '../account/ShortcutHub';
@@ -59,9 +59,12 @@ export function BuyerDashboard() {
         }
       />
 
-      {standing !== 'verified' && standing !== 'not_required' ? (
+      {/* 2026-10-31: an organisation's verification is a badge; an individual has none. */}
+      {standing !== 'verified' &&
+      standing !== 'not_required' &&
+      showsStandingStamp(profile.organization.account_type, standing) ? (
         <Notice
-          kind={standing === 'rejected' || standing === 'suspended' ? 'error' : 'info'}
+          kind={standing === 'suspended' ? 'error' : 'info'}
           title={t('buyer.dash.standingTitle', language)}
         >
           <p>{verificationMessage(standing, language)}</p>

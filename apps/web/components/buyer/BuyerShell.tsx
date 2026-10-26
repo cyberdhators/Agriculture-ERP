@@ -21,7 +21,7 @@ import {
   updateProfile,
   type BuyerProfile,
 } from '@/lib/buyer/api';
-import { VERIFICATION_STAMPS, verificationLabel } from '@/lib/buyer/labels';
+import { VERIFICATION_STAMPS, showsStandingStamp, verificationLabel } from '@/lib/buyer/labels';
 import { DEFAULT_LANGUAGE, isRtl, t, type Language, type TKey } from '@/lib/i18n';
 import { useDocumentLanguage, useLanguageChoice } from '@/lib/i18n/client';
 import { setCartOwner, useCart } from '@/lib/buyer/cart';
@@ -354,7 +354,8 @@ export function BuyerShell({
               </span>
               {/* On a phone the standing moves under the name: beside the
                   icons there is no room for it and the name both. */}
-              {profile ? (
+              {profile &&
+              showsStandingStamp(profile.organization.account_type, profile.verification.status) ? (
                 <span className={styles.stampUnder}>
                   <Stamp kind={VERIFICATION_STAMPS[profile.verification.status]}>
                     {verificationLabel(profile.verification.status, language)}
@@ -383,7 +384,8 @@ export function BuyerShell({
                   <span className={styles.unreadDot}>{unread}</span>
                 ) : null}
               </Link>
-              {profile ? (
+              {profile &&
+              showsStandingStamp(profile.organization.account_type, profile.verification.status) ? (
                 <span className={styles.stampSide}>
                   <Stamp kind={VERIFICATION_STAMPS[profile.verification.status]}>
                     {verificationLabel(profile.verification.status, language)}

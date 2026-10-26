@@ -179,6 +179,20 @@ describe('individual buyers need no review (owner, 2026-10-06)', () => {
     expect(canMoveBuyer('pending', 'verified', 'business')).toBe(true);
   });
 
+  it('an individual is never rejected either: no verification state reaches a person (2026-10-31)', () => {
+    for (const from of BUYER_VERIFICATION_STATUSES) {
+      for (const to of ['pending', 'under_review', 'verified', 'rejected'] as const) {
+        expect(canMoveBuyer(from, to, 'individual'), `${from} -> ${to}`).toBe(false);
+      }
+    }
+    expect(STANDINGS_FOR.individual).toEqual(['not_required', 'suspended']);
+  });
+
+  it('a verified organisation can have its badge withdrawn, and be verified again', () => {
+    expect(canMoveBuyer('verified', 'rejected', 'business')).toBe(true);
+    expect(canMoveBuyer('rejected', 'verified', 'business')).toBe(true);
+  });
+
   it('the kinds and their standings agree with the status list', () => {
     for (const type of BUYER_ACCOUNT_TYPES) {
       for (const s of STANDINGS_FOR[type]) expect(BUYER_VERIFICATION_STATUSES).toContain(s);
@@ -309,9 +323,15 @@ describe('standing decides what a buyer may do', () => {
     expect(buyerCapabilities('not_required')).toEqual({ browse: true, request: true });
   });
 
-  it('a rejected or suspended account can do neither', () => {
-    expect(buyerCapabilities('rejected')).toEqual({ browse: false, request: false });
+  it('a declined verification withholds the badge only; it closes nothing (2026-10-31)', () => {
+    expect(buyerCapabilities('rejected')).toEqual({ browse: true, request: true });
+  });
+
+  it('only a suspension -- account standing, not verification -- closes the marketplace', () => {
     expect(buyerCapabilities('suspended')).toEqual({ browse: false, request: false });
+    for (const s of BUYER_VERIFICATION_STATUSES.filter((x) => x !== 'suspended')) {
+      expect(buyerCapabilities(s), s).toEqual({ browse: true, request: true });
+    }
   });
 
   it('the transition tables cover every status, and only name real ones', () => {

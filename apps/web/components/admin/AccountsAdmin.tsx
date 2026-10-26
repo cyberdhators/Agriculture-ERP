@@ -278,7 +278,7 @@ export function AccountsAdmin() {
                 render: (r) => (
                   <span style={{ display: 'grid', gap: 4, justifyItems: 'start' }}>
                     <Stamp kind={statusStamp(r.status)}>{statusLabel(r.status)}</Stamp>
-                    {r.kind !== 'organisation' ? (
+                    {verificationLabel(r) ? (
                       <span className="small">{verificationLabel(r)}</span>
                     ) : null}
                     <span className="small">{publicationLabel(r.publication)}</span>

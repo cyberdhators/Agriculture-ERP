@@ -139,10 +139,12 @@ export async function accountOfSignIn(db: Db, authUserId: string): Promise<Profi
      )
      SELECT (SELECT id FROM f) AS farmer_id,
             (SELECT id FROM b) AS buyer_id,
-            (COALESCE((SELECT verification_status::text FROM f), '') = 'verified'
-              OR COALESCE((SELECT o.verification_status::text FROM b
-                             JOIN public.buyer_organization_active o ON o.id = b.organization_id), '')
-                 = 'verified') AS verified,
+            -- 2026-10-31: only an organisation is verified -- the buyer's
+            -- organisation when it is a verified business; never a person.
+            COALESCE((SELECT o.account_type::text <> 'individual'
+                             AND o.verification_status::text = 'verified'
+                        FROM b JOIN public.buyer_organization_active o ON o.id = b.organization_id),
+                     false) AS verified,
             LEAST((SELECT created_at FROM f), (SELECT created_at FROM b)) AS member_since,
             COALESCE((SELECT phone FROM f), (SELECT phone FROM b)) AS phone`,
     authUserId,

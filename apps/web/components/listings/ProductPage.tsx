@@ -21,7 +21,6 @@ import { formatDate } from '@/lib/format';
 import { t, type Language } from '@/lib/i18n';
 
 import { Photo } from './Photo';
-import { VerifiedFarmerBadge } from './VerifiedFarmerBadge';
 import styles from './listings.module.css';
 
 /** Two initials for the seller disc — never an icon alone. */
@@ -228,10 +227,6 @@ export function ProductPage({
                 <div className={styles.sellerName} dir="auto">
                   {listing.trading_name}
                 </div>
-                <VerifiedFarmerBadge
-                  verified={seller.verification_status === 'verified'}
-                  lang={lang}
-                />
               </div>
             </div>
             <dl className={styles.sellerRows}>

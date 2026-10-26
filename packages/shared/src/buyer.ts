@@ -80,10 +80,13 @@ export const BUYER_VERIFICATION_STATUSES = [
 export type BuyerVerificationStatus = (typeof BUYER_VERIFICATION_STATUSES)[number];
 
 /**
- * Individuals buy for themselves and need no review; a business is verified
- * by CORWADO before it may send requests (owner, 2026-10-06). An individual's
- * standing is `not_required`, never `verified`: nobody checked them, and the
- * record must not say somebody did.
+ * Individuals buy for themselves and are never reviewed; a business may be
+ * verified by CORWADO (owner, 2026-10-06). An individual's standing is
+ * `not_required`, never `verified`: nobody checked them, and the record must
+ * not say somebody did. 2026-10-31 (the owner: "only organization needs to be
+ * verified by admin and superadmin not individual"): a business's
+ * verification is a "Verified organisation" badge and never a gate, and an
+ * individual is never put through any verification state at all.
  */
 export const BUYER_ACCOUNT_TYPES = ['individual', 'business'] as const;
 export type BuyerAccountType = (typeof BUYER_ACCOUNT_TYPES)[number];
@@ -155,7 +158,8 @@ export interface BuyerCapabilities {
  * "ordinary participation must not depend on CORWADO approval"): a new or
  * under-review organisation may send purchase requests at once, as farmers may
  * list since #180. Verification is a badge, not a gate. Until then a new
- * organisation could look but not buy.
+ * organisation could look but not buy. 2026-10-31: a declined verification
+ * no longer closes the marketplace either -- only a suspension does.
  */
 export function buyerCapabilities(status: BuyerVerificationStatus): BuyerCapabilities {
   switch (status) {
@@ -165,7 +169,10 @@ export function buyerCapabilities(status: BuyerVerificationStatus): BuyerCapabil
     case 'pending':
     case 'under_review':
       return { browse: true, request: true };
+    // 2026-10-31: a declined verification withholds the badge, nothing else.
     case 'rejected':
+      return { browse: true, request: true };
+    // Suspension is account standing, not verification: it still closes the market.
     case 'suspended':
       return { browse: false, request: false };
   }
@@ -180,8 +187,9 @@ export const BUYER_VERIFICATION_TRANSITIONS: Readonly<
 > = {
   pending: ['under_review', 'verified', 'rejected'],
   under_review: ['verified', 'rejected'],
-  verified: ['suspended'],
-  rejected: ['under_review', 'not_required'],
+  // 2026-10-31: the badge can be withdrawn (rejected) as well as the account suspended.
+  verified: ['rejected', 'suspended'],
+  rejected: ['under_review', 'verified', 'not_required'],
   suspended: ['verified', 'rejected', 'not_required'],
   not_required: ['suspended', 'rejected'],
 };
@@ -189,7 +197,10 @@ export const BUYER_VERIFICATION_TRANSITIONS: Readonly<
 /** The standings each kind of account may ever hold. The database enforces the same. */
 export const STANDINGS_FOR: Readonly<Record<BuyerAccountType, readonly BuyerVerificationStatus[]>> =
   {
-    individual: ['not_required', 'rejected', 'suspended'],
+    // 2026-10-31: an individual is never verified, so never "rejected" either --
+    // active or suspended only. (The database still admits 'rejected' for an
+    // old row; no decision can make one now.)
+    individual: ['not_required', 'suspended'],
     business: ['pending', 'under_review', 'verified', 'rejected', 'suspended'],
   };
 

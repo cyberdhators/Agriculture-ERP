@@ -200,6 +200,9 @@ export const AUDIT_ACTIONS = [
   'organization.unpublished',
   'organization.closed',
   'organization.recovered',
+  // 2026-10-31: staff verify an organisational profile, or remove the mark (a badge only).
+  'organization.verified',
+  'organization.verification_removed',
   'organization_member.joined',
   'organization_member.updated',
   'organization_member.revoked',

@@ -89,8 +89,9 @@ const ADMIN_ROLE_BY_DESIGN: Readonly<Record<string, string>> = {
   'admin/staff-access/users/[id]/mfa-reset/route.ts POST': 'superadmin.grant',
   'admin/staff-access/users/[id]/revoke-sessions/route.ts POST': 'superadmin.grant',
   // B13 procurement: the buyer state machines record the actor as `admin`.
-  'admin/buyers/route.ts GET': 'content.moderate; B13 actor typing',
-  'admin/buyers/[id]/route.ts PATCH': 'content.moderate; B13 actor typing',
+  // 2026-10-31: content.moderate (suspend/restore) or organization.verify (verify).
+  'admin/buyers/route.ts GET': 'content.moderate or organization.verify; B13 actor typing',
+  'admin/buyers/[id]/route.ts PATCH': 'content.moderate or organization.verify; B13 actor typing',
   'admin/purchase-requests/route.ts GET': 'content.moderate; B13 actor typing',
   'admin/purchase-requests/[id]/route.ts PATCH': 'content.moderate; B13 actor typing',
   'admin/orders/route.ts GET': 'content.moderate; B13 actor typing',
