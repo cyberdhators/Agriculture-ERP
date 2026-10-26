@@ -30,24 +30,10 @@ const ACCOUNT_TILES: ReadonlyArray<{
   // "Buy" are no longer tiles here. The shortcut hub above already offers both
   // ("Sell produce" and "Buy", same pages), so the home showed two cart tiles
   // and two ways to post. tests/duplicate-icons-scan.test.ts keeps it so.
-  {
-    href: '/market',
-    inBottomBar: true,
-    title: 'shell.marketplace',
-    sub: 'account.tileMarketSub',
-    glyph: (
-      <svg
-        viewBox="0 0 24 24"
-        width="26"
-        height="26"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.6"
-      >
-        <path d="M3 9l1.5-5h15L21 9M3 9v11h18V9M3 9h18M9 20v-6h6v6" />
-      </svg>
-    ),
-  },
+  // 2026-11-01 (owner: "compare the redundancy" above and below the weather):
+  // the Marketplace tile went too -- "Buy" above the weather and the bottom
+  // bar's Market tab already lead there -- and so did the header's "Post
+  // produce" button, which repeated the hub's "Sell produce".
   {
     href: '/farmer/account/listings',
     title: 'account.tileListings',
@@ -182,11 +168,6 @@ export function FarmerOverview() {
       <PageHead
         title={t('account.tabOverview', language)}
         lead={farmerPayamName(farmer.payam_id)}
-        actions={
-          <ButtonLink href="/farmer/account/listings/new">
-            {t('account.tilePost', language)}
-          </ButtonLink>
-        }
       />
 
       {/* 2026-10-28: one home for every ordinary function (infographic no. 4). */}

@@ -61,6 +61,21 @@ describe('one icon per destination', () => {
     expect(duplicates(hrefs)).toEqual([]);
   });
 
+  it('nothing below the weather repeats what the hub above it offers (owner, 2026-11-01)', () => {
+    const src = read('components/farmer/FarmerOverview.tsx');
+    const tiles = src.slice(
+      src.indexOf('const ACCOUNT_TILES'),
+      src.indexOf('export function FarmerOverview'),
+    );
+    // "Buy" above the weather and the Market tab already lead to the market.
+    expect(tiles).not.toMatch(/href:\s*'\/market'/);
+    // The page header repeats no hub destination ("Sell produce" is the hub's).
+    const head = src.slice(src.indexOf('<PageHead'), src.indexOf('<ShortcutHub'));
+    for (const href of Object.values(SHORTCUT_HREF.farmer)) {
+      expect(head.includes(`href="${href}"`), href).toBe(false);
+    }
+  });
+
   it("tiles that are also bottom-bar tabs are hidden at the bottom bar's width", () => {
     const shell = read('components/farmer/AccountShell.tsx');
     const bottom = shell.slice(shell.indexOf('const BOTTOM'), shell.indexOf('function isActive'));
