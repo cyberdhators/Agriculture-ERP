@@ -1,12 +1,14 @@
 'use client';
 
+import Link from 'next/link';
 import { useState } from 'react';
 
 import {
   AccountAnnouncements,
   NotificationPreferencesCard,
 } from '@/components/account/NotificationSettings';
-import { listNotifications, markNotificationRead } from '@/lib/buyer/api';
+import { listNotifications, markNotificationRead, type BuyerNotification } from '@/lib/buyer/api';
+import { popHref } from '@/lib/farmer-notices';
 import { formatDate } from '@/lib/format';
 import { t } from '@/lib/i18n';
 
@@ -21,6 +23,19 @@ import styles from './buyer.module.css';
  * existing notification table: account decisions, request decisions, orders
  * and their progress. Each is a fixed sentence; none names a person.
  */
+/** This page itself: a notice whose only place is here gets no link. */
+const NOTIFICATIONS_HREF = '/buyer/notifications';
+
+/**
+ * 2026-11-01 (live test): where tapping a notice goes -- the exact post or
+ * conversation it is about, as its live pop opens; null when it has nowhere
+ * to open but this page.
+ */
+function opensAt(n: BuyerNotification): string | null {
+  const href = popHref({ side: 'buyer', title: n.title, refKind: n.ref_kind, refId: n.ref_id });
+  return href === NOTIFICATIONS_HREF ? null : href;
+}
+
 export function BuyerNotifications() {
   const { refreshUnread, language } = useBuyer();
   const [view, setView] = useState<'all' | 'unread' | 'announcements' | 'settings'>('all');
@@ -80,7 +95,9 @@ export function BuyerNotifications() {
         />
       ) : (
         <>
-          {list.rows.map((n) => (
+          {list.rows.map((n) => {
+            const href = opensAt(n);
+            return (
             <Card key={n.id}>
               <CardBody>
                 <div className={styles.standing}>
@@ -92,7 +109,15 @@ export function BuyerNotifications() {
                       )}
                     </p>
                     <p dir="auto">{n.body}</p>
-                    <p className={styles.muted}>{formatDate(n.created_at, language)}</p>
+                    <p className={styles.muted}>
+                      {formatDate(n.created_at, language)}
+                      {href ? (
+                        <>
+                          {' · '}
+                          <Link href={href}>{language === 'ar' ? 'افتح' : 'Open'} →</Link>
+                        </>
+                      ) : null}
+                    </p>
                   </div>
                   {n.read_at ? null : (
                     <Button
@@ -107,7 +132,8 @@ export function BuyerNotifications() {
                 </div>
               </CardBody>
             </Card>
-          ))}
+            );
+          })}
           <Pagination
             shown={list.rows.length}
             hasMore={list.hasMore}

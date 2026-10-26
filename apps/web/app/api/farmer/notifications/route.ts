@@ -1,5 +1,11 @@
 import { FARMER_ROLE } from '@agri-erp/shared';
 
+import {
+  noticeRefColumns,
+  noticeRefStored,
+  presentNoticeRef,
+  type NoticeRefRow,
+} from '../../../../lib/api/notice-ref';
 import { defineRoutes, paged } from '../../../../lib/api/route';
 import { farmerScope } from '../../../../lib/api/scope';
 import { prisma } from '../../../../lib/db';
@@ -7,9 +13,10 @@ import { prisma } from '../../../../lib/db';
 /**
  * GET /api/farmer/notifications -- the farmer's own in-app notices, newest
  * first, with the unread count beside them. B14. The existing notification
- * table, filtered to the session's farmer; the most recent 100.
+ * table, filtered to the session's farmer; the most recent 100. 2026-11-01:
+ * each with what it points at (ref_kind, ref_id), so tapping it opens that.
  */
-interface Row {
+interface Row extends NoticeRefRow {
   id: string;
   title: string;
   body: string;
@@ -22,8 +29,9 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
     roles: [FARMER_ROLE],
     handler: async ({ auth }) => {
       const { farmerId } = farmerScope(auth);
+      const refs = noticeRefColumns(await noticeRefStored(prisma));
       const rows = await prisma.$queryRawUnsafe<Row[]>(
-        `SELECT id, title, body, read_at, created_at FROM public.notification
+        `SELECT id, title, body, read_at, created_at, ${refs} FROM public.notification
           WHERE farmer_id = $1::uuid AND deleted_at IS NULL
           ORDER BY created_at DESC, id DESC LIMIT 100`,
         farmerId,
@@ -35,6 +43,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
           body: r.body,
           read_at: r.read_at?.toISOString() ?? null,
           created_at: r.created_at.toISOString(),
+          ...presentNoticeRef(r),
         })),
         { cursor: null, hasMore: false, unread: rows.filter((r) => !r.read_at).length },
       );

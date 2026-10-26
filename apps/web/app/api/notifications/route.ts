@@ -1,11 +1,17 @@
 import { DEFAULT_LIMIT, MAX_LIMIT, decodeCursor, encodeCursor } from '@agri-erp/shared';
 
 import { invalidCursor } from '../../../lib/api/errors';
+import {
+  noticeRefColumns,
+  noticeRefStored,
+  presentNoticeRef,
+  type NoticeRefRow,
+} from '../../../lib/api/notice-ref';
 import { defineRoutes, paged } from '../../../lib/api/route';
 import { scopeCondition } from '../../../lib/api/scope';
 import { prisma } from '../../../lib/db';
 
-interface NotificationRow {
+interface NotificationRow extends NoticeRefRow {
   id: string;
   farmer_id: string;
   channel: string;
@@ -23,11 +29,15 @@ const present = (row: NotificationRow) => ({
   body: row.body,
   read_at: row.read_at,
   created_at: row.created_at,
+  ...presentNoticeRef(row),
 });
 
 const SELECT_COLUMNS = `n.id, n.farmer_id::text AS farmer_id,
   n.channel::text AS channel, n.title, n.body,
   n.read_at::text AS read_at, n.created_at::text AS created_at`;
+
+/** The columns, with what each notice points at (2026-11-01; NULLs before its migration). */
+const selectColumns = (refs: boolean) => `${SELECT_COLUMNS}, ${noticeRefColumns(refs, 'n')}`;
 
 export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   GET: {
@@ -78,8 +88,9 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
         );
       }
 
+      const refs = await noticeRefStored(prisma);
       const rows = await prisma.$queryRawUnsafe<NotificationRow[]>(
-        `SELECT ${SELECT_COLUMNS}
+        `SELECT ${selectColumns(refs)}
          FROM public.notification n
          JOIN public.farmer f ON f.id = n.farmer_id
          WHERE ${where.join(' AND ')}

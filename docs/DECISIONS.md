@@ -5836,3 +5836,30 @@ used below (any product and state work: matching is by data).
 6. Reply from B: it appears on A's open conversation without a refresh.
    In Arabic (language switch on both phones) the cards and "متصل الآن" read in
    Arabic.
+
+## A stored notice opens the exact post or conversation (2026-11-01)
+
+OBSERVED (live test): a match alert tapped in the notifications list opened the
+general market page (`/market/requests` or `/market`), while the same notice's
+live pop opened the buying request or listing itself. The live event carries
+`ref_kind`/`ref_id`; the stored row did not.
+
+Decision: `public.notification` gains nullable `ref_kind` (CHECK against
+NOTICE_REF_KINDS: buying_request, listing, conversation) and `ref_id`, both or
+neither (migration `20261101100000_notification_ref`, additive; no view selects
+from the table). `notifyAccountWithId` stores the ref it is given — match alerts
+(the post) and first-message notices (the conversation), the only notices whose
+target is one of those kinds. Every notifications list and detail API answers
+`ref_kind`/`ref_id`; the farmer and buyer lists open a notice through `popHref`,
+exactly as the pop. Older rows (no ref) open where they always did. The buyer
+list, which had no links, now shows "Open →" when a notice has a place other
+than the list itself.
+
+INFERRED: other notices keep no ref on purpose — expiry reminders, correction
+requests and the request-received notice open the owner's own management pages,
+which are more useful than the public post page; advice and organisation
+notices have no ref kind.
+
+Until the migration is applied the columns are detected as absent (one cannot-fail
+lookup, remembered once present): notices are written without a ref and the
+APIs answer nulls, so nothing fails on a database that has not had it.
