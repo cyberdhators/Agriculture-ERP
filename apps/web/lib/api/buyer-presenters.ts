@@ -41,7 +41,7 @@ export const MARKET_COLUMNS = `pl.id, pl.title, pl.category::text AS category, p
        ELSE to_char(pl.available_until, 'YYYY-MM-DD') END AS available_until,
   pl.harvest_season, pl.quality_grade::text AS quality_grade,
   pl.min_order_quantity::text AS min_order_quantity, pl.trading_name,
-  pl.updated_at, f.verification_status::text AS supplier_verification, pl.show_phone,
+  pl.updated_at, pl.show_phone,
   pm.name AS payam_name, c.id AS county_id, c.name AS county_name,
   s.id AS state_id, s.name AS state_name,
   COALESCE((SELECT ap.allow_messages FROM public.account_profile ap
@@ -62,7 +62,8 @@ export const MARKET_FROM = `FROM public.produce_listing_active pl
  * needs staff verification before their listings go live. B14's rule (the
  * owner, 2026-10-07: "farmers need to be approved and verified before they can
  * post anything") is replaced, not silently removed: verification is now a
- * badge (`supplier.verified`), shown and never filtered on. Paused, withdrawn
+ * badge, shown and never filtered on -- and since 2026-10-31 not even that
+ * (only organisations are verified; a farmer never is). Paused, withdrawn
  * and completed listings are not `listed`, so they are out.
  */
 // 2026-10-08: and not past its "available until" date -- an expired listing
@@ -90,7 +91,6 @@ export interface MarketRow {
   min_order_quantity: string | null;
   trading_name: string;
   updated_at: Date;
-  supplier_verification: string;
   show_phone: boolean;
   payam_name: string;
   county_id: string;
@@ -121,9 +121,9 @@ export function presentMarketListing(row: MarketRow) {
     production_period: row.harvest_season,
     quality_grade: row.quality_grade,
     min_order_quantity: row.min_order_quantity === null ? null : Number(row.min_order_quantity),
+    // 2026-10-31 (the owner): no `verified` -- a farmer's account is never verified.
     supplier: {
       trading_name: row.trading_name,
-      verified: row.supplier_verification === 'verified',
     },
     // 2026-10-20: whether the farmer gives their phone to a buyer who sends a
     // request (a yes/no, never the number).
@@ -311,13 +311,14 @@ export function presentDeliveryUpdate(row: DeliveryUpdateRow) {
  * identified by what the buyer already knows of it.
  */
 export const BUYER_NOTICES = {
+  // 2026-10-31: an organisation's verification is a badge, never a gate.
   account_verified: {
-    title: 'Your buyer account is verified',
-    body: 'You can now send purchase requests from the marketplace.',
+    title: 'Your organisation is verified',
+    body: 'A "Verified organisation" badge now shows on its posts and profile.',
   },
   account_rejected: {
-    title: 'Your buyer account was not approved',
-    body: 'CORWADO could not verify your organisation. Open your profile to see the note.',
+    title: 'Your organisation was not verified',
+    body: 'You can still buy as before. Open your profile to see CORWADO’s note.',
   },
   account_suspended: {
     title: 'Your buyer account is suspended',
@@ -328,8 +329,8 @@ export const BUYER_NOTICES = {
     body: 'You can browse the marketplace and send purchase requests.',
   },
   account_under_review: {
-    title: 'Your buyer account is under review',
-    body: 'CORWADO is checking your organisation details.',
+    title: 'Your organisation is being checked',
+    body: 'CORWADO is checking your organisation details and may ask for more. You can keep buying meanwhile.',
   },
   request_under_review: {
     title: 'A purchase request is under review',

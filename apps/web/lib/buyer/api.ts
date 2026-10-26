@@ -164,7 +164,7 @@ export interface MarketListing {
   production_period: string | null;
   quality_grade: string | null;
   min_order_quantity: number | null;
-  supplier: { trading_name: string; verified: boolean };
+  supplier: { trading_name: string };
   location: { payam: string; county_id: string; county: string; state_id: string; state: string };
   updated_at: string;
   /** 2026-10-20: whether the farmer gives their phone to a buyer who asks. */

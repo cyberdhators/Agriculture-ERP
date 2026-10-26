@@ -8,11 +8,13 @@ import {
   buyerListFilterSchema,
   decodeCursor,
   encodeCursor,
+  holdsPermission,
+  mayVerifyOrganizations,
   zodErrorToApiError,
 } from '@agri-erp/shared';
 
-import { ApiFailure, invalidCursor } from '../../../../lib/api/errors';
-import { requirePermission } from '../../../../lib/api/permissions';
+import { ApiFailure, forbidden, invalidCursor } from '../../../../lib/api/errors';
+import { permissionsOf } from '../../../../lib/api/permissions';
 import { defineRoutes, paged } from '../../../../lib/api/route';
 import { prisma } from '../../../../lib/db';
 import { adminAuthEmails } from '../../../../lib/supabase/admin';
@@ -27,6 +29,10 @@ import { adminAuthEmails } from '../../../../lib/supabase/admin';
  *
  * 2026-10-21: the contact carries its buyer id and whether that account is
  * suspended, for the Suspend/Restore button on the row.
+ *
+ * 2026-10-31: open to staff holding content.moderate (suspend and restore) OR
+ * organization.verify (verify an organisation -- the Administrator and Super
+ * Admin presets). Verification is a badge only.
  */
 interface OrgRow {
   id: string;
@@ -56,7 +62,13 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   GET: {
     roles: ['admin'],
     handler: async ({ auth, request }) => {
-      await requirePermission(auth, 'content.moderate');
+      const permissions = await permissionsOf(auth);
+      if (
+        !holdsPermission(permissions, 'content.moderate') &&
+        !mayVerifyOrganizations(permissions)
+      ) {
+        throw forbidden();
+      }
       const parsed = buyerListFilterSchema.safeParse(
         Object.fromEntries(new URL(request.url).searchParams),
       );

@@ -109,7 +109,12 @@ const ACCOUNTS_CTE = `
       COALESCE(f.suspended_at, b.suspended_at) AS suspended_at,
       COALESCE(f.disabled_at, b.disabled_at) AS disabled_at,
       FALSE AS closed,
-      COALESCE(f.verification_status::text, bo.verification_status::text) AS verification,
+      -- 2026-10-31 (the owner): only organisations are verified. A person's
+      -- row shows its buyer organisation's verification when that is a
+      -- business, and nothing for an individual -- not the extension
+      -- programme's field record of a farmer, which stays with the officers.
+      CASE WHEN bo.account_type::text <> 'individual' THEN bo.verification_status::text END
+        AS verification,
       (f.id IS NOT NULL AND EXISTS (
          SELECT 1 FROM public.phone_verification pv
           WHERE pv.phone = f.phone AND pv.verified_at IS NOT NULL)) AS phone_verified,
@@ -139,7 +144,7 @@ const ACCOUNTS_CTE = `
     SELECT 'organisation', o.id, NULL::uuid, NULL::uuid, NULL::uuid, o.name, 'none',
            NULL::text, NULL::text, COALESCE(o.activities, '{}'::text[]), '{}'::text[],
            o.state_id, o.created_at, NULL::timestamptz, NULL::timestamptz,
-           NULL::timestamptz, NULL::timestamptz, (o.closed_at IS NOT NULL), NULL::text, FALSE,
+           NULL::timestamptz, NULL::timestamptz, (o.closed_at IS NOT NULL), o.verification_status, FALSE,
            o.status, NULL::text, FALSE, NULL::text
       FROM public.organization o
      WHERE o.deleted_at IS NULL

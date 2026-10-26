@@ -15,7 +15,7 @@ import {
   UNIT_LABELS,
 } from '@/lib/buyer/labels';
 
-import { Badge, Button, EmptyState, Field, Input, Notice, PageHeader, Select, Stamp } from '../ui';
+import { Badge, Button, EmptyState, Field, Input, Notice, PageHeader, Select } from '../ui';
 import { CardSkeleton, Pagination } from '../ui/data';
 import { useBuyer } from './BuyerShell';
 import { useCursorList } from './useCursorList';
@@ -30,7 +30,7 @@ import styles from './buyer.module.css';
  * per keystroke.
  *
  * What a card shows of the seller is what the route returns: the trading name
- * the farmer published, whether the farmer is verified, and where the produce
+ * the farmer published and where the produce (2026-10-31: no farmer badge)
  * is. No phone, no legal name -- the route does not have them to give.
  */
 
@@ -265,7 +265,6 @@ export function BuyerMarketplace() {
                   </p>
                   <div className={styles.productFoot}>
                     <span dir="auto">{p.supplier.trading_name}</span>
-                    {p.supplier.verified ? <Stamp kind="verified">Verified farmer</Stamp> : null}
                   </div>
                 </Link>
               </li>

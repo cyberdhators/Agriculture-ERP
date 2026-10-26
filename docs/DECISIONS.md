@@ -5616,3 +5616,88 @@ The owner: "in mobile view, there's duplicate icons on the dashboards".
   building. No destination was removed: every page is still one tap away.
   Labels and aria-labels are unchanged.
 - **Guard:** `apps/web/tests/duplicate-icons-scan.test.ts` (pure).
+
+## Only organisations are verified (2026-10-31) — amends "Listings: no verification gate" (2026-10-19) and "Buy from any product page" (2026-10-21)
+
+The owner, 2026-10-31, in writing: **"remove verification from accounts. only
+organization needs to be verified by admin and superadmin not individual."**
+Branch `feat/organisation-only-verification`; migration
+`20261031090000_organisation_verification`, written, NOT applied.
+
+1. **Individual accounts are never verified (DOCUMENTED: the owner's words).**
+   A phone account (farmer record) or an individual email account (buyer,
+   `account_type = 'individual'`) shows no verified, pending or not-verified
+   status to its holder or the public, carries no badge and meets no gate.
+   - Removed: the "Verified farmer" badge (`VerifiedFarmerBadge`, deleted) on
+     market cards, product pages, the market table and services; the buyer
+     marketplace's `supplier.verified` and its "Verified farmer" stamp;
+     `farmer_verified` and `seller_verification_status` from the public
+     listing reads; the farmer's verification KPI and the "Not verified yet" /
+     "Not verified" banners on the farmer overview; the status block on
+     `/farmer/account/verification`, which is now "Your record" (number,
+     name, payam, joined; the path is kept for old links); the farmer's
+     "Verified" profile badge; the individual buyer's "Active" standing stamp.
+   - Gates (OBSERVED in the code): listing, buying requests, services,
+     messaging, advice and profile publication already had no verification
+     gate (2026-10-19, 2026-10-21, 2026-10-22). The one left was a buyer
+     organisation's **declined** verification (`rejected`), which closed the
+     marketplace; it now withholds the badge only (`buyerCapabilities`).
+     Suspension -- account standing, not verification -- still closes it.
+   - An individual buyer can no longer be put in `rejected` at all
+     (`STANDINGS_FOR.individual` = active or suspended). The database CHECK
+     still admits the value for an old row; nothing writes it.
+2. **Organisations are verified by staff, as a badge only.**
+   - New staff permission `organization.verify`, in the **Administrator** and
+     **Super Admin** presets only (packages/shared/src/staff-permissions.ts).
+     Organisational administrators cannot hold it (team permissions are a
+     separate list; a test asserts it).
+   - **Buyer organisations of the business kind** keep their review
+     (`buyer_organization.verification_status`): verify, ask for more
+     information (`under_review`, the clarification branch, with a note the
+     buyer sees), or decline (`rejected`); a verified organisation's badge can
+     be withdrawn (`verified -> rejected`) and given again. Verification
+     decisions now need `organization.verify`; suspend and restore keep
+     `content.moderate`. The list (`GET /api/admin/buyers`) admits either.
+     Labels and notices reworded: "Verified organisation", "Not verified",
+     "Being checked"; no sentence says buying waits on it.
+   - **Organisational profiles** (`organization`, team access) gain
+     `verification_status` ('unverified' | 'verified'), `verified_at`,
+     `verified_by` (a staff user), `verification_note` (migration above,
+     additive, CHECKs: status values; verified implies when and by whom; note
+     at most 300). `POST /api/admin/organizations/:id/verification`
+     (`{ verified, note }`; a note is required to remove the mark), refused
+     on a closed organisation or when nothing changes, audited as
+     **`organization.verified`** / **`organization.verification_removed`**.
+     Admin → Organisations shows each organisation's verification and the
+     Verify / Remove control to holders of the permission.
+   - **The badge** "Verified organisation" (`VerifiedOrganisationBadge`, i18n
+     `market.verifiedOrganisation`) shows on the public organisation page,
+     on buying requests and services posted for an organisation (or by a
+     verified business buyer), and on a business buyer's public profile.
+     Nothing filters on it.
+3. **The extension programme's field record stays (INFERRED reading -- OWNER
+   CONFIRMATION NEEDED).** An officer's check of a farmer they registered
+   (`verification_event`, `farmer.verification_status`, the view
+   `farmer_verified_v`) is kept as an internal programme record, because
+   CLAUDE.md's Reporting law says "Reach figures read the verified-only view"
+   and the contracted reach reports depend on it. It is shown only on officer
+   and staff screens (register, review queue, dossier, reports, the
+   communications farmer picker) and is never presented to the person or the
+   public as an account verification, nor used to gate anything for them.
+   The INFERENCE is that the owner's instruction is about account
+   verification as users and the public see it, not the programme's reach
+   counting; it rests on one instance (the wording "verified by admin and
+   superadmin", which describes staff action on accounts, while the field
+   record is an officer's). **Owner to confirm** whether reach reports
+   should keep counting only officer-checked farmers.
+4. **Admin console.** The accounts list and account page no longer print a
+   farmer's field-record status as the account's "verification": a person
+   shows their phone confirmation (contact verification, which the
+   specification keeps separate) and, for a business buyer, the buyer
+   organisation's verification; an individual shows none; an organisational
+   profile shows "Verified organisation" / "Organisation not verified".
+5. **Owner confirmations.** (a) the reach-report reading in 3; (b) whether a
+   state-scoped Administrator grant should verify organisations in its states
+   (built: platform-wide grants only); (c) whether "declined" should exist for
+   a buyer organisation at all now that it gates nothing (kept: it records
+   that CORWADO looked and did not verify).

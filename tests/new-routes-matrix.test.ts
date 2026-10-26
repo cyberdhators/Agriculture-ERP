@@ -23,6 +23,7 @@ import * as unreadCount from '../apps/web/app/api/admin/product-reports/unread-c
 import * as submit from '../apps/web/app/api/listings/[id]/reports/route';
 import * as adminOrganizations from '../apps/web/app/api/admin/organizations/route';
 import * as adminOrgRecover from '../apps/web/app/api/admin/organizations/[id]/recover/route';
+import * as adminOrgVerification from '../apps/web/app/api/admin/organizations/[id]/verification/route';
 // 2026-10-27: official announcements and message templates.
 import * as announcements from '../apps/web/app/api/admin/announcements/route';
 import * as announcementItem from '../apps/web/app/api/admin/announcements/[id]/route';
@@ -172,6 +173,14 @@ const ADMIN_ROUTES = [
       evidence: 'Zztest evidence',
       password: 'zztest-not-a-password',
     }),
+  },
+  // 2026-10-31: staff verify an organisation (then organization.verify).
+  {
+    name: 'POST /api/admin/organizations/:id/verification',
+    mod: adminOrgVerification,
+    method: 'POST' as const,
+    params: () => ({ id: DUMMY_ID }),
+    body: () => ({ verified: true }),
   },
   // 2026-10-27: correction requests on marketplace posts (then content.moderate).
   { name: 'GET /api/admin/corrections', mod: corrections, method: 'GET' as const },

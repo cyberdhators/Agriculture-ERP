@@ -162,7 +162,7 @@ export function AccountDetail({ kind, id }: { kind: AccountDetailKind; id: strin
             ) : null}
             <div>
               <dt className="muted">Verification</dt>
-              <dd>{verificationLabel(row)}</dd>
+              <dd>{verificationLabel(row) || 'None (individual accounts are not verified)'}</dd>
             </div>
             <div>
               <dt className="muted">Joined</dt>

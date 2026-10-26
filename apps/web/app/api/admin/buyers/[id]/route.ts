@@ -1,5 +1,6 @@
 import {
   buyerVerificationDecisionSchema,
+  ORGANIZATION_VERIFY_PERMISSION,
   canMoveBuyer,
   type BuyerAccountType,
   type BuyerVerificationStatus,
@@ -27,13 +28,32 @@ import { prisma } from '../../../../../lib/db';
  *
  * Suspension takes effect on the buyer's very next request: requireRole reads
  * the standing every time, so there is no session to revoke.
+ *
+ * 2026-10-31 (the owner: "only organization needs to be verified by admin and
+ * superadmin not individual"): a VERIFICATION decision -- under review,
+ * verified, not verified -- needs organization.verify (the Administrator and
+ * Super Admin presets) and is a badge only; suspending or restoring an
+ * account is moderation and keeps content.moderate. An individual can only
+ * be suspended or restored (STANDINGS_FOR).
  */
+const VERIFICATION_DECISIONS: ReadonlySet<BuyerVerificationStatus> = new Set([
+  'pending',
+  'under_review',
+  'verified',
+  'rejected',
+]);
+
 export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   PATCH: {
     roles: ['admin'],
     bodySchema: buyerVerificationDecisionSchema,
     handler: async ({ auth, body, params }) => {
-      await requirePermission(auth, 'content.moderate');
+      await requirePermission(
+        auth,
+        VERIFICATION_DECISIONS.has(body.status)
+          ? ORGANIZATION_VERIFY_PERMISSION
+          : 'content.moderate',
+      );
       const id = params.id ?? '';
       if (!UUID_PATTERN.test(id)) throw notFound();
 

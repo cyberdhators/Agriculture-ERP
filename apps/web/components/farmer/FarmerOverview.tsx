@@ -5,10 +5,9 @@ import Link from 'next/link';
 import { ShortcutHub } from '@/components/account/ShortcutHub';
 import { Boundary } from '@/components/farmers/Boundary';
 import { ListingCard } from '@/components/listings/ListingCard';
-import { ButtonLink, EmptyState, KpiStrip, Notice, Stamp } from '@/components/ui';
+import { ButtonLink, EmptyState, KpiStrip, Notice } from '@/components/ui';
 import { farmerPayamName, farmsForFarmer, officerById } from '@/lib/fixtures/farmers';
 import { useFarmerSession } from '@/lib/farmer-session';
-import { VERIFICATION_KEY, verificationStamp } from '@/lib/farmers/verification';
 import { LANGUAGE_LABELS, formatDate, formatPhone } from '@/lib/format';
 import { t, type TKey } from '@/lib/i18n';
 
@@ -161,8 +160,7 @@ const ACCOUNT_TILES: ReadonlyArray<{
 ];
 
 /**
- * The overview: a ruled KPI row (live, drafts, sold, plots, verification), a
- * plain note on what pending or not-verified means while it applies, the three
+ * The overview: a ruled KPI row (live, drafts, sold, plots), the three
  * most recent listings as cards, and a side column with the record and the
  * first mapped plot.
  */
@@ -243,30 +241,13 @@ export function FarmerOverview() {
           { label: t('account.kpiDrafts', language), value: drafts },
           { label: t('account.kpiSold', language), value: sold },
           { label: t('account.kpiPlots', language), value: farms.length },
-          {
-            label: t('account.kpiVerification', language),
-            value: (
-              <Stamp kind={verificationStamp(farmer.verification_status)}>
-                {t(VERIFICATION_KEY[farmer.verification_status], language)}
-              </Stamp>
-            ),
-          },
+          // 2026-10-31 (the owner): no verification here -- a person's account
+          // is never verified. An officer's field record stays the officer's.
         ]}
       />
 
       <div className={styles.overview}>
         <div className={styles.block}>
-          {farmer.verification_status === 'pending' ? (
-            <Notice kind="info" title={t('account.whatPendingTitle', language)}>
-              <p className="small">{t('listings.verifyBadgeNote', language)}</p>
-            </Notice>
-          ) : null}
-          {farmer.verification_status === 'rejected' ? (
-            <Notice kind="error" title={t('account.rejected', language)}>
-              <p className="small">{t('account.whatRejectedBody', language)}</p>
-            </Notice>
-          ) : null}
-
           <div id="requests" className={styles.anchor}>
             <FarmerRequests />
           </div>

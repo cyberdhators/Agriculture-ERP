@@ -241,7 +241,6 @@ export function ServiceForm({
       poster_type: poster,
       trading_name: values.trading_name,
       poster_verified: false,
-      farmer_verified: false,
       service_type: values.service_type,
       title: values.title,
       description: values.description,

@@ -60,7 +60,8 @@ interface Profile {
 const W = {
   en: {
     title: 'Profile',
-    verified: 'Verified',
+    // 2026-10-31: only organisations are verified.
+    verified: 'Verified organisation',
     since: 'Member since',
     listings: 'Selling',
     requests: 'Looking to buy',
@@ -75,7 +76,7 @@ const W = {
   },
   ar: {
     title: 'الملف الشخصي',
-    verified: 'موثّق',
+    verified: 'منظمة موثّقة',
     since: 'عضو منذ',
     listings: 'يبيع',
     requests: 'يريد أن يشتري',

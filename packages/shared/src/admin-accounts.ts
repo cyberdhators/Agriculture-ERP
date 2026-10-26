@@ -190,7 +190,11 @@ export interface AdminAccountRow {
   first_sign_in_at: string | null;
   last_active_at: string | null;
   status: AccountStatus;
-  /** The register's verification of a farmer record, or a buyer organisation's standing. */
+  /**
+   * 2026-10-31: an ORGANISATION's verification only -- an organisational
+   * profile's ('unverified' | 'verified'), or a person's business buyer
+   * organisation's standing. Null for an individual, who is never verified.
+   */
   verification: string | null;
   phone_verified: boolean;
   /** The public profile: draft, published, or none. */

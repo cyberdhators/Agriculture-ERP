@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { LISTING_CATEGORIES } from '@agri-erp/shared';
 
+import { VerifiedOrganisationBadge } from '@/components/listings/VerifiedOrganisationBadge';
 import { MessageButton } from '@/components/messages/MessageButton';
 import { ProfileLink } from '@/components/profiles/PublicProfile';
 import { Badge, EmptyState, Input, Notice } from '@/components/ui';
@@ -160,6 +161,7 @@ export function MarketRequests({ lang, postHref }: { lang: Language; postHref?: 
               <span className="small muted" dir="auto">
                 {r.display_name}
               </span>
+              <VerifiedOrganisationBadge verified={r.poster_verified} lang={lang} />
             </li>
           ))}
         </ul>
@@ -244,6 +246,7 @@ export function BuyingRequestDetailBody({
           <dt className="small muted">{t('requests.postedBy', lang)}</dt>
           <dd dir="auto">
             {row.display_name}{' '}
+            <VerifiedOrganisationBadge verified={row.poster_verified} lang={lang} />{' '}
             {preview ? null : <ProfileLink kind="buying_request" id={row.id} language={lang} />}
           </dd>
         </div>

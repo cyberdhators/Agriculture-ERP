@@ -68,11 +68,13 @@ export interface OrganizationRow {
   status: 'draft' | 'published';
   closed_at: Date | null;
   created_at: Date;
+  /** 2026-10-31: 'unverified' | 'verified' (migration 20261031090000). */
+  verification_status: string;
 }
 
 export const ORGANIZATION_COLUMNS = `o.id, o.name, o.profile_kind, o.group_kind, o.activities,
   o.about, o.state_id, o.location, o.public_phone, o.public_email, o.show_team, o.status,
-  o.closed_at, o.created_at`;
+  o.closed_at, o.created_at, o.verification_status`;
 
 export interface MemberRow {
   id: string;
@@ -196,6 +198,7 @@ export const presentOrganization = (row: OrganizationRow): OrganizationSummary =
   show_team: row.show_team,
   status: row.status,
   closed: row.closed_at !== null,
+  verified: row.verification_status === 'verified',
   created_at: row.created_at.toISOString(),
 });
 

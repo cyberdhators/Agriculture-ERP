@@ -35,9 +35,20 @@ describe('words for the accounts screens (2026-10-28)', () => {
 
   it('reads verification and publication plainly', () => {
     expect(verificationLabel({ verification: 'verified', phone_verified: true })).toBe(
-      'Phone verified · Record verified',
+      'Phone confirmed · Buyer organisation verified',
     );
-    expect(verificationLabel({ verification: null, phone_verified: false })).toBe('Not verified');
+    // 2026-10-31: an individual is never verified, so nothing is printed.
+    expect(verificationLabel({ verification: null, phone_verified: false })).toBe('');
+    expect(
+      verificationLabel({ kind: 'organisation', verification: 'verified', phone_verified: false }),
+    ).toBe('Verified organisation');
+    expect(
+      verificationLabel({
+        kind: 'organisation',
+        verification: 'unverified',
+        phone_verified: false,
+      }),
+    ).toBe('Organisation not verified');
     expect(publicationLabel('published')).toBe('Profile published');
     expect(publicationLabel('none')).toBe('No public profile');
   });

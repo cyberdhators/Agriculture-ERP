@@ -33,26 +33,31 @@ import { AccountSanction } from './AccountSanction';
  * Oldest application first. Each row offers only the decisions the transition
  * table allows from its current standing, and each decision asks for a note,
  * which the buyer sees. The decision is audited and notifies the organisation.
+ *
+ * 2026-10-31 (the owner): only organisations are verified, by staff holding
+ * organization.verify (Administrator, Super Admin), and verification is a
+ * "Verified organisation" badge -- never a gate on buying. Individuals are
+ * never verified: their only moves are suspend and restore (content.moderate).
  */
 
 const ACTION_LABELS: Record<BuyerVerificationStatus, string> = {
   pending: 'Return to pending',
-  under_review: 'Start review',
-  verified: 'Verify',
-  rejected: 'Reject',
+  under_review: 'Ask for more information',
+  verified: 'Verify organisation',
+  rejected: 'Decline verification',
   suspended: 'Suspend',
   not_required: 'Restore',
 };
 
 const CONSEQUENCES: Record<BuyerVerificationStatus, string> = {
   pending: '',
-  not_required:
-    'The individual buyer can browse and send requests again. Individuals need no review.',
-  under_review: 'The organisation is told its application is being checked.',
+  not_required: 'The account can browse and send requests again.',
+  under_review:
+    'The organisation is told it is being checked, and sees your note asking for what you need. It keeps buying meanwhile.',
   verified:
-    'The organisation can send purchase requests and receive orders from now on. It is notified.',
+    'The organisation gets a "Verified organisation" badge on its posts and profile. It is notified. Buying is unchanged.',
   rejected:
-    'The organisation loses access to the marketplace immediately. It keeps read access to its history and sees your note.',
+    'The organisation shows no badge and sees your note. It keeps full access to the marketplace: verification is a badge, not a gate.',
   suspended:
     'The organisation loses access to the marketplace on its next request. Its history stays readable.',
 };
@@ -99,7 +104,7 @@ export function BuyerReview() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s-6)' }}>
       <PageHeader
         title="Buyer accounts"
-        subtitle="Organisations that applied to buy produce. Verify before they can send requests."
+        subtitle="Buyer organisations: verify them for a badge. Verification never limits buying; only a suspension does. Individuals are never verified."
       />
       <Tabs
         label="Standing"

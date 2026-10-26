@@ -71,8 +71,7 @@ export const ar: Partial<Record<TKey, string>> = {
   'register.next': 'التالي',
   'register.submit': 'أنشئ الحساب',
   'register.doneTitle': 'حسابك جاهز',
-  'register.doneBody':
-    'يمكنك الآن الشراء والبيع وتقديم الخدمات وطلب النصيحة. قد يتحقق مرشد زراعي من بياناتك لاحقاً ويضيف شارة "موثَّق".',
+  'register.doneBody': 'يمكنك الآن الشراء والبيع وتقديم الخدمات وطلب النصيحة.',
   'register.doneNumber': 'رقم العضوية',
   'register.donePending': 'احتفظ بهذا الرقم. تسجّل الدخول برقم هاتفك وكلمة المرور.',
   'register.goToAccount': 'الذهاب إلى حسابي',
@@ -98,14 +97,13 @@ export const ar: Partial<Record<TKey, string>> = {
   'account.tileSecuritySub': 'كلمة المرور ورقم الهاتف',
   'account.tileLanguage': 'اللغة',
   'account.tileLanguageSub': 'لغة حسابك',
-  'account.tileVerification': 'التحقق',
-  'account.tileVerificationSub': 'الحالة وما تعنيه',
+  'account.tileVerification': 'سجلّك',
+  'account.tileVerificationSub': 'رقم العضوية والبيانات',
   'account.pending': 'لم يتم التوثيق بعد',
   'account.verified': 'مُتحقق منه',
   'account.rejected': 'غير مُتحقق منه',
   'account.whatPendingTitle': 'لم يتم التوثيق بعد',
-  'account.whatPendingBody':
-    'يمكنك الشراء والبيع الآن. بعد أن يتحقق مرشد زراعي من بياناتك، تظهر شارة "موثَّق" على عروضك.',
+  'account.whatPendingBody': 'يمكنك الشراء والبيع الآن.',
   'account.whatRejectedBody':
     'لم يتمكن المسؤول من التحقق من حسابك. تواصل مع مسؤول الإرشاد الزراعي المحلي، أو عدّل بياناتك واطلب إعادة الفحص.',
   'account.kpiLive': 'إعلانات مباشرة',
@@ -168,7 +166,7 @@ export const ar: Partial<Record<TKey, string>> = {
   'account.newPhone': 'رقم الهاتف الجديد',
   'account.phoneChanged': 'تم تغيير رقم هاتفك. سجل دخولك به في المرة القادمة.',
   'account.farmerNumber': 'رقم العضوية',
-  'account.numberPending': 'يُمنح عند التحقق من تسجيلك.',
+  'account.numberPending': 'لم يُمنح بعد.',
   'account.back': 'حسابي',
   'account.signOut': 'تسجيل الخروج',
   'account.tabLearn': 'تعلّم',
@@ -413,7 +411,7 @@ export const ar: Partial<Record<TKey, string>> = {
 
   'market.title': 'السوق',
   'market.lead':
-    'منتجات ومدخلات معروضة على أجري ون: السعر والكمية والبايام ومن تتصل به. شارة "موثَّق" تميّز البائعين الذين تحققت منهم كوروادو.',
+    'منتجات ومدخلات معروضة على أجري ون: السعر والكمية والبايام ومن تتصل به. شارة "منظمة موثّقة" تميّز المنظمات التي تحققت منها كوروادو.',
   'market.filters': 'التصفية',
   'market.category': 'الفئة',
   'market.allCategories': 'جميع الفئات',
@@ -485,7 +483,7 @@ export const ar: Partial<Record<TKey, string>> = {
   'market.similar': 'مشابه في',
   'market.listingNo': 'إعلان رقم',
   'market.trust':
-    'شارات توثيق للبائعين المُتحقق منهم · صور في كل إعلان · تواصل بالاتصال أو الرسائل',
+    'شارات توثيق للمنظمات المُتحقق منها · صور في كل إعلان · تواصل بالاتصال أو الرسائل',
 
   'nav.myFarm': 'مزرعتي',
   'nav.market': 'السوق',
@@ -599,9 +597,8 @@ export const ar: Partial<Record<TKey, string>> = {
   'lifecycle.completeTitle': 'هل تريد تعليمه كمكتمل؟',
   'lifecycle.completeBody': 'سيخرج من السوق نهائياً على أنه أُنجز.',
   'lifecycle.queued': 'حُفظ على هذا الهاتف. سيُرسل عند توفر الشبكة.',
-  'listings.verifyBadgeNote':
-    'تظهر عروضك في السوق فور نشرها. وبعد أن تتحقق CORWADO من حسابك، يرى المشترون أيضاً شارة "مزارع موثَّق" عليها.',
-  'market.verifiedFarmer': 'مزارع موثَّق',
+  'listings.verifyBadgeNote': 'تظهر عروضك في السوق فور نشرها.',
+  'market.verifiedOrganisation': 'منظمة موثّقة',
   'listingForm.untilDefault': 'اتركه فارغاً ويبقى العرض في السوق 30 يوماً.',
   'listingForm.alreadySold': 'بِيع حتى الآن:',
   'listingForm.statusOnPage': 'أوقف مؤقتاً أو جدّد أو سجّل بيعاً أو اسحب من صفحة العرض.',
@@ -778,9 +775,9 @@ export const ar: Partial<Record<TKey, string>> = {
   'help.q4': 'كيف أحذف حسابي؟',
   'help.a4':
     'المزارعون: افتحوا تسجيل الدخول والأمان. المشترون: افتحوا الملف الشخصي. اختر حذف حسابي، وأدخل كلمة المرور، وضع علامة في المربع. تُسحب منشوراتك ويُخفى حسابك، وتحتفظ كوروادو بالسجل لأغراض التدقيق.',
-  'help.q5': 'ما هي شارة التحقق؟',
+  'help.q5': 'ما هي شارة "منظمة موثّقة"؟',
   'help.a5':
-    'عندما يتحقق مرشد زراعي أو كوروادو من بياناتك، تظهر شارة التحقق على إعلاناتك. يمكنك البيع والشراء قبل ذلك.',
+    'تتحقق كوروادو من المنظمات -- الشركات والمجموعات والمؤسسات -- فتظهر شارة "منظمة موثّقة" على منشوراتها وملفاتها. لا يتم التحقق من الحسابات الفردية، ويمكن للجميع البيع والشراء فوراً.',
   'help.formTitle': 'راسل كوروادو',
   'help.formLead':
     'أخبرنا بما حدث. إذا لم تكن مسجّل الدخول، اترك رقم هاتف أو بريداً إلكترونياً لنتمكن من الرد.',
@@ -1104,7 +1101,7 @@ export const ar: Partial<Record<TKey, string>> = {
   'pp.tab.requests': 'طلبات الشراء',
   'pp.tab.services': 'الخدمات',
   'pp.featured': 'مميز',
-  'pp.verified': 'موثّق',
+  'pp.verified': 'منظمة موثّقة',
   'pp.since': 'عضو منذ',
   'pp.report': 'الإبلاغ عن الملف',
   'pp.missing': 'هذا الملف غير متاح.',
@@ -1327,23 +1324,22 @@ export const ar: Partial<Record<TKey, string>> = {
   'buyer.shell.footer': 'أجري ون جنوب السودان · كوروادو',
   'buyer.common.retry': 'حاول مرة أخرى',
   'buyer.common.loading': 'جارٍ التحميل',
-  'buyer.standing.pending': 'بانتظار المراجعة',
-  'buyer.standing.under_review': 'قيد المراجعة',
-  'buyer.standing.verified': 'موثّق',
-  'buyer.standing.rejected': 'غير معتمد',
+  'buyer.standing.pending': 'لم يتم التوثيق بعد',
+  'buyer.standing.under_review': 'قيد التحقق',
+  'buyer.standing.verified': 'منظمة موثّقة',
+  'buyer.standing.rejected': 'غير موثّقة',
   'buyer.standing.suspended': 'موقوف',
   'buyer.standing.not_required': 'نشط',
   'buyer.standingMsg.pending':
-    'يمكنك الآن تصفّح السوق وإرسال طلبات الشراء. قد تتحقق كوروادو من منظمتك لاحقاً وتضيف شارة «موثّق».',
+    'يمكنك الآن تصفّح السوق وإرسال طلبات الشراء. قد تتحقق كوروادو من منظمتك وتضيف شارة «منظمة موثّقة».',
   'buyer.standingMsg.under_review':
-    'منظمتك قيد المراجعة الآن للحصول على شارة «موثّق». يمكنك في الأثناء تصفّح السوق وإرسال طلبات الشراء.',
-  'buyer.standingMsg.verified': 'حساب المشتري الخاص بك موثّق. يمكنك إرسال طلبات الشراء.',
+    'منظمتك قيد المراجعة الآن للحصول على شارة «منظمة موثّقة»، وقد تطلب منك كوروادو معلومات إضافية. يمكنك في الأثناء تصفّح السوق وإرسال طلبات الشراء.',
+  'buyer.standingMsg.verified': 'منظمتك موثّقة: تظهر شارة «منظمة موثّقة» على منشوراتها وملفها.',
   'buyer.standingMsg.rejected':
-    'لم تتم الموافقة على حساب المشتري الخاص بك. يبقى سجلك متاحاً للقراءة، والسوق مغلق أمام هذا الحساب. تواصل مع كوروادو إن كنت تعتقد أن هذا خطأ.',
+    'لم توثّق كوروادو منظمتك، فلا تظهر لها شارة. ما زال بإمكانك تصفّح السوق وإرسال طلبات الشراء. تواصل مع كوروادو إن كنت تعتقد أن هذا خطأ.',
   'buyer.standingMsg.suspended':
     'حساب المشتري الخاص بك موقوف. يبقى سجلك متاحاً للقراءة، والسوق مغلق حتى تعيد كوروادو الحساب.',
-  'buyer.standingMsg.not_required':
-    'حسابك كمشترٍ فرد نشط. لا تحتاج الحسابات الفردية إلى مراجعة: يمكنك تصفّح السوق وإرسال طلبات الشراء.',
+  'buyer.standingMsg.not_required': 'حسابك نشط. يمكنك تصفّح السوق وإرسال طلبات الشراء.',
   'buyer.orgType.trader': 'تاجر',
   'buyer.orgType.aggregator': 'مُجمِّع',
   'buyer.orgType.processor': 'مُصنِّع',
@@ -1501,9 +1497,9 @@ export const ar: Partial<Record<TKey, string>> = {
   'email.reg.who': 'من يشتري',
   'email.reg.accountTypeAria': 'نوع الحساب',
   'email.reg.individual': 'فرد',
-  'email.reg.individualHint': 'تشتري لنفسك. لا حاجة إلى مراجعة.',
+  'email.reg.individualHint': 'تشتري لنفسك. ابدأ فوراً.',
   'email.reg.business': 'شركة أو منظمة',
-  'email.reg.businessHint': 'اشترِ فوراً. قد تتحقق كوروادو منها لاحقاً وتضيف شارة «موثّق».',
+  'email.reg.businessHint': 'اشترِ فوراً. قد تتحقق كوروادو منها لاحقاً وتضيف شارة «منظمة موثّقة».',
   'email.reg.yourAccount': 'حسابك',
   'email.reg.emailHint': 'ستسجّل الدخول به. نرسل رمزاً لتأكيده.',
   'email.reg.passwordHint': '12 حرفاً على الأقل.',

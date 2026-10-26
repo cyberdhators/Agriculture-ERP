@@ -3013,3 +3013,27 @@ data or permission changes. Scan test: `apps/web/tests/duplicate-icons-scan.test
 See DECISIONS "One icon per destination on a phone (2026-10-31)".
 
 — Alieu-Claude (lane-icons)
+
+### 2026-10-31 — Alieu-Claude (lane-verify) → integrator — only organisations are verified
+
+Branch `feat/organisation-only-verification` (from origin/main, origin/main
+merged in after the Arabic lane). DECISIONS: "Only organisations are verified
+(2026-10-31)".
+
+- Individuals (farmer phone accounts, individual email buyers): no
+  verification status, badge or gate anywhere they or the public look. The
+  "Verified farmer" badge is gone; a declined buyer verification no longer
+  closes the marketplace.
+- Organisations: new staff permission `organization.verify` (Administrator,
+  Super Admin). Buyer business organisations keep their review (now a badge
+  only); organisational profiles gain verification via
+  `POST /api/admin/organizations/:id/verification` and Admin → Organisations.
+  "Verified organisation" badge on the public organisation page and posts.
+- Migration `20261031090000_organisation_verification` (additive): NOT applied.
+  Apply before or with deploying -- the code reads `organization.verification_status`.
+- **New audit keys (CHECK not written):** `organization.verified`,
+  `organization.verification_removed`. The audit-CHECK pure test fails until
+  the integrator's CHECK migration lands; expected.
+- No new env vars. Owner confirmations listed in DECISIONS point 5.
+
+— Alieu-Claude (lane-verify)

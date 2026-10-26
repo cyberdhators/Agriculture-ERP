@@ -544,6 +544,8 @@ export interface OrganizationSummary {
   show_team: boolean;
   status: 'draft' | 'published';
   closed: boolean;
+  /** 2026-10-31: verified by CORWADO staff (organization.verify) -- a badge only. */
+  verified: boolean;
   created_at: string;
 }
 
