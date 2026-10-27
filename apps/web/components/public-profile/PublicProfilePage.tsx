@@ -11,6 +11,7 @@ import { postHref } from '@/components/messages/Messages';
 import { Expertise } from '@/components/profiles/Expertise';
 import { RatingsSummaryBlock } from '@/components/ratings/Ratings';
 import { Button, EmptyState, Skeleton, Tabs } from '@/components/ui';
+import { unitLabelOf } from '@/lib/buyer/labels';
 import { useFarmerSession } from '@/lib/farmer-session';
 import { t, type Language } from '@/lib/i18n';
 import { getPublicProfile } from '@/lib/public-profile/client';
@@ -65,13 +66,13 @@ function postsOf(profile: PublicProfileView, language: Language) {
     kind: 'listing',
     id: l.id,
     title: l.title,
-    line: `SSP ${l.indicative_price_ssp.toLocaleString()} ${t('pp.perUnit', language)} ${l.price_per} · ${l.location.payam}`,
+    line: `SSP ${l.indicative_price_ssp.toLocaleString()} ${t('pp.perUnit', language)} ${unitLabelOf(l.price_per, language)} · ${l.location.payam}`,
   }));
   const requests: Post[] = (profile.buying_requests as RequestShape[]).map((r) => ({
     kind: 'buying_request',
     id: r.id,
     title: r.product_name,
-    line: `${r.quantity.toLocaleString()} ${r.unit} · ${r.location}`,
+    line: `${r.quantity.toLocaleString()} ${unitLabelOf(r.unit, language)} · ${r.location}`,
   }));
   const services: Post[] = (profile.service_listings as ServiceShape[]).map((s) => ({
     kind: 'service',

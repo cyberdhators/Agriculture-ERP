@@ -16,7 +16,7 @@ import {
 
 import { Button, Field, Notice, Select, Skeleton, Textarea } from '@/components/ui';
 import { formatDate } from '@/lib/format';
-import { t, type Language, type TKey } from '@/lib/i18n';
+import { t, tCount, type Language, type TKey } from '@/lib/i18n';
 import { MessagesError, myRatings, reportRating, submitRating } from '@/lib/messages/client';
 
 import styles from './ratings.module.css';
@@ -66,9 +66,7 @@ export function RatingsSummaryBlock({
           <div className={styles.average}>
             <span className={styles.averageValue}>{summary.average.toFixed(1)}</span>
             <Stars value={summary.average} />
-            <span className={styles.meta}>
-              {summary.count} {t('rate.count', language)}
-            </span>
+            <span className={styles.meta}>{tCount('rate.count', summary.count, language)}</span>
           </div>
           {summary.latest.length > 0 ? (
             <ul className={styles.list}>
@@ -344,7 +342,7 @@ export function MyRatingsPanel({ language }: { language: Language }) {
             <span className={styles.averageValue}>{data.summary.average.toFixed(1)}</span>
             <Stars value={data.summary.average} />
             <span className={styles.meta}>
-              {data.summary.count} {t('rate.count', language)}
+              {tCount('rate.count', data.summary.count, language)}
             </span>
           </div>
         ) : null}

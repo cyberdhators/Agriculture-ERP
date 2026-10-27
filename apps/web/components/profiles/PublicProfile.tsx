@@ -9,6 +9,7 @@ import type { PostKind, PublicExpertise } from '@agri-erp/shared';
 import { ABOUT_LABELS } from '@/components/account/AccountActivities';
 import { postHref } from '@/components/messages/Messages';
 import { EmptyState, Skeleton, Stamp } from '@/components/ui';
+import { unitLabelOf } from '@/lib/buyer/labels';
 import { t, type Language } from '@/lib/i18n';
 
 import { Expertise } from './Expertise';
@@ -164,7 +165,7 @@ export function PublicProfile({
       posts: profile.listings.map((l) => ({
         id: l.id,
         title: l.title,
-        line: `SSP ${l.indicative_price_ssp.toLocaleString()} ${w.perUnit} ${l.price_per} · ${l.location.payam}`,
+        line: `SSP ${l.indicative_price_ssp.toLocaleString()} ${w.perUnit} ${unitLabelOf(l.price_per, lang)} · ${l.location.payam}`,
       })),
     },
     {
@@ -173,7 +174,7 @@ export function PublicProfile({
       posts: profile.buying_requests.map((r) => ({
         id: r.id,
         title: r.product_name,
-        line: `${r.quantity.toLocaleString()} ${r.unit} · ${r.location}`,
+        line: `${r.quantity.toLocaleString()} ${unitLabelOf(r.unit, lang)} · ${r.location}`,
       })),
     },
     {

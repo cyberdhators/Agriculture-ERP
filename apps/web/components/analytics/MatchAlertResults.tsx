@@ -103,7 +103,9 @@ export function MatchAlertResults() {
   const [downloading, setDownloading] = useState(false);
   const [exportNote, setExportNote] = useState<{ ok: boolean; text: string } | undefined>();
 
-  const canExport = hydrated && (role === 'admin' || role === 'supervisor');
+  // The same rule as the export route: admin, supervisor and read_only, with
+  // reports.view (held by anyone the report loaded for; the button waits for it).
+  const canExport = hydrated && (role === 'admin' || role === 'supervisor' || role === 'read_only');
 
   useEffect(() => {
     setDraft({
