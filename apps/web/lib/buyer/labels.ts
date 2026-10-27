@@ -243,6 +243,14 @@ export const categoryLabelOf = (category: string, lang: Language = 'en') =>
 
 export const unitLabel = (unit: ListingUnit, lang: Language = 'en') => t(`unit.${unit}`, lang);
 
+/**
+ * 2026-10-27: a stored unit that may arrive as a plain string (public
+ * profiles, posts): its label in the reader's language ("50 kg bag", never
+ * "bag_50kg"); a value this build does not know is shown as it is, never blank.
+ */
+export const unitLabelOf = (unit: string, lang: Language = 'en') =>
+  unit in UNIT_LABELS ? unitLabel(unit as ListingUnit, lang) : unit;
+
 const MONTH_NUMBERS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] as const;
 
 /** The twelve month names, January first, in the buyer's language. */

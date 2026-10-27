@@ -6114,3 +6114,22 @@ the workbook (`MATCH_ALERT_METRICS`).
   Definitions with limitations; logged before the file leaves as
   `analytics.exported` with `report: 'match_alerts'`, the filters, scope,
   cut-off and the query as it ran (existing key; no new one).
+
+## Live-test polish (2026-10-27, lane-polish)
+
+- The Analyst (read_only with reports.view) now sees "Download Excel" on
+  Marketplace analytics and Match-alert results. OBSERVED: both export routes
+  already accept admin, supervisor and read_only with reports.view (#220 opened
+  the summary export), while both pages still showed the button to admin and
+  supervisor only. The button now follows the route's roles; the permission is
+  held by anyone the report loaded for, and the button waits for the report.
+- Counts with a noun use `tCount(base, n, lang)` (lib/i18n): Intl.PluralRules
+  picks `<base>.zero|one|two|few|many|other`, falling back to `other`, then
+  English. English uses one/other; Arabic has all six ("1 تقييم", "2 تقييمان",
+  "3 تقييمات", "11 تقييمًا", "100 تقييم"). INFERRED: keeping `{n}` in every
+  Arabic form (rather than "تقييم واحد") is acceptable UI Arabic and keeps the
+  dictionary's placeholder check intact. First user: the rating count.
+- Public profiles (person and organisation-side `PublicProfile`) printed the
+  stored unit ("bag_50kg") in post lines; they now use `unitLabelOf` (lib/buyer/
+  labels), which labels a known unit in the reader's language and shows an
+  unknown one as it is.

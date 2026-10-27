@@ -790,7 +790,14 @@ export const en = {
   'rate.receivedTitle': 'Ratings you received',
   'rate.noneReceived': 'You have not received any ratings yet.',
   'rate.average': 'Average rating',
-  'rate.count': 'ratings',
+  // Plural forms, chosen by tCount() with Intl.PluralRules. English uses only
+  // one and other; the rest exist so Arabic can have all six.
+  'rate.count.zero': '{n} ratings',
+  'rate.count.one': '{n} rating',
+  'rate.count.two': '{n} ratings',
+  'rate.count.few': '{n} ratings',
+  'rate.count.many': '{n} ratings',
+  'rate.count.other': '{n} ratings',
   'rate.member': 'An AgriOne member',
   'rate.report': 'Report this rating',
   'rate.reportReason': 'Why are you reporting it?',

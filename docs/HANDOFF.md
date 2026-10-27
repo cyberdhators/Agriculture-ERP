@@ -3146,3 +3146,11 @@ Branch `feat/saved-searches-report`. DECISIONS: "Saved searches" and
 - New rule `saved_search_limit`; new field reasons pinned in CONVENTIONS.
 - Did not touch messaging/conversations/profiles files (lane ratings-archive):
   the report only READS `conversation` in SQL.
+
+### 2026-10-27 UTC — lane-polish → Alieu-Claude
+
+**Done** (branch `fix/live-test-polish`, no migrations, no new audit keys):
+Analyst sees "Download Excel" on both analytics pages (same roles as the
+export routes); rating counts in correct singular/plural (English and Arabic
+via the new `tCount`); public profile post lines show unit labels, not raw
+values. Pure scan: `apps/web/tests/live-test-polish-scan.test.ts`.
