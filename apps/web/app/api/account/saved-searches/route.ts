@@ -60,8 +60,11 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       const wanted = savedSearchCriteria(body);
       const result = await audited(prisma, async (tx) => {
         // One saver at a time per account, so two quick saves cannot pass the limit.
+        // Wrapped so the result is a number, not `void`, which the driver
+        // cannot read (2026-11-03 live test: P2010, every save answered 500).
         await tx.$queryRawUnsafe(
-          `SELECT pg_advisory_xact_lock(hashtext('saved_search:' || $1::text))`,
+          `SELECT 1 AS locked
+             FROM (SELECT pg_advisory_xact_lock(hashtext('saved_search:' || $1::text))) l`,
           owner,
         );
         if (wanted.state_id) {
