@@ -8,14 +8,18 @@
   text-decoration: none;
 }
 
+/* The artwork is a square with wide empty bands above and below the lockup;
+   a 9:5 frame crops them so the words, not the margin, take the height. */
 .logo {
   display: block;
   width: auto;
+  aspect-ratio: 9 / 5;
+  object-fit: cover;
 }
 
 /* On the dark forest band, sit the logo in a light rounded chip. */
 .onBand .logo {
   background: var(--card);
   border-radius: 8px;
-  padding: 4px 10px;
+  padding: 3px 6px;
 }

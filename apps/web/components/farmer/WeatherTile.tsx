@@ -213,6 +213,8 @@ const CONDITIONS_AR: Record<string, string> = {
 };
 
 function conditionLabel(conditions: string, language: Language): string {
-  if (language !== 'ar') return conditions;
-  return CONDITIONS_AR[conditions.trim().toLowerCase()] ?? conditions;
+  if (language === 'ar') return CONDITIONS_AR[conditions.trim().toLowerCase()] ?? conditions;
+  // Sentence case ("Overcast clouds"), not the title case CSS capitalize gave.
+  const text = conditions.trim();
+  return text.charAt(0).toUpperCase() + text.slice(1);
 }

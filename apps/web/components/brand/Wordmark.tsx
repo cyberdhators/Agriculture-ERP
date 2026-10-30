@@ -26,7 +26,7 @@ export function Wordmark({
       src="/brand/agrione-logo.png"
       alt="AgriOne South Sudan — Digital Agriculture Marketplace"
       className={styles.logo}
-      style={{ height: `${Math.round(size * 1.7)}px` }}
+      style={{ height: `${Math.round(size * (onBand ? 1.4 : 1.7))}px` }}
     />
   );
   return href ? (

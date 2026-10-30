@@ -2060,7 +2060,6 @@
 .weatherHeroCond {
   font-size: var(--text-subhead, 20px);
   font-weight: 600;
-  text-transform: capitalize;
 }
 
 .weatherHeroFacts {
@@ -2122,10 +2121,6 @@
   opacity: 0.85;
 }
 
-.weatherDayCond {
-  text-transform: capitalize;
-}
-
 .weatherHeroCredit {
   font-size: 12px;
   color: var(--band-ink);
@@ -2175,6 +2170,54 @@
      destinations with the same icon; one control per destination. */
   .acctTileBottomBar {
     display: none;
+  }
+
+  /* An odd tile out fills its row rather than sitting alone in a half. */
+  .acctTile:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    justify-content: center;
+  }
+
+  /* The account links under the weather read as one list on a phone: a row
+     each, the one-line sub shown, so the home is shorter and nothing is
+     orphaned when the bottom bar hides a tile. */
+  .acctList {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-card);
+    overflow: hidden;
+  }
+
+  .acctList .acctTile,
+  .acctList .acctTile:last-child:nth-child(odd) {
+    flex-direction: row;
+    justify-content: flex-start;
+    text-align: start;
+    gap: var(--s-3);
+    padding: var(--s-3) var(--s-4);
+    border: 0;
+    border-block-end: 1px solid var(--line);
+    border-radius: 0;
+  }
+
+  .acctList .acctTile:last-child {
+    border-block-end: 0;
+  }
+
+  .acctList .acctTileGlyph {
+    width: 40px;
+    height: 40px;
+  }
+
+  .acctList .acctTileTitle {
+    font-size: var(--text-body);
+  }
+
+  .acctList .acctTileSub {
+    display: block;
   }
 
   .main {

@@ -191,7 +191,10 @@ export function FarmerOverview() {
 
       <WeatherTile payamId={farmer.payam_id} language={language} />
 
-      <nav className={styles.acctTiles} aria-label={t('account.tilesTitle', language)}>
+      <nav
+        className={`${styles.acctTiles} ${styles.acctList}`}
+        aria-label={t('account.tilesTitle', language)}
+      >
         {ACCOUNT_TILES.map((tile) => (
           <Link
             key={tile.href}

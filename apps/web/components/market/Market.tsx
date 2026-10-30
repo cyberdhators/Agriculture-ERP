@@ -466,6 +466,13 @@ export function Market({
             </div>
           ) : null}
 
+          {showFeatured && shown.length > 0 ? (
+            <div className={styles.ruledHead} style={{ marginTop: 'var(--s-8)' }}>
+              <h2>{t('market.everything', lang)}</h2>
+              <span className={styles.ruledCount}>{matched.length}</span>
+            </div>
+          ) : null}
+
           {shown.length === 0 ? (
             <EmptyState
               title={
