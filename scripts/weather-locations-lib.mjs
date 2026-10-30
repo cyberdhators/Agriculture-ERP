@@ -162,24 +162,31 @@ export async function seedWeatherLocations(db, { centroids = COUNTY_CENTROIDS } 
       payam_id: null,
       ...centroids[c.name],
     });
-    await db.$transaction(async (tx) => {
-      const [loc] = await tx.$queryRawUnsafe(
-        `INSERT INTO public.weather_location (name, level, state_id, county_id, payam_id, latitude, longitude)
+    await db.$transaction(
+      async (tx) => {
+        const [loc] = await tx.$queryRawUnsafe(
+          `INSERT INTO public.weather_location (name, level, state_id, county_id, payam_id, latitude, longitude)
          VALUES ($1, $2, $3, $4, NULL, $5, $6) RETURNING id`,
-        row.name,
-        row.level,
-        row.state_id,
-        row.county_id,
-        row.latitude,
-        row.longitude,
-      );
-      await tx.$executeRawUnsafe(
-        `INSERT INTO public.audit_event (entity_type, entity_id, actor_type, actor_id, action, before, after)
+          row.name,
+          row.level,
+          row.state_id,
+          row.county_id,
+          row.latitude,
+          row.longitude,
+        );
+        await tx.$executeRawUnsafe(
+          `INSERT INTO public.audit_event (entity_type, entity_id, actor_type, actor_id, action, before, after)
          VALUES ('weather_location', $1, 'system', NULL, 'weather_location.created', NULL, $2::jsonb)`,
-        loc.id,
-        JSON.stringify({ ...row, seed: 'county-centroids' }),
-      );
-    });
+          loc.id,
+          JSON.stringify({ ...row, seed: 'county-centroids' }),
+        );
+        // Two writes, but this link can take seconds a round trip: the default
+        // 5-second budget closed one mid-way on the national seed (2026-10-30,
+        // P2028 after 9.4 s). Each county is its own transaction, so a rerun
+        // carries on where a failed one stopped.
+      },
+      { maxWait: 30_000, timeout: 60_000 },
+    );
     inserted += 1;
   }
   return { refused: false, inserted, skipped, counties: counties.length };
