@@ -6188,3 +6188,11 @@ the existing reseed already reads when present.
 - **A member's weather follows their payam:** the farmer's Home and Weather
   read the forecast for the county of their own payam. Email (buyer) accounts
   have no weather card; that is unchanged.
+- **The reseed writes in bulk now.** OBSERVED on the first `--apply` against
+  production: about 1,150 one-row writes ran past the transaction's 300-second
+  budget (P2028), and the whole load rolled back. Afterwards production still
+  held 10 states, 6 counties and 12 payams. Now each level is one statement
+  over arrays, the soft-deletes are one, and the audit rows are one, so the
+  load is about 8 round trips and still all or nothing. Unchanged rows are
+  still left untouched. Each statement was planned with EXPLAIN on production
+  before the second run.

@@ -95,25 +95,55 @@ if (APPLY) {
   if (plan.refused.length > 0) {
     console.log('\nNOT APPLIED. The refusals above must be resolved first.');
   } else {
+    // SET-BASED, not row by row (2026-10-30). The national list is about 600
+    // places; one upsert and one audit row per place was some 1,150 round
+    // trips, and on this link the transaction ran past its 300-second budget
+    // and rolled back (P2028, nothing written). Each level is now one
+    // statement over arrays, so the whole reseed is a handful of round trips
+    // and stays all or nothing. Unchanged rows are still left untouched
+    // (C-2.6): the update fires only where a name or parent differs.
+    const col = (rows, key) => rows.map((r) => r[key]);
+    const now = new Date();
     await prisma.$transaction(
       async (tx) => {
-        for (const s of source.states)
-          await tx.state.upsert({ where: { id: s.id }, update: { name: s.name }, create: s });
-        for (const c of source.counties)
-          await tx.county.upsert({
-            where: { id: c.id },
-            update: { name: c.name, stateId: c.state_id },
-            create: { id: c.id, name: c.name, stateId: c.state_id },
-          });
-        for (const p of source.payams)
-          await tx.payam.upsert({
-            where: { id: p.id },
-            update: { name: p.name, countyId: p.county_id, stateId: p.state_id },
-            create: { id: p.id, name: p.name, countyId: p.county_id, stateId: p.state_id },
-          });
-        const now = new Date();
-        for (const r of plan.removable) {
-          await tx[r.level].update({ where: { id: r.id }, data: { deletedAt: now } });
+        await tx.$executeRawUnsafe(
+          `INSERT INTO public.state (id, name)
+           SELECT * FROM unnest($1::text[], $2::text[])
+           ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name
+           WHERE public.state.name IS DISTINCT FROM EXCLUDED.name`,
+          col(source.states, 'id'),
+          col(source.states, 'name'),
+        );
+        await tx.$executeRawUnsafe(
+          `INSERT INTO public.county (id, name, state_id)
+           SELECT * FROM unnest($1::text[], $2::text[], $3::text[])
+           ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, state_id = EXCLUDED.state_id
+           WHERE (public.county.name, public.county.state_id)
+                 IS DISTINCT FROM (EXCLUDED.name, EXCLUDED.state_id)`,
+          col(source.counties, 'id'),
+          col(source.counties, 'name'),
+          col(source.counties, 'state_id'),
+        );
+        await tx.$executeRawUnsafe(
+          `INSERT INTO public.payam (id, name, county_id, state_id)
+           SELECT * FROM unnest($1::text[], $2::text[], $3::text[], $4::text[])
+           ON CONFLICT (id) DO UPDATE
+             SET name = EXCLUDED.name, county_id = EXCLUDED.county_id, state_id = EXCLUDED.state_id
+           WHERE (public.payam.name, public.payam.county_id, public.payam.state_id)
+                 IS DISTINCT FROM (EXCLUDED.name, EXCLUDED.county_id, EXCLUDED.state_id)`,
+          col(source.payams, 'id'),
+          col(source.payams, 'name'),
+          col(source.payams, 'county_id'),
+          col(source.payams, 'state_id'),
+        );
+        for (const level of ['state', 'county', 'payam']) {
+          const ids = plan.removable.filter((r) => r.level === level).map((r) => r.id);
+          if (ids.length === 0) continue;
+          await tx.$executeRawUnsafe(
+            `UPDATE public.${level} SET deleted_at = $2::timestamptz WHERE id = ANY($1::text[])`,
+            ids,
+            now.toISOString(),
+          );
         }
 
         // ---- AUDIT ROWS, inside this same transaction (C-4.4). ------------
@@ -123,41 +153,46 @@ if (APPLY) {
         // specifier does not resolve from scripts/ -- so it writes the same
         // INSERT under the same rules: inside the transaction, action keys from
         // the fixed set, changed fields only. The database's CHECK refuses any
-        // key not in AUDIT_ACTIONS, so the two cannot drift silently.
+        // key not in AUDIT_ACTIONS, so the two cannot drift silently. One
+        // statement for all of them, for the reason above.
         //
         // Runs before B4 merged wrote no rows. That gap is recorded in
         // docs/DECISIONS.md and is not backfilled.
-        const audit = (level, id, action, before, after) =>
-          tx.$executeRawUnsafe(
-            `INSERT INTO public.audit_event
-               (entity_type, entity_id, actor_type, actor_id, action, before, after)
-             VALUES ($1, $2, 'system', NULL, $3, $4::jsonb, $5::jsonb)`,
-            level,
-            id,
-            action,
-            before === null ? null : JSON.stringify(before),
-            after === null ? null : JSON.stringify(after),
-          );
-        for (const a of plan.added)
-          await audit(a.level, a.id, 'location.created', null, { name: a.name });
-        for (const r of plan.renamed)
-          await audit(r.level, r.id, 'location.renamed', { name: r.from }, { name: r.to });
-        for (const r of plan.removable)
-          await audit(
+        const audits = [
+          ...plan.added.map((a) => [a.level, a.id, 'location.created', null, { name: a.name }]),
+          ...plan.renamed.map((r) => [
+            r.level,
+            r.id,
+            'location.renamed',
+            { name: r.from },
+            { name: r.to },
+          ]),
+          ...plan.removable.map((r) => [
             r.level,
             r.id,
             'location.soft_deleted',
             { deleted_at: null },
-            {
-              deleted_at: now.toISOString(),
-            },
+            { deleted_at: now.toISOString() },
+          ]),
+        ];
+        if (audits.length > 0) {
+          await tx.$executeRawUnsafe(
+            `INSERT INTO public.audit_event
+               (entity_type, entity_id, actor_type, actor_id, action, before, after)
+             SELECT t, i, 'system', NULL, a, b::jsonb, f::jsonb
+               FROM unnest($1::text[], $2::text[], $3::text[], $4::text[], $5::text[])
+                    WITH ORDINALITY AS u(t, i, a, b, f, n)
+              ORDER BY n`,
+            audits.map((x) => x[0]),
+            audits.map((x) => x[1]),
+            audits.map((x) => x[2]),
+            audits.map((x) => (x[3] === null ? null : JSON.stringify(x[3]))),
+            audits.map((x) => JSON.stringify(x[4])),
           );
+        }
       },
-      // The default interactive-transaction budget is 5 seconds. A full reseed is
-      // dozens of round trips, and this link averages seconds per round trip, so
-      // the default closes the transaction mid-write and Prisma reports P2028.
-      // The budget has to match the work and the latency, not the other way
-      // round. See the known condition in docs/PROJECT-STATE.md.
+      // The default interactive-transaction budget is 5 seconds; this link
+      // averages seconds per round trip, so the budget stays generous.
       { maxWait: 30_000, timeout: 300_000 },
     );
     console.log('\nApplied.');
