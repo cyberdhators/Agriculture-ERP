@@ -12,8 +12,8 @@ import { listStates } from '@/lib/market-posts/api';
  * organisation page beside the general location.
  */
 const WORDS = {
-  en: { label: 'State', none: 'Not stated' },
-  ar: { label: 'الولاية', none: 'غير محدد' },
+  en: { label: 'State or area', none: 'Not stated' },
+  ar: { label: 'الولاية أو المنطقة', none: 'غير محدد' },
 } as const;
 
 export function OrganisationStateField({

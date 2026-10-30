@@ -1,0 +1,602 @@
+level,id,name,county_id,state_id
+state,CE,Central Equatoria,,
+state,EE,Eastern Equatoria,,
+state,JG,Jonglei,,
+state,LK,Lakes,,
+state,NB,Northern Bahr el Ghazal,,
+state,UY,Unity,,
+state,UN,Upper Nile,,
+state,WR,Warrap,,
+state,WB,Western Bahr el Ghazal,,
+state,WE,Western Equatoria,,
+state,AB,Abyei Administrative Area,,
+state,GP,Greater Pibor Administrative Area,,
+state,RW,Ruweng Administrative Area,,
+county,CE-JUB,Juba,,CE
+payam,CE-JUB-BUN,Bungu,CE-JUB,CE
+payam,CE-JUB-DOL,Dolo,CE-JUB,CE
+payam,CE-JUB-GAN,Ganji,CE-JUB,CE
+payam,CE-JUB-GON,Gondokoro,CE-JUB,CE
+payam,CE-JUB-JUB,Juba Town,CE-JUB,CE
+payam,CE-JUB-KAT,Kator,CE-JUB,CE
+payam,CE-JUB-LIR,Lirya,CE-JUB,CE
+payam,CE-JUB-LOB,Lobonok,CE-JUB,CE
+payam,CE-JUB-LOK,Lokiliri,CE-JUB,CE
+payam,CE-JUB-MNO,Mangala North,CE-JUB,CE
+payam,CE-JUB-MSO,Mangala South,CE-JUB,CE
+payam,CE-JUB-MUN,Munuki,CE-JUB,CE
+payam,CE-JUB-NBA,Northern Bari,CE-JUB,CE
+payam,CE-JUB-REJ,Rejaf,CE-JUB,CE
+payam,CE-JUB-ROK,Rokon,CE-JUB,CE
+payam,CE-JUB-TIJ,Tijor,CE-JUB,CE
+payam,CE-JUB-WON,Wonduruba,CE-JUB,CE
+county,CE-KAJ,Kajo-keji,,CE
+payam,CE-KAJ-KA1,Kangapo I,CE-KAJ,CE
+payam,CE-KAJ-KA2,Kangapo II,CE-KAJ,CE
+payam,CE-KAJ-LIR,Lire,CE-KAJ,CE
+payam,CE-KAJ-LIW,Liwolo,CE-KAJ,CE
+payam,CE-KAJ-NYE,Nyepo,CE-KAJ,CE
+county,CE-LAI,Lainya,,CE
+payam,CE-LAI-KEN,Kenyi,CE-LAI,CE
+payam,CE-LAI-KUP,Kupera,CE-LAI,CE
+payam,CE-LAI-LAI,Lainya,CE-LAI,CE
+payam,CE-LAI-MUK,Mukaya,CE-LAI,CE
+payam,CE-LAI-WUJ,Wuji,CE-LAI,CE
+county,CE-MOR,Morobo,,CE
+payam,CE-MOR-GUL,Gulumbi,CE-MOR,CE
+payam,CE-MOR-KIM,Kimba,CE-MOR,CE
+payam,CE-MOR-LUJ,Lujulo,CE-MOR,CE
+payam,CE-MOR-PAN,Panyume,CE-MOR,CE
+payam,CE-MOR-WUD,Wudabi,CE-MOR,CE
+county,CE-TER,Terekeka,,CE
+payam,CE-TER-GAM,Gameiza,CE-TER,CE
+payam,CE-TER-MUN,Muni,CE-TER,CE
+payam,CE-TER-NYO,Nyori,CE-TER,CE
+payam,CE-TER-REG,Reggo,CE-TER,CE
+payam,CE-TER-RIJ,Rijong,CE-TER,CE
+payam,CE-TER-TAL,Tali,CE-TER,CE
+payam,CE-TER-TER,Terekeka,CE-TER,CE
+payam,CE-TER-TIN,Tindilo,CE-TER,CE
+payam,CE-TER-TOM,Tombek,CE-TER,CE
+county,CE-YEI,Yei,,CE
+payam,CE-YEI-LAS,Lasu,CE-YEI,CE
+payam,CE-YEI-MUG,Mugwo,CE-YEI,CE
+payam,CE-YEI-OTO,Otogo,CE-YEI,CE
+payam,CE-YEI-TOR,Tore,CE-YEI,CE
+payam,CE-YEI-YEI,Yei,CE-YEI,CE
+county,EE-BUD,Budi,,EE
+payam,EE-BUD-KIM,Kimotong,EE-BUD,EE
+payam,EE-BUD-KOM,Komori,EE-BUD,EE
+payam,EE-BUD-LOR,Loriyok,EE-BUD,EE
+payam,EE-BUD-LOT,Lotukei,EE-BUD,EE
+payam,EE-BUD-LOU,Loudo,EE-BUD,EE
+payam,EE-BUD-NAG,Nagishot,EE-BUD,EE
+payam,EE-BUD-NAP,Napak,EE-BUD,EE
+payam,EE-BUD-NAU,Nauro,EE-BUD,EE
+county,EE-IKO,Ikotos,,EE
+payam,EE-IKO-HAT,Hatire,EE-IKO,EE
+payam,EE-IKO-IKO,Ikotos,EE-IKO,EE
+payam,EE-IKO-IMO,Imotong,EE-IKO,EE
+payam,EE-IKO-LNO,Lomohidang North,EE-IKO,EE
+payam,EE-IKO-LSO,Lomohidang South,EE-IKO,EE
+payam,EE-IKO-LOS,Losite,EE-IKO,EE
+county,EE-KEA,Kapoeta East,,EE
+payam,EE-KEA-JIE,Jie,EE-KEA,EE
+payam,EE-KEA-KAT,Katodori,EE-KEA,EE
+payam,EE-KEA-KAU,Kauto,EE-KEA,EE
+payam,EE-KEA-LOT,Lotimor,EE-KEA,EE
+payam,EE-KEA-MOG,Mogos,EE-KEA,EE
+payam,EE-KEA-NAR,Narus,EE-KEA,EE
+payam,EE-KEA-NAT,Natinga,EE-KEA,EE
+county,EE-KNO,Kapoeta North,,EE
+payam,EE-KNO-CHU,Chumakori,EE-KNO,EE
+payam,EE-KNO-KAR,Karukomuge,EE-KNO,EE
+payam,EE-KNO-LOM,Lomeyen,EE-KNO,EE
+payam,EE-KNO-MOS,Mosingo,EE-KNO,EE
+payam,EE-KNO-NAJ,Najie,EE-KNO,EE
+payam,EE-KNO-PAR,Paringa,EE-KNO,EE
+county,EE-KSO,Kapoeta South,,EE
+payam,EE-KSO-KTO,Kapoeta Town,EE-KSO,EE
+payam,EE-KSO-LON,Longeleya,EE-KSO,EE
+payam,EE-KSO-MA1,Machi One,EE-KSO,EE
+payam,EE-KSO-MA2,Machi Two,EE-KSO,EE
+payam,EE-KSO-PWA,Pwata,EE-KSO,EE
+county,EE-LAF,Lafon,,EE
+payam,EE-LAF-ARI,Arihilo,EE-LAF,EE
+payam,EE-LAF-BUR,Burgilo,EE-LAF,EE
+payam,EE-LAF-IME,Imehejek,EE-LAF,EE
+payam,EE-LAF-KUR,Kurumi,EE-LAF,EE
+payam,EE-LAF-LOH,Lohutok,EE-LAF,EE
+payam,EE-LAF-LON,Longiro,EE-LAF,EE
+payam,EE-LAF-MAR,Marguna,EE-LAF,EE
+payam,EE-LAF-PAC,Pachidi,EE-LAF,EE
+county,EE-MAG,Magwi,,EE
+payam,EE-MAG-LOB,Lobone,EE-MAG,EE
+payam,EE-MAG-MAG,Magwi,EE-MAG,EE
+payam,EE-MAG-MUG,Mugali,EE-MAG,EE
+payam,EE-MAG-NIM,Nimule,EE-MAG,EE
+payam,EE-MAG-PAG,Pageri,EE-MAG,EE
+payam,EE-MAG-PAJ,Pajok,EE-MAG,EE
+county,EE-TOR,Torit,,EE
+payam,EE-TOR-BUR,Bur,EE-TOR,EE
+payam,EE-TOR-HIM,Himodonge,EE-TOR,EE
+payam,EE-TOR-HIY,Hiyala,EE-TOR,EE
+payam,EE-TOR-IFW,Ifwotu,EE-TOR,EE
+payam,EE-TOR-IMU,Imurok,EE-TOR,EE
+payam,EE-TOR-KUD,Kudo,EE-TOR,EE
+payam,EE-TOR-TOR,Torit,EE-TOR,EE
+county,JG-AKO,Akobo,,JG
+payam,JG-AKO-ALA,Alali,JG-AKO,JG
+payam,JG-AKO-BAR,Barmach,JG-AKO,JG
+payam,JG-AKO-BIL,Bilkey,JG-AKO,JG
+payam,JG-AKO-BUO,Buong,JG-AKO,JG
+payam,JG-AKO-DEN,Dengjok,JG-AKO,JG
+payam,JG-AKO-DIR,Diror,JG-AKO,JG
+payam,JG-AKO-NYA,Nyandit,JG-AKO,JG
+payam,JG-AKO-WAL,Walgak,JG-AKO,JG
+county,JG-AYO,Ayod,,JG
+payam,JG-AYO-AYO,Ayod,JG-AYO,JG
+payam,JG-AYO-KUA,Kuach-deng,JG-AYO,JG
+payam,JG-AYO-KUR,Kurwai,JG-AYO,JG
+payam,JG-AYO-MOG,Mogok,JG-AYO,JG
+payam,JG-AYO-PAG,Pagil,JG-AYO,JG
+payam,JG-AYO-PAJ,Pajiek,JG-AYO,JG
+payam,JG-AYO-WAU,Wau,JG-AYO,JG
+county,JG-BSO,Bor South,,JG
+payam,JG-BSO-ANY,Anyidi,JG-BSO,JG
+payam,JG-BSO-BAI,Baidit,JG-BSO,JG
+payam,JG-BSO-BOR,Bor,JG-BSO,JG
+payam,JG-BSO-JAL,Jalle,JG-BSO,JG
+payam,JG-BSO-KOL,Kolnyang,JG-BSO,JG
+payam,JG-BSO-MAK,Makuach,JG-BSO,JG
+county,JG-CPI,Canal/Pigi,,JG
+payam,JG-CPI-ALA,Alam,JG-CPI,JG
+payam,JG-CPI-ATA,Atar,JG-CPI,JG
+payam,JG-CPI-BEL,Belewach,JG-CPI,JG
+payam,JG-CPI-KAL,Kaldak,JG-CPI,JG
+payam,JG-CPI-KOR,Korwach,JG-CPI,JG
+payam,JG-CPI-MAR,Mareng,JG-CPI,JG
+payam,JG-CPI-NYA,Nyainthokmalual,JG-CPI,JG
+payam,JG-CPI-WUN,Wunlem,JG-CPI,JG
+county,JG-DUK,Duk,,JG
+payam,JG-DUK-AGE,Ageer,JG-DUK,JG
+payam,JG-DUK-DON,Dongchak,JG-DUK,JG
+payam,JG-DUK-PAD,Padiet,JG-DUK,JG
+payam,JG-DUK-PAG,Pagak,JG-DUK,JG
+payam,JG-DUK-PAN,Panyang,JG-DUK,JG
+payam,JG-DUK-PAY,Payuel,JG-DUK,JG
+county,JG-FAN,Fangak,,JG
+payam,JG-FAN-MAN,Manajang,JG-FAN,JG
+payam,JG-FAN-MAR,Mareang,JG-FAN,JG
+payam,JG-FAN-OFA,Old Fangak,JG-FAN,JG
+payam,JG-FAN-PAG,Paguir,JG-FAN,JG
+payam,JG-FAN-PHO,Phom,JG-FAN,JG
+county,JG-NYI,Nyirol,,JG
+payam,JG-NYI-CHU,Chuil,JG-NYI,JG
+payam,JG-NYI-NYA,Nyambor,JG-NYI,JG
+payam,JG-NYI-PAD,Pading,JG-NYI,JG
+payam,JG-NYI-PUL,Pulturuk,JG-NYI,JG
+payam,JG-NYI-THO,Thol,JG-NYI,JG
+payam,JG-NYI-WAA,Waat,JG-NYI,JG
+county,JG-TEA,Twic East,,JG
+payam,JG-TEA-AJU,Ajuong,JG-TEA,JG
+payam,JG-TEA-KON,Kongor,JG-TEA,JG
+payam,JG-TEA-LIT,Lith,JG-TEA,JG
+payam,JG-TEA-NYU,Nyuak,JG-TEA,JG
+payam,JG-TEA-PAK,Pakeer,JG-TEA,JG
+county,JG-URO,Uror,,JG
+payam,JG-URO-KAR,Karam,JG-URO,JG
+payam,JG-URO-MOT,Motot,JG-URO,JG
+payam,JG-URO-PAT,Pathai,JG-URO,JG
+payam,JG-URO-PAY,Payai,JG-URO,JG
+payam,JG-URO-PIE,Pieri,JG-URO,JG
+payam,JG-URO-PUO,Puolchuol,JG-URO,JG
+payam,JG-URO-TIA,Tiam,JG-URO,JG
+payam,JG-URO-URO,Uror,JG-URO,JG
+county,LK-AWE,Awerial,,LK
+payam,LK-AWE-ABU,Abuyong,LK-AWE,LK
+payam,LK-AWE-AL1,Alel I,LK-AWE,LK
+payam,LK-AWE-AL2,Alel II,LK-AWE,LK
+payam,LK-AWE-BUN,Bun-agok,LK-AWE,LK
+payam,LK-AWE-DOR,Dor,LK-AWE,LK
+payam,LK-AWE-MAG,Magok,LK-AWE,LK
+payam,LK-AWE-NIL,Nile,LK-AWE,LK
+payam,LK-AWE-PUL,Puluk,LK-AWE,LK
+county,LK-CUE,Cueibet,,LK
+payam,LK-CUE-ABI,Abiriu,LK-CUE,LK
+payam,LK-CUE-CIT,Citcok,LK-CUE,LK
+payam,LK-CUE-DUO,Duony,LK-CUE,LK
+payam,LK-CUE-MPE,Malou Pec,LK-CUE,LK
+payam,LK-CUE-NGA,Ngap,LK-CUE,LK
+payam,LK-CUE-NG1,Ngap 1,LK-CUE,LK
+payam,LK-CUE-PAG,Pagor,LK-CUE,LK
+county,LK-RCE,Rumbek Centre,,LK
+payam,LK-RCE-AMO,Amongpiny,LK-RCE,LK
+payam,LK-RCE-JII,Jiir,LK-RCE,LK
+payam,LK-RCE-MA2,Malek 2,LK-RCE,LK
+payam,LK-RCE-MAT,Matangai,LK-RCE,LK
+payam,LK-RCE-MAY,Mayom,LK-RCE,LK
+county,LK-REA,Rumbek East,,LK
+payam,LK-REA-ADU,Aduel,LK-REA,LK
+payam,LK-REA-AKO,Akot,LK-REA,LK
+payam,LK-REA-ATI,Atiaba,LK-REA,LK
+payam,LK-REA-CUE,Cueicok,LK-REA,LK
+payam,LK-REA-MAL,Maleng-agok,LK-REA,LK
+payam,LK-REA-PAC,Pacong,LK-REA,LK
+payam,LK-REA-PAL,Paloc,LK-REA,LK
+county,LK-RNO,Rumbek North,,LK
+payam,LK-RNO-ALO,Aloor,LK-RNO,LK
+payam,LK-RNO-MAD,Madol,LK-RNO,LK
+payam,LK-RNO-MAL,Malueeth,LK-RNO,LK
+payam,LK-RNO-MAP,Maper,LK-RNO,LK
+payam,LK-RNO-MAY,Mayen,LK-RNO,LK
+payam,LK-RNO-WUN,Wun-rieng,LK-RNO,LK
+county,LK-WUL,Wulu,,LK
+payam,LK-WUL-BAR,Bargel,LK-WUL,LK
+payam,LK-WUL-DOM,Domoloto,LK-WUL,LK
+payam,LK-WUL-MAK,Makundi,LK-WUL,LK
+payam,LK-WUL-WUL,Wulu,LK-WUL,LK
+county,LK-YEA,Yirol East,,LK
+payam,LK-YEA-ADI,Adior,LK-YEA,LK
+payam,LK-YEA-LEK,Lekakedu,LK-YEA,LK
+payam,LK-YEA-MAL,Malek,LK-YEA,LK
+payam,LK-YEA-PAG,Pagarau,LK-YEA,LK
+payam,LK-YEA-TIN,Tinagau,LK-YEA,LK
+payam,LK-YEA-YAL,Yali,LK-YEA,LK
+county,LK-YWE,Yirol West,,LK
+payam,LK-YWE-ABA,Abang,LK-YWE,LK
+payam,LK-YWE-ALU,Aluakluak,LK-YWE,LK
+payam,LK-YWE-ANU,Anuol,LK-YWE,LK
+payam,LK-YWE-GEN,Geng-geng,LK-YWE,LK
+payam,LK-YWE-GHE,Gher,LK-YWE,LK
+payam,LK-YWE-MAP,Mapuordit,LK-YWE,LK
+payam,LK-YWE-YIR,Yirol,LK-YWE,LK
+county,NB-ACE,Aweil Centre,,NB
+payam,NB-ACE-ABU,Abul,NB-ACE,NB
+payam,NB-ACE-ACH,Achana,NB-ACE,NB
+payam,NB-ACE-ARO,Aroyo,NB-ACE,NB
+payam,NB-ACE-AWI,Awiil,NB-ACE,NB
+payam,NB-ACE-BMA,Bahr Mayen,NB-ACE,NB
+payam,NB-ACE-CSO,Chel South,NB-ACE,NB
+payam,NB-ACE-NYA,Nyalath,NB-ACE,NB
+county,NB-AEA,Aweil East,,NB
+payam,NB-AEA-BAA,Baach,NB-AEA,NB
+payam,NB-AEA-MAD,Madhol,NB-AEA,NB
+payam,NB-AEA-MAL,Malual-bai,NB-AEA,NB
+payam,NB-AEA-MA1,Mangar-tong I,NB-AEA,NB
+payam,NB-AEA-MAN,Mangok,NB-AEA,NB
+payam,NB-AEA-MAY,Mayom-wel,NB-AEA,NB
+payam,NB-AEA-WUN,Wunlang,NB-AEA,NB
+payam,NB-AEA-YAR,Yargot,NB-AEA,NB
+county,NB-ANO,Aweil North,,NB
+payam,NB-ANO-ARI,Ariath,NB-ANO,NB
+payam,NB-ANO-MCE,Malual Centre,NB-ANO,NB
+payam,NB-ANO-MEA,Malual East,NB-ANO,NB
+payam,NB-ANO-MNO,Malual North,NB-ANO,NB
+payam,NB-ANO-MWE,Malual West,NB-ANO,NB
+county,NB-ASO,Aweil South,,NB
+payam,NB-ASO-AYA,Ayai,NB-ASO,NB
+payam,NB-ASO-GAK,Gakrol,NB-ASO,NB
+payam,NB-ASO-NYI,Nyieth,NB-ASO,NB
+payam,NB-ASO-NY1,Nyocawany I,NB-ASO,NB
+payam,NB-ASO-NY2,Nyocawany II,NB-ASO,NB
+payam,NB-ASO-PAN,Panthou,NB-ASO,NB
+payam,NB-ASO-TAR,Tar-weng,NB-ASO,NB
+payam,NB-ASO-TIA,Tiar-aleit,NB-ASO,NB
+payam,NB-ASO-WAT,Wathmuok,NB-ASO,NB
+county,NB-AWE,Aweil West,,NB
+payam,NB-AWE-AC2,Achana 2,NB-AWE,NB
+payam,NB-AWE-ATO,Aweil Town,NB-AWE,NB
+payam,NB-AWE-ACE,Ayat Centre,NB-AWE,NB
+payam,NB-AWE-AEA,Ayat East,NB-AWE,NB
+payam,NB-AWE-AWE,Ayat West,NB-AWE,NB
+payam,NB-AWE-GCE,Gomjuer Centre,NB-AWE,NB
+payam,NB-AWE-GEA,Gomjuer East,NB-AWE,NB
+payam,NB-AWE-GWE,Gomjuer West,NB-AWE,NB
+payam,NB-AWE-MEA,Mariem East,NB-AWE,NB
+payam,NB-AWE-MWE,Mariem West,NB-AWE,NB
+county,UY-GUI,Guit,,UY
+payam,UY-GUI-GUI,Guit,UY-GUI,UY
+payam,UY-GUI-KED,Kedad,UY-GUI,UY
+payam,UY-GUI-KUA,Kuach,UY-GUI,UY
+payam,UY-GUI-KUE,Kuerguini,UY-GUI,UY
+payam,UY-GUI-NIE,Niemni,UY-GUI,UY
+payam,UY-GUI-NYA,Nyathoar,UY-GUI,UY
+payam,UY-GUI-WAT,Wathnyona,UY-GUI,UY
+county,UY-KOC,Koch,,UY
+payam,UY-KOC-BOA,Boaw,UY-KOC,UY
+payam,UY-KOC-GAN,Gany,UY-KOC,UY
+payam,UY-KOC-JAA,Jaak,UY-KOC,UY
+payam,UY-KOC-KUA,Kuachlual,UY-KOC,UY
+payam,UY-KOC-NGO,Ngony,UY-KOC,UY
+payam,UY-KOC-NOR,Norbor,UY-KOC,UY
+payam,UY-KOC-PAK,Pakur,UY-KOC,UY
+county,UY-LEE,Leer,,UY
+payam,UY-LEE-ADO,Adok,UY-LEE,UY
+payam,UY-LEE-BOU,Bou,UY-LEE,UY
+payam,UY-LEE-GUA,Guat,UY-LEE,UY
+payam,UY-LEE-JKA,Juong Kang,UY-LEE,UY
+payam,UY-LEE-LEE,Leer,UY-LEE,UY
+payam,UY-LEE-PAD,Padeah,UY-LEE,UY
+payam,UY-LEE-PIL,Pilieny,UY-LEE,UY
+payam,UY-LEE-YAN,Yang,UY-LEE,UY
+county,UY-MAY,Mayendit,,UY
+payam,UY-MAY-BO2,Bor 2,UY-MAY,UY
+payam,UY-MAY-DAB,Dablual,UY-MAY,UY
+payam,UY-MAY-LUO,Luom,UY-MAY,UY
+payam,UY-MAY-MAA,Maal,UY-MAY,UY
+payam,UY-MAY-PAB,Pabuong,UY-MAY,UY
+payam,UY-MAY-RUB,Rubkuay,UY-MAY,UY
+payam,UY-MAY-THA,Thaker,UY-MAY,UY
+payam,UY-MAY-THAR,Tharjiath,UY-MAY,UY
+payam,UY-MAY-TUT,Tutnyang,UY-MAY,UY
+county,UY-MAYO,Mayom,,UY
+payam,UY-MAYO-BIE,Bieh,UY-MAYO,UY
+payam,UY-MAYO-KUE,Kuerbuone,UY-MAYO,UY
+payam,UY-MAYO-KUER,Kueryiek,UY-MAYO,UY
+payam,UY-MAYO-MAN,Mankien,UY-MAYO,UY
+payam,UY-MAYO-NG2,Ngop 2,UY-MAYO,UY
+payam,UY-MAYO-PUP,Pup,UY-MAYO,UY
+payam,UY-MAYO-RIA,Riak,UY-MAYO,UY
+payam,UY-MAYO-RUA,Ruathnyibuol,UY-MAYO,UY
+payam,UY-MAYO-WA1,Wangbuor I,UY-MAYO,UY
+payam,UY-MAYO-WA2,Wangbuor II,UY-MAYO,UY
+payam,UY-MAYO-WA3,Wangbuor III,UY-MAYO,UY
+payam,UY-MAYO-WAN,Wangkei,UY-MAYO,UY
+county,UY-PAN,Panyijiar,,UY
+payam,UY-PAN-GAN,Ganyliel,UY-PAN,UY
+payam,UY-PAN-KOL,Kol,UY-PAN,UY
+payam,UY-PAN-MA2,Mayom 2,UY-PAN,UY
+payam,UY-PAN-NYA,Nyal,UY-PAN,UY
+payam,UY-PAN-PAC,Pachaar,UY-PAN,UY
+payam,UY-PAN-PACH,Pachak,UY-PAN,UY
+payam,UY-PAN-PACHI,Pachienjok,UY-PAN,UY
+payam,UY-PAN-PAN,Panyijiar,UY-PAN,UY
+payam,UY-PAN-THO,Thoarnhoum,UY-PAN,UY
+payam,UY-PAN-TIA,Tiap,UY-PAN,UY
+county,UY-RUB,Rubkona,,UY
+payam,UY-RUB-BTO,Bentiu Town,UY-RUB,UY
+payam,UY-RUB-BUD,Budaang,UY-RUB,UY
+payam,UY-RUB-DHO,Dhorbor,UY-RUB,UY
+payam,UY-RUB-KAL,Kaljak,UY-RUB,UY
+payam,UY-RUB-NGO,Ngop,UY-RUB,UY
+payam,UY-RUB-NHI,Nhialdiu,UY-RUB,UY
+payam,UY-RUB-PAN,Panhiany,UY-RUB,UY
+payam,UY-RUB-RUB,Rubkotne,UY-RUB,UY
+payam,UY-RUB-WAT,Wathjaak,UY-RUB,UY
+county,UN-BAL,Baliet,,UN
+payam,UN-BAL-ABW,Abwong,UN-BAL,UN
+payam,UN-BAL-ADO,Adong,UN-BAL,UN
+payam,UN-BAL-AKO,Akoka,UN-BAL,UN
+payam,UN-BAL-AKOT,Akotweng,UN-BAL,UN
+payam,UN-BAL-GAC,Gel Achiel,UN-BAL,UN
+payam,UN-BAL-NYO,Nyongkuach,UN-BAL,UN
+payam,UN-BAL-NYON,Nyongrial,UN-BAL,UN
+payam,UN-BAL-ROM,Rom,UN-BAL,UN
+payam,UN-BAL-WUN,Wunthow,UN-BAL,UN
+county,UN-FAS,Fashoda,,UN
+payam,UN-FAS-DET,Dethok,UN-FAS,UN
+payam,UN-FAS-KOD,Kodok,UN-FAS,UN
+payam,UN-FAS-KTO,Kodok Town,UN-FAS,UN
+payam,UN-FAS-LUL,Lul,UN-FAS,UN
+county,UN-LON,Longochuk,,UN
+payam,UN-LON-DAJ,Dajo,UN-LON,UN
+payam,UN-LON-GUE,Guelguk,UN-LON,UN
+payam,UN-LON-LON,Longochuk,UN-LON,UN
+payam,UN-LON-MAL,Malual,UN-LON,UN
+payam,UN-LON-PAM,Pamach,UN-LON,UN
+payam,UN-LON-WUD,Wudier,UN-LON,UN
+county,UN-LNA,Luakpiny/Nasir,,UN
+payam,UN-LNA-DIN,Dingkar,UN-LNA,UN
+payam,UN-LNA-JIK,Jikmir,UN-LNA,UN
+payam,UN-LNA-KKU,Kiech Kuon,UN-LNA,UN
+payam,UN-LNA-KUE,Kuerenge-Ke,UN-LNA,UN
+payam,UN-LNA-MAD,Mading,UN-LNA,UN
+payam,UN-LNA-MAK,Maker,UN-LNA,UN
+payam,UN-LNA-NAS,Nasir,UN-LNA,UN
+payam,UN-LNA-ROA,Roam,UN-LNA,UN
+county,UN-MAB,Maban,,UN
+payam,UN-MAB-BAN,Banashowa,UN-MAB,UN
+payam,UN-MAB-BOU,Boung,UN-MAB,UN
+payam,UN-MAB-JIN,Jinkuata,UN-MAB,UN
+payam,UN-MAB-JINM,Jinmakda,UN-MAB,UN
+payam,UN-MAB-KEL,Khor El Amer,UN-MAB,UN
+county,UN-MAI,Maiwut,,UN
+payam,UN-MAI-JEK,Jekow,UN-MAI,UN
+payam,UN-MAI-JOT,Jotoma,UN-MAI,UN
+payam,UN-MAI-KIG,Kigila,UN-MAI,UN
+payam,UN-MAI-MAI,Maiwut,UN-MAI,UN
+payam,UN-MAI-OLA,Olang,UN-MAI,UN
+county,UN-MAL,Malakal,,UN
+payam,UN-MAL-CMA,Central Malakal,UN-MAL,UN
+payam,UN-MAL-EMA,Eastern Malakal,UN-MAL,UN
+payam,UN-MAL-LEL,Lelo,UN-MAL,UN
+payam,UN-MAL-NMA,Northern Malakal,UN-MAL,UN
+payam,UN-MAL-OGO,Ogot,UN-MAL,UN
+payam,UN-MAL-SMA,Southern Malakal,UN-MAL,UN
+county,UN-MAN,Manyo,,UN
+payam,UN-MAN-ADH,Adhidwoi,UN-MAN,UN
+payam,UN-MAN-KAK,Kaka,UN-MAN,UN
+payam,UN-MAN-MAG,Magenist,UN-MAN,UN
+payam,UN-MAN-WED,Wedakona,UN-MAN,UN
+county,UN-MEL,Melut,,UN
+payam,UN-MEL-BIM,Bimachuk,UN-MEL,UN
+payam,UN-MEL-GAL,Galdora,UN-MEL,UN
+payam,UN-MEL-MEL,Melut,UN-MEL,UN
+payam,UN-MEL-PAL,Paloch,UN-MEL,UN
+payam,UN-MEL-PAN,Panomdit,UN-MEL,UN
+payam,UN-MEL-WUN,Wunamum,UN-MEL,UN
+county,UN-PAN,Panyikang,,UN
+payam,UN-PAN-ANA,Anakdiar,UN-PAN,UN
+payam,UN-PAN-DHE,Dheteim,UN-PAN,UN
+payam,UN-PAN-KUE,Kuel,UN-PAN,UN
+payam,UN-PAN-PAK,Pakang,UN-PAN,UN
+payam,UN-PAN-PAN,Panyidwoi,UN-PAN,UN
+payam,UN-PAN-PANY,Panyikang,UN-PAN,UN
+payam,UN-PAN-TON,Tonga,UN-PAN,UN
+county,UN-REN,Renk,,UN
+payam,UN-REN-CHE,Chemmedi,UN-REN,UN
+payam,UN-REN-GEG,Geger,UN-REN,UN
+payam,UN-REN-JAL,Jalhak,UN-REN,UN
+payam,UN-REN-NRE,North Renk,UN-REN,UN
+payam,UN-REN-SRE,South Renk,UN-REN,UN
+county,UN-ULA,Ulang,,UN
+payam,UN-ULA-DOM,Doma,UN-ULA,UN
+payam,UN-ULA-KUR,Kurmuot,UN-ULA,UN
+payam,UN-ULA-ULA,Ulang,UN-ULA,UN
+payam,UN-ULA-YOM,Yomding,UN-ULA,UN
+county,WR-GEA,Gogrial East,,WR
+payam,WR-GEA-NYA,Nyang,WR-GEA,WR
+payam,WR-GEA-PEA,Pathuon East,WR-GEA,WR
+payam,WR-GEA-PWE,Pathuon West,WR-GEA,WR
+payam,WR-GEA-TEA,Toch East,WR-GEA,WR
+payam,WR-GEA-TNO,Toch North,WR-GEA,WR
+payam,WR-GEA-TWE,Toch West,WR-GEA,WR
+county,WR-GWE,Gogrial West,,WR
+payam,WR-GWE-ANO,Akon North,WR-GWE,WR
+payam,WR-GWE-ASO,Akon South,WR-GWE,WR
+payam,WR-GWE-ALN,Alek North,WR-GWE,WR
+payam,WR-GWE-ALS,Alek South,WR-GWE,WR
+payam,WR-GWE-AWE,Alek West,WR-GWE,WR
+payam,WR-GWE-GOG,Gogrial,WR-GWE,WR
+payam,WR-GWE-KNO,Kuac North,WR-GWE,WR
+payam,WR-GWE-KSO,Kuac South,WR-GWE,WR
+payam,WR-GWE-RIA,Riau,WR-GWE,WR
+county,WR-TEA,Tonj East,,WR
+payam,WR-TEA-ANA,Ananatak,WR-TEA,WR
+payam,WR-TEA-MAK,Makuac,WR-TEA,WR
+payam,WR-TEA-MAL,Malualcum,WR-TEA,WR
+payam,WR-TEA-MAP,Maparah,WR-TEA,WR
+payam,WR-TEA-MA2,Mayen 2,WR-TEA,WR
+payam,WR-TEA-PA2,Pagor 2,WR-TEA,WR
+payam,WR-TEA-PAL,Palal,WR-TEA,WR
+payam,WR-TEA-PALI,Paliang,WR-TEA,WR
+payam,WR-TEA-PAN,Pannhial,WR-TEA,WR
+payam,WR-TEA-PAW,Paweng,WR-TEA,WR
+payam,WR-TEA-WUN,Wun-liit,WR-TEA,WR
+county,WR-TNO,Tonj North,,WR
+payam,WR-TNO-AKO,Akop,WR-TNO,WR
+payam,WR-TNO-ALA,Alabek,WR-TNO,WR
+payam,WR-TNO-ALI,Aliek,WR-TNO,WR
+payam,WR-TNO-AWU,Awuul,WR-TNO,WR
+payam,WR-TNO-KIR,Kirik,WR-TNO,WR
+payam,WR-TNO-MAN,Manloor,WR-TNO,WR
+payam,WR-TNO-MAR,Marial-lou,WR-TNO,WR
+payam,WR-TNO-PAG,Pagol,WR-TNO,WR
+payam,WR-TNO-RUA,Rual-bet,WR-TNO,WR
+payam,WR-TNO-WAR,Warrap,WR-TNO,WR
+county,WR-TSO,Tonj South,,WR
+payam,WR-TSO-JAK,Jak,WR-TSO,WR
+payam,WR-TSO-MAN,Manyang-ngok,WR-TSO,WR
+payam,WR-TSO-THI,Thiet,WR-TSO,WR
+payam,WR-TSO-TON,Tonj,WR-TSO,WR
+payam,WR-TSO-WAT,Wath-alel,WR-TSO,WR
+county,WR-TWI,Twic,,WR
+payam,WR-TWI-AJA,Ajak-kuac,WR-TWI,WR
+payam,WR-TWI-AKO,Akoc,WR-TWI,WR
+payam,WR-TWI-AWE,Aweeng,WR-TWI,WR
+payam,WR-TWI-PAN,Pannyok,WR-TWI,WR
+payam,WR-TWI-TUR,Turalei,WR-TWI,WR
+payam,WR-TWI-WUN,Wunrok,WR-TWI,WR
+county,WB-JRI,Jur River,,WB
+payam,WB-JRI-KAN,Kangi,WB-JRI,WB
+payam,WB-JRI-KUA,Kuajiena,WB-JRI,WB
+payam,WB-JRI-MBA,Marial Bai,WB-JRI,WB
+payam,WB-JRI-ROC,Rocrocdong,WB-JRI,WB
+payam,WB-JRI-UDI,Udici,WB-JRI,WB
+payam,WB-JRI-WBA,Wau Bai,WB-JRI,WB
+county,WB-RAJ,Raja,,WB
+payam,WB-RAJ-ERE,Ere,WB-RAJ,WB
+payam,WB-RAJ-RAG,Raga,WB-RAJ,WB
+payam,WB-RAJ-RIN,Ringi,WB-RAJ,WB
+payam,WB-RAJ-UYU,Uyujuku,WB-RAJ,WB
+county,WB-WAU,Wau,,WB
+payam,WB-WAU-BAG,Bagari,WB-WAU,WB
+payam,WB-WAU-BES,Besselia,WB-WAU,WB
+payam,WB-WAU-KPA,Kpaile,WB-WAU,WB
+payam,WB-WAU-WNO,Wau North,WB-WAU,WB
+payam,WB-WAU-WSO,Wau South,WB-WAU,WB
+county,WE-EZO,Ezo,,WE
+payam,WE-EZO-AND,Andari,WE-EZO,WE
+payam,WE-EZO-BAG,Bagidi,WE-EZO,WE
+payam,WE-EZO-BAR,Bariguna,WE-EZO,WE
+payam,WE-EZO-ECE,Ezo Centre,WE-EZO,WE
+payam,WE-EZO-NAA,Naandi,WE-EZO,WE
+payam,WE-EZO-YAN,Yangiri,WE-EZO,WE
+county,WE-IBB,Ibba,,WE
+payam,WE-IBB-ICE,Ibba Centre,WE-IBB,WE
+payam,WE-IBB-MAD,Madebe,WE-IBB,WE
+payam,WE-IBB-MAN,Manikakara,WE-IBB,WE
+payam,WE-IBB-MAR,Maruko,WE-IBB,WE
+payam,WE-IBB-NAB,Nabanga,WE-IBB,WE
+county,WE-MAR,Maridi,,WE
+payam,WE-MAR-KOZ,Kozi,WE-MAR,WE
+payam,WE-MAR-LAN,Landili,WE-MAR,WE
+payam,WE-MAR-MAM,Mambe,WE-MAR,WE
+payam,WE-MAR-MAR,Maridi,WE-MAR,WE
+payam,WE-MAR-NGA,Ngamunde,WE-MAR,WE
+county,WE-MEA,Mundri East,,WE
+payam,WE-MEA-KED,Kediba,WE-MEA,WE
+payam,WE-MEA-LAK,Lakamadi,WE-MEA,WE
+payam,WE-MEA-LOZ,Lozoh,WE-MEA,WE
+payam,WE-MEA-MIN,Minga,WE-MEA,WE
+payam,WE-MEA-WIT,Witto,WE-MEA,WE
+county,WE-MWE,Mundri West,,WE
+payam,WE-MWE-AMA,Amadi,WE-MWE,WE
+payam,WE-MWE-BAN,Bangolo,WE-MWE,WE
+payam,WE-MWE-KOT,Kotobi,WE-MWE,WE
+payam,WE-MWE-MUN,Mundri,WE-MWE,WE
+county,WE-MVO,Mvolo,,WE
+payam,WE-MVO-BAG,Bagori,WE-MVO,WE
+payam,WE-MVO-BEL,Bahr El Grindi,WE-MVO,WE
+payam,WE-MVO-DAR,Dari,WE-MVO,WE
+payam,WE-MVO-KOK,Kokori,WE-MVO,WE
+payam,WE-MVO-LES,Lessi,WE-MVO,WE
+payam,WE-MVO-MVO,Mvolo,WE-MVO,WE
+payam,WE-MVO-YER,Yeri,WE-MVO,WE
+county,WE-NAG,Nagero,,WE
+payam,WE-NAG-NAG,Nagero,WE-NAG,WE
+county,WE-NZA,Nzara,,WE
+payam,WE-NZA-BAS,Basukangbi,WE-NZA,WE
+payam,WE-NZA-NCE,Nzara Centre,WE-NZA,WE
+payam,WE-NZA-RIN,Ringasi,WE-NZA,WE
+payam,WE-NZA-SAK,Sakure,WE-NZA,WE
+payam,WE-NZA-SAN,Sangua,WE-NZA,WE
+county,WE-TAM,Tambura,,WE
+payam,WE-TAM-MUP,Mupoi,WE-TAM,WE
+payam,WE-TAM-NAM,Namutina,WE-TAM,WE
+payam,WE-TAM-SYU,Source Yubu,WE-TAM,WE
+payam,WE-TAM-TAM,Tambura,WE-TAM,WE
+county,WE-YAM,Yambio,,WE
+payam,WE-YAM-BAN,Bangasu,WE-YAM,WE
+payam,WE-YAM-GAN,Gangura,WE-YAM,WE
+payam,WE-YAM-NAD,Nadiangere,WE-YAM,WE
+payam,WE-YAM-RIR,Ri-rangu,WE-YAM,WE
+payam,WE-YAM-YTO,Yambio Town,WE-YAM,WE
+county,AB-ALA,Alal,,AB
+payam,AB-ALA-ALL,Allal,AB-ALA,AB
+county,AB-AME,Ameth-Aguok,,AB
+payam,AB-AME-AME,Ameth-Aguok,AB-AME,AB
+county,AB-MIJ,Mijak,,AB
+payam,AB-MIJ-MIJ,Mijak,AB-MIJ,AB
+county,AB-RUM,Rumamer,,AB
+payam,AB-RUM-RUM,Rumamer,AB-RUM,AB
+county,AB-AMU,Abyei Municipality,,AB
+payam,AB-AMU-ABY,Abyei,AB-AMU,AB
+county,GP-PIB,Pibor,,GP
+payam,GP-PIB-BOM,Boma,GP-PIB,GP
+payam,GP-PIB-GUM,Gumuruk,GP-PIB,GP
+payam,GP-PIB-KIZ,Kiziongora,GP-PIB,GP
+payam,GP-PIB-LEK,Lekuangole,GP-PIB,GP
+payam,GP-PIB-MAR,Marow,GP-PIB,GP
+payam,GP-PIB-MEW,Mewun,GP-PIB,GP
+payam,GP-PIB-PIB,Pibor,GP-PIB,GP
+payam,GP-PIB-VER,Verteth,GP-PIB,GP
+county,GP-POC,Pochalla,,GP
+payam,GP-POC-ADO,Adongo,GP-POC,GP
+payam,GP-POC-AKI,Akiela,GP-POC,GP
+payam,GP-POC-BUR,Burator,GP-POC,GP
+payam,GP-POC-OMI,Omiela,GP-POC,GP
+payam,GP-POC-POC,Pochalla,GP-POC,GP
+county,RW-ABI,Abiemnhom,,RW
+county,RW-PAR,Pariang,,RW

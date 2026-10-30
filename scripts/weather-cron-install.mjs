@@ -1,6 +1,6 @@
 // node --env-file=<env> scripts/weather-cron-install.mjs
 //
-// Installs (or replaces) the hourly weather job in the database's pg_cron
+// Installs (or replaces) the weather job (every 10 minutes since 2026-10-30) in the database's pg_cron
 // (2026-10-08). The job calls POST <SITE_URL>/api/cron/weather through pg_net
 // with "Authorization: Bearer <CRON_SECRET>". The secret is kept in Supabase
 // Vault (encrypted at rest) and read by the job at run time, so it appears in
@@ -56,8 +56,10 @@ try {
         body := '{}'::jsonb,
         timeout_milliseconds := 60000
       );`;
-    // Seven past every hour, like the GitHub backup; pg_cron runs on time.
-    await tx.$queryRawUnsafe(`SELECT cron.schedule($1, '7 * * * *', $2)`, JOB, command);
+    // Every 10 minutes (2026-10-30). One call fetches what it can in its time
+    // budget, oldest first; the 45-minute floor keeps each county to about one
+    // fetch an hour. The job keeps its old name so re-running replaces it.
+    await tx.$queryRawUnsafe(`SELECT cron.schedule($1, '*/10 * * * *', $2)`, JOB, command);
   });
   const [job] = await db.$queryRawUnsafe(
     'SELECT jobid, schedule, active FROM cron.job WHERE jobname = $1',
