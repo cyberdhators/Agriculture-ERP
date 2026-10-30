@@ -4,7 +4,7 @@ import { WEATHER_SCHEDULED_FLOOR_MINUTES, emptyBodySchema } from '@agri-erp/shar
 
 import { unauthenticated } from '../../../../lib/api/errors';
 import { defineRoutes, ok } from '../../../../lib/api/route';
-import { runWeatherFetch } from '../../../../lib/weather/fetch-cycle';
+import { WEATHER_CYCLE_BUDGET_MS, runWeatherFetch } from '../../../../lib/weather/fetch-cycle';
 
 /**
  * POST /api/cron/weather -- the hourly weather fetch, called by Supabase's
@@ -18,6 +18,10 @@ import { runWeatherFetch } from '../../../../lib/weather/fetch-cycle';
  * returns only counts. C-16.6 holds: no route a visitor or staff member opens
  * calls OpenWeather; only this scheduler-only route does, and only on the
  * hourly floor.
+ *
+ * Every 10 minutes since the national location list (2026-10-30): each call
+ * fetches what it can in WEATHER_CYCLE_BUDGET_MS, oldest first, so every
+ * county is refreshed about once an hour.
  */
 export const maxDuration = 60;
 
@@ -45,7 +49,11 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
           failed: 0,
           failures: ['OPENWEATHER_API_KEY is not set'],
         });
-      const outcome = await runWeatherFetch({ key, floorMinutes: WEATHER_SCHEDULED_FLOOR_MINUTES });
+      const outcome = await runWeatherFetch({
+        key,
+        floorMinutes: WEATHER_SCHEDULED_FLOOR_MINUTES,
+        budgetMs: WEATHER_CYCLE_BUDGET_MS,
+      });
       return ok(outcome);
     },
   },

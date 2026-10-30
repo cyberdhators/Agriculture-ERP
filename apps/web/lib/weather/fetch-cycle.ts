@@ -50,20 +50,34 @@ interface LocationRow {
   last_fetched_at: Date | null;
 }
 
+/**
+ * How long one cycle may spend fetching before it stops and leaves the rest
+ * to the next run (2026-10-30). The route's function is cut off at 60 seconds,
+ * and at the paced rate a location costs about 2.4 seconds, so a national list
+ * (83 counties) cannot finish in one call. Stopping cleanly inside the limit,
+ * oldest first, means every run moves the queue on instead of refetching the
+ * same front of the list and never reaching the end.
+ */
+export const WEATHER_CYCLE_BUDGET_MS = 45_000;
+
 export async function runWeatherFetch(options: {
   key: string;
   floorMinutes: number;
+  budgetMs?: number;
 }): Promise<FetchOutcome> {
   const out: FetchOutcome = { fetched: 0, skipped: 0, failed: 0, failures: [] };
+  const deadline = Date.now() + (options.budgetMs ?? Number.POSITIVE_INFINITY);
   const locations = await prisma.$queryRawUnsafe<LocationRow[]>(
     `SELECT wl.id, wl.name, wl.latitude::text AS lat, wl.longitude::text AS lon,
             (SELECT max(o.fetched_at) FROM public.weather_observation o WHERE o.weather_location_id = wl.id) AS last_fetched_at
        FROM public.weather_location_active wl
       WHERE wl.active = true
-      ORDER BY wl.state_id, wl.name`,
+      ORDER BY last_fetched_at ASC NULLS FIRST, wl.state_id, wl.name`,
   );
 
   for (const loc of locations) {
+    // Out of time: the rest wait for the next run, oldest first.
+    if (Date.now() >= deadline) break;
     const floor = new Date(Date.now() - options.floorMinutes * 60_000);
     if (loc.last_fetched_at && new Date(loc.last_fetched_at) > floor) {
       out.skipped += 1;

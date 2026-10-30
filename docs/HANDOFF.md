@@ -3104,6 +3104,26 @@ compulsory, details should be fixed" (reverses #213's optional details).
   acknowledgement (since #213) and now also without state/kind/language; it
   needs those fields before the DB suite is next run.
 
+### 2026-10-30 — Alieu-Claude (lane-locations) → integrator — national locations, weather everywhere
+
+Branch `feat/locations-national`. DECISIONS: "The national location list, and
+weather for every county (2026-10-30)". No migration and no new audit key: the
+reseed already writes `location.created`, `location.renamed` and
+`location.soft_deleted`, and the weather seed writes `weather_location.created`.
+
+**After merge, run in order against production (the owner):**
+
+1. `scripts/locations-reseed.mjs --apply`: adds 574 places, renames 3 and
+   soft-deletes Mangalla. The dry run has already been checked against production.
+2. `scripts/locations-bundle.mjs`: a new version, so devices refresh their list.
+3. `scripts/weather-locations-seed.mjs`: one weather point for each new county.
+4. Once the merge is live, `scripts/weather-cron-install.mjs`: the job then
+   runs every 10 minutes.
+
+**Open:** Ruweng's 11 payams and Greater Pibor's newer county names are
+missing from the document received; ask CORWADO for them. Abyei's five
+counties share one weather point.
+
 ### 2026-11-03 — Alieu-Claude (lane-trust) → integrator — archive for me, ratings
 
 Branch `feat/ratings-archive`. DECISIONS: "Archive for me replaces Close

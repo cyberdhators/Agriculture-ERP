@@ -6133,3 +6133,66 @@ the workbook (`MATCH_ALERT_METRICS`).
   stored unit ("bag_50kg") in post lines; they now use `unitLabelOf` (lib/buyer/
   labels), which labels a known unit in the reader's language and shows an
   unknown one as it is.
+
+## The national location list, and weather for every county (2026-10-30)
+
+The owner: "add these counties and payams" (CORWADO's "South Sudan: States,
+Administrative Areas, Counties and Payams", 30 October 2026) and "let
+everything correlate, weather should reflect members location weather
+forecast". The placeholder list (10 states, Central Equatoria's 6 counties,
+Juba's 12 payams; input I-07) is replaced by `docs/data/locations.csv`, which
+the existing reseed already reads when present.
+
+- **Contents (OBSERVED, counted against the document's own summary table):**
+  13 states and administrative areas, 83 counties, 505 payams. The ten states
+  keep their names without "State". Abyei (AB), Greater Pibor (GP) and Ruweng
+  (RW) are new. Pibor and Pochalla sit under Greater Pibor, and Abiemnhom and
+  Pariang under Ruweng, as the document groups them. Abyei's four counties and
+  its Municipality have one payam each, from the Abyei Ministry of Health
+  register.
+- **Ruweng has no payams.** The document's Ruweng section, and Greater
+  Pibor's "newer local county names", are absent from the file as received:
+  its text ends after Pochalla. The two counties are in, so Ruweng shows in
+  every list, but nobody can choose a payam there until CORWADO sends the
+  page. INFERRED from the summary table: 11 payams are missing.
+- **Codes:** existing codes are kept (CE-JUB, CE-JUB-KAT and the rest), so
+  nothing attached to them moves. New codes follow the same shape,
+  STATE-COUNTY-PAYAM, one segment each. The forecast route reads the county
+  from the first two segments of a payam code, and a test now holds every
+  payam to that.
+- **Spelling follows the document:** "Kajo-Keji" becomes "Kajo-keji", "Yei
+  River" becomes "Yei", and Juba's "Juba" payam becomes "Juba Town". The
+  placeholder "Mangalla" is soft-deleted, because the document splits it into
+  Mangala North and Mangala South. OBSERVED in the dry run against production:
+  nothing is attached to it and nothing is refused.
+- **Weather for every county:** each county has a point at its headquarters
+  town. OBSERVED: 70 of the towns were checked against OpenWeather's place
+  search; where the search disagreed by more than a few kilometres it was
+  usually right, and its position was used. All five Abyei counties share
+  Abyei town until CORWADO gives them places. A test holds every county to a
+  point inside South Sudan's bounding box. A municipality's weather is named
+  "Abyei Municipality", not "... County".
+- **The fetch keeps up with 83 places.** The scheduled route is cut off at 60
+  seconds and paces OpenWeather at about 2.4 seconds a place, so it cannot
+  fetch the national list in one call. Each call now:
+  - takes the least recently fetched places first;
+  - stops after 45 seconds.
+
+  The job runs every 10 minutes instead of hourly, and the 45-minute floor
+  keeps each place to about one fetch an hour. That is about 4,000
+  OpenWeather calls a day, within the free plan's 60 a minute.
+
+- **"State or area":** member-facing State labels now read "State or area"
+  (Arabic "الولاية أو المنطقة"), because three of the entries are
+  administrative areas. Staff screens keep "State".
+- **A member's weather follows their payam:** the farmer's Home and Weather
+  read the forecast for the county of their own payam. Email (buyer) accounts
+  have no weather card; that is unchanged.
+- **The reseed writes in bulk now.** OBSERVED on the first `--apply` against
+  production: about 1,150 one-row writes ran past the transaction's 300-second
+  budget (P2028), and the whole load rolled back. Afterwards production still
+  held 10 states, 6 counties and 12 payams. Now each level is one statement
+  over arrays, the soft-deletes are one, and the audit rows are one, so the
+  load is about 8 round trips and still all or nothing. Unchanged rows are
+  still left untouched. Each statement was planned with EXPLAIN on production
+  before the second run.
