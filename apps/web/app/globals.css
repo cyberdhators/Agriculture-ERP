@@ -215,6 +215,18 @@
   text-decoration-color: var(--green);
 }
 
+/* A link inside running text must look like one: a phone has no hover to
+   reveal it. Classed links (buttons, tabs, cards) keep their own look. */
+.shop p a:not([class]) {
+  color: var(--green);
+  font-weight: 600;
+  text-decoration-color: currentColor;
+}
+
+.shop p a:not([class]):hover {
+  color: var(--green-hover);
+}
+
 /* Amazon focus is a soft green glow, not the offset ring. */
 .shop :focus-visible {
   box-shadow: var(--az-focus);

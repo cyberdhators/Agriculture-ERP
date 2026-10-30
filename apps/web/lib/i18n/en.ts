@@ -490,6 +490,7 @@ export const en = {
   'market.priceRange': 'Price range',
   'market.deliveryAvailable': 'Delivery available',
   'market.featured': 'Fresh this week',
+  'market.everything': 'All listings',
   'market.trust':
     'Verified badges on checked organisations · Photos on every listing · Contact by call or SMS',
   'market.emptyFiltered': 'No listings match; clear a filter or try another payam.',

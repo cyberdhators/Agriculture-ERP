@@ -8,7 +8,7 @@ import { SERVICE_TYPES } from '@agri-erp/shared';
 import { VerifiedOrganisationBadge } from '@/components/listings/VerifiedOrganisationBadge';
 import { MessageButton } from '@/components/messages/MessageButton';
 import { ProfileLink } from '@/components/profiles/PublicProfile';
-import { Badge, EmptyState, Input, Notice } from '@/components/ui';
+import { Badge, ButtonLink, EmptyState, Input, Notice, PageHeader } from '@/components/ui';
 import { formatDate } from '@/lib/format';
 import { t, type Language } from '@/lib/i18n';
 import { getService, listServices, type ServiceListing } from '@/lib/market-posts/api';
@@ -94,17 +94,17 @@ export function MarketServices({ lang, postHref }: { lang: Language; postHref?: 
   return (
     <>
       <MarketSections current="services" lang={lang} />
-      <div className={styles.cardHead} style={{ justifyContent: 'space-between' }}>
-        <div>
-          <h1>{t('svc.marketTitle', lang)}</h1>
-          <p className="muted small">{t('svc.marketLead', lang)}</p>
-        </div>
-        {postHref ? (
-          <Link href={postHref} className="small">
-            {t('svc.new', lang)}
-          </Link>
-        ) : null}
-      </div>
+      <PageHeader
+        title={t('svc.marketTitle', lang)}
+        subtitle={t('svc.marketLead', lang)}
+        actions={
+          postHref ? (
+            <ButtonLink href={postHref} variant="secondary" size="small">
+              {t('svc.new', lang)}
+            </ButtonLink>
+          ) : undefined
+        }
+      />
       <div className={styles.toolbar}>
         <Input
           type="search"

@@ -455,6 +455,7 @@ export const ar: Partial<Record<TKey, string>> = {
   'market.contact': 'التواصل مع البائع',
   'market.negotiable': 'قابل للتفاوض',
   'market.featured': 'جديد هذا الأسبوع',
+  'market.everything': 'كل العروض',
   'market.withdraw': 'سحب الإعلان',
   'market.withdrawTitle': 'سحب هذا الإعلان',
   'market.withdrawBody': 'يُزال الإعلان من السوق ويرى البائع سببك عليه.',

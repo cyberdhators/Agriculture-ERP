@@ -8,7 +8,7 @@ import { LISTING_CATEGORIES } from '@agri-erp/shared';
 import { VerifiedOrganisationBadge } from '@/components/listings/VerifiedOrganisationBadge';
 import { MessageButton } from '@/components/messages/MessageButton';
 import { ProfileLink } from '@/components/profiles/PublicProfile';
-import { Badge, EmptyState, Input, Notice } from '@/components/ui';
+import { Badge, ButtonLink, EmptyState, Input, Notice, PageHeader } from '@/components/ui';
 import { CATEGORY_KEY } from '@/lib/farmers/listings';
 import type { ListingCategory } from '@/lib/fixtures/farmers';
 import { formatDate } from '@/lib/format';
@@ -90,17 +90,17 @@ export function MarketRequests({
   return (
     <>
       <MarketSections current="requests" lang={lang} />
-      <div className={styles.cardHead} style={{ justifyContent: 'space-between' }}>
-        <div>
-          <h1>{t('requests.marketTitle', lang)}</h1>
-          <p className="muted small">{t('requests.marketLead', lang)}</p>
-        </div>
-        {postHref ? (
-          <Link href={postHref} className="small">
-            {t('requests.new', lang)}
-          </Link>
-        ) : null}
-      </div>
+      <PageHeader
+        title={t('requests.marketTitle', lang)}
+        subtitle={t('requests.marketLead', lang)}
+        actions={
+          postHref ? (
+            <ButtonLink href={postHref} variant="secondary" size="small">
+              {t('requests.new', lang)}
+            </ButtonLink>
+          ) : undefined
+        }
+      />
       <div className={styles.toolbar}>
         <Input
           type="search"

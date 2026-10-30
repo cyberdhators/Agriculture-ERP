@@ -600,7 +600,7 @@ export function FarmerRegister() {
 
       <h1 className={styles.h1}>{t('register.title', language)}</h1>
       {step === 0 ? (
-        <p className="small muted">
+        <p className="small muted" style={{ marginBlockEnd: 'var(--s-4)' }}>
           {language === 'ar'
             ? 'بعد التسجيل يمكنك أيضاً الشراء بنفس الحساب. لا تريد البيع؟ '
             : 'After signing up you can also buy with this same account. Only buying? '}
