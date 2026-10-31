@@ -424,6 +424,12 @@
   --on-strong: #ffffff;
 }
 
+/* 2026-10-31: "Larger text" (Account > Appearance) -- the whole app a size
+   up, evenly: text, controls and spacing together, so nothing is cramped. */
+:root[data-text='large'] {
+  zoom: 1.125;
+}
+
 /* ---- Reset ---------------------------------------------------------- */
 
 *,

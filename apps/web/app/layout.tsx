@@ -83,10 +83,15 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  themeColor: '#0f2e1c',
+  // 2026-10-31: the phone's top bar follows the theme (the band colour in
+  // each), so the installed app's frame matches the page.
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#0f2e1c' },
+    { media: '(prefers-color-scheme: dark)', color: '#0a1f13' },
+  ],
 };
 
-const THEME_SCRIPT = `try{var t=localStorage.getItem('agri-theme');if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)}catch(e){}`;
+const THEME_SCRIPT = `try{var d=document.documentElement,t=localStorage.getItem('agri-theme');if(t==='dark'||t==='light')d.setAttribute('data-theme',t);if(localStorage.getItem('agri-text')==='large')d.setAttribute('data-text','large')}catch(e){}`;
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (

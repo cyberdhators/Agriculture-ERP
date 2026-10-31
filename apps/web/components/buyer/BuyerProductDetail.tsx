@@ -6,16 +6,10 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { LISTING_UNITS } from '@agri-erp/shared';
 
 import { BuyerApiError, getListing, type MarketListing } from '@/lib/buyer/api';
-import {
-  CATEGORY_LABELS,
-  GRADE_LABELS,
-  UNIT_LABELS,
-  formatQuantity,
-  formatSsp,
-  labelOf,
-} from '@/lib/buyer/labels';
+import { categoryLabelOf, formatSsp, unitLabel } from '@/lib/buyer/labels';
 import { addToCart, useCart } from '@/lib/buyer/cart';
 import { formatPhone } from '@/lib/format';
+import { t, type Language } from '@/lib/i18n';
 
 import {
   Button,
@@ -34,6 +28,8 @@ import {
 import { MessageButton } from '../messages/MessageButton';
 import { ProfileLink } from '../profiles/PublicProfile';
 import { LoadingState } from '../ui/data';
+import { useBuyer } from './BuyerShell';
+import { gradeIn, perUnitIn, quantityIn } from './Timeline';
 import styles from './buyer.module.css';
 import { DirArrow } from '@/components/ui/icons';
 
@@ -47,6 +43,8 @@ import { DirArrow } from '@/components/ui/icons';
  * cart sends one request to each farmer.
  */
 export function BuyerProductDetail({ id }: { id: string }) {
+  const { language } = useBuyer();
+  const w = (key: Parameters<typeof t>[0]) => t(key, language);
   const [listing, setListing] = useState<MarketListing | null>(null);
   const [state, setState] = useState<'loading' | 'ready' | 'missing' | 'closed' | 'error'>(
     'loading',
@@ -70,24 +68,20 @@ export function BuyerProductDetail({ id }: { id: string }) {
     };
   }, [id]);
 
-  if (state === 'loading') return <LoadingState label="Loading the product" rows={5} />;
+  if (state === 'loading') return <LoadingState label={w('buyer.product.loading')} rows={5} />;
   if (state !== 'ready' || !listing) {
     return (
       <EmptyState
         error={state === 'error'}
-        title={
+        title={w(
           state === 'missing'
-            ? 'This product is no longer listed'
+            ? 'buyer.product.missing'
             : state === 'closed'
-              ? 'The marketplace is closed to this account'
-              : 'This product could not be loaded'
-        }
-        body={
-          state === 'missing'
-            ? 'It may have sold, been withdrawn, or never existed. Go back to the marketplace to see what is listed now.'
-            : 'Go back to the marketplace and try again.'
-        }
-        actions={<Link href="/buyer/marketplace">Back to the marketplace</Link>}
+              ? 'buyer.mkt.closed'
+              : 'buyer.product.loadFailed',
+        )}
+        body={w(state === 'missing' ? 'buyer.product.missingBody' : 'buyer.product.failedBody')}
+        actions={<Link href="/buyer/marketplace">{w('buyer.product.back')}</Link>}
       />
     );
   }
@@ -95,10 +89,10 @@ export function BuyerProductDetail({ id }: { id: string }) {
   return (
     <div className={styles.page}>
       <Link href="/buyer/marketplace" className="small">
-        <DirArrow back /> Marketplace
+        <DirArrow back /> {w('buyer.nav.marketplace')}
       </Link>
       <PageHeader
-        eyebrow={labelOf(CATEGORY_LABELS, listing.category)}
+        eyebrow={categoryLabelOf(listing.category, language)}
         title={listing.title}
         subtitle={listing.description || undefined}
       />
@@ -106,61 +100,73 @@ export function BuyerProductDetail({ id }: { id: string }) {
       <div className={styles.twoCol}>
         <Card>
           {/* 2026-10-31: the title alone; the cart says the rest. */}
-          <CardHeader title="Buy from this farmer" />
+          <CardHeader title={w('buyer.product.buy')} />
           <CardBody>
-            <AddToCart listing={listing} />
+            <AddToCart listing={listing} language={language} />
           </CardBody>
         </Card>
 
         <div className={styles.page}>
           <Card>
-            <CardHeader title="Details" />
+            <CardHeader title={w('buyer.w.details')} />
             <CardBody>
               <DefinitionList
                 items={[
-                  { term: 'Product', value: listing.product_name },
+                  { term: w('buyer.w.product'), value: listing.product_name },
                   {
-                    term: 'Available',
-                    value: formatQuantity(listing.available_quantity, listing.unit),
+                    term: w('buyer.product.available'),
+                    value: quantityIn(listing.available_quantity, listing.unit, language),
                   },
                   {
-                    term: 'Indicative price',
-                    value: `${formatSsp(listing.indicative_price_ssp)} per ${labelOf(UNIT_LABELS, listing.price_per)}${listing.negotiable ? ' · negotiable' : ''}`,
+                    term: w('buyer.product.price'),
+                    value: `${formatSsp(listing.indicative_price_ssp)} ${perUnitIn(listing.price_per, language)}${listing.negotiable ? ` · ${w('buyer.product.negotiable')}` : ''}`,
                   },
                   {
-                    term: 'Minimum order',
+                    term: w('buyer.product.minOrder'),
                     value:
                       listing.min_order_quantity === null
-                        ? 'None stated'
-                        : formatQuantity(listing.min_order_quantity, listing.unit),
+                        ? w('buyer.product.noneStated')
+                        : quantityIn(listing.min_order_quantity, listing.unit, language),
                   },
-                  { term: 'Quality', value: labelOf(GRADE_LABELS, listing.quality_grade) },
                   {
-                    term: 'Availability',
+                    term: w('buyer.product.quality'),
+                    value: gradeIn(listing.quality_grade, language),
+                  },
+                  {
+                    term: w('buyer.product.availability'),
                     value: listing.available_until
-                      ? `${listing.available_from} to ${listing.available_until}`
-                      : `From ${listing.available_from}`,
+                      ? w('buyer.product.fromTo')
+                          .replace('{from}', listing.available_from)
+                          .replace('{until}', listing.available_until)
+                      : w('buyer.product.from').replace('{from}', listing.available_from),
                   },
-                  { term: 'Production period', value: listing.production_period ?? 'Not stated' },
                   {
-                    term: 'Delivery',
-                    value: listing.delivery_available ? 'Supplier can deliver' : 'Collection only',
+                    term: w('buyer.product.period'),
+                    value: listing.production_period ?? w('buyer.product.notStated'),
+                  },
+                  {
+                    term: w('buyer.cart.delivery'),
+                    value: w(
+                      listing.delivery_available
+                        ? 'buyer.product.canDeliver'
+                        : 'buyer.product.collect',
+                    ),
                   },
                 ]}
               />
             </CardBody>
           </Card>
           <Card>
-            <CardHeader title="Supplier" />
+            <CardHeader title={w('buyer.w.supplier')} />
             <CardBody>
               <DefinitionList
                 items={[
                   {
-                    term: 'Trading name',
+                    term: w('buyer.product.tradingName'),
                     value: <span dir="auto">{listing.supplier.trading_name}</span>,
                   },
                   {
-                    term: 'Location',
+                    term: w('buyer.product.location'),
                     value: `${listing.location.payam}, ${listing.location.county}, ${listing.location.state}`,
                   },
                 ]}
@@ -168,28 +174,31 @@ export function BuyerProductDetail({ id }: { id: string }) {
               {listing.farmer_phone ? (
                 <div className={styles.actions}>
                   <ButtonLink href={`tel:${listing.farmer_phone}`}>
-                    Call {formatPhone(listing.farmer_phone)}
+                    {w('buyer.w.call')} <span dir="ltr">{formatPhone(listing.farmer_phone)}</span>
                   </ButtonLink>
                   <ButtonLink
                     variant="secondary"
                     href={`https://wa.me/${listing.farmer_phone.replace(/\D/g, '')}`}
                   >
-                    WhatsApp
+                    {w('buyer.w.whatsapp')}
                   </ButtonLink>
                 </div>
               ) : (
                 <p className={styles.muted}>
-                  {listing.phone_on_request === false
-                    ? 'This farmer prefers messages.'
-                    : 'The farmer’s phone number is shown here once you send them a request.'}
+                  {w(
+                    listing.phone_on_request === false
+                      ? 'buyer.w.prefersMessages'
+                      : 'buyer.product.phoneLater',
+                  )}
                 </p>
               )}
               <MessageButton
                 postKind="listing"
                 postId={listing.id}
                 allowed={listing.messages_allowed !== false}
+                language={language}
               />
-              <ProfileLink kind="listing" id={listing.id} language="en" />
+              <ProfileLink kind="listing" id={listing.id} language={language} />
             </CardBody>
           </Card>
         </div>
@@ -199,7 +208,8 @@ export function BuyerProductDetail({ id }: { id: string }) {
 }
 
 /** Quantity and unit for this product, into the cart (B14). */
-function AddToCart({ listing }: { listing: MarketListing }) {
+function AddToCart({ listing, language }: { listing: MarketListing; language: Language }) {
+  const w = (key: Parameters<typeof t>[0]) => t(key, language);
   const cart = useCart();
   const inCart = cart.find((l) => l.listing_id === listing.id);
   const [quantity, setQuantity] = useState(
@@ -213,7 +223,7 @@ function AddToCart({ listing }: { listing: MarketListing }) {
     event.preventDefault();
     const q = Number(quantity);
     if (quantity.trim() === '' || !Number.isFinite(q) || q <= 0) {
-      setError('Enter how much you want, as a number greater than zero.');
+      setError(w('buyer.product.enterQuantity'));
       return;
     }
     if (
@@ -222,7 +232,10 @@ function AddToCart({ listing }: { listing: MarketListing }) {
       q < listing.min_order_quantity
     ) {
       setError(
-        `The farmer's minimum order is ${formatQuantity(listing.min_order_quantity, listing.unit)}.`,
+        w('buyer.product.belowMin').replace(
+          '{quantity}',
+          quantityIn(listing.min_order_quantity, listing.unit, language),
+        ),
       );
       return;
     }
@@ -238,7 +251,7 @@ function AddToCart({ listing }: { listing: MarketListing }) {
       price_per: listing.price_per,
     });
     if (!ok) {
-      setError('Your cart is full. Send it first, then add more.');
+      setError(w('buyer.product.cartFull'));
       return;
     }
     setError(null);
@@ -246,21 +259,29 @@ function AddToCart({ listing }: { listing: MarketListing }) {
   };
 
   return (
-    <form className={styles.form} onSubmit={onSubmit} noValidate aria-label="Add to cart">
+    <form
+      className={styles.form}
+      onSubmit={onSubmit}
+      noValidate
+      aria-label={w('buyer.product.add')}
+    >
       {added || inCart ? (
-        <Notice kind="success" title={added ? 'Added to your cart' : 'In your cart'}>
-          <Link href="/buyer/cart">Go to the cart ({cart.length})</Link> or{' '}
-          <Link href="/buyer/marketplace">keep shopping</Link>.
+        <Notice kind="success" title={w(added ? 'buyer.product.added' : 'buyer.product.inCart')}>
+          <Link href="/buyer/cart">
+            {w('buyer.product.goCart').replace('{n}', String(cart.length))}
+          </Link>{' '}
+          {w('buyer.product.or')}{' '}
+          <Link href="/buyer/marketplace">{w('buyer.product.keepShopping')}</Link>.
         </Notice>
       ) : null}
       <div className={styles.formGrid}>
         <Field
-          label="Quantity"
+          label={w('buyer.w.quantity')}
           error={error ?? undefined}
           hint={
             listing.min_order_quantity
-              ? `Minimum order ${formatQuantity(listing.min_order_quantity, listing.unit)}`
-              : `Available ${formatQuantity(listing.available_quantity, listing.unit)}`
+              ? `${w('buyer.product.minOrder')} ${quantityIn(listing.min_order_quantity, listing.unit, language)}`
+              : `${w('buyer.product.available')} ${quantityIn(listing.available_quantity, listing.unit, language)}`
           }
         >
           {(ids) => (
@@ -275,12 +296,12 @@ function AddToCart({ listing }: { listing: MarketListing }) {
             />
           )}
         </Field>
-        <Field label="Unit">
+        <Field label={w('buyer.w.unit')}>
           {(ids) => (
             <Select {...ids} value={unit} onChange={(e) => setUnit(e.target.value)}>
               {LISTING_UNITS.map((u) => (
                 <option key={u} value={u}>
-                  {UNIT_LABELS[u]}
+                  {unitLabel(u, language)}
                 </option>
               ))}
             </Select>
@@ -288,7 +309,7 @@ function AddToCart({ listing }: { listing: MarketListing }) {
         </Field>
       </div>
       <div className={styles.actions}>
-        <Button type="submit">{inCart ? 'Update cart' : 'Add to cart'}</Button>
+        <Button type="submit">{w(inCart ? 'buyer.product.update' : 'buyer.product.add')}</Button>
       </div>
     </form>
   );

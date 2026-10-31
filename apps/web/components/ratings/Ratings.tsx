@@ -36,13 +36,63 @@ const REASON_KEY: Record<ReportReason, TKey> = {
   other: 'report.other',
 };
 
-/** "★★★★☆", read out as "4 of 5". */
+const STAR_PATH = 'M8 1.2l2.1 4.3 4.7.7-3.4 3.3.8 4.7L8 12l-4.2 2.2.8-4.7L1.2 6.2l4.7-.7z';
+
+function StarRow() {
+  return (
+    <>
+      {[0, 1, 2, 3, 4].map((i) => (
+        <svg key={i} viewBox="0 0 16 16" aria-hidden focusable="false">
+          <path d={STAR_PATH} />
+        </svg>
+      ))}
+    </>
+  );
+}
+
+/**
+ * Five stars, read out as "4 of 5". 2026-10-31 (delight, "trust you can
+ * see"): drawn shapes, filled to the exact value (4.6 fills four and most of
+ * the fifth) over a row of empty ones, instead of text glyphs.
+ */
 export function Stars({ value }: { value: number }) {
-  const whole = Math.round(value);
+  const fill = Math.max(0, Math.min(5, value)) * 20;
   return (
     <span className={styles.stars} role="img" aria-label={`${value} / 5`}>
-      {'★'.repeat(whole)}
-      {'☆'.repeat(Math.max(0, 5 - whole))}
+      <span className={styles.starsEmpty}>
+        <StarRow />
+      </span>
+      <span className={styles.starsFill} style={{ width: `${fill}%` }}>
+        <StarRow />
+      </span>
+    </span>
+  );
+}
+
+/**
+ * 2026-10-31 (delight): the compact mark for a name row -- "★ 4.6 · 12".
+ * Nothing at all before the first rating: an empty mark reads as a bad one.
+ */
+export function RatingMark({
+  summary,
+  language,
+}: {
+  summary: RatingSummary | undefined;
+  language: Language;
+}) {
+  if (!summary || summary.count === 0 || summary.average === null) return null;
+  const average = summary.average.toFixed(1);
+  return (
+    <span
+      className={styles.mark}
+      role="img"
+      aria-label={`${average} / 5 · ${tCount('rate.count', summary.count, language)}`}
+    >
+      <svg className={styles.markStar} viewBox="0 0 16 16" aria-hidden focusable="false">
+        <path d={STAR_PATH} />
+      </svg>
+      <span className={styles.markValue}>{average}</span>
+      <span className={styles.markCount}>· {summary.count}</span>
     </span>
   );
 }

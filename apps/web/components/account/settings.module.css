@@ -241,7 +241,7 @@
 }
 
 .segmented button {
-  min-height: 32px;
+  min-height: 36px;
   padding: 0 var(--s-3);
   border: 0;
   border-radius: var(--radius-pill);

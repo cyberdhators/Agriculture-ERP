@@ -6,18 +6,14 @@ import { useState } from 'react';
 import { PURCHASE_ORDER_STATUSES } from '@agri-erp/shared';
 
 import { listOrders, type Order } from '@/lib/buyer/api';
-import {
-  ORDER_STATUS_LABELS,
-  ORDER_STATUS_STAMPS,
-  formatQuantity,
-  formatSsp,
-  labelOf,
-  stampOf,
-} from '@/lib/buyer/labels';
+import { ORDER_STATUS_STAMPS, formatSsp, stampOf } from '@/lib/buyer/labels';
 import { formatDate } from '@/lib/format';
+import { t } from '@/lib/i18n';
 
 import { Button, EmptyState, Field, PageHeader, Select, Stamp } from '../ui';
 import { DataTable, LoadingState, Pagination } from '../ui/data';
+import { useBuyer } from './BuyerShell';
+import { orderStatusIn, quantityIn } from './Timeline';
 import { useCursorList } from './useCursorList';
 import styles from './buyer.module.css';
 
@@ -27,20 +23,22 @@ import styles from './buyer.module.css';
  * in this system, and nothing here suggests one.
  */
 export function BuyerOrders() {
+  const { language } = useBuyer();
+  const w = (key: Parameters<typeof t>[0]) => t(key, language);
   const [status, setStatus] = useState('');
   const list = useCursorList((cursor) => listOrders(status || undefined, cursor), status);
 
   return (
     <div className={styles.page}>
-      <PageHeader title="Orders" subtitle="Totals are agreed amounts; no payment is taken here." />
+      <PageHeader title={w('buyer.orders.title')} subtitle={w('buyer.orders.subtitle')} />
       <div className={styles.filters}>
-        <Field label="Status">
+        <Field label={w('buyer.w.status')}>
           {(ids) => (
             <Select {...ids} value={status} onChange={(e) => setStatus(e.target.value)}>
-              <option value="">Every status</option>
+              <option value="">{w('buyer.w.everyStatus')}</option>
               {PURCHASE_ORDER_STATUSES.map((s) => (
                 <option key={s} value={s}>
-                  {ORDER_STATUS_LABELS[s]}
+                  {orderStatusIn(s, language)}
                 </option>
               ))}
             </Select>
@@ -51,33 +49,29 @@ export function BuyerOrders() {
       {list.error ? (
         <EmptyState
           error
-          title="Orders could not be loaded"
+          title={w('buyer.orders.loadFailed')}
           body={list.error}
-          actions={<Button onClick={list.reload}>Try again</Button>}
+          actions={<Button onClick={list.reload}>{w('buyer.common.retry')}</Button>}
         />
       ) : list.loading ? (
-        <LoadingState rows={5} />
+        <LoadingState rows={5} label={w('buyer.common.loading')} />
       ) : (
         <>
           <DataTable<Order>
-            caption="Orders"
+            caption={w('buyer.orders.title')}
             rows={list.rows}
             rowKey={(o) => o.id}
             empty={
               <EmptyState
                 art="box"
-                title={status ? 'No orders with this status' : 'No orders yet'}
-                body={
-                  status
-                    ? undefined
-                    : 'Orders appear here once CORWADO accepts a request and arranges supply.'
-                }
+                title={w(status ? 'buyer.orders.noneWithStatus' : 'buyer.orders.none')}
+                body={status ? undefined : w('buyer.orders.noneBody')}
               />
             }
             columns={[
               {
                 key: 'number',
-                header: 'Order',
+                header: w('buyer.orders.order'),
                 rowHeader: true,
                 nowrap: true,
                 render: (o) => (
@@ -86,52 +80,52 @@ export function BuyerOrders() {
                   </Link>
                 ),
               },
-              { key: 'product', header: 'Product', render: (o) => o.product_name },
+              { key: 'product', header: w('buyer.w.product'), render: (o) => o.product_name },
               {
                 key: 'quantity',
-                header: 'Quantity',
+                header: w('buyer.w.quantity'),
                 numeric: true,
-                render: (o) => formatQuantity(o.quantity, o.unit),
+                render: (o) => quantityIn(o.quantity, o.unit, language),
               },
               {
                 key: 'supplier',
-                header: 'Supplier',
+                header: w('buyer.w.supplier'),
                 render: (o) => <span dir="auto">{o.supplier.trading_name}</span>,
               },
               {
                 key: 'price',
-                header: 'Unit price',
+                header: w('buyer.w.unitPrice'),
                 numeric: true,
                 render: (o) => formatSsp(o.unit_price_ssp),
               },
               {
                 key: 'total',
-                header: 'Total',
+                header: w('buyer.orders.total'),
                 numeric: true,
                 render: (o) => formatSsp(o.total_ssp),
               },
               {
                 key: 'status',
-                header: 'Status',
+                header: w('buyer.w.status'),
                 render: (o) => (
                   <Stamp kind={stampOf(ORDER_STATUS_STAMPS, o.status)}>
-                    {labelOf(ORDER_STATUS_LABELS, o.status)}
+                    {orderStatusIn(o.status, language)}
                   </Stamp>
                 ),
               },
               {
                 key: 'date',
-                header: 'Ordered',
+                header: w('buyer.orders.ordered'),
                 nowrap: true,
-                render: (o) => formatDate(o.order_date),
+                render: (o) => formatDate(o.order_date, language),
               },
               {
                 key: 'expected',
-                header: 'Expected',
+                header: w('buyer.w.expected'),
                 nowrap: true,
                 render: (o) => o.expected_delivery_date ?? '—',
               },
-              { key: 'to', header: 'Deliver to', render: (o) => o.delivery_location },
+              { key: 'to', header: w('buyer.w.deliverTo'), render: (o) => o.delivery_location },
             ]}
           />
           <Pagination
@@ -140,6 +134,7 @@ export function BuyerOrders() {
             onNext={list.goNext}
             onPrevious={list.goBack}
             canGoBack={list.canGoBack}
+            language={language}
           />
         </>
       )}

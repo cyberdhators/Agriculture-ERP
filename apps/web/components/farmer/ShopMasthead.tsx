@@ -5,15 +5,17 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState, type ReactNode } from 'react';
 
 import { Wordmark } from '@/components/brand/Wordmark';
-import { IconSearch } from '@/components/ui/icons';
+import { IconLibrary, IconSearch } from '@/components/ui/icons';
 import { useFarmerSession } from '@/lib/farmer-session';
 import { useUnreadNotifications } from '@/lib/farmer-unread';
 import { useUnreadMessages } from '@/lib/messages/client';
-import { CATEGORY_KEY } from '@/lib/farmers/listings';
+import { CATEGORY_KEY, cropImageFor } from '@/lib/farmers/listings';
 import { LISTING_CATEGORIES } from '@/lib/fixtures/farmers';
 import { t } from '@/lib/i18n';
 
 import { LanguageButtons } from './LanguageSwitch';
+import welcome from '@/components/market/welcome.module.css';
+
 import styles from './farmer.module.css';
 
 /**
@@ -200,10 +202,15 @@ export function ShopMasthead({ subnav, hideStrip }: { subnav?: ReactNode; hideSt
 
       {hideStrip ? null : (
         <div className={styles.shopStrip}>
-          <span className={styles.shopStripAll} aria-hidden>
-            <span className={styles.shopBurger} />
-            {t('market.allCategories', language)}
-          </span>
+          {/* 2026-10-31 (delight): the round photo buttons speak for
+              themselves; the "All categories" caption stays only beside a
+              text sub-navigation. */}
+          {subnav ? (
+            <span className={styles.shopStripAll} aria-hidden>
+              <span className={styles.shopBurger} />
+              {t('market.allCategories', language)}
+            </span>
+          ) : null}
           {subnav ?? <ShopCategoryLinks />}
         </div>
       )}
@@ -211,19 +218,35 @@ export function ShopMasthead({ subnav, hideStrip }: { subnav?: ReactNode; hideSt
   );
 }
 
-/** The horizontal category links on the second strip — they open the marketplace. */
+/**
+ * The category buttons on the second strip — they open the marketplace.
+ * 2026-10-31 (delight): a row of round stock-crop photos with the label under
+ * each (scrolls sideways on a phone). Same links as the text strip they
+ * replace; the one for the page you are on is ringed.
+ */
 export function ShopCategoryLinks() {
   const { language } = useFarmerSession();
+  const pathname = usePathname() ?? '';
+  const onGuides = pathname === '/learn' || pathname.startsWith('/learn/');
   return (
-    <nav className={styles.shopStripNav} aria-label={t('market.allCategories', language)}>
+    <nav
+      className={`${styles.shopStripNav} ${welcome.catRow}`}
+      aria-label={t('market.allCategories', language)}
+    >
       {LISTING_CATEGORIES.filter((category) => category !== 'other').map((category) => (
-        <Link key={category} href="/market" className={styles.shopStripLink}>
-          {t(CATEGORY_KEY[category], language)}
+        <Link key={category} href="/market" className={welcome.cat}>
+          <span className={welcome.catPhoto} aria-hidden>
+            <img src={cropImageFor('', category)} alt="" loading="lazy" decoding="async" />
+          </span>
+          <span className={welcome.catLabel}>{t(CATEGORY_KEY[category], language)}</span>
         </Link>
       ))}
       {/* 2026-10-22: the public guides, so a visitor without an account finds them. */}
-      <Link href="/learn" className={styles.shopStripLink}>
-        {t('account.tabGuides', language)}
+      <Link href="/learn" className={welcome.cat} aria-current={onGuides ? 'page' : undefined}>
+        <span className={welcome.catPhoto} aria-hidden>
+          <IconLibrary />
+        </span>
+        <span className={welcome.catLabel}>{t('account.tabGuides', language)}</span>
       </Link>
     </nav>
   );

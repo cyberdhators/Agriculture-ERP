@@ -1,0 +1,208 @@
+/*
+ * 2026-10-31 (delight): the visitor's first impression on the public market
+ * (a slim welcome strip over a drawing of fields) and the round photo
+ * category buttons in the masthead strip. Tokens only, so both follow dark
+ * mode; logical properties, so both follow RTL; motion is off under
+ * prefers-reduced-motion.
+ */
+
+/* ---- Welcome strip ---------------------------------------------------- */
+
+.welcome {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: 72px;
+  margin-bottom: var(--s-4);
+  padding: var(--s-3) var(--s-5);
+  overflow: hidden;
+  background: linear-gradient(
+    to bottom,
+    var(--card),
+    color-mix(in srgb, var(--green-tint) 70%, var(--card))
+  );
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+}
+
+.welcomeLine {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  max-width: 60%;
+  font-family: var(--font-display);
+  font-size: var(--text-subhead);
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--ink);
+}
+
+.fields {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-end: 0;
+  width: min(420px, 62%);
+  height: 100%;
+  pointer-events: none;
+}
+
+/* The drawing is left-to-right; in Arabic it sits on the left, mirrored. */
+:global([dir='rtl']) .fields {
+  transform: scaleX(-1);
+}
+
+.sun {
+  fill: color-mix(in srgb, var(--harvest) 55%, transparent);
+}
+
+.hillFar {
+  fill: color-mix(in srgb, var(--sprout) 22%, transparent);
+}
+
+.hillMid {
+  fill: color-mix(in srgb, var(--sprout) 38%, transparent);
+}
+
+.hillNear {
+  fill: color-mix(in srgb, var(--green) 40%, transparent);
+}
+
+.furrows path,
+.stalks path {
+  fill: none;
+  stroke-linecap: round;
+}
+
+.furrows path {
+  stroke: color-mix(in srgb, var(--green-deep) 30%, transparent);
+  stroke-width: 1.2;
+}
+
+.stalks path {
+  stroke: color-mix(in srgb, var(--green) 75%, transparent);
+  stroke-width: 1.6;
+}
+
+@media (max-width: 600px) {
+  .welcome {
+    min-height: 56px;
+    padding: var(--s-2) var(--s-4);
+    margin-bottom: var(--s-3);
+  }
+
+  .welcomeLine {
+    max-width: 66%;
+    font-size: var(--text-body);
+  }
+}
+
+/* ---- Round photo category buttons (masthead strip) -------------------- */
+
+.catRow {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-3);
+  padding-block: var(--s-2);
+  overflow-x: auto;
+  scrollbar-width: none;
+  scroll-snap-type: x proximity;
+}
+
+.catRow::-webkit-scrollbar {
+  display: none;
+}
+
+.cat {
+  flex: none;
+  display: grid;
+  justify-items: center;
+  gap: var(--s-1);
+  width: 68px;
+  color: var(--band-ink);
+  text-decoration: none;
+  scroll-snap-align: start;
+}
+
+.cat:hover,
+.cat:focus-visible {
+  color: var(--band-ink);
+  text-decoration: none;
+}
+
+.catPhoto {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  overflow: hidden;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--band-ink) 12%, transparent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--band-ink) 22%, transparent);
+  transition:
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+.catPhoto img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.catPhoto svg {
+  width: 22px;
+  height: 22px;
+}
+
+.catLabel {
+  max-width: 100%;
+  overflow: hidden;
+  font-size: var(--text-label);
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cat:hover .catPhoto {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--band-ink) 60%, transparent);
+  transform: translateY(-1px);
+}
+
+.cat:focus-visible {
+  outline: none;
+}
+
+.cat:focus-visible .catPhoto {
+  box-shadow: 0 0 0 3px var(--sprout);
+}
+
+.cat[aria-current='page'] .catPhoto {
+  box-shadow: 0 0 0 3px var(--sprout);
+}
+
+.cat[aria-current='page'] .catLabel {
+  font-weight: 700;
+}
+
+@media (max-width: 600px) {
+  .cat {
+    width: 60px;
+  }
+
+  .catPhoto {
+    width: 42px;
+    height: 42px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .catPhoto {
+    transition: none;
+  }
+
+  .cat:hover .catPhoto {
+    transform: none;
+  }
+}

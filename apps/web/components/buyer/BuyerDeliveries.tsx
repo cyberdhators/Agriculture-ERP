@@ -3,13 +3,8 @@
 import Link from 'next/link';
 
 import { listDeliveries } from '@/lib/buyer/api';
-import {
-  ORDER_STATUS_LABELS,
-  ORDER_STATUS_STAMPS,
-  formatQuantity,
-  labelOf,
-  stampOf,
-} from '@/lib/buyer/labels';
+import { ORDER_STATUS_STAMPS, stampOf } from '@/lib/buyer/labels';
+import { t } from '@/lib/i18n';
 
 import {
   Button,
@@ -22,7 +17,8 @@ import {
   Stamp,
 } from '../ui';
 import { LoadingState, Pagination } from '../ui/data';
-import { Timeline } from './Timeline';
+import { useBuyer } from './BuyerShell';
+import { Timeline, orderStatusIn, quantityIn } from './Timeline';
 import { useCursorList } from './useCursorList';
 import styles from './buyer.module.css';
 
@@ -33,26 +29,28 @@ import styles from './buyer.module.css';
  * rather than implying a position.
  */
 export function BuyerDeliveries() {
+  const { language } = useBuyer();
+  const w = (key: Parameters<typeof t>[0]) => t(key, language);
   const list = useCursorList((cursor) => listDeliveries(cursor), 'deliveries');
 
   return (
     <div className={styles.page}>
       {/* 2026-10-31: the title alone; each status names who recorded it, and when. */}
-      <PageHeader title="Deliveries" />
+      <PageHeader title={w('buyer.deliveries.title')} />
       {list.error ? (
         <EmptyState
           error
-          title="Deliveries could not be loaded"
+          title={w('buyer.deliveries.loadFailed')}
           body={list.error}
-          actions={<Button onClick={list.reload}>Try again</Button>}
+          actions={<Button onClick={list.reload}>{w('buyer.common.retry')}</Button>}
         />
       ) : list.loading ? (
-        <LoadingState rows={5} />
+        <LoadingState rows={5} label={w('buyer.common.loading')} />
       ) : list.rows.length === 0 ? (
         <EmptyState
           art="box"
-          title="Nothing is being delivered"
-          body="An order appears here once CORWADO marks it ready for delivery."
+          title={w('buyer.deliveries.none')}
+          body={w('buyer.deliveries.noneBody')}
         />
       ) : (
         <>
@@ -66,7 +64,7 @@ export function BuyerDeliveries() {
                 }
                 actions={
                   <Stamp kind={stampOf(ORDER_STATUS_STAMPS, o.status)}>
-                    {labelOf(ORDER_STATUS_LABELS, o.status)}
+                    {orderStatusIn(o.status, language)}
                   </Stamp>
                 }
               />
@@ -74,14 +72,20 @@ export function BuyerDeliveries() {
                 <div className={styles.twoCol}>
                   <DefinitionList
                     items={[
-                      { term: 'Quantity', value: formatQuantity(o.quantity, o.unit) },
-                      { term: 'Supplier', value: o.supplier.trading_name },
-                      { term: 'Deliver to', value: o.delivery_location },
-                      { term: 'Expected', value: o.expected_delivery_date ?? 'Not yet set' },
-                      { term: 'Latest note', value: o.latest_note ?? '—' },
+                      {
+                        term: w('buyer.w.quantity'),
+                        value: quantityIn(o.quantity, o.unit, language),
+                      },
+                      { term: w('buyer.w.supplier'), value: o.supplier.trading_name },
+                      { term: w('buyer.w.deliverTo'), value: o.delivery_location },
+                      {
+                        term: w('buyer.w.expected'),
+                        value: o.expected_delivery_date ?? w('buyer.w.notYetSet'),
+                      },
+                      { term: w('buyer.deliveries.latestNote'), value: o.latest_note ?? '—' },
                     ]}
                   />
-                  <Timeline entries={o.timeline ?? []} />
+                  <Timeline entries={o.timeline ?? []} language={language} />
                 </div>
               </CardBody>
             </Card>
@@ -92,6 +96,7 @@ export function BuyerDeliveries() {
             onNext={list.goNext}
             onPrevious={list.goBack}
             canGoBack={list.canGoBack}
+            language={language}
           />
         </>
       )}

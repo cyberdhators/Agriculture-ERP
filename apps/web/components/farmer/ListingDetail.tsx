@@ -1,12 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { lifecycleStage } from '@agri-erp/shared';
 
 import { BackLink, ProductPage } from '@/components/listings/ProductPage';
 import { LifecycleActions, type ActionInput } from '@/components/market-posts/LifecycleActions';
 import { ButtonLink, Notice } from '@/components/ui';
+import { Celebrate } from '@/components/ui/Celebrate';
 import { farmerPayamName, type ProduceListing } from '@/lib/fixtures/farmers';
 import { useFarmerSession } from '@/lib/farmer-session';
 import { UNIT_KEY, formatQuantity, remainingQuantity } from '@/lib/farmers/listings';
@@ -26,6 +27,16 @@ import { PageHead } from './AccountShell';
  * never queued -- a retry would count it twice -- so it needs signal.
  */
 export function ListingDetail({ listingId }: { listingId: string }) {
+  // 2026-10-31: opened straight after publishing (?published=1 from the form):
+  // celebrate once, then drop the flag so a refresh does not repeat it.
+  const [justPublished, setJustPublished] = useState(false);
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('published') === '1') {
+      setJustPublished(true);
+      window.history.replaceState(null, '', window.location.pathname);
+    }
+  }, []);
   const { farmer, language, listingById, listingsFor, saveListing, refresh, isPending } =
     useFarmerSession();
   const [queued, setQueued] = useState(false);
@@ -85,6 +96,22 @@ export function ListingDetail({ listingId }: { listingId: string }) {
   return (
     <>
       <BackLink href="/farmer/account/listings">{t('detail.back', language)}</BackLink>
+      {justPublished ? (
+        <Celebrate
+          compact
+          art="basket"
+          title={language === 'ar' ? 'منتجك الآن في السوق' : 'Your produce is on the market'}
+          body={
+            language === 'ar'
+              ? 'يمكن للمشترين أن يجدوه الآن ويرسلوا إليك طلباً.'
+              : 'Buyers can find it now and send you a request.'
+          }
+        >
+          <ButtonLink href={`/market/${listing.id}`} variant="secondary" size="small">
+            {language === 'ar' ? 'شاهده كما يراه المشترون' : 'See it as buyers do'}
+          </ButtonLink>
+        </Celebrate>
+      ) : null}
       {queued || isPending(listing.id) ? (
         <Notice kind="info">
           <p className="small">{t('lifecycle.queued', language)}</p>

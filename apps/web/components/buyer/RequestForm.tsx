@@ -11,7 +11,8 @@ import {
 } from '@agri-erp/shared';
 
 import { BuyerApiError, createRequest, type MarketListing } from '@/lib/buyer/api';
-import { CATEGORY_LABELS, UNIT_LABELS } from '@/lib/buyer/labels';
+import { categoryLabel, unitLabel } from '@/lib/buyer/labels';
+import { t } from '@/lib/i18n';
 
 import { Button, Field, Input, Notice, Select, Textarea } from '../ui';
 import { useToast } from '../ui/feedback';
@@ -33,7 +34,8 @@ import styles from './buyer.module.css';
 export function RequestForm({ listing }: { listing?: MarketListing }) {
   const router = useRouter();
   const toast = useToast();
-  const { profile } = useBuyer();
+  const { profile, language } = useBuyer();
+  const w = (key: Parameters<typeof t>[0]) => t(key, language);
   const canSend = profile.verification.capabilities.request;
 
   const [form, setForm] = useState({
@@ -76,8 +78,8 @@ export function RequestForm({ listing }: { listing?: MarketListing }) {
       const created = await createRequest(parsed.data);
       toast.show({
         kind: 'success',
-        title: send ? 'Request sent to CORWADO' : 'Draft saved',
-        body: send ? 'You will be notified when it is reviewed.' : 'Send it when you are ready.',
+        title: w(send ? 'buyer.form.sentTitle' : 'buyer.form.draftTitle'),
+        body: w(send ? 'buyer.form.sentBody' : 'buyer.form.draftBody'),
       });
       router.push(`/buyer/purchase-requests/${created.id}`);
     } catch (error) {
@@ -85,7 +87,7 @@ export function RequestForm({ listing }: { listing?: MarketListing }) {
         setErrors(error.fields);
         setFailure(error.message);
       } else {
-        setFailure('The request could not be saved.');
+        setFailure(w('buyer.form.failed'));
       }
     } finally {
       setBusy(false);
@@ -98,20 +100,20 @@ export function RequestForm({ listing }: { listing?: MarketListing }) {
   };
 
   return (
-    <form className={styles.form} onSubmit={onSubmit} noValidate aria-label="Purchase request">
+    <form className={styles.form} onSubmit={onSubmit} noValidate aria-label={w('buyer.form.aria')}>
       {!canSend ? (
-        <Notice kind="info" title="Drafts only">
-          Contact CORWADO about your account to send requests.
+        <Notice kind="info" title={w('buyer.form.draftsOnly')}>
+          {w('buyer.form.draftsOnlyBody')}
         </Notice>
       ) : null}
       {failure ? (
-        <Notice kind="error" title="Not saved">
+        <Notice kind="error" title={w('buyer.w.notSaved')}>
           {failure}
         </Notice>
       ) : null}
 
       <div className={styles.formGrid}>
-        <Field label="Category" error={errors.category}>
+        <Field label={w('buyer.w.category')} error={errors.category}>
           {(ids) => (
             <Select
               {...ids}
@@ -121,29 +123,29 @@ export function RequestForm({ listing }: { listing?: MarketListing }) {
             >
               {LISTING_CATEGORIES.map((c) => (
                 <option key={c} value={c}>
-                  {CATEGORY_LABELS[c]}
+                  {categoryLabel(c, language)}
                 </option>
               ))}
             </Select>
           )}
         </Field>
-        <Field label="Product" error={errors.product_name}>
+        <Field label={w('buyer.w.product')} error={errors.product_name}>
           {(ids) => (
             <Input
               {...ids}
               value={form.product_name}
               readOnly={Boolean(listing)}
-              placeholder="Maize"
+              placeholder={w('buyer.form.productPlaceholder')}
               onChange={(e) => set('product_name')(e.target.value)}
             />
           )}
         </Field>
         <Field
-          label="Quantity"
+          label={w('buyer.w.quantity')}
           error={errors.quantity}
           hint={
             listing?.min_order_quantity
-              ? `The supplier's minimum order is ${listing.min_order_quantity}.`
+              ? w('buyer.form.minHint').replace('{n}', String(listing.min_order_quantity))
               : undefined
           }
         >
@@ -156,21 +158,21 @@ export function RequestForm({ listing }: { listing?: MarketListing }) {
             />
           )}
         </Field>
-        <Field label="Unit" error={errors.unit}>
+        <Field label={w('buyer.w.unit')} error={errors.unit}>
           {(ids) => (
             <Select {...ids} value={form.unit} onChange={(e) => set('unit')(e.target.value)}>
               {LISTING_UNITS.map((u) => (
                 <option key={u} value={u}>
-                  {UNIT_LABELS[u]}
+                  {unitLabel(u, language)}
                 </option>
               ))}
             </Select>
           )}
         </Field>
         <Field
-          label="Deliver to"
+          label={w('buyer.w.deliverTo')}
           error={errors.delivery_location}
-          hint="A town or market, e.g. Juba"
+          hint={w('buyer.w.deliverToHint')}
         >
           {(ids) => (
             <Input
@@ -180,7 +182,7 @@ export function RequestForm({ listing }: { listing?: MarketListing }) {
             />
           )}
         </Field>
-        <Field label="Needed by" optional error={errors.required_by}>
+        <Field label={w('buyer.w.neededBy')} optional error={errors.required_by}>
           {(ids) => (
             <Input
               {...ids}
@@ -192,7 +194,12 @@ export function RequestForm({ listing }: { listing?: MarketListing }) {
           )}
         </Field>
         <div className={styles.formGridFull}>
-          <Field label="Notes" optional error={errors.notes} hint="Quality, packaging, timing">
+          <Field
+            label={w('buyer.w.notes')}
+            optional
+            error={errors.notes}
+            hint={w('buyer.form.notesHint')}
+          >
             {(ids) => (
               <Textarea
                 {...ids}
@@ -207,11 +214,11 @@ export function RequestForm({ listing }: { listing?: MarketListing }) {
 
       <div className={styles.actions}>
         <Button variant="secondary" disabled={busy} onClick={() => void submit(false)}>
-          Save as draft
+          {w('buyer.form.saveDraft')}
         </Button>
         {canSend ? (
           <Button type="submit" disabled={busy}>
-            {busy ? 'Sending…' : 'Send request'}
+            {busy ? w('buyer.w.sending') : w('buyer.form.send')}
           </Button>
         ) : null}
       </div>

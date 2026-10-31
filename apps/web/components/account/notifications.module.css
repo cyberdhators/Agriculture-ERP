@@ -1,0 +1,162 @@
+/* 2026-10-31 (ui-delight): the farmer's and the buyer's notifications, one
+   look. Grouped under Today / Yesterday / Earlier; each row a small icon by
+   kind, the notice, its time; an unread row on a soft green wash with a dot.
+   Tokens only (light and dark), logical properties (Arabic mirrors it). */
+
+.groups {
+  display: grid;
+  gap: var(--s-5);
+}
+
+.group {
+  display: grid;
+  gap: var(--s-2);
+}
+
+.groupTitle {
+  margin: 0;
+  padding-inline: var(--s-1);
+  color: var(--muted);
+  font-size: var(--text-label);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--card);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+
+.list > li + li {
+  border-top: 1px solid var(--line);
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  transition: background-color 150ms ease;
+}
+
+.unread {
+  background: var(--green-tint);
+}
+
+.link {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-3);
+  min-width: 0;
+  padding: var(--s-3) var(--s-4);
+  color: inherit;
+  text-decoration: none;
+}
+
+a.link:hover .title {
+  text-decoration: underline;
+}
+
+a.link:focus-visible {
+  outline: none;
+  box-shadow: inset var(--ring);
+}
+
+/* The kind, as a small round icon. */
+.icon {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  margin-top: 1px;
+  border-radius: 50%;
+  background: var(--dust);
+  color: var(--muted);
+}
+
+.kindRequest {
+  background: var(--soil-tint);
+  color: var(--soil);
+}
+
+.kindMessage {
+  background: var(--info-tint);
+  color: var(--info);
+}
+
+.kindRating {
+  background: var(--harvest-tint);
+  color: var(--harvest-ink);
+}
+
+.kindMatch {
+  background: var(--green-tint);
+  color: var(--green-deep);
+}
+
+.unread .kindMatch {
+  background: var(--card);
+}
+
+.text {
+  flex: 1;
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.title {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.unread .title {
+  font-weight: 700;
+}
+
+.body {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: var(--text-small);
+  line-height: 1.4;
+}
+
+.meta {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--text-small);
+  font-variant-numeric: tabular-nums;
+}
+
+.meta a {
+  font-weight: 600;
+}
+
+.dot {
+  flex: none;
+  align-self: center;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--green);
+}
+
+/* The row's own action (the buyer's "Mark as read"), at the end. */
+.action {
+  flex: none;
+  padding-inline-end: var(--s-4);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .item {
+    transition: none;
+  }
+}

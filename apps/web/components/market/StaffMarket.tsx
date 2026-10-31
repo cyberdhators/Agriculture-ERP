@@ -7,13 +7,18 @@ import { usePreview } from '@/lib/preview';
 
 import { Market } from './Market';
 import { MarketDetail } from './MarketDetail';
+import { MarketWelcome } from './Welcome';
 
 /** The marketplace inside the staff portal, scoped by the signed-in role. */
 export function StaffMarket() {
-  const { role } = usePreview();
-  const { language } = useFarmerSession();
+  const { role, me, hydrated } = usePreview();
+  const { language, farmer, hydrated: farmerHydrated } = useFarmerSession();
+  // 2026-10-31 (delight): a welcome for visitors only -- once both sessions
+  // have been read and neither is signed in, so staff never see it flash.
+  const visitor = hydrated && farmerHydrated && !me && !farmer;
   return (
     <>
+      {visitor ? <MarketWelcome language={language} /> : null}
       <MarketSections current="produce" lang={language} />
       {/* 2026-10-31: the section tabs above name the page; the title is for
           screen readers and the browser tab. */}

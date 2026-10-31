@@ -8,7 +8,8 @@ import { LISTING_UNITS, cartCheckoutSchema, zodErrorToApiError } from '@agri-erp
 
 import { BuyerApiError, checkoutCart } from '@/lib/buyer/api';
 import { clearCart, removeFromCart, updateCartLine, useCart } from '@/lib/buyer/cart';
-import { UNIT_LABELS, formatSsp, labelOf } from '@/lib/buyer/labels';
+import { formatSsp, unitLabel } from '@/lib/buyer/labels';
+import { t, tCount } from '@/lib/i18n';
 
 import {
   Button,
@@ -24,6 +25,7 @@ import {
 } from '../ui';
 import { useToast } from '../ui/feedback';
 import { useBuyer } from './BuyerShell';
+import { perUnitIn } from './Timeline';
 import styles from './buyer.module.css';
 
 /**
@@ -35,7 +37,8 @@ export function BuyerCart() {
   const lines = useCart();
   const router = useRouter();
   const toast = useToast();
-  const { profile } = useBuyer();
+  const { profile, language } = useBuyer();
+  const w = (key: Parameters<typeof t>[0]) => t(key, language);
   const canSend = profile.verification.capabilities.request;
 
   const [delivery, setDelivery] = useState(profile.procurement.delivery_locations[0] ?? '');
@@ -47,12 +50,12 @@ export function BuyerCart() {
   if (lines.length === 0) {
     return (
       <div className={styles.page}>
-        <PageHeader title="Cart" />
+        <PageHeader title={w('buyer.nav.cart')} />
         <EmptyState
           art="cart"
-          title="Your cart is empty"
-          body="Add products from the marketplace, then send them to the sellers together."
-          actions={<Link href="/buyer/marketplace">Go to the marketplace</Link>}
+          title={w('buyer.cart.emptyTitle')}
+          body={w('buyer.cart.emptyBody')}
+          actions={<Link href="/buyer/marketplace">{w('buyer.cart.goMarket')}</Link>}
         />
       </div>
     );
@@ -85,8 +88,8 @@ export function BuyerCart() {
       clearCart();
       toast.show({
         kind: 'success',
-        title: `${sent.length} request${sent.length === 1 ? '' : 's'} sent`,
-        body: 'Each seller has been alerted. Their phone numbers are on your requests.',
+        title: tCount('buyer.cart.sent', sent.length, language),
+        body: w('buyer.cart.sentBody'),
       });
       router.push('/buyer/purchase-requests');
     } catch (error) {
@@ -94,7 +97,7 @@ export function BuyerCart() {
         setErrors(error.fields);
         setFailure(error.message);
       } else {
-        setFailure('The cart could not be sent.');
+        setFailure(w('buyer.cart.failed'));
       }
     } finally {
       setBusy(false);
@@ -104,18 +107,20 @@ export function BuyerCart() {
   return (
     <div className={styles.page}>
       <PageHeader
-        title="Cart"
-        subtitle={`${lines.length} product${lines.length === 1 ? '' : 's'} from ${farmers} farmer${farmers === 1 ? '' : 's'}`}
+        title={w('buyer.nav.cart')}
+        subtitle={w('buyer.cart.summary')
+          .replace('{products}', tCount('buyer.cart.products', lines.length, language))
+          .replace('{farmers}', tCount('buyer.cart.farmers', farmers, language))}
       />
 
       {failure ? (
-        <Notice kind="error" title="Not sent">
+        <Notice kind="error" title={w('buyer.w.notSent')}>
           {failure}
         </Notice>
       ) : null}
       {!canSend ? (
-        <Notice kind="info" title="This account cannot send requests">
-          Contact CORWADO about your account.
+        <Notice kind="info" title={w('buyer.cart.cannotSend')}>
+          {w('buyer.cart.contactCorwado')}
         </Notice>
       ) : null}
 
@@ -125,20 +130,20 @@ export function BuyerCart() {
             {/* 2026-10-31: Remove sits on the line's header, not on a row of its own. */}
             <CardHeader
               title={line.title}
-              subtitle={`${line.trading_name} · ${line.location} · ${formatSsp(line.price_ssp)} per ${labelOf(UNIT_LABELS, line.price_per)}`}
+              subtitle={`${line.trading_name} · ${line.location} · ${formatSsp(line.price_ssp)} ${perUnitIn(line.price_per, language)}`}
               actions={
                 <Button
                   variant="ghost"
                   size="small"
                   onClick={() => removeFromCart(line.listing_id)}
                 >
-                  Remove
+                  {w('buyer.w.remove')}
                 </Button>
               }
             />
             <CardBody>
               <div className={styles.formGrid}>
-                <Field label="Quantity" error={errors[`items.${i}.quantity`]}>
+                <Field label={w('buyer.w.quantity')} error={errors[`items.${i}.quantity`]}>
                   {(ids) => (
                     <Input
                       {...ids}
@@ -153,7 +158,7 @@ export function BuyerCart() {
                     />
                   )}
                 </Field>
-                <Field label="Unit" error={errors[`items.${i}.unit`]}>
+                <Field label={w('buyer.w.unit')} error={errors[`items.${i}.unit`]}>
                   {(ids) => (
                     <Select
                       {...ids}
@@ -162,14 +167,18 @@ export function BuyerCart() {
                     >
                       {LISTING_UNITS.map((u) => (
                         <option key={u} value={u}>
-                          {UNIT_LABELS[u]}
+                          {unitLabel(u, language)}
                         </option>
                       ))}
                     </Select>
                   )}
                 </Field>
                 <div className={styles.formGridFull}>
-                  <Field label="Note to the farmer" optional error={errors[`items.${i}.notes`]}>
+                  <Field
+                    label={w('buyer.cart.noteToFarmer')}
+                    optional
+                    error={errors[`items.${i}.notes`]}
+                  >
                     {(ids) => (
                       <Input
                         {...ids}
@@ -185,19 +194,19 @@ export function BuyerCart() {
         ))}
 
         <Card>
-          <CardHeader title="Delivery" />
+          <CardHeader title={w('buyer.cart.delivery')} />
           <CardBody>
             <div className={styles.formGrid}>
               <Field
-                label="Deliver to"
+                label={w('buyer.w.deliverTo')}
                 error={errors.delivery_location}
-                hint="A town or market, e.g. Juba"
+                hint={w('buyer.w.deliverToHint')}
               >
                 {(ids) => (
                   <Input {...ids} value={delivery} onChange={(e) => setDelivery(e.target.value)} />
                 )}
               </Field>
-              <Field label="Needed by" optional error={errors.required_by}>
+              <Field label={w('buyer.w.neededBy')} optional error={errors.required_by}>
                 {(ids) => (
                   <Input
                     {...ids}
@@ -212,13 +221,11 @@ export function BuyerCart() {
             {errors.items ? <p className={styles.muted}>{errors.items}</p> : null}
             <div className={styles.actions}>
               <Button variant="secondary" onClick={() => clearCart()} disabled={busy}>
-                Empty the cart
+                {w('buyer.cart.empty')}
               </Button>
               {canSend ? (
                 <Button type="submit" disabled={busy}>
-                  {busy
-                    ? 'Sending…'
-                    : `Send ${lines.length} request${lines.length === 1 ? '' : 's'}`}
+                  {busy ? w('buyer.w.sending') : tCount('buyer.cart.send', lines.length, language)}
                 </Button>
               ) : null}
             </div>
