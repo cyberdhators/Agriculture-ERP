@@ -12,5 +12,10 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   // 2026-10-29: the first paint in the language this browser chose (cookie).
   const cookieLang = (await cookies()).get(LANG_COOKIE)?.value;
   const initialLanguage = isLanguage(cookieLang) ? cookieLang : DEFAULT_LANGUAGE;
-  return <PublicOrganisation id={id} initialLanguage={initialLanguage} />;
+  // 2026-10-31: the member look (`.shop`), as on every other public page.
+  return (
+    <div className="shop">
+      <PublicOrganisation id={id} initialLanguage={initialLanguage} />
+    </div>
+  );
 }

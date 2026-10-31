@@ -11,5 +11,11 @@ export default async function BuyerRegisterPage() {
   // 2026-10-29: the first paint in the language this browser chose (cookie).
   const cookieLang = (await cookies()).get(LANG_COOKIE)?.value;
   const initialLanguage = isLanguage(cookieLang) ? cookieLang : DEFAULT_LANGUAGE;
-  return <BuyerRegister initialLanguage={initialLanguage} />;
+  // 2026-10-31: the member look (`.shop`), like every other sign-up page; it
+  // sits outside the buyer shell, so it carries the class itself.
+  return (
+    <div className="shop">
+      <BuyerRegister initialLanguage={initialLanguage} />
+    </div>
+  );
 }
