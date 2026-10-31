@@ -1,5 +1,11 @@
 import type { Metadata, Viewport } from 'next';
-import { Fraunces, Instrument_Sans, JetBrains_Mono, Open_Sans } from 'next/font/google';
+import {
+  Fraunces,
+  Instrument_Sans,
+  JetBrains_Mono,
+  Noto_Sans_Arabic,
+  Open_Sans,
+} from 'next/font/google';
 import type { ReactNode } from 'react';
 
 import { OfflineSync } from '@/components/pwa/OfflineSync';
@@ -45,6 +51,20 @@ const openSans = Open_Sans({
   variable: '--font-open-sans',
 });
 
+/**
+ * 2026-10-31: one Arabic face for every Arabic letter. None of the faces above
+ * carries Arabic, so each browser fell back to whatever it had -- thin serif
+ * headings beside bold sans text. The arabic subset ships with a unicode-range,
+ * so it is fetched only when Arabic is on screen (hence no preload).
+ */
+const arabic = Noto_Sans_Arabic({
+  subsets: ['arabic'],
+  display: 'swap',
+  weight: ['400', '600', '700'],
+  preload: false,
+  variable: '--font-arabic',
+});
+
 export const metadata: Metadata = {
   title: {
     default: 'AgriOne South Sudan',
@@ -70,7 +90,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html
       lang="en"
-      className={`${fraunces.variable} ${instrument.variable} ${jetbrains.variable} ${openSans.variable}`}
+      className={`${fraunces.variable} ${instrument.variable} ${jetbrains.variable} ${openSans.variable} ${arabic.variable}`}
     >
       <body>
         {/* 2026-10-25: the maintenance notice, when switched on in Settings. */}

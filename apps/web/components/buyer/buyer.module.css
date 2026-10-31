@@ -401,3 +401,61 @@
   box-shadow: var(--shadow-card-hover);
   transform: translateY(-1px);
 }
+
+/* The seven narrower filters: always shown on a wider screen; on a phone
+   they fold behind "More filters" (with a count of those applied), so the
+   products are one scroll away instead of eight fields. */
+.more,
+.moreOpen {
+  display: contents;
+}
+
+.moreToggle {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .more {
+    display: none;
+  }
+
+  .moreToggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--s-2);
+    min-height: 44px;
+    padding: 0 var(--s-4);
+    background: var(--card);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-control);
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  .moreToggle::after {
+    content: '';
+    width: 16px;
+    height: 16px;
+    margin-inline-start: auto;
+    background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231f7a3f' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>")
+      center / contain no-repeat;
+    transition: transform 160ms ease;
+  }
+
+  .moreToggle[aria-expanded='true']::after {
+    transform: rotate(180deg);
+  }
+}
+
+.moreCount {
+  display: inline-grid;
+  place-items: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: var(--radius-pill);
+  background: var(--green);
+  color: var(--card);
+  font-size: 12px;
+}
