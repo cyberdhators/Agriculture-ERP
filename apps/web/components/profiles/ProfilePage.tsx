@@ -11,7 +11,11 @@ import { PublicProfile } from './PublicProfile';
 export function ProfilePage({ kind, id }: { kind: string; id: string }) {
   const { language } = useFarmerSession();
   if (!(POST_KINDS as readonly string[]).includes(kind)) {
-    return <EmptyState title="This profile is not available." body="" />;
+    return (
+      <EmptyState
+        title={language === 'ar' ? 'هذا الملف غير متاح.' : 'This profile is not available.'}
+      />
+    );
   }
   return <PublicProfile kind={kind as PostKind} id={id} language={language} />;
 }

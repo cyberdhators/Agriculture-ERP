@@ -74,7 +74,8 @@ export function FarmerOverview() {
         greeting={
           <>
             <p className={styles.greetingHello} suppressHydrationWarning>
-              {t(greetingKey(), language)}, <span dir="auto">{farmer.given_name}</span>
+              {t(greetingKey(), language)}
+              {language === 'ar' ? '،' : ','} <span dir="auto">{farmer.given_name}</span>
             </p>
             {farmer.payam_id ? (
               <p className={styles.greetingPlace}>

@@ -2,6 +2,7 @@
 
 import { NotificationPreferencesCard } from '@/components/account/NotificationSettings';
 import { MyAvatar } from '@/components/account/MyAvatar';
+import { AppearanceRow } from '@/components/account/Appearance';
 import css from '@/components/account/settings.module.css';
 import { farmerPayamName } from '@/lib/fixtures/farmers';
 import { useFarmerSession } from '@/lib/farmer-session';
@@ -99,6 +100,8 @@ export function FarmerAccount() {
                 <span className={css.rowValue}>{t('language.name', language)}</span>
               )}
             </li>
+            {/* 2026-10-31: light, dark, or follow the phone. */}
+            <AppearanceRow language={language === 'ar' ? 'ar' : 'en'} />
           </ul>
         </section>
 

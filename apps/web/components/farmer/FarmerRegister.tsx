@@ -1007,9 +1007,16 @@ export function FarmerRegister() {
             {language === 'ar' ? 'أكّد رقم هاتفك' : 'Confirm your phone number'}
           </p>
           <p className="small">
-            {language === 'ar'
-              ? `أرسلنا رمزاً من 6 أرقام إلى ${codeFor.phone}. اكتبه هنا.`
-              : `We sent a 6-digit code to ${codeFor.phone}. Type it here.`}
+            {/* 2026-10-31 (Arabic pass): the number keeps its own direction. */}
+            {language === 'ar' ? (
+              <>
+                أرسلنا رمزاً من 6 أرقام إلى <bdi dir="ltr">{codeFor.phone}</bdi>. اكتبه هنا.
+              </>
+            ) : (
+              <>
+                We sent a 6-digit code to <bdi dir="ltr">{codeFor.phone}</bdi>. Type it here.
+              </>
+            )}
           </p>
           <Field label={language === 'ar' ? 'الرمز' : 'Code'} error={codeError ?? undefined}>
             {(ids) => (

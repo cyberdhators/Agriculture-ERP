@@ -1,5 +1,7 @@
 import type { SVGProps } from 'react';
 
+import styles from './ui.module.css';
+
 /**
  * Inline icons, 24 grid, 1.75 stroke. No icon library: one fewer dependency
  * and no font download in the field. Icons are decorative (aria-hidden): the
@@ -108,22 +110,35 @@ export const IconRemove = (p: IconProps) => (
 );
 
 export const IconChevronLeft = (p: IconProps) => (
-  <Icon {...p}>
+  <Icon className={styles.rtlFlip} {...p}>
     <path d="m14 6-6 6 6 6" />
   </Icon>
 );
 
 export const IconChevronRight = (p: IconProps) => (
-  <Icon {...p}>
+  <Icon className={styles.rtlFlip} {...p}>
     <path d="m10 6 6 6-6 6" />
   </Icon>
 );
 
 export const IconArrowRight = (p: IconProps) => (
-  <Icon {...p}>
+  <Icon className={styles.rtlFlip} {...p}>
     <path d="M4 12h16M13 5l7 7-7 7" />
   </Icon>
 );
+
+/**
+ * 2026-10-31 (Arabic pass): a text arrow ("← Back", "Open →") that turns round
+ * under RTL, so it points the way the page reads. Decorative; the words carry
+ * the meaning.
+ */
+export function DirArrow({ back = false }: { back?: boolean }) {
+  return (
+    <span aria-hidden="true" className={styles.rtlFlip}>
+      {back ? '←' : '→'}
+    </span>
+  );
+}
 
 export const IconPrint = (p: IconProps) => (
   <Icon {...p}>

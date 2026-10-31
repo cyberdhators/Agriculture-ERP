@@ -312,7 +312,7 @@ export function ProviderForm({
           <Field
             label={t('advice.availability', lang)}
             hint={t('advice.availabilityHint', lang)}
-            optional
+            optional={t('common.optional', lang)}
             error={errors.availability || undefined}
           >
             {(ids) => (
@@ -340,7 +340,7 @@ export function ProviderForm({
           <Field
             label={t('advice.fees', lang)}
             hint={t('advice.feeNoteHint', lang)}
-            optional
+            optional={t('common.optional', lang)}
             error={errors.fee_note || undefined}
           >
             {(ids) => (
@@ -356,7 +356,7 @@ export function ProviderForm({
           <Field
             label={t('advice.commercial', lang)}
             hint={t('advice.commercialHint', lang)}
-            optional
+            optional={t('common.optional', lang)}
             error={errors.commercial_interests || undefined}
           >
             {(ids) => (

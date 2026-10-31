@@ -33,6 +33,7 @@ import { LoadingState } from '../ui/data';
 import { ConfirmationDialog, useToast } from '../ui/feedback';
 import { useBuyer } from './BuyerShell';
 import styles from './buyer.module.css';
+import { DirArrow } from '@/components/ui/icons';
 
 /**
  * ONE PURCHASE REQUEST (C-14B.11). A draft can be sent or cancelled; a sent
@@ -102,7 +103,7 @@ export function BuyerRequestDetail({ id }: { id: string }) {
   return (
     <div className={styles.page}>
       <Link href="/buyer/purchase-requests" className="small">
-        ← My requests
+        <DirArrow back /> My requests
       </Link>
       <PageHeader
         eyebrow={labelOf(CATEGORY_LABELS, request.category)}

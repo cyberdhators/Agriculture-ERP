@@ -109,8 +109,10 @@ export function ListingCard({
         <Link href={href} className={styles.cardTitle} dir="auto">
           {listing.title}
         </Link>
-        <span className={styles.cardProduct} dir="auto">
-          {listing.product_name} · {formatQuantity(listing, unit)}
+        {/* 2026-10-31 (Arabic pass): the product name and the quantity each
+            keep their own direction, and the line follows the page's. */}
+        <span className={styles.cardProduct}>
+          <bdi>{listing.product_name}</bdi> · <bdi>{formatQuantity(listing, unit)}</bdi>
         </span>
         <div className={styles.cardPrice}>
           {formatSsp(listing.price_ssp)} <small>/ {unit(listing.price_per)}</small>

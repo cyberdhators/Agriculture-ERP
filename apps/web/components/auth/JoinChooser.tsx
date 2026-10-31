@@ -1,6 +1,68 @@
+'use client';
+
+import { LanguageButtons } from '@/components/farmer/LanguageSwitch';
+import { DEFAULT_LANGUAGE, isRtl, type Language } from '@/lib/i18n';
+import { useDocumentLanguage, useLanguageChoice } from '@/lib/i18n/client';
+
 import { Wordmark } from '../brand/Wordmark';
 import { ButtonLink, Card } from '../ui';
 import styles from './auth.module.css';
+
+/** 2026-10-31 (Arabic pass): the page's words, in both languages. */
+const W = {
+  en: {
+    title: 'Sign in or create an account',
+    lead: 'One AgriOne account lets you buy, sell, offer services and get advice. Choose how you sign in: with your phone number or with an email address.',
+    phoneTitle: 'With your phone number',
+    phoneFor: 'For anyone with a South Sudan mobile number.',
+    phoneList: [
+      'Create your account with your phone number and a password.',
+      'We send a code by SMS to confirm the number.',
+      'Sell, buy, offer services and ask for advice from the same account.',
+    ],
+    emailTitle: 'With an email address',
+    emailFor: 'For businesses and organisations, or without a +211 number.',
+    emailList: [
+      'Create your account with your email address and a password.',
+      'Individuals start straight away; businesses are reviewed first.',
+      'Buy now, and start selling from the same account whenever you like.',
+    ],
+    create: 'Create account',
+    signIn: 'Sign in',
+    staffTitle: 'CORWADO staff and extension officers',
+    staffFor:
+      'For accounts issued by an administrator. Staff sign in with their email address; extension officers with their phone number.',
+    staffSignIn: 'Staff sign in',
+    back: 'Back to the marketplace',
+    help: 'Help',
+  },
+  ar: {
+    title: 'سجّل الدخول أو أنشئ حساباً',
+    lead: 'حساب واحد في أجري ون للشراء والبيع وتقديم الخدمات وطلب النصيحة. اختر طريقة الدخول: برقم هاتفك أو ببريد إلكتروني.',
+    phoneTitle: 'برقم هاتفك',
+    phoneFor: 'لكل من لديه رقم هاتف محمول في جنوب السودان.',
+    phoneList: [
+      'أنشئ حسابك برقم هاتفك وكلمة مرور.',
+      'نرسل رمزاً برسالة نصية لتأكيد الرقم.',
+      'بِع واشترِ وقدّم الخدمات واطلب النصيحة من الحساب نفسه.',
+    ],
+    emailTitle: 'ببريد إلكتروني',
+    emailFor: 'للشركات والمنظمات، أو لمن ليس لديه رقم هاتف من جنوب السودان.',
+    emailList: [
+      'أنشئ حسابك ببريدك الإلكتروني وكلمة مرور.',
+      'يبدأ الأفراد فوراً، وتُراجَع الشركات أولاً.',
+      'اشترِ الآن، وابدأ البيع من الحساب نفسه متى شئت.',
+    ],
+    create: 'إنشاء حساب',
+    signIn: 'تسجيل الدخول',
+    staffTitle: 'موظفو كوروادو والمرشدون الزراعيون',
+    staffFor:
+      'لحسابات يصدرها مسؤول. يدخل الموظفون ببريدهم الإلكتروني، والمرشدون الزراعيون برقم هاتفهم.',
+    staffSignIn: 'دخول الموظفين',
+    back: 'العودة إلى السوق',
+    help: 'المساعدة',
+  },
+} as const;
 
 /**
  * SIGN IN OR REGISTER -- FARMER OR BUYER (B14, the owner, 2026-10-07: "make sure
@@ -17,19 +79,30 @@ import styles from './auth.module.css';
  *
  * Staff do not register here: an administrator issues their accounts.
  */
-export function JoinChooser({ next }: { next: string }) {
+export function JoinChooser({
+  next,
+  initialLanguage = DEFAULT_LANGUAGE,
+}: {
+  next: string;
+  initialLanguage?: Language;
+}) {
+  // 2026-10-31 (Arabic pass): the page reads in the language this browser
+  // chose, with the same English / Arabic switch as the sign-in pages.
+  const [language, setLanguage] = useLanguageChoice(initialLanguage);
+  useDocumentLanguage(language);
+  const w = W[language === 'ar' ? 'ar' : 'en'];
   const buyerNext = next.startsWith('/buyer') ? next : '/buyer/marketplace';
   const login = `/login?next=${encodeURIComponent(buyerNext)}`;
   return (
-    <main className={styles.wrap}>
+    <main className={styles.wrap} dir={isRtl(language) ? 'rtl' : 'ltr'}>
       <div className={styles.join}>
         <header className={styles.joinHead}>
           <Wordmark size={34} tagline />
-          <h1 className={styles.joinTitle}>Sign in or create an account</h1>
-          <p className={styles.joinLead}>
-            One AgriOne account lets you buy, sell, offer services and get advice. Choose how you
-            sign in: with your phone number or with an email address.
-          </p>
+          <div className={styles.lang}>
+            <LanguageButtons value={language} onChange={setLanguage} />
+          </div>
+          <h1 className={styles.joinTitle}>{w.title}</h1>
+          <p className={styles.joinLead}>{w.lead}</p>
         </header>
 
         <div className={styles.joinGrid}>
@@ -49,17 +122,17 @@ export function JoinChooser({ next }: { next: string }) {
                 <path d="M10.5 18.5h3" />
               </svg>
             </span>
-            <h2>With your phone number</h2>
-            <p className={styles.joinFor}>For anyone with a South Sudan mobile number.</p>
+            <h2>{w.phoneTitle}</h2>
+            <p className={styles.joinFor}>{w.phoneFor}</p>
             <ul className={styles.joinList}>
-              <li>Create your account with your phone number and a password.</li>
-              <li>We send a code by SMS to confirm the number.</li>
-              <li>Sell, buy, offer services and ask for advice from the same account.</li>
+              {w.phoneList.map((line) => (
+                <li key={line}>{line}</li>
+              ))}
             </ul>
             <div className={styles.joinActions}>
-              <ButtonLink href="/farmer/register">Create account</ButtonLink>
+              <ButtonLink href="/farmer/register">{w.create}</ButtonLink>
               <ButtonLink href="/farmer/login" variant="secondary">
-                Sign in
+                {w.signIn}
               </ButtonLink>
             </div>
           </Card>
@@ -80,19 +153,17 @@ export function JoinChooser({ next }: { next: string }) {
                 <path d="m3.5 6.5 8.5 6.5 8.5-6.5" />
               </svg>
             </span>
-            <h2>With an email address</h2>
-            <p className={styles.joinFor}>
-              For businesses and organisations, or without a +211 number.
-            </p>
+            <h2>{w.emailTitle}</h2>
+            <p className={styles.joinFor}>{w.emailFor}</p>
             <ul className={styles.joinList}>
-              <li>Create your account with your email address and a password.</li>
-              <li>Individuals start straight away; businesses are reviewed first.</li>
-              <li>Buy now, and start selling from the same account whenever you like.</li>
+              {w.emailList.map((line) => (
+                <li key={line}>{line}</li>
+              ))}
             </ul>
             <div className={styles.joinActions}>
-              <ButtonLink href="/buyer/register">Create account</ButtonLink>
+              <ButtonLink href="/buyer/register">{w.create}</ButtonLink>
               <ButtonLink href={login} variant="secondary">
-                Sign in
+                {w.signIn}
               </ButtonLink>
             </div>
           </Card>
@@ -106,21 +177,18 @@ export function JoinChooser({ next }: { next: string }) {
          */}
         <section className={styles.joinStaff} aria-labelledby="join-staff">
           <div>
-            <h2 id="join-staff">CORWADO staff and extension officers</h2>
-            <p className={styles.joinFor}>
-              For accounts issued by an administrator. Staff sign in with their email address;
-              extension officers with their phone number.
-            </p>
+            <h2 id="join-staff">{w.staffTitle}</h2>
+            <p className={styles.joinFor}>{w.staffFor}</p>
           </div>
           <ButtonLink href="/admin/login" variant="secondary">
-            Staff sign in
+            {w.staffSignIn}
           </ButtonLink>
         </section>
 
         <p className={styles.joinBack}>
-          <a href="/market">Back to the marketplace</a>
+          <a href="/market">{w.back}</a>
           <span aria-hidden> · </span>
-          <a href="/help">Help</a>
+          <a href="/help">{w.help}</a>
         </p>
       </div>
     </main>

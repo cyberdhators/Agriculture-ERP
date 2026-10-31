@@ -14,6 +14,7 @@ import { t, type Language } from '@/lib/i18n';
 
 import { Expertise } from './Expertise';
 import styles from './profiles.module.css';
+import { DirArrow } from '@/components/ui/icons';
 
 /**
  * A POSTER'S PUBLIC PROFILE (2026-10-20). GET /api/profiles/:kind/:id: the
@@ -250,7 +251,7 @@ export function ProfileLink({
 }) {
   return (
     <Link href={`/market/profile/${kind}/${id}`} className={styles.profileLink}>
-      {language === 'ar' ? 'عرض الملف الشخصي' : 'See profile'} →
+      {language === 'ar' ? 'عرض الملف الشخصي' : 'See profile'} <DirArrow />
     </Link>
   );
 }

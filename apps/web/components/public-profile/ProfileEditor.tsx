@@ -530,7 +530,7 @@ export function ProfileEditor({
             {/* Kept (privacy): the place shown is general, never the village or farm. */}
             <Field
               label={t('pp.payam', language)}
-              optional
+              optional={t('common.optional', language)}
               hint={t('pp.locationHint', language)}
               error={errors.payam_id || undefined}
             >

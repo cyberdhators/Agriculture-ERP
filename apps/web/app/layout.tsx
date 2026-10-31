@@ -86,12 +86,22 @@ export const viewport: Viewport = {
   themeColor: '#0f2e1c',
 };
 
+const THEME_SCRIPT = `try{var t=localStorage.getItem('agri-theme');if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)}catch(e){}`;
+
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html
       lang="en"
       className={`${fraunces.variable} ${instrument.variable} ${jetbrains.variable} ${openSans.variable} ${arabic.variable}`}
+      // The theme attribute is set by the script below before React loads.
+      suppressHydrationWarning
     >
+      <head>
+        {/* 2026-10-31, dark mode: apply the member's Appearance choice
+            (Account > Appearance, kept on this phone) before the first paint,
+            so a dark choice never flashes white. No choice = follow the phone. */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+      </head>
       <body>
         {/* 2026-10-25: the maintenance notice, when switched on in Settings. */}
         <MaintenanceBanner />
