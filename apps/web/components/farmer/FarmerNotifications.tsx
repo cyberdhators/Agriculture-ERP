@@ -14,6 +14,7 @@ import { t, type Language, type TKey } from '@/lib/i18n';
 
 import { PageHead } from './AccountShell';
 import styles from './farmer.module.css';
+import { DirArrow } from '@/components/ui/icons';
 
 interface NotificationRow {
   id: string;
@@ -116,7 +117,12 @@ function NotificationCard({
       <p className="small">{body}</p>
       <span className="small muted">
         {formatDate(notification.created_at, language)}
-        {href ? ` · ${language === 'ar' ? 'افتح' : 'Open'} →` : ''}
+        {href ? (
+          <>
+            {' · '}
+            {language === 'ar' ? 'افتح' : 'Open'} <DirArrow />
+          </>
+        ) : null}
       </span>
     </>
   );

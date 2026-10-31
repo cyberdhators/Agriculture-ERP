@@ -2319,7 +2319,7 @@
 }
 
 .priceTable th {
-  text-align: left;
+  text-align: start;
   font-weight: 600;
   font-size: var(--text-small, 13px);
   color: var(--muted);
@@ -2341,7 +2341,7 @@
 }
 
 .priceNum {
-  text-align: right;
+  text-align: end;
   font-variant-numeric: tabular-nums;
 }
 
@@ -2896,7 +2896,7 @@
       color-mix(in srgb, var(--info) 28%, transparent),
       transparent 60%
     ),
-    linear-gradient(160deg, color-mix(in srgb, var(--band) 85%, var(--ink)), var(--band));
+    linear-gradient(160deg, color-mix(in srgb, var(--band) 85%, var(--photo-shade)), var(--band));
 }
 
 /* Clouds soften the light a little. */

@@ -419,7 +419,7 @@ export function ServiceForm({
           <Field
             label={t('listingForm.availableUntil', lang)}
             hint={t('listingForm.untilDefault', lang)}
-            optional
+            optional={t('common.optional', lang)}
             error={err('available_until')}
           >
             {(ids) => (
@@ -437,7 +437,7 @@ export function ServiceForm({
             <Field
               label={t('svc.availability', lang)}
               hint={t('svc.availabilityHint', lang)}
-              optional
+              optional={t('common.optional', lang)}
               error={err('availability_note')}
             >
               {(ids) => (
@@ -503,7 +503,7 @@ export function ServiceForm({
         <Field
           label={t('listingForm.contactPhone', lang)}
           hint={t('requests.phoneHint', lang)}
-          optional
+          optional={t('common.optional', lang)}
           error={err('contact_phone')}
         >
           {(ids) => (

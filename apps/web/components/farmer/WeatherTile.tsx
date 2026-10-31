@@ -138,7 +138,11 @@ export function WeatherTile({
             target="_blank"
             rel="noreferrer"
           >
-            {w.attribution.text}
+            {/* 2026-10-31 (Arabic pass): the credit in Arabic; the provider's
+                name stays as it is written. */}
+            {language === 'ar'
+              ? w.attribution.text.replace(/^Weather data provided by/i, 'بيانات الطقس من')
+              : w.attribution.text}
           </a>
         </>
       )}

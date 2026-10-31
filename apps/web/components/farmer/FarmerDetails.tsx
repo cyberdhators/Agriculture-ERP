@@ -125,7 +125,7 @@ export function FarmerDetails() {
         {needYear ? (
           <Field
             label={w.yob}
-            optional
+            optional={language === 'ar' ? 'اختياري' : true}
             hint={`1920–${maxBirthYear()}`}
             error={fields.year_of_birth}
           >

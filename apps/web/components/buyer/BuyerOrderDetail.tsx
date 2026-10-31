@@ -34,6 +34,7 @@ import { LoadingState } from '../ui/data';
 import { ConfirmationDialog, useToast } from '../ui/feedback';
 import { Timeline } from './Timeline';
 import styles from './buyer.module.css';
+import { DirArrow } from '@/components/ui/icons';
 
 /**
  * ONE ORDER (C-14B.12, C-14B.13). The buyer may cancel it, with a reason,
@@ -93,7 +94,7 @@ export function BuyerOrderDetail({ id }: { id: string }) {
   return (
     <div className={styles.page}>
       <Link href="/buyer/orders" className="small">
-        ← Orders
+        <DirArrow back /> Orders
       </Link>
       <PageHeader
         eyebrow={`Order ${order.order_number}`}

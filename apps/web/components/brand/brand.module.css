@@ -19,7 +19,23 @@
 
 /* On the dark forest band, sit the logo in a light rounded chip. */
 .onBand .logo {
-  background: var(--card);
+  background: var(--logo-chip);
+  border-radius: 8px;
+  padding: 3px 6px;
+}
+
+/* 2026-10-31, dark mode: the artwork is dark green on transparent, so on a
+   dark page every logo sits on the light chip, not only the banded ones. */
+@media (prefers-color-scheme: dark) {
+  :global(:root:not([data-theme='light'])) .logo {
+    background: var(--logo-chip);
+    border-radius: 8px;
+    padding: 3px 6px;
+  }
+}
+
+:global(:root[data-theme='dark']) .logo {
+  background: var(--logo-chip);
   border-radius: 8px;
   padding: 3px 6px;
 }

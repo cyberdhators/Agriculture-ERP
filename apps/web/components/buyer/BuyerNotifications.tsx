@@ -19,6 +19,7 @@ import { LoadingState, Pagination } from '../ui/data';
 import { useBuyer } from './BuyerShell';
 import { useCursorList } from './useCursorList';
 import styles from './buyer.module.css';
+import { DirArrow } from '@/components/ui/icons';
 
 /**
  * NOTIFICATIONS (C-14B.20). The organisation's in-app notices from the
@@ -116,7 +117,9 @@ export function BuyerNotifications() {
                       {href ? (
                         <>
                           {' · '}
-                          <Link href={href}>{language === 'ar' ? 'افتح' : 'Open'} →</Link>
+                          <Link href={href}>
+                            {language === 'ar' ? 'افتح' : 'Open'} <DirArrow />
+                          </Link>
                         </>
                       ) : null}
                     </p>

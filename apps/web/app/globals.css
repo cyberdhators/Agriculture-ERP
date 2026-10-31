@@ -290,6 +290,140 @@
   border-radius: var(--az-radius);
 }
 
+/*
+ * ─────────────────────────────────────────────────────────────────────
+ *  DARK MODE (2026-10-31). A deep-green night version of every token, so
+ *  every page follows without its own rules. It applies when the phone is
+ *  set to dark and the member has not chosen Light, or when the member
+ *  chooses Dark (Account > Appearance sets <html data-theme>). Light stays
+ *  the default for everyone else. Colours stay in this file only.
+ *
+ *  The two blocks below carry the same values: one for "the phone says
+ *  dark", one for "the member chose dark". Change both together.
+ * ─────────────────────────────────────────────────────────────────────
+ */
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --paper: #0d1510;
+    --card: #141e18;
+    --dust: #1b2720;
+    --line: #25332b;
+    --line-strong: #37483e;
+    --ink: #e7eee9;
+    --ink-2: #c2cdc5;
+    --muted: #93a398;
+    --band: #0a1f13;
+    --band-ink: #eef4ef;
+    --band-line: #1d3a28;
+    --green-deep: #9bd8ae;
+    --green: #2a8f4e;
+    --green-hover: #33a35b;
+    --sprout: #8cc659;
+    --green-tint: #183424;
+    --harvest: #e0a526;
+    --harvest-deep: #e9b94b;
+    --harvest-ink: #ecc56a;
+    --harvest-tint: #382c12;
+    --soil: #d4a77f;
+    --soil-tint: #33261b;
+    --verified: #86d08f;
+    --verified-tint: #173221;
+    --pending: #e8c069;
+    --pending-tint: #36290f;
+    --danger: #f29483;
+    --danger-tint: #3b1c17;
+    --info: #8fc3ea;
+    --info-tint: #13293a;
+    --neutral: #b2bdb6;
+    --neutral-tint: #232d28;
+    --nile-deep: #b9d9f1;
+    --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4), 0 2px 8px -2px rgba(0, 0, 0, 0.35);
+    --shadow-card-hover: 0 14px 30px -14px rgba(0, 0, 0, 0.7);
+    --shadow-dialog: 0 24px 64px -20px rgba(0, 0, 0, 0.75);
+    color-scheme: dark;
+  }
+
+  :root:not([data-theme='light']) .shop {
+    --az-bg: #0d1510;
+    --az-card: #141e18;
+    --az-dust: #1b2720;
+    --az-line: #25332b;
+    --az-line-strong: #37483e;
+    --az-ink: #e7eee9;
+    --az-ink-2: #c2cdc5;
+    --az-muted: #93a398;
+    --az-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 2px 8px -2px rgba(0, 0, 0, 0.35);
+    --az-shadow-hover: 0 14px 30px -14px rgba(0, 0, 0, 0.7);
+    --az-strip: #0f2a1a;
+    --az-btn-top: rgba(255, 255, 255, 0.12);
+  }
+}
+
+:root[data-theme='dark'] {
+  --paper: #0d1510;
+  --card: #141e18;
+  --dust: #1b2720;
+  --line: #25332b;
+  --line-strong: #37483e;
+  --ink: #e7eee9;
+  --ink-2: #c2cdc5;
+  --muted: #93a398;
+  --band: #0a1f13;
+  --band-ink: #eef4ef;
+  --band-line: #1d3a28;
+  --green-deep: #9bd8ae;
+  --green: #2a8f4e;
+  --green-hover: #33a35b;
+  --sprout: #8cc659;
+  --green-tint: #183424;
+  --harvest: #e0a526;
+  --harvest-deep: #e9b94b;
+  --harvest-ink: #ecc56a;
+  --harvest-tint: #382c12;
+  --soil: #d4a77f;
+  --soil-tint: #33261b;
+  --verified: #86d08f;
+  --verified-tint: #173221;
+  --pending: #e8c069;
+  --pending-tint: #36290f;
+  --danger: #f29483;
+  --danger-tint: #3b1c17;
+  --info: #8fc3ea;
+  --info-tint: #13293a;
+  --neutral: #b2bdb6;
+  --neutral-tint: #232d28;
+  --nile-deep: #b9d9f1;
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4), 0 2px 8px -2px rgba(0, 0, 0, 0.35);
+  --shadow-card-hover: 0 14px 30px -14px rgba(0, 0, 0, 0.7);
+  --shadow-dialog: 0 24px 64px -20px rgba(0, 0, 0, 0.75);
+  color-scheme: dark;
+}
+
+:root[data-theme='dark'] .shop {
+  --az-bg: #0d1510;
+  --az-card: #141e18;
+  --az-dust: #1b2720;
+  --az-line: #25332b;
+  --az-line-strong: #37483e;
+  --az-ink: #e7eee9;
+  --az-ink-2: #c2cdc5;
+  --az-muted: #93a398;
+  --az-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 2px 8px -2px rgba(0, 0, 0, 0.35);
+  --az-shadow-hover: 0 14px 30px -14px rgba(0, 0, 0, 0.7);
+  --az-strip: #0f2a1a;
+  --az-btn-top: rgba(255, 255, 255, 0.12);
+}
+
+/* The logo artwork is dark green on transparent: it keeps a light chip in
+   both themes so it is always legible. */
+:root {
+  --logo-chip: #ffffff;
+  /* Over a photo or a solid green, whatever the theme: a dark shade, white ink. */
+  --photo-shade: #0b130e;
+  --on-strong: #ffffff;
+}
+
 /* ---- Reset ---------------------------------------------------------- */
 
 *,

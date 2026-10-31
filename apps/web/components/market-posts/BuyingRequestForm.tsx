@@ -465,7 +465,7 @@ export function BuyingRequestForm({
         <Field
           label={t('requests.deliveryTerms', lang)}
           hint={t('requests.deliveryHint', lang)}
-          optional
+          optional={t('common.optional', lang)}
           error={err('delivery_terms')}
         >
           {(ids) => (
@@ -495,7 +495,7 @@ export function BuyingRequestForm({
         <Field
           label={t('listingForm.contactPhone', lang)}
           hint={t('requests.phoneHint', lang)}
-          optional
+          optional={t('common.optional', lang)}
           error={err('contact_phone')}
         >
           {(ids) => (

@@ -367,7 +367,7 @@ export function AdviserApplication({
           <Field
             label={t('adviser.qualifications', lang)}
             hint={t('adviser.qualificationsHint', lang)}
-            optional
+            optional={t('common.optional', lang)}
             error={errors.qualifications || undefined}
           >
             {(ids) => (
@@ -384,7 +384,7 @@ export function AdviserApplication({
           <Field
             label={t('adviser.affiliation', lang)}
             hint={t('adviser.affiliationHint', lang)}
-            optional
+            optional={t('common.optional', lang)}
             error={errors.affiliation || undefined}
           >
             {(ids) => (

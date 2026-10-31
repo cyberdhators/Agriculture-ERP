@@ -20,11 +20,30 @@ interface InstallPrompt extends Event {
 
 const DISMISSED_KEY = 'agrione.pwa.installDismissed';
 
+/**
+ * 2026-10-31 (Arabic pass): this sits in the root layout, outside the shells
+ * that know the language, so it follows the page's own `lang` (which the
+ * farmer, buyer and market shells set) and switches with it.
+ */
+function usePageArabic(): boolean {
+  const [arabic, setArabic] = useState(false);
+  useEffect(() => {
+    const root = document.documentElement;
+    const read = () => setArabic(root.lang === 'ar');
+    read();
+    const watch = new MutationObserver(read);
+    watch.observe(root, { attributes: true, attributeFilter: ['lang'] });
+    return () => watch.disconnect();
+  }, []);
+  return arabic;
+}
+
 export function PwaStatus() {
   const [online, setOnline] = useState(true);
   /** The farmer closed the no-signal strip; cleared whenever the signal changes. */
   const [stripHidden, setStripHidden] = useState(false);
   const [installable, setInstallable] = useState<InstallPrompt | null>(null);
+  const ar = usePageArabic();
 
   useEffect(() => {
     setOnline(navigator.onLine);
@@ -82,20 +101,23 @@ export function PwaStatus() {
             display: 'flex',
             alignItems: 'center',
             gap: '0.5rem',
-            padding: '0.5rem 0.5rem 0.5rem 1rem',
+            paddingBlock: '0.5rem',
+            paddingInline: '1rem 0.5rem',
             background: '#7a4b00',
             color: '#fff',
             fontSize: '0.875rem',
           }}
         >
           <span style={{ flex: 1, textAlign: 'center' }}>
-            No signal. You are seeing pages saved on this phone; they may be out of date.
+            {ar
+              ? 'لا توجد إشارة. تعرض صفحات محفوظة على هذا الهاتف، وقد لا تكون محدّثة.'
+              : 'No signal. You are seeing pages saved on this phone; they may be out of date.'}
           </span>
           <button
             type="button"
             onClick={() => setStripHidden(true)}
-            aria-label="Hide this message"
-            title="Hide this message"
+            aria-label={ar ? 'إخفاء هذه الرسالة' : 'Hide this message'}
+            title={ar ? 'إخفاء هذه الرسالة' : 'Hide this message'}
             style={{
               flex: '0 0 auto',
               width: 44,
@@ -150,12 +172,12 @@ export function PwaStatus() {
               fontWeight: 600,
             }}
           >
-            Install AgriOne
+            {ar ? 'ثبّت أجري ون' : 'Install AgriOne'}
           </button>
           <button
             type="button"
             onClick={dismiss}
-            aria-label="Not now"
+            aria-label={ar ? 'ليس الآن' : 'Not now'}
             style={{ background: 'none', border: 0, color: 'inherit', cursor: 'pointer' }}
           >
             ✕

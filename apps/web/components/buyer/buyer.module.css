@@ -456,7 +456,7 @@
   padding: 0 6px;
   border-radius: var(--radius-pill);
   background: var(--green);
-  color: var(--card);
+  color: var(--on-strong);
   font-size: 12px;
 }
 

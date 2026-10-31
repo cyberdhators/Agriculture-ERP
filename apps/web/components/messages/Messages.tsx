@@ -32,6 +32,7 @@ import {
 } from '@/lib/messages/client';
 
 import styles from './messages.module.css';
+import { DirArrow } from '@/components/ui/icons';
 
 /**
  * IN-APP MESSAGING (2026-10-20). The inbox, and one conversation when the
@@ -348,7 +349,7 @@ function Conversation({
       <div className={styles.page}>
         {embedded ? null : (
           <Link href={pathname} className={styles.back}>
-            ← {t('msg.back', language)}
+            <DirArrow back /> {t('msg.back', language)}
           </Link>
         )}
         <EmptyState title={t('msg.notFound', language)} body="" />
@@ -360,7 +361,7 @@ function Conversation({
     <div className={styles.page}>
       {embedded ? null : (
         <Link href={pathname} className={styles.back}>
-          ← {t('msg.back', language)}
+          <DirArrow back /> {t('msg.back', language)}
         </Link>
       )}
       {embedded ? (

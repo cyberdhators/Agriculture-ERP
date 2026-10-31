@@ -5,7 +5,7 @@ import { useRef, useState, type ReactNode } from 'react';
 
 import { ProfileLink } from '@/components/profiles/PublicProfile';
 import { Button, ButtonLink, Stamp } from '@/components/ui';
-import { IconChevronLeft, IconChevronRight } from '@/components/ui/icons';
+import { DirArrow, IconChevronLeft, IconChevronRight } from '@/components/ui/icons';
 import type { ProduceListing } from '@/lib/fixtures/farmers';
 import type { SellerInfo } from '@/lib/listings/api-client';
 import {
@@ -346,7 +346,9 @@ function DetailRow({ term, children }: { term: string; children: ReactNode }) {
 export function BackLink({ href, children }: { href: string; children: ReactNode }) {
   return (
     <p className="small">
-      <Link href={href}>← {children}</Link>
+      <Link href={href}>
+        <DirArrow back /> {children}
+      </Link>
     </p>
   );
 }

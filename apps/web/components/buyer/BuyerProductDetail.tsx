@@ -35,6 +35,7 @@ import { MessageButton } from '../messages/MessageButton';
 import { ProfileLink } from '../profiles/PublicProfile';
 import { LoadingState } from '../ui/data';
 import styles from './buyer.module.css';
+import { DirArrow } from '@/components/ui/icons';
 
 /**
  * ONE PRODUCT, AS A BUYER MAY SEE IT (C-14B.10).
@@ -94,7 +95,7 @@ export function BuyerProductDetail({ id }: { id: string }) {
   return (
     <div className={styles.page}>
       <Link href="/buyer/marketplace" className="small">
-        ← Marketplace
+        <DirArrow back /> Marketplace
       </Link>
       <PageHeader
         eyebrow={labelOf(CATEGORY_LABELS, listing.category)}

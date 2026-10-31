@@ -43,6 +43,7 @@ import { t, type Language } from '@/lib/i18n';
 
 import styles from './advice.module.css';
 import { PageLoading } from '@/components/ui/data';
+import { DirArrow } from '@/components/ui/icons';
 
 const STATUS_TONE = { open: 'nile', in_progress: 'sorghum', closed: 'neutral' } as const;
 
@@ -226,7 +227,9 @@ export function CaseDetail({
       <section className={styles.box}>
         <h2>{t('advice.concern', lang)}</h2>
         <p className={styles.note}>{t('advice.concernBody', lang)}</p>
-        <Link href="/help">{t('help.title', lang)} →</Link>
+        <Link href="/help">
+          {t('help.title', lang)} <DirArrow />
+        </Link>
       </section>
     </div>
   );

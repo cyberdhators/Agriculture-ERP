@@ -308,8 +308,15 @@ export function Field({ label, hint, error, optional, children }: FieldProps) {
       <label className={styles.fieldLabel} htmlFor={id}>
         {label}
         {optional ? (
-          <span className={styles.fieldOptional}>
-            {typeof optional === 'string' ? optional : 'optional'}
+          // 2026-10-31 (Arabic pass): a bare `optional` says "optional" or
+          // "اختياري" by the page's language (the word comes from the CSS).
+          <span
+            className={cx(
+              styles.fieldOptional,
+              typeof optional === 'string' ? undefined : styles.fieldOptionalWord,
+            )}
+          >
+            {typeof optional === 'string' ? optional : null}
           </span>
         ) : null}
       </label>
@@ -335,7 +342,17 @@ export function Field({ label, hint, error, optional, children }: FieldProps) {
 
 export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(
   function Input({ className, ...rest }, ref) {
-    return <input ref={ref} className={cx(styles.control, className)} {...rest} />;
+    // 2026-10-31 (Arabic pass): a phone number reads left to right even on an
+    // Arabic page ("+211 9XX", not "9XX 211+"); a caller's own dir still wins.
+    const tel = rest.type === 'tel' || rest.inputMode === 'tel';
+    return (
+      <input
+        ref={ref}
+        dir={tel ? 'ltr' : undefined}
+        className={cx(styles.control, className)}
+        {...rest}
+      />
+    );
   },
 );
 
@@ -357,7 +374,8 @@ export function PrefixedInput({
   ...rest
 }: { prefix: string } & InputHTMLAttributes<HTMLInputElement>) {
   return (
-    <div className={styles.controlWithPrefix}>
+    // 2026-10-31 (Arabic pass): a "+211" group stays left to right, prefix first.
+    <div className={styles.controlWithPrefix} dir={prefix.startsWith('+') ? 'ltr' : undefined}>
       <span className={styles.controlPrefix} aria-hidden="true">
         {prefix}
       </span>

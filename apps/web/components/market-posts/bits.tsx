@@ -8,6 +8,7 @@ import { Button, Select } from '@/components/ui';
 import { t, type Language } from '@/lib/i18n';
 
 import styles from './market-posts.module.css';
+import { DirArrow } from '@/components/ui/icons';
 
 /** A filter: a labelled select whose first choice is "any". */
 export function SearchSelect({
@@ -122,7 +123,9 @@ export function FilterFold({
 export function BackLinkRow({ href, label }: { href: string; label: string }) {
   return (
     <p className="small">
-      <Link href={href}>← {label}</Link>
+      <Link href={href}>
+        <DirArrow back /> {label}
+      </Link>
     </p>
   );
 }

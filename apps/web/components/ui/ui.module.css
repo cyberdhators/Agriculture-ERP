@@ -352,7 +352,7 @@
 }
 
 .fieldOptional {
-  margin-left: var(--s-2);
+  margin-inline-start: var(--s-2);
   font-weight: 400;
   font-size: var(--text-small);
   color: var(--muted);
@@ -439,21 +439,55 @@ select.control {
   grid-template-columns: auto 1fr;
 }
 
+/* 2026-10-31 (Arabic pass): the word for a bare `optional` Field, in the
+   page's language (the farmer, buyer and market shells set <html lang>). */
+.fieldOptionalWord::after {
+  content: 'optional';
+}
+
+:global(html[lang='ar']) .fieldOptionalWord::after {
+  content: 'اختياري';
+}
+
 .controlPrefix {
   display: flex;
   align-items: center;
   padding: 0 var(--s-3);
   background: var(--dust);
   border: 1px solid var(--line-strong);
-  border-right: 0;
-  border-radius: var(--radius-control) 0 0 var(--radius-control);
+  border-inline-end: 0;
+  border-start-start-radius: var(--radius-control);
+  border-end-start-radius: var(--radius-control);
   font-family: var(--font-mono);
   font-weight: 500;
   color: var(--ink-2);
 }
 
 .controlWithPrefix .control {
-  border-radius: 0 var(--radius-control) var(--radius-control) 0;
+  border-radius: 0;
+  border-start-end-radius: var(--radius-control);
+  border-end-end-radius: var(--radius-control);
+}
+
+/* 2026-10-31 (Arabic pass): a phone number is written left to right; in an
+   Arabic form it still sits on the reading side. Inside a "+211" group the
+   whole group is left to right, so the number starts beside the prefix. */
+:global([dir='rtl']) .control[dir='ltr'] {
+  text-align: right;
+}
+
+.controlWithPrefix[dir='ltr'] .control[dir='ltr'] {
+  text-align: left;
+}
+
+/* 2026-10-31 (Arabic pass): arrows and chevrons that mean "back" / "next"
+   turn round under RTL, so they point the way the page reads. */
+.rtlFlip {
+  display: inline-block;
+}
+
+:global([dir='rtl']) .rtlFlip {
+  transform: scaleX(-1);
 }
 
 /* Password: the control with a "Show" / "Hide" word beside it — a word, not an
@@ -627,7 +661,7 @@ select.control {
   gap: var(--s-3);
   padding: var(--s-3) var(--s-4);
   border: 1px solid;
-  border-left-width: 3px;
+  border-inline-start-width: 3px;
   border-radius: var(--radius-control);
 }
 

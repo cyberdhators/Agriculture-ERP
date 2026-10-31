@@ -37,6 +37,7 @@ import { offered, useArchivedLists } from '@/lib/settings/client';
 
 import { PageHead } from './AccountShell';
 import styles from './farmer.module.css';
+import { DirArrow } from '@/components/ui/icons';
 
 const TODAY = new Date().toISOString().slice(0, 10);
 
@@ -113,7 +114,9 @@ export function ListingForm({ listingId }: { listingId?: string }) {
           <p className="small">{t('listingForm.notFound', language)}</p>
         </Notice>
         <p className={styles.linkRow}>
-          <Link href="/farmer/account/listings">← {t('listings.title', language)}</Link>
+          <Link href="/farmer/account/listings">
+            <DirArrow back /> {t('listings.title', language)}
+          </Link>
         </p>
       </>
     );
@@ -645,7 +648,7 @@ export function ListingForm({ listingId }: { listingId?: string }) {
               <Field
                 label={t('listingForm.availableUntil', language)}
                 hint={t('listingForm.untilDefault', language)}
-                optional
+                optional={t('common.optional', language)}
                 error={err('available_until')}
               >
                 {(ids) => (
@@ -664,7 +667,7 @@ export function ListingForm({ listingId }: { listingId?: string }) {
               <Field
                 label={t('listingForm.harvestSeason', language)}
                 hint={t('listingForm.harvestHint', language)}
-                optional
+                optional={t('common.optional', language)}
               >
                 {(ids) => (
                   <Input
@@ -763,7 +766,7 @@ export function ListingForm({ listingId }: { listingId?: string }) {
                 <Field
                   label={t('listingForm.pickupNotes', language)}
                   hint={t('listingForm.pickupHint', language)}
-                  optional
+                  optional={t('common.optional', language)}
                 >
                   {(ids) => (
                     <Textarea
