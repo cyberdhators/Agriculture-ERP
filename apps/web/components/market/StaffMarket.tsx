@@ -13,9 +13,16 @@ import { MarketDetail } from './MarketDetail';
 
 /** The marketplace inside the staff portal, scoped by the signed-in role. */
 export function StaffMarket() {
-  const { role } = usePreview();
+  const { role, me } = usePreview();
   const { language } = useFarmerSession();
-  const scopeName = role === 'admin' ? 'All states' : STATE_NAMES[SCOPE_STATE];
+  // 2026-10-31: a visitor who is not signed in (or an admin) sees the whole
+  // country; the eyebrow used to name Central Equatoria to everyone.
+  const scopeName =
+    !me || role === 'admin'
+      ? language === 'ar'
+        ? 'جنوب السودان'
+        : 'South Sudan'
+      : STATE_NAMES[SCOPE_STATE];
   return (
     <>
       <MarketSections current="produce" lang={language} />
