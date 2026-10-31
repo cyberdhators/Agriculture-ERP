@@ -20,6 +20,7 @@ import {
 import { t } from '@/lib/i18n';
 import { useArabicEnabled } from '@/lib/settings/client';
 
+import { MyAvatar } from '@/components/account/MyAvatar';
 import css from '@/components/account/settings.module.css';
 
 import { Button, Field, Input, Notice, Stamp } from '../ui';
@@ -154,9 +155,7 @@ export function BuyerProfile() {
 
       <div className={css.page}>
         <section className={css.profile} aria-label={t('buyer.profile.standing', language)}>
-          <span className={css.avatar} aria-hidden>
-            {initials}
-          </span>
+          <MyAvatar initials={initials} />
           <div className={css.profileText}>
             <span className={css.profileName} dir="auto">
               {profile.person.given_name} {profile.person.family_name}
