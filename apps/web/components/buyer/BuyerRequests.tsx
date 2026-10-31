@@ -70,6 +70,7 @@ export function BuyerRequests() {
             rowKey={(r) => r.id}
             empty={
               <EmptyState
+                art="document"
                 title={status ? 'No requests with this status' : 'No purchase requests yet'}
                 body={
                   status

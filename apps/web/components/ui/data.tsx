@@ -558,6 +558,50 @@ export function UnavailableState({
 }
 
 /** A section's skeleton, shaped like the cards it replaces so nothing jumps. */
+/**
+ * 2026-10-31: what a member sees while a list loads -- the outline of the
+ * cards about to appear, with a slow light passing over them, instead of the
+ * word "Loading…". On a weak connection the page feels there already.
+ * `kind` picks the outline: product cards with a photo, or plain rows.
+ */
+export function PageLoading({
+  kind = 'rows',
+  count = 3,
+  label = 'Loading',
+}: {
+  kind?: 'cards' | 'rows';
+  count?: number;
+  label?: string;
+}) {
+  return (
+    <div
+      className={kind === 'cards' ? styles.ghostCards : styles.ghostRows}
+      role="status"
+      aria-live="polite"
+    >
+      <span className="visually-hidden">{label}</span>
+      {Array.from({ length: count }, (_, index) =>
+        kind === 'cards' ? (
+          <div key={index} className={styles.ghostCard} aria-hidden>
+            <span className={`${styles.ghost} ${styles.ghostPhoto}`} />
+            <span className={styles.ghost} style={{ width: '70%', height: 16 }} />
+            <span className={styles.ghost} style={{ width: '45%', height: 12 }} />
+            <span className={styles.ghost} style={{ width: '35%', height: 20 }} />
+          </div>
+        ) : (
+          <div key={index} className={styles.ghostRow} aria-hidden>
+            <span className={`${styles.ghost} ${styles.ghostDot}`} />
+            <span className={styles.ghostLines}>
+              <span className={styles.ghost} style={{ width: '60%', height: 14 }} />
+              <span className={styles.ghost} style={{ width: '85%', height: 11 }} />
+            </span>
+          </div>
+        ),
+      )}
+    </div>
+  );
+}
+
 export function CardSkeleton({ count = 4 }: { count?: number }) {
   return (
     <div className={styles.skelGrid} role="status" aria-live="polite">

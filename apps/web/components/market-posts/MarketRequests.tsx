@@ -21,6 +21,7 @@ import { MarketSections } from './MarketSections';
 import { needLine, offerLine } from './MyBuyingRequests';
 import styles from './market-posts.module.css';
 import { SaveSearchPanel } from '@/components/account/SavedSearches';
+import { PageLoading } from '@/components/ui/data';
 
 /**
  * LISTINGS LANE (2026-10-19). Buying requests on the public market: what
@@ -151,7 +152,7 @@ export function MarketRequests({
         </Notice>
       ) : null}
       {rows === null ? (
-        <p className="muted">{t('market.loading', lang)}</p>
+        <PageLoading kind="cards" label={t('market.loading', lang)} />
       ) : rows.length === 0 ? (
         <EmptyState title={t('requests.marketEmpty', lang)} body={t('requests.marketLead', lang)} />
       ) : (
@@ -201,7 +202,7 @@ export function MarketRequestDetail({ id, lang }: { id: string; lang: Language }
       .catch(() => setRow(null));
   }, [id]);
 
-  if (row === undefined) return <p className="muted">{t('market.loading', lang)}</p>;
+  if (row === undefined) return <PageLoading kind="cards" label={t('market.loading', lang)} />;
   if (row === null) {
     return (
       <>

@@ -42,6 +42,7 @@ import { formatDate } from '@/lib/format';
 import { t, type Language } from '@/lib/i18n';
 
 import styles from './advice.module.css';
+import { PageLoading } from '@/components/ui/data';
 
 const STATUS_TONE = { open: 'nile', in_progress: 'sorghum', closed: 'neutral' } as const;
 
@@ -106,7 +107,7 @@ export function CaseDetail({
     [id],
   );
 
-  if (row === undefined) return <p className="muted">{t('market.loading', lang)}</p>;
+  if (row === undefined) return <PageLoading label={t('market.loading', lang)} />;
   if (row === null) {
     return (
       <div className={styles.narrow}>

@@ -23,6 +23,7 @@ import { PRICE_UNIT_KEY, SERVICE_TYPE_KEY, todayLocal } from '@/lib/market-posts
 
 import { LifecycleActions, type ActionInput } from './LifecycleActions';
 import styles from './market-posts.module.css';
+import { PageLoading } from '@/components/ui/data';
 
 const NEXT_STATUS: Partial<Record<LifecycleAction, string>> = {
   publish: 'active',
@@ -84,7 +85,7 @@ export function MyServices({ lang, basePath }: { lang: Language; basePath: strin
     setRows((list) => (list ?? []).map((x) => (x.id === saved.id ? saved : x)));
   }
 
-  if (rows === null) return <p className="muted">{t('market.loading', lang)}</p>;
+  if (rows === null) return <PageLoading kind="cards" label={t('market.loading', lang)} />;
   const today = todayLocal();
 
   return (
@@ -102,6 +103,7 @@ export function MyServices({ lang, basePath }: { lang: Language; basePath: strin
       {rows.length === 0 ? (
         <EmptyState
           // 2026-10-31: the page's lead and its button sit just above; not again.
+          art="seedling"
           title={t('svc.mineEmpty', lang)}
         />
       ) : (

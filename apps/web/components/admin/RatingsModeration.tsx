@@ -14,6 +14,7 @@ import { formatDate } from '@/lib/format';
 import { reasonLabel } from '../product-reports/presentation';
 import { Stars } from '../ratings/Ratings';
 import { Button, EmptyState, Field, Notice, PageHeader, Stamp, Tabs, Textarea } from '../ui';
+import { PageLoading } from '@/components/ui/data';
 
 /**
  * RATINGS MODERATION (2026-11-03, lane-trust). Staff holding "Moderate
@@ -200,7 +201,7 @@ export function RatingsModeration() {
       />
       {problem ? <Notice kind="error">{problem}</Notice> : null}
       {rows === null ? (
-        <p className="small muted">Loading…</p>
+        <PageLoading />
       ) : rows.length === 0 ? (
         <EmptyState
           title={filter === 'reported' ? 'No reported ratings' : 'No ratings here'}

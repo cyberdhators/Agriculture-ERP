@@ -32,6 +32,7 @@ import { listStates } from '@/lib/market-posts/api';
 
 import { AdviserApplication } from './AdviserApplication';
 import styles from './advice.module.css';
+import { PageLoading } from '@/components/ui/data';
 
 interface Values {
   display_name: string;
@@ -168,7 +169,7 @@ export function ProviderForm({
     }
   }
 
-  if (profile === undefined) return <p className="muted">{t('market.loading', lang)}</p>;
+  if (profile === undefined) return <PageLoading label={t('market.loading', lang)} />;
   const status = profile?.status ?? 'draft';
 
   const group = (

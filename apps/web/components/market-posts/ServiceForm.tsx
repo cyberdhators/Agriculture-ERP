@@ -29,6 +29,7 @@ import { PRICE_UNIT_KEY, SERVICE_TYPE_KEY, todayLocal } from '@/lib/market-posts
 import { ServiceDetailBody } from './MarketServices';
 import { SwitchRow } from './bits';
 import styles from './market-posts.module.css';
+import { PageLoading } from '@/components/ui/data';
 
 interface Values {
   trading_name: string;
@@ -224,7 +225,7 @@ export function ServiceForm({
     }
   }
 
-  if (loading) return <p className="muted">{t('market.loading', lang)}</p>;
+  if (loading) return <PageLoading label={t('market.loading', lang)} />;
   const err = (key: keyof Values) => errors[key] || undefined;
 
   if (previewing) {

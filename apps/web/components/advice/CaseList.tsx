@@ -12,6 +12,7 @@ import { formatDate } from '@/lib/format';
 import { t, type Language } from '@/lib/i18n';
 
 import styles from './advice.module.css';
+import { PageLoading } from '@/components/ui/data';
 
 /**
  * A LIST OF ADVICE REQUESTS (2026-10-22), in Open / In progress / Closed
@@ -84,9 +85,10 @@ export function CaseList({
         </Notice>
       ) : null}
       {rows === null ? (
-        <p className="muted">{t('market.loading', lang)}</p>
+        <PageLoading label={t('market.loading', lang)} />
       ) : shown.length === 0 ? (
         <EmptyState
+          art="document"
           title={t(requester ? 'advice.requestsEmpty' : 'advice.workEmpty', lang)}
           body={t(requester ? 'advice.requestsEmptyBody' : 'advice.workEmptyBody', lang)}
         />

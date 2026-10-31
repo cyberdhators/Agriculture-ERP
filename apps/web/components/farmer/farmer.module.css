@@ -2852,3 +2852,97 @@
     var(--tone-bg);
   filter: saturate(1.15);
 }
+
+/* ─────────────────────────────────────────────────────────────────────
+ *  2026-10-31: the welcome card follows the day. Same layout and text;
+ *  only the light changes -- a warm morning, a bright day, a golden
+ *  evening, a deep night -- and faint rain marks when it rains.
+ * ───────────────────────────────────────────────────────────────────── */
+
+.weatherHero[data-mood='morning'] {
+  background:
+    radial-gradient(
+      120% 100% at 100% 0%,
+      color-mix(in srgb, var(--harvest) 38%, transparent),
+      transparent 62%
+    ),
+    linear-gradient(160deg, color-mix(in srgb, var(--green) 55%, var(--band)), var(--band));
+}
+
+.weatherHero[data-mood='day'] {
+  background:
+    radial-gradient(
+      120% 100% at 100% 0%,
+      color-mix(in srgb, var(--sprout) 30%, transparent),
+      transparent 60%
+    ),
+    linear-gradient(160deg, color-mix(in srgb, var(--green) 70%, var(--band)), var(--band));
+}
+
+.weatherHero[data-mood='evening'] {
+  background:
+    radial-gradient(
+      120% 100% at 100% 0%,
+      color-mix(in srgb, var(--harvest-deep) 45%, transparent),
+      transparent 62%
+    ),
+    linear-gradient(160deg, color-mix(in srgb, var(--soil) 35%, var(--band)), var(--band));
+}
+
+.weatherHero[data-mood='night'] {
+  background:
+    radial-gradient(
+      90% 80% at 85% 10%,
+      color-mix(in srgb, var(--info) 28%, transparent),
+      transparent 60%
+    ),
+    linear-gradient(160deg, color-mix(in srgb, var(--band) 85%, var(--ink)), var(--band));
+}
+
+/* Clouds soften the light a little. */
+.weatherHero[data-sky='cloud']::before,
+.weatherHero[data-sky='rain']::before,
+.weatherHero[data-sky='storm']::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--band-ink) 8%, transparent),
+    transparent 70%
+  );
+}
+
+/* Faint diagonal rain marks, still (no motion), when it rains. */
+.weatherHero[data-sky='rain']::after,
+.weatherHero[data-sky='storm']::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.18;
+  background-image: repeating-linear-gradient(
+    105deg,
+    transparent 0 14px,
+    color-mix(in srgb, var(--band-ink) 70%, transparent) 14px 15px,
+    transparent 15px 34px
+  );
+  mask-image: linear-gradient(180deg, var(--ink) 0%, transparent 85%);
+}
+
+.weatherHero > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Figures with character: the temperature and the home numbers. */
+.weatherHeroTemp {
+  font-weight: 800;
+  letter-spacing: -0.04em;
+}
+
+.statValue {
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}

@@ -50,6 +50,7 @@ import { messagesChanged } from '@/lib/messages/client';
 
 import { coverageLine } from './AdviceDirectory';
 import styles from './advice.module.css';
+import { PageLoading } from '@/components/ui/data';
 
 /** "October 2026" from "2026-10", in the reader's language. */
 const monthOf = (month: string, lang: Language) =>
@@ -87,7 +88,7 @@ export function ProviderDetail({
       .catch(() => setRow(null));
   }, [id]);
 
-  if (row === undefined) return <p className="muted">{t('market.loading', lang)}</p>;
+  if (row === undefined) return <PageLoading label={t('market.loading', lang)} />;
   if (row === null) {
     return (
       <div className={styles.narrow}>

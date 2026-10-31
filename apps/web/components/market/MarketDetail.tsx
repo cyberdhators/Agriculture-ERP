@@ -8,6 +8,7 @@ import { ListingCard } from '@/components/listings/ListingCard';
 import { ProductPage } from '@/components/listings/ProductPage';
 import { MessageButton } from '@/components/messages/MessageButton';
 import { Button, Dialog, Field, Notice, Textarea } from '@/components/ui';
+import { PageLoading } from '@/components/ui/data';
 import { CATEGORY_KEY } from '@/lib/farmers/listings';
 import { t, type Language } from '@/lib/i18n';
 import { fetchListing, toListing } from '@/lib/listings/api-client';
@@ -94,9 +95,7 @@ export function MarketDetail({
         <nav className={styles.breadcrumb} aria-label={t('market.breadcrumb', lang)}>
           <Link href={backHref}>{t('market.title', lang)}</Link>
         </nav>
-        <p className="muted" style={{ padding: 'var(--s-6)' }}>
-          {t('market.loading', lang)}
-        </p>
+        <PageLoading kind="cards" count={1} label={t('market.loading', lang)} />
       </>
     );
   }

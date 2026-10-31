@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { SaveSearchPanel } from '@/components/account/SavedSearches';
 import { CategoryGlyph } from '@/components/listings/CategoryGlyph';
+import { PageLoading } from '@/components/ui/data';
 import { ListingCard } from '@/components/listings/ListingCard';
 import { Photo } from '@/components/listings/Photo';
 import {
@@ -239,9 +240,7 @@ export function Market({
   if (loading) {
     return (
       <div className={styles.browse}>
-        <p className="muted" style={{ padding: 'var(--s-6)' }}>
-          {t('market.loading', lang)}
-        </p>
+        <PageLoading kind="cards" count={4} label={t('market.loading', lang)} />
       </div>
     );
   }

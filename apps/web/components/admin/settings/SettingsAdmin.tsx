@@ -19,6 +19,7 @@ import {
 import { ReasonCodesSection } from './ReasonCodesSection';
 import { SecuritySection } from './SecuritySection';
 import { TermsSection } from './TermsSection';
+import { PageLoading } from '@/components/ui/data';
 
 type Tab =
   | 'identity'
@@ -115,7 +116,7 @@ export function SettingsAdmin() {
           </Button>
         </Notice>
       ) : null}
-      {settings === null && !failure ? <p className="muted">Loading…</p> : null}
+      {settings === null && !failure ? <PageLoading /> : null}
 
       {tab === 'identity' && identity && support ? (
         <IdentitySection identity={identity} support={support} onSaved={replace} />

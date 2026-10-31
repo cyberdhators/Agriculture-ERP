@@ -35,6 +35,7 @@ import {
 } from '@/lib/communications/announcements';
 
 import { CHANNEL_LABELS } from './AnnouncementComposer';
+import { PageLoading } from '@/components/ui/data';
 
 const STATUS_TONE: Record<TemplateStatus, 'leaf' | 'sorghum' | 'neutral'> = {
   active: 'leaf',
@@ -107,7 +108,7 @@ export function TemplatesPanel() {
           <Button onClick={() => setEditing('new')}>New template</Button>
         </div>
       )}
-      {templates === null && !failure ? <p className="muted">Loading…</p> : null}
+      {templates === null && !failure ? <PageLoading /> : null}
       {templates && templates.length === 0 ? <p className="muted">No templates yet.</p> : null}
       {templates?.map((t) => (
         <Card key={t.id}>

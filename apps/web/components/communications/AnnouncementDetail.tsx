@@ -44,6 +44,7 @@ import { useLocationNames } from '@/lib/portal/locations';
 import { usePreview } from '@/lib/preview';
 
 import { ACTIVITY_LABELS, AnnouncementComposer, CHANNEL_LABELS } from './AnnouncementComposer';
+import { PageLoading } from '@/components/ui/data';
 
 const STATUS_LABELS: Record<DeliveryStatus, string> = {
   queued: 'Waiting',
@@ -196,7 +197,7 @@ export function AnnouncementDetail({ id }: { id: string }) {
         <p className="small">{failure.message}</p>
       </Notice>
     ) : (
-      <p className="muted">Loading…</p>
+      <PageLoading />
     );
   }
 

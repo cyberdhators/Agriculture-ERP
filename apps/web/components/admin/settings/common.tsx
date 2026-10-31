@@ -8,6 +8,7 @@ import { Button, Notice } from '@/components/ui';
 import { formatDate } from '@/lib/format';
 
 import { asFailure, call, type CurrentSetting } from './api';
+import { PageLoading } from '@/components/ui/data';
 
 /** "Version 3 · saved 12 Mar 2026 by Amina", or that nothing has been saved yet. */
 export function VersionLine({ setting }: { setting: CurrentSetting }) {
@@ -59,7 +60,7 @@ export function SettingHistory({ settingKey }: { settingKey: SettingKey }) {
       }}
     >
       <summary className="small">Earlier versions</summary>
-      {busy ? <p className="small muted">Loading…</p> : null}
+      {busy ? <PageLoading /> : null}
       {error ? (
         <Notice kind="error">
           <p className="small">{error}</p>

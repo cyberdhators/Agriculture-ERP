@@ -87,6 +87,7 @@ export function BuyerNotifications() {
         <LoadingState rows={4} label={t('buyer.common.loading', language)} />
       ) : list.rows.length === 0 ? (
         <EmptyState
+          art="bell"
           title={
             view === 'unread'
               ? t('buyer.notif.nothingUnread', language)

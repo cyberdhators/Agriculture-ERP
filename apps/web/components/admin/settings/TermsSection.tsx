@@ -31,6 +31,7 @@ import { ConfirmationDialog } from '@/components/ui/feedback';
 import { formatDate } from '@/lib/format';
 
 import { asFailure, call, json, type Failure } from './api';
+import { PageLoading } from '@/components/ui/data';
 
 const KIND_LABEL: Record<PolicyNoticeKind, string> = {
   consent: 'Consent',
@@ -139,7 +140,7 @@ export function TermsSection() {
           ) : null}
           {done ? <Notice kind="success">{done}</Notice> : null}
           {notices === null ? (
-            <p className="muted">Loading…</p>
+            <PageLoading />
           ) : notices.length === 0 ? (
             <p className="small muted">No notice has been stored yet.</p>
           ) : (
@@ -478,7 +479,7 @@ function Acknowledgements() {
             <p className="small">{error}</p>
           </Notice>
         ) : rows === null ? (
-          <p className="muted">Loading…</p>
+          <PageLoading />
         ) : rows.length === 0 ? (
           <p className="small muted">No consent has been recorded yet.</p>
         ) : (

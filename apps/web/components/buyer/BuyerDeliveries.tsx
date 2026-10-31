@@ -50,6 +50,7 @@ export function BuyerDeliveries() {
         <LoadingState rows={5} />
       ) : list.rows.length === 0 ? (
         <EmptyState
+          art="box"
           title="Nothing is being delivered"
           body="An order appears here once CORWADO marks it ready for delivery."
         />

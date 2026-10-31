@@ -18,6 +18,7 @@ import { KIND_KEY, LANGUAGE_KEY, MODE_KEY, TERMS_KEY, TOPIC_KEY } from '@/lib/ad
 import { t, type Language } from '@/lib/i18n';
 
 import styles from './advice.module.css';
+import { PageLoading } from '@/components/ui/data';
 
 /** "Juba, Central Equatoria" or "Anywhere". */
 export function coverageLine(p: AdviceProviderPublic, lang: Language): string {
@@ -173,7 +174,7 @@ export function AdviceDirectory({ lang, base }: { lang: Language; base: string }
         </Notice>
       ) : null}
       {rows === null ? (
-        <p className="muted">{t('market.loading', lang)}</p>
+        <PageLoading label={t('market.loading', lang)} />
       ) : rows.length === 0 ? (
         <EmptyState title={t('advice.empty', lang)} body={t('advice.emptyBody', lang)} />
       ) : (

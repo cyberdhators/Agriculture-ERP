@@ -20,6 +20,7 @@ import { t } from '@/lib/i18n';
 import { PageHead } from './AccountShell';
 import listingStyles from '@/components/listings/listings.module.css';
 import styles from './farmer.module.css';
+import { PageLoading } from '@/components/ui/data';
 
 // LISTINGS LANE (2026-10-19): the tabs are the lifecycle stages, `expired` included.
 type Filter = 'all' | LifecycleStage;
@@ -74,10 +75,10 @@ export function FarmerListings() {
       />
 
       {loading ? (
-        <p className="muted">{t('market.loading', language)}</p>
+        <PageLoading kind="cards" label={t('market.loading', language)} />
       ) : all.length === 0 ? (
         // The "New listing" button sits just above; not a second one here.
-        <EmptyState title={t('listings.empty', language)} />
+        <EmptyState art="basket" title={t('listings.empty', language)} />
       ) : (
         <>
           <div className={styles.toolbar}>

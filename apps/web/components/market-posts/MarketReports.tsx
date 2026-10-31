@@ -12,6 +12,7 @@ import { usePreview } from '@/lib/preview';
 import { reasonLabel, statusLabel, statusTone } from '@/components/product-reports/presentation';
 
 import styles from './market-posts.module.css';
+import { PageLoading } from '@/components/ui/data';
 
 interface MarketReport {
   id: string;
@@ -151,7 +152,7 @@ export function MarketReports() {
         </Notice>
       ) : null}
       {rows === null ? (
-        <p className="muted">Loading…</p>
+        <PageLoading />
       ) : rows.length === 0 ? (
         <Notice kind="info">
           <p className="small">No buying request or service has been reported.</p>
