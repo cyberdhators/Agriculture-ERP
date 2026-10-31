@@ -2,8 +2,11 @@
 
 import type { ReactNode } from 'react';
 
+import type { RatingSummary } from '@agri-erp/shared';
+
 import { ABOUT_LABELS } from '@/components/account/AccountActivities';
-import { Stamp } from '@/components/ui';
+import { VerifiedOrganisationBadge } from '@/components/listings/VerifiedOrganisationBadge';
+import { RatingMark } from '@/components/ratings/Ratings';
 import { t, type Language } from '@/lib/i18n';
 import { initialsOf } from '@/lib/public-profile/client';
 
@@ -25,6 +28,8 @@ export interface ProfileCardData {
   services: readonly string[];
   verified_organisation: boolean;
   member_since: string | null;
+  /** 2026-10-31 (delight): the ratings summary, when the page has it -- shown as "★ 4.6 · 12". */
+  ratings?: RatingSummary;
 }
 
 export function ProfilePhoto({
@@ -81,9 +86,9 @@ export function ProfileCard({
         <Heading dir="auto">{profile.display_name}</Heading>
         {roles ? <p className={styles.roles}>{roles}</p> : null}
         <div className={styles.facts}>
-          {profile.verified_organisation ? (
-            <Stamp kind="verified">{t('pp.verified', language)}</Stamp>
-          ) : null}
+          {/* 2026-10-31 (delight): the tick and the stars as marks, not plain text. */}
+          <VerifiedOrganisationBadge verified={profile.verified_organisation} lang={language} />
+          <RatingMark summary={profile.ratings} language={language} />
           {place ? <span dir="auto">{place}</span> : null}
           {month ? (
             <span>

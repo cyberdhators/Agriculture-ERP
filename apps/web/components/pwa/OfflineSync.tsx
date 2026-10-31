@@ -3,6 +3,7 @@
 import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
 import { useCallback, useEffect, useState } from 'react';
 
+import { t, tCount, type Language } from '@/lib/i18n';
 import { clearCacheFor } from '@/lib/offline/db';
 import {
   discard,
@@ -15,6 +16,24 @@ import {
   type OutboxSummary,
 } from '@/lib/offline/outbox';
 import { supabaseBrowser } from '@/lib/supabase/browser';
+
+/**
+ * 2026-10-31 (finishing the Arabic): this sits in the root layout, outside
+ * the shells that know the language, so -- like PwaStatus -- it follows the
+ * page's own `lang` (which the farmer, buyer and market shells set).
+ */
+function usePageLanguage(): Language {
+  const [language, setLanguage] = useState<Language>('en');
+  useEffect(() => {
+    const root = document.documentElement;
+    const read = () => setLanguage(root.lang === 'ar' ? 'ar' : 'en');
+    read();
+    const watch = new MutationObserver(read);
+    watch.observe(root, { attributes: true, attributeFilter: ['lang'] });
+    return () => watch.disconnect();
+  }, []);
+  return language;
+}
 
 /**
  * RUNS THE OUTBOX AND SHOWS ITS STATE (2026-10-10, PWA step 2), on every page.
@@ -32,6 +51,8 @@ import { supabaseBrowser } from '@/lib/supabase/browser';
 export function OfflineSync() {
   const [state, setState] = useState<OutboxSummary | null>(null);
   const [open, setOpen] = useState(false);
+  const language = usePageLanguage();
+  const w = (key: Parameters<typeof t>[0]) => t(key, language);
 
   const refresh = useCallback(() => {
     void summary().then(setState);
@@ -97,12 +118,12 @@ export function OfflineSync() {
   if (!stopped && !waiting && !state.syncing && !state.needsSignIn) return null;
 
   const label = state.needsSignIn
-    ? 'Sign in again to send your changes'
+    ? w('sync.signInAgain')
     : stopped
-      ? `${stopped} change${stopped === 1 ? '' : 's'} need${stopped === 1 ? 's' : ''} attention`
+      ? tCount('sync.attention', stopped, language)
       : state.syncing
-        ? 'Sending…'
-        : `${waiting} change${waiting === 1 ? '' : 's'} waiting to send`;
+        ? w('sync.sending')
+        : tCount('sync.waiting', waiting, language);
 
   return (
     <div
@@ -118,7 +139,7 @@ export function OfflineSync() {
       {open && stopped ? (
         <div
           role="dialog"
-          aria-label="Changes that need attention"
+          aria-label={w('sync.attentionAria')}
           style={{
             marginBottom: '0.5rem',
             background: '#fff',
@@ -139,18 +160,18 @@ export function OfflineSync() {
               <span>{r.message}</span>
               <span style={{ display: 'flex', gap: '0.75rem' }}>
                 <button type="button" onClick={() => void retry(r.id)} style={linkButton}>
-                  Try again
+                  {w('sync.retry')}
                 </button>
                 <button
                   type="button"
                   onClick={() => {
-                    if (window.confirm('Discard this change? It will not be sent.')) {
+                    if (window.confirm(w('sync.discardConfirm'))) {
                       void discard(r.id);
                     }
                   }}
                   style={linkButton}
                 >
-                  Discard
+                  {w('sync.discard')}
                 </button>
               </span>
             </div>
@@ -175,7 +196,7 @@ export function OfflineSync() {
         </button>
         {!state.syncing && waiting && !state.needsSignIn ? (
           <button type="button" onClick={() => void syncNow()} style={linkButton}>
-            Send now
+            {w('sync.sendNow')}
           </button>
         ) : null}
       </span>

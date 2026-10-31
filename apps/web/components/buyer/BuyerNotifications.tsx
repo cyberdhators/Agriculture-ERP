@@ -9,12 +9,13 @@ import {
 } from '@/components/account/NotificationSettings';
 import { listNotifications, markNotificationRead, type BuyerNotification } from '@/lib/buyer/api';
 import { popHref } from '@/lib/farmer-notices';
-import { formatDate } from '@/lib/format';
 import { t } from '@/lib/i18n';
 
-import css from '@/components/account/settings.module.css';
+import nc from '@/components/account/notifications.module.css';
+import { NoticeIcon, noticeKind } from '@/components/farmer/FarmerNotifications';
+import { bucketLabel, groupByDay, noticeTime } from '@/components/messages/when';
 
-import { Badge, Button, EmptyState, PageHeader, Tabs } from '../ui';
+import { Button, EmptyState, PageHeader, Tabs } from '../ui';
 import { LoadingState, Pagination } from '../ui/data';
 import { useBuyer } from './BuyerShell';
 import { useCursorList } from './useCursorList';
@@ -97,47 +98,67 @@ export function BuyerNotifications() {
         />
       ) : (
         <>
-          <ul className={css.list}>
-            {list.rows.map((n) => {
-              const href = opensAt(n);
-              return (
-                <li key={n.id} className={css.row}>
-                  <div className={css.rowText}>
-                    <p className={css.rowLabel}>
-                      <span dir="auto">{n.title}</span>{' '}
-                      {n.read_at ? null : (
-                        <Badge tone="sorghum">{t('buyer.notif.new', language)}</Badge>
-                      )}
-                    </p>
-                    <p className="small" dir="auto">
-                      {n.body}
-                    </p>
-                    <p className={css.rowHint}>
-                      {formatDate(n.created_at, language)}
-                      {href ? (
-                        <>
-                          {' · '}
-                          <Link href={href}>
-                            {language === 'ar' ? 'افتح' : 'Open'} <DirArrow />
-                          </Link>
-                        </>
-                      ) : null}
-                    </p>
-                  </div>
-                  {n.read_at ? null : (
-                    <Button
-                      variant="secondary"
-                      size="small"
-                      disabled={marking === n.id}
-                      onClick={() => void markRead(n.id)}
-                    >
-                      {t('buyer.notif.markRead', language)}
-                    </Button>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
+          {/* 2026-10-31 (ui-delight): under Today, Yesterday and Earlier, each
+              row with a small icon of its kind; an unread row on a soft wash
+              (the "New" badge went: the wash, the dot and "Mark as read" say it). */}
+          <div className={nc.groups}>
+            {groupByDay(list.rows).map((group) => (
+              <section key={group.bucket} className={nc.group}>
+                <h2 className={nc.groupTitle}>{bucketLabel(group.bucket, language)}</h2>
+                <ul className={nc.list}>
+                  {group.rows.map((n) => {
+                    const href = opensAt(n);
+                    return (
+                      <li key={n.id} className={`${nc.item} ${n.read_at ? '' : nc.unread}`}>
+                        <div className={nc.link}>
+                          <NoticeIcon kind={noticeKind(n.title, n.ref_kind)} />
+                          <div className={nc.text}>
+                            <span className={nc.title} dir="auto">
+                              {n.title}
+                              {n.read_at ? null : (
+                                <span className="visually-hidden">
+                                  {' '}
+                                  {t('buyer.notif.new', language)}
+                                </span>
+                              )}
+                            </span>
+                            <p className={nc.body} dir="auto">
+                              {n.body}
+                            </p>
+                            <p className={nc.meta}>
+                              <time dateTime={n.created_at}>
+                                {noticeTime(n.created_at, language)}
+                              </time>
+                              {href ? (
+                                <>
+                                  {' · '}
+                                  <Link href={href}>
+                                    {language === 'ar' ? 'افتح' : 'Open'} <DirArrow />
+                                  </Link>
+                                </>
+                              ) : null}
+                            </p>
+                          </div>
+                        </div>
+                        {n.read_at ? null : (
+                          <span className={nc.action}>
+                            <Button
+                              variant="secondary"
+                              size="small"
+                              disabled={marking === n.id}
+                              onClick={() => void markRead(n.id)}
+                            >
+                              {t('buyer.notif.markRead', language)}
+                            </Button>
+                          </span>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </section>
+            ))}
+          </div>
           <Pagination
             shown={list.rows.length}
             hasMore={list.hasMore}

@@ -6,16 +6,9 @@ import { useCallback, useEffect, useState } from 'react';
 import { buyerMayCancelOrder, type PurchaseOrderStatus } from '@agri-erp/shared';
 
 import { BuyerApiError, cancelOrder, getOrder, type Order } from '@/lib/buyer/api';
-import {
-  CATEGORY_LABELS,
-  ORDER_STATUS_LABELS,
-  ORDER_STATUS_STAMPS,
-  formatQuantity,
-  formatSsp,
-  labelOf,
-  stampOf,
-} from '@/lib/buyer/labels';
+import { ORDER_STATUS_STAMPS, categoryLabelOf, formatSsp, stampOf } from '@/lib/buyer/labels';
 import { formatDate } from '@/lib/format';
+import { t } from '@/lib/i18n';
 
 import {
   Button,
@@ -32,7 +25,8 @@ import {
 } from '../ui';
 import { LoadingState } from '../ui/data';
 import { ConfirmationDialog, useToast } from '../ui/feedback';
-import { Timeline } from './Timeline';
+import { useBuyer } from './BuyerShell';
+import { Timeline, orderStatusIn, quantityIn } from './Timeline';
 import styles from './buyer.module.css';
 import { DirArrow } from '@/components/ui/icons';
 
@@ -44,6 +38,8 @@ import { DirArrow } from '@/components/ui/icons';
  */
 export function BuyerOrderDetail({ id }: { id: string }) {
   const toast = useToast();
+  const { language } = useBuyer();
+  const w = (key: Parameters<typeof t>[0]) => t(key, language);
   const [order, setOrder] = useState<Order | null>(null);
   const [state, setState] = useState<'loading' | 'ready' | 'missing' | 'error'>('loading');
   const [confirm, setConfirm] = useState(false);
@@ -69,22 +65,22 @@ export function BuyerOrderDetail({ id }: { id: string }) {
     try {
       setOrder(await cancelOrder(id, reason));
       setConfirm(false);
-      toast.show({ kind: 'success', title: 'Order cancelled' });
+      toast.show({ kind: 'success', title: w('buyer.order.cancelled') });
     } catch (e) {
-      setFailure(e instanceof Error ? e.message : 'The order was not cancelled.');
+      setFailure(e instanceof Error ? e.message : w('buyer.order.notCancelled'));
     } finally {
       setBusy(false);
     }
   };
 
-  if (state === 'loading') return <LoadingState rows={6} />;
+  if (state === 'loading') return <LoadingState rows={6} label={w('buyer.common.loading')} />;
   if (state !== 'ready' || !order) {
     return (
       <EmptyState
         error={state === 'error'}
-        title={state === 'missing' ? 'Order not found' : 'The order could not be loaded'}
-        body="It may belong to another organisation, or not exist."
-        actions={<Link href="/buyer/orders">Back to orders</Link>}
+        title={w(state === 'missing' ? 'buyer.order.notFound' : 'buyer.order.loadFailed')}
+        body={w('buyer.w.notFoundBody')}
+        actions={<Link href="/buyer/orders">{w('buyer.order.back')}</Link>}
       />
     );
   }
@@ -94,26 +90,26 @@ export function BuyerOrderDetail({ id }: { id: string }) {
   return (
     <div className={styles.page}>
       <Link href="/buyer/orders" className="small">
-        <DirArrow back /> Orders
+        <DirArrow back /> {w('buyer.orders.title')}
       </Link>
       <PageHeader
-        eyebrow={`Order ${order.order_number}`}
+        eyebrow={w('buyer.order.eyebrow').replace('{number}', order.order_number)}
         title={order.product_name}
         subtitle={
           <Stamp kind={stampOf(ORDER_STATUS_STAMPS, order.status)}>
-            {labelOf(ORDER_STATUS_LABELS, order.status)}
+            {orderStatusIn(order.status, language)}
           </Stamp>
         }
         actions={
           canCancel ? (
             <Button variant="secondary" onClick={() => setConfirm(true)}>
-              Cancel order
+              {w('buyer.order.cancel')}
             </Button>
           ) : null
         }
       />
       {order.cancel_reason ? (
-        <Notice kind="warn" title="Cancelled">
+        <Notice kind="warn" title={w('buyer.order.cancelledNotice')}>
           {order.cancel_reason}
         </Notice>
       ) : null}
@@ -121,29 +117,35 @@ export function BuyerOrderDetail({ id }: { id: string }) {
       <div className={styles.twoCol}>
         <Card>
           {/* 2026-10-31: the number is the page's eyebrow; not said twice. */}
-          <CardHeader title="Details" />
+          <CardHeader title={w('buyer.w.details')} />
           <CardBody>
             <DefinitionList
               items={[
-                { term: 'Category', value: labelOf(CATEGORY_LABELS, order.category) },
-                { term: 'Quantity', value: formatQuantity(order.quantity, order.unit) },
-                { term: 'Unit price', value: formatSsp(order.unit_price_ssp) },
-                { term: 'Total (agreed)', value: formatSsp(order.total_ssp) },
+                { term: w('buyer.w.category'), value: categoryLabelOf(order.category, language) },
                 {
-                  term: 'Supplier',
+                  term: w('buyer.w.quantity'),
+                  value: quantityIn(order.quantity, order.unit, language),
+                },
+                { term: w('buyer.w.unitPrice'), value: formatSsp(order.unit_price_ssp) },
+                { term: w('buyer.order.total'), value: formatSsp(order.total_ssp) },
+                {
+                  term: w('buyer.w.supplier'),
                   value: `${order.supplier.trading_name} — ${order.supplier.county}, ${order.supplier.state}`,
                 },
-                { term: 'Order date', value: formatDate(order.order_date) },
-                { term: 'Expected delivery', value: order.expected_delivery_date ?? 'Not yet set' },
-                { term: 'Deliver to', value: order.delivery_location },
+                { term: w('buyer.order.date'), value: formatDate(order.order_date, language) },
                 {
-                  term: 'From request',
+                  term: w('buyer.order.expectedDelivery'),
+                  value: order.expected_delivery_date ?? w('buyer.w.notYetSet'),
+                },
+                { term: w('buyer.w.deliverTo'), value: order.delivery_location },
+                {
+                  term: w('buyer.order.fromRequest'),
                   value: order.purchase_request_id ? (
                     <Link href={`/buyer/purchase-requests/${order.purchase_request_id}`}>
-                      Open the request
+                      {w('buyer.order.openRequest')}
                     </Link>
                   ) : (
-                    'Arranged directly'
+                    w('buyer.order.direct')
                   ),
                 },
               ]}
@@ -151,9 +153,9 @@ export function BuyerOrderDetail({ id }: { id: string }) {
           </CardBody>
         </Card>
         <Card>
-          <CardHeader title="Delivery history" />
+          <CardHeader title={w('buyer.order.history')} />
           <CardBody>
-            <Timeline entries={order.timeline ?? []} />
+            <Timeline entries={order.timeline ?? []} language={language} />
           </CardBody>
         </Card>
       </div>
@@ -162,14 +164,14 @@ export function BuyerOrderDetail({ id }: { id: string }) {
         open={confirm}
         onCancel={() => setConfirm(false)}
         onConfirm={() => void cancel()}
-        title="Cancel this order?"
-        consequence="CORWADO and the supplier will be told the order is off. This cannot be undone; a new order would need a new request."
-        confirmLabel="Cancel order"
+        title={w('buyer.order.confirmTitle')}
+        consequence={w('buyer.order.confirmBody')}
+        confirmLabel={w('buyer.order.cancel')}
         destructive
         busy={busy || reason.trim().length < 2}
       >
         {failure ? <Notice kind="error">{failure}</Notice> : null}
-        <Field label="Reason" hint="Kept on the order, so CORWADO knows why.">
+        <Field label={w('buyer.order.reason')} hint={w('buyer.order.reasonHint')}>
           {(ids) => (
             <Textarea
               {...ids}

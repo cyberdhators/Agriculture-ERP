@@ -33,6 +33,7 @@ import { offered, useArchivedLists, useConsentText } from '@/lib/settings/client
 
 import css from '@/components/account/settings.module.css';
 
+import { Celebrate } from '@/components/ui/Celebrate';
 import styles from './farmer.module.css';
 
 const REFERENCE = new Date('2026-09-02T00:00:00Z');
@@ -524,8 +525,13 @@ export function FarmerRegister() {
   if (done) {
     return (
       <div className={styles.sheet}>
-        <h1 className={styles.h1}>{t('register.doneTitle', language)}</h1>
-        <p className={styles.lede}>{t('register.doneBody', language)}</p>
+        {/* 2026-10-31: the moment of joining, celebrated. */}
+        <h1 className="visually-hidden">{t('register.doneTitle', language)}</h1>
+        <Celebrate
+          art="seedling"
+          title={t('register.doneTitle', language)}
+          body={t('register.doneBody', language)}
+        />
 
         <div className={styles.receiptNumber}>
           <span className={styles.recordTerm}>{t('register.doneNumber', language)}</span>

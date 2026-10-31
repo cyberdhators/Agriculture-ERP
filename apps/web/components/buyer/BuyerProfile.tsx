@@ -21,7 +21,7 @@ import { t } from '@/lib/i18n';
 import { useArabicEnabled } from '@/lib/settings/client';
 
 import { MyAvatar, PublicNameLine } from '@/components/account/MyAvatar';
-import { AppearanceRow } from '@/components/account/Appearance';
+import { AppearanceRow, TextSizeRow } from '@/components/account/Appearance';
 import css from '@/components/account/settings.module.css';
 
 import { Button, Field, Input, Notice, Stamp } from '../ui';
@@ -236,6 +236,7 @@ export function BuyerProfile() {
             </li>
             {/* 2026-10-31: light, dark, or follow the phone. */}
             <AppearanceRow language={language === 'ar' ? 'ar' : 'en'} />
+            <TextSizeRow language={language === 'ar' ? 'ar' : 'en'} />
           </ul>
         </section>
 

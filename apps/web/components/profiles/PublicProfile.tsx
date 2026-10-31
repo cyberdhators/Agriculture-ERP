@@ -8,7 +8,8 @@ import type { PostKind, PublicExpertise } from '@agri-erp/shared';
 
 import { ABOUT_LABELS } from '@/components/account/AccountActivities';
 import { postHref } from '@/components/messages/Messages';
-import { EmptyState, Skeleton, Stamp } from '@/components/ui';
+import { VerifiedOrganisationBadge } from '@/components/listings/VerifiedOrganisationBadge';
+import { EmptyState, Skeleton } from '@/components/ui';
 import { unitLabelOf } from '@/lib/buyer/labels';
 import { t, type Language } from '@/lib/i18n';
 
@@ -62,8 +63,6 @@ interface Profile {
 const W = {
   en: {
     title: 'Profile',
-    // 2026-10-31: only organisations are verified.
-    verified: 'Verified organisation',
     since: 'Member since',
     listings: 'Selling',
     requests: 'Looking to buy',
@@ -78,7 +77,6 @@ const W = {
   },
   ar: {
     title: 'الملف الشخصي',
-    verified: 'منظمة موثّقة',
     since: 'عضو منذ',
     listings: 'يبيع',
     requests: 'يريد أن يشتري',
@@ -192,7 +190,8 @@ export function PublicProfile({
         <span className={styles.eyebrow}>{w.title}</span>
         <h1 dir="auto">{profile.name}</h1>
         <div className={styles.facts}>
-          {profile.verified_organisation ? <Stamp kind="verified">{w.verified}</Stamp> : null}
+          {/* 2026-10-31 (delight): the tick mark, same as on posts. */}
+          <VerifiedOrganisationBadge verified={profile.verified_organisation} lang={lang} />
           {place ? <span>{place}</span> : null}
           <span>
             {w.since} {month}

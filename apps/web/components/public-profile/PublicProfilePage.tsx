@@ -175,6 +175,7 @@ export function PublicProfileBody({
           services: profile.services,
           verified_organisation: profile.verified_organisation,
           member_since: profile.member_since,
+          ratings: profile.ratings,
         }}
       >
         <Expertise expertise={profile.expertise} language={language} />

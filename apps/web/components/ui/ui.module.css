@@ -991,7 +991,7 @@ select.control {
 }
 
 :global(.shop) .buttonSmall {
-  min-height: 34px;
+  min-height: 38px;
   padding-inline: var(--s-3);
 }
 

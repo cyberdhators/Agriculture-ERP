@@ -5,16 +5,30 @@ import { useEffect, useState } from 'react';
 
 import { AccountAnnouncements } from '@/components/account/NotificationSettings';
 import { EmptyState } from '@/components/ui';
-import { noticeKey, popHref } from '@/lib/farmer-notices';
+import nc from '@/components/account/notifications.module.css';
+import { bucketLabel, groupByDay, noticeTime } from '@/components/messages/when';
+import {
+  ACCOUNT_NOTICES,
+  FARMER_CANCEL_NOTICE,
+  FARMER_REQUEST_NOTICE,
+  MATCH_NOTICES,
+  noticeKey,
+  popHref,
+} from '@/lib/farmer-notices';
 import { farmerApi, FarmerApiError, useFarmerSession } from '@/lib/farmer-session';
 import { notificationsChanged } from '@/lib/farmer-unread';
 import { loadWithSnapshot } from '@/lib/offline/snapshot';
-import { formatDate } from '@/lib/format';
 import { t, type Language, type TKey } from '@/lib/i18n';
 
 import { PageHead } from './AccountShell';
-import styles from './farmer.module.css';
-import { DirArrow } from '@/components/ui/icons';
+import {
+  DirArrow,
+  IconBell,
+  IconCart,
+  IconChat,
+  IconSearch,
+  IconStar,
+} from '@/components/ui/icons';
 
 interface NotificationRow {
   id: string;
@@ -29,6 +43,64 @@ interface NotificationRow {
 
 /** This page itself: a notice whose only place is here gets no link. */
 const NOTIFICATIONS_HREF = '/farmer/account/notifications';
+
+/**
+ * 2026-10-31 (ui-delight): what kind a notice is, for its small icon. A
+ * notice row has no type column, so this reads what it does carry: what it
+ * points at (ref_kind) and its fixed title. A notice it cannot place (an
+ * official announcement, an older free-text notice, an account decision)
+ * gets the plain bell. Shared with the buyer's list.
+ */
+export type NoticeKind = 'request' | 'message' | 'rating' | 'match' | 'other';
+
+const MATCH_TITLES: ReadonlySet<string> = new Set(
+  [...MATCH_NOTICES].map((k) => ACCOUNT_NOTICES[k].title),
+);
+const MESSAGE_TITLES: ReadonlySet<string> = new Set([
+  ACCOUNT_NOTICES.message_listing.title,
+  ACCOUNT_NOTICES.message_buying_request.title,
+  ACCOUNT_NOTICES.message_service.title,
+  ACCOUNT_NOTICES.message_advice_case.title,
+]);
+const REQUEST_TITLES: ReadonlySet<string> = new Set([
+  FARMER_REQUEST_NOTICE.title,
+  FARMER_CANCEL_NOTICE.title,
+]);
+
+export function noticeKind(title: string, refKind?: string | null): NoticeKind {
+  if (MATCH_TITLES.has(title)) return 'match';
+  if (refKind === 'conversation' || MESSAGE_TITLES.has(title)) return 'message';
+  if (refKind === 'rating' || title === ACCOUNT_NOTICES.rating_received.title) return 'rating';
+  if (REQUEST_TITLES.has(title)) return 'request';
+  return 'other';
+}
+
+const KIND_CLASS: Record<NoticeKind, string | undefined> = {
+  request: nc.kindRequest,
+  message: nc.kindMessage,
+  rating: nc.kindRating,
+  match: nc.kindMatch,
+  other: undefined,
+};
+
+/** The small round icon of a notice's kind. Decorative: the title says what it is. */
+export function NoticeIcon({ kind }: { kind: NoticeKind }) {
+  const Icon =
+    kind === 'request'
+      ? IconCart
+      : kind === 'message'
+        ? IconChat
+        : kind === 'rating'
+          ? IconStar
+          : kind === 'match'
+            ? IconSearch
+            : IconBell;
+  return (
+    <span className={`${nc.icon} ${KIND_CLASS[kind] ?? ''}`} aria-hidden="true">
+      <Icon size={18} />
+    </span>
+  );
+}
 
 /**
  * The farmer's in-app notices (B14): GET /api/farmer/notifications. Opening
@@ -79,11 +151,19 @@ export function FarmerNotifications() {
         // 2026-10-31: the title alone (the body repeated "Notifications").
         <EmptyState art="bell" title={t('notifications.empty', language)} />
       ) : (
-        <ul className={styles.notiList}>
-          {notifications.map((n) => (
-            <NotificationCard key={n.id} notification={n} language={language} />
+        // 2026-10-31 (ui-delight): under Today, Yesterday and Earlier.
+        <div className={nc.groups}>
+          {groupByDay(notifications).map((group) => (
+            <section key={group.bucket} className={nc.group}>
+              <h2 className={nc.groupTitle}>{bucketLabel(group.bucket, language)}</h2>
+              <ul className={nc.list}>
+                {group.rows.map((n) => (
+                  <NotificationCard key={n.id} notification={n} language={language} />
+                ))}
+              </ul>
+            </section>
           ))}
-        </ul>
+        </div>
       )}
     </>
   );
@@ -113,28 +193,42 @@ function NotificationCard({
   const body = key ? t(`${key}.body` as TKey, language) : notification.body;
   const content = (
     <>
-      <div className={styles.notiTitle}>{title}</div>
-      <p className="small">{body}</p>
-      <span className="small muted">
-        {formatDate(notification.created_at, language)}
-        {href ? (
-          <>
-            {' · '}
-            {language === 'ar' ? 'افتح' : 'Open'} <DirArrow />
-          </>
-        ) : null}
+      <NoticeIcon kind={noticeKind(notification.title, notification.ref_kind)} />
+      <span className={nc.text}>
+        <span className={nc.title} dir="auto">
+          {title}
+        </span>
+        <span className={nc.body} dir="auto">
+          {body}
+        </span>
+        <span className={nc.meta}>
+          <time dateTime={notification.created_at}>
+            {noticeTime(notification.created_at, language)}
+          </time>
+          {href ? (
+            <>
+              {' · '}
+              {language === 'ar' ? 'افتح' : 'Open'} <DirArrow />
+            </>
+          ) : null}
+        </span>
       </span>
+      {unread ? (
+        <span className={nc.dot}>
+          <span className="visually-hidden">{t('buyer.notif.new', language)}</span>
+        </span>
+      ) : null}
     </>
   );
 
   return (
-    <li className={`${styles.notiItem} ${unread ? styles.notiUnread : ''}`}>
+    <li className={`${nc.item} ${unread ? nc.unread : ''}`}>
       {href ? (
-        <Link href={href} className={styles.notiLink}>
+        <Link href={href} className={nc.link}>
           {content}
         </Link>
       ) : (
-        content
+        <div className={nc.link}>{content}</div>
       )}
     </li>
   );

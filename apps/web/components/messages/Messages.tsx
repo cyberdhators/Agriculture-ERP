@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 
 import {
   MESSAGE_MAX_LENGTH,
@@ -16,7 +16,6 @@ import { PresenceLine } from '@/components/live/Presence';
 import { MyRatingsPanel } from '@/components/ratings/Ratings';
 import { Button, EmptyState, Notice, Skeleton, Tabs } from '@/components/ui';
 import { caseHref, topicLabel } from '@/lib/advice/labels';
-import { formatDate } from '@/lib/format';
 import { t, type Language, type TKey } from '@/lib/i18n';
 import { LIVE_EVENT, useLiveEvent, type LiveEvent } from '@/lib/realtime/client';
 import {
@@ -32,7 +31,8 @@ import {
 } from '@/lib/messages/client';
 
 import styles from './messages.module.css';
-import { DirArrow } from '@/components/ui/icons';
+import { avatarTone, clockTime, dayKey, dayLabel, inboxTime, initials } from './when';
+import { DirArrow, IconCheck, IconClock, IconSend } from '@/components/ui/icons';
 
 /**
  * IN-APP MESSAGING (2026-10-20). The inbox, and one conversation when the
@@ -79,6 +79,20 @@ export function postHref(
 function aboutLine(c: ConversationSummary, language: Language): string {
   const title = c.post_kind === 'advice_case' ? topicLabel(c.post_title, language) : c.post_title;
   return `${t(KIND_LABEL[c.post_kind], language)} · ${title}`;
+}
+
+const TONE_CLASS = [styles.tone0, styles.tone1, styles.tone2, styles.tone3] as const;
+
+/** 2026-10-31 (ui-delight): the other person's initials in a small circle. Decorative. */
+function Avatar({ name, small = false }: { name: string; small?: boolean }) {
+  return (
+    <span
+      className={`${styles.avatar} ${small ? styles.avatarSmall : ''} ${TONE_CLASS[avatarTone(name)] ?? ''}`}
+      aria-hidden="true"
+    >
+      {initials(name)}
+    </span>
+  );
 }
 
 export function Messages({ language }: { language: Language }) {
@@ -164,28 +178,39 @@ function Inbox({ language, tab }: { language: Language; tab: InboxTab }) {
           />
         )
       ) : (
-        <ul className={styles.list}>
+        <ul className={`${styles.list} ${styles.inbox}`}>
           {rows.map((c) => (
             <li key={c.id}>
               <Link
                 href={`${pathname}?c=${c.id}`}
                 className={`${styles.row} ${c.unread ? styles.rowUnread : ''}`}
               >
-                <span className={styles.rowTop}>
-                  <span className={styles.rowName}>
-                    {c.other_name}{' '}
-                    <PresenceLine presence={c.presence} language={language} dotOnly />
+                {/* 2026-10-31 (ui-delight): a chat-app row -- initials, name and
+                    time, the post it is about, the last message, an unread dot. */}
+                <Avatar name={c.other_name} />
+                <span className={styles.rowBody}>
+                  <span className={styles.rowTop}>
+                    <span className={styles.rowName}>
+                      {c.other_name}{' '}
+                      <PresenceLine presence={c.presence} language={language} dotOnly />
+                    </span>
+                    <time className={styles.rowTime} dateTime={c.last_message_at}>
+                      {inboxTime(c.last_message_at, language)}
+                    </time>
                   </span>
-                  <span className={styles.rowTime}>{formatDate(c.last_message_at, language)}</span>
+                  <span className={styles.rowAbout}>{aboutLine(c, language)}</span>
+                  <span className={styles.rowBottom}>
+                    {c.last_message_preview ? (
+                      <span className={styles.rowPreview} dir="auto">
+                        {c.last_from_me ? `${t('msg.you', language)}: ` : ''}
+                        {c.last_message_preview}
+                      </span>
+                    ) : (
+                      <span />
+                    )}
+                    {c.unread ? <span className={styles.dot} aria-label="unread" /> : null}
+                  </span>
                 </span>
-                <span className={styles.rowAbout}>{aboutLine(c, language)}</span>
-                {c.last_message_preview ? (
-                  <span className={styles.rowPreview}>
-                    {c.last_from_me ? `${t('msg.you', language)}: ` : ''}
-                    {c.last_message_preview}
-                  </span>
-                ) : null}
-                {c.unread ? <span className={styles.dot} aria-label="unread" /> : null}
               </Link>
             </li>
           ))}
@@ -405,56 +430,106 @@ function Conversation({
       {problem === 'offline' ? <Notice kind="warn">{t('msg.offlineRead', language)}</Notice> : null}
       {embedded ? null : <p className={styles.safety}>{t('msg.privacy', language)}</p>}
 
+      {/* 2026-10-31 (ui-delight): the thread as a chat -- messages under a
+          day divider (Today, Yesterday, the date), the clock time on each, the
+          other person's initials beside the last of their run. A tick on mine
+          means only what the data says: it reached the server (a message still
+          on the phone shows the clock and "Waiting for signal"). There is no
+          read receipt in the data, so none is drawn. */}
       <ol className={styles.thread} aria-live="polite">
-        {shown.map((m) => (
-          <li key={m.id} className={m.from_me ? styles.mine : styles.theirs}>
-            <p className={styles.bubble} dir="auto">
-              {m.body}
-            </p>
-            <span className={styles.meta}>
-              {waitingIds.has(m.id)
-                ? t('msg.waiting', language)
-                : new Date(m.created_at).toLocaleString(language === 'ar' ? 'ar' : 'en-GB', {
-                    day: 'numeric',
-                    month: 'short',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-              {/* 2026-10-27: in an organisation's shared inbox, which colleague wrote. */}
-              {m.sent_by ? ` · ${m.sent_by}` : ''}
-            </span>
-          </li>
-        ))}
+        {shown.map((m, i) => {
+          const prev = shown[i - 1];
+          const next = shown[i + 1];
+          const day = dayKey(m.created_at);
+          const newDay = !prev || dayKey(prev.created_at) !== day;
+          const runStart = newDay || prev.from_me !== m.from_me;
+          const runEnd = !next || next.from_me !== m.from_me || dayKey(next.created_at) !== day;
+          const isWaiting = waitingIds.has(m.id);
+          return (
+            <Fragment key={m.id}>
+              {newDay ? (
+                <li className={styles.day}>
+                  <span>{dayLabel(m.created_at, language)}</span>
+                </li>
+              ) : null}
+              <li
+                className={`${m.from_me ? styles.mine : styles.theirs} ${runStart ? styles.runStart : ''}`}
+              >
+                {m.from_me ? null : (
+                  <span className={styles.avatarSlot}>
+                    {runEnd && conversation ? (
+                      <Avatar name={conversation.other_name} small />
+                    ) : null}
+                  </span>
+                )}
+                <div className={styles.stack}>
+                  <p className={styles.bubble} dir="auto">
+                    {m.body}
+                  </p>
+                  <span className={styles.meta}>
+                    {isWaiting ? (
+                      <>
+                        <IconClock size={12} /> {t('msg.waiting', language)}
+                      </>
+                    ) : (
+                      <time dateTime={m.created_at}>{clockTime(m.created_at, language)}</time>
+                    )}
+                    {/* 2026-10-27: in an organisation's shared inbox, which colleague wrote. */}
+                    {m.sent_by ? ` · ${m.sent_by}` : ''}
+                    {m.from_me && !isWaiting ? (
+                      <span className={styles.tick}>
+                        <IconCheck size={13} />
+                        <span className="visually-hidden">
+                          {language === 'ar' ? 'أُرسلت' : 'Sent'}
+                        </span>
+                      </span>
+                    ) : null}
+                  </span>
+                </div>
+              </li>
+            </Fragment>
+          );
+        })}
       </ol>
       <div ref={endRef} />
 
       {conversation?.blocked ? (
         <Notice kind="info">{t('msg.blocked', language)}</Notice>
       ) : conversation ? (
+        // 2026-10-31 (ui-delight): one rounded input bar with a round send
+        // button inside it. Same form, same submit, same Enter-to-send.
         <form className={styles.compose} onSubmit={(e) => void send(e)}>
-          <textarea
-            className={styles.input}
-            value={draft}
-            maxLength={MESSAGE_MAX_LENGTH}
-            rows={2}
-            dir="auto"
-            placeholder={t('msg.placeholder', language)}
-            aria-label={t('msg.placeholder', language)}
-            onChange={(e) => setDraft(e.target.value)}
-            onKeyDown={(e) => {
-              if (
-                e.key === 'Enter' &&
-                !e.shiftKey &&
-                window.matchMedia('(pointer: fine)').matches
-              ) {
-                e.preventDefault();
-                void send(e);
-              }
-            }}
-          />
-          <Button type="submit" disabled={!draft.trim()}>
-            {t('msg.send', language)}
-          </Button>
+          <div className={styles.bar}>
+            <textarea
+              className={styles.barInput}
+              value={draft}
+              maxLength={MESSAGE_MAX_LENGTH}
+              rows={1}
+              dir="auto"
+              placeholder={t('msg.placeholder', language)}
+              aria-label={t('msg.placeholder', language)}
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (
+                  e.key === 'Enter' &&
+                  !e.shiftKey &&
+                  window.matchMedia('(pointer: fine)').matches
+                ) {
+                  e.preventDefault();
+                  void send(e);
+                }
+              }}
+            />
+            <button
+              type="submit"
+              className={styles.send}
+              disabled={!draft.trim()}
+              aria-label={t('msg.send', language)}
+              title={t('msg.send', language)}
+            >
+              <IconSend size={18} />
+            </button>
+          </div>
         </form>
       ) : null}
     </div>

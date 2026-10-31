@@ -7,18 +7,13 @@ import { LISTING_CATEGORIES, LISTING_GRADES } from '@agri-erp/shared';
 
 import { SaveSearchPanel } from '@/components/account/SavedSearches';
 import { getLocations, listMarket, type Locations, type MarketQuery } from '@/lib/buyer/api';
-import {
-  CATEGORY_LABELS,
-  GRADE_LABELS,
-  formatQuantity,
-  formatSsp,
-  labelOf,
-  UNIT_LABELS,
-} from '@/lib/buyer/labels';
+import { categoryLabel, categoryLabelOf, formatSsp } from '@/lib/buyer/labels';
+import { t } from '@/lib/i18n';
 
 import { Badge, Button, EmptyState, Field, Input, Notice, PageHeader, Select } from '../ui';
 import { CardSkeleton, Pagination } from '../ui/data';
 import { useBuyer } from './BuyerShell';
+import { gradeIn, perUnitIn, quantityIn } from './Timeline';
 import { useCursorList } from './useCursorList';
 import styles from './buyer.module.css';
 
@@ -49,6 +44,7 @@ const EMPTY: MarketQuery = {
 
 export function BuyerMarketplace() {
   const { profile, language } = useBuyer();
+  const w = (key: Parameters<typeof t>[0]) => t(key, language);
   const [draft, setDraft] = useState<MarketQuery>(EMPTY);
   const [applied, setApplied] = useState<MarketQuery>(EMPTY);
   const [locations, setLocations] = useState<Locations | null>(null);
@@ -74,10 +70,9 @@ export function BuyerMarketplace() {
   if (!profile.verification.capabilities.browse) {
     return (
       <div className={styles.page}>
-        <PageHeader title="Marketplace" />
-        <Notice kind="error" title="The marketplace is closed to this account">
-          Your buyer account is not in good standing, so the marketplace is not available. Your
-          requests and orders remain readable.
+        <PageHeader title={w('buyer.nav.marketplace')} />
+        <Notice kind="error" title={w('buyer.mkt.closed')}>
+          {w('buyer.mkt.closedBody')}
         </Notice>
       </div>
     );
@@ -93,27 +88,29 @@ export function BuyerMarketplace() {
 
   return (
     <div className={styles.page}>
-      <PageHeader
-        title="Marketplace"
-        subtitle="Prices are indicative; you agree the final price with the farmer."
-      />
+      <PageHeader title={w('buyer.nav.marketplace')} subtitle={w('buyer.mkt.subtitle')} />
       {/* 2026-10-31: the rest of the market as four quiet pills, not a sentence of links. */}
-      <nav className={styles.pills} aria-label="Also on the market">
-        <Link href="/market/requests">Buying requests</Link>
-        <Link href="/market/services">Services for hire</Link>
-        <Link href="/buyer/buying-requests/new">Post what you need</Link>
-        <Link href="/buyer/services/new">Offer a service</Link>
+      <nav className={styles.pills} aria-label={w('buyer.mkt.alsoAria')}>
+        <Link href="/market/requests">{w('buyer.nav.buyingRequests')}</Link>
+        <Link href="/market/services">{w('buyer.mkt.services')}</Link>
+        <Link href="/buyer/buying-requests/new">{w('buyer.mkt.postNeed')}</Link>
+        <Link href="/buyer/services/new">{w('buyer.mkt.offerService')}</Link>
       </nav>
 
-      <form className={styles.form} onSubmit={apply} role="search" aria-label="Filter products">
+      <form
+        className={styles.form}
+        onSubmit={apply}
+        role="search"
+        aria-label={w('buyer.mkt.filterAria')}
+      >
         <div className={styles.filters}>
-          <Field label="Search">
+          <Field label={w('buyer.mkt.search')}>
             {(ids) => (
               <Input
                 {...ids}
                 type="search"
                 value={draft.q ?? ''}
-                placeholder="Product or supplier"
+                placeholder={w('buyer.mkt.searchPlaceholder')}
                 onChange={(e) => set('q')(e.target.value)}
               />
             )}
@@ -125,34 +122,34 @@ export function BuyerMarketplace() {
             aria-controls="buyer-more-filters"
             onClick={() => setMoreOpen((v) => !v)}
           >
-            {moreOpen ? 'Fewer filters' : 'More filters'}
+            {w(moreOpen ? 'buyer.mkt.fewer' : 'buyer.mkt.more')}
             {narrowed > 0 ? <span className={styles.moreCount}>{narrowed}</span> : null}
           </button>
           <div id="buyer-more-filters" className={moreOpen ? styles.moreOpen : styles.more}>
-            <Field label="Category">
+            <Field label={w('buyer.w.category')}>
               {(ids) => (
                 <Select
                   {...ids}
                   value={draft.category ?? ''}
                   onChange={(e) => set('category')(e.target.value)}
                 >
-                  <option value="">Any category</option>
+                  <option value="">{w('buyer.mkt.anyCategory')}</option>
                   {LISTING_CATEGORIES.map((c) => (
                     <option key={c} value={c}>
-                      {CATEGORY_LABELS[c]}
+                      {categoryLabel(c, language)}
                     </option>
                   ))}
                 </Select>
               )}
             </Field>
-            <Field label="State">
+            <Field label={w('buyer.sell.state')}>
               {(ids) => (
                 <Select
                   {...ids}
                   value={draft.state_id ?? ''}
                   onChange={(e) => set('state_id')(e.target.value)}
                 >
-                  <option value="">Any state</option>
+                  <option value="">{w('buyer.mkt.anyState')}</option>
                   {(locations?.states ?? []).map((s) => (
                     <option key={s.id} value={s.id}>
                       {s.name}
@@ -161,23 +158,23 @@ export function BuyerMarketplace() {
                 </Select>
               )}
             </Field>
-            <Field label="Grade">
+            <Field label={w('buyer.mkt.grade')}>
               {(ids) => (
                 <Select
                   {...ids}
                   value={draft.grade ?? ''}
                   onChange={(e) => set('grade')(e.target.value)}
                 >
-                  <option value="">Any grade</option>
+                  <option value="">{w('buyer.mkt.anyGrade')}</option>
                   {LISTING_GRADES.map((g) => (
                     <option key={g} value={g}>
-                      {GRADE_LABELS[g]}
+                      {gradeIn(g, language)}
                     </option>
                   ))}
                 </Select>
               )}
             </Field>
-            <Field label="At least this quantity">
+            <Field label={w('buyer.mkt.minQuantity')}>
               {(ids) => (
                 <Input
                   {...ids}
@@ -187,7 +184,7 @@ export function BuyerMarketplace() {
                 />
               )}
             </Field>
-            <Field label="Available by">
+            <Field label={w('buyer.mkt.availableBy')}>
               {(ids) => (
                 <Input
                   {...ids}
@@ -197,7 +194,7 @@ export function BuyerMarketplace() {
                 />
               )}
             </Field>
-            <Field label="Lowest price (SSP)">
+            <Field label={w('buyer.mkt.minPrice')}>
               {(ids) => (
                 <Input
                   {...ids}
@@ -207,7 +204,7 @@ export function BuyerMarketplace() {
                 />
               )}
             </Field>
-            <Field label="Highest price (SSP)">
+            <Field label={w('buyer.mkt.maxPrice')}>
               {(ids) => (
                 <Input
                   {...ids}
@@ -222,7 +219,7 @@ export function BuyerMarketplace() {
               verification is a badge, shown and never filtered on. */}
         </div>
         <div className={styles.filterActions}>
-          <Button type="submit">Apply filters</Button>
+          <Button type="submit">{w('buyer.mkt.apply')}</Button>
           {filtered ? (
             <Button
               variant="secondary"
@@ -231,7 +228,7 @@ export function BuyerMarketplace() {
                 setApplied(EMPTY);
               }}
             >
-              Clear
+              {w('buyer.mkt.clear')}
             </Button>
           ) : null}
         </div>
@@ -253,24 +250,20 @@ export function BuyerMarketplace() {
       {list.error ? (
         <EmptyState
           error
-          title="The marketplace could not be loaded"
+          title={w('buyer.mkt.loadFailed')}
           body={list.error}
-          actions={<Button onClick={list.reload}>Try again</Button>}
+          actions={<Button onClick={list.reload}>{w('buyer.common.retry')}</Button>}
         />
       ) : list.loading ? (
         <CardSkeleton count={6} />
       ) : list.rows.length === 0 ? (
         <EmptyState
-          title={filtered ? 'Nothing matches these filters' : 'Nothing is listed right now'}
-          body={
-            filtered
-              ? 'Widen or clear the filters to see more of what sellers have listed.'
-              : 'Sellers list their produce and inputs here as they become available. Check back soon.'
-          }
+          title={w(filtered ? 'buyer.mkt.noMatch' : 'buyer.mkt.noneListed')}
+          body={w(filtered ? 'buyer.mkt.noMatchBody' : 'buyer.mkt.noneListedBody')}
         />
       ) : (
         <>
-          <ul className={styles.products} aria-label="Products">
+          <ul className={styles.products} aria-label={w('buyer.mkt.products')}>
             {list.rows.map((p) => (
               <li key={p.id}>
                 <Link href={`/buyer/marketplace/${p.id}`} className={styles.product}>
@@ -279,21 +272,22 @@ export function BuyerMarketplace() {
                       {p.title}
                     </h2>
                     {p.quality_grade ? (
-                      <Badge tone="nile">{labelOf(GRADE_LABELS, p.quality_grade)}</Badge>
+                      <Badge tone="nile">{gradeIn(p.quality_grade, language)}</Badge>
                     ) : null}
                   </div>
                   <p className={styles.productMeta}>
-                    {labelOf(CATEGORY_LABELS, p.category)} · {p.location.county}, {p.location.state}
+                    {categoryLabelOf(p.category, language)} · {p.location.county},{' '}
+                    {p.location.state}
                   </p>
                   <p className={styles.price}>
                     {formatSsp(p.indicative_price_ssp)}{' '}
-                    <span className={styles.muted}>per {labelOf(UNIT_LABELS, p.price_per)}</span>
+                    <span className={styles.muted}>{perUnitIn(p.price_per, language)}</span>
                   </p>
                   <p className={styles.productMeta}>
                     <span className={styles.figure}>
-                      {formatQuantity(p.available_quantity, p.unit)}
+                      {quantityIn(p.available_quantity, p.unit, language)}
                     </span>{' '}
-                    available from {p.available_from}
+                    {w('buyer.mkt.availableFrom').replace('{date}', p.available_from)}
                   </p>
                   <div className={styles.productFoot}>
                     <span dir="auto">{p.supplier.trading_name}</span>
@@ -309,6 +303,7 @@ export function BuyerMarketplace() {
             onPrevious={list.goBack}
             canGoBack={list.canGoBack}
             busy={list.loading}
+            language={language}
           />
         </>
       )}

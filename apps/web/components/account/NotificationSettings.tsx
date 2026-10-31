@@ -177,15 +177,15 @@ export function AccountAnnouncements({ language = 'en' }: { language?: Language 
     };
   }, []);
 
+  // 2026-10-31: the card shows only when there is something in it -- not an
+  // empty box while loading, nor a second "nothing yet" under the page's own.
+  if (failed || !rows || rows.length === 0) return null;
+
   return (
     <Card>
       <CardHeader title={t('announcements.title', language)} />
       <CardBody>
-        {failed ? <p className="small muted">{t('announcements.empty', language)}</p> : null}
-        {rows && rows.length === 0 ? (
-          <p className="small muted">{t('announcements.empty', language)}</p>
-        ) : null}
-        {rows && rows.length > 0 ? (
+        {rows.length > 0 ? (
           <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 12 }}>
             {rows.map((a) => (
               <li key={a.id} style={{ borderTop: '1px solid var(--line)', paddingTop: 8 }}>

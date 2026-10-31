@@ -38,7 +38,9 @@ describe('the rating count has its plural form', () => {
   it('the ratings block uses it, not a fixed plural', () => {
     const src = read('components/ratings/Ratings.tsx');
     expect(src).not.toMatch(/\bt\('rate\.count/);
-    expect(src.match(/tCount\('rate\.count'/g)?.length).toBe(2);
+    // 2026-10-31: three -- the block's two, and the compact "★ 4.6 · 12"
+    // mark's screen-reader label (RatingMark). Each one uses tCount.
+    expect(src.match(/tCount\('rate\.count'/g)?.length).toBe(3);
   });
 });
 
