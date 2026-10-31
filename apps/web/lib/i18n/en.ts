@@ -1148,7 +1148,7 @@ export const en = {
   'pp.status.draft': 'Draft',
   'pp.status.published': 'Published',
   'pp.status.unpublished': 'Unpublished',
-  'pp.name': 'Name',
+  'pp.name': 'Name on your public profile',
   'pp.nameHint': 'The name people see: yours, or your farm, business or group name.',
   'pp.roles': 'What you do',
   'pp.state': 'State or area',
