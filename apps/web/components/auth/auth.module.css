@@ -32,37 +32,128 @@
   gap: var(--s-4);
 }
 
-/* B14: the "join" chooser -- farmer or buyer, side by side. */
+/* B14: the "join" chooser. 2026-10-31: a centred header, the two member
+   ways in as equal cards with an icon and ticked points, buttons on one line
+   at the foot of each card, and staff as a slim row beneath. */
 .join {
   width: min(880px, 100%);
   display: grid;
-  gap: var(--s-5);
+  gap: var(--s-6);
+}
+
+.joinHead {
+  display: grid;
+  justify-items: center;
+  gap: var(--s-3);
+  text-align: center;
+}
+
+.joinTitle {
+  font-size: clamp(26px, 5vw, 34px);
+  line-height: 1.15;
+  margin-top: var(--s-2);
+}
+
+.joinLead {
+  max-width: 56ch;
+  color: var(--ink-2);
 }
 
 .joinGrid {
   display: grid;
   gap: var(--s-4);
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
 }
 
 .joinCard {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: var(--s-3);
-  align-content: start;
+}
+
+.joinCard h2 {
+  font-size: var(--text-h2);
+}
+
+.joinIcon {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-card);
+  background: var(--green-tint);
+  color: var(--green-deep);
+}
+
+.joinFor {
+  color: var(--ink-2);
+  font-size: var(--text-small);
 }
 
 .joinList {
   margin: 0;
-  padding-inline-start: var(--s-5);
-  color: var(--muted);
+  padding: 0;
+  list-style: none;
+  color: var(--ink-2);
   font-size: var(--text-small);
   display: grid;
-  gap: var(--s-1);
+  gap: var(--s-2);
+}
+
+.joinList li {
+  position: relative;
+  padding-inline-start: 26px;
+}
+
+/* A green tick in a tinted round, drawn in CSS so the list needs no markup. */
+.joinList li::before {
+  content: '';
+  position: absolute;
+  inset-inline-start: 0;
+  top: 1px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231f7a3f' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'><path d='m6 12 4 4 8-8'/></svg>")
+      center / 12px no-repeat,
+    var(--green-tint);
 }
 
 .joinActions {
   display: flex;
   flex-wrap: wrap;
   gap: var(--s-2);
-  margin-top: var(--s-2);
+  margin-top: auto;
+  padding-top: var(--s-3);
+}
+
+.joinActions > * {
+  flex: 1 1 auto;
+}
+
+.joinStaff {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3) var(--s-5);
+  padding: var(--s-4) var(--s-5);
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius-card);
+}
+
+.joinStaff > div {
+  flex: 1 1 320px;
+}
+
+.joinStaff h2 {
+  font-size: var(--text-subhead);
+  margin-bottom: 2px;
+}
+
+.joinBack {
+  text-align: center;
+  font-size: var(--text-small);
+  color: var(--muted);
 }

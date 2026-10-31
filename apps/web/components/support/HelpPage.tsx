@@ -140,7 +140,7 @@ export function HelpPage() {
         <section className={styles.settingCard}>
           <h2>{t('help.faqTitle', language)}</h2>
           {FAQ.map(([q, a]) => (
-            <details key={q}>
+            <details key={q} className={styles.faq}>
               <summary>
                 <strong>{t(q, language)}</strong>
               </summary>

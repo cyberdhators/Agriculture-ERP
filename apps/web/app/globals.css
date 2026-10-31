@@ -143,19 +143,21 @@
 
 .shop {
   /* ---- Amazon neutrals (a hair green, never pure) ------------------- */
-  --az-bg: #eaeeeb;
+  --az-bg: #f2f5f1;
   --az-card: #ffffff;
-  --az-dust: #f0f2f0;
-  --az-line: #d5d9d9;
-  --az-line-strong: #b8bfbe;
+  --az-dust: #eef2ed;
+  --az-line: #e0e5de;
+  --az-line-strong: #c4ccc2;
   --az-ink: #0f1111;
   --az-ink-2: #333b3b;
   --az-muted: #565f5f;
 
   /* ---- Amazon shapes & feedback (green where Amazon is orange) ------ */
-  --az-radius: 8px;
+  --az-radius: 10px;
+  --az-radius-card: 14px;
   --az-radius-pill: 999px;
-  --az-shadow-hover: 0 2px 8px rgba(15, 17, 17, 0.15);
+  --az-shadow: 0 1px 2px rgba(19, 42, 28, 0.05), 0 2px 6px -2px rgba(19, 42, 28, 0.06);
+  --az-shadow-hover: 0 12px 28px -14px rgba(19, 42, 28, 0.32);
   --az-focus: 0 0 0 3px rgba(31, 122, 63, 0.5);
   --az-strip: #16482c; /* the second, lighter-green category strip */
   --az-btn-ink: #ffffff; /* text on the solid-green CTA pill */
@@ -175,10 +177,11 @@
   --ink-2: var(--az-ink-2);
   --muted: var(--az-muted);
 
-  --radius-card: var(--az-radius);
+  --radius-card: var(--az-radius-card);
   --radius-control: var(--az-radius);
   --radius-pill: var(--az-radius-pill);
 
+  --shadow-card: var(--az-shadow);
   --shadow-card-hover: var(--az-shadow-hover);
   --ring: var(--az-focus);
 
@@ -203,6 +206,25 @@
   font-weight: 700;
   letter-spacing: -0.01em;
   font-variation-settings: normal;
+}
+
+/* 2026-10-31 refresh: one heading scale for every member page -- a page
+   title that leads, section titles a clear step below, all tight-set. */
+:where(.shop) h1 {
+  font-size: clamp(28px, 3.2vw, 36px);
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  line-height: 1.1;
+}
+
+:where(.shop) h2 {
+  font-size: clamp(19px, 2vw, 22px);
+  letter-spacing: -0.015em;
+  line-height: 1.2;
+}
+
+:where(.shop) h3 {
+  line-height: 1.25;
 }
 
 /* Amazon links: ink text, green underline on hover. */

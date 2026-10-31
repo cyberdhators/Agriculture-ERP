@@ -1422,15 +1422,16 @@
 
 :global(.shop) .card {
   border-color: var(--az-line);
+  box-shadow: var(--shadow-card);
 }
 
 :global(.shop) .panel {
   align-self: start;
   background: var(--card);
   border: 1px solid var(--az-line);
-  border-radius: var(--az-radius);
+  border-radius: var(--radius-card);
   padding: var(--s-6);
-  box-shadow: var(--az-shadow-hover);
+  box-shadow: var(--shadow-card);
 }
 
 :global(.shop) .productHead {
@@ -1450,4 +1451,18 @@
 
 :global(.shop) .detailTable th {
   color: var(--muted);
+}
+
+/* 2026-10-31 refresh: section heads on one hairline, the count as a pill. */
+:global(.shop) .ruledHead {
+  align-items: center;
+  border-bottom-color: var(--line);
+}
+
+:global(.shop) .ruledCount {
+  padding: 1px 9px;
+  border-radius: var(--radius-pill);
+  background: var(--dust);
+  color: var(--ink-2);
+  font-weight: 600;
 }
