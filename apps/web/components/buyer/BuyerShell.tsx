@@ -247,7 +247,7 @@ export function BuyerShell({
 
   return (
     <ToastProvider>
-      <div className={shell.shell} dir={rtl ? 'rtl' : 'ltr'}>
+      <div className={`${shell.shell} shop`} dir={rtl ? 'rtl' : 'ltr'}>
         <a href="#main" className="skip-link">
           {t('shell.skip', language)}
         </a>
@@ -328,7 +328,7 @@ export function BuyerShell({
               {profile?.organization.name ?? t('buyer.shell.buyer', language)}
             </span>
             {/* 2026-10-29: English / العربية, saved on the account. */}
-            <LanguageButtons value={language} onChange={setLanguage} />
+            <LanguageButtons value={language} onChange={setLanguage} onBand />
             <button type="button" className={shell.signOut} onClick={() => void signOut()}>
               <IconSignOut size={16} />
               <span>{t('account.signOut', language)}</span>

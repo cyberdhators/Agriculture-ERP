@@ -195,3 +195,58 @@
   font-size: 1.15rem;
   font-weight: 600;
 }
+
+/* 2026-10-31 refresh: request and service cards match the marketplace cards. */
+:global(.shop) .card,
+:global(.shop) .lifecycle {
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+}
+
+:global(.shop) .card {
+  padding: var(--s-4) var(--s-5);
+}
+
+/* The three market sections as one segmented control: all three fit on a
+   phone (the third was cut off as "Servic"), the current one raised. */
+:global(.shop) .sections {
+  width: fit-content;
+  max-width: 100%;
+  gap: 4px;
+  padding: 4px;
+  background: var(--dust);
+  border: 0;
+  border-radius: var(--radius-pill);
+  margin-block-end: var(--s-5);
+}
+
+:global(.shop) .sections a {
+  flex: 1 1 auto;
+  padding: 8px 16px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  color: var(--ink-2);
+  text-align: center;
+  font-weight: 600;
+  font-size: var(--text-small);
+}
+
+:global(.shop) .sections a:hover {
+  color: var(--green-deep);
+}
+
+:global(.shop) .sections a[aria-current='page'] {
+  background: var(--card);
+  color: var(--green-deep);
+  box-shadow: var(--shadow-card);
+}
+
+@media (max-width: 640px) {
+  :global(.shop) .sections {
+    width: 100%;
+  }
+
+  :global(.shop) .sections a {
+    padding-inline: 8px;
+  }
+}

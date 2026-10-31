@@ -10,14 +10,21 @@ import styles from './farmer.module.css';
 export function LanguageButtons({
   value,
   onChange,
+  onBand = false,
 }: {
   value: Language;
   onChange: (lang: Language) => void;
+  /** On a dark green rail: light text, so the unpressed button stays legible. */
+  onBand?: boolean;
 }) {
   // 2026-10-27: Arabic is offered while Settings say so.
   const arabic = useArabicEnabled();
   return (
-    <div className={styles.panelLang} role="group" aria-label={t('account.language', value)}>
+    <div
+      className={onBand ? `${styles.panelLang} ${styles.panelLangOnBand}` : styles.panelLang}
+      role="group"
+      aria-label={t('account.language', value)}
+    >
       <button
         type="button"
         className={styles.panelLangBtn}

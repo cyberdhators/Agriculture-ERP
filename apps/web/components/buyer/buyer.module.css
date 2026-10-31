@@ -387,3 +387,17 @@
     white-space: nowrap;
   }
 }
+
+/* 2026-10-31: the buyer side now wears the member look (`.shop`, set on the
+   shell): product cards lift like the marketplace cards. */
+:global(.shop) .product {
+  box-shadow: var(--shadow-card);
+  transition:
+    box-shadow 140ms ease,
+    transform 140ms ease;
+}
+
+:global(.shop) .product:hover {
+  box-shadow: var(--shadow-card-hover);
+  transform: translateY(-1px);
+}
