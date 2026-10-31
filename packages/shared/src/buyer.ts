@@ -289,6 +289,9 @@ export const BUYER_MESSAGES = {
   givenNameRequired: 'Enter your first name.',
   familyNameRequired: 'Enter your last name.',
   personNameTooLong: 'A name can be at most 100 characters.',
+  // 2026-10-31 (the owner): a member's name is fixed after sign-up; CORWADO
+  // corrects it on request, as an officer does for a farmer.
+  nameLocked: 'Your name is corrected by CORWADO. Write to them from Help.',
   buyerPhoneInvalid:
     'Enter a mobile number in international form, starting with + and the country code.',
   passwordsDiffer: 'The two passwords do not match.',

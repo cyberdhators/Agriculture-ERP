@@ -1091,7 +1091,7 @@ export const ar: Partial<Record<TKey, string>> = {
   'pp.status.draft': 'مسودة',
   'pp.status.published': 'منشور',
   'pp.status.unpublished': 'غير منشور',
-  'pp.name': 'الاسم',
+  'pp.name': 'الاسم في ملفك العام',
   'pp.nameHint': 'الاسم الذي يراه الناس: اسمك أو اسم مزرعتك أو عملك أو مجموعتك.',
   'pp.roles': 'ماذا تعمل',
   'pp.state': 'الولاية أو المنطقة',

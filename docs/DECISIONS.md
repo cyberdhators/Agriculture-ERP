@@ -6285,3 +6285,22 @@ Farmers at 390px, no sideways scroll.
 
 Also here: the weather card's units are translated ("مم", "كم/س"), so an
 Arabic line no longer mixes in "mm" and "km/h".
+
+## A member's name is fixed after sign-up; the public name is theirs (2026-10-31)
+
+The owner, after editing the public profile's name and seeing the Account
+page keep the old one: "should we stop name edits after account creation?"
+-- then "yes" to the proposal below.
+
+- **The record name (given and family name) is fixed after sign-up.** It is
+  the identity CORWADO verifies and the one officers and reports use. A
+  farmer already could not edit it (an officer corrects it). A buyer could,
+  on the buyer profile; now `PATCH /api/buyer/profile` refuses a change to
+  `given_name` / `family_name` with "Your name is corrected by CORWADO.
+  Write to them from Help." (a save that carries the same name passes). The
+  buyer profile shows the name read-only with that hint. Corrections go
+  through Help (there is no member-side correction request).
+- **The public profile's name stays the member's to choose** -- often a farm
+  or business name. Its field now reads "Name on your public profile", and
+  the Account card (farmer and buyer) adds "Shown publicly as: …" when it
+  differs from the record name.

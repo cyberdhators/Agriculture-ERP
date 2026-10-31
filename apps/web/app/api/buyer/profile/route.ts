@@ -192,6 +192,14 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
       const scope = buyerScope(auth);
       const current = await loadProfile(scope.buyerId);
 
+      // 2026-10-31 (the owner): the name is fixed after sign-up. A save that
+      // carries the same name passes; one that changes it is refused, and
+      // CORWADO corrects it on request (Help).
+      if (body.given_name !== undefined && body.given_name !== current.given_name)
+        throw fieldError('given_name', BUYER_MESSAGES.nameLocked);
+      if (body.family_name !== undefined && body.family_name !== current.family_name)
+        throw fieldError('family_name', BUYER_MESSAGES.nameLocked);
+
       // The state and county are judged as the row WILL be, so a patch that
       // changes only the county is checked against the state already stored.
       const stateId = body.state_id !== undefined ? body.state_id : current.state_id;

@@ -902,6 +902,7 @@ These are also exact.
 | Buyer first name: missing or blank         | Enter your first name.                                                                          |
 | Buyer last name: missing or blank          | Enter your last name.                                                                           |
 | Buyer name: over 100 characters            | A name can be at most 100 characters.                                                           |
+| Buyer name: a profile save that changes it | Your name is corrected by CORWADO. Write to them from Help.                                     |
 | Buyer phone: not E.164                     | Enter a mobile number in international form, starting with + and the country code.              |
 | Confirm password: differs                  | The two passwords do not match.                                                                 |
 | Organisation name: missing or length       | Enter the organisation name: 2 to 160 characters.                                               |

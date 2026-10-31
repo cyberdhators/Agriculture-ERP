@@ -20,7 +20,7 @@ import {
 import { t } from '@/lib/i18n';
 import { useArabicEnabled } from '@/lib/settings/client';
 
-import { MyAvatar } from '@/components/account/MyAvatar';
+import { MyAvatar, PublicNameLine } from '@/components/account/MyAvatar';
 import { AppearanceRow } from '@/components/account/Appearance';
 import css from '@/components/account/settings.module.css';
 
@@ -161,6 +161,10 @@ export function BuyerProfile() {
             <span className={css.profileName} dir="auto">
               {profile.person.given_name} {profile.person.family_name}
             </span>
+            <PublicNameLine
+              recordName={`${profile.person.given_name} ${profile.person.family_name}`}
+              language={language === 'ar' ? 'ar' : 'en'}
+            />
             <span className={css.profileId} dir="auto">
               {profile.organization.name}
             </span>
@@ -252,25 +256,21 @@ export function BuyerProfile() {
               {t('buyer.profile.you', language)}
             </h2>
             <div className={`${css.formCard} ${styles.formGrid}`}>
+              {/* 2026-10-31 (the owner): the name is fixed after sign-up;
+                  CORWADO corrects it on request. */}
               <Field label={t('buyer.field.givenName', language)} error={errors.given_name}>
-                {(ids) => (
-                  <Input
-                    {...ids}
-                    value={person.given_name}
-                    autoComplete="given-name"
-                    onChange={(e) => setPerson((p) => ({ ...p, given_name: e.target.value }))}
-                  />
-                )}
+                {(ids) => <Input {...ids} value={person.given_name} readOnly />}
               </Field>
-              <Field label={t('buyer.field.familyName', language)} error={errors.family_name}>
-                {(ids) => (
-                  <Input
-                    {...ids}
-                    value={person.family_name}
-                    autoComplete="family-name"
-                    onChange={(e) => setPerson((p) => ({ ...p, family_name: e.target.value }))}
-                  />
-                )}
+              <Field
+                label={t('buyer.field.familyName', language)}
+                error={errors.family_name}
+                hint={
+                  language === 'ar'
+                    ? 'تصحّح كوروادو اسمك عند الطلب، من صفحة المساعدة.'
+                    : 'CORWADO corrects your name on request, from Help.'
+                }
+              >
+                {(ids) => <Input {...ids} value={person.family_name} readOnly />}
               </Field>
               <Field
                 label={t('buyer.field.mobile', language)}

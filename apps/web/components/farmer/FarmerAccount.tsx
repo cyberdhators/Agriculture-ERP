@@ -1,7 +1,7 @@
 'use client';
 
 import { NotificationPreferencesCard } from '@/components/account/NotificationSettings';
-import { MyAvatar } from '@/components/account/MyAvatar';
+import { MyAvatar, PublicNameLine } from '@/components/account/MyAvatar';
 import { AppearanceRow } from '@/components/account/Appearance';
 import css from '@/components/account/settings.module.css';
 import { farmerPayamName } from '@/lib/fixtures/farmers';
@@ -52,6 +52,10 @@ export function FarmerAccount() {
             <span className={css.profileName} dir="auto">
               {farmer.given_name} {farmer.family_name}
             </span>
+            <PublicNameLine
+              recordName={`${farmer.given_name} ${farmer.family_name}`}
+              language={language === 'ar' ? 'ar' : 'en'}
+            />
             <span className={css.profileId}>
               {numberPending ? t('account.numberPending', language) : farmer.farmer_number}
             </span>
