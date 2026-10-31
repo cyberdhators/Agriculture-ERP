@@ -250,3 +250,9 @@
     padding-inline: 8px;
   }
 }
+
+.headActions {
+  display: flex;
+  justify-content: flex-end;
+  margin-block-end: var(--s-4);
+}
