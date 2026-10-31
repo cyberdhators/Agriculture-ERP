@@ -1,199 +1,27 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-
-import { Button, Field, Notice, PasswordInput } from '@/components/ui';
-import { validatePassword } from '@/lib/farmers/schema';
+import css from '@/components/account/settings.module.css';
 import { useFarmerSession } from '@/lib/farmer-session';
 import { t } from '@/lib/i18n';
-import { formatPhone } from '@/lib/format';
-
-import { DeleteAccount } from '@/components/account/DeleteAccount';
 
 import { PageHead } from './AccountShell';
-import { ChangePhone } from './ChangePhone';
-import styles from './farmer.module.css';
+import { SecuritySettings } from './SecuritySettings';
 
-type Panel = 'password' | 'phone' | null;
-
+/**
+ * "Login & security": password, phone number, sign out and delete my account,
+ * as the same rows the Account page uses (2026-10-31; it was a titled card per
+ * action, each title repeated on its button, and the phone number shown on a
+ * card of its own above "Change phone number").
+ */
 export function FarmerSecurity() {
-  const { farmer, language, signOut, changePassword } = useFarmerSession();
-  const router = useRouter();
-
-  const [panel, setPanel] = useState<Panel>(null);
-  const [done, setDone] = useState<'password' | 'phone' | null>(null);
-
-  const [current, setCurrent] = useState('');
-  const [next, setNext] = useState('');
-  const [again, setAgain] = useState('');
-  const [passwordErrors, setPasswordErrors] = useState<{
-    current?: string;
-    next?: string;
-    again?: string;
-  }>({});
-
+  const { farmer, language } = useFarmerSession();
   if (!farmer) return null;
-
-  function open(which: Panel) {
-    setPanel((p) => (p === which ? null : which));
-    setDone(null);
-  }
-
-  async function submitPassword(event: React.FormEvent) {
-    event.preventDefault();
-    const errors: typeof passwordErrors = {};
-    if (current === '') errors.current = t('account.wrongPassword', language);
-    const nextError = validatePassword(next);
-    if (nextError) errors.next = t('register.passwordHint', language);
-    else if (again !== next) errors.again = t('register.passwordMismatch', language);
-    if (Object.keys(errors).length > 0) {
-      setPasswordErrors(errors);
-      return;
-    }
-    if (!(await changePassword(current, next))) {
-      setPasswordErrors({ current: t('account.wrongPassword', language) });
-      return;
-    }
-    setPasswordErrors({});
-    setCurrent('');
-    setNext('');
-    setAgain('');
-    setPanel(null);
-    setDone('password');
-  }
-
-  async function onSignOut() {
-    await signOut();
-    router.push('/');
-  }
-
-  const show = t('login.show', language);
-  const hide = t('login.hide', language);
 
   return (
     <>
-      <PageHead
-        title={t('account.tileSecurity', language)}
-        lead={t('account.tileSecuritySub', language)}
-      />
-
-      {done === 'password' ? (
-        <Notice kind="success" className={styles.block}>
-          <p className="small">{t('account.passwordChanged', language)}</p>
-        </Notice>
-      ) : null}
-      {done === 'phone' ? (
-        <Notice kind="success">
-          <p className="small">{t('account.phoneChanged', language)}</p>
-        </Notice>
-      ) : null}
-
-      <div className={styles.settings}>
-        <section className={styles.settingCard}>
-          <h2>{t('account.phone', language)}</h2>
-          <p className="mono">{formatPhone(farmer.phone)}</p>
-        </section>
-
-        <section className={styles.settingCard}>
-          <h2>{t('account.changePassword', language)}</h2>
-          <div>
-            <Button
-              variant="secondary"
-              aria-expanded={panel === 'password'}
-              onClick={() => open('password')}
-            >
-              {t('account.changePassword', language)}
-            </Button>
-            {panel === 'password' ? (
-              <form className={styles.inlineForm} onSubmit={submitPassword} noValidate>
-                <Field
-                  label={t('account.currentPassword', language)}
-                  error={passwordErrors.current}
-                >
-                  {(ids) => (
-                    <PasswordInput
-                      {...ids}
-                      autoComplete="current-password"
-                      value={current}
-                      showLabel={show}
-                      hideLabel={hide}
-                      onChange={(e) => setCurrent(e.target.value)}
-                    />
-                  )}
-                </Field>
-                <Field
-                  label={t('account.newPassword', language)}
-                  hint={t('register.passwordHint', language)}
-                  error={passwordErrors.next}
-                >
-                  {(ids) => (
-                    <PasswordInput
-                      {...ids}
-                      autoComplete="new-password"
-                      value={next}
-                      showLabel={show}
-                      hideLabel={hide}
-                      onChange={(e) => setNext(e.target.value)}
-                    />
-                  )}
-                </Field>
-                <Field label={t('register.passwordConfirm', language)} error={passwordErrors.again}>
-                  {(ids) => (
-                    <PasswordInput
-                      {...ids}
-                      autoComplete="new-password"
-                      value={again}
-                      showLabel={show}
-                      hideLabel={hide}
-                      onChange={(e) => setAgain(e.target.value)}
-                    />
-                  )}
-                </Field>
-                <Button type="submit" variant="primary">
-                  {t('account.changePassword', language)}
-                </Button>
-              </form>
-            ) : null}
-          </div>
-        </section>
-
-        <section className={styles.settingCard}>
-          <h2>{t('account.changePhone', language)}</h2>
-          <p className="small muted">{t('account.changePhoneNote', language)}</p>
-          <div>
-            <Button
-              variant="secondary"
-              aria-expanded={panel === 'phone'}
-              onClick={() => open('phone')}
-            >
-              {t('account.changePhone', language)}
-            </Button>
-            {panel === 'phone' ? (
-              <ChangePhone
-                language={language}
-                onDone={() => {
-                  setPanel(null);
-                  setDone('phone');
-                }}
-              />
-            ) : null}
-          </div>
-        </section>
-
-        <section className={styles.settingCard}>
-          <h2>{t('account.signOut', language)}</h2>
-          <div>
-            <Button variant="ghost" onClick={onSignOut}>
-              {t('account.signOut', language)}
-            </Button>
-          </div>
-        </section>
-
-        {/* 2026-10-20: the account deletes itself (hide now, keep for audit). */}
-        <section className={styles.settingCard}>
-          <DeleteAccount language={language === 'ar' ? 'ar' : 'en'} />
-        </section>
+      <PageHead title={t('account.tileSecurity', language)} />
+      <div className={css.page}>
+        <SecuritySettings deletable titled={false} />
       </div>
     </>
   );

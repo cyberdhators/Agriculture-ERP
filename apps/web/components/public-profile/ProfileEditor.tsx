@@ -397,7 +397,7 @@ export function ProfileEditor({
     <Dialog
       open={confirming}
       onClose={() => setConfirming(false)}
-      title={t('pp.publish', language)}
+      title={t('pp.publishTitle', language)}
       footer={
         <>
           <Button variant="ghost" onClick={() => setConfirming(false)} disabled={busy}>

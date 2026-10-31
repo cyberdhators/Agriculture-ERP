@@ -537,7 +537,6 @@ export function Market({
               title={
                 rows.length === 0 ? t('market.emptyAll', lang) : t('market.emptyFiltered', lang)
               }
-              body={t('market.lead', lang)}
               actions={
                 applied.length > 0 ? (
                   <Button variant="secondary" onClick={clearAll}>
