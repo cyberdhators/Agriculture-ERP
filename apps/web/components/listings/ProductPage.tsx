@@ -52,6 +52,7 @@ export function ProductPage({
   actions,
   moderate,
   related,
+  buy,
   sellerListingsHref,
   contact = true,
 }: {
@@ -66,6 +67,12 @@ export function ProductPage({
   actions?: ReactNode;
   moderate?: ReactNode;
   related?: ReactNode;
+  /**
+   * 2026-10-31: the one Buy action. The market passes its BuyBox (it knows
+   * buyer / farmer / visitor); without it the plain link to the buyer page
+   * stands in. Only one is ever shown.
+   */
+  buy?: ReactNode;
   sellerListingsHref?: string;
   /** False on the farmer's own preview: a farmer does not contact themselves. */
   contact?: boolean;
@@ -173,9 +180,11 @@ export function ProductPage({
               <span>{t(CATEGORY_KEY[listing.category], lang)}</span>
               <span aria-hidden>·</span>
               <span dir="auto">{listing.product_name}</span>
-              <Stamp kind={listingStamp(listing.status)}>
-                {t(STATUS_KEY[listing.status], lang)}
-              </Stamp>
+              {!contact || listing.status !== 'listed' ? (
+                <Stamp kind={listingStamp(listing.status)}>
+                  {t(STATUS_KEY[listing.status], lang)}
+                </Stamp>
+              ) : null}
             </div>
             <h1 className={styles.productTitle} dir="auto">
               {listing.title}
@@ -189,65 +198,55 @@ export function ProductPage({
             </div>
           </header>
 
-          <div className={styles.buyLine}>
-            <span>{t('detail.quantity', lang)}</span>
-            <span className={styles.mono}>{formatQuantity(listing, unit)}</span>
-          </div>
-          <div className={styles.buyLine}>
-            <span>{t('detail.availability', lang)}</span>
-            {availability}
-          </div>
-          <div className={styles.buyLine}>
-            <span>{t('detail.delivery', lang)}</span>
-            <span>
+          {/* 2026-10-31 (the owner: "i know you can do better"): the three
+              facts a buyer weighs, as small tiles, said once on the page. */}
+          <dl className={styles.facts}>
+            <Fact icon={FACT_ICON.quantity} label={t('detail.quantity', lang)}>
+              {formatQuantity(listing, unit)}
+            </Fact>
+            <Fact icon={FACT_ICON.when} label={t('detail.availability', lang)}>
+              {availability}
+            </Fact>
+            <Fact icon={FACT_ICON.delivery} label={t('detail.delivery', lang)}>
               {listing.delivery_available
                 ? t('listings.delivery', lang)
                 : t('listings.noDelivery', lang)}
-            </span>
-          </div>
+            </Fact>
+          </dl>
 
           {contact ? (
-            <div className={styles.contact}>
-              <ButtonLink variant="primary" href={`/buyer/marketplace/${listing.id}`}>
-                {t('contact.button', lang)}
-              </ButtonLink>
-              <p className="small muted">
-                {t('contact.how', lang)}{' '}
+            <div className={styles.buyBox}>
+              {buy ?? (
+                <ButtonLink variant="primary" href={`/buyer/marketplace/${listing.id}`}>
+                  {t('contact.button', lang)}
+                </ButtonLink>
+              )}
+              <p className={styles.buyNote}>
                 <Link href="/buyer/register">{t('contact.registerBuyer', lang)}</Link>
               </p>
             </div>
           ) : null}
 
-          <div className={styles.seller}>
+          <div className={styles.sellerCard}>
             <div className={styles.sellerHead}>
               <span className={styles.sellerDisc} aria-hidden>
                 {initials(listing)}
               </span>
-              <div>
+              <div className={styles.sellerText}>
                 <div className={styles.sellerName} dir="auto">
                   {listing.trading_name}
                 </div>
+                <div className={styles.sellerMeta}>
+                  <span>{seller.payam_name}</span>
+                  <span>
+                    {t('market.memberSince', lang)} {formatDate(seller.created_at, lang)}
+                  </span>
+                </div>
               </div>
             </div>
-            <dl className={styles.sellerRows}>
-              <div className={styles.sellerRow}>
-                <dt>{t('account.payam', lang)}</dt>
-                <dd>{seller.payam_name}</dd>
-              </div>
-              <div className={styles.sellerRow}>
-                <dt>{t('market.memberSince', lang)}</dt>
-                <dd className={styles.mono}>{formatDate(seller.created_at, lang)}</dd>
-              </div>
-              <div className={styles.sellerRow}>
-                <dt>{t('detail.listings', lang)}</dt>
-                <dd className={styles.mono}>
-                  {sellerListingCount} {t('detail.sellerListings', lang)}
-                </dd>
-              </div>
-            </dl>
             {sellerListingsHref ? (
               <Link href={sellerListingsHref} className={styles.sellerLink}>
-                {t('market.viewSellerListings', lang)}
+                {t('market.viewSellerListings', lang)} ({sellerListingCount})
               </Link>
             ) : null}
             {/* 2026-10-20: the seller's public profile. */}
@@ -270,15 +269,12 @@ export function ProductPage({
         <h2>{t('detail.details', lang)}</h2>
         <table className={styles.detailTable}>
           <tbody>
-            <DetailRow term={t('detail.category', lang)}>
-              {t(CATEGORY_KEY[listing.category], lang)}
-            </DetailRow>
-            <DetailRow term={t('detail.quantity', lang)}>{formatQuantity(listing, unit)}</DetailRow>
-            <DetailRow term={t('market.unit', lang)}>{unit(listing.unit)}</DetailRow>
             <DetailRow term={t('detail.season', lang)}>
               {listing.harvest_season || t('listings.ongoing', lang)}
             </DetailRow>
-            <DetailRow term={t('detail.pickup', lang)}>{listing.pickup_notes || '—'}</DetailRow>
+            {listing.pickup_notes ? (
+              <DetailRow term={t('detail.pickup', lang)}>{listing.pickup_notes}</DetailRow>
+            ) : null}
             <DetailRow term={t('detail.listedOn', lang)}>
               {formatDate(listing.created_at, lang)}
             </DetailRow>
@@ -291,7 +287,10 @@ export function ProductPage({
 
       {related}
 
-      {contact ? (
+      {/* The pinned bar repeats the plain Buy link; where the market's own Buy
+          (which knows who is looking) is on the page, it would say a different
+          thing, so it is left out. */}
+      {contact && !buy ? (
         <div className={styles.stickyBar}>
           <span className={styles.mono}>
             {formatSsp(listing.price_ssp)}{' '}
@@ -303,6 +302,35 @@ export function ProductPage({
         </div>
       ) : null}
     </>
+  );
+}
+
+const FACT_ICON = {
+  quantity: 'M4 8l8-4 8 4-8 4zM4 8v8l8 4 8-4V8M12 12v8',
+  when: 'M4 6h16v14H4zM4 10h16M8 3v4M16 3v4',
+  delivery: 'M3 7h11v9H3zM14 10h4l3 3v3h-7M7 19a2 2 0 1 0 0-.01M17 19a2 2 0 1 0 0-.01',
+} as const;
+
+function Fact({ icon, label, children }: { icon: string; label: string; children: ReactNode }) {
+  return (
+    <div className={styles.fact}>
+      <span className={styles.factIcon} aria-hidden>
+        <svg
+          viewBox="0 0 24 24"
+          width="18"
+          height="18"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d={icon} />
+        </svg>
+      </span>
+      <dt className={styles.factLabel}>{label}</dt>
+      <dd className={styles.factValue}>{children}</dd>
+    </div>
   );
 }
 
