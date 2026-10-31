@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 
 import {
   ADVICE_DELIVERY_MODES,
@@ -15,7 +15,9 @@ import {
   type AdviceProviderStatus,
 } from '@agri-erp/shared';
 
-import { Badge, Button, Checkbox, Field, Input, Notice, Select, Textarea } from '@/components/ui';
+import css from '@/components/account/settings.module.css';
+import { Badge, Button, Field, Input, Notice, PageHeader, Select, Textarea } from '@/components/ui';
+import ui from '@/components/ui/ui.module.css';
 import { AdviceError, getMyProvider, saveMyProvider } from '@/lib/advice/client';
 import {
   KIND_KEY,
@@ -79,6 +81,10 @@ const fromProfile = (p: AdviceProviderOwn): Values => ({
  * interest. Saved as a draft, published at once (no review), or unpublished.
  * The same shared schema as the route. `base` is where public profiles are
  * on this side of the app; `workHref` is My Advisory Work.
+ *
+ * 2026-10-31 (the owner: "elite level ui"): one title, the fields on three
+ * white cards, each pick-any list as chips, the green action first. Every
+ * field, check and save is the one it was.
  */
 export function ProviderForm({
   lang,
@@ -108,6 +114,7 @@ export function ProviderForm({
   const [failure, setFailure] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [busy, setBusy] = useState(false);
+  const groupId = useId();
 
   useEffect(() => {
     (source ? source.load() : getMyProvider())
@@ -170,18 +177,23 @@ export function ProviderForm({
     options: ReadonlyArray<{ value: string; label: string }>,
     hint?: string,
   ) => (
-    <div>
-      <fieldset className={styles.choices}>
-        <legend>{legend}</legend>
+    // 2026-10-31: a pick-any choice as chips (was a column of checkboxes).
+    <div className={ui.field} role="group" aria-labelledby={`${groupId}-${key}`}>
+      <span id={`${groupId}-${key}`} className={ui.fieldLabel}>
+        {legend}
+      </span>
+      <div className={css.chips}>
         {options.map((o) => (
-          <Checkbox
-            key={o.value}
-            label={o.label}
-            checked={values[key].includes(o.value)}
-            onChange={() => toggle(key, o.value)}
-          />
+          <label key={o.value} className={css.chip}>
+            <input
+              type="checkbox"
+              checked={values[key].includes(o.value)}
+              onChange={() => toggle(key, o.value)}
+            />
+            {o.label}
+          </label>
         ))}
-      </fieldset>
+      </div>
       {hint ? <p className="small muted">{hint}</p> : null}
       {errors[key] ? (
         <p className="small" role="alert">
@@ -195,10 +207,11 @@ export function ProviderForm({
 
   return (
     <div className={styles.narrow}>
-      <header className={styles.head}>
-        <h1>{source ? source.title : t('advice.offer', lang)}</h1>
-        <p className="muted small">{source ? source.lead : t('advice.offerLead', lang)}</p>
-      </header>
+      {/* 2026-10-31: one title; the organisation's page keeps its one-line lead. */}
+      <PageHeader
+        title={source ? source.title : t('advice.offer', lang)}
+        subtitle={source ? source.lead : undefined}
+      />
       {profile ? (
         <div className={styles.cardHead}>
           <span>
@@ -223,136 +236,142 @@ export function ProviderForm({
       {saved ? <Notice kind="success">{t('advice.saved', lang)}</Notice> : null}
 
       <form
-        className={styles.formGrid}
+        className={styles.narrow}
         noValidate
         onSubmit={(e) => {
           e.preventDefault();
           void save(status);
         }}
       >
-        <Field label={t('advice.displayName', lang)} error={errors.display_name || undefined}>
-          {(ids) => (
-            <Input
-              {...ids}
-              dir="auto"
-              maxLength={ADVICE_LIMITS.displayNameMax}
-              value={values.display_name}
-              onChange={(e) => set('display_name', e.target.value)}
-            />
+        <section className={css.formCard}>
+          <Field label={t('advice.displayName', lang)} error={errors.display_name || undefined}>
+            {(ids) => (
+              <Input
+                {...ids}
+                dir="auto"
+                maxLength={ADVICE_LIMITS.displayNameMax}
+                value={values.display_name}
+                onChange={(e) => set('display_name', e.target.value)}
+              />
+            )}
+          </Field>
+          <Field label={t('advice.kindLabel', lang)} error={errors.provider_kind || undefined}>
+            {(ids) => (
+              <Select
+                {...ids}
+                value={values.provider_kind}
+                onChange={(e) => set('provider_kind', e.target.value)}
+              >
+                <option value="">{t('register.select', lang)}</option>
+                {labelled(ADVICE_PROVIDER_KINDS, KIND_KEY).map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </Select>
+            )}
+          </Field>
+          <Field
+            label={t('advice.description', lang)}
+            hint={t('advice.descriptionHint', lang)}
+            error={errors.description || undefined}
+          >
+            {(ids) => (
+              <Textarea
+                {...ids}
+                rows={5}
+                dir="auto"
+                maxLength={ADVICE_LIMITS.descriptionMax}
+                value={values.description}
+                onChange={(e) => set('description', e.target.value)}
+              />
+            )}
+          </Field>
+        </section>
+        <section className={css.formCard}>
+          {group('topics', t('advice.topicsPick', lang), labelled(ADVICE_TOPICS, TOPIC_KEY))}
+          {group(
+            'languages',
+            t('advice.languagesPick', lang),
+            labelled(ADVICE_LANGUAGES, LANGUAGE_KEY),
           )}
-        </Field>
-        <Field label={t('advice.kindLabel', lang)} error={errors.provider_kind || undefined}>
-          {(ids) => (
-            <Select
-              {...ids}
-              value={values.provider_kind}
-              onChange={(e) => set('provider_kind', e.target.value)}
-            >
-              <option value="">{t('register.select', lang)}</option>
-              {labelled(ADVICE_PROVIDER_KINDS, KIND_KEY).map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-            </Select>
+          {group(
+            'state_ids',
+            t('advice.statesPick', lang),
+            states.map((s) => ({ value: s.id, label: s.name })),
+            t('advice.statesHint', lang),
           )}
-        </Field>
-        <Field
-          label={t('advice.description', lang)}
-          hint={t('advice.descriptionHint', lang)}
-          error={errors.description || undefined}
-        >
-          {(ids) => (
-            <Textarea
-              {...ids}
-              rows={5}
-              dir="auto"
-              maxLength={ADVICE_LIMITS.descriptionMax}
-              value={values.description}
-              onChange={(e) => set('description', e.target.value)}
-            />
+          {group(
+            'delivery_modes',
+            t('advice.deliveryPick', lang),
+            labelled(ADVICE_DELIVERY_MODES, MODE_KEY),
           )}
-        </Field>
-        {group('topics', t('advice.topicsPick', lang), labelled(ADVICE_TOPICS, TOPIC_KEY))}
-        {group(
-          'languages',
-          t('advice.languagesPick', lang),
-          labelled(ADVICE_LANGUAGES, LANGUAGE_KEY),
-        )}
-        {group(
-          'state_ids',
-          t('advice.statesPick', lang),
-          states.map((s) => ({ value: s.id, label: s.name })),
-          t('advice.statesHint', lang),
-        )}
-        {group(
-          'delivery_modes',
-          t('advice.deliveryPick', lang),
-          labelled(ADVICE_DELIVERY_MODES, MODE_KEY),
-        )}
-        <Field
-          label={t('advice.availability', lang)}
-          hint={t('advice.availabilityHint', lang)}
-          optional
-          error={errors.availability || undefined}
-        >
-          {(ids) => (
-            <Input
-              {...ids}
-              dir="auto"
-              maxLength={ADVICE_LIMITS.availabilityMax}
-              value={values.availability}
-              onChange={(e) => set('availability', e.target.value)}
-            />
-          )}
-        </Field>
-        <Field label={t('advice.termsPick', lang)} error={errors.terms || undefined}>
-          {(ids) => (
-            <Select {...ids} value={values.terms} onChange={(e) => set('terms', e.target.value)}>
-              <option value="">{t('register.select', lang)}</option>
-              {labelled(ADVICE_TERMS, TERMS_KEY).map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-            </Select>
-          )}
-        </Field>
-        <Field
-          label={t('advice.fees', lang)}
-          hint={t('advice.feeNoteHint', lang)}
-          optional
-          error={errors.fee_note || undefined}
-        >
-          {(ids) => (
-            <Input
-              {...ids}
-              dir="auto"
-              maxLength={ADVICE_LIMITS.feeNoteMax}
-              value={values.fee_note}
-              onChange={(e) => set('fee_note', e.target.value)}
-            />
-          )}
-        </Field>
-        <Field
-          label={t('advice.commercial', lang)}
-          hint={t('advice.commercialHint', lang)}
-          optional
-          error={errors.commercial_interests || undefined}
-        >
-          {(ids) => (
-            <Textarea
-              {...ids}
-              rows={3}
-              dir="auto"
-              maxLength={ADVICE_LIMITS.commercialMax}
-              value={values.commercial_interests}
-              onChange={(e) => set('commercial_interests', e.target.value)}
-            />
-          )}
-        </Field>
+        </section>
+        <section className={css.formCard}>
+          <Field
+            label={t('advice.availability', lang)}
+            hint={t('advice.availabilityHint', lang)}
+            optional
+            error={errors.availability || undefined}
+          >
+            {(ids) => (
+              <Input
+                {...ids}
+                dir="auto"
+                maxLength={ADVICE_LIMITS.availabilityMax}
+                value={values.availability}
+                onChange={(e) => set('availability', e.target.value)}
+              />
+            )}
+          </Field>
+          <Field label={t('advice.termsPick', lang)} error={errors.terms || undefined}>
+            {(ids) => (
+              <Select {...ids} value={values.terms} onChange={(e) => set('terms', e.target.value)}>
+                <option value="">{t('register.select', lang)}</option>
+                {labelled(ADVICE_TERMS, TERMS_KEY).map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </Select>
+            )}
+          </Field>
+          <Field
+            label={t('advice.fees', lang)}
+            hint={t('advice.feeNoteHint', lang)}
+            optional
+            error={errors.fee_note || undefined}
+          >
+            {(ids) => (
+              <Input
+                {...ids}
+                dir="auto"
+                maxLength={ADVICE_LIMITS.feeNoteMax}
+                value={values.fee_note}
+                onChange={(e) => set('fee_note', e.target.value)}
+              />
+            )}
+          </Field>
+          <Field
+            label={t('advice.commercial', lang)}
+            hint={t('advice.commercialHint', lang)}
+            optional
+            error={errors.commercial_interests || undefined}
+          >
+            {(ids) => (
+              <Textarea
+                {...ids}
+                rows={3}
+                dir="auto"
+                maxLength={ADVICE_LIMITS.commercialMax}
+                value={values.commercial_interests}
+                onChange={(e) => set('commercial_interests', e.target.value)}
+              />
+            )}
+          </Field>
+        </section>
 
-        <div className={styles.actions}>
+        <div className={css.actions}>
           {profile ? (
             <>
               <Button type="submit" disabled={busy}>
@@ -374,11 +393,11 @@ export function ProviderForm({
             </>
           ) : (
             <>
-              <Button variant="secondary" disabled={busy} onClick={() => void save('draft')}>
-                {t('advice.saveDraft', lang)}
-              </Button>
               <Button disabled={busy} onClick={() => void save('published')}>
                 {t('advice.publish', lang)}
+              </Button>
+              <Button variant="secondary" disabled={busy} onClick={() => void save('draft')}>
+                {t('advice.saveDraft', lang)}
               </Button>
             </>
           )}

@@ -15,7 +15,7 @@ import { formatDate } from '@/lib/format';
 import { t, type Language } from '@/lib/i18n';
 import { getBuyingRequest, listBuyingRequests, type BuyingRequest } from '@/lib/market-posts/api';
 
-import { BackLinkRow, SearchSelect } from './bits';
+import { BackLinkRow, FilterFold, SearchSelect } from './bits';
 import { ContactReveal, ReportPost } from './ContactAndReport';
 import { MarketSections } from './MarketSections';
 import { needLine, offerLine } from './MyBuyingRequests';
@@ -100,14 +100,19 @@ export function MarketRequests({
           </ButtonLink>
         </div>
       ) : null}
-      <div className={styles.toolbar}>
-        <Input
-          type="search"
-          aria-label={t('requests.search', lang)}
-          placeholder={t('requests.search', lang)}
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-        />
+      <FilterFold
+        lang={lang}
+        active={[category, state, poster].filter(Boolean).length}
+        search={
+          <Input
+            type="search"
+            aria-label={t('requests.search', lang)}
+            placeholder={t('requests.search', lang)}
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+          />
+        }
+      >
         <SearchSelect
           label={t('listingForm.category', lang)}
           value={category}
@@ -132,7 +137,7 @@ export function MarketRequests({
           ]}
           anyLabel={t('requests.anyPoster', lang)}
         />
-      </div>
+      </FilterFold>
       {/* 2026-11-03: "tell me when a request like this is posted". */}
       <SaveSearchPanel
         lang={lang}

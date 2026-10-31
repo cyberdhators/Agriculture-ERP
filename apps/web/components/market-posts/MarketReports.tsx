@@ -11,6 +11,8 @@ import { useHolds } from '@/lib/admin/use-permission';
 import { usePreview } from '@/lib/preview';
 import { reasonLabel, statusLabel, statusTone } from '@/components/product-reports/presentation';
 
+import styles from './market-posts.module.css';
+
 interface MarketReport {
   id: string;
   target_type: 'buying_request' | 'service_listing' | string;
@@ -141,10 +143,8 @@ export function MarketReports() {
 
   return (
     <section style={{ marginBlockStart: 'var(--s-6, 32px)' }}>
+      {/* 2026-10-31: the heading says it; the line under it said it again. */}
       <h2>Buying requests and services reported</h2>
-      <p className="small muted">
-        Reports from marketplace visitors about buying requests and service listings.
-      </p>
       {failure ? (
         <Notice kind="error">
           <p className="small">{failure}</p>
@@ -153,16 +153,13 @@ export function MarketReports() {
       {rows === null ? (
         <p className="muted">Loading…</p>
       ) : rows.length === 0 ? (
-        <Notice kind="info" title="No reports">
+        <Notice kind="info">
           <p className="small">No buying request or service has been reported.</p>
         </Notice>
       ) : (
         <ul style={{ listStyle: 'none', padding: 0, display: 'grid', gap: 12 }}>
           {rows.map((r) => (
-            <li
-              key={r.id}
-              style={{ border: '1px solid var(--line)', borderRadius: 8, padding: 12 }}
-            >
+            <li key={r.id} className={styles.card}>
               <p>
                 <strong>{TARGET_LABEL[r.target_type] ?? r.target_type}:</strong>{' '}
                 <span dir="auto">{r.target_title ?? 'Removed'}</span>

@@ -6,16 +6,10 @@ import { useEffect, useRef, useState, type DragEvent } from 'react';
 
 import { Photo } from '@/components/listings/Photo';
 import { ProductPage } from '@/components/listings/ProductPage';
-import {
-  Button,
-  Checkbox,
-  Field,
-  Input,
-  Notice,
-  PrefixedInput,
-  Select,
-  Textarea,
-} from '@/components/ui';
+import css from '@/components/account/settings.module.css';
+import { SwitchRow } from '@/components/market-posts/bits';
+import posts from '@/components/market-posts/market-posts.module.css';
+import { Button, Field, Input, Notice, PrefixedInput, Select, Textarea } from '@/components/ui';
 import {
   LISTING_CATEGORIES,
   LISTING_DESCRIPTION_MAX,
@@ -303,18 +297,14 @@ export function ListingForm({ listingId }: { listingId?: string }) {
             photos={photos}
             kicker={t('detail.previewNote', language)}
           />
-          <div className={styles.actionBar}>
-            <Button variant="ghost" onClick={() => setPreviewing(false)}>
-              {t('posts.previewEdit', language)}
-            </Button>
-            <span className="spacer" style={{ flex: 1 }} />
+          <div className={`${styles.actionBar} ${css.actions}`}>
             {status === 'draft' ? (
               <>
-                <Button variant="secondary" onClick={() => void persist('draft')}>
-                  {t('listingForm.saveDraft', language)}
-                </Button>
                 <Button variant="primary" onClick={() => void persist('listed')}>
                   {t('lifecycle.publish', language)}
+                </Button>
+                <Button variant="secondary" onClick={() => void persist('draft')}>
+                  {t('listingForm.saveDraft', language)}
                 </Button>
               </>
             ) : (
@@ -322,6 +312,9 @@ export function ListingForm({ listingId }: { listingId?: string }) {
                 {t('listingForm.save', language)}
               </Button>
             )}
+            <Button variant="ghost" onClick={() => setPreviewing(false)}>
+              {t('posts.previewEdit', language)}
+            </Button>
           </div>
         </>
       );
@@ -336,9 +329,11 @@ export function ListingForm({ listingId }: { listingId?: string }) {
       }}
       noValidate
     >
+      {/* 2026-10-31 (the owner's phone screenshots): the title alone, and the
+          same fields in the same order on white cards -- Photos, The product,
+          Quantity and price, Availability and collection. */}
       <PageHead
         title={isEdit ? t('listingForm.editTitle', language) : t('listingForm.newTitle', language)}
-        lead={t('listingForm.lead', language)}
         actions={
           own ? (
             <Link href={`/farmer/account/listings/${own.id}`} className="small">
@@ -356,7 +351,7 @@ export function ListingForm({ listingId }: { listingId?: string }) {
 
       <div className={styles.formLayout}>
         {/* Photos */}
-        <aside className={styles.photoPanel}>
+        <aside className={`${styles.photoPanel} ${css.formCard}`}>
           <Field
             label={t('listingForm.photos', language)}
             hint={t('listingForm.photosHint', language)}
@@ -444,14 +439,14 @@ export function ListingForm({ listingId }: { listingId?: string }) {
         </aside>
 
         {/* Fields */}
-        <div>
-          <section className={styles.fieldSection}>
+        <div className={posts.formStack}>
+          <section className={css.formCard}>
             <h2>{t('listingForm.sectionProduct', language)}</h2>
             <div className={styles.fieldGrid}>
               <div className={styles.span2}>
                 <Field
                   label={t('listingForm.tradingName', language)}
-                  hint={t('listingForm.tradingNameHint', language)}
+                  hint={t('requests.displayNameHint', language)}
                   error={err('trading_name')}
                 >
                   {(ids) => (
@@ -549,7 +544,7 @@ export function ListingForm({ listingId }: { listingId?: string }) {
             </div>
           </section>
 
-          <section className={styles.fieldSection}>
+          <section className={css.formCard}>
             <h2>{t('listingForm.sectionPrice', language)}</h2>
             <div className={styles.fieldGrid}>
               <Field
@@ -622,16 +617,16 @@ export function ListingForm({ listingId }: { listingId?: string }) {
                 )}
               </Field>
               <div className={styles.span2}>
-                <Checkbox
+                <SwitchRow
                   label={t('listingForm.negotiable', language)}
                   checked={values.negotiable}
-                  onChange={(e) => set('negotiable', e.target.checked)}
+                  onChange={(on) => set('negotiable', on)}
                 />
               </div>
             </div>
           </section>
 
-          <section className={styles.fieldSection}>
+          <section className={css.formCard}>
             <h2>{t('listingForm.sectionAvailability', language)}</h2>
             <div className={styles.fieldGrid}>
               <Field label={t('listingForm.availableFrom', language)} error={err('available_from')}>
@@ -793,55 +788,55 @@ export function ListingForm({ listingId }: { listingId?: string }) {
                     prefix="+211"
                     inputMode="tel"
                     className="mono"
+                    dir="ltr"
                     value={values.contact_phone}
                     onChange={(e) => set('contact_phone', e.target.value)}
                     onBlur={() => blur('contact_phone')}
                   />
                 )}
               </Field>
-              <div className={styles.checkRow}>
-                <Checkbox
+              <div className={styles.span2}>
+                <SwitchRow
                   label={t('listingForm.showPhone', language)}
+                  hint={t('listingForm.showPhoneHint', language)}
                   checked={values.show_phone}
-                  onChange={(e) => set('show_phone', e.target.checked)}
+                  onChange={(on) => set('show_phone', on)}
                 />
               </div>
-              <p className="small muted">{t('listingForm.showPhoneHint', language)}</p>
-              <div className={styles.checkRow}>
-                <Checkbox
+              <div className={styles.span2}>
+                <SwitchRow
                   label={t('listingForm.delivery', language)}
                   checked={values.delivery_available}
-                  onChange={(e) => set('delivery_available', e.target.checked)}
+                  onChange={(on) => set('delivery_available', on)}
                 />
               </div>
             </div>
           </section>
 
-          <div className={styles.actionBar}>
-            <Link href="/farmer/account/listings" className={styles.textLink}>
-              {t('listingForm.cancel', language)}
-            </Link>
-            <span className="spacer" style={{ flex: 1 }} />
-            <Button variant="ghost" onClick={openPreview}>
-              {t('posts.preview', language)}
-            </Button>
-
+          {/* The one primary action first: full width on a phone. */}
+          <div className={`${styles.actionBar} ${css.actions}`}>
             {status === 'draft' ? (
               <>
-                <Button variant="secondary" onClick={() => persist('draft')}>
-                  {t('listingForm.saveDraft', language)}
-                </Button>
                 <Button variant="primary" onClick={() => persist('listed')}>
                   {t('lifecycle.publish', language)}
                 </Button>
-              </>
-            ) : (
-              <>
-                <span className={styles.actionNote}>{t('listingForm.statusOnPage', language)}</span>
-                <Button variant="primary" onClick={() => persist(status)}>
-                  {t('listingForm.save', language)}
+                <Button variant="secondary" onClick={() => persist('draft')}>
+                  {t('listingForm.saveDraft', language)}
                 </Button>
               </>
+            ) : (
+              <Button variant="primary" onClick={() => persist(status)}>
+                {t('listingForm.save', language)}
+              </Button>
+            )}
+            <Button variant="ghost" onClick={openPreview}>
+              {t('posts.preview', language)}
+            </Button>
+            <Link href="/farmer/account/listings" className={styles.textLink}>
+              {t('listingForm.cancel', language)}
+            </Link>
+            {status === 'draft' ? null : (
+              <span className={styles.actionNote}>{t('listingForm.statusOnPage', language)}</span>
             )}
           </div>
         </div>

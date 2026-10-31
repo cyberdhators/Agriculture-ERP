@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useState } from 'react';
 
 import {
   ADVICE_DELIVERY_MODES,
@@ -11,7 +11,8 @@ import {
 } from '@agri-erp/shared';
 
 import { SearchSelect } from '@/components/market-posts/bits';
-import { Badge, Checkbox, EmptyState, Input, Notice } from '@/components/ui';
+import css from '@/components/account/settings.module.css';
+import { Badge, Button, EmptyState, Input, Notice, PageHeader } from '@/components/ui';
 import { listProviders } from '@/lib/advice/client';
 import { KIND_KEY, LANGUAGE_KEY, MODE_KEY, TERMS_KEY, TOPIC_KEY } from '@/lib/advice/labels';
 import { t, type Language } from '@/lib/i18n';
@@ -31,6 +32,11 @@ export function coverageLine(p: AdviceProviderPublic, lang: Language): string {
  * done on the server. The person reads and chooses; nothing is ranked or
  * recommended, and being listed is not an endorsement -- the page says so.
  * `base` is where a provider's page lives on this side of the app.
+ *
+ * 2026-10-31 (the owner's screenshot: a three-sentence lead, four dropdowns
+ * stacked): one title, the not-an-endorsement line at the foot of the list,
+ * and on a phone the filters fold behind "Filters". Every filter, its value
+ * and the request it makes are the ones they were.
  */
 export function AdviceDirectory({ lang, base }: { lang: Language; base: string }) {
   const [q, setQ] = useState('');
@@ -43,6 +49,10 @@ export function AdviceDirectory({ lang, base }: { lang: Language; base: string }
   const [rows, setRows] = useState<AdviceProviderPublic[] | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
   const [states, setStates] = useState<Map<string, string>>(new Map());
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const filtersId = useId();
+  const activeFilters =
+    [topic, language, state, mode].filter(Boolean).length + (approvedOnly ? 1 : 0);
 
   useEffect(() => {
     const id = setTimeout(() => setQuery(q.trim()), 300);
@@ -88,53 +98,74 @@ export function AdviceDirectory({ lang, base }: { lang: Language; base: string }
 
   return (
     <div className={styles.page}>
-      <header className={styles.head}>
-        <h1>{t('advice.find', lang)}</h1>
-        <p className="muted small">{t('advice.dirLead', lang)}</p>
-      </header>
+      <PageHeader title={t('advice.find', lang)} />
       <div className={styles.toolbar}>
-        <Input
-          type="search"
-          aria-label={t('advice.search', lang)}
-          placeholder={t('advice.search', lang)}
-          maxLength={100}
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-        />
-        <SearchSelect
-          label={t('advice.topicLabel', lang)}
-          value={topic}
-          onChange={setTopic}
-          options={ADVICE_TOPICS.map((v) => ({ value: v, label: t(TOPIC_KEY[v], lang) }))}
-          anyLabel={t('advice.anyTopic', lang)}
-        />
-        <SearchSelect
-          label={t('advice.languageLabel', lang)}
-          value={language}
-          onChange={setLanguage}
-          options={ADVICE_LANGUAGES.map((v) => ({ value: v, label: t(LANGUAGE_KEY[v], lang) }))}
-          anyLabel={t('advice.anyLanguage', lang)}
-        />
-        <SearchSelect
-          label={t('advice.stateLabel', lang)}
-          value={state}
-          onChange={setState}
-          options={stateOptions.map(([value, label]) => ({ value, label }))}
-          anyLabel={t('advice.anyState', lang)}
-        />
-        <SearchSelect
-          label={t('advice.deliveryLabel', lang)}
-          value={mode}
-          onChange={setMode}
-          options={ADVICE_DELIVERY_MODES.map((v) => ({ value: v, label: t(MODE_KEY[v], lang) }))}
-          anyLabel={t('advice.anyDelivery', lang)}
-        />
-        {/* 2026-10-24: approved by CORWADO (the optional pathway). */}
-        <Checkbox
-          label={t('advice.approvedOnly', lang)}
-          checked={approvedOnly}
-          onChange={(e) => setApprovedOnly(e.target.checked)}
-        />
+        <div className={styles.searchRow}>
+          <Input
+            type="search"
+            aria-label={t('advice.search', lang)}
+            placeholder={t('advice.search', lang)}
+            maxLength={100}
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+          />
+          <Button
+            variant="secondary"
+            className={styles.filterToggle}
+            aria-expanded={filtersOpen}
+            aria-controls={filtersId}
+            onClick={() => setFiltersOpen((o) => !o)}
+          >
+            {t('market.filters', lang)}
+            {activeFilters > 0 ? <span className={styles.filterCount}>{activeFilters}</span> : null}
+          </Button>
+        </div>
+        <div
+          id={filtersId}
+          className={
+            filtersOpen ? styles.filterSet : `${styles.filterSet} ${styles.filterSetClosed}`
+          }
+        >
+          <SearchSelect
+            label={t('advice.topicLabel', lang)}
+            value={topic}
+            onChange={setTopic}
+            options={ADVICE_TOPICS.map((v) => ({ value: v, label: t(TOPIC_KEY[v], lang) }))}
+            anyLabel={t('advice.anyTopic', lang)}
+          />
+          <SearchSelect
+            label={t('advice.languageLabel', lang)}
+            value={language}
+            onChange={setLanguage}
+            options={ADVICE_LANGUAGES.map((v) => ({ value: v, label: t(LANGUAGE_KEY[v], lang) }))}
+            anyLabel={t('advice.anyLanguage', lang)}
+          />
+          <SearchSelect
+            label={t('advice.stateLabel', lang)}
+            value={state}
+            onChange={setState}
+            options={stateOptions.map(([value, label]) => ({ value, label }))}
+            anyLabel={t('advice.anyState', lang)}
+          />
+          <SearchSelect
+            label={t('advice.deliveryLabel', lang)}
+            value={mode}
+            onChange={setMode}
+            options={ADVICE_DELIVERY_MODES.map((v) => ({ value: v, label: t(MODE_KEY[v], lang) }))}
+            anyLabel={t('advice.anyDelivery', lang)}
+          />
+          {/* 2026-10-24: approved by CORWADO (the optional pathway). 2026-10-31: a chip. */}
+          <div className={styles.chipCell}>
+            <label className={css.chip}>
+              <input
+                type="checkbox"
+                checked={approvedOnly}
+                onChange={(e) => setApprovedOnly(e.target.checked)}
+              />
+              {t('advice.approvedOnly', lang)}
+            </label>
+          </div>
+        </div>
       </div>
       {failure ? (
         <Notice kind="error">
@@ -176,6 +207,12 @@ export function AdviceDirectory({ lang, base }: { lang: Language; base: string }
           ))}
         </ul>
       )}
+      {/* 2026-10-31: the lead's third sentence, the one that matters, said once at the foot. */}
+      <p className="small muted">
+        {lang === 'ar'
+          ? 'الإدراج هنا ليس تزكية من كوروادو.'
+          : 'Being listed here is not an endorsement by CORWADO.'}
+      </p>
     </div>
   );
 }

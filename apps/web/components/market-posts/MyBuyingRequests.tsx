@@ -10,7 +10,7 @@ import {
   CorrectionStamp,
   useOpenCorrections,
 } from '@/components/account/Corrections';
-import { ButtonLink, EmptyState, Notice } from '@/components/ui';
+import { EmptyState, Notice } from '@/components/ui';
 import { CATEGORY_KEY, UNIT_KEY, formatSsp } from '@/lib/farmers/listings';
 import type { ListingCategory, ListingUnit } from '@/lib/fixtures/farmers';
 import { formatDate } from '@/lib/format';
@@ -108,9 +108,8 @@ export function MyBuyingRequests({
       ) : null}
       {rows.length === 0 ? (
         <EmptyState
+          // 2026-10-31: the page's lead and its button sit just above; not again.
           title={t('requests.mineEmpty', lang)}
-          body={t('requests.mineLead', lang)}
-          actions={<ButtonLink href={`${basePath}/new`}>{t('requests.new', lang)}</ButtonLink>}
         />
       ) : (
         <ul className={styles.list}>

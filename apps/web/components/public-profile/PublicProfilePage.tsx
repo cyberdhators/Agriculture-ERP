@@ -181,7 +181,8 @@ export function PublicProfileBody({
         {profile.phone ? (
           <div className={styles.contact}>
             <span className="small muted">{t('pp.phone', language)}</span>
-            <a className={styles.phone} href={`tel:${profile.phone}`}>
+            {/* 2026-10-31: a phone number reads left to right in Arabic too. */}
+            <a className={styles.phone} href={`tel:${profile.phone}`} dir="ltr">
               {profile.phone}
             </a>
           </div>

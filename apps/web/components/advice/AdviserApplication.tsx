@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useId, useState } from 'react';
 
 import {
   ADVICE_LANGUAGES,
@@ -14,7 +14,9 @@ import {
   type AdviserApplicationStatus,
 } from '@agri-erp/shared';
 
+import css from '@/components/account/settings.module.css';
 import { Badge, Button, Checkbox, Field, Notice, Textarea, type Tone } from '@/components/ui';
+import ui from '@/components/ui/ui.module.css';
 import {
   AdviceError,
   applyAsAdviser,
@@ -79,6 +81,9 @@ const startFrom = (p: AdviceProviderOwn | null): Values => ({
  * that start unticked), where it stands, CORWADO's question and a box to
  * answer it, and Withdraw. Nothing here changes what the account can do; the
  * page says so. Same shared schemas as the routes.
+ *
+ * 2026-10-31: on a white card from the settings kit, the pick-any lists as
+ * chips. Every request and check is the one it was.
  */
 export function AdviserApplication({
   lang,
@@ -97,6 +102,7 @@ export function AdviserApplication({
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [confirmWithdraw, setConfirmWithdraw] = useState(false);
+  const groupId = useId();
 
   const load = useCallback(() => {
     getMyApplication()
@@ -205,18 +211,22 @@ export function AdviserApplication({
     options: ReadonlyArray<{ value: string; label: string }>,
     hint?: string,
   ) => (
-    <div>
-      <fieldset className={styles.choices}>
-        <legend>{legend}</legend>
+    <div className={ui.field} role="group" aria-labelledby={`${groupId}-${key}`}>
+      <span id={`${groupId}-${key}`} className={ui.fieldLabel}>
+        {legend}
+      </span>
+      <div className={css.chips}>
         {options.map((o) => (
-          <Checkbox
-            key={o.value}
-            label={o.label}
-            checked={values[key].includes(o.value)}
-            onChange={() => toggle(key, o.value)}
-          />
+          <label key={o.value} className={css.chip}>
+            <input
+              type="checkbox"
+              checked={values[key].includes(o.value)}
+              onChange={() => toggle(key, o.value)}
+            />
+            {o.label}
+          </label>
         ))}
-      </fieldset>
+      </div>
       {hint ? <p className="small muted">{hint}</p> : null}
       {errors[key] ? (
         <p className="small" role="alert">
@@ -227,9 +237,14 @@ export function AdviserApplication({
   );
 
   return (
-    <section className={styles.box} aria-labelledby="adviser-approval">
+    <section className={css.formCard} aria-labelledby="adviser-approval">
       <h2 id="adviser-approval">{t('adviser.title', lang)}</h2>
-      <p className="small">{t('adviser.lead', lang)}</p>
+      {/* 2026-10-31: one line (adviser.lead was three sentences). */}
+      <p className="small muted">
+        {lang === 'ar'
+          ? 'تراجع كوروادو خبرتك؛ وإذا وافقت يظهر الشعار على ملفك الاستشاري. لا يتغير شيء آخر.'
+          : 'CORWADO reviews your experience; if approved, your advice profile shows the badge. Nothing else changes.'}
+      </p>
 
       {!profile ? <p className="small muted">{t('adviser.needProfile', lang)}</p> : null}
       {failure ? (
@@ -279,7 +294,7 @@ export function AdviserApplication({
               />
             )}
           </Field>
-          <div className={styles.actions}>
+          <div className={css.actions}>
             <Button disabled={busy} onClick={() => void answer()}>
               {t('adviser.sendReply', lang)}
             </Button>
@@ -291,7 +306,7 @@ export function AdviserApplication({
         confirmWithdraw ? (
           <div className={styles.formGrid}>
             <p className="small">{t('adviser.withdrawConfirm', lang)}</p>
-            <div className={styles.actions}>
+            <div className={css.actions}>
               <Button variant="danger" disabled={busy} onClick={() => void withdraw()}>
                 {t('adviser.withdraw', lang)}
               </Button>
@@ -301,7 +316,7 @@ export function AdviserApplication({
             </div>
           </div>
         ) : (
-          <div className={styles.actions}>
+          <div className={css.actions}>
             <Button variant="secondary" disabled={busy} onClick={() => setConfirmWithdraw(true)}>
               {t('adviser.withdraw', lang)}
             </Button>
@@ -401,7 +416,7 @@ export function AdviserApplication({
               ) : null}
             </div>
           ))}
-          <div className={styles.actions}>
+          <div className={css.actions}>
             <Button type="submit" disabled={busy}>
               {current ? t('adviser.applyAgain', lang) : t('adviser.apply', lang)}
             </Button>

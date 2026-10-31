@@ -55,7 +55,8 @@ export function FarmerServices() {
       />
 
       {entries.length === 0 ? (
-        <EmptyState title={t('services.empty', language)} body={t('services.lead', language)} />
+        // 2026-10-31: the lead above already says what belongs here.
+        <EmptyState title={t('services.empty', language)} />
       ) : (
         <div className={styles.serviceGrid}>
           {entries.map((entry) => (

@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import type { RatingSummary } from '@agri-erp/shared';
 
 import { ABOUT_LABELS } from '@/components/account/AccountActivities';
+import css from '@/components/account/settings.module.css';
 import { LanguageButtons } from '@/components/farmer/LanguageSwitch';
 import { RatingsSummaryBlock } from '@/components/ratings/Ratings';
 import { Notice, Stamp } from '@/components/ui';
@@ -39,6 +40,8 @@ interface Profile {
  * GET /api/organizations/:id/profile returns, and nothing else: no member is
  * shown who did not agree, no contact the organisation did not give.
  * Messages go through its posts, to its shared inbox.
+ *
+ * 2026-10-31: contact, team and posts each on a white card (settings kit).
  */
 export function PublicOrganisation({
   id,
@@ -79,7 +82,7 @@ export function PublicOrganisation({
       dir={isRtl(language) ? 'rtl' : 'ltr'}
     >
       <LanguageButtons value={language} onChange={setLanguage} />
-      <header>
+      <header style={{ display: 'grid', gap: 6, justifyItems: 'start' }}>
         <h1 style={{ margin: 0 }} dir="auto">
           {profile.name}
         </h1>
@@ -102,7 +105,7 @@ export function PublicOrganisation({
         </p>
       ) : null}
       {profile.public_phone || profile.public_email ? (
-        <section>
+        <section className={css.formCard}>
           <h2>{t('org.public.contact', language)}</h2>
           {profile.public_phone ? (
             <p className="mono" dir="ltr">
@@ -115,9 +118,9 @@ export function PublicOrganisation({
       <RatingsSummaryBlock summary={profile.ratings} language={language} />
 
       {profile.team.length > 0 ? (
-        <section>
+        <section className={css.formCard}>
           <h2>{t('org.public.team', language)}</h2>
-          <ul>
+          <ul style={{ margin: 0, paddingInlineStart: 18, display: 'grid', gap: 6 }}>
             {profile.team.map((m, i) => (
               <li key={i} dir="auto">
                 {m.name}
@@ -128,9 +131,9 @@ export function PublicOrganisation({
         </section>
       ) : null}
       {profile.services.length > 0 ? (
-        <section>
+        <section className={css.formCard}>
           <h2>{t('org.public.services', language)}</h2>
-          <ul>
+          <ul style={{ margin: 0, paddingInlineStart: 18, display: 'grid', gap: 6 }}>
             {profile.services.map((s) => (
               <li key={s.id}>
                 <Link href={`/market/services/${s.id}`} dir="auto">
@@ -143,9 +146,9 @@ export function PublicOrganisation({
         </section>
       ) : null}
       {profile.buying_requests.length > 0 ? (
-        <section>
+        <section className={css.formCard}>
           <h2>{t('org.public.buyingRequests', language)}</h2>
-          <ul>
+          <ul style={{ margin: 0, paddingInlineStart: 18, display: 'grid', gap: 6 }}>
             {profile.buying_requests.map((b) => (
               <li key={b.id}>
                 <Link href={`/market/requests/${b.id}`} dir="auto">

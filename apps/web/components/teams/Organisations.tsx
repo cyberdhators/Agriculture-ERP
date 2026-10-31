@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useId, useState } from 'react';
 
 import {
   ACTIVITIES,
@@ -13,7 +13,9 @@ import {
 } from '@agri-erp/shared';
 
 import { ABOUT_LABELS } from '@/components/account/AccountActivities';
-import { Button, Checkbox, Field, Input, Notice, Select, Textarea } from '@/components/ui';
+import css from '@/components/account/settings.module.css';
+import { Button, Field, Input, Notice, PageHeader, Select, Textarea } from '@/components/ui';
+import ui from '@/components/ui/ui.module.css';
 
 import { OrganisationStateField } from './StateField';
 
@@ -32,6 +34,11 @@ import {
  * the signed-in person (the organisation, the role and every permission shown
  * BEFORE accepting), the organisations they belong to, and "Create an
  * organisation profile". Shared by the farmer and buyer sides of one account.
+ *
+ * 2026-10-31 (the owner: "elite level ui", no redundant words): one title and
+ * one short line; the groups show only when they have something in them; the
+ * create form sits on a white card with "what it does" as chips. Every fetch,
+ * field and handler is the one it was.
  */
 export function Organisations({
   side,
@@ -73,11 +80,8 @@ export function Organisations({
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 760 }}>
-      <header>
-        <h1 style={{ margin: 0 }}>{w.title}</h1>
-        <p className="small muted">{w.lead}</p>
-      </header>
+    <div className={css.page}>
+      <PageHeader title={w.title} subtitle={w.lead} />
 
       {message ? (
         <Notice kind={message.ok ? 'success' : 'error'}>
@@ -85,52 +89,51 @@ export function Organisations({
         </Notice>
       ) : null}
 
-      <section style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        <h2 style={{ margin: 0 }}>{w.invitations}</h2>
-        {invites.length === 0 ? <p className="small muted">{w.noInvitations}</p> : null}
-        {invites.map((inv) => (
-          <InvitationCard
-            key={inv.id}
-            invitation={inv}
-            language={language}
-            onAnswer={(accept) => void respond(inv.id, accept)}
-          />
-        ))}
-      </section>
-
-      <section style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        <h2 style={{ margin: 0 }}>{w.yours}</h2>
-        {orgs === null ? <p className="small muted">…</p> : null}
-        {orgs?.length === 0 ? <p className="small muted">{w.none}</p> : null}
-        <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 8 }}>
-          {orgs?.map((o) => (
-            <li
-              key={o.id}
-              style={{
-                border: '1px solid var(--color-border, #d9d9d9)',
-                borderRadius: 8,
-                padding: 12,
-                display: 'flex',
-                flexWrap: 'wrap',
-                gap: 8,
-                alignItems: 'center',
-                justifyContent: 'space-between',
-              }}
-            >
-              <div style={{ minWidth: 0 }}>
-                <strong dir="auto">{o.name}</strong>
-                <p className="small muted" style={{ margin: 0 }}>
-                  {PRESET_WORDS[language][o.preset].label} ·{' '}
-                  {o.closed ? w.closed : o.status === 'published' ? w.published : w.draft}
-                </p>
-              </div>
-              <Link href={`${teamBase(side)}/${o.id}`} className="small">
-                {w.open}
-              </Link>
-            </li>
+      {/* 2026-10-31 (the owner: "no redundant words"): the invitations group
+          shows only when one is waiting -- "No invitations are waiting for
+          you" said nothing the empty page did not. */}
+      {invites.length > 0 ? (
+        <section className={css.group} aria-labelledby="org-invitations">
+          <h2 id="org-invitations" className={css.groupTitle}>
+            {w.invitations}
+          </h2>
+          {invites.map((inv) => (
+            <InvitationCard
+              key={inv.id}
+              invitation={inv}
+              language={language}
+              onAnswer={(accept) => void respond(inv.id, accept)}
+            />
           ))}
-        </ul>
-      </section>
+        </section>
+      ) : null}
+
+      {orgs === null ? <p className="small muted">…</p> : null}
+      {orgs && orgs.length > 0 ? (
+        <section className={css.group} aria-labelledby="org-yours">
+          <h2 id="org-yours" className={css.groupTitle}>
+            {w.yours}
+          </h2>
+          <ul className={css.list}>
+            {orgs.map((o) => (
+              <li key={o.id} className={css.row}>
+                <span className={css.rowText}>
+                  <span className={css.rowLabel} dir="auto">
+                    {o.name}
+                  </span>
+                  <span className={css.rowHint}>
+                    {PRESET_WORDS[language][o.preset].label} ·{' '}
+                    {o.closed ? w.closed : o.status === 'published' ? w.published : w.draft}
+                  </span>
+                </span>
+                <Link href={`${teamBase(side)}/${o.id}`} className="small">
+                  {w.open}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
       <CreateOrganisation
         language={language}
@@ -152,16 +155,7 @@ export function InvitationCard({
   const w = TEAM_WORDS[language];
   const preset = PRESET_WORDS[language][invitation.preset];
   return (
-    <article
-      style={{
-        border: '1px solid var(--color-border, #d9d9d9)',
-        borderRadius: 8,
-        padding: 12,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 6,
-      }}
-    >
+    <article className={css.formCard}>
       <strong dir="auto">{invitation.organization_name}</strong>
       {invitation.kind === 'transfer' ? <p className="small">{w.handoverOffer}</p> : null}
       <p className="small" style={{ margin: 0 }}>
@@ -175,7 +169,7 @@ export function InvitationCard({
       <p className="small muted" style={{ margin: 0 }}>
         {w.expires}: {new Date(invitation.expires_at).toLocaleDateString()}
       </p>
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+      <div className={css.actions}>
         <Button onClick={() => onAnswer(true)}>{w.accept}</Button>
         <Button variant="ghost" onClick={() => onAnswer(false)}>
           {w.decline}
@@ -204,6 +198,7 @@ function CreateOrganisation({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [failure, setFailure] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const activitiesId = useId();
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
@@ -240,13 +235,11 @@ function CreateOrganisation({
   }
 
   return (
-    <section style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-      <h2 style={{ margin: 0 }}>{w.create}</h2>
-      <form
-        onSubmit={(e) => void submit(e)}
-        noValidate
-        style={{ display: 'flex', flexDirection: 'column', gap: 12 }}
-      >
+    <section className={css.group} aria-labelledby="org-create">
+      <h2 id="org-create" className={css.groupTitle}>
+        {w.newOrg}
+      </h2>
+      <form onSubmit={(e) => void submit(e)} noValidate className={css.formCard}>
         <Field label={w.name} error={errors.name}>
           {(ids) => (
             <Input {...ids} value={name} dir="auto" onChange={(e) => setName(e.target.value)} />
@@ -278,25 +271,28 @@ function CreateOrganisation({
             )}
           </Field>
         ) : null}
-        <fieldset style={{ border: 0, padding: 0, margin: 0 }}>
-          <legend className="small" style={{ fontWeight: 600 }}>
+        {/* 2026-10-31: a pick-any choice as chips (was a grid of nine checkboxes). */}
+        <div className={ui.field} role="group" aria-labelledby={activitiesId}>
+          <span id={activitiesId} className={ui.fieldLabel}>
             {w.activities}
-          </legend>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+          </span>
+          <div className={css.chips}>
             {ACTIVITIES.map((a) => (
-              <Checkbox
-                key={a}
-                label={labels[a]}
-                checked={activities.includes(a)}
-                onChange={(e) =>
-                  setActivities((list) =>
-                    e.target.checked ? [...list, a] : list.filter((x) => x !== a),
-                  )
-                }
-              />
+              <label key={a} className={css.chip}>
+                <input
+                  type="checkbox"
+                  checked={activities.includes(a)}
+                  onChange={(e) =>
+                    setActivities((list) =>
+                      e.target.checked ? [...list, a] : list.filter((x) => x !== a),
+                    )
+                  }
+                />
+                {labels[a]}
+              </label>
             ))}
           </div>
-        </fieldset>
+        </div>
         <Field label={w.about} error={errors.about} optional>
           {(ids) => (
             <Textarea
@@ -325,7 +321,7 @@ function CreateOrganisation({
           )}
         </Field>
         {failure ? <Notice kind="error">{failure}</Notice> : null}
-        <div>
+        <div className={css.actions}>
           <Button type="submit" disabled={busy}>
             {busy ? w.creating : w.create}
           </Button>
