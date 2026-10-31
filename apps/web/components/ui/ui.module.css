@@ -866,7 +866,7 @@ select.control {
  *  Green stands in for Amazon's yellow: the primary CTA is a solid-green
  *  pill with a darker-green border and a top inner-highlight; the secondary
  *  is a white bordered pill; inputs gain the 8px radius and green focus.
- *  The staff portal never carries `.shop`, so it is unaffected.
+ *  Since 2026-10-31 the staff portal carries `.shop` too.
  * ───────────────────────────────────────────────────────────────────── */
 
 :global(.shop) .button {

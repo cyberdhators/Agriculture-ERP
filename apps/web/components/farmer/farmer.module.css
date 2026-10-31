@@ -12,8 +12,8 @@
  * pill — while KEEPING AgriOne's green palette (green plays Amazon's
  * cart-yellow). This is a conscious break from "The Register" that governs
  * the staff portal, and is SCOPED to the `.shop` wrapper (see globals.css)
- * on the (farmer) and (market) route groups only. The staff portal
- * (app/(portal)/**) is never wrapped in `.shop` and is unchanged.
+ * on the (farmer) and (market) route groups -- and, since 2026-10-31, the
+ * buyer side and the staff portal too: one look for every signed-in page.
  * ───────────────────────────────────────────────────────────────────────
  */
 

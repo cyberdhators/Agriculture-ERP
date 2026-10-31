@@ -6262,3 +6262,26 @@ Now:
 
 Server validation is unchanged: a chosen payam must still exist in the
 database (its foreign key), which it does, since both come from the CSV.
+
+## The staff portal joins the one look (2026-10-31)
+
+The owner, offered the choice after the member pages were unified: "go
+ahead". The portal kept "The Register" (Fraunces headings, mono figures,
+2px corners) by an earlier design decision, and the portal layout's comment
+recorded that `.shop` had once been removed from it on purpose. That is now
+reversed: `Shell` carries `.shop`, so staff, farmers and buyers see one app.
+Visual only: no route, data or permission change.
+
+What it fixed on the way, OBSERVED on the live portal at 1366px: the primary
+button read dark ink on green ("Apply filters"); the Farmers filters sat at
+three heights (`align-items: end` with hints of different lengths -- now
+`start`); the dashboard's From-To pair ran under the Location box (it now
+takes two columns on a wide screen and the whole row on a narrow one).
+
+Verified before merge by adding `shop` to the shell of the live portal in a
+test browser (the change is that class plus the two layout rules, also
+injected): Dashboard, Farmers, Reports and Visits at 1366px, Dashboard and
+Farmers at 390px, no sideways scroll.
+
+Also here: the weather card's units are translated ("مم", "كم/س"), so an
+Arabic line no longer mixes in "mm" and "km/h".

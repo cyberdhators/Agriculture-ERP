@@ -740,7 +740,7 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
   gap: var(--s-3);
-  align-items: end;
+  align-items: start;
 }
 
 .filterAdvanced {

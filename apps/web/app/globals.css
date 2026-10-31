@@ -139,9 +139,9 @@
  *  the (market) browse/product pages) are dressed as an Amazon-style
  *  shopping experience — Open Sans, cool-grey ground, white cards, 8px
  *  radius, soft hover shadow, a green focus glow — while KEEPING AgriOne's
- *  green palette (green is Amazon's cart-yellow here). The staff portal
- *  (app/(portal)/**) is never wrapped in `.shop` and stays exactly as the
- *  Register defines it. Everything here is tokens; no raw hex in components.
+ *  green palette (green is Amazon's cart-yellow here). Since 2026-10-31 the
+ *  buyer side and the staff portal carry `.shop` too: one look for every
+ *  signed-in page. Everything here is tokens; no raw hex in components.
  * ───────────────────────────────────────────────────────────────────── */
 
 .shop {

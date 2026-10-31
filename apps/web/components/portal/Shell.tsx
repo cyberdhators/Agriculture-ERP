@@ -107,7 +107,8 @@ export function Shell({ children }: { children: ReactNode }) {
     // of a write without mounting its own. It is a polite live region: the
     // outcome is announced without taking focus off what the reader was doing.
     <ToastProvider>
-      <div className={styles.shell}>
+      {/* 2026-10-31: `.shop` -- the one member look, here too (see the layout). */}
+      <div className={`${styles.shell} shop`}>
         <a href="#main" className="skip-link">
           Skip to content
         </a>
