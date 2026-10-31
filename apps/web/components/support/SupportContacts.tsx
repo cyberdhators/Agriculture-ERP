@@ -1,13 +1,14 @@
 'use client';
 
 import Link from 'next/link';
+import type { ReactNode } from 'react';
 
 import type { PublicSettings } from '@agri-erp/shared';
 
 import { t, type Language } from '@/lib/i18n';
 import { usePublicSettings } from '@/lib/settings/client';
 
-import styles from '@/components/farmer/farmer.module.css';
+import css from '@/components/account/settings.module.css';
 
 /**
  * SUPPORT CONTACTS AND HELP LINKS (2026-10-25, settings phase 1), as CORWADO
@@ -27,72 +28,87 @@ function hasContact(s: PublicSettings): boolean {
   return Boolean(c.phone || c.email || c.whatsapp || c.office_hours);
 }
 
-/** The help page's contact card, the About text and the help links. */
+/**
+ * The help page's contact card, the About text and the help links.
+ *
+ * 2026-10-31 (the owner: "more beautiful and more appealing"): in the
+ * settings kit -- a small group title over a white card; each contact a row,
+ * its label on the left and the number or address on the right.
+ */
 export function SupportContactsCard({ language }: { language: Language }) {
   const settings = usePublicSettings();
   if (!settings) return null;
   const { support, about } = settings;
+  const contacts: { label: string; value: ReactNode }[] = [];
+  if (support.phone)
+    contacts.push({
+      label: t('help.contactPhone', language),
+      value: (
+        <a href={telHref(support.phone)} dir="ltr">
+          {support.phone}
+        </a>
+      ),
+    });
+  if (support.whatsapp)
+    contacts.push({
+      label: t('help.contactWhatsapp', language),
+      value: (
+        <a href={whatsappHref(support.whatsapp)} rel="noopener noreferrer" dir="ltr">
+          {support.whatsapp}
+        </a>
+      ),
+    });
+  if (support.email)
+    contacts.push({
+      label: t('help.contactEmail', language),
+      value: (
+        <a href={`mailto:${support.email}`} dir="ltr">
+          {support.email}
+        </a>
+      ),
+    });
+  if (support.office_hours)
+    contacts.push({
+      label: t('help.contactHours', language),
+      value: <span dir="auto">{support.office_hours}</span>,
+    });
   return (
     <>
       {about ? (
-        <section className={styles.settingCard}>
-          <h2>{t('help.aboutTitle', language)}</h2>
-          <p className="small" dir="auto" style={{ whiteSpace: 'pre-line' }}>
-            {about}
-          </p>
+        <section className={css.group} aria-labelledby="help-about">
+          <h2 id="help-about" className={css.groupTitle}>
+            {t('help.aboutTitle', language)}
+          </h2>
+          <div className={css.formCard}>
+            <p className="small" dir="auto" style={{ whiteSpace: 'pre-line' }}>
+              {about}
+            </p>
+          </div>
         </section>
       ) : null}
       {hasContact(settings) ? (
-        <section className={styles.settingCard}>
-          <h2>{t('help.contactTitle', language)}</h2>
-          <dl className="small" style={{ display: 'grid', gap: 'var(--s-2, 8px)', margin: 0 }}>
-            {support.phone ? (
-              <div>
-                <dt className="muted">{t('help.contactPhone', language)}</dt>
-                <dd style={{ margin: 0 }}>
-                  <a href={telHref(support.phone)} dir="ltr">
-                    {support.phone}
-                  </a>
-                </dd>
+        <section className={css.group} aria-labelledby="help-contact">
+          <h2 id="help-contact" className={css.groupTitle}>
+            {t('help.contactTitle', language)}
+          </h2>
+          <dl className={css.list}>
+            {contacts.map(({ label, value }) => (
+              <div key={label} className={css.row}>
+                <dt className={`${css.rowText} ${css.rowLabel}`}>{label}</dt>
+                <dd className={css.rowValue}>{value}</dd>
               </div>
-            ) : null}
-            {support.whatsapp ? (
-              <div>
-                <dt className="muted">{t('help.contactWhatsapp', language)}</dt>
-                <dd style={{ margin: 0 }}>
-                  <a href={whatsappHref(support.whatsapp)} rel="noopener noreferrer" dir="ltr">
-                    {support.whatsapp}
-                  </a>
-                </dd>
-              </div>
-            ) : null}
-            {support.email ? (
-              <div>
-                <dt className="muted">{t('help.contactEmail', language)}</dt>
-                <dd style={{ margin: 0 }}>
-                  <a href={`mailto:${support.email}`} dir="ltr">
-                    {support.email}
-                  </a>
-                </dd>
-              </div>
-            ) : null}
-            {support.office_hours ? (
-              <div>
-                <dt className="muted">{t('help.contactHours', language)}</dt>
-                <dd style={{ margin: 0 }} dir="auto">
-                  {support.office_hours}
-                </dd>
-              </div>
-            ) : null}
+            ))}
           </dl>
         </section>
       ) : null}
       {support.help_links.length > 0 ? (
-        <section className={styles.settingCard}>
-          <h2>{t('help.linksTitle', language)}</h2>
-          <ul className="small" style={{ margin: 0, paddingInlineStart: 18 }}>
+        <section className={css.group} aria-labelledby="help-links">
+          <h2 id="help-links" className={css.groupTitle}>
+            {t('help.linksTitle', language)}
+          </h2>
+          <ul className={css.list}>
             {support.help_links.map((link) => (
-              <li key={link.url}>
+              <li key={link.url} className={css.row}>
                 <a href={link.url} rel="noopener noreferrer" target="_blank" dir="auto">
                   {link.label}
                 </a>

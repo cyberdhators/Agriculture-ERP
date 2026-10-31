@@ -104,7 +104,7 @@ export function BuyerReview() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s-6)' }}>
       <PageHeader
         title="Buyer accounts"
-        subtitle="Buyer organisations: verify them for a badge. Verification never limits buying; only a suspension does. Individuals are never verified."
+        subtitle="Verifying adds a badge; only a suspension limits buying."
       />
       <Tabs
         label="Standing"

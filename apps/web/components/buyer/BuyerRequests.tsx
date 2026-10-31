@@ -71,7 +71,11 @@ export function BuyerRequests() {
             empty={
               <EmptyState
                 title={status ? 'No requests with this status' : 'No purchase requests yet'}
-                body="Add products to your cart from the marketplace and send them to the farmers."
+                body={
+                  status
+                    ? undefined
+                    : 'Add products to your cart from the marketplace and send them to the farmers.'
+                }
               />
             }
             columns={[

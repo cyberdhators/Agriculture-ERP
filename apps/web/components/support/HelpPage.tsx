@@ -10,7 +10,7 @@ import { useFarmerSession } from '@/lib/farmer-session';
 import { t, type TKey } from '@/lib/i18n';
 import { usePublicSettings } from '@/lib/settings/client';
 
-import styles from '@/components/farmer/farmer.module.css';
+import css from '@/components/account/settings.module.css';
 
 import { MySupportCases } from './MySupportCases';
 import { SupportContactsCard } from './SupportContacts';
@@ -131,28 +131,39 @@ export function HelpPage() {
 
   return (
     <>
-      <PageHead title={t('help.title', language)} lead={t('help.lead', language)} />
+      {/* 2026-10-31 (the owner: "more beautiful and more appealing"): the
+          title alone, then the settings kit -- a small group title over each
+          white card, one column, even gaps. Every action is the one it was. */}
+      <PageHead title={t('help.title', language)} />
 
-      <div className={styles.settings}>
+      <div className={css.page}>
         {/* 2026-10-25: About, contacts and links as published in Settings; none shown if unset. */}
         <SupportContactsCard language={language} />
 
-        <section className={styles.settingCard}>
-          <h2>{t('help.faqTitle', language)}</h2>
-          {FAQ.map(([q, a]) => (
-            <details key={q} className={styles.faq}>
-              <summary>
-                <strong>{t(q, language)}</strong>
-              </summary>
-              <p className="small">{t(a, language)}</p>
-            </details>
-          ))}
+        <section className={css.group} aria-labelledby="help-faq">
+          <h2 id="help-faq" className={css.groupTitle}>
+            {t('help.faqTitle', language)}
+          </h2>
+          <ul className={css.list}>
+            {FAQ.map(([q, a]) => (
+              <li key={q} style={{ padding: 'var(--s-4)' }}>
+                <details>
+                  <summary>{t(q, language)}</summary>
+                  <p className="small" style={{ marginBlockStart: 'var(--s-2)' }}>
+                    {t(a, language)}
+                  </p>
+                </details>
+              </li>
+            ))}
+          </ul>
         </section>
 
-        <section className={styles.settingCard}>
-          <h2>{t('help.formTitle', language)}</h2>
+        <section className={css.group} aria-labelledby="help-form">
+          <h2 id="help-form" className={css.groupTitle}>
+            {t('help.formTitle', language)}
+          </h2>
           {sent ? (
-            <>
+            <div className={css.formCard}>
               <Notice kind="success">
                 <p className="small">{t('help.sent', language)}</p>
                 {caseNumber !== null ? (
@@ -161,15 +172,17 @@ export function HelpPage() {
                   </p>
                 ) : null}
               </Notice>
-              <div>
+              <div className={css.actions}>
                 <Button variant="secondary" onClick={() => setSent(false)}>
                   {t('help.sendAnother', language)}
                 </Button>
               </div>
-            </>
+            </div>
           ) : (
-            <form className={styles.inlineForm} onSubmit={send} noValidate>
-              <p className="small muted">{t('help.formLead', language)}</p>
+            <form className={css.formCard} onSubmit={send} noValidate>
+              {/* A signed-in farmer is answered on their account; the lead
+                  (leave a phone or an email) is for everyone else. */}
+              {farmer ? null : <p className="small muted">{t('help.formLead', language)}</p>}
               {error ? (
                 <Notice kind="error">
                   <p className="small">{error}</p>
@@ -246,9 +259,11 @@ export function HelpPage() {
                   />
                 )}
               </Field>
-              <Button type="submit" variant="primary" disabled={busy}>
-                {busy ? t('help.sending', language) : t('help.send', language)}
-              </Button>
+              <div className={css.actions}>
+                <Button type="submit" variant="primary" disabled={busy}>
+                  {busy ? t('help.sending', language) : t('help.send', language)}
+                </Button>
+              </div>
             </form>
           )}
         </section>

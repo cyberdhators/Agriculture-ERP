@@ -7,7 +7,7 @@ import { caseLabel, type OwnSupportCase, type SupportStatus } from '@agri-erp/sh
 import { formatDate } from '@/lib/format';
 import { t, type Language, type TKey } from '@/lib/i18n';
 
-import styles from '@/components/farmer/farmer.module.css';
+import css from '@/components/account/settings.module.css';
 
 /**
  * "YOUR MESSAGES TO CORWADO" (2026-10-28). A signed-in farmer or buyer sees
@@ -43,24 +43,28 @@ export function MySupportCases({ language, refresh }: { language: Language; refr
 
   if (cases === null) return null;
 
+  // 2026-10-31: a group title over one white list, a case per row; the lead
+  // ("each message has a case number") went -- every row shows its number.
   return (
-    <section className={styles.settingCard} id="my-messages">
-      <h2>{t('help.mineTitle', language)}</h2>
-      <p className="small muted">{t('help.mineLead', language)}</p>
+    <section className={css.group} id="my-messages" aria-labelledby="my-messages-title">
+      <h2 id="my-messages-title" className={css.groupTitle}>
+        {t('help.mineTitle', language)}
+      </h2>
       {cases.length === 0 ? (
-        <p className="small">{t('help.mineNone', language)}</p>
+        <div className={css.formCard}>
+          <p className="small muted">{t('help.mineNone', language)}</p>
+        </div>
       ) : (
-        <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 12 }}>
+        <ul className={css.list}>
           {cases.map((c) => (
-            <li
-              key={c.id}
-              style={{ border: '1px solid var(--line)', borderRadius: 8, padding: 12 }}
-            >
+            <li key={c.id} style={{ display: 'grid', gap: 'var(--s-2)', padding: 'var(--s-4)' }}>
               <p className="small">
                 <strong>
                   {t('help.caseNumber', language)} {caseLabel(c.case_number)}
                 </strong>{' '}
-                · {t(STATUS_KEY[c.status], language)} · {formatDate(c.created_at, language)}
+                <span className="muted">
+                  · {t(STATUS_KEY[c.status], language)} · {formatDate(c.created_at, language)}
+                </span>
               </p>
               <p dir="auto" className="small" style={{ whiteSpace: 'pre-wrap' }}>
                 {c.body}
@@ -72,8 +76,12 @@ export function MySupportCases({ language, refresh }: { language: Language; refr
                   <div
                     key={`${r.created_at}:${i}`}
                     style={{
-                      borderInlineStart: '3px solid var(--leaf, #2e7d32)',
-                      paddingInlineStart: 10,
+                      display: 'grid',
+                      gap: 2,
+                      padding: 'var(--s-3)',
+                      borderInlineStart: '3px solid var(--green)',
+                      borderRadius: 'var(--radius-control)',
+                      background: 'var(--green-tint)',
                     }}
                   >
                     <p className="small">

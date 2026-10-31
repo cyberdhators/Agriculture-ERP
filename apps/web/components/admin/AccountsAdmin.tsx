@@ -103,7 +103,7 @@ export function AccountsAdmin() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s-6)' }}>
       <PageHeader
         title="Users and organizations"
-        subtitle="Every account: phone and email sign-ins, farmers registered without one, and organisational profiles."
+        subtitle="Including farmers registered without a sign-in."
       />
 
       <FilterBar>
@@ -309,10 +309,7 @@ export function AccountsAdmin() {
           />
         </>
       )}
-      <p className="small muted">
-        Deleted accounts are not listed. Contact, Suspend, Disable and Restore are on each
-        account&apos;s page, and every action records a reason.
-      </p>
+      <p className="small muted">Deleted accounts are not listed.</p>
     </div>
   );
 }

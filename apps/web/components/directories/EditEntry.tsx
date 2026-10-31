@@ -18,7 +18,7 @@ export function EditEntry({ id }: { id: string }) {
         <EmptyState
           error
           title="This entry does not exist"
-          body="The link may be old. Go back to the list and open the entry from there."
+          body="The link may be old."
           actions={<ButtonLink href="/directories">Back to directories</ButtonLink>}
         />
       )}

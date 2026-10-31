@@ -110,9 +110,8 @@ export function LibraryScreen() {
   return (
     <>
       <PageHeader
-        eyebrow="Advice and learning"
         title="Guides, audio and video for the field"
-        subtitle="Written as a draft, checked in review, then published to officers and to the public guides page. Sizes are shown so nobody starts a 40 MB download on a metered connection by accident."
+        subtitle="Drafted, reviewed, then published to officers and the public guides page."
         actions={
           editor ? (
             <ButtonLink href="/library/new">
@@ -234,12 +233,12 @@ export function LibraryScreen() {
           }
           body={
             filtered
-              ? 'Try fewer filters, or search for a word from the title.'
+              ? 'Try fewer filters.'
               : status !== 'published'
                 ? 'Guides appear here as they move through review.'
                 : editor
-                  ? 'Add the first resource, submit it for review, and publish it. Officers and the public guides page see it once it is published.'
-                  : 'Nothing has been published yet. Ask a programme administrator to add resources.'
+                  ? 'Officers see a resource once it is published.'
+                  : 'Ask a programme administrator to add resources.'
           }
           actions={
             <>

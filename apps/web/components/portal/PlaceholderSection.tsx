@@ -16,11 +16,11 @@ export function PlaceholderSection({
 }) {
   return (
     <>
-      <PageHeader eyebrow="Not yet built" title={title} subtitle={unit} />
+      <PageHeader title={title} subtitle={unit} />
       <Card>
         <CardBody>
           <EmptyState
-            title={`${title} is not available yet`}
+            title="Not available yet"
             body={body}
             actions={
               <>

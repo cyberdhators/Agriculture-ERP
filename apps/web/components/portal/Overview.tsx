@@ -124,9 +124,7 @@ export function Overview() {
   return (
     <div className={styles.stack}>
       <PageHeader
-        eyebrow="Overview"
         title="National programme overview"
-        subtitle="National view of farmer registration, verification, field activity and programme reach."
         actions={
           <div className={styles.headerControls}>
             {/*
@@ -190,7 +188,6 @@ export function Overview() {
           <h2 id="attention-h" className={styles.sectionTitle}>
             Needs attention
           </h2>
-          <p className={styles.sectionNote}>Work that may not be moving without you.</p>
         </div>
 
         {data.loading ? (
@@ -213,10 +210,7 @@ export function Overview() {
                 >
                   {data.counts.pending.toLocaleString('en')}
                 </p>
-                <p className={styles.exceptionWhy}>
-                  Already buying and selling. Verifying adds the Verified badge and counts them in
-                  reach figures.
-                </p>
+                <p className={styles.exceptionWhy}>Verifying counts them in reach figures.</p>
                 <span className={styles.exceptionAction}>Verify farmers →</span>
               </Link>
             ) : (
@@ -234,10 +228,8 @@ export function Overview() {
               <div className={`${styles.exceptionCard} ${styles.exceptionCardUnmeasured}`}>
                 <span className={styles.exceptionHead}>Waiting more than 7 days</span>
                 <p className={styles.exceptionWhy}>
-                  <strong>Not measured.</strong> Requires registration-age data, which comes with
-                  the verification queue — and the queue is not read in your scope.
+                  <strong>Not measured.</strong> The verification queue is not read in your scope.
                 </p>
-                <span className={styles.exceptionRequires}>Requires the verification queue.</span>
               </div>
             ) : (
               <Link
@@ -254,9 +246,7 @@ export function Overview() {
                 >
                   {escalated.toLocaleString('en')}
                 </p>
-                <p className={styles.exceptionWhy}>
-                  A farmer waiting this long has been visited and entered, and is still not counted.
-                </p>
+                <p className={styles.exceptionWhy}>Entered, and still not counted.</p>
                 <span className={styles.exceptionAction}>Open the oldest first →</span>
               </Link>
             )}
@@ -267,12 +257,8 @@ export function Overview() {
                 <IconWarn size={14} /> Farmers without a working officer
               </span>
               <p className={styles.exceptionWhy}>
-                <strong>Not measured.</strong> Farmers currently without an active officer cannot
-                continue normal field follow-up until reassigned.
+                <strong>Not measured.</strong> Needs officer-assignment status in the summary.
               </p>
-              <span className={styles.exceptionRequires}>
-                Requires officer-assignment status in the summary data.
-              </span>
             </div>
           </div>
         )}
@@ -302,7 +288,7 @@ export function Overview() {
                 empty={
                   <div className={styles.notes}>
                     <p className="small muted" style={{ margin: 0 }}>
-                      No records available — nothing is waiting in this scope.
+                      Nothing is waiting.
                     </p>
                   </div>
                 }
@@ -402,9 +388,7 @@ export function Overview() {
           <h2 id="register-h" className={styles.sectionTitle}>
             Farmer register
           </h2>
-          <p className={styles.sectionNote}>
-            Four populations, counted apart. They are not interchangeable and never summed.
-          </p>
+          <p className={styles.sectionNote}>Counted apart, never summed.</p>
         </div>
 
         {data.loading ? (
@@ -451,9 +435,7 @@ export function Overview() {
                     centreLabel="Verified"
                   />
                 ) : (
-                  <p className="small muted">
-                    No records available — nothing has been registered in this scope yet.
-                  </p>
+                  <p className="small muted">Nothing registered yet.</p>
                 )}
               </ChartCard>
 
@@ -462,9 +444,7 @@ export function Overview() {
                 note="Registrations and decisions over time."
               >
                 <UnavailableState title="Historical activity is not available">
-                  This view will appear when historical registration data is available. The summary
-                  route answers a single cut-off rather than a series, so there is nothing to plot
-                  without inventing it.
+                  The summary answers a single cut-off, not a series.
                 </UnavailableState>
               </ChartCard>
             </div>
@@ -478,9 +458,7 @@ export function Overview() {
           <h2 id="reach-h" className={styles.sectionTitle}>
             Programme reach
           </h2>
-          <p className={styles.sectionNote}>
-            Verified farmers by place. Counts only — no ranking is implied.
-          </p>
+          <p className={styles.sectionNote}>Verified farmers by place.</p>
         </div>
 
         {data.loading ? (
@@ -574,9 +552,7 @@ export function Overview() {
           <h2 id="field-h" className={styles.sectionTitle}>
             Field activity
           </h2>
-          <p className={styles.sectionNote}>
-            What officers have recorded. An administrator reads this; the fieldwork is theirs.
-          </p>
+          <p className={styles.sectionNote}>What officers have recorded.</p>
         </div>
 
         {data.loading ? (

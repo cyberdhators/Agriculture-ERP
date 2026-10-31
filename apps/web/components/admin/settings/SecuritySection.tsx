@@ -69,7 +69,7 @@ export function SecuritySection({
       <Card>
         <CardHeader
           title="Integrations"
-          subtitle="Whether each service's settings are present on this deployment. Values are never shown here, or anywhere."
+          subtitle="Whether each service is configured. Values are never shown."
         />
         <CardBody>
           {error ? (
@@ -151,7 +151,7 @@ export function SecuritySection({
       <Card>
         <CardHeader
           title="Backup and restoration"
-          subtitle="From the restore runbook (docs/RUNBOOK-restore.md). Static text; not a live reading."
+          subtitle="From the restore runbook; not a live reading."
         />
         <CardBody>
           <ul
@@ -231,7 +231,7 @@ function MaintenanceForm({
     <Card>
       <CardHeader
         title="Maintenance notice"
-        subtitle="A banner at the top of every page, public and staff, while it is on. It informs; it does not stop anything working."
+        subtitle="A banner on every page while it is on. Nothing stops working."
         actions={
           setting.value.enabled ? (
             <Stamp kind="escalated">On</Stamp>

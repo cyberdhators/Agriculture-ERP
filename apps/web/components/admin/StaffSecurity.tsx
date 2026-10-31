@@ -132,7 +132,7 @@ export function StaffSecurity() {
     <div style={{ display: 'grid', gap: 'var(--s-4)', maxWidth: '36rem' }}>
       <PageHeader
         title="Your sign-in security"
-        subtitle="Two-step sign-in: your password, then a six-digit code from an authenticator app on your phone."
+        subtitle="Your password, then a code from an authenticator app."
       />
 
       {loadError ? <Notice kind="error">{loadError}</Notice> : null}

@@ -167,9 +167,8 @@ export function DesignPage() {
   return (
     <div className={styles.page}>
       <PageHeader
-        eyebrow="Reference"
         title="Design system"
-        subtitle="Tokens, components and rules from the client's design document, rendered live. Every screen in the portal is built from exactly these."
+        subtitle="Tokens, components and rules, rendered live."
         actions={
           <Button variant="ghost" onClick={() => window.print()}>
             <Icons.IconPrint size={18} />

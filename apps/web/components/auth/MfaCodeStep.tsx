@@ -7,6 +7,8 @@ import { Button, Field, Input, Notice } from '@/components/ui';
 import { t, type Language } from '@/lib/i18n';
 import { supabaseBrowser } from '@/lib/supabase/browser';
 
+import styles from './auth.module.css';
+
 /**
  * THE CODE STEP OF TWO-STEP SIGN-IN (2026-10-28). The password has been
  * accepted; the session is at the first level. The six-digit code is checked
@@ -61,8 +63,8 @@ export function MfaCodeStep({
   }
 
   return (
-    <form onSubmit={onSubmit} noValidate style={{ display: 'grid', gap: 'var(--s-3)' }}>
-      <p className="small">{intro}</p>
+    <form className={styles.form} onSubmit={onSubmit} noValidate>
+      <p className={styles.hint}>{intro}</p>
       {error ? <Notice kind="error">{error}</Notice> : null}
       <Field label={t('mfa.label', language)}>
         {(ids) => (

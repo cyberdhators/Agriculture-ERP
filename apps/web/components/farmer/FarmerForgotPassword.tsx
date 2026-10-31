@@ -163,7 +163,6 @@ export function FarmerForgotPassword() {
 
   return (
     <div className={styles.sheet}>
-      <p className={styles.eyebrow}>{t('brand.tagline', language)}</p>
       <h1 className={styles.h1}>
         {stage === 'done' ? t('recover.doneTitle', language) : t('recover.title', language)}
       </h1>

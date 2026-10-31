@@ -229,6 +229,35 @@
   line-height: 1.2;
 }
 
+/* A plain fold-out (details/summary with no styling of its own, e.g. "Save
+   this search"): a green chevron instead of the browser's triangle. */
+:where(.shop) details:not([class]) > summary:not([class]) {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  list-style: none;
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--green-deep);
+}
+
+:where(.shop) details:not([class]) > summary:not([class])::-webkit-details-marker {
+  display: none;
+}
+
+:where(.shop) details:not([class]) > summary:not([class])::before {
+  content: '';
+  width: 16px;
+  height: 16px;
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231f7a3f' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><path d='m9 6 6 6-6 6'/></svg>")
+    center / contain no-repeat;
+  transition: transform 160ms ease;
+}
+
+:where(.shop) details[open]:not([class]) > summary:not([class])::before {
+  transform: rotate(90deg);
+}
+
 :where(.shop) h3 {
   line-height: 1.25;
 }

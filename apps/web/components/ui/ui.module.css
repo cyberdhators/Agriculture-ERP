@@ -1014,3 +1014,71 @@ select.control {
   color: var(--muted);
   font-size: var(--text-small);
 }
+
+/* ─────────────────────────────────────────────────────────────────────
+ *  2026-10-31, beauty pass (`.shop` scope).
+ * ───────────────────────────────────────────────────────────────────── */
+
+/* Empty and error states: a light, centred card with a small icon -- not a
+   grey slab with a headline. */
+:global(.shop) .state {
+  justify-items: center;
+  text-align: center;
+  gap: var(--s-2);
+  padding: var(--s-8) var(--s-5);
+  background: var(--card);
+  border: 1px dashed var(--line-strong);
+}
+
+:global(.shop) .stateIcon {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  margin-bottom: var(--s-1);
+  border-radius: 50%;
+  background: var(--green-tint);
+  color: var(--green-deep);
+}
+
+:global(.shop) .stateError {
+  background: var(--card);
+  border-color: color-mix(in srgb, var(--danger) 45%, transparent);
+}
+
+:global(.shop) .stateError .stateIcon {
+  background: var(--danger-tint);
+  color: var(--danger);
+}
+
+:global(.shop) .stateTitle {
+  font-family: var(--font-body);
+  font-size: var(--text-subhead);
+  font-weight: 700;
+  line-height: 1.3;
+  font-variation-settings: normal;
+}
+
+:global(.shop) .stateBody {
+  margin-inline: auto;
+  color: var(--muted);
+  font-size: var(--text-small);
+}
+
+:global(.shop) .stateActions {
+  justify-content: center;
+}
+
+/* A card's own title is a step below the page title, everywhere. */
+:global(.shop) .cardHeader h2 {
+  font-size: var(--text-subhead);
+  letter-spacing: -0.01em;
+}
+
+:global(.shop) .cardHeader {
+  padding: var(--s-4) var(--s-5);
+}
+
+:global(.shop) .cardBody {
+  padding: var(--s-5);
+}

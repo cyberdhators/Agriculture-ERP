@@ -128,10 +128,9 @@ export function AuditTrail() {
   if (!isAdmin) {
     return (
       <div className={styles.page}>
-        <PageHeader eyebrow="Governance" title="Audit log" />
+        <PageHeader title="Audit log" />
         <UnavailableState title="The audit log is not available to you">
-          Reading who changed what across the whole system needs the Administrator preset (C-4.8).
-          Your own work is unaffected.
+          Needs the Administrator preset.
         </UnavailableState>
       </div>
     );
@@ -143,9 +142,8 @@ export function AuditTrail() {
   return (
     <div className={styles.page}>
       <PageHeader
-        eyebrow="Governance"
         title="Audit log"
-        subtitle="Search recorded administrative and system changes. Every create, update and removal is written here in the same transaction as the change itself, and nothing can edit or remove an entry."
+        subtitle="Every recorded change. No entry can be edited or removed."
       />
 
       {/* ---- The four filters the route accepts ------------------------ */}

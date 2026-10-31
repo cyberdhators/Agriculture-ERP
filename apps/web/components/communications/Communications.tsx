@@ -217,10 +217,9 @@ export function Communications() {
   if (!isAdmin) {
     return (
       <div className={styles.stack}>
-        <PageHeader eyebrow="Communications" title="Communications" />
+        <PageHeader title="Communications" />
         <UnavailableState title="Communications is not available to you">
-          Sending messages from the portal needs the Administrator preset. Ask an administrator who
-          manages staff permissions.
+          Needs the Administrator preset.
         </UnavailableState>
       </div>
     );
@@ -229,9 +228,8 @@ export function Communications() {
   return (
     <div className={styles.stack}>
       <PageHeader
-        eyebrow="Communications"
         title="Communications"
-        subtitle="Write to staff, officers and farmers from the portal. Recipients are addressed by record, and the server resolves each contact — no address or phone number reaches this screen."
+        subtitle="Write to staff, officers and farmers. No address or phone number reaches this screen."
       />
 
       {/*
@@ -264,7 +262,7 @@ export function Communications() {
           label="Recipient type"
           hint={
             channel === 'email'
-              ? 'Only staff accounts hold an email address. Farmers and extension officers have phone numbers; their tables have no email column, and an officer’s sign-in identifier is not an address.'
+              ? 'Only staff accounts hold an email address.'
               : 'Farmers and extension officers are reached by phone.'
           }
         >
@@ -298,8 +296,7 @@ export function Communications() {
 
         {!LIVE_ADMIN ? (
           <UnavailableState title="No live directory of recipients">
-            Recipient lists are read from the live staff, officer and farmer routes. This deployment
-            is running on preview data, so no real person can be selected.
+            This deployment runs on preview data, so no real person can be selected.
           </UnavailableState>
         ) : recipientType === 'farmer' ? (
           <FarmerPicker selected={selected} onChange={setSelected} />
@@ -481,8 +478,7 @@ export function Communications() {
         <p className="label">Message</p>
         <div className={styles.previewBody}>{body}</div>
         <p className="small muted" style={{ marginBlockStart: 'var(--s-3)' }}>
-          The server resolves each recipient&apos;s contact details; any recipient with none on file
-          is reported back rather than silently skipped.
+          A recipient with no contact on file is reported back, not skipped.
         </p>
       </Dialog>
     </div>

@@ -9,13 +9,15 @@ import {
   type VisitTopic,
 } from '@agri-erp/shared';
 
-import { Button, Checkbox, Dialog, Field, Input, Notice, Select, Textarea } from '@/components/ui';
+import { Button, Dialog, Field, Input, Notice, Select, Textarea } from '@/components/ui';
 import { isNoSignal, offlineNow } from '@/lib/offline/net';
 import { queueVisit } from '@/lib/offline/officer';
 import { createVisit, LIVE_VISITS, VisitApiError, type Visit } from '@/lib/visits/api';
 import { FARMER_OPTIONS, VISIT_TOPIC_LABELS, type FarmerOption } from '@/lib/visits/fixtures';
 import type { VisitNames } from '@/lib/visits/names';
 import { newId } from '@/lib/preview';
+
+import css from '@/components/account/settings.module.css';
 
 import styles from './visits.module.css';
 
@@ -302,20 +304,19 @@ export function RecordVisitForm({
           )}
         </Field>
 
-        <Field
-          label="Topics covered"
-          error={errors.topics}
-          hint="Tick every topic the visit covered."
-        >
+        {/* 2026-10-31: a pick-any list reads as chips; same state, same handler. */}
+        <Field label="Topics covered" error={errors.topics}>
           {() => (
-            <div className={styles.topics}>
+            <div className={css.chips} role="group" aria-label="Topics covered">
               {VISIT_TOPICS.map((topic) => (
-                <Checkbox
-                  key={topic}
-                  label={VISIT_TOPIC_LABELS[topic]}
-                  checked={values.topics.includes(topic)}
-                  onChange={() => toggleTopic(topic)}
-                />
+                <label key={topic} className={css.chip}>
+                  <input
+                    type="checkbox"
+                    checked={values.topics.includes(topic)}
+                    onChange={() => toggleTopic(topic)}
+                  />
+                  {VISIT_TOPIC_LABELS[topic]}
+                </label>
               ))}
             </div>
           )}
@@ -375,7 +376,7 @@ export function RecordVisitForm({
         <Field
           label="Where the visit happened"
           error={errors.position}
-          hint="Longitude and latitude of the field, as the officer app captures them."
+          hint="Longitude and latitude of the field."
         >
           {() => (
             <div className={styles.grid2}>

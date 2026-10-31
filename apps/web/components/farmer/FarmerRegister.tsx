@@ -31,6 +31,8 @@ import { farmerApi, FarmerApiError, useFarmerSession } from '@/lib/farmer-sessio
 import { t, type Language } from '@/lib/i18n';
 import { offered, useArchivedLists, useConsentText } from '@/lib/settings/client';
 
+import css from '@/components/account/settings.module.css';
+
 import styles from './farmer.module.css';
 
 const REFERENCE = new Date('2026-09-02T00:00:00Z');
@@ -601,9 +603,8 @@ export function FarmerRegister() {
       <h1 className={styles.h1}>{t('register.title', language)}</h1>
       {step === 0 ? (
         <p className="small muted" style={{ marginBlockEnd: 'var(--s-4)' }}>
-          {language === 'ar'
-            ? 'بعد التسجيل يمكنك أيضاً الشراء بنفس الحساب. لا تريد البيع؟ '
-            : 'After signing up you can also buy with this same account. Only buying? '}
+          {/* 2026-10-31: one short line; that the account also buys is said on Join. */}
+          {language === 'ar' ? 'لا تريد البيع؟ ' : 'Only buying? '}
           <a href="/buyer/register">{language === 'ar' ? 'سجّل كمشترٍ' : 'Register as a buyer'}</a>
         </p>
       ) : null}
@@ -775,7 +776,6 @@ export function FarmerRegister() {
               />
             )}
           </Field>
-          <p className="small muted">{w.placeLead}</p>
           <Field label={t('register.state', language)} error={errors.state_id}>
             {(ids) => (
               <Select
@@ -851,18 +851,21 @@ export function FarmerRegister() {
 
       {step === FARM_STEP ? (
         <div className={styles.stack}>
-          <p className="small muted">{w.farmLead}</p>
-          <fieldset className={styles.stack} style={{ border: 0, padding: 0, margin: 0 }}>
+          {/* 2026-10-31: no lead (the step has its own Skip); crops and
+              services as chips -- the same checkboxes, drawn as pills. */}
+          <fieldset className={styles.stackTight} style={{ border: 0, padding: 0, margin: 0 }}>
             <legend className="small">{w.crops}</legend>
-            <div className={styles.choiceRow} style={{ flexWrap: 'wrap' }}>
+            <div className={css.chips}>
               {offered(PROFILE_CROPS, archivedLists?.archived_crops, ...farm.primary_crops).map(
                 (c) => (
-                  <Checkbox
-                    key={c}
-                    label={w[c] ?? c}
-                    checked={farm.primary_crops.includes(c)}
-                    onChange={() => toggle('primary_crops', c)}
-                  />
+                  <label key={c} className={css.chip}>
+                    <input
+                      type="checkbox"
+                      checked={farm.primary_crops.includes(c)}
+                      onChange={() => toggle('primary_crops', c)}
+                    />
+                    {w[c] ?? c}
+                  </label>
                 ),
               )}
             </div>
@@ -942,7 +945,7 @@ export function FarmerRegister() {
             setF('preferred_channel', v),
           )}
           {choose(w.heard!, farm.heard_via, HEARD_VIA, (v) => setF('heard_via', v))}
-          <fieldset className={styles.stack} style={{ border: 0, padding: 0, margin: 0 }}>
+          <fieldset className={styles.stackTight} style={{ border: 0, padding: 0, margin: 0 }}>
             <legend className="small">{w.services}</legend>
             {/* 2026-10-10 (CORWADO): all at once instead of one by one. */}
             <div>
@@ -962,14 +965,16 @@ export function FarmerRegister() {
                 {farm.services_wanted.length === SERVICES_WANTED.length ? w.clearAll : w.selectAll}
               </Button>
             </div>
-            <div className={styles.choiceRow} style={{ flexWrap: 'wrap' }}>
+            <div className={css.chips}>
               {SERVICES_WANTED.map((s) => (
-                <Checkbox
-                  key={s}
-                  label={w[s] ?? s}
-                  checked={farm.services_wanted.includes(s)}
-                  onChange={() => toggle('services_wanted', s)}
-                />
+                <label key={s} className={css.chip}>
+                  <input
+                    type="checkbox"
+                    checked={farm.services_wanted.includes(s)}
+                    onChange={() => toggle('services_wanted', s)}
+                  />
+                  {w[s] ?? s}
+                </label>
               ))}
             </div>
           </fieldset>
@@ -978,8 +983,8 @@ export function FarmerRegister() {
 
       {step === LAST_STEP ? (
         <div className={styles.stack}>
+          {/* 2026-10-31: "Your agreement" once -- as the checkbox's label below. */}
           <div>
-            <p className={styles.progressLabel}>{t('register.consentTitle', language)}</p>
             <div className={styles.consentBody}>{consent.body}</div>
             <p className={styles.consentVersion}>{consent.text_version}</p>
           </div>

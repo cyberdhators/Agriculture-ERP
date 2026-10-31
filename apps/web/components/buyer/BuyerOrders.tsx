@@ -66,7 +66,11 @@ export function BuyerOrders() {
             empty={
               <EmptyState
                 title={status ? 'No orders with this status' : 'No orders yet'}
-                body="Orders appear here once CORWADO accepts a request and arranges supply."
+                body={
+                  status
+                    ? undefined
+                    : 'Orders appear here once CORWADO accepts a request and arranges supply.'
+                }
               />
             }
             columns={[

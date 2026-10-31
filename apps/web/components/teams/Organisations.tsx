@@ -108,7 +108,6 @@ export function Organisations({
         </section>
       ) : null}
 
-      {orgs === null ? <p className="small muted">…</p> : null}
       {orgs && orgs.length > 0 ? (
         <section className={css.group} aria-labelledby="org-yours">
           <h2 id="org-yours" className={css.groupTitle}>

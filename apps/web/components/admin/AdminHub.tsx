@@ -1,5 +1,7 @@
 import Link from 'next/link';
 
+import { PageHeader } from '../ui';
+
 import styles from './admin.module.css';
 
 /** Inline glyphs, so the hub needs no icon library (design law: SVG only). */
@@ -73,25 +75,25 @@ const CARDS = [
     href: '/admin/users',
     glyph: 'users' as const,
     title: 'Users & officers',
-    body: 'Create, edit and deactivate staff accounts and extension officers; reset passwords.',
+    body: 'Staff accounts and extension officers.',
   },
   {
     href: '/admin/audit',
     glyph: 'audit' as const,
     title: 'Audit trail',
-    body: 'Who created, changed or deactivated what, across the whole system. Append-only.',
+    body: 'Who changed what, across the system.',
   },
   {
     href: '/admin/staff-access',
     glyph: 'verify' as const,
     title: 'Staff permissions',
-    body: 'Give staff presets such as Analyst or Support, by state or nationally; appoint Super Admins.',
+    body: 'Presets by state or nationally; Super Admins.',
   },
   {
     href: '/admin/access-logs',
     glyph: 'audit' as const,
     title: 'Access logs',
-    body: 'When each account was created, signed in or came back to an open session. Append-only.',
+    body: 'Sign-ins and session events.',
   },
 ];
 
@@ -109,7 +111,7 @@ const PLANNED = [
   {
     glyph: 'reference' as const,
     title: 'Reference data',
-    body: 'The state → county → payam hierarchy and other lists the system is scoped by.',
+    body: 'States, counties, payams and other lists.',
     when: 'On the I-07 lists',
   },
 ];
@@ -123,14 +125,8 @@ const PLANNED = [
 export function AdminHub() {
   return (
     <div className={styles.page}>
-      <header className={styles.head}>
-        <p className={styles.eyebrow}>Administration</p>
-        <h1 className={styles.h1}>Administration</h1>
-        <p className={styles.lede}>
-          Everything reserved to an administrator: the people who use the system, the record of what
-          they did and, as later phases land, coverage, verification oversight and reference data.
-        </p>
-      </header>
+      {/* 2026-10-31: the shared calm title; the eyebrow repeated it and the lede restated it. */}
+      <PageHeader title="Administration" />
 
       <div className={styles.hubGrid}>
         {CARDS.map((c) => (
@@ -144,8 +140,8 @@ export function AdminHub() {
         ))}
       </div>
 
-      <div className={styles.sectionHead} style={{ marginTop: 'var(--s-8)' }}>
-        <h2>Coming with later phases</h2>
+      <div className={styles.sectionHead} style={{ marginTop: 'var(--s-6)' }}>
+        <h2>Coming later</h2>
       </div>
       <div className={styles.hubGrid}>
         {PLANNED.map((c) => (

@@ -12,15 +12,6 @@ import styles from './auth.module.css';
 
 type Stage = 'email' | 'code' | 'done';
 
-const linkButton = {
-  background: 'none',
-  border: 0,
-  padding: 0,
-  color: 'inherit',
-  textDecoration: 'underline',
-  cursor: 'pointer',
-} as const;
-
 /**
  * FORGOT PASSWORD -- BY EMAILED CODE (2026-10-09). For anyone who signs in with
  * an email address: buyers, and office staff.
@@ -131,21 +122,19 @@ export function ForgotPassword() {
         <div className={styles.brand}>
           <Wordmark size={28} tagline />
         </div>
-        <div>
+        {/* 2026-10-31: the title and one short line; the code step names the
+            address, and the rest (spam folder, expiry) moved into one clause. */}
+        <div className={styles.head}>
           <h1 className={styles.title}>
             {stage === 'done' ? 'Password changed' : 'Forgot your password?'}
           </h1>
           {stage === 'email' ? (
-            <p className={styles.hint}>
-              Enter the email address you sign in with. We will email you a code to set a new
-              password.
-            </p>
+            <p className={styles.hint}>We will email you a code to set a new one.</p>
           ) : null}
           {stage === 'code' ? (
             <p className={styles.hint}>
-              If an account uses <strong>{email.trim()}</strong>, we have emailed it a code. It can
-              take a few minutes; check your spam folder too. The code works once and expires in an
-              hour.
+              If <strong>{email.trim()}</strong> has an account, a code is on its way (check spam
+              too).
             </p>
           ) : null}
         </div>
@@ -178,7 +167,7 @@ export function ForgotPassword() {
 
         {stage === 'code' ? (
           <form className={styles.form} onSubmit={(e) => void saveWithCode(e)} noValidate>
-            <Field label="Code from the email" hint="Numbers only, for example 483921">
+            <Field label="Code from the email">
               {(ids) => (
                 <Input
                   {...ids}
@@ -218,29 +207,27 @@ export function ForgotPassword() {
             <Button type="submit" variant="primary" disabled={busy}>
               {busy ? 'Saving…' : 'Save new password'}
             </Button>
-            <p className={styles.hint}>
-              No code?{' '}
+            <p className={styles.linkLine}>
               <button
                 type="button"
-                style={linkButton}
+                className={styles.textButton}
                 onClick={() => void sendCode()}
                 disabled={busy}
               >
-                Send it again
+                Send the code again
               </button>{' '}
-              or{' '}
+              ·{' '}
               <button
                 type="button"
-                style={linkButton}
+                className={styles.textButton}
                 onClick={() => {
                   setStage('email');
                   setCode('');
                   setError(null);
                 }}
               >
-                use a different email
+                Use a different email
               </button>
-              .
             </p>
           </form>
         ) : null}
@@ -253,10 +240,14 @@ export function ForgotPassword() {
           </Notice>
         ) : null}
 
-        <p className={styles.hint}>
-          Sign in with a phone number? <a href="/farmer/forgot-password">Reset it by SMS</a>.{' '}
-          <a href="/login">Back to sign in</a>
-        </p>
+        <div className={styles.links}>
+          <p>
+            Signed up with a phone? <a href="/farmer/forgot-password">Reset it by SMS</a>
+          </p>
+          <p>
+            <a href="/login">Back to sign in</a>
+          </p>
+        </div>
       </Card>
     </main>
   );

@@ -119,7 +119,7 @@ export function SupportInbox() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s-6)' }}>
       <PageHeader
         title="Support cases"
-        subtitle="Technical issues, complaints, appeals and enquiries sent from the Help page. Assign each case, answer the person, and resolve it with a note."
+        subtitle="Issues, complaints, appeals and enquiries from the Help page."
       />
 
       <Tabs

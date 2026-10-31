@@ -114,16 +114,26 @@ export function BuyerCart() {
       ) : null}
       {!canSend ? (
         <Notice kind="info" title="This account cannot send requests">
-          Contact CORWADO about your account. You can keep products in the cart meanwhile.
+          Contact CORWADO about your account.
         </Notice>
       ) : null}
 
       <form className={styles.page} onSubmit={(e) => void onSubmit(e)} noValidate>
         {lines.map((line, i) => (
           <Card key={line.listing_id}>
+            {/* 2026-10-31: Remove sits on the line's header, not on a row of its own. */}
             <CardHeader
               title={line.title}
               subtitle={`${line.trading_name} · ${line.location} · ${formatSsp(line.price_ssp)} per ${labelOf(UNIT_LABELS, line.price_per)}`}
+              actions={
+                <Button
+                  variant="ghost"
+                  size="small"
+                  onClick={() => removeFromCart(line.listing_id)}
+                >
+                  Remove
+                </Button>
+              }
             />
             <CardBody>
               <div className={styles.formGrid}>
@@ -168,11 +178,6 @@ export function BuyerCart() {
                     )}
                   </Field>
                 </div>
-              </div>
-              <div className={styles.actions}>
-                <Button variant="secondary" onClick={() => removeFromCart(line.listing_id)}>
-                  Remove
-                </Button>
               </div>
             </CardBody>
           </Card>

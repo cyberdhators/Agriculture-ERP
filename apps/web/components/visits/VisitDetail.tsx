@@ -2,7 +2,7 @@
 
 import type { AttachmentStatus } from '@agri-erp/shared';
 
-import { Button, Dialog, EmptyState, Stamp, type StampKind } from '@/components/ui';
+import { Button, Dialog, Stamp, type StampKind } from '@/components/ui';
 import { IconAudio, IconImage } from '@/components/ui/icons';
 import type { Visit } from '@/lib/visits/api';
 import { VISIT_TOPIC_LABELS } from '@/lib/visits/fixtures';
@@ -139,10 +139,7 @@ export function VisitDetail({
       <section className={styles.detailSection}>
         <h3>Attachments</h3>
         {visit.attachments.length === 0 ? (
-          <EmptyState
-            title="No attachments"
-            body="This visit was recorded without a photo or a recording."
-          />
+          <p className={styles.muted}>No photo or recording.</p>
         ) : (
           <ul className={styles.attachList}>
             {visit.attachments.map((a) => (

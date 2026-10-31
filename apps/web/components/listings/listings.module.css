@@ -1466,3 +1466,51 @@
   color: var(--ink-2);
   font-weight: 600;
 }
+
+/* 2026-10-31, beauty pass: the Filters button's arrow is the app's chevron
+   (it was a ▾ text glyph), and Cards / List is a quiet segmented control
+   like the market's section tabs, not a solid green block. */
+.railChevron {
+  width: 18px;
+  height: 18px;
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231f7a3f' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>")
+    center / contain no-repeat;
+  transition: transform 160ms ease;
+}
+
+.railToggle[aria-expanded='true'] .railChevron {
+  transform: rotate(180deg);
+}
+
+:global(.shop) .viewToggle {
+  gap: 2px;
+  padding: 3px;
+  background: var(--dust);
+  border: 0;
+  border-radius: var(--radius-pill);
+}
+
+:global(.shop) .viewToggle button {
+  min-height: 34px;
+  padding: 0 var(--s-4);
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--ink-2);
+  font-weight: 600;
+}
+
+:global(.shop) .viewToggle button + button {
+  border-inline-start: 0;
+}
+
+:global(.shop) .viewToggle button[aria-pressed='true'] {
+  background: var(--card);
+  color: var(--green-deep);
+  box-shadow: var(--shadow-card);
+}
+
+:global(.shop) .railToggle {
+  border-color: var(--line);
+  box-shadow: var(--shadow-card);
+}

@@ -107,15 +107,23 @@ export function StaffInviteAccept() {
         <div className={styles.brand}>
           <Wordmark size={28} tagline />
         </div>
-        <h1 className={styles.title}>Join AgriOne staff</h1>
-
-        {stage === 'checking' ? <p className={styles.hint}>Checking your invitation…</p> : null}
+        {/* 2026-10-31: the title and one short line -- who is invited, as
+            what, and the sign-in -- in place of three sentences in the form. */}
+        <div className={styles.head}>
+          <h1 className={styles.title}>Join AgriOne staff</h1>
+          {stage === 'checking' ? <p className={styles.hint}>Checking your invitation…</p> : null}
+          {stage === 'ready' && preview ? (
+            <p className={styles.hint}>
+              {preview.name}, you are invited as {ROLE_WORDS[preview.role]}. You sign in with{' '}
+              {preview.email_hint}.
+            </p>
+          ) : null}
+        </div>
 
         {stage === 'invalid' ? (
           <Notice kind="error" title="This link does not work">
             <p className="small">
-              Open the link from the invitation email again, exactly as it was sent. If it still
-              does not work, ask the person who invited you for a new invitation.
+              Open the link in the invitation email again, or ask for a new invitation.
             </p>
           </Notice>
         ) : null}
@@ -151,10 +159,6 @@ export function StaffInviteAccept() {
 
         {stage === 'ready' && preview ? (
           <form className={styles.form} onSubmit={(e) => void submit(e)} noValidate>
-            <p className={styles.hint}>
-              {preview.name}, you are invited to join as {ROLE_WORDS[preview.role]}. Your sign-in is{' '}
-              {preview.email_hint}. Choose a password only you know.
-            </p>
             {error ? (
               <Notice kind="error" title="Not created">
                 <p className="small">{error}</p>

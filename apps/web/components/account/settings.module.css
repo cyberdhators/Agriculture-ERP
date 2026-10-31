@@ -59,18 +59,11 @@
 }
 
 .profileMeta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 2px var(--s-3);
+  display: grid;
+  gap: 1px;
   color: var(--ink-2);
   font-size: var(--text-small);
   font-variant-numeric: tabular-nums;
-}
-
-.profileMeta span + span::before {
-  content: '·';
-  margin-inline-end: var(--s-3);
-  color: var(--muted);
 }
 
 /* ---- Groups and rows -------------------------------------------------- */
@@ -137,7 +130,14 @@
   width: 36px;
   height: 36px;
   border-radius: 10px;
-  background: var(--green-tint);
+  /* A light highlight on the tint, as on the Home quick actions. */
+  background:
+    radial-gradient(
+      circle at 30% 25%,
+      color-mix(in srgb, var(--card) 70%, transparent),
+      transparent 60%
+    ),
+    var(--green-tint);
   color: var(--green-deep);
 }
 

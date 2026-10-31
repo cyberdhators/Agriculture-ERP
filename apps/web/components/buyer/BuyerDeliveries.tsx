@@ -37,10 +37,8 @@ export function BuyerDeliveries() {
 
   return (
     <div className={styles.page}>
-      <PageHeader
-        title="Deliveries"
-        subtitle="CORWADO records each status; there is no live tracking."
-      />
+      {/* 2026-10-31: the title alone; each status names who recorded it, and when. */}
+      <PageHeader title="Deliveries" />
       {list.error ? (
         <EmptyState
           error

@@ -229,12 +229,8 @@ export function MarketplaceConsole() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s-6)' }}>
       <PageHeader
         title="Marketplace"
-        subtitle="Every published post: inspect it, ask its owner for a correction, or remove it with a reason."
+        subtitle="Removing a post does not suspend its account; do that from the account's page."
       />
-      <Notice kind="info">
-        Listings and accounts have separate actions. Removing a post does not suspend or disable the
-        account that posted it; do that from the account&apos;s own page.
-      </Notice>
 
       <Tabs
         label="Kind of post"

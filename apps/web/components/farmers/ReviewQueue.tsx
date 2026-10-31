@@ -131,11 +131,11 @@ export function ReviewQueue() {
   if (!canReview(role)) {
     return (
       <>
-        <PageHeader eyebrow="Farmers · Verification" title="Verify farmers" />
+        <PageHeader title="Verify farmers" />
         <EmptyState
           error
           title="Only a supervisor or administrator reviews farmers"
-          body={`You are previewing as ${ROLE_LABELS[role]}. Verifying, merging and rejecting are review actions; the live portal returns 403 for anyone else.`}
+          body={`You are previewing as ${ROLE_LABELS[role]}.`}
           actions={<ButtonLink href="/farmers">Back to the register</ButtonLink>}
         />
       </>
@@ -213,9 +213,8 @@ export function ReviewQueue() {
   return (
     <>
       <PageHeader
-        eyebrow="Farmers · Verification"
         title="Verify farmers"
-        subtitle={`Farmers not yet verified, oldest first. They can already buy and sell; verifying adds the Verified badge and counts them in reach figures. Past ${ESCALATE_AFTER_DAYS} days a farmer is escalated to the top.`}
+        subtitle={`Oldest first. After ${ESCALATE_AFTER_DAYS} days a farmer moves to the top.`}
         actions={
           <ButtonLink href="/farmers" variant="secondary">
             Back to register
@@ -242,7 +241,7 @@ export function ReviewQueue() {
       {entries.length === 0 ? (
         <EmptyState
           title="Nothing waiting"
-          body="No farmer in your scope is pending review. New registrations arrive here as officers sync from the field."
+          body="New registrations arrive here as officers sync."
           actions={<ButtonLink href="/farmers">Open the register</ButtonLink>}
         />
       ) : (

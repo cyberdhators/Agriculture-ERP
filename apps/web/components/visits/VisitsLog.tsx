@@ -2,7 +2,16 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-import { Button, Dialog, EmptyState, Field, KpiStrip, Notice, Textarea } from '@/components/ui';
+import {
+  Button,
+  Dialog,
+  EmptyState,
+  Field,
+  KpiStrip,
+  Notice,
+  PageHeader,
+  Textarea,
+} from '@/components/ui';
 import { IconImage, IconPlus } from '@/components/ui/icons';
 import { isNoSignal } from '@/lib/offline/net';
 import { VISIT_KIND } from '@/lib/offline/officer';
@@ -177,15 +186,8 @@ export function VisitsLog() {
 
   return (
     <div className={styles.page}>
-      <header className={styles.head}>
-        <p className={styles.eyebrow}>Extension</p>
-        <h1 className={styles.h1}>Extension visits</h1>
-        <p className={styles.lede}>
-          Every field visit an officer records, newest first. An officer sees the visits in their
-          caseload; a supervisor and read-only user see their state. Open a visit for the advice
-          given and any photos or recordings that came with it.
-        </p>
-      </header>
+      {/* 2026-10-31: the shared calm title; the lede explained scoping the list already applies. */}
+      <PageHeader title="Extension visits" subtitle="Newest first." />
 
       <KpiStrip items={kpis} label="Extension visit summary" />
 
@@ -275,8 +277,8 @@ export function VisitsLog() {
           title="No visits to show"
           body={
             farmer || payam
-              ? 'No visit matches these filters. Clear them to see the whole log.'
-              : 'When an officer records a field visit it appears here.'
+              ? 'Clear the filters to see the whole log.'
+              : 'Recorded field visits appear here.'
           }
           actions={
             canRecord ? (

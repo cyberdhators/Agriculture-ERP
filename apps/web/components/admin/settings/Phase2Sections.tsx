@@ -272,7 +272,7 @@ export function RegistrationRecoverySection({
       setting={setting}
       onSaved={onSaved}
       title="Registration and recovery"
-      subtitle="Sign-up codes, session rules and age eligibility. Self-service registration is always open: there is deliberately no switch to close it."
+      subtitle="Sign-up codes, session rules and age eligibility. Registration is always open."
     >
       {(value, set, fields) => (
         <>
@@ -305,9 +305,8 @@ export function RegistrationRecoverySection({
             onChange={(v) => set({ ...value, minimum_age_years: v })}
           />
           <p className="small muted">
-            Sign-in methods: farmers sign in with a phone number and password, buyer accounts and
-            staff with an email address and password; staff may add an authenticator app (see
-            Security and operations). These are fixed by the sign-in service, not settings.
+            Sign-in methods are fixed by the sign-in service: farmers use a phone number, buyers and
+            staff an email address.
           </p>
         </>
       )}
@@ -328,14 +327,13 @@ export function ProfilePrivacySection({
       setting={setting}
       onSaved={onSaved}
       title="Profile privacy"
-      subtitle="What a NEW public profile starts with. The owner can change either choice at any time."
+      subtitle="What a new public profile starts with; the owner can change it."
     >
       {(value, set, fields) => (
         <>
           <Notice kind="info" title="Existing profiles are never changed">
             <p className="small">
-              A new default applies only to profiles created after you save it. Nobody&apos;s
-              existing profile is changed, so nobody is exposed without their knowledge.
+              A new default applies only to profiles created after you save it.
             </p>
           </Notice>
           <Checkbox
@@ -443,7 +441,7 @@ export function ReferenceListsSection({
       setting={setting}
       onSaved={onSaved}
       title="Marketplace and reference lists"
-      subtitle="How long a post stays on the market, and which categories, units and crops are offered for new entries."
+      subtitle="How long a post stays up, and what new entries may choose."
     >
       {(value, set, fields) => (
         <>
@@ -467,9 +465,8 @@ export function ReferenceListsSection({
           />
           <Notice kind="info" title="Archiving keeps every record">
             <p className="small">
-              Untick a value to archive it: it is no longer offered for NEW posts or registrations,
-              and new posts naming it are refused. Every existing listing, request and profile keeps
-              its value and is shown as before. Tick it again to restore it.
+              An unticked value is no longer offered for new posts or registrations. Existing
+              records keep it. Tick it again to restore it.
             </p>
           </Notice>
           <ArchiveList

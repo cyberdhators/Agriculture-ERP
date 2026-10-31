@@ -54,27 +54,49 @@ const SHORT: Record<Language, Record<Shortcut, string>> = {
   },
 };
 
+// 2026-10-31 (the owner: "make the UI come to life ... better than just an
+// icon outline, but maintain simplicity"): two-tone glyphs -- a soft filled
+// shape under the same outline -- each on its own gentle colour.
+const FILL = { fill: 'currentColor', fillOpacity: 0.2, stroke: 'none' } as const;
+
 const GLYPH: Record<Shortcut, React.ReactNode> = {
-  sell: <path d="M20 12l-8 8-9-9V3h8zM7.5 7.5h.01" />,
+  sell: (
+    <>
+      <path {...FILL} d="M20 12l-8 8-9-9V3h8z" />
+      <path d="M20 12l-8 8-9-9V3h8zM7.5 7.5h.01" />
+    </>
+  ),
   buy: (
     <>
+      <path {...FILL} d="M6.2 7H22l-2.5 8h-12z" />
       <circle cx="9" cy="20" r="1.5" />
       <circle cx="18" cy="20" r="1.5" />
       <path d="M2 3h3l2.5 12h12L22 7H6" />
     </>
   ),
-  buying_request: <path d="M6 3h9l4 4v14H6zM9 12h7M9 16h5M14 3v5h5" />,
+  buying_request: (
+    <>
+      <path {...FILL} d="M6 3h9l4 4v14H6z" />
+      <path d="M6 3h9l4 4v14H6zM9 12h7M9 16h5M14 3v5h5" />
+    </>
+  ),
   services: (
     <>
+      <circle {...FILL} cx="12" cy="12" r="5.5" />
       <circle cx="12" cy="12" r="3" />
       <path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2" />
     </>
   ),
   advice: (
-    <path d="M3 5h7a2 2 0 0 1 2 2v13a2 2 0 0 0-2-2H3zM21 5h-7a2 2 0 0 0-2 2v13a2 2 0 0 1 2-2h7z" />
+    <>
+      <path {...FILL} d="M3 5h7a2 2 0 0 1 2 2v13a2 2 0 0 0-2-2H3z" />
+      <path d="M3 5h7a2 2 0 0 1 2 2v13a2 2 0 0 0-2-2H3zM21 5h-7a2 2 0 0 0-2 2v13a2 2 0 0 1 2-2h7z" />
+    </>
   ),
   profile: (
     <>
+      <path {...FILL} d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6z" />
+      <circle {...FILL} cx="12" cy="8" r="4" />
       <circle cx="12" cy="8" r="4" />
       <path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6" />
     </>
@@ -82,8 +104,22 @@ const GLYPH: Record<Shortcut, React.ReactNode> = {
   // 2026-10-31: a building, not a house -- the house is "Your farm" on the
   // same home, and two house tiles read as a duplicate on a phone.
   organisations: (
-    <path d="M4 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16M16 9h3a1 1 0 0 1 1 1v11M2 21h20M8 7h4M8 11h4M8 15h4" />
+    <>
+      <path {...FILL} d="M4 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16z" />
+      <path d="M4 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16M16 9h3a1 1 0 0 1 1 1v11M2 21h20M8 7h4M8 11h4M8 15h4" />
+    </>
   ),
+};
+
+/** Each way in keeps its own gentle colour, so the row reads at a glance. */
+const TONE: Record<Shortcut, 'green' | 'gold' | 'sky' | 'earth'> = {
+  sell: 'gold',
+  buy: 'green',
+  buying_request: 'sky',
+  services: 'earth',
+  advice: 'green',
+  profile: 'sky',
+  organisations: 'earth',
 };
 
 /**
@@ -134,7 +170,7 @@ export function ShortcutHub({
               className={styles.quickItem}
               aria-label={title}
             >
-              <span className={styles.quickIcon} aria-hidden>
+              <span className={styles.quickIcon} data-tone={TONE[s]} aria-hidden>
                 <svg
                   viewBox="0 0 24 24"
                   width="24"

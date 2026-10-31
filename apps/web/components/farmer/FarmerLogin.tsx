@@ -52,7 +52,6 @@ export function FarmerLogin() {
 
   return (
     <form className={styles.sheet} onSubmit={submit} noValidate>
-      <p className={styles.eyebrow}>{t('brand.tagline', language)}</p>
       <h1 className={styles.h1}>{t('login.title', language)}</h1>
 
       {failure ? (
@@ -118,9 +117,10 @@ export function FarmerLogin() {
         </Button>
       </div>
 
-      <p className={styles.helpRow}>
-        <span className={styles.helpTitle}>{t('login.forgotTitle', language)}</span>{' '}
-        {t('login.forgotBody', language)}{' '}
+      {/* 2026-10-31: one quiet line, as on the email sign-in (it was three
+          sentences); the officer/CORWADO route is on the reset page. */}
+      <p className={styles.linkRow}>
+        {t('login.forgotTitle', language)}{' '}
         <Link href="/farmer/forgot-password">{t('login.forgotLink', language)}</Link>
       </p>
 

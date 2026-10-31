@@ -197,10 +197,7 @@ export function AdviserReview() {
   if (!isAdmin || failure?.status === 403) {
     return (
       <Notice kind="info" title="Moderators only">
-        <p className="small">
-          Adviser applications are reviewed by administrators who hold Moderate content and
-          listings.
-        </p>
+        <p className="small">Needs the Moderate content and listings permission.</p>
       </Notice>
     );
   }
@@ -209,9 +206,7 @@ export function AdviserReview() {
     <section style={{ display: 'grid', gap: 'var(--s-3)' }}>
       <h2>Approved advisers</h2>
       <p className="small muted">
-        An optional pathway: an advice provider asks CORWADO to review their experience and
-        qualifications. Approval adds an &quot;Approved adviser&quot; badge to their advice profile.
-        It never changes ordinary access, and it is separate from account suspension.
+        Approval adds an &quot;Approved adviser&quot; badge; it never changes ordinary access.
       </p>
       <Tabs
         label="Application status"

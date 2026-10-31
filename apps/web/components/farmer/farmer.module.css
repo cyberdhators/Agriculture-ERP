@@ -2250,7 +2250,7 @@
   }
 
   .main {
-    padding-bottom: calc(var(--s-10) + 64px);
+    padding-bottom: var(--s-8);
   }
 
   /* The footer sits after the main column, so it needs its own room above
@@ -2809,4 +2809,46 @@
   color: var(--muted);
   font-size: 12px;
   line-height: 1.25;
+}
+
+/* 2026-10-31: the quick actions come to life -- each round icon on its own
+   gentle tone (a soft wash with a light highlight), the glyph two-tone. */
+.quickIcon {
+  --tone-bg: var(--green-tint);
+  --tone-ink: var(--green-deep);
+  background:
+    radial-gradient(
+      circle at 30% 25%,
+      color-mix(in srgb, var(--card) 70%, transparent),
+      transparent 60%
+    ),
+    var(--tone-bg);
+  border-color: color-mix(in srgb, var(--tone-ink) 14%, transparent);
+  color: var(--tone-ink);
+}
+
+.quickIcon[data-tone='gold'] {
+  --tone-bg: var(--harvest-tint);
+  --tone-ink: var(--harvest-ink);
+}
+
+.quickIcon[data-tone='sky'] {
+  --tone-bg: var(--info-tint);
+  --tone-ink: var(--info);
+}
+
+.quickIcon[data-tone='earth'] {
+  --tone-bg: var(--soil-tint);
+  --tone-ink: var(--soil);
+}
+
+.quickItem:hover .quickIcon {
+  background:
+    radial-gradient(
+      circle at 30% 25%,
+      color-mix(in srgb, var(--card) 80%, transparent),
+      transparent 60%
+    ),
+    var(--tone-bg);
+  filter: saturate(1.15);
 }

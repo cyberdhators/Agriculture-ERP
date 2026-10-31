@@ -257,7 +257,7 @@ export function Market({
           {applied.length > 0 ? (
             <span className={styles.railToggleCount}>{applied.length}</span>
           ) : null}
-          <span aria-hidden="true">{filtersOpen ? '▴' : '▾'}</span>
+          <span aria-hidden="true" className={styles.railChevron} />
         </button>
         <aside
           id="market-filters"

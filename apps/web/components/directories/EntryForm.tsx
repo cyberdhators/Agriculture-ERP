@@ -208,13 +208,8 @@ export function EntryForm({ existing }: { existing: DirectoryEntryRow | null }) 
   return (
     <>
       <PageHeader
-        eyebrow="Directories"
         title={title}
-        subtitle={
-          existing
-            ? `Editing “${existing.name}”. Every saved change is recorded with who made it and when.`
-            : 'A named place with a phone number that a farmer can be sent to. Not an account, not a balance.'
-        }
+        subtitle={existing ? existing.name : undefined}
         actions={
           <ButtonLink
             href={existing ? `/directories?entry=${existing.id}` : '/directories'}
@@ -257,9 +252,6 @@ export function EntryForm({ existing }: { existing: DirectoryEntryRow | null }) 
             <section className={styles.formSection} aria-labelledby="sec-identity">
               <div className={styles.formSectionTitle}>
                 <h2 id="sec-identity">What it is</h2>
-                <p className="small muted">
-                  The directory this entry belongs to and how it is named.
-                </p>
               </div>
               <div className={styles.formGrid}>
                 <Field label="Directory" error={errors['entry_type']}>
@@ -409,9 +401,7 @@ export function EntryForm({ existing }: { existing: DirectoryEntryRow | null }) 
             <section className={styles.formSection} aria-labelledby="sec-where">
               <div className={styles.formSectionTitle}>
                 <h2 id="sec-where">Where it is</h2>
-                <p className="small muted">
-                  Payam is required. A GPS point is optional and lets the map show it.
-                </p>
+                <p className="small muted">A GPS point is optional and shows it on the map.</p>
               </div>
               <div className={styles.formGrid}>
                 <Field label="Payam" error={errors['payam_id'] ?? errors['state_id']}>
@@ -474,8 +464,7 @@ export function EntryForm({ existing }: { existing: DirectoryEntryRow | null }) 
               <div className={styles.formSectionTitle}>
                 <h2 id="sec-check">Checked</h2>
                 <p className="small muted">
-                  When someone last confirmed this entry is open and the number works. It is shown
-                  to every officer.
+                  When someone last confirmed it is open and the number works.
                 </p>
               </div>
               <div className={styles.formGrid}>

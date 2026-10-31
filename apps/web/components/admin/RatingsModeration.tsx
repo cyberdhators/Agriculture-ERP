@@ -184,7 +184,7 @@ export function RatingsModeration() {
     <div style={{ display: 'grid', gap: 12, maxWidth: 820, minWidth: 0 }}>
       <PageHeader
         title="Ratings"
-        subtitle="Ratings people gave each other after a completed deal. Hide an abusive one with a reason; it leaves every profile and the average. Nothing is deleted."
+        subtitle="A hidden rating leaves every profile and the average. Nothing is deleted."
       />
       <Tabs<RatingModerationFilter>
         label="Ratings"

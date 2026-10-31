@@ -98,7 +98,7 @@ function IdentityForm({
     <Card>
       <CardHeader
         title="Identity"
-        subtitle="The approved name of the service and the About text shown on the help page."
+        subtitle="The service name and the About text on the help page."
       />
       <CardBody>
         <VersionLine setting={setting} />
@@ -210,7 +210,7 @@ function SupportForm({
     <Card>
       <CardHeader
         title="Support contacts and help links"
-        subtitle="Shown on the public help page and in the site footer. Leave a contact blank to not publish it."
+        subtitle="Shown on the help page and in the footer. A blank contact is not published."
       />
       <CardBody>
         <VersionLine setting={setting} />

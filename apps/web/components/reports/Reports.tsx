@@ -211,15 +211,14 @@ export function Reports() {
   return (
     <div className={styles.page}>
       <PageHeader
-        eyebrow="Reports"
         title="Reach and coverage"
-        subtitle="Verified farmers reached, land mapped and extension coverage, within your scope. Pending, rejected and merged farmers are counted beside every figure, never inside it."
+        subtitle="Verified farmers only; pending, rejected and merged are counted beside each figure."
       />
 
       {/* ---- Filters (the same set an export takes, so the two agree — C-10.9) ---- */}
       <Card padded>
         <div className={styles.filters}>
-          <Field label="Data cut-off" hint="Counts are as of this date.">
+          <Field label="Data cut-off">
             {(ids) => (
               <Input
                 {...ids}
@@ -230,7 +229,7 @@ export function Reports() {
               />
             )}
           </Field>
-          <Field label="Period from" hint="Reach and visits, by the server's moment of receipt.">
+          <Field label="Period from">
             {(ids) => (
               <Input
                 {...ids}
@@ -593,8 +592,8 @@ export function Reports() {
             <div>
               <p className="label">Exports</p>
               <p className="small muted">
-                An export is a recorded act: who ran it, the query, the filters, the cut-off and the
-                row count. A farmer list carries farmer numbers only, never a name or phone.
+                Every export is recorded with its query, filters and cut-off. A farmer list carries
+                farmer numbers only.
               </p>
             </div>
             <div className={styles.exportActions}>
