@@ -6196,3 +6196,34 @@ the existing reseed already reads when present.
   load is about 8 round trips and still all or nothing. Unchanged rows are
   still left untouched. Each statement was planned with EXPLAIN on production
   before the second run.
+
+## The forms offer the national place list (2026-10-31)
+
+Found by the owner ("all the payams are not showing in the filter for the
+marketplace"), and on looking, wider than the filter. OBSERVED in the code:
+
+- the sign-up form, "Your details", an officer's "Register a farmer" and an
+  email account's "Start selling" read `lib/fixtures/p1.ts`, which held B2's
+  placeholder list: Central Equatoria, Juba County, twelve Juba payams. The
+  database had held CORWADO's 13 / 83 / 505 since 30 October, so a member
+  anywhere else could not give their place, and so had no weather for it;
+- the marketplace's place filter listed only payams that had a listing.
+
+Now:
+
+- **`lib/places/national.ts` is generated** from `docs/data/locations.csv` by
+  `node scripts/places-module.mjs` -- the same CSV the reseed loads. It is a
+  built-in module rather than a call to `/api/locations` because the sign-up
+  form and the public marketplace are used before anyone signs in, and that
+  route requires a role; opening it to anonymous callers is an authorization
+  change this did not need. `tests/places-national.test.ts` fails if the
+  module and the CSV disagree, so editing the CSV without rerunning the
+  script is caught by the suite.
+- `lib/fixtures/p1.ts` STATES / COUNTIES / PAYAMS now are the national lists,
+  so every form that read them offers the whole country, unchanged otherwise.
+- **The marketplace filter is "Place": a state, then a county in it, then a
+  payam in that.** Any level alone narrows the results (a payam code is
+  STATE-COUNTY-PAYAM, so its state and county are its first parts).
+
+Server validation is unchanged: a chosen payam must still exist in the
+database (its foreign key), which it does, since both come from the CSV.
