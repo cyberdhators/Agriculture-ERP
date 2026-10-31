@@ -113,19 +113,15 @@ export function LoginForm({
           <Wordmark size={28} tagline />
         </div>
         {/* 2026-10-29: English / العربية on the email sign-in; the choice is kept. */}
-        {staff ? null : <LanguageButtons value={language} onChange={setLanguage} />}
-        <div>
+        {staff ? null : (
+          <div className={styles.lang}>
+            <LanguageButtons value={language} onChange={setLanguage} />
+          </div>
+        )}
+        {/* 2026-10-31: the title alone; the field says "email or phone number",
+            and the other ways in are the quiet links at the foot. */}
+        <div className={styles.head}>
           <h1 className={styles.title}>{staff ? 'Staff sign in' : w('email.login.title')}</h1>
-          {staff ? (
-            <p className={styles.hint}>
-              For CORWADO staff and extension officers. Staff sign in with their email address;
-              extension officers with their phone number. Accounts are issued by an administrator.
-            </p>
-          ) : (
-            <p className={styles.hint}>
-              {w('email.login.hint')} <a href="/farmer/login">{w('email.login.phoneLink')}</a>.
-            </p>
-          )}
         </div>
 
         {codeStep ? (
@@ -169,30 +165,40 @@ export function LoginForm({
               />
             )}
           </Field>
-          <Button type="submit" variant="primary" disabled={busy || !login || !password}>
+          <Button
+            type="submit"
+            variant="primary"
+            className={styles.submit}
+            disabled={busy || !login || !password}
+          >
             {busy ? w('email.login.signingIn') : w('login.submit')}
           </Button>
         </form>
+        {/* The staff sentences keep their exact lines (the Arabic scan allows
+            these and only these), so they sit at the card's own level. */}
         {staff ? (
-          <p className={styles.hint}>
+          <p className={styles.links}>
             Forgot your password? Staff: <a href="/forgot-password">reset it by email</a>. Extension
             officers: ask an administrator.
           </p>
         ) : null}
         {staff ? (
-          <p className={styles.hint}>
+          <p className={styles.linkLine}>
             Not staff? <a href="/join">Sign in or create an account</a> to buy, sell and get advice.
           </p>
         ) : (
-          <>
-            <p className={styles.hint}>
-              {w('login.forgotTitle')} <a href="/forgot-password">{w('email.login.resetLink')}</a>.
+          <div className={styles.links}>
+            <p>
+              <a href="/farmer/login">{w('email.login.phoneLink')}</a>
             </p>
-            <p className={styles.hint}>
+            <p>
+              {w('login.forgotTitle')} <a href="/forgot-password">{w('email.login.resetLink')}</a>
+            </p>
+            <p>
               {w('login.newHere')} <a href={BUYER_REGISTER_PATH}>{w('email.login.createEmail')}</a>
-              {w('email.login.or')} <a href="/farmer/register">{w('email.login.withPhone')}</a>.
+              {w('email.login.or')} <a href="/farmer/register">{w('email.login.withPhone')}</a>
             </p>
-          </>
+          </div>
         )}
       </Card>
     </main>

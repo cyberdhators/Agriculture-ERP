@@ -495,3 +495,70 @@
   font-size: var(--text-small);
   font-weight: 600;
 }
+
+.pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+}
+
+.pills a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0 var(--s-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  background: var(--card);
+  color: var(--green-deep);
+  font-size: var(--text-small);
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: var(--shadow-card);
+}
+
+.pills a:hover {
+  border-color: var(--green);
+  background: var(--green-tint);
+  text-decoration: none;
+}
+
+/* 2026-10-31 (helper D -- the owner: "more beautiful and more appealing";
+   labels close to their input, even gaps between fields, a larger even gap
+   between cards). The forms and detail pages are built from the settings kit
+   (components/account/settings.module.css: .group, .groupTitle, .formCard,
+   .chips, .list, .row); these are the few pieces it does not have. */
+
+/* A form or page of grouped cards: one even gap between the groups. */
+.sections {
+  display: grid;
+  gap: var(--s-6);
+}
+
+/* A pick-any (or pick-one) question inside a card: its label sits close to
+   its chips, as a Field's label sits close to its input. */
+.pick {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.pickLabel {
+  padding: 0;
+  font-weight: 600;
+  font-size: var(--text-small);
+  letter-spacing: 0.02em;
+  color: var(--ink);
+}
+
+/* A native radio at the end of a settings row ("An individual" / "A business"). */
+.rowRadio {
+  flex: none;
+  inline-size: 20px;
+  block-size: 20px;
+  margin: 0;
+  accent-color: var(--green);
+  cursor: pointer;
+}

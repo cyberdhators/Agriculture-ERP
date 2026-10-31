@@ -6,7 +6,7 @@ import { LIVE_FARMERS, createFarmer } from '@/lib/farmers/api';
 import { isNoSignal, offlineNow } from '@/lib/offline/net';
 import { queueRegistration } from '@/lib/offline/officer';
 import { eligibleOfficers, useOfficers } from '@/lib/farmers/caseload';
-import { CROP_LABELS, LANGUAGE_LABELS } from '@/lib/format';
+import { LANGUAGE_LABELS } from '@/lib/format';
 import { canRegister } from '@/lib/farmers/presentation';
 import {
   validateFarmer,
@@ -15,10 +15,9 @@ import {
   type FarmerErrors,
   type FarmerFormValues,
 } from '@/lib/farmers/schema';
-import { FARMERS, FARMER_NUMBER_FORMAT, type Farmer } from '@/lib/fixtures/farmers';
+import { FARMERS, type Farmer } from '@/lib/fixtures/farmers';
 import { COUNTIES, PAYAMS, STATES, payamName } from '@/lib/fixtures/p1';
 import { ROLE_LABELS, usePreview } from '@/lib/preview';
-import { CROPS } from '@agri-erp/shared';
 
 import {
   Button,
@@ -260,11 +259,11 @@ export function RegisterFarmer() {
   if (!canRegister(role)) {
     return (
       <>
-        <PageHeader eyebrow="Farmers" title="Help a farmer register" />
+        <PageHeader title="Help a farmer register" />
         <EmptyState
           error
           title="Extension officers help farmers register"
-          body={`You are signed in as ${ROLE_LABELS[role]}. Farmers create their own accounts; an extension officer helps those who cannot, in the field.`}
+          body={`You are signed in as ${ROLE_LABELS[role]}.`}
           actions={<ButtonLink href="/farmers">Back to the register</ButtonLink>}
         />
       </>
@@ -274,7 +273,7 @@ export function RegisterFarmer() {
   if (saved) {
     return (
       <>
-        <PageHeader eyebrow="Farmers" title="Help a farmer register" />
+        <PageHeader title="Help a farmer register" />
         <div className={styles.recorded}>
           <p className="label">
             {saved.pending
@@ -318,9 +317,8 @@ export function RegisterFarmer() {
   return (
     <>
       <PageHeader
-        eyebrow="Farmers"
         title="Help a farmer register"
-        subtitle={`New farmers enter as pending. The farmer number ${FARMER_NUMBER_FORMAT} is a placeholder until the numbering rule (C-5) is written.`}
+        subtitle="New farmers enter as pending."
         actions={
           <ButtonLink href="/farmers" variant="secondary">
             Cancel
@@ -663,9 +661,7 @@ export function RegisterFarmer() {
             ) : (
               <Notice kind="info" title="Duplicate check">
                 <p className="small">
-                  As you fill in the phone number and name, any possible duplicate already on the
-                  register appears here. A match warns; it never blocks. The survivor is a
-                  person&apos;s decision, taken from the dossier.
+                  Possible duplicates appear here as you type. A match warns; it never blocks.
                 </p>
               </Notice>
             )}
@@ -673,12 +669,7 @@ export function RegisterFarmer() {
             <Card padded className={styles.homeAside}>
               <p className="label">After this step</p>
               <p className="small muted">
-                Crop declarations and the farm boundary are captured on the next screen once the
-                farmer exists:{' '}
-                {CROPS.slice(0, 4)
-                  .map((c) => CROP_LABELS[c])
-                  .join(', ')}{' '}
-                and more. The intake form records the person and their consent only.
+                Crops and the farm boundary are recorded on the next screen.
               </p>
               <p className="small muted">
                 Location: {values.payam_id ? payamName(values.payam_id) : 'not chosen yet'}.

@@ -201,11 +201,7 @@ export function UserAdmin() {
 
   return (
     <div className={styles.page}>
-      <PageHeader
-        eyebrow="Staff and permissions"
-        title="Staff accounts and extension officers"
-        subtitle="Administrative access and account lifecycle, and the field workforce with their payam assignments. Two separate records; an account is not an officer."
-      />
+      <PageHeader title="Staff accounts and extension officers" />
 
       {error ? (
         <Notice kind="error" title="Could not load this information">
@@ -509,8 +505,7 @@ export function UserAdmin() {
           <strong dir="auto">{confirm?.kind === 'remove-staff' ? confirm.staff.name : ''}</strong>?
         </p>
         <p className="small muted">
-          This disables the account and ends any session already open. Historical records remain:
-          everything this account did stays in the audit trail. This is not a permanent deletion.
+          This disables the account and ends any open session. Its history stays in the audit trail.
         </p>
       </Dialog>
 
@@ -549,8 +544,7 @@ export function UserAdmin() {
             </p>
             <p>{DEACTIVATION_WARNING}</p>
             <p className="small muted">
-              Deactivation ends this officer&apos;s access at once. It is not a deletion: the
-              officer record and their history remain.
+              This ends their access at once. Their record and history remain.
             </p>
           </>
         ) : null}

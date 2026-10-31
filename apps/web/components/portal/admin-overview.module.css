@@ -68,8 +68,14 @@
 
 .section {
   display: grid;
-  gap: var(--s-4);
+  gap: var(--s-3);
   min-inline-size: 0;
+}
+
+/* 2026-10-31: a section title sits close to what it names; the grid gap is
+   the only space beneath it. */
+.section > .sectionTitle {
+  margin: 0;
 }
 
 .sectionTitle {

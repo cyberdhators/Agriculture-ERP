@@ -25,23 +25,15 @@ import { useNoticeText, type ConsentText } from '@/lib/settings/client';
 import { supabaseBrowser } from '@/lib/supabase/browser';
 
 import { Wordmark } from '../brand/Wordmark';
-import {
-  Button,
-  Card,
-  Checkbox,
-  Field,
-  Input,
-  Notice,
-  PageHeader,
-  PasswordInput,
-  Select,
-} from '../ui';
+import { Button, Checkbox, Field, Input, Notice, PageHeader, PasswordInput, Select } from '../ui';
 import {
   EMPTY_ORG,
   ProcurementFields,
   toOrganizationBody,
   type OrgForm,
 } from './ProcurementFields';
+import css from '@/components/account/settings.module.css';
+
 import styles from './buyer.module.css';
 
 /**
@@ -311,168 +303,184 @@ export function BuyerRegister({
     <main className={styles.registerWrap} dir={isRtl(language) ? 'rtl' : 'ltr'}>
       <div className={styles.registerInner}>
         <Wordmark size={28} tagline />
-        <PageHeader title={w('email.login.createEmail')} subtitle={w('email.reg.subtitle')} />
-        <p className="small">
-          {w('email.reg.phoneQ')} <a href="/farmer/register">{w('email.reg.phoneLink')}</a>{' '}
-          {w('email.reg.instead')} {w('email.reg.haveAccount')}{' '}
-          <a href="/login?next=/buyer/marketplace">{w('login.submit')}</a>.
-        </p>
-        <Card padded>
-          <form
-            className={styles.form}
-            onSubmit={submit}
-            noValidate
-            aria-label={w('email.reg.formAria')}
-          >
-            {failure ? (
-              <Notice kind="error" title={w('email.reg.notSentTitle')}>
-                {failure}
-              </Notice>
-            ) : null}
+        {/* 2026-10-31 (the owner: "more beautiful and more appealing"): the
+            title and one quiet line (the phone way in); "Already have an
+            account? Sign in" is said once, beside the button. Each topic is a
+            small group title over a white card, at one even gap. */}
+        <PageHeader
+          title={w('email.login.createEmail')}
+          subtitle={
+            <>
+              {w('email.reg.phoneQ')} <a href="/farmer/register">{w('email.reg.phoneLink')}</a>{' '}
+              {w('email.reg.instead')}
+            </>
+          }
+        />
+        <form
+          className={styles.sections}
+          onSubmit={submit}
+          noValidate
+          aria-label={w('email.reg.formAria')}
+        >
+          {failure ? (
+            <Notice kind="error" title={w('email.reg.notSentTitle')}>
+              {failure}
+            </Notice>
+          ) : null}
 
-            <fieldset className={styles.fieldset}>
-              <legend className={styles.legend}>{w('account.language')}</legend>
-              <div
-                className={styles.checkGrid}
-                role="radiogroup"
-                aria-label={w('account.language')}
-              >
+          <section className={css.group} aria-labelledby="reg-language">
+            <h2 id="reg-language" className={css.groupTitle}>
+              {w('account.language')}
+            </h2>
+            <div className={css.formCard}>
+              <div className={css.chips} role="radiogroup" aria-label={w('account.language')}>
                 {(
                   [
                     ['en', t('language.name', 'en')],
                     ['ar', t('language.arabicNative', 'en')],
                   ] as const
                 ).map(([value, label]) => (
-                  <label key={value} lang={value} dir={isRtl(value) ? 'rtl' : 'ltr'}>
+                  <label
+                    key={value}
+                    className={css.chip}
+                    lang={value}
+                    dir={isRtl(value) ? 'rtl' : 'ltr'}
+                  >
                     <input
                       type="radio"
                       name="preferred_language"
                       value={value}
                       checked={language === value}
                       onChange={() => setLanguage(value)}
-                    />{' '}
+                    />
                     {label}
                   </label>
                 ))}
               </div>
-              <p className={styles.muted}>{w('email.reg.langNote')}</p>
               {errors.preferred_language ? <p role="alert">{errors.preferred_language}</p> : null}
-            </fieldset>
+            </div>
+          </section>
 
-            <fieldset className={styles.fieldset}>
-              <legend className={styles.legend}>{w('email.reg.who')}</legend>
-              <div
-                className={styles.checkGrid}
-                role="radiogroup"
-                aria-label={w('email.reg.accountTypeAria')}
-              >
-                {(
-                  [
-                    ['individual', w('email.reg.individual'), w('email.reg.individualHint')],
-                    ['business', w('email.reg.business'), w('email.reg.businessHint')],
-                  ] as const
-                ).map(([value, label, hint]) => (
-                  <label key={value} className={styles.form} style={{ gap: 2 }}>
-                    <span>
-                      <input
-                        type="radio"
-                        name="account_type"
-                        value={value}
-                        checked={accountType === value}
-                        onChange={() => setAccountType(value)}
-                      />{' '}
-                      {label}
+          <section className={css.group} aria-labelledby="reg-who">
+            <h2 id="reg-who" className={css.groupTitle}>
+              {w('email.reg.who')}
+            </h2>
+            <ul className={css.list} role="radiogroup" aria-label={w('email.reg.accountTypeAria')}>
+              {(
+                [
+                  ['individual', w('email.reg.individual'), w('email.reg.individualHint')],
+                  ['business', w('email.reg.business'), w('email.reg.businessHint')],
+                ] as const
+              ).map(([value, label, hint]) => (
+                <li key={value}>
+                  <label className={css.row}>
+                    <span className={css.rowText}>
+                      <span className={css.rowLabel}>{label}</span>
+                      <span className={css.rowHint}>{hint}</span>
                     </span>
-                    <span className={styles.muted}>{hint}</span>
+                    <input
+                      type="radio"
+                      className={styles.rowRadio}
+                      name="account_type"
+                      value={value}
+                      checked={accountType === value}
+                      onChange={() => setAccountType(value)}
+                    />
                   </label>
-                ))}
-              </div>
-              {errors.account_type ? <p role="alert">{said('account_type')}</p> : null}
-            </fieldset>
+                </li>
+              ))}
+            </ul>
+            {errors.account_type ? <p role="alert">{said('account_type')}</p> : null}
+          </section>
 
-            <fieldset className={styles.fieldset}>
-              <legend className={styles.legend}>{w('email.reg.yourAccount')}</legend>
-              <div className={styles.formGrid}>
-                <Field label={w('buyer.field.givenName')} error={errors.given_name}>
-                  {(ids) => (
-                    <Input
-                      {...ids}
-                      autoComplete="given-name"
-                      value={person.given_name}
-                      onChange={(e) => setP('given_name')(e.target.value)}
-                    />
-                  )}
-                </Field>
-                <Field label={w('buyer.field.familyName')} error={errors.family_name}>
-                  {(ids) => (
-                    <Input
-                      {...ids}
-                      autoComplete="family-name"
-                      value={person.family_name}
-                      onChange={(e) => setP('family_name')(e.target.value)}
-                    />
-                  )}
-                </Field>
-                <Field
-                  label={w('buyer.field.email')}
-                  hint={w('email.reg.emailHint')}
-                  error={errors.email}
-                >
-                  {(ids) => (
-                    <Input
-                      {...ids}
-                      type="email"
-                      autoComplete="email"
-                      value={person.email}
-                      disabled={Boolean(codeFor)}
-                      onChange={(e) => setP('email')(e.target.value)}
-                    />
-                  )}
-                </Field>
-                <Field
-                  label={w('buyer.field.mobile')}
-                  hint={w('buyer.field.mobileHint')}
-                  error={errors.phone}
-                >
-                  {(ids) => (
-                    <Input
-                      {...ids}
-                      type="tel"
-                      autoComplete="tel"
-                      value={person.phone}
-                      onChange={(e) => setP('phone')(e.target.value)}
-                    />
-                  )}
-                </Field>
-                <Field
-                  label={w('login.passwordLabel')}
-                  hint={w('email.reg.passwordHint')}
-                  error={errors.password}
-                >
-                  {(ids) => (
-                    <PasswordInput
-                      {...ids}
-                      autoComplete="new-password"
-                      value={person.password}
-                      onChange={(e) => setP('password')(e.target.value)}
-                    />
-                  )}
-                </Field>
-                <Field label={w('email.reg.confirmPassword')} error={errors.confirm_password}>
-                  {(ids) => (
-                    <PasswordInput
-                      {...ids}
-                      autoComplete="new-password"
-                      value={person.confirm_password}
-                      onChange={(e) => setP('confirm_password')(e.target.value)}
-                    />
-                  )}
-                </Field>
-              </div>
-            </fieldset>
+          <section className={css.group} aria-labelledby="reg-account">
+            <h2 id="reg-account" className={css.groupTitle}>
+              {w('email.reg.yourAccount')}
+            </h2>
+            <div className={`${css.formCard} ${styles.formGrid}`}>
+              <Field label={w('buyer.field.givenName')} error={errors.given_name}>
+                {(ids) => (
+                  <Input
+                    {...ids}
+                    autoComplete="given-name"
+                    value={person.given_name}
+                    onChange={(e) => setP('given_name')(e.target.value)}
+                  />
+                )}
+              </Field>
+              <Field label={w('buyer.field.familyName')} error={errors.family_name}>
+                {(ids) => (
+                  <Input
+                    {...ids}
+                    autoComplete="family-name"
+                    value={person.family_name}
+                    onChange={(e) => setP('family_name')(e.target.value)}
+                  />
+                )}
+              </Field>
+              <Field
+                label={w('buyer.field.email')}
+                hint={w('email.reg.emailHint')}
+                error={errors.email}
+              >
+                {(ids) => (
+                  <Input
+                    {...ids}
+                    type="email"
+                    autoComplete="email"
+                    value={person.email}
+                    disabled={Boolean(codeFor)}
+                    onChange={(e) => setP('email')(e.target.value)}
+                  />
+                )}
+              </Field>
+              <Field
+                label={w('buyer.field.mobile')}
+                hint={w('buyer.field.mobileHint')}
+                error={errors.phone}
+              >
+                {(ids) => (
+                  <Input
+                    {...ids}
+                    type="tel"
+                    autoComplete="tel"
+                    value={person.phone}
+                    onChange={(e) => setP('phone')(e.target.value)}
+                  />
+                )}
+              </Field>
+              <Field
+                label={w('login.passwordLabel')}
+                hint={w('email.reg.passwordHint')}
+                error={errors.password}
+              >
+                {(ids) => (
+                  <PasswordInput
+                    {...ids}
+                    autoComplete="new-password"
+                    value={person.password}
+                    onChange={(e) => setP('password')(e.target.value)}
+                  />
+                )}
+              </Field>
+              <Field label={w('email.reg.confirmPassword')} error={errors.confirm_password}>
+                {(ids) => (
+                  <PasswordInput
+                    {...ids}
+                    autoComplete="new-password"
+                    value={person.confirm_password}
+                    onChange={(e) => setP('confirm_password')(e.target.value)}
+                  />
+                )}
+              </Field>
+            </div>
+          </section>
 
-            <fieldset className={styles.fieldset}>
-              <legend className={styles.legend}>{w('email.reg.where')}</legend>
+          <section className={css.group} aria-labelledby="reg-where">
+            <h2 id="reg-where" className={css.groupTitle}>
+              {w('email.reg.where')}
+            </h2>
+            <div className={css.formCard}>
               <Field label={w('email.reg.state')} error={said('state_id')}>
                 {(ids) => (
                   <Select
@@ -498,20 +506,24 @@ export function BuyerRegister({
                 )}
               </Field>
               {statesFailed ? <p role="alert">{w('email.reg.statesFailed')}</p> : null}
-            </fieldset>
+            </div>
+          </section>
 
-            {accountType ? (
-              <ProcurementFields
-                form={org}
-                onChange={setOrg}
-                errors={errors}
-                individual={individual}
-                language={language}
-              />
-            ) : null}
+          {accountType ? (
+            <ProcurementFields
+              form={org}
+              onChange={setOrg}
+              errors={errors}
+              individual={individual}
+              language={language}
+            />
+          ) : null}
 
-            <fieldset className={styles.fieldset}>
-              <legend className={styles.legend}>{w('email.reg.terms')}</legend>
+          <section className={css.group} aria-labelledby="reg-terms">
+            <h2 id="reg-terms" className={css.groupTitle}>
+              {w('email.reg.terms')}
+            </h2>
+            <div className={css.formCard}>
               <div dir={language === 'ar' ? 'rtl' : 'auto'} className="small">
                 <p>{terms.body}</p>
                 <p>{privacy.body}</p>
@@ -536,11 +548,15 @@ export function BuyerRegister({
                 label={w('email.reg.agree')}
               />
               {ackError ? <p role="alert">{ackError}</p> : null}
-            </fieldset>
+            </div>
+          </section>
 
-            {codeFor ? (
-              <fieldset className={styles.fieldset}>
-                <legend className={styles.legend}>{w('email.reg.codeTitle')}</legend>
+          {codeFor ? (
+            <section className={css.group} aria-labelledby="reg-code">
+              <h2 id="reg-code" className={css.groupTitle}>
+                {w('email.reg.codeTitle')}
+              </h2>
+              <div className={css.formCard}>
                 <p className="small">
                   {w('email.reg.codeSentBefore')} <strong dir="ltr">{codeFor.email}</strong>
                   {w('email.reg.codeSentAfter')}
@@ -559,7 +575,14 @@ export function BuyerRegister({
                     />
                   )}
                 </Field>
-                <div className={styles.actions}>
+                <div className={css.actions}>
+                  <Button
+                    type="button"
+                    disabled={busy || code.length !== 6}
+                    onClick={() => void confirmCode()}
+                  >
+                    {busy ? w('mfa.checking') : w('email.reg.confirm')}
+                  </Button>
                   <Button
                     type="button"
                     variant="ghost"
@@ -580,31 +603,24 @@ export function BuyerRegister({
                   >
                     {w('email.reg.changeEmail')}
                   </Button>
-                  <Button
-                    type="button"
-                    disabled={busy || code.length !== 6}
-                    onClick={() => void confirmCode()}
-                  >
-                    {busy ? w('mfa.checking') : w('email.reg.confirm')}
-                  </Button>
                 </div>
-              </fieldset>
-            ) : null}
+              </div>
+            </section>
+          ) : null}
 
-            <div className={styles.actions} hidden={Boolean(codeFor)}>
-              <a href={LOGIN_PATH} className="small">
-                {w('email.reg.alreadySignIn')}
-              </a>
-              <Button type="submit" disabled={busy}>
-                {busy
-                  ? w('email.reg.sending')
-                  : accountType === 'business'
-                    ? w('email.reg.sendApplication')
-                    : w('login.register')}
-              </Button>
-            </div>
-          </form>
-        </Card>
+          <div className={css.actions} hidden={Boolean(codeFor)}>
+            <Button type="submit" disabled={busy}>
+              {busy
+                ? w('email.reg.sending')
+                : accountType === 'business'
+                  ? w('email.reg.sendApplication')
+                  : w('login.register')}
+            </Button>
+            <a href={LOGIN_PATH} className="small">
+              {w('email.reg.alreadySignIn')}
+            </a>
+          </div>
+        </form>
       </div>
     </main>
   );

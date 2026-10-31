@@ -172,10 +172,9 @@ export function ProductReports() {
   if (!isAdmin) {
     return (
       <div>
-        <PageHeader eyebrow="Governance" title="Product reports" />
+        <PageHeader title="Product reports" />
         <UnavailableState title="Product reports are not available to you">
-          Marketplace moderation needs the Moderator + Editor preset. Ask an administrator who
-          manages staff permissions.
+          Needs the Moderator + Editor preset.
         </UnavailableState>
       </div>
     );
@@ -184,18 +183,15 @@ export function ProductReports() {
   return (
     <div>
       <PageHeader
-        eyebrow="Governance"
         title="Product reports"
-        subtitle="Listings that marketplace visitors have reported. Separate from Reports, which is agricultural reporting and export."
+        subtitle="Listings that marketplace visitors have reported."
       />
 
       {loading ? (
         <LoadingState rows={5} label="Loading product reports" />
       ) : notConnected ? (
         <UnavailableState title="The marketplace report service is not connected">
-          {notConnected} The queue could not be read because the route did not answer on this
-          deployment. This is not an empty queue: nothing was counted, so nothing is shown. See{' '}
-          <code>docs/api/product-reports-contract.md</code>.
+          {notConnected} This is not an empty queue: nothing could be counted.
         </UnavailableState>
       ) : error ? (
         <Notice kind="error" title="Could not load this information">
@@ -208,10 +204,7 @@ export function ProductReports() {
         </Notice>
       ) : reports.length === 0 ? (
         <Notice kind="info" title="No product reports">
-          <p className="small">
-            No listing has been reported. This is a measured result from the report service, not an
-            absence of information.
-          </p>
+          <p className="small">No listing has been reported.</p>
         </Notice>
       ) : (
         <>

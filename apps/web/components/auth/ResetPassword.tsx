@@ -97,9 +97,10 @@ export function ResetPassword() {
         <div className={styles.brand}>
           <Wordmark size={28} tagline />
         </div>
-        <h1 className={styles.title}>Choose a new password</h1>
-
-        {stage === 'checking' ? <p className={styles.hint}>Checking your link…</p> : null}
+        <div className={styles.head}>
+          <h1 className={styles.title}>Choose a new password</h1>
+          {stage === 'checking' ? <p className={styles.hint}>Checking your link…</p> : null}
+        </div>
 
         {stage === 'invalid' ? (
           <Notice kind="error" title="This link does not work">

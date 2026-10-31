@@ -105,7 +105,7 @@ export function ReasonCodesSection({
     <Card>
       <CardHeader
         title="Moderation reason codes"
-        subtitle="Offered in the suspend and report dialogs; choosing one pre-fills the written reason, which stays required. Archive a code instead of deleting it."
+        subtitle="Offered in the suspend and report dialogs; a written reason is still required."
       />
       <CardBody>
         <VersionLine setting={setting} />

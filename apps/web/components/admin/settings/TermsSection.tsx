@@ -124,7 +124,7 @@ export function TermsSection() {
       <Card>
         <CardHeader
           title="Versioned notices"
-          subtitle="Consent, terms and privacy texts. A draft is seen by nobody until it is published; publishing retires the version it replaces, which is kept."
+          subtitle="Consent, terms and privacy texts. A draft is private until published."
           actions={
             <Button size="small" onClick={() => setEditing('new')}>
               New draft
@@ -199,11 +199,7 @@ export function TermsSection() {
               </table>
             </div>
           )}
-          <p className="small muted">
-            The sign-up screens read the published consent text in the person&apos;s language and
-            record its version with their agreement. Consents already given keep the version they
-            recorded.
-          </p>
+          <p className="small muted">Consents already given keep the version they recorded.</p>
         </CardBody>
       </Card>
 
@@ -474,7 +470,7 @@ function Acknowledgements() {
     <Card>
       <CardHeader
         title="Acknowledgement history"
-        subtitle="How many accounts accepted each consent version. Counts only; no names."
+        subtitle="Accounts that accepted each consent version. Counts only."
       />
       <CardBody>
         {error ? (

@@ -108,9 +108,7 @@ export function TemplatesPanel() {
         </div>
       )}
       {templates === null && !failure ? <p className="muted">Loading…</p> : null}
-      {templates && templates.length === 0 ? (
-        <p className="muted">No templates yet. A template saves a text you send often.</p>
-      ) : null}
+      {templates && templates.length === 0 ? <p className="muted">No templates yet.</p> : null}
       {templates?.map((t) => (
         <Card key={t.id}>
           <CardHeader

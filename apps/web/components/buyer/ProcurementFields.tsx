@@ -16,7 +16,9 @@ import {
 } from '@/lib/buyer/labels';
 import { t, type Language } from '@/lib/i18n';
 
-import { Checkbox, Field, Input, Select, Textarea } from '../ui';
+import css from '@/components/account/settings.module.css';
+
+import { Field, Input, Select, Textarea } from '../ui';
 import styles from './buyer.module.css';
 
 /**
@@ -142,10 +144,15 @@ export function ProcurementFields({
 
   return (
     <>
+      {/* 2026-10-31: each topic a small group title over a white card (the
+          settings kit), and every pick-any list as chips -- the same
+          checkboxes, the same handlers. */}
       {individual ? null : (
-        <fieldset className={styles.fieldset}>
-          <legend className={styles.legend}>{w('buyer.pf.organisation')}</legend>
-          <div className={styles.formGrid}>
+        <section className={css.group} aria-labelledby="pf-organisation">
+          <h2 id="pf-organisation" className={css.groupTitle}>
+            {w('buyer.pf.organisation')}
+          </h2>
+          <div className={`${css.formCard} ${styles.formGrid}`}>
             <Field label={w('buyer.pf.orgName')} error={errors.organization_name}>
               {(ids) => (
                 <Input
@@ -285,136 +292,150 @@ export function ProcurementFields({
               </Field>
             </div>
           </div>
-        </fieldset>
+        </section>
       )}
 
-      <fieldset className={styles.fieldset}>
-        <legend className={styles.legend}>{w('buyer.pf.whatYouBuy')}</legend>
-        <div role="group" aria-label={w('buyer.pf.categoriesAria')}>
-          <p className={styles.muted}>{w('buyer.pf.categories')}</p>
-          <div className={styles.checkGrid}>
-            {LISTING_CATEGORIES.map((c) => (
-              <Checkbox
-                key={c}
-                label={categoryLabel(c, language)}
-                checked={form.interested_categories.includes(c)}
-                onChange={() => set('interested_categories', toggle(form.interested_categories, c))}
-              />
-            ))}
+      <section className={css.group} aria-labelledby="pf-what">
+        <h2 id="pf-what" className={css.groupTitle}>
+          {w('buyer.pf.whatYouBuy')}
+        </h2>
+        <div className={css.formCard}>
+          <div className={styles.pick} role="group" aria-label={w('buyer.pf.categoriesAria')}>
+            <p className={styles.pickLabel}>{w('buyer.pf.categories')}</p>
+            <div className={css.chips}>
+              {LISTING_CATEGORIES.map((c) => (
+                <label key={c} className={css.chip}>
+                  <input
+                    type="checkbox"
+                    checked={form.interested_categories.includes(c)}
+                    onChange={() =>
+                      set('interested_categories', toggle(form.interested_categories, c))
+                    }
+                  />
+                  {categoryLabel(c, language)}
+                </label>
+              ))}
+            </div>
           </div>
-        </div>
-        <div className={styles.formGrid}>
-          <Field
-            label={w('buyer.pf.products')}
-            optional={optional}
-            hint={w('buyer.pf.productsHint')}
-            error={errors.interested_products}
-          >
-            {(ids) => (
-              <Input
-                {...ids}
-                value={form.interested_products}
-                onChange={(e) => set('interested_products', e.target.value)}
-              />
-            )}
-          </Field>
-          <Field label={w('buyer.pf.unit')} optional={optional} error={errors.preferred_unit}>
-            {(ids) => (
-              <Select
-                {...ids}
-                value={form.preferred_unit}
-                onChange={(e) => set('preferred_unit', e.target.value)}
-              >
-                <option value="">{w('buyer.pf.unitNone')}</option>
-                {LISTING_UNITS.map((u) => (
-                  <option key={u} value={u}>
-                    {unitLabel(u, language)}
-                  </option>
-                ))}
-              </Select>
-            )}
-          </Field>
-          <Field label={w('buyer.pf.min')} optional={optional} error={errors.min_quantity}>
-            {(ids) => (
-              <Input
-                {...ids}
-                inputMode="decimal"
-                value={form.min_quantity}
-                onChange={(e) => set('min_quantity', e.target.value)}
-              />
-            )}
-          </Field>
-          <Field label={w('buyer.pf.max')} optional={optional} error={errors.max_quantity}>
-            {(ids) => (
-              <Input
-                {...ids}
-                inputMode="decimal"
-                value={form.max_quantity}
-                onChange={(e) => set('max_quantity', e.target.value)}
-              />
-            )}
-          </Field>
-          <div className={styles.formGridFull}>
+          <div className={styles.formGrid}>
             <Field
-              label={w('buyer.pf.delivery')}
+              label={w('buyer.pf.products')}
               optional={optional}
-              hint={w('buyer.pf.deliveryHint')}
-              error={errors.delivery_locations}
+              hint={w('buyer.pf.productsHint')}
+              error={errors.interested_products}
             >
               {(ids) => (
                 <Input
                   {...ids}
-                  value={form.delivery_locations}
-                  onChange={(e) => set('delivery_locations', e.target.value)}
+                  value={form.interested_products}
+                  onChange={(e) => set('interested_products', e.target.value)}
                 />
               )}
             </Field>
-          </div>
-        </div>
-        {states ? (
-          <div role="group" aria-label={w('buyer.pf.areas')}>
-            <p className={styles.muted}>{w('buyer.pf.areas')}</p>
-            <div className={styles.checkGrid}>
-              {states.map((s) => (
-                <Checkbox
-                  key={s.id}
-                  label={s.name}
-                  checked={form.preferred_state_ids.includes(s.id)}
-                  onChange={() =>
-                    set('preferred_state_ids', toggle(form.preferred_state_ids, s.id))
-                  }
+            <Field label={w('buyer.pf.unit')} optional={optional} error={errors.preferred_unit}>
+              {(ids) => (
+                <Select
+                  {...ids}
+                  value={form.preferred_unit}
+                  onChange={(e) => set('preferred_unit', e.target.value)}
+                >
+                  <option value="">{w('buyer.pf.unitNone')}</option>
+                  {LISTING_UNITS.map((u) => (
+                    <option key={u} value={u}>
+                      {unitLabel(u, language)}
+                    </option>
+                  ))}
+                </Select>
+              )}
+            </Field>
+            <Field label={w('buyer.pf.min')} optional={optional} error={errors.min_quantity}>
+              {(ids) => (
+                <Input
+                  {...ids}
+                  inputMode="decimal"
+                  value={form.min_quantity}
+                  onChange={(e) => set('min_quantity', e.target.value)}
                 />
+              )}
+            </Field>
+            <Field label={w('buyer.pf.max')} optional={optional} error={errors.max_quantity}>
+              {(ids) => (
+                <Input
+                  {...ids}
+                  inputMode="decimal"
+                  value={form.max_quantity}
+                  onChange={(e) => set('max_quantity', e.target.value)}
+                />
+              )}
+            </Field>
+            <div className={styles.formGridFull}>
+              <Field
+                label={w('buyer.pf.delivery')}
+                optional={optional}
+                hint={w('buyer.pf.deliveryHint')}
+                error={errors.delivery_locations}
+              >
+                {(ids) => (
+                  <Input
+                    {...ids}
+                    value={form.delivery_locations}
+                    onChange={(e) => set('delivery_locations', e.target.value)}
+                  />
+                )}
+              </Field>
+            </div>
+          </div>
+          {states ? (
+            <div className={styles.pick} role="group" aria-label={w('buyer.pf.areas')}>
+              <p className={styles.pickLabel}>{w('buyer.pf.areas')}</p>
+              <div className={css.chips}>
+                {states.map((s) => (
+                  <label key={s.id} className={css.chip}>
+                    <input
+                      type="checkbox"
+                      checked={form.preferred_state_ids.includes(s.id)}
+                      onChange={() =>
+                        set('preferred_state_ids', toggle(form.preferred_state_ids, s.id))
+                      }
+                    />
+                    {s.name}
+                  </label>
+                ))}
+              </div>
+            </div>
+          ) : null}
+          <div className={styles.pick} role="group" aria-label={w('buyer.pf.months')}>
+            <p className={styles.pickLabel}>{w('buyer.pf.months')}</p>
+            <div className={css.chips}>
+              {monthLabels(language).map((m, i) => (
+                <label key={i} className={css.chip}>
+                  <input
+                    type="checkbox"
+                    checked={form.purchasing_months.includes(i + 1)}
+                    onChange={() => set('purchasing_months', toggle(form.purchasing_months, i + 1))}
+                  />
+                  {m}
+                </label>
               ))}
             </div>
           </div>
-        ) : null}
-        <div role="group" aria-label={w('buyer.pf.months')}>
-          <p className={styles.muted}>{w('buyer.pf.months')}</p>
-          <div className={styles.checkGrid}>
-            {monthLabels(language).map((m, i) => (
-              <Checkbox
-                key={i}
-                label={m}
-                checked={form.purchasing_months.includes(i + 1)}
-                onChange={() => set('purchasing_months', toggle(form.purchasing_months, i + 1))}
-              />
-            ))}
+          <div className={styles.pick} role="group" aria-label={w('buyer.pf.pay')}>
+            <p className={styles.pickLabel}>{w('buyer.pf.payNote')}</p>
+            <div className={css.chips}>
+              {PAYMENT_PREFERENCES.map((p) => (
+                <label key={p} className={css.chip}>
+                  <input
+                    type="checkbox"
+                    checked={form.payment_preferences.includes(p)}
+                    onChange={() => set('payment_preferences', toggle(form.payment_preferences, p))}
+                  />
+                  {paymentLabel(p, language)}
+                </label>
+              ))}
+            </div>
           </div>
         </div>
-        <div role="group" aria-label={w('buyer.pf.pay')}>
-          <p className={styles.muted}>{w('buyer.pf.payNote')}</p>
-          <div className={styles.checkGrid}>
-            {PAYMENT_PREFERENCES.map((p) => (
-              <Checkbox
-                key={p}
-                label={paymentLabel(p, language)}
-                checked={form.payment_preferences.includes(p)}
-                onChange={() => set('payment_preferences', toggle(form.payment_preferences, p))}
-              />
-            ))}
-          </div>
-        </div>
-      </fieldset>
+      </section>
     </>
   );
 }

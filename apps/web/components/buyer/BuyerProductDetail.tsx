@@ -104,10 +104,8 @@ export function BuyerProductDetail({ id }: { id: string }) {
 
       <div className={styles.twoCol}>
         <Card>
-          <CardHeader
-            title="Buy from this farmer"
-            subtitle="Add it to your cart. You can add products from other sellers and send them all together."
-          />
+          {/* 2026-10-31: the title alone; the cart says the rest. */}
+          <CardHeader title="Buy from this farmer" />
           <CardBody>
             <AddToCart listing={listing} />
           </CardBody>
@@ -115,7 +113,7 @@ export function BuyerProductDetail({ id }: { id: string }) {
 
         <div className={styles.page}>
           <Card>
-            <CardHeader title="Product" />
+            <CardHeader title="Details" />
             <CardBody>
               <DefinitionList
                 items={[
@@ -181,7 +179,7 @@ export function BuyerProductDetail({ id }: { id: string }) {
               ) : (
                 <p className={styles.muted}>
                   {listing.phone_on_request === false
-                    ? 'This farmer prefers messages. Use the Message button below.'
+                    ? 'This farmer prefers messages.'
                     : 'The farmer’s phone number is shown here once you send them a request.'}
                 </p>
               )}

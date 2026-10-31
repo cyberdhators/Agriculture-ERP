@@ -97,12 +97,13 @@ export function BuyerMarketplace() {
         title="Marketplace"
         subtitle="Prices are indicative; you agree the final price with the farmer."
       />
-      <p className="small">
-        Also on the market: <Link href="/market/requests">buying requests</Link> and{' '}
-        <Link href="/market/services">services for hire</Link>.{' '}
-        <Link href="/buyer/buying-requests/new">Post what you need</Link> or{' '}
-        <Link href="/buyer/services/new">offer a service</Link>.
-      </p>
+      {/* 2026-10-31: the rest of the market as four quiet pills, not a sentence of links. */}
+      <nav className={styles.pills} aria-label="Also on the market">
+        <Link href="/market/requests">Buying requests</Link>
+        <Link href="/market/services">Services for hire</Link>
+        <Link href="/buyer/buying-requests/new">Post what you need</Link>
+        <Link href="/buyer/services/new">Offer a service</Link>
+      </nav>
 
       <form className={styles.form} onSubmit={apply} role="search" aria-label="Filter products">
         <div className={styles.filters}>

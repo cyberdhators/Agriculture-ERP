@@ -148,7 +148,7 @@ export function BuyerRequestDetail({ id }: { id: string }) {
         <Card>
           <CardHeader
             title={request.farmer_name ? `Contact ${request.farmer_name}` : 'Contact the farmer'}
-            subtitle="Agree the price, quality and handover directly with the farmer."
+            subtitle="Agree the price, quality and handover directly."
           />
           <CardBody>
             <div className={styles.actions}>
@@ -169,7 +169,7 @@ export function BuyerRequestDetail({ id }: { id: string }) {
         <Card>
           <CardHeader
             title={request.farmer_name ? `Contact ${request.farmer_name}` : 'Contact the farmer'}
-            subtitle="This farmer prefers messages. Agree the price, quality and handover in a conversation."
+            subtitle="This farmer prefers messages."
           />
           <CardBody>
             <MessageButton postKind="listing" postId={request.listing_id} />
@@ -178,7 +178,7 @@ export function BuyerRequestDetail({ id }: { id: string }) {
       ) : null}
 
       <Card>
-        <CardHeader title="Request" />
+        <CardHeader title="Details" />
         <CardBody>
           <DefinitionList
             items={[

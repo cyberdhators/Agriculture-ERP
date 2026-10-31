@@ -47,7 +47,7 @@ export function CommunicationsHub() {
       {tab !== 'direct' ? (
         <PageHeader
           title="Communications"
-          subtitle="Official announcements to accounts, by scope, with a preview before sending and a delivery record afterwards. Each person's notification settings are respected."
+          subtitle="Official announcements, previewed before sending. Notification settings are respected."
         />
       ) : null}
       <Tabs label="Communications section" items={TABS} value={tab} onChange={setTab} />

@@ -181,11 +181,10 @@ export function CorrectionRequests() {
   useEffect(() => load(), [load]);
 
   return (
-    <section style={{ display: 'grid', gap: 12, marginBlockStart: 'var(--s-6)' }}>
+    <section style={{ display: 'grid', gap: 'var(--s-3)', marginBlockStart: 'var(--s-6)' }}>
       <h2>Correction requests</h2>
       <p className="small muted">
-        Posts whose owners were asked to correct them. A request is addressed when the owner edits
-        the post. The posts stay on the market throughout.
+        Addressed when the owner edits the post; it stays on the market meanwhile.
       </p>
       <Field label="Show">
         {(ids) => (

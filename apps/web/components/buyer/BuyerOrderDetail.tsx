@@ -119,11 +119,11 @@ export function BuyerOrderDetail({ id }: { id: string }) {
 
       <div className={styles.twoCol}>
         <Card>
-          <CardHeader title="Order" />
+          {/* 2026-10-31: the number is the page's eyebrow; not said twice. */}
+          <CardHeader title="Details" />
           <CardBody>
             <DefinitionList
               items={[
-                { term: 'Order number', value: <span className="mono">{order.order_number}</span> },
                 { term: 'Category', value: labelOf(CATEGORY_LABELS, order.category) },
                 { term: 'Quantity', value: formatQuantity(order.quantity, order.unit) },
                 { term: 'Unit price', value: formatSsp(order.unit_price_ssp) },
@@ -150,7 +150,7 @@ export function BuyerOrderDetail({ id }: { id: string }) {
           </CardBody>
         </Card>
         <Card>
-          <CardHeader title="Delivery history" subtitle="What CORWADO recorded, and when" />
+          <CardHeader title="Delivery history" />
           <CardBody>
             <Timeline entries={order.timeline ?? []} />
           </CardBody>

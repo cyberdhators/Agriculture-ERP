@@ -4,11 +4,23 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { farmerStartSellingSchema } from '@agri-erp/shared';
 
-import { Button, ButtonLink, Checkbox, Field, Input, Notice, Select } from '@/components/ui';
+import css from '@/components/account/settings.module.css';
+import {
+  Button,
+  ButtonLink,
+  Checkbox,
+  Field,
+  Input,
+  Notice,
+  PageHeader,
+  Select,
+} from '@/components/ui';
 import { getProfile } from '@/lib/buyer/api';
 import { COUNTIES, PAYAMS, STATES } from '@/lib/fixtures/p1';
 import { t } from '@/lib/i18n';
 import { useConsentText } from '@/lib/settings/client';
+
+import styles from './buyer.module.css';
 
 /**
  * The consent text version the farmer sign-up records (FarmerRegister): the
@@ -117,14 +129,11 @@ export function StartSelling() {
   }
 
   return (
-    <div style={{ display: 'grid', gap: 'var(--s-4)', maxWidth: 560 }}>
-      <div>
-        <h1>Start selling</h1>
-        <p className="muted">
-          Sell your produce with this same account: no new password. A few details about you and
-          where you farm.
-        </p>
-      </div>
+    // 2026-10-31 (the owner: "more beautiful and more appealing"): the title
+    // and one short line, then the fields grouped on white cards -- you, the
+    // farm, the agreement -- and one button that does not repeat the title.
+    <div className={styles.sections} style={{ maxWidth: 560 }}>
+      <PageHeader title="Start selling" subtitle="Sell with this same account; no new password." />
 
       {failure ? (
         <Notice kind="error" title="Not set up yet">
@@ -132,133 +141,161 @@ export function StartSelling() {
         </Notice>
       ) : null}
 
-      <Field label="First name" error={errors.given_name}>
-        {(ids) => (
-          <Input {...ids} dir="auto" value={given} onChange={(e) => setGiven(e.target.value)} />
-        )}
-      </Field>
-      <Field label="Family name" error={errors.family_name}>
-        {(ids) => (
-          <Input {...ids} dir="auto" value={family} onChange={(e) => setFamily(e.target.value)} />
-        )}
-      </Field>
-      <Field label="Sex" error={errors.sex}>
-        {(ids) => (
-          <Select {...ids} value={sex} onChange={(e) => setSex(e.target.value)}>
-            <option value="">Select…</option>
-            <option value="f">Female</option>
-            <option value="m">Male</option>
-          </Select>
-        )}
-      </Field>
-      <Field label="Year of birth" error={errors.year_of_birth}>
-        {(ids) => (
-          <Input
-            {...ids}
-            inputMode="numeric"
-            maxLength={4}
-            value={year}
-            onChange={(e) => setYear(e.target.value.replace(/\D/g, ''))}
-          />
-        )}
-      </Field>
-      <Field
-        label="Farm phone (South Sudan)"
-        hint="Starts 9, after +211. Buyers who contact you about produce use this number."
-        error={errors.phone}
-      >
-        {(ids) => (
-          <Input
-            {...ids}
-            inputMode="tel"
-            className="mono"
-            placeholder="9XX XXX XXX"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-          />
-        )}
-      </Field>
-      <Field label="State">
-        {(ids) => (
-          <Select
-            {...ids}
-            value={stateId}
-            onChange={(e) => {
-              setStateId(e.target.value);
-              setCountyId('');
-              setPayamId('');
-            }}
-          >
-            <option value="">Select…</option>
-            {STATES.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name}
-              </option>
-            ))}
-          </Select>
-        )}
-      </Field>
-      <Field label="County">
-        {(ids) => (
-          <Select
-            {...ids}
-            value={countyId}
-            disabled={!stateId}
-            onChange={(e) => {
-              setCountyId(e.target.value);
-              setPayamId('');
-            }}
-          >
-            <option value="">Select…</option>
-            {counties.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </Select>
-        )}
-      </Field>
-      <Field label="Payam" error={errors.payam_id}>
-        {(ids) => (
-          <Select
-            {...ids}
-            value={payamId}
-            disabled={!countyId}
-            onChange={(e) => setPayamId(e.target.value)}
-          >
-            <option value="">Select…</option>
-            {payams.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </Select>
-        )}
-      </Field>
-      <Field label="Village or boma" optional error={errors.village}>
-        {(ids) => (
-          <Input {...ids} dir="auto" value={village} onChange={(e) => setVillage(e.target.value)} />
-        )}
-      </Field>
+      <section className={css.group} aria-labelledby="sell-you">
+        <h2 id="sell-you" className={css.groupTitle}>
+          About you
+        </h2>
+        <div className={css.formCard}>
+          <Field label="First name" error={errors.given_name}>
+            {(ids) => (
+              <Input {...ids} dir="auto" value={given} onChange={(e) => setGiven(e.target.value)} />
+            )}
+          </Field>
+          <Field label="Family name" error={errors.family_name}>
+            {(ids) => (
+              <Input
+                {...ids}
+                dir="auto"
+                value={family}
+                onChange={(e) => setFamily(e.target.value)}
+              />
+            )}
+          </Field>
+          <Field label="Sex" error={errors.sex}>
+            {(ids) => (
+              <Select {...ids} value={sex} onChange={(e) => setSex(e.target.value)}>
+                <option value="">Select…</option>
+                <option value="f">Female</option>
+                <option value="m">Male</option>
+              </Select>
+            )}
+          </Field>
+          <Field label="Year of birth" error={errors.year_of_birth}>
+            {(ids) => (
+              <Input
+                {...ids}
+                inputMode="numeric"
+                maxLength={4}
+                value={year}
+                onChange={(e) => setYear(e.target.value.replace(/\D/g, ''))}
+              />
+            )}
+          </Field>
+        </div>
+      </section>
 
-      <div>
-        <p className="small">{consent.body}</p>
-        <p className="small muted">{consent.text_version}</p>
-        <Field label="Consent" error={errors.consent}>
-          {(ids) => (
-            <Checkbox
-              {...ids}
-              checked={agreed}
-              onChange={(e) => setAgreed(e.target.checked)}
-              label="I agree"
-            />
-          )}
-        </Field>
+      <section className={css.group} aria-labelledby="sell-farm">
+        <h2 id="sell-farm" className={css.groupTitle}>
+          Your farm
+        </h2>
+        <div className={css.formCard}>
+          <Field label="Farm phone (South Sudan)" hint="Starts 9, after +211." error={errors.phone}>
+            {(ids) => (
+              <Input
+                {...ids}
+                inputMode="tel"
+                className="mono"
+                placeholder="9XX XXX XXX"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+              />
+            )}
+          </Field>
+          <Field label="State">
+            {(ids) => (
+              <Select
+                {...ids}
+                value={stateId}
+                onChange={(e) => {
+                  setStateId(e.target.value);
+                  setCountyId('');
+                  setPayamId('');
+                }}
+              >
+                <option value="">Select…</option>
+                {STATES.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </Select>
+            )}
+          </Field>
+          <Field label="County">
+            {(ids) => (
+              <Select
+                {...ids}
+                value={countyId}
+                disabled={!stateId}
+                onChange={(e) => {
+                  setCountyId(e.target.value);
+                  setPayamId('');
+                }}
+              >
+                <option value="">Select…</option>
+                {counties.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </Select>
+            )}
+          </Field>
+          <Field label="Payam" error={errors.payam_id}>
+            {(ids) => (
+              <Select
+                {...ids}
+                value={payamId}
+                disabled={!countyId}
+                onChange={(e) => setPayamId(e.target.value)}
+              >
+                <option value="">Select…</option>
+                {payams.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </Select>
+            )}
+          </Field>
+          <Field label="Village or boma" optional error={errors.village}>
+            {(ids) => (
+              <Input
+                {...ids}
+                dir="auto"
+                value={village}
+                onChange={(e) => setVillage(e.target.value)}
+              />
+            )}
+          </Field>
+        </div>
+      </section>
+
+      <section className={css.group} aria-labelledby="sell-consent">
+        <h2 id="sell-consent" className={css.groupTitle}>
+          Agreement
+        </h2>
+        <div className={css.formCard}>
+          <p className="small">{consent.body}</p>
+          <p className="small muted">{consent.text_version}</p>
+          <Field label="Consent" error={errors.consent}>
+            {(ids) => (
+              <Checkbox
+                {...ids}
+                checked={agreed}
+                onChange={(e) => setAgreed(e.target.checked)}
+                label="I agree"
+              />
+            )}
+          </Field>
+        </div>
+      </section>
+
+      <div className={css.actions}>
+        <Button variant="primary" onClick={() => void submit()} disabled={busy || already === null}>
+          {busy ? 'Setting up…' : 'Continue'}
+        </Button>
       </div>
-
-      <Button variant="primary" onClick={() => void submit()} disabled={busy || already === null}>
-        {busy ? 'Setting up…' : 'Start selling'}
-      </Button>
     </div>
   );
 }

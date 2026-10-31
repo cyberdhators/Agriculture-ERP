@@ -8,7 +8,11 @@ import { Button, Field, Input, Notice, PasswordInput, PrefixedInput } from '@/co
 import { FarmerApiError, farmerApi, useFarmerSession } from '@/lib/farmer-session';
 import { t, type Language } from '@/lib/i18n';
 
-import styles from './farmer.module.css';
+import css from '@/components/account/settings.module.css';
+
+/* 2026-10-31: the form sits in the Phone number row's panel, which already
+   draws the line above it; fields at the panel's even gap, no second rule. */
+const formStyle = { display: 'grid', gap: 'var(--s-4)' } as const;
 
 /** Seconds left before another code may be asked for, ticking once a second. */
 export function useResendWait(lastSentAt: string | null): number {
@@ -180,12 +184,8 @@ export function ChangePhone({ language, onDone }: { language: Language; onDone: 
         </Notice>
       ) : null}
       {sent === null ? (
-        <form className={styles.inlineForm} onSubmit={start} noValidate>
-          <Field
-            label={t('account.newPhone', language)}
-            hint={t('account.changePhoneCodeNote', language)}
-            error={errors.phone}
-          >
+        <form style={formStyle} onSubmit={start} noValidate>
+          <Field label={t('account.newPhone', language)} error={errors.phone}>
             {(ids) => (
               <PrefixedInput
                 {...ids}
@@ -199,11 +199,7 @@ export function ChangePhone({ language, onDone }: { language: Language; onDone: 
               />
             )}
           </Field>
-          <Field
-            label={t('login.passwordLabel', language)}
-            hint={t('account.changePhoneNote', language)}
-            error={errors.password}
-          >
+          <Field label={t('login.passwordLabel', language)} error={errors.password}>
             {(ids) => (
               <PasswordInput
                 {...ids}
@@ -215,18 +211,16 @@ export function ChangePhone({ language, onDone }: { language: Language; onDone: 
               />
             )}
           </Field>
-          <Button type="submit" variant="primary" disabled={busy}>
-            {busy ? t('recover.sending', language) : t('account.changePhone', language)}
-          </Button>
+          <div className={css.actions}>
+            <Button type="submit" variant="primary" disabled={busy}>
+              {busy ? t('recover.sending', language) : t('recover.verify', language)}
+            </Button>
+          </div>
         </form>
       ) : (
-        <form className={styles.inlineForm} onSubmit={confirm} noValidate>
-          <p className="small">{t('account.phoneCodeSent', language)}</p>
-          <Field
-            label={t('recover.codeLabel', language)}
-            hint={t('recover.codeHint', language)}
-            error={errors.code}
-          >
+        <form style={formStyle} onSubmit={confirm} noValidate>
+          <p className={css.note}>{t('account.phoneCodeSent', language)}</p>
+          <Field label={t('recover.codeLabel', language)} error={errors.code}>
             {(ids) => (
               <Input
                 {...ids}
@@ -239,21 +233,28 @@ export function ChangePhone({ language, onDone }: { language: Language; onDone: 
               />
             )}
           </Field>
-          <Button type="submit" variant="primary" disabled={busy || code.trim().length !== 6}>
-            {t('account.phoneConfirm', language)}
-          </Button>
-          <ResendCode language={language} wait={wait} busy={busy} onResend={() => void resend()} />
-          <Button
-            variant="ghost"
-            onClick={() => {
-              setSent(null);
-              setCode('');
-              setFailure(null);
-            }}
-            disabled={busy}
-          >
-            {t('recover.otherNumber', language)}
-          </Button>
+          <div className={css.actions}>
+            <Button type="submit" variant="primary" disabled={busy || code.trim().length !== 6}>
+              {t('account.phoneConfirm', language)}
+            </Button>
+            <ResendCode
+              language={language}
+              wait={wait}
+              busy={busy}
+              onResend={() => void resend()}
+            />
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setSent(null);
+                setCode('');
+                setFailure(null);
+              }}
+              disabled={busy}
+            >
+              {t('recover.otherNumber', language)}
+            </Button>
+          </div>
         </form>
       )}
     </>

@@ -91,6 +91,8 @@ interface BuyerContextValue {
    */
   language: Language;
   setLanguage: (lang: Language) => void;
+  /** 2026-10-31: the profile's Sign out row uses the shell's own sign-out. */
+  signOut: () => Promise<void>;
 }
 
 const BuyerContext = createContext<BuyerContextValue | null>(null);
@@ -237,8 +239,9 @@ export function BuyerShell({
   }, []);
 
   const value = useMemo(
-    () => (profile ? { profile, refresh, unread, refreshUnread, language, setLanguage } : null),
-    [profile, refresh, unread, refreshUnread, language, setLanguage],
+    () =>
+      profile ? { profile, refresh, unread, refreshUnread, language, setLanguage, signOut } : null,
+    [profile, refresh, unread, refreshUnread, language, setLanguage, signOut],
   );
 
   const active = NAV.map((n) => n.href)

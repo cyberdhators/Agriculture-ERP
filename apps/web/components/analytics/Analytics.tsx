@@ -218,9 +218,8 @@ export function Analytics() {
   return (
     <div className={styles.page}>
       <PageHeader
-        eyebrow="Analytics and exports"
         title="Marketplace analytics"
-        subtitle="Accounts, participation and marketplace activity in a window of Juba days. Each figure is counted on its own and says what it counts."
+        subtitle="Accounts and marketplace activity, by Juba day."
         actions={
           <>
             {/* 2026-11-03: what the match alerts led to, on its own page. */}
@@ -363,9 +362,8 @@ export function Analytics() {
 
           {summary.commodity || summary.actor_type ? (
             <Notice kind="info" className="no-print">
-              The commodity and actor-type filters narrow only the figures that can be narrowed;
-              every other figure says &ldquo;Not measured&rdquo; under them rather than show an
-              unfiltered number.
+              These filters narrow only the figures they can; the rest say &ldquo;Not
+              measured&rdquo;.
             </Notice>
           ) : null}
 

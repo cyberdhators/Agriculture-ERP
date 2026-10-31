@@ -217,9 +217,8 @@ export function MatchAlertResults() {
   return (
     <div className={styles.page}>
       <PageHeader
-        eyebrow="Analytics and exports"
         title="Match-alert results"
-        subtitle="What the match alerts led to: alerts sent and opened, conversations between the alerted person and the poster, and deals they completed. Counts only."
+        subtitle="Alerts sent and opened, and the conversations and deals they led to."
         actions={
           <>
             <Link href="/analytics" className="small no-print">

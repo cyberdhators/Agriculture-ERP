@@ -177,7 +177,7 @@ export function FarmerDossier({ id }: { id: string }) {
   if (farmer === undefined) {
     return (
       <>
-        <PageHeader eyebrow="Farmers" title="Loading…" />
+        <PageHeader title="Loading…" />
         <p className="muted">Reading the farmer record.</p>
       </>
     );
@@ -186,7 +186,7 @@ export function FarmerDossier({ id }: { id: string }) {
   if (!farmer) {
     return (
       <>
-        <PageHeader eyebrow="Farmers" title="Farmer not found" />
+        <PageHeader title="Farmer not found" />
         <EmptyState
           error
           title="No such farmer"
@@ -203,11 +203,11 @@ export function FarmerDossier({ id }: { id: string }) {
   if (hydrated && !inScope) {
     return (
       <>
-        <PageHeader eyebrow="Farmers" title="Outside your scope" />
+        <PageHeader title="Outside your scope" />
         <EmptyState
           error
           title="You cannot open this farmer"
-          body="This record belongs to a state or caseload outside the one you are previewing. The live portal returns 403."
+          body="This record is outside the state or caseload you are previewing."
           actions={<ButtonLink href="/farmers">Back to the register</ButtonLink>}
         />
       </>
@@ -342,7 +342,7 @@ export function FarmerDossier({ id }: { id: string }) {
   return (
     <>
       <PageHeader
-        eyebrow={`Farmers · ${farmerPayamName(farmer.payam_id)}`}
+        eyebrow={farmerPayamName(farmer.payam_id)}
         title={`${farmer.given_name} ${farmer.family_name}`}
         subtitle={
           <span className="mono">
@@ -646,7 +646,7 @@ export function FarmerDossier({ id }: { id: string }) {
             ) : farms.length === 0 ? (
               <EmptyState
                 title="No farms recorded"
-                body="No farm has been recorded or mapped for this farmer yet. The caseload officer records one from this page."
+                body="The caseload officer records one from this page."
               />
             ) : (
               <div>
@@ -1005,9 +1005,8 @@ export function FarmerDossier({ id }: { id: string }) {
           <span className="mono">({farmer.farmer_number})</span> from active lists and reporting?
         </p>
         <p className="small muted">
-          The record stops appearing in the register, in counts and in exports. Historical
-          information — the registration, its consent, farms, visits and the audit trail — remains
-          available to authorised users. This is not a permanent deletion.
+          It leaves the register, counts and exports. Its history stays available to authorised
+          users; nothing is permanently deleted.
         </p>
       </Dialog>
 
@@ -1097,10 +1096,7 @@ export function FarmerDossier({ id }: { id: string }) {
           </Field>
         )}
         {!live && duplicates.length === 0 ? (
-          <p className="small muted">
-            No possible duplicate was flagged for this farmer, so there is no obvious survivor to
-            offer here.
-          </p>
+          <p className="small muted">No possible duplicate was flagged for this farmer.</p>
         ) : null}
       </Dialog>
 

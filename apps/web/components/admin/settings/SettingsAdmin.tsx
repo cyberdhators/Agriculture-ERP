@@ -105,10 +105,7 @@ export function SettingsAdmin() {
 
   return (
     <section style={{ display: 'grid', gap: 'var(--s-4)' }}>
-      <PageHeader
-        title="Settings"
-        subtitle="Service configuration, policy versions, security, integrations and recovery. Every change is kept as a new version and recorded in the audit trail."
-      />
+      <PageHeader title="Settings" subtitle="Every change is kept as a new version." />
       <Tabs label="Settings section" items={TABS} value={tab} onChange={setTab} />
       {failure ? (
         <Notice kind="error" title="Settings could not be loaded">

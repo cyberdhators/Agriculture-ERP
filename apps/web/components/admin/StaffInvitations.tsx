@@ -119,11 +119,10 @@ export function StaffInvitations() {
     <Card padded>
       <h2 className="label">Invite staff</h2>
       <p className="small muted" style={{ marginBottom: 'var(--s-3)' }}>
-        The person gets an email with a link. They choose their own password; nobody else ever sees
-        it. The link works once and expires in 7 days.
+        They get a one-time email link, valid for 7 days, and choose their own password.
       </p>
 
-      <div style={{ display: 'grid', gap: 'var(--s-3)', maxWidth: '32rem' }}>
+      <div style={{ display: 'grid', gap: 'var(--s-4)', maxWidth: '32rem' }}>
         <Field label="Name" error={fields.name}>
           {(ids) => <Input {...ids} value={name} onChange={(e) => setName(e.target.value)} />}
         </Field>
@@ -164,8 +163,7 @@ export function StaffInvitations() {
           </Field>
         ) : (
           <p className="small muted">
-            Administrators are asked to set up two-step sign-in when they first sign in. Presets and
-            Super Admin are given separately, after they join.
+            Administrators set up two-step sign-in when they first sign in.
           </p>
         )}
         {error ? <Notice kind="error">{error}</Notice> : null}

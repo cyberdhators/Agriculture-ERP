@@ -75,9 +75,7 @@ export function AdvisoryNoteReview() {
     <section style={{ display: 'grid', gap: 'var(--s-3)', marginTop: 'var(--s-6)' }}>
       <h2>Official advisory notes</h2>
       <p className="small muted">
-        Short notes from approved advisers. Publishing puts a note on the adviser&rsquo;s public
-        profile as &ldquo;Reviewed by CORWADO&rdquo;. Only staff who can publish content may publish
-        or unpublish.
+        Publishing shows a note on the adviser&rsquo;s profile as &ldquo;Reviewed by CORWADO&rdquo;.
       </p>
       <Tabs items={TABS} value={tab} onChange={(k) => setTab(k)} label="Note status" />
       {failure ? <Notice kind="error">{failure}</Notice> : null}

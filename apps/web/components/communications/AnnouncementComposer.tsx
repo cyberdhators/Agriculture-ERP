@@ -259,7 +259,7 @@ export function AnnouncementComposer({
         {draft.scope_kind === 'activity' ? (
           <Field
             label="Activity"
-            hint="Accounts that chose this activity in their profile. Farmers and buyers include every farmer and buyer account."
+            hint="Accounts that chose this activity in their profile."
             error={fields['scope.activity']}
           >
             {(ids) => (
@@ -292,14 +292,13 @@ export function AnnouncementComposer({
           ))}
           {fields.channels ? <p className="small error">{fields.channels}</p> : null}
           <p className="small muted">
-            Each person&apos;s notification settings are respected unless the announcement is
-            essential. Private conversations are never used to reach anyone.
+            Notification settings are respected unless the announcement is essential.
           </p>
         </fieldset>
 
         <Field
           label="Kind"
-          hint="Essential is for account, security and service-continuity messages: it is sent whatever people have switched off. Use it sparingly."
+          hint="Essential reaches people whatever they switched off. Use it sparingly."
           error={fields.category}
         >
           {(ids) => (

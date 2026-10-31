@@ -1,10 +1,11 @@
 /* User administration. Built on the base design tokens, so it matches the
    portal today and adopts whatever the tokens are remapped to later. */
 
+/* 2026-10-31: the portal shell already pads its content well; a second
+   32px here made these pages sit in a cavern. */
 .page {
   max-width: var(--content-max);
   margin: 0 auto;
-  padding: var(--s-8);
 }
 
 .head {
@@ -43,21 +44,22 @@
   color: var(--ink);
 }
 
+/* 2026-10-31: sections are spaced like every other staff page (24px), and a
+   section title is a calm heading close to its content, not a 2px ink rule. */
 .section {
-  margin-block-start: var(--s-8);
+  margin-block-start: var(--s-6);
 }
 .sectionHead {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: var(--s-4);
-  border-block-end: 2px solid var(--ink);
-  padding-block-end: var(--s-2);
+  margin-block-end: var(--s-3);
 }
 .sectionHead h2 {
   margin: 0;
   font-family: var(--font-display);
-  font-size: 20px;
+  font-size: var(--text-subhead);
   color: var(--ink);
 }
 .count {
@@ -74,12 +76,12 @@
   min-width: 640px;
   border-collapse: collapse;
 }
+/* Header cells match the shared DataTable. */
 .table th {
   padding: var(--s-3) var(--s-3);
   text-align: start;
-  font-family: var(--font-mono);
-  font-size: var(--text-small);
-  font-weight: 500;
+  font-size: var(--text-label);
+  font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--muted);
@@ -165,7 +167,6 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: var(--s-4);
-  margin-block-start: var(--s-4);
 }
 .hubCard {
   display: flex;
@@ -175,6 +176,7 @@
   background: var(--card);
   border: 1px solid var(--line);
   border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
   text-decoration: none;
   color: var(--ink);
   transition:
@@ -255,7 +257,7 @@ a.hubCard:hover {
 .auditFilters {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: var(--s-3);
+  gap: var(--s-4);
   align-items: start;
 }
 

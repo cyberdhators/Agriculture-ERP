@@ -179,7 +179,7 @@ export function AdminOverview() {
 
   return (
     <div className={styles.page}>
-      <PageHeader title="Platform overview" subtitle="Every figure opens the list behind it." />
+      <PageHeader title="Platform overview" />
 
       <Card padded>
         <div className={styles.presets} role="group" aria-label="Quick periods">
@@ -312,7 +312,7 @@ export function AdminOverview() {
             </section>
           ) : (
             <Notice kind="success" title="No system alerts">
-              Nothing failed in this period and every integration you can see is configured.
+              Nothing failed in this period.
             </Notice>
           )}
 
@@ -353,10 +353,6 @@ export function AdminOverview() {
 
           <Card padded>
             <h2 className={styles.sectionTitle}>Farmer verification programme</h2>
-            <p className={styles.note}>
-              The extension-officer figures — registrations, verification, reach and the review
-              queue — are kept on their own page.
-            </p>
             <Link href="/reports/programme" className={styles.link}>
               Open the programme figures
             </Link>

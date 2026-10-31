@@ -95,9 +95,8 @@ export function DirectoriesScreen() {
   return (
     <>
       <PageHeader
-        eyebrow="Directories"
         title="Agro-dealers, suppliers and financial services"
-        subtitle="Where an officer sends a farmer for seed, fertiliser, tools, savings or a loan. Every entry carries the date it was last checked."
+        subtitle="Every entry carries the date it was last checked."
         actions={
           hydrated && editor ? (
             <ButtonLink href="/directories/new">
@@ -162,10 +161,10 @@ export function DirectoriesScreen() {
           title={query ? `No entries match “${query}”` : 'No entries here yet'}
           body={
             query
-              ? 'Try the whole county, check the spelling, or search by phone number.'
+              ? 'Check the spelling, or search by phone number.'
               : editor
-                ? 'Add the first entry for this directory. Officers see it as soon as it is saved.'
-                : 'Nothing has been added for this filter. Ask a programme administrator to add entries.'
+                ? 'Officers see an entry as soon as it is saved.'
+                : 'Ask a programme administrator to add entries.'
           }
           actions={
             <>

@@ -32,6 +32,83 @@
   gap: var(--s-4);
 }
 
+/* 2026-10-31 (the owner: "more beautiful and more appealing"): the sign-in,
+   reset and invitation pages as one calm centred card -- the mark, a title
+   with at most one short line under it, the fields, one full-width primary
+   button, then the other ways out as quiet links under a hairline. */
+.head {
+  display: grid;
+  gap: var(--s-1);
+  justify-items: center;
+  text-align: center;
+}
+
+.head .title {
+  margin-bottom: 0;
+}
+
+.lang {
+  display: flex;
+  justify-content: center;
+}
+
+.submit,
+.card .form > button[type='submit'] {
+  width: 100%;
+}
+
+.links {
+  display: grid;
+  gap: var(--s-2);
+  justify-items: center;
+  padding-top: var(--s-4);
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: var(--text-small);
+  text-align: center;
+}
+
+.linkLine {
+  margin-top: calc(-1 * var(--s-2));
+  color: var(--muted);
+  font-size: var(--text-small);
+  text-align: center;
+}
+
+.links a,
+.linkLine a,
+.textButton {
+  color: var(--green-deep);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.links a:hover,
+.linkLine a:hover,
+.textButton:hover {
+  text-decoration: underline;
+}
+
+/* A link that is a button (send the code again): reads as a link. */
+.textButton {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  cursor: pointer;
+}
+
+.textButton:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.textButton:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+  border-radius: 4px;
+}
+
 /* B14: the "join" chooser. 2026-10-31: a centred header, the two member
    ways in as equal cards with an icon and ticked points, buttons on one line
    at the foot of each card, and staff as a slim row beneath. */

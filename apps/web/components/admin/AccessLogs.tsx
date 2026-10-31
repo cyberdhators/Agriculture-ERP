@@ -107,9 +107,9 @@ export function AccessLogs() {
   if (error?.status === 403) {
     return (
       <div className={styles.page}>
-        <PageHeader eyebrow="Governance" title="Access logs" />
+        <PageHeader title="Access logs" />
         <UnavailableState title="Not available to your account">
-          Reading access logs needs the audit-view permission across the whole platform.
+          Needs the audit-view permission across the whole platform.
         </UnavailableState>
       </div>
     );
@@ -118,9 +118,8 @@ export function AccessLogs() {
   return (
     <div className={styles.page}>
       <PageHeader
-        eyebrow="Governance"
         title="Access logs"
-        subtitle="When each account was created, signed in, came back to an open session, or failed to re-authenticate. Times are in Juba time. No IP address or browser details are kept."
+        subtitle="Sign-ins and session events, in Juba time. No IP address or browser details are kept."
       />
 
       <section className={styles.section} aria-labelledby="access-search">

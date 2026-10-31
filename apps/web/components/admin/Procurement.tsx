@@ -33,7 +33,7 @@ export function Procurement() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s-6)' }}>
       <PageHeader
         title="Buyer requests"
-        subtitle="What buyers have asked farmers for, and how each farmer answered. Farmers accept or decline; this page only shows it."
+        subtitle="What buyers asked farmers for, and how each answered."
       />
       <Requests />
     </div>

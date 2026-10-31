@@ -12,7 +12,9 @@ import { popHref } from '@/lib/farmer-notices';
 import { formatDate } from '@/lib/format';
 import { t } from '@/lib/i18n';
 
-import { Badge, Button, Card, CardBody, EmptyState, PageHeader, Tabs } from '../ui';
+import css from '@/components/account/settings.module.css';
+
+import { Badge, Button, EmptyState, PageHeader, Tabs } from '../ui';
 import { LoadingState, Pagination } from '../ui/data';
 import { useBuyer } from './BuyerShell';
 import { useCursorList } from './useCursorList';
@@ -55,10 +57,9 @@ export function BuyerNotifications() {
 
   return (
     <div className={styles.page}>
-      <PageHeader
-        title={t('buyer.nav.notifications', language)}
-        subtitle={t('buyer.notif.lead', language)}
-      />
+      {/* 2026-10-31: the title alone (the tabs say what is here), and the
+          notices as rows of one white list rather than a card each. */}
+      <PageHeader title={t('buyer.nav.notifications', language)} />
       <Tabs
         label={t('buyer.notif.which', language)}
         value={view}
@@ -91,49 +92,48 @@ export function BuyerNotifications() {
               ? t('buyer.notif.nothingUnread', language)
               : t('buyer.notif.none', language)
           }
-          body={t('buyer.notif.noneBody', language)}
         />
       ) : (
         <>
-          {list.rows.map((n) => {
-            const href = opensAt(n);
-            return (
-              <Card key={n.id}>
-                <CardBody>
-                  <div className={styles.standing}>
-                    <div>
-                      <p>
-                        <strong dir="auto">{n.title}</strong>{' '}
-                        {n.read_at ? null : (
-                          <Badge tone="sorghum">{t('buyer.notif.new', language)}</Badge>
-                        )}
-                      </p>
-                      <p dir="auto">{n.body}</p>
-                      <p className={styles.muted}>
-                        {formatDate(n.created_at, language)}
-                        {href ? (
-                          <>
-                            {' · '}
-                            <Link href={href}>{language === 'ar' ? 'افتح' : 'Open'} →</Link>
-                          </>
-                        ) : null}
-                      </p>
-                    </div>
-                    {n.read_at ? null : (
-                      <Button
-                        variant="secondary"
-                        size="small"
-                        disabled={marking === n.id}
-                        onClick={() => void markRead(n.id)}
-                      >
-                        {t('buyer.notif.markRead', language)}
-                      </Button>
-                    )}
+          <ul className={css.list}>
+            {list.rows.map((n) => {
+              const href = opensAt(n);
+              return (
+                <li key={n.id} className={css.row}>
+                  <div className={css.rowText}>
+                    <p className={css.rowLabel}>
+                      <span dir="auto">{n.title}</span>{' '}
+                      {n.read_at ? null : (
+                        <Badge tone="sorghum">{t('buyer.notif.new', language)}</Badge>
+                      )}
+                    </p>
+                    <p className="small" dir="auto">
+                      {n.body}
+                    </p>
+                    <p className={css.rowHint}>
+                      {formatDate(n.created_at, language)}
+                      {href ? (
+                        <>
+                          {' · '}
+                          <Link href={href}>{language === 'ar' ? 'افتح' : 'Open'} →</Link>
+                        </>
+                      ) : null}
+                    </p>
                   </div>
-                </CardBody>
-              </Card>
-            );
-          })}
+                  {n.read_at ? null : (
+                    <Button
+                      variant="secondary"
+                      size="small"
+                      disabled={marking === n.id}
+                      onClick={() => void markRead(n.id)}
+                    >
+                      {t('buyer.notif.markRead', language)}
+                    </Button>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
           <Pagination
             shown={list.rows.length}
             hasMore={list.hasMore}

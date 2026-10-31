@@ -269,7 +269,7 @@ export function StaffAccess() {
   if (loading) {
     return (
       <div className={styles.page}>
-        <PageHeader eyebrow="Governance" title="Staff and permissions" />
+        <PageHeader title="Staff and permissions" />
         <LoadingState rows={4} label="Loading staff permissions" />
       </div>
     );
@@ -278,7 +278,7 @@ export function StaffAccess() {
   if (error || !me) {
     return (
       <div className={styles.page}>
-        <PageHeader eyebrow="Governance" title="Staff and permissions" />
+        <PageHeader title="Staff and permissions" />
         <Notice kind="error" title="Could not load this information">
           <p className="small">
             {error?.message}{' '}
@@ -294,10 +294,9 @@ export function StaffAccess() {
   if (!manage) {
     return (
       <div className={styles.page}>
-        <PageHeader eyebrow="Governance" title="Staff and permissions" />
+        <PageHeader title="Staff and permissions" />
         <UnavailableState title="Not available to your account">
-          Managing staff permissions needs the staff-management permission, which comes with the
-          Administrator preset. Your own work is unaffected.
+          Needs the Administrator preset.
         </UnavailableState>
       </div>
     );
@@ -310,9 +309,8 @@ export function StaffAccess() {
   return (
     <div className={styles.page}>
       <PageHeader
-        eyebrow="Governance"
         title="Staff and permissions"
-        subtitle="A staff member can do exactly what their presets allow; the role alone grants no permission. Every change is recorded with its reason in the audit trail."
+        subtitle="Presets grant permissions; the role alone grants none."
       />
 
       {/* ---- Your own access ------------------------------------------- */}

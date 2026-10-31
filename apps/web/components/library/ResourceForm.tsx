@@ -231,13 +231,8 @@ export function ResourceForm({ existing }: { existing: LearningResourceRow | nul
   return (
     <>
       <PageHeader
-        eyebrow="Learning library"
         title={existing ? 'Edit resource' : 'Add learning resource'}
-        subtitle={
-          existing
-            ? `Editing “${existing.title}”. Replace the file or change the card; officers get the new version on their next sync.`
-            : 'Upload a file and describe it well enough that an officer in the field knows whether it is worth the download.'
-        }
+        subtitle={existing ? existing.title : undefined}
         actions={
           <ButtonLink
             href={existing ? `/library?resource=${existing.id}` : '/library'}

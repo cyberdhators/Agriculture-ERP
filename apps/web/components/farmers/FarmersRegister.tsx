@@ -98,6 +98,8 @@ export function FarmersRegister() {
   /** The cursors of the pages already visited, so Previous can walk back. */
   const [history, setHistory] = useState<Array<string | null>>([]);
   const [hasMore, setHasMore] = useState(false);
+  /** Phones only: whether the filters beyond Search are unfolded. Presentation only. */
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [loading, setLoading] = useState(LIVE_FARMERS);
   const [error, setError] = useState<string | undefined>();
   const [attempt, setAttempt] = useState(0);
@@ -253,9 +255,7 @@ export function FarmersRegister() {
   return (
     <div className={styles.registerStack}>
       <PageHeader
-        eyebrow="Users and organizations"
         title="Farmers"
-        subtitle="National farmer register."
         actions={
           <>
             <Button variant="ghost" onClick={() => window.print()}>
@@ -326,7 +326,11 @@ export function FarmersRegister() {
       </div>
 
       {/* ---- Filters ---------------------------------------------------- */}
-      <div className={`${styles.filterBarWrap} no-print`}>
+      {/*
+       * 2026-10-31: on a phone the eight boxes stacked into a wall; Search
+       * stays, the rest fold behind "Filters". Desktop is unchanged.
+       */}
+      <div className={`${styles.filterBarWrap} ${filtersOpen ? styles.filtersOpen : ''} no-print`}>
         <div className={styles.filterGrid}>
           <Field label="Search" hint="Farmer name, farmer number or phone">
             {(ids) => (
@@ -427,6 +431,15 @@ export function FarmersRegister() {
             )}
           </Field>
         </div>
+
+        <button
+          type="button"
+          className={styles.filterToggle}
+          aria-expanded={filtersOpen}
+          onClick={() => setFiltersOpen((open) => !open)}
+        >
+          Filters
+        </button>
 
         <div className={`${styles.filterGrid} ${styles.filterAdvanced}`}>
           <Field label="Registered from">

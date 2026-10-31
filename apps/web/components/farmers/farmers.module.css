@@ -328,26 +328,28 @@
   scroll-margin-top: calc(var(--masthead-h) + var(--s-4));
 }
 
+/* 2026-10-31: a calm section title -- a hairline, not a heavy rule, and a
+   heading sized for a card rather than a page. */
 .sectionHead {
   display: flex;
   align-items: baseline;
   gap: var(--s-3);
   margin-bottom: var(--s-4);
   padding-bottom: var(--s-3);
-  border-bottom: 1.5px solid var(--line-strong);
+  border-bottom: 1px solid var(--line);
 }
 
 .sectionNo {
   font-family: var(--font-mono);
   font-weight: 500;
-  font-size: var(--text-subhead);
-  color: var(--accent-hover);
+  font-size: var(--text-small);
+  color: var(--muted);
 }
 
 .sectionHead h2 {
   font-family: var(--font-display);
   font-weight: 560;
-  font-size: var(--text-h2);
+  font-size: var(--text-subhead);
   font-variation-settings:
     'opsz' 40,
     'SOFT' 60,
@@ -673,7 +675,7 @@
 .registerStack {
   display: flex;
   flex-direction: column;
-  gap: var(--s-5);
+  gap: var(--s-6);
 }
 
 .scopeBand {
@@ -739,7 +741,7 @@
 .filterGrid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-  gap: var(--s-3);
+  gap: var(--s-4);
   align-items: start;
 }
 
@@ -837,7 +839,49 @@
   background: var(--card);
   border: 1px solid var(--line);
   border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
   padding: var(--s-5);
+}
+
+/* The phone-only "Filters" disclosure (2026-10-31). Hidden on wider screens,
+   where every filter shows as before. */
+.filterToggle {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .filterToggle {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s-2);
+    margin-block-start: var(--s-4);
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--green-deep);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .filterToggle::after {
+    content: '';
+    inline-size: 7px;
+    block-size: 7px;
+    border-inline-end: 2px solid currentColor;
+    border-block-end: 2px solid currentColor;
+    transform: rotate(45deg) translateY(-2px);
+    transition: transform 160ms ease;
+  }
+
+  .filtersOpen .filterToggle::after {
+    transform: rotate(-135deg) translateY(-2px);
+  }
+
+  .filterBarWrap:not(.filtersOpen) .filterGrid > :not(:first-child),
+  .filterBarWrap:not(.filtersOpen) .filterAdvanced {
+    display: none;
+  }
 }
 
 .recordNumberCell {
