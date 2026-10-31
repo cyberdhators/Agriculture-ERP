@@ -12,6 +12,7 @@ import {
   type AdviceProviderPublic,
 } from '@agri-erp/shared';
 
+import css from '@/components/account/settings.module.css';
 import { BackLinkRow } from '@/components/market-posts/bits';
 import { ConversationThread } from '@/components/messages/Messages';
 import {
@@ -146,7 +147,8 @@ export function CaseDetail({
         </Notice>
       ) : null}
 
-      <dl className={styles.facts}>
+      {/* 2026-10-31: the request's facts on a white card, like the rest of the page. */}
+      <dl className={`${styles.box} ${styles.facts}`}>
         <div>
           <dt>{t(mine ? 'advice.askedOf' : 'advice.askedBy', lang)}</dt>
           <dd dir="auto">{mine ? row.provider.display_name : row.requester_name}</dd>
@@ -172,7 +174,9 @@ export function CaseDetail({
             {row.shared.phone ? (
               <div>
                 <dt>{t('advice.sharedPhone', lang)}</dt>
-                <dd className="mono">{row.shared.phone}</dd>
+                <dd className="mono" dir="ltr">
+                  {row.shared.phone}
+                </dd>
               </div>
             ) : null}
           </>
@@ -282,7 +286,7 @@ function Photos({
       )}
       {photos.length > 0 ? <p className={styles.note}>{t('advice.photosPrivate', lang)}</p> : null}
       {canAdd ? (
-        <div className={styles.actions}>
+        <div className={css.actions}>
           <Button
             type="button"
             variant="secondary"
@@ -386,7 +390,7 @@ function Referral({
                 onChange={(e) => setShare(e.target.checked)}
               />
             ) : null}
-            <div className={styles.actions}>
+            <div className={css.actions}>
               <Button
                 disabled={busy}
                 onClick={() =>
@@ -413,7 +417,7 @@ function Referral({
               {t('advice.referWaiting', lang)}:{' '}
               <strong dir="auto">{rf.to_provider.display_name}</strong>
             </p>
-            <div className={styles.actions}>
+            <div className={css.actions}>
               <Button
                 variant="secondary"
                 disabled={busy}
@@ -468,7 +472,7 @@ function Referral({
               <Input {...ids} dir="auto" value={query} onChange={(e) => setQuery(e.target.value)} />
             )}
           </Field>
-          <div className={styles.actions}>
+          <div className={css.actions}>
             <Button variant="secondary" disabled={busy} onClick={() => void search()}>
               {t('advice.referSearchButton', lang)}
             </Button>
@@ -493,7 +497,7 @@ function Referral({
                   <Link href={providerHref(pick)}>{t('advice.viewProvider', lang)}</Link>
                 </p>
               ) : null}
-              <div className={styles.actions}>
+              <div className={css.actions}>
                 <Button
                   disabled={busy || !pick}
                   onClick={() => void run(() => proposeReferral(row.id, pick))}
@@ -527,7 +531,7 @@ function CloseControls({
   return (
     <div className={styles.box}>
       {row.my_side === 'provider' && row.status === 'open' ? (
-        <div className={styles.actions}>
+        <div className={css.actions}>
           <Button disabled={busy} onClick={() => void onChange({ action: 'start' })}>
             {t('advice.start', lang)}
           </Button>
@@ -548,7 +552,7 @@ function CloseControls({
           </Select>
         )}
       </Field>
-      <div className={styles.actions}>
+      <div className={css.actions}>
         <Button
           variant="secondary"
           disabled={busy}
@@ -617,7 +621,7 @@ function Feedback({
               />
             )}
           </Field>
-          <div className={styles.actions}>
+          <div className={css.actions}>
             <Button
               disabled={busy || rating === 0}
               onClick={() =>

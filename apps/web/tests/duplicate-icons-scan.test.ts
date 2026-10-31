@@ -48,51 +48,29 @@ describe('one icon per destination', () => {
     expect(duplicates(icons)).toEqual([]);
   });
 
-  it('the phone-account home has no account tile the shortcut hub already offers', () => {
+  it('the phone-account home repeats neither the hub nor the Account page (owner, 2026-10-31)', () => {
+    // Home is the welcome card, the hub's round icons, one strip of numbers
+    // and the farmer's own things. The account links (security, language,
+    // record) live on Account; the full record on "Your record".
     const src = read('components/farmer/FarmerOverview.tsx');
-    const tiles = src.slice(
-      src.indexOf('const ACCOUNT_TILES'),
-      src.indexOf('export function FarmerOverview'),
-    );
-    const hrefs = [...tiles.matchAll(/href:\s*'([^']+)'/g)].map((m) => m[1] ?? '');
-    expect(hrefs.length).toBeGreaterThan(3);
+    expect(src).not.toMatch(/ACCOUNT_TILES|acctTiles/);
+    for (const href of [
+      '/farmer/account/security',
+      '/farmer/account/language',
+      '/farmer/account/verification',
+      '/farmer/account/settings',
+    ]) {
+      expect(src.includes(`'${href}'`) || src.includes(`"${href}"`), href).toBe(false);
+    }
+    // "Buy" in the hub and the Market tab already lead to the market.
+    expect(src).not.toMatch(/href="\/market"/);
+    // No row of links of its own that leads where a round icon already does
+    // (an empty state's one next step is not a row of links).
     const hub = new Set(Object.values(SHORTCUT_HREF.farmer));
-    expect(hrefs.filter((h) => hub.has(h))).toEqual([]);
-    expect(duplicates(hrefs)).toEqual([]);
-  });
-
-  it('nothing below the weather repeats what the hub above it offers (owner, 2026-11-01)', () => {
-    const src = read('components/farmer/FarmerOverview.tsx');
-    const tiles = src.slice(
-      src.indexOf('const ACCOUNT_TILES'),
-      src.indexOf('export function FarmerOverview'),
+    const rows = [...src.matchAll(/<Link\s+href="([^"]+)"\s+className=\{`\$\{css\.row\}/g)].map(
+      (m) => m[1] ?? '',
     );
-    // "Buy" above the weather and the Market tab already lead to the market.
-    expect(tiles).not.toMatch(/href:\s*'\/market'/);
-    // The page header repeats no hub destination ("Sell produce" is the hub's).
-    const head = src.slice(src.indexOf('<PageHead'), src.indexOf('<ShortcutHub'));
-    for (const href of Object.values(SHORTCUT_HREF.farmer)) {
-      expect(head.includes(`href="${href}"`), href).toBe(false);
-    }
-  });
-
-  it("tiles that are also bottom-bar tabs are hidden at the bottom bar's width", () => {
-    const shell = read('components/farmer/AccountShell.tsx');
-    const bottom = shell.slice(shell.indexOf('const BOTTOM'), shell.indexOf('function isActive'));
-    const bottomHrefs = new Set([...bottom.matchAll(/href:\s*'([^']+)'/g)].map((m) => m[1]));
-    const src = read('components/farmer/FarmerOverview.tsx');
-    const tiles = src.slice(
-      src.indexOf('const ACCOUNT_TILES'),
-      src.indexOf('export function FarmerOverview'),
-    );
-    // Each tile object starts at "href:"; the farmer home itself is not a tile.
-    for (const block of tiles.split(/(?=href:\s*')/).slice(1)) {
-      const href = /href:\s*'([^']+)'/.exec(block)?.[1] ?? '';
-      if (bottomHrefs.has(href)) expect(block, href).toMatch(/inBottomBar:\s*true/);
-    }
-    expect(read('components/farmer/farmer.module.css')).toMatch(
-      /\.acctTileBottomBar\s*\{\s*display:\s*none;/,
-    );
+    expect(rows.filter((h) => hub.has(h))).toEqual([]);
   });
 
   it('the shortcut hub draws a different glyph for every tile', () => {

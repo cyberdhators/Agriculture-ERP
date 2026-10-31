@@ -16,7 +16,8 @@ import {
 } from '@agri-erp/shared';
 
 import { ProviderForm } from '@/components/advice/ProviderForm';
-import { Badge, Button, Field, Notice, Select, Tabs, Textarea } from '@/components/ui';
+import css from '@/components/account/settings.module.css';
+import { Badge, Button, Field, Notice, PageHeader, Select, Tabs, Textarea } from '@/components/ui';
 import { AdviceError } from '@/lib/advice/client';
 import { FARMER_ADVICE, BUYER_ADVICE, topicLabel } from '@/lib/advice/labels';
 import { type Language } from '@/lib/i18n';
@@ -33,6 +34,9 @@ import { errorText, sendJson, teamBase } from './words';
  * refuses everyone else, and this page says so plainly. Each request shows
  * who is handling it; the buttons are the ones the server would allow
  * (`may`), and the server decides again on every press.
+ *
+ * 2026-10-31 (the owner: "elite level ui"): one title and one short line;
+ * each request on a white card from the settings kit.
  */
 
 type Tab = 'inbox' | 'profile';
@@ -68,13 +72,13 @@ const EN = {
   } as Record<AdviceOutcome, string>,
   back: '← Back to the organisation',
   title: 'Advice requests',
-  lead: "Questions people asked your organisation's advice profile. Only members who handle advisory cases can see them. Your personal messages stay separate.",
+  // 2026-10-31: one line (was three sentences).
+  lead: "Questions sent to your organisation's advice profile.",
   tabsLabel: 'Organisation advice',
   inbox: 'Shared inbox',
   profile: 'Advice profile',
   profileTitle: "Your organisation's advice profile",
-  profileLead:
-    'Requests to this profile come to the shared inbox. Publishing needs no approval from CORWADO; it is not an endorsement.',
+  profileLead: 'Requests to this profile come to the shared inbox.',
   profileNotLoaded: 'The profile could not be loaded.',
   profileNotSaved: 'The profile could not be saved.',
   unreachable: 'The server could not be reached. Check the connection.',
@@ -134,13 +138,12 @@ const AR: Words = {
   },
   back: '→ العودة إلى المنظمة',
   title: 'طلبات النصيحة',
-  lead: 'أسئلة طرحها الناس على ملف النصيحة الخاص بمنظمتك. لا يراها إلا الأعضاء الذين يتولون حالات النصيحة. رسائلك الشخصية تبقى منفصلة.',
+  lead: 'أسئلة أُرسلت إلى ملف النصيحة الخاص بمنظمتك.',
   tabsLabel: 'نصيحة المنظمة',
   inbox: 'البريد المشترك',
   profile: 'ملف النصيحة',
   profileTitle: 'ملف النصيحة الخاص بمنظمتك',
-  profileLead:
-    'تصل الطلبات الموجهة إلى هذا الملف إلى البريد المشترك. لا يحتاج النشر إلى موافقة CORWADO، وليس تزكية منها.',
+  profileLead: 'تصل الطلبات الموجهة إلى هذا الملف إلى البريد المشترك.',
   profileNotLoaded: 'تعذر تحميل الملف.',
   profileNotSaved: 'تعذر حفظ الملف.',
   unreachable: 'تعذر الوصول إلى الخادم. تحقق من الاتصال.',
@@ -197,12 +200,6 @@ const row: React.CSSProperties = {
   gap: 8,
   alignItems: 'center',
 };
-const box: React.CSSProperties = {
-  border: '1px solid var(--color-border, #d9d9d9)',
-  borderRadius: 8,
-  padding: 12,
-  ...col,
-};
 
 const when = (iso: string) =>
   new Date(iso).toLocaleString('en-GB', {
@@ -240,16 +237,11 @@ export function OrganisationAdvice({
   const w = wordsFor(language);
 
   return (
-    <div style={{ ...col, gap: 20, maxWidth: 760 }}>
+    <div className={css.page}>
       <Link href={back} className="small">
         {w.back}
       </Link>
-      <header>
-        <h1 style={{ margin: 0 }}>{w.title}</h1>
-        <p className="small muted" style={{ margin: 0 }}>
-          {w.lead}
-        </p>
-      </header>
+      <PageHeader title={w.title} subtitle={w.lead} />
       <Tabs
         label={w.tabsLabel}
         items={[
@@ -396,7 +388,7 @@ function Inbox({ base, language }: { base: string; language: Language }) {
       {cases === null ? <p className="small muted">…</p> : null}
       {cases && cases.length === 0 ? <p className="small muted">{w.none}</p> : null}
       {cases?.map((c) => (
-        <div key={c.id} style={box}>
+        <div key={c.id} className={css.formCard} style={{ gap: 12 }}>
           <div style={{ ...row, justifyContent: 'space-between' }}>
             <strong>{topicLabel(c.topic, language)}</strong>
             <span style={row}>

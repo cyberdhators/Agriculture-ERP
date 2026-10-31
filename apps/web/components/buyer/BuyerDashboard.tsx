@@ -8,9 +8,10 @@ import { categoryLabelOf, showsStandingStamp, verificationMessage } from '@/lib/
 import { t } from '@/lib/i18n';
 
 import { ShortcutHub } from '../account/ShortcutHub';
-import { ButtonLink, Notice, PageHeader } from '../ui';
-import { CardSkeleton, ChartCard, StatCard, StatGrid } from '../ui/data';
+import { ButtonLink, Notice } from '../ui';
+import { CardSkeleton, ChartCard } from '../ui/data';
 import { useBuyer } from './BuyerShell';
+import home from '../farmer/farmer.module.css';
 import styles from './buyer.module.css';
 
 /**
@@ -24,6 +25,11 @@ import styles from './buyer.module.css';
  * The charts are the kit's plain-HTML bars: each value is printed beside its
  * bar, so the numbers are read, not inferred from a picture.
  */
+function greetingKey(): 'home.morning' | 'home.afternoon' | 'home.evening' {
+  const hour = new Date().getHours();
+  return hour < 12 ? 'home.morning' : hour < 17 ? 'home.afternoon' : 'home.evening';
+}
+
 export function BuyerDashboard() {
   const { profile, language } = useBuyer();
   const [summary, setSummary] = useState<BuyerSummary | null>(null);
@@ -48,16 +54,24 @@ export function BuyerDashboard() {
 
   return (
     <div className={styles.page}>
-      <PageHeader
-        eyebrow={profile.organization.name}
-        title={t('buyer.dash.title', language)}
-        subtitle={t('buyer.dash.welcome', language).replace('{name}', profile.person.given_name)}
-        actions={
-          profile.verification.capabilities.browse ? (
-            <ButtonLink href="/buyer/marketplace">{t('buyer.dash.browse', language)}</ButtonLink>
-          ) : null
-        }
-      />
+      {/* 2026-10-31 (the owner: no big bold page names; "creatively beautiful"):
+          a welcome card, as on the phone account's Home, with the one action. */}
+      <h1 className="visually-hidden">{t('buyer.dash.title', language)}</h1>
+      <section className={styles.hello}>
+        <div>
+          <p className={styles.helloName} suppressHydrationWarning>
+            {t(greetingKey(), language)}, <span dir="auto">{profile.person.given_name}</span>
+          </p>
+          <p className={styles.helloOrg} dir="auto">
+            {profile.organization.name}
+          </p>
+        </div>
+        {profile.verification.capabilities.browse ? (
+          <ButtonLink href="/buyer/marketplace" variant="secondary">
+            {t('buyer.dash.browse', language)}
+          </ButtonLink>
+        ) : null}
+      </section>
 
       {/* 2026-10-31: an organisation's verification is a badge; an individual has none. */}
       {standing !== 'verified' &&
@@ -88,30 +102,32 @@ export function BuyerDashboard() {
         <CardSkeleton count={6} />
       ) : (
         <>
-          <StatGrid>
-            <StatCard
-              label={t('buyer.dash.requestsSent', language)}
-              value={kpis.active_purchase_requests}
-              note={t('buyer.dash.requestsSentNote', language)}
-            />
-            <StatCard
-              label={t('buyer.dash.available', language)}
-              value={kpis.available_products}
-              note={t('buyer.dash.availableNote', language)}
-              unmeasuredBecause={t('buyer.dash.availableUnmeasured', language)}
-              unmeasuredLabel={t('buyer.dash.notMeasured', language)}
-            />
-            <StatCard
-              label={t('buyer.dash.inCart', language)}
-              value={cart.length}
-              note={
-                cart.length > 0
-                  ? t('buyer.dash.inCartNote', language)
-                  : t('buyer.dash.inCartEmpty', language)
-              }
-              attention={cart.length > 0}
-            />
-          </StatGrid>
+          {/* The three figures on one strip, each a link to its list. A figure
+              that could not be measured shows a dash with the reason on hover. */}
+          <dl className={home.stats} style={{ gridTemplateColumns: 'repeat(3, minmax(0, 1fr))' }}>
+            {(
+              [
+                [t('buyer.dash.requestsSent', language), kpis.active_purchase_requests, false, ''],
+                [
+                  t('buyer.dash.available', language),
+                  kpis.available_products,
+                  false,
+                  t('buyer.dash.availableUnmeasured', language),
+                ],
+                [t('buyer.dash.inCart', language), cart.length, cart.length > 0, ''],
+              ] as [string, number | null, boolean, string][]
+            ).map(([label, value, accent, why]) => (
+              <div key={label} className={home.stat}>
+                <dd
+                  className={accent ? `${home.statValue} ${home.statAccent}` : home.statValue}
+                  title={value === null ? why : undefined}
+                >
+                  {value ?? '—'}
+                </dd>
+                <dt className={home.statLabel}>{label}</dt>
+              </div>
+            ))}
+          </dl>
 
           <div className={styles.grid2}>
             {summary.supply ? (

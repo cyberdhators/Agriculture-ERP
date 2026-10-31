@@ -8,14 +8,14 @@ import { LISTING_CATEGORIES } from '@agri-erp/shared';
 import { VerifiedOrganisationBadge } from '@/components/listings/VerifiedOrganisationBadge';
 import { MessageButton } from '@/components/messages/MessageButton';
 import { ProfileLink } from '@/components/profiles/PublicProfile';
-import { Badge, ButtonLink, EmptyState, Input, Notice, PageHeader } from '@/components/ui';
+import { Badge, ButtonLink, EmptyState, Input, Notice } from '@/components/ui';
 import { CATEGORY_KEY } from '@/lib/farmers/listings';
 import type { ListingCategory } from '@/lib/fixtures/farmers';
 import { formatDate } from '@/lib/format';
 import { t, type Language } from '@/lib/i18n';
 import { getBuyingRequest, listBuyingRequests, type BuyingRequest } from '@/lib/market-posts/api';
 
-import { BackLinkRow, SearchSelect } from './bits';
+import { BackLinkRow, FilterFold, SearchSelect } from './bits';
 import { ContactReveal, ReportPost } from './ContactAndReport';
 import { MarketSections } from './MarketSections';
 import { needLine, offerLine } from './MyBuyingRequests';
@@ -90,25 +90,29 @@ export function MarketRequests({
   return (
     <>
       <MarketSections current="requests" lang={lang} />
-      <PageHeader
-        title={t('requests.marketTitle', lang)}
-        subtitle={t('requests.marketLead', lang)}
-        actions={
-          postHref ? (
-            <ButtonLink href={postHref} variant="secondary" size="small">
-              {t('requests.new', lang)}
-            </ButtonLink>
-          ) : undefined
+      {/* 2026-10-31: the tab above names the page; the title is for screen
+          readers, and the one action sits at the end of the line. */}
+      <h1 className="visually-hidden">{t('requests.marketTitle', lang)}</h1>
+      {postHref ? (
+        <div className={styles.headActions}>
+          <ButtonLink href={postHref} variant="secondary" size="small">
+            {t('requests.new', lang)}
+          </ButtonLink>
+        </div>
+      ) : null}
+      <FilterFold
+        lang={lang}
+        active={[category, state, poster].filter(Boolean).length}
+        search={
+          <Input
+            type="search"
+            aria-label={t('requests.search', lang)}
+            placeholder={t('requests.search', lang)}
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+          />
         }
-      />
-      <div className={styles.toolbar}>
-        <Input
-          type="search"
-          aria-label={t('requests.search', lang)}
-          placeholder={t('requests.search', lang)}
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-        />
+      >
         <SearchSelect
           label={t('listingForm.category', lang)}
           value={category}
@@ -133,7 +137,7 @@ export function MarketRequests({
           ]}
           anyLabel={t('requests.anyPoster', lang)}
         />
-      </div>
+      </FilterFold>
       {/* 2026-11-03: "tell me when a request like this is posted". */}
       <SaveSearchPanel
         lang={lang}

@@ -13,6 +13,7 @@ import {
   type AdvisoryNotePublic,
 } from '@agri-erp/shared';
 
+import css from '@/components/account/settings.module.css';
 import { BackLinkRow } from '@/components/market-posts/bits';
 import {
   Badge,
@@ -63,6 +64,9 @@ const monthOf = (month: string, lang: Language) =>
  * where, how, when, on what terms, and any commercial interest they declare
  * -- then "Request advice". `base` is the directory on this side of the app;
  * `side` says where the new request's page is.
+ *
+ * 2026-10-31: the description and the facts on one white card, the request
+ * form on another; the green action is Send.
  */
 export function ProviderDetail({
   id,
@@ -109,49 +113,51 @@ export function ProviderDetail({
       ) : null}
       {/* 2026-10-28: the verification panel -- what CORWADO checked. */}
       {row.approved_adviser ? <ApprovalChecks row={row} lang={lang} /> : null}
-      <p className={styles.prose} dir="auto">
-        {row.description}
-      </p>
-      <dl className={styles.facts}>
-        <div>
-          <dt>{t('advice.topics', lang)}</dt>
-          <dd>{row.topics.map((v) => t(TOPIC_KEY[v], lang)).join(' · ')}</dd>
-        </div>
-        <div>
-          <dt>{t('advice.languages', lang)}</dt>
-          <dd>{row.languages.map((v) => t(LANGUAGE_KEY[v], lang)).join(', ')}</dd>
-        </div>
-        <div>
-          <dt>{t('advice.coverage', lang)}</dt>
-          <dd>{coverageLine(row, lang)}</dd>
-        </div>
-        <div>
-          <dt>{t('advice.delivery', lang)}</dt>
-          <dd>{row.delivery_modes.map((v) => t(MODE_KEY[v], lang)).join(', ')}</dd>
-        </div>
-        {row.availability ? (
+      <section className={styles.box}>
+        <p className={styles.prose} dir="auto">
+          {row.description}
+        </p>
+        <dl className={styles.facts}>
           <div>
-            <dt>{t('advice.availability', lang)}</dt>
-            <dd dir="auto">{row.availability}</dd>
+            <dt>{t('advice.topics', lang)}</dt>
+            <dd>{row.topics.map((v) => t(TOPIC_KEY[v], lang)).join(' · ')}</dd>
           </div>
-        ) : null}
-        <div>
-          <dt>{t('advice.terms', lang)}</dt>
-          <dd>
-            {t(TERMS_KEY[row.terms], lang)}
-            {row.fee_note ? (
-              <>
-                {' · '}
-                <span dir="auto">{row.fee_note}</span>
-              </>
-            ) : null}
-          </dd>
-        </div>
-        <div>
-          <dt>{t('advice.commercial', lang)}</dt>
-          <dd dir="auto">{row.commercial_interests ?? t('advice.noCommercial', lang)}</dd>
-        </div>
-      </dl>
+          <div>
+            <dt>{t('advice.languages', lang)}</dt>
+            <dd>{row.languages.map((v) => t(LANGUAGE_KEY[v], lang)).join(', ')}</dd>
+          </div>
+          <div>
+            <dt>{t('advice.coverage', lang)}</dt>
+            <dd>{coverageLine(row, lang)}</dd>
+          </div>
+          <div>
+            <dt>{t('advice.delivery', lang)}</dt>
+            <dd>{row.delivery_modes.map((v) => t(MODE_KEY[v], lang)).join(', ')}</dd>
+          </div>
+          {row.availability ? (
+            <div>
+              <dt>{t('advice.availability', lang)}</dt>
+              <dd dir="auto">{row.availability}</dd>
+            </div>
+          ) : null}
+          <div>
+            <dt>{t('advice.terms', lang)}</dt>
+            <dd>
+              {t(TERMS_KEY[row.terms], lang)}
+              {row.fee_note ? (
+                <>
+                  {' · '}
+                  <span dir="auto">{row.fee_note}</span>
+                </>
+              ) : null}
+            </dd>
+          </div>
+          <div>
+            <dt>{t('advice.commercial', lang)}</dt>
+            <dd dir="auto">{row.commercial_interests ?? t('advice.noCommercial', lang)}</dd>
+          </div>
+        </dl>
+      </section>
       <p className={styles.note}>
         {t('advice.notEndorsed', lang)} {t('advice.noPurchase', lang)} ·{' '}
         {formatDate(row.updated_at, lang)}
@@ -247,7 +253,7 @@ function RequestForm({
     return (
       <div className={styles.box}>
         <h2>{t('advice.askTitle', lang)}</h2>
-        <div className={styles.actions}>
+        <div className={css.actions}>
           <ButtonLink href="/join">{t('advice.signIn', lang)}</ButtonLink>
         </div>
       </div>
@@ -362,7 +368,7 @@ function RequestForm({
       <p className={styles.note}>
         {t('advice.noGuarantee', lang)} {t('advice.disclaimer', lang)}
       </p>
-      <div className={styles.actions}>
+      <div className={css.actions}>
         <Button type="submit" disabled={busy}>
           {t('advice.send', lang)}
         </Button>

@@ -15,7 +15,7 @@ import {
   CorrectionStamp,
   useOpenCorrections,
 } from '@/components/account/Corrections';
-import { ButtonLink, EmptyState, Notice } from '@/components/ui';
+import { EmptyState, Notice } from '@/components/ui';
 import { formatSsp } from '@/lib/farmers/listings';
 import { t, type Language } from '@/lib/i18n';
 import { myServices, updateService, type ServiceListing } from '@/lib/market-posts/api';
@@ -101,18 +101,19 @@ export function MyServices({ lang, basePath }: { lang: Language; basePath: strin
       ) : null}
       {rows.length === 0 ? (
         <EmptyState
+          // 2026-10-31: the page's lead and its button sit just above; not again.
           title={t('svc.mineEmpty', lang)}
-          body={t('svc.mineLead', lang)}
-          actions={<ButtonLink href={`${basePath}/new`}>{t('svc.new', lang)}</ButtonLink>}
         />
       ) : (
         <ul className={styles.list}>
           {rows.map((s) => (
             <li key={s.id} className={styles.card}>
-              <span className={styles.cardTitle} dir="auto">
-                {s.title}
-              </span>
-              {corrections.ids.has(s.id) ? <CorrectionStamp lang={lang} /> : null}
+              <div className={styles.cardHead}>
+                <span className={styles.cardTitle} dir="auto">
+                  {s.title}
+                </span>
+                {corrections.ids.has(s.id) ? <CorrectionStamp lang={lang} /> : null}
+              </div>
               <div className={styles.meta}>
                 <span>{serviceTypeLabel(s, lang)}</span>
                 <span dir="auto">{s.location}</span>

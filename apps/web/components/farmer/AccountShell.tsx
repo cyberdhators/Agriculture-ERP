@@ -757,11 +757,26 @@ export function PageHead({
   title,
   lead,
   actions,
+  quiet = false,
 }: {
   title: string;
   lead?: ReactNode;
   actions?: ReactNode;
+  /**
+   * 2026-10-31 (the owner: the big "HOME", "MARKETPLACE", "AGRIONE AI" titles
+   * "seem funny"): on a page the bottom bar and the side menu already name,
+   * the title is kept for screen readers and the browser tab but not shown.
+   */
+  quiet?: boolean;
 }) {
+  if (quiet) {
+    return (
+      <>
+        <h1 className="visually-hidden">{title}</h1>
+        {actions ? <div className={styles.pageActionsQuiet}>{actions}</div> : null}
+      </>
+    );
+  }
   return (
     <div className={styles.pageHead}>
       <div className={styles.pageTitle}>

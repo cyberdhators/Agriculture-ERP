@@ -67,7 +67,7 @@ export function ContactReveal({ kind, id, lang }: { kind: PostKind; id: string; 
           <span className="small muted" dir="auto">
             {state.name}
           </span>
-          <a className={styles.phone} href={`tel:${state.phone}`}>
+          <a className={styles.phone} href={`tel:${state.phone}`} dir="ltr">
             {state.phone}
           </a>
           <div className={styles.actionRow}>

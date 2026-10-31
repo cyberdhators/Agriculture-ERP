@@ -75,10 +75,8 @@ export function FarmerNotifications() {
       {/* 2026-10-27: official announcements, also listed among the notices below. */}
       <AccountAnnouncements language={language} />
       {notifications.length === 0 ? (
-        <EmptyState
-          title={t('notifications.empty', language)}
-          body={t('notifications.title', language)}
-        />
+        // 2026-10-31: the title alone (the body repeated "Notifications").
+        <EmptyState title={t('notifications.empty', language)} />
       ) : (
         <ul className={styles.notiList}>
           {notifications.map((n) => (

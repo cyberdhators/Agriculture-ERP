@@ -101,11 +101,12 @@ export function LifecycleActions({
 
   return (
     <section className={styles.lifecycle} aria-label={t('lifecycle.title', lang)}>
+      {/* 2026-10-31: the stamp and its one sentence on one line; "Status" is
+          the section's name for a screen reader, not a word over the stamp. */}
       <div className={styles.lifecycleHead}>
-        <span className="small muted">{t('lifecycle.title', lang)}</span>
         <Stamp kind={stageStamp(stage)}>{t(STAGE_KEY[stage], lang)}</Stamp>
+        <span className="small muted">{t(STAGE_EXPLAIN_KEY[stage], lang)}</span>
       </div>
-      <p className="small muted">{t(STAGE_EXPLAIN_KEY[stage], lang)}</p>
       {daysLeft !== null ? (
         <Notice kind="warn">
           <p className="small">

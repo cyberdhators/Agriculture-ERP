@@ -16,10 +16,6 @@
   max-width: 760px;
 }
 
-.head h1 {
-  margin: 0 0 4px;
-}
-
 .toolbar {
   display: grid;
   gap: 8px;
@@ -36,6 +32,65 @@
   .toolbar {
     grid-template-columns: 2fr repeat(4, minmax(0, 1fr));
   }
+}
+
+/* 2026-10-31 (the owner's screenshot: four dropdowns stacked under the
+   search): on a phone the search stays and the rest fold behind "Filters",
+   which counts the ones in use. From 640px the two wrappers vanish from the
+   layout and the toolbar grid above is the one it was. */
+.searchRow,
+.filterSet {
+  display: contents;
+}
+
+.toolbar .filterToggle {
+  display: none;
+}
+
+.filterCount {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding-inline: 5px;
+  margin-inline-start: 6px;
+  border-radius: var(--radius-pill);
+  background: var(--green);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+@media (max-width: 639px) {
+  .searchRow {
+    display: flex;
+    gap: 8px;
+  }
+
+  .searchRow > :first-child {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .toolbar .filterToggle {
+    display: inline-flex;
+    flex: none;
+  }
+
+  .filterSet {
+    display: grid;
+    gap: 8px;
+  }
+
+  .filterSetClosed {
+    display: none;
+  }
+}
+
+/* The "approved advisers only" filter, as one chip that fits the grid. */
+.chipCell {
+  display: flex;
+  align-items: center;
 }
 
 .list {
@@ -64,9 +119,12 @@
 .card {
   display: grid;
   gap: 6px;
-  padding: 14px;
+  padding: var(--s-4);
   border: 1px solid var(--line, #d9d4c7);
-  border-radius: 8px;
+  /* 2026-10-31: the settings kit's card (radius and shadow), so the advice
+     pages read as the rest of the app. */
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
   background: var(--card, #fff);
   min-width: 0;
   color: inherit;
@@ -134,10 +192,11 @@ a.card:hover .cardTitle {
 
 .box {
   display: grid;
-  gap: 10px;
-  padding: 14px;
+  gap: var(--s-3);
+  padding: var(--s-5);
   border: 1px solid var(--line, #d9d4c7);
-  border-radius: 8px;
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
   background: var(--card, #fff);
 }
 
@@ -156,21 +215,6 @@ a.card:hover .cardTitle {
   display: grid;
   gap: 12px;
   grid-template-columns: 1fr;
-}
-
-.choices {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 16px;
-  border: 0;
-  padding: 0;
-  margin: 0;
-}
-
-.choices legend {
-  font-weight: 600;
-  margin-block-end: 6px;
-  padding: 0;
 }
 
 .actions {

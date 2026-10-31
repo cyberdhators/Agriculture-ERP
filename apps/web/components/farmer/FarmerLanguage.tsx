@@ -1,62 +1,74 @@
 'use client';
 
+import css from '@/components/account/settings.module.css';
 import { useFarmerSession } from '@/lib/farmer-session';
 import { useArabicEnabled } from '@/lib/settings/client';
-import { LANGUAGE_LABELS } from '@/lib/format';
 import { t, type Language } from '@/lib/i18n';
 
 import { PageHead } from './AccountShell';
-import styles from './farmer.module.css';
 
+const CHECK = (
+  <svg
+    viewBox="0 0 24 24"
+    width="20"
+    height="20"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.4"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden
+  >
+    <path d="m5 12 5 5 9-10" />
+  </svg>
+);
+
+/**
+ * Language: the choices as a list, the current one ticked (2026-10-31). It
+ * was the word "Language" four times -- page title, lead, card title and
+ * "Language: English" -- above two buttons.
+ */
 export function FarmerLanguage() {
   const { farmer, language, setLanguage } = useFarmerSession();
   // 2026-10-27: Arabic is offered while Settings say so.
   const arabic = useArabicEnabled();
   if (!farmer) return null;
 
-  function switchLanguage(lang: Language) {
-    setLanguage(lang);
-  }
+  const choices: { lang: Language; label: string; rtl?: boolean }[] = [
+    { lang: 'en', label: t('language.name', 'en') },
+    ...(arabic
+      ? [{ lang: 'ar' as Language, label: t('language.arabicNative', 'en'), rtl: true }]
+      : []),
+  ];
 
   return (
     <>
-      <PageHead
-        title={t('account.tileLanguage', language)}
-        lead={t('account.tileLanguageSub', language)}
-      />
-
-      <div className={styles.settings}>
-        <section className={styles.settingCard}>
-          <h2>{t('account.changeLanguage', language)}</h2>
-          <p className="small muted" style={{ marginBottom: 'var(--s-3)' }}>
-            {t('language.subtitle', language)}
-          </p>
-          <p className="small" style={{ marginBottom: 'var(--s-3)' }}>
-            {t('account.tileLanguage', language)}: <strong>{LANGUAGE_LABELS[language]}</strong>
-          </p>
-          <div className={styles.choiceRow}>
-            <button
-              type="button"
-              className={`${styles.choice} ${language === 'en' ? styles.choiceSelected : ''}`}
-              aria-pressed={language === 'en'}
-              onClick={() => switchLanguage('en')}
-            >
-              {t('language.name', language)}
-            </button>
-            {arabic ? (
+      <PageHead title={t('account.tileLanguage', language)} />
+      <div className={css.page}>
+        <ul className={css.list} role="radiogroup" aria-label={t('account.tileLanguage', language)}>
+          {choices.map((c) => (
+            <li key={c.lang}>
               <button
                 type="button"
-                className={`${styles.choice} ${language === 'ar' ? styles.choiceSelected : ''}`}
-                aria-pressed={language === 'ar'}
-                onClick={() => switchLanguage('ar')}
-                dir="rtl"
-                lang="ar"
+                role="radio"
+                aria-checked={language === c.lang}
+                className={`${css.row} ${css.rowButton}`}
+                onClick={() => setLanguage(c.lang)}
               >
-                {t('language.arabicNative', language)}
+                <span className={css.rowText}>
+                  <span
+                    className={css.rowLabel}
+                    lang={c.rtl ? 'ar' : 'en'}
+                    dir={c.rtl ? 'rtl' : 'ltr'}
+                  >
+                    {c.label}
+                  </span>
+                </span>
+                {language === c.lang ? <span className={css.tick}>{CHECK}</span> : null}
               </button>
-            ) : null}
-          </div>
-        </section>
+            </li>
+          ))}
+        </ul>
       </div>
     </>
   );

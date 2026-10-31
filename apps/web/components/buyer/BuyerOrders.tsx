@@ -32,10 +32,7 @@ export function BuyerOrders() {
 
   return (
     <div className={styles.page}>
-      <PageHeader
-        title="Orders"
-        subtitle="Orders CORWADO has arranged for your organisation. Totals are agreed amounts; no payment is taken here."
-      />
+      <PageHeader title="Orders" subtitle="Totals are agreed amounts; no payment is taken here." />
       <div className={styles.filters}>
         <Field label="Status">
           {(ids) => (

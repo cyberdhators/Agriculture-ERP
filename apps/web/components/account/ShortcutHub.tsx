@@ -32,6 +32,28 @@ const WORDS: Record<Language, Record<Shortcut | 'title', [string, string] | stri
   },
 };
 
+/** One word under each round icon. */
+const SHORT: Record<Language, Record<Shortcut, string>> = {
+  en: {
+    sell: 'Sell',
+    buy: 'Buy',
+    buying_request: 'Request',
+    services: 'Services',
+    advice: 'Advice',
+    profile: 'Profile',
+    organisations: 'Groups',
+  },
+  ar: {
+    sell: 'بيع',
+    buy: 'شراء',
+    buying_request: 'طلب',
+    services: 'خدمات',
+    advice: 'نصيحة',
+    profile: 'ملفي',
+    organisations: 'منظمات',
+  },
+};
+
 const GLYPH: Record<Shortcut, React.ReactNode> = {
   sell: <path d="M20 12l-8 8-9-9V3h8zM7.5 7.5h.01" />,
   buy: (
@@ -94,31 +116,40 @@ export function ShortcutHub({
 
   const w = WORDS[language];
   const order = orderShortcuts(activities);
+  // 2026-10-31 (the owner: "creatively beautiful", no big bold words): the
+  // seven ways in as a row of round icons with one word each, like a phone's
+  // own quick actions; the full name is the link's accessible name.
   return (
-    <section aria-labelledby="shortcut-hub-title" className={styles.block}>
-      <div className={styles.blockHead}>
-        <h2 id="shortcut-hub-title">{w.title as string}</h2>
-      </div>
-      <nav className={styles.acctTiles} aria-labelledby="shortcut-hub-title">
+    <section aria-labelledby="shortcut-hub-title" className={styles.quickWrap}>
+      <h2 id="shortcut-hub-title" className="visually-hidden">
+        {w.title as string}
+      </h2>
+      <nav className={styles.quick} aria-labelledby="shortcut-hub-title">
         {order.map((s) => {
-          const [title, sub] = w[s] as [string, string];
+          const [title] = w[s] as [string, string];
           return (
-            <Link key={s} href={SHORTCUT_HREF[shell][s]} className={styles.acctTile}>
-              <span className={styles.acctTileGlyph} aria-hidden>
+            <Link
+              key={s}
+              href={SHORTCUT_HREF[shell][s]}
+              className={styles.quickItem}
+              aria-label={title}
+            >
+              <span className={styles.quickIcon} aria-hidden>
                 <svg
                   viewBox="0 0 24 24"
-                  width="26"
-                  height="26"
+                  width="24"
+                  height="24"
                   fill="none"
                   stroke="currentColor"
-                  strokeWidth="1.6"
+                  strokeWidth="1.7"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
                 >
                   {GLYPH[s]}
                 </svg>
               </span>
-              <span className={styles.acctTileText}>
-                <span className={styles.acctTileTitle}>{title}</span>
-                <span className={styles.acctTileSub}>{sub}</span>
+              <span className={styles.quickLabel} aria-hidden>
+                {SHORT[language][s]}
               </span>
             </Link>
           );
