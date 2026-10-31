@@ -52,6 +52,8 @@ export function BuyerMarketplace() {
   const [draft, setDraft] = useState<MarketQuery>(EMPTY);
   const [applied, setApplied] = useState<MarketQuery>(EMPTY);
   const [locations, setLocations] = useState<Locations | null>(null);
+  // 2026-10-31: on a phone the seven narrower filters fold behind one button.
+  const [moreOpen, setMoreOpen] = useState(false);
 
   useEffect(() => {
     getLocations()
@@ -61,6 +63,9 @@ export function BuyerMarketplace() {
 
   const key = JSON.stringify(applied);
   const list = useCursorList((cursor) => listMarket({ ...applied, cursor }), key);
+  const narrowed = (Object.keys(applied) as (keyof MarketQuery)[]).filter(
+    (k) => k !== 'q' && applied[k] !== undefined && applied[k] !== '',
+  ).length;
   const filtered = useMemo(
     () => Object.values(applied).some((v) => v !== '' && v !== undefined),
     [applied],
@@ -112,94 +117,106 @@ export function BuyerMarketplace() {
               />
             )}
           </Field>
-          <Field label="Category">
-            {(ids) => (
-              <Select
-                {...ids}
-                value={draft.category ?? ''}
-                onChange={(e) => set('category')(e.target.value)}
-              >
-                <option value="">Any category</option>
-                {LISTING_CATEGORIES.map((c) => (
-                  <option key={c} value={c}>
-                    {CATEGORY_LABELS[c]}
-                  </option>
-                ))}
-              </Select>
-            )}
-          </Field>
-          <Field label="State">
-            {(ids) => (
-              <Select
-                {...ids}
-                value={draft.state_id ?? ''}
-                onChange={(e) => set('state_id')(e.target.value)}
-              >
-                <option value="">Any state</option>
-                {(locations?.states ?? []).map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                  </option>
-                ))}
-              </Select>
-            )}
-          </Field>
-          <Field label="Grade">
-            {(ids) => (
-              <Select
-                {...ids}
-                value={draft.grade ?? ''}
-                onChange={(e) => set('grade')(e.target.value)}
-              >
-                <option value="">Any grade</option>
-                {LISTING_GRADES.map((g) => (
-                  <option key={g} value={g}>
-                    {GRADE_LABELS[g]}
-                  </option>
-                ))}
-              </Select>
-            )}
-          </Field>
-          <Field label="At least this quantity">
-            {(ids) => (
-              <Input
-                {...ids}
-                inputMode="decimal"
-                value={draft.min_quantity ?? ''}
-                onChange={(e) => set('min_quantity')(e.target.value)}
-              />
-            )}
-          </Field>
-          <Field label="Available by">
-            {(ids) => (
-              <Input
-                {...ids}
-                type="date"
-                value={draft.available_by ?? ''}
-                onChange={(e) => set('available_by')(e.target.value)}
-              />
-            )}
-          </Field>
-          <Field label="Lowest price (SSP)">
-            {(ids) => (
-              <Input
-                {...ids}
-                inputMode="decimal"
-                value={draft.min_price ?? ''}
-                onChange={(e) => set('min_price')(e.target.value)}
-              />
-            )}
-          </Field>
-          <Field label="Highest price (SSP)">
-            {(ids) => (
-              <Input
-                {...ids}
-                inputMode="decimal"
-                value={draft.max_price ?? ''}
-                onChange={(e) => set('max_price')(e.target.value)}
-              />
-            )}
-          </Field>
+          <button
+            type="button"
+            className={styles.moreToggle}
+            aria-expanded={moreOpen}
+            aria-controls="buyer-more-filters"
+            onClick={() => setMoreOpen((v) => !v)}
+          >
+            {moreOpen ? 'Fewer filters' : 'More filters'}
+            {narrowed > 0 ? <span className={styles.moreCount}>{narrowed}</span> : null}
+          </button>
+          <div id="buyer-more-filters" className={moreOpen ? styles.moreOpen : styles.more}>
+            <Field label="Category">
+              {(ids) => (
+                <Select
+                  {...ids}
+                  value={draft.category ?? ''}
+                  onChange={(e) => set('category')(e.target.value)}
+                >
+                  <option value="">Any category</option>
+                  {LISTING_CATEGORIES.map((c) => (
+                    <option key={c} value={c}>
+                      {CATEGORY_LABELS[c]}
+                    </option>
+                  ))}
+                </Select>
+              )}
+            </Field>
+            <Field label="State">
+              {(ids) => (
+                <Select
+                  {...ids}
+                  value={draft.state_id ?? ''}
+                  onChange={(e) => set('state_id')(e.target.value)}
+                >
+                  <option value="">Any state</option>
+                  {(locations?.states ?? []).map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
+                    </option>
+                  ))}
+                </Select>
+              )}
+            </Field>
+            <Field label="Grade">
+              {(ids) => (
+                <Select
+                  {...ids}
+                  value={draft.grade ?? ''}
+                  onChange={(e) => set('grade')(e.target.value)}
+                >
+                  <option value="">Any grade</option>
+                  {LISTING_GRADES.map((g) => (
+                    <option key={g} value={g}>
+                      {GRADE_LABELS[g]}
+                    </option>
+                  ))}
+                </Select>
+              )}
+            </Field>
+            <Field label="At least this quantity">
+              {(ids) => (
+                <Input
+                  {...ids}
+                  inputMode="decimal"
+                  value={draft.min_quantity ?? ''}
+                  onChange={(e) => set('min_quantity')(e.target.value)}
+                />
+              )}
+            </Field>
+            <Field label="Available by">
+              {(ids) => (
+                <Input
+                  {...ids}
+                  type="date"
+                  value={draft.available_by ?? ''}
+                  onChange={(e) => set('available_by')(e.target.value)}
+                />
+              )}
+            </Field>
+            <Field label="Lowest price (SSP)">
+              {(ids) => (
+                <Input
+                  {...ids}
+                  inputMode="decimal"
+                  value={draft.min_price ?? ''}
+                  onChange={(e) => set('min_price')(e.target.value)}
+                />
+              )}
+            </Field>
+            <Field label="Highest price (SSP)">
+              {(ids) => (
+                <Input
+                  {...ids}
+                  inputMode="decimal"
+                  value={draft.max_price ?? ''}
+                  onChange={(e) => set('max_price')(e.target.value)}
+                />
+              )}
+            </Field>
+          </div>
           {/* LISTINGS LANE (2026-10-19): no "verified farmers only" filter --
               verification is a badge, shown and never filtered on. */}
         </div>

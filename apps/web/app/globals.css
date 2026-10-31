@@ -15,11 +15,14 @@
 
 :root {
   /* ---- Type families ------------------------------------------------- */
-  --font-display: var(--font-fraunces), 'Iowan Old Style', Georgia, 'Times New Roman', serif;
+  --font-display:
+    var(--font-fraunces), var(--font-arabic), 'Iowan Old Style', Georgia, 'Times New Roman', serif;
   --font-body:
-    var(--font-instrument), system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
-    sans-serif;
-  --font-mono: var(--font-jetbrains), ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    var(--font-instrument), var(--font-arabic), system-ui, -apple-system, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+  --font-mono:
+    var(--font-jetbrains), var(--font-arabic), ui-monospace, SFMono-Regular, Menlo, Consolas,
+    monospace;
 
   /* ---- Ground: light natural off-white with a green cast ------------ */
   --paper: #f5f7f1; /* ground */
@@ -164,9 +167,12 @@
   --az-btn-top: rgba(255, 255, 255, 0.28); /* CTA top inner-highlight */
 
   /* ---- Remap the Register's base tokens onto the Amazon values ------ */
-  --font-display: var(--font-open-sans), system-ui, 'Segoe UI', Roboto, Arial, sans-serif;
-  --font-body: var(--font-open-sans), system-ui, 'Segoe UI', Roboto, Arial, sans-serif;
-  --font-mono: var(--font-open-sans), system-ui, 'Segoe UI', Roboto, Arial, sans-serif;
+  --font-display:
+    var(--font-open-sans), var(--font-arabic), system-ui, 'Segoe UI', Roboto, Arial, sans-serif;
+  --font-body:
+    var(--font-open-sans), var(--font-arabic), system-ui, 'Segoe UI', Roboto, Arial, sans-serif;
+  --font-mono:
+    var(--font-open-sans), var(--font-arabic), system-ui, 'Segoe UI', Roboto, Arial, sans-serif;
 
   --paper: var(--az-bg);
   --card: var(--az-card);
