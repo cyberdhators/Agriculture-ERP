@@ -43,9 +43,9 @@ export function FarmerPrices() {
 
   return (
     <>
-      <PageHead title={t('prices.title', language)} lead={t('prices.lead', language)} />
+      <PageHead title={t('prices.title', language)} />
       {prices.length === 0 ? (
-        <EmptyState title={t('prices.empty', language)} body={t('prices.lead', language)} />
+        <EmptyState title={t('prices.empty', language)} />
       ) : (
         <div className={styles.priceTableWrap}>
           <table className={styles.priceTable}>

@@ -116,8 +116,18 @@
 }
 
 .list > li + li,
-.list > .rowGroup + .rowGroup {
+.list > div + div {
   border-top: 1px solid var(--line);
+}
+
+.list dd {
+  margin: 0;
+}
+
+/* The chosen option in a list of choices. */
+.tick {
+  flex: none;
+  color: var(--green);
 }
 
 .rowIcon {
