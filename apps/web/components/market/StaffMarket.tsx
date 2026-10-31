@@ -27,7 +27,7 @@ export function StaffMarket() {
     <>
       <MarketSections current="produce" lang={language} />
       <PageHeader
-        eyebrow={`${t('market.title', language)} · ${scopeName}`}
+        eyebrow={scopeName}
         title={t('market.title', language)}
         subtitle={t('market.lead', language)}
       />

@@ -224,7 +224,7 @@ function SearchForm({
       </div>
       <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
         <Button type="submit" size="small" disabled={busy}>
-          {t('saved.save', lang)}
+          {t('saved.saveButton', lang)}
         </Button>
         {savedHref ? (
           <Link href={savedHref} className="small">

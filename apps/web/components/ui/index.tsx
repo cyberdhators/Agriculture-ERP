@@ -486,7 +486,8 @@ export function EmptyState({
   icon,
 }: {
   title: string;
-  body: ReactNode;
+  /** Optional since 2026-10-31: a title that says it all needs no echo beneath it. */
+  body?: ReactNode;
   actions?: ReactNode;
   error?: boolean;
   icon?: ReactNode;
@@ -498,7 +499,7 @@ export function EmptyState({
       </div>
       <div>
         <p className={styles.stateTitle}>{title}</p>
-        <p className={styles.stateBody}>{body}</p>
+        {body ? <p className={styles.stateBody}>{body}</p> : null}
         {actions ? <div className={cx(styles.stateActions, 'no-print')}>{actions}</div> : null}
       </div>
     </div>

@@ -2247,6 +2247,12 @@
     padding-bottom: calc(var(--s-10) + 64px);
   }
 
+  /* The footer sits after the main column, so it needs its own room above
+     the fixed bottom bar (it was half hidden behind it, 2026-10-31). */
+  .footer {
+    padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px));
+  }
+
   .bottomBar {
     position: fixed;
     inset-inline: 0;

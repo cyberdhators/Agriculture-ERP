@@ -9,10 +9,9 @@ import styles from '@/components/farmer/farmer.module.css';
 
 type Language = 'en' | 'ar';
 
-const WORDS: Record<Language, Record<Shortcut | 'title' | 'lead', [string, string] | string>> = {
+const WORDS: Record<Language, Record<Shortcut | 'title', [string, string] | string>> = {
   en: {
     title: 'What would you like to do?',
-    lead: 'Every account can do all of these. Your chosen activities only change the order.',
     sell: ['Sell produce', 'Create an offer for buyers'],
     buy: ['Buy', 'Find produce and inputs'],
     buying_request: ['Post a buying request', 'Tell sellers what you need'],
@@ -23,7 +22,6 @@ const WORDS: Record<Language, Record<Shortcut | 'title' | 'lead', [string, strin
   },
   ar: {
     title: 'ماذا تريد أن تفعل؟',
-    lead: 'يمكن لكل حساب القيام بكل هذا. أنشطتك المختارة تغيّر الترتيب فقط.',
     sell: ['بيع المنتجات', 'أنشئ عرضاً للمشترين'],
     buy: ['شراء', 'ابحث عن منتجات ومدخلات'],
     buying_request: ['نشر طلب شراء', 'أخبر البائعين بما تحتاج'],
@@ -101,7 +99,6 @@ export function ShortcutHub({
       <div className={styles.blockHead}>
         <h2 id="shortcut-hub-title">{w.title as string}</h2>
       </div>
-      <p className="small muted">{w.lead as string}</p>
       <nav className={styles.acctTiles} aria-labelledby="shortcut-hub-title">
         {order.map((s) => {
           const [title, sub] = w[s] as [string, string];

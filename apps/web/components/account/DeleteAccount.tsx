@@ -7,6 +7,8 @@ import { clearCacheFor } from '@/lib/offline/db';
 import { currentAccount, ensureAccount, setAccount } from '@/lib/offline/outbox';
 import { supabaseBrowser } from '@/lib/supabase/browser';
 
+import css from './settings.module.css';
+
 type Lang = 'en' | 'ar';
 
 const W = {
@@ -48,7 +50,14 @@ const W = {
  * account's password and an explicit yes. On success the phone forgets the
  * account -- the session and everything saved offline -- and goes home.
  */
-export function DeleteAccount({ language = 'en' }: { language?: Lang }) {
+export function DeleteAccount({
+  language = 'en',
+  variant = 'card',
+}: {
+  language?: Lang;
+  /** 2026-10-31: 'row' is one red settings row that opens the warning and the form. */
+  variant?: 'card' | 'row';
+}) {
   const w = W[language];
   const [open, setOpen] = useState(false);
   const [password, setPassword] = useState('');
@@ -111,6 +120,108 @@ export function DeleteAccount({ language = 'en' }: { language?: Lang }) {
     }
   }
 
+  const form = (
+    <form
+      onSubmit={(e) => void remove(e)}
+      style={{ display: 'flex', flexDirection: 'column', gap: 12 }}
+    >
+      <Field label={w.password} error={fields.password}>
+        {(ids) => (
+          <PasswordInput
+            {...ids}
+            autoComplete="current-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+        )}
+      </Field>
+      {soleOrgs.length > 0 ? (
+        <Notice kind="warn">
+          <p className="small">{w.orgs}</p>
+          <ul className="small">
+            {soleOrgs.map((o) => (
+              <li key={o.id} dir="auto">
+                {o.name}
+              </li>
+            ))}
+          </ul>
+          <Checkbox
+            label={w.closeOrgs}
+            checked={closeOrgs}
+            onChange={(e) => setCloseOrgs(e.target.checked)}
+          />
+        </Notice>
+      ) : null}
+      {hasOrgs ? (
+        <p className="small muted" style={{ margin: 0 }}>
+          {w.orgsLeave}
+        </p>
+      ) : null}
+      <Checkbox
+        label={w.confirm}
+        checked={confirm}
+        onChange={(e) => setConfirm(e.target.checked)}
+      />
+      {fields.confirm ? (
+        <p className="small" role="alert">
+          {fields.confirm}
+        </p>
+      ) : null}
+      {error ? <Notice kind="error">{error}</Notice> : null}
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <Button
+          type="submit"
+          variant="danger"
+          disabled={busy || !confirm || !password || (soleOrgs.length > 0 && !closeOrgs)}
+        >
+          {busy ? w.deleting : w.delete}
+        </Button>
+        <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
+          {w.cancel}
+        </Button>
+      </div>
+    </form>
+  );
+
+  if (variant === 'row') {
+    return (
+      <li>
+        <button
+          type="button"
+          className={`${css.row} ${css.rowButton} ${css.danger}`}
+          aria-expanded={open}
+          onClick={() => setOpen((v) => !v)}
+        >
+          <span className={css.rowIcon} aria-hidden>
+            <svg
+              viewBox="0 0 24 24"
+              width="20"
+              height="20"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" />
+            </svg>
+          </span>
+          <span className={css.rowText}>
+            <span className={css.rowLabel}>{w.title}</span>
+          </span>
+        </button>
+        {open ? (
+          <div className={css.panel}>
+            <p className="small muted" style={{ margin: 0 }}>
+              {w.lead}
+            </p>
+            {form}
+          </div>
+        ) : null}
+      </li>
+    );
+  }
+
   return (
     <section style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       <h2 style={{ margin: 0 }}>{w.title}</h2>
@@ -124,66 +235,7 @@ export function DeleteAccount({ language = 'en' }: { language?: Lang }) {
           </Button>
         </div>
       ) : (
-        <form
-          onSubmit={(e) => void remove(e)}
-          style={{ display: 'flex', flexDirection: 'column', gap: 12 }}
-        >
-          <Field label={w.password} error={fields.password}>
-            {(ids) => (
-              <PasswordInput
-                {...ids}
-                autoComplete="current-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            )}
-          </Field>
-          {soleOrgs.length > 0 ? (
-            <Notice kind="warn">
-              <p className="small">{w.orgs}</p>
-              <ul className="small">
-                {soleOrgs.map((o) => (
-                  <li key={o.id} dir="auto">
-                    {o.name}
-                  </li>
-                ))}
-              </ul>
-              <Checkbox
-                label={w.closeOrgs}
-                checked={closeOrgs}
-                onChange={(e) => setCloseOrgs(e.target.checked)}
-              />
-            </Notice>
-          ) : null}
-          {hasOrgs ? (
-            <p className="small muted" style={{ margin: 0 }}>
-              {w.orgsLeave}
-            </p>
-          ) : null}
-          <Checkbox
-            label={w.confirm}
-            checked={confirm}
-            onChange={(e) => setConfirm(e.target.checked)}
-          />
-          {fields.confirm ? (
-            <p className="small" role="alert">
-              {fields.confirm}
-            </p>
-          ) : null}
-          {error ? <Notice kind="error">{error}</Notice> : null}
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <Button
-              type="submit"
-              variant="danger"
-              disabled={busy || !confirm || !password || (soleOrgs.length > 0 && !closeOrgs)}
-            >
-              {busy ? w.deleting : w.delete}
-            </Button>
-            <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
-              {w.cancel}
-            </Button>
-          </div>
-        </form>
+        form
       )}
     </section>
   );

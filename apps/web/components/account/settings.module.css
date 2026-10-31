@@ -1,0 +1,306 @@
+/*
+ * Settings, the way a phone's own settings read (2026-10-31, the owner:
+ * "the redundant words and style ... elite level ui"): a profile card, then
+ * groups of rows -- a label, its current value or a switch, and an action --
+ * under a small group title. One word per row where one will do; a title
+ * never repeats on the button beneath it.
+ */
+
+.page {
+  display: grid;
+  gap: var(--s-6);
+  max-width: 720px;
+}
+
+/* ---- Profile card ----------------------------------------------------- */
+
+.profile {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  padding: var(--s-5);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+}
+
+.avatar {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--green-tint);
+  color: var(--green-deep);
+  font-weight: 700;
+  font-size: 20px;
+  letter-spacing: 0.02em;
+}
+
+.profileText {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.profileName {
+  font-size: var(--text-subhead);
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.profileId {
+  color: var(--green-deep);
+  font-size: var(--text-small);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.profileMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px var(--s-3);
+  color: var(--ink-2);
+  font-size: var(--text-small);
+  font-variant-numeric: tabular-nums;
+}
+
+.profileMeta span + span::before {
+  content: '·';
+  margin-inline-end: var(--s-3);
+  color: var(--muted);
+}
+
+/* ---- Groups and rows -------------------------------------------------- */
+
+.subTitle {
+  padding-inline: var(--s-1);
+  color: var(--ink-2);
+  font-size: var(--text-small);
+  font-weight: 600;
+}
+
+.group {
+  display: grid;
+  gap: var(--s-2);
+}
+
+.groupTitle {
+  padding-inline: var(--s-1);
+  font-size: var(--text-label);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  min-height: 56px;
+  padding: var(--s-3) var(--s-4);
+}
+
+.list > li + li,
+.list > .rowGroup + .rowGroup {
+  border-top: 1px solid var(--line);
+}
+
+.rowIcon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--green-tint);
+  color: var(--green-deep);
+}
+
+.rowText {
+  flex: 1;
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+
+.rowLabel {
+  font-weight: 600;
+}
+
+.rowHint {
+  color: var(--muted);
+  font-size: var(--text-small);
+  line-height: 1.35;
+}
+
+.rowValue {
+  color: var(--ink-2);
+  font-size: var(--text-small);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/* A row that opens something: the whole row is the button. */
+.rowButton {
+  width: 100%;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.rowButton:hover {
+  background: var(--dust);
+}
+
+.chevron {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  color: var(--muted);
+  transition: transform 160ms ease;
+}
+
+.rowButton[aria-expanded='true'] .chevron {
+  transform: rotate(90deg);
+}
+
+[dir='rtl'] .chevron {
+  transform: scaleX(-1);
+}
+
+[dir='rtl'] .rowButton[aria-expanded='true'] .chevron {
+  transform: rotate(90deg);
+}
+
+/* What a row opens: indented under it, on a faint ground. */
+.panel {
+  display: grid;
+  gap: var(--s-4);
+  padding: var(--s-4);
+  background: var(--paper);
+  border-top: 1px solid var(--line);
+}
+
+.danger {
+  color: var(--danger);
+}
+
+.danger .rowIcon {
+  background: var(--danger-tint);
+  color: var(--danger);
+}
+
+/* ---- Segmented control (language) ------------------------------------ */
+
+.segmented {
+  flex: none;
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  background: var(--dust);
+  border-radius: var(--radius-pill);
+}
+
+.segmented button {
+  min-height: 32px;
+  padding: 0 var(--s-3);
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--ink-2);
+  font: inherit;
+  font-size: var(--text-small);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.segmented button[aria-pressed='true'] {
+  background: var(--card);
+  color: var(--green-deep);
+  box-shadow: var(--shadow-card);
+}
+
+/* ---- Switch ------------------------------------------------------------ */
+
+/* A native checkbox drawn as a switch: keyboard, label and form behaviour
+   stay the browser's own; role="switch" says what it is. */
+.switch {
+  flex: none;
+  appearance: none;
+  position: relative;
+  width: 44px;
+  height: 26px;
+  margin: 0;
+  border-radius: 999px;
+  background: var(--line-strong);
+  cursor: pointer;
+  transition: background-color 160ms ease;
+}
+
+.switch::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  inset-inline-start: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--card);
+  box-shadow: var(--shadow-card);
+  transition: transform 160ms ease;
+}
+
+.switch:checked {
+  background: var(--green);
+}
+
+.switch:checked::after {
+  transform: translateX(18px);
+}
+
+[dir='rtl'] .switch:checked::after {
+  transform: translateX(-18px);
+}
+
+.switch:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+label.row {
+  cursor: pointer;
+}
+
+/* ---- Foot of a group --------------------------------------------------- */
+
+.foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  padding-inline: var(--s-1);
+}
+
+.note {
+  color: var(--muted);
+  font-size: var(--text-small);
+}
