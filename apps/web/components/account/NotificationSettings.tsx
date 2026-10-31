@@ -10,9 +10,11 @@ import {
   type PreferenceField,
 } from '@agri-erp/shared';
 
-import { Badge, Button, Card, CardBody, CardHeader, Checkbox, Notice } from '@/components/ui';
+import { Badge, Button, Card, CardBody, CardHeader, Notice } from '@/components/ui';
 import { formatDate } from '@/lib/format';
 import { t, type Language } from '@/lib/i18n';
+
+import css from './settings.module.css';
 
 /**
  * NOTIFICATION SETTINGS AND ANNOUNCEMENTS FOR ONE ACCOUNT (2026-10-27).
@@ -33,15 +35,6 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   if (!res.ok || body.data === undefined) throw new Error(String(res.status));
   return body.data;
 }
-
-const ANNOUNCEMENT_SWITCHES: {
-  field: PreferenceField;
-  key: 'prefs.inApp' | 'prefs.sms' | 'prefs.email';
-}[] = [
-  { field: 'announcements_in_app', key: 'prefs.inApp' },
-  { field: 'announcements_sms', key: 'prefs.sms' },
-  { field: 'announcements_email', key: 'prefs.email' },
-];
 
 export function NotificationPreferencesCard({
   language = 'en',
@@ -102,79 +95,66 @@ export function NotificationPreferencesCard({
   const shown = prefs ?? DEFAULT_PREFERENCES;
   const set = (field: PreferenceField, value: boolean) => setPrefs({ ...shown, [field]: value });
 
+  // One row per switch. An email-only switch is not offered to an account
+  // that has no email address, rather than offered with a note saying it
+  // does nothing (2026-10-31).
+  const row = (field: PreferenceField, label: string, hint?: string) => (
+    <li key={field}>
+      <label className={css.row}>
+        <span className={css.rowText}>
+          <span className={css.rowLabel}>{label}</span>
+          {hint ? <span className={css.rowHint}>{hint}</span> : null}
+        </span>
+        <input
+          type="checkbox"
+          role="switch"
+          className={css.switch}
+          checked={shown[field]}
+          disabled={!prefs || busy}
+          onChange={(e) => set(field, e.target.checked)}
+        />
+      </label>
+    </li>
+  );
+
   return (
-    <Card>
-      <CardHeader title={t('prefs.title', language)} subtitle={t('prefs.lead', language)} />
-      <CardBody>
-        {loadFailed ? (
-          <Notice kind="error">
-            <p className="small">{t('prefs.loadFailed', language)}</p>
-          </Notice>
-        ) : null}
-        <fieldset style={{ border: 0, padding: 0, margin: 0, display: 'grid', gap: 8 }}>
-          <legend className="label">{t('prefs.announcements', language)}</legend>
-          {ANNOUNCEMENT_SWITCHES.map((s) => (
-            <Checkbox
-              key={s.field}
-              label={t(s.key, language)}
-              checked={shown[s.field]}
-              disabled={!prefs || busy}
-              onChange={(e) => set(s.field, e.target.checked)}
-            />
-          ))}
-          {!emailAccount ? <p className="small muted">{t('prefs.emailNone', language)}</p> : null}
-        </fieldset>
-        <div style={{ marginTop: 12 }}>
-          <Checkbox
-            label={t('prefs.updates', language)}
-            checked={shown.updates_in_app}
-            disabled={!prefs || busy}
-            onChange={(e) => set('updates_in_app', e.target.checked)}
-          />
-        </div>
-        {/* 2026-10-26: match alerts (marketing; SMS off unless turned on). */}
-        <fieldset style={{ border: 0, padding: 0, margin: '12px 0 0', display: 'grid', gap: 8 }}>
-          <legend className="label">{t('prefs.match', language)}</legend>
-          <Checkbox
-            label={t('prefs.matchInApp', language)}
-            checked={shown.match_in_app}
-            disabled={!prefs || busy}
-            onChange={(e) => set('match_in_app', e.target.checked)}
-          />
-          <Checkbox
-            label={t('prefs.matchSms', language)}
-            checked={shown.match_sms}
-            disabled={!prefs || busy}
-            onChange={(e) => set('match_sms', e.target.checked)}
-          />
-        </fieldset>
-        {/* 2026-10-26: online status in conversations, reciprocal. */}
-        <fieldset style={{ border: 0, padding: 0, margin: '12px 0 0', display: 'grid', gap: 8 }}>
-          <legend className="label">{t('prefs.privacy', language)}</legend>
-          <Checkbox
-            label={t('prefs.showActivity', language)}
-            checked={shown.show_activity}
-            disabled={!prefs || busy}
-            onChange={(e) => set('show_activity', e.target.checked)}
-          />
-          <p className="small muted">{t('prefs.showActivityHint', language)}</p>
-        </fieldset>
-        <Notice kind="info">
-          <p className="small">{t('prefs.essential', language)}</p>
+    <section className={css.group} aria-labelledby="prefs-title">
+      <h2 id="prefs-title" className={css.groupTitle}>
+        {t('set.notifications', language)}
+      </h2>
+      {loadFailed ? (
+        <Notice kind="error">
+          <p className="small">{t('prefs.loadFailed', language)}</p>
         </Notice>
-        {state === 'saved' ? <Notice kind="success">{t('prefs.saved', language)}</Notice> : null}
-        {state === 'failed' ? (
-          <Notice kind="error">
-            <p className="small">{t('prefs.failed', language)}</p>
-          </Notice>
-        ) : null}
-        <div>
-          <Button onClick={() => void save()} disabled={!prefs || busy}>
-            {t('prefs.save', language)}
-          </Button>
-        </div>
-      </CardBody>
-    </Card>
+      ) : null}
+      <p className={css.subTitle}>{t('set.announcements', language)}</p>
+      <ul className={css.list}>
+        {row('announcements_in_app', t('set.inApp', language))}
+        {row('announcements_sms', t('set.sms', language))}
+        {emailAccount ? row('announcements_email', t('set.email', language)) : null}
+      </ul>
+      <p className={css.subTitle}>{t('set.activityGroup', language)}</p>
+      <ul className={css.list}>
+        {row('updates_in_app', t('set.updates', language), t('set.updatesHint', language))}
+        {/* 2026-10-26: match alerts (marketing; SMS off unless turned on). */}
+        {row('match_in_app', t('set.match', language), t('set.matchHint', language))}
+        {row('match_sms', t('set.matchSms', language), t('set.matchSmsHint', language))}
+        {/* 2026-10-26: online status in conversations, reciprocal. */}
+        {row('show_activity', t('set.activity', language), t('set.activityHint', language))}
+      </ul>
+      {state === 'saved' ? <Notice kind="success">{t('prefs.saved', language)}</Notice> : null}
+      {state === 'failed' ? (
+        <Notice kind="error">
+          <p className="small">{t('prefs.failed', language)}</p>
+        </Notice>
+      ) : null}
+      <div className={css.foot}>
+        <span className={css.note}>{t('set.essential', language)}</span>
+        <Button onClick={() => void save()} disabled={!prefs || busy}>
+          {t('set.save', language)}
+        </Button>
+      </div>
+    </section>
   );
 }
 
