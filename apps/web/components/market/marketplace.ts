@@ -26,6 +26,9 @@ export const PAGE_SIZE = 24;
 export interface MarketFilters {
   q: string;
   category: ListingCategory | '';
+  /** 2026-10-31: where, narrowing down -- a state, a county in it, a payam in that. */
+  state: string;
+  county: string;
   payam: string;
   unit: ListingUnit | '';
   priceMin: string;
@@ -38,6 +41,8 @@ export interface MarketFilters {
 export const DEFAULT_FILTERS: MarketFilters = {
   q: '',
   category: '',
+  state: '',
+  county: '',
   payam: '',
   unit: '',
   priceMin: '',
@@ -51,6 +56,8 @@ export function filtersActive(f: MarketFilters): boolean {
   return (
     f.q.trim() !== '' ||
     f.category !== '' ||
+    f.state !== '' ||
+    f.county !== '' ||
     f.payam !== '' ||
     f.unit !== '' ||
     f.priceMin !== '' ||
@@ -86,7 +93,15 @@ export function applyFilters(
   return rows.filter(({ listing, seller }) => {
     if (mode === 'staff' ? listing.status !== f.status : listing.status !== 'listed') return false;
     if (f.category && listing.category !== f.category) return false;
-    if (f.payam && seller.payam_id !== f.payam) return false;
+    // A payam code is STATE-COUNTY-PAYAM, so its state and county are its
+    // first one and two parts: the narrowest place chosen decides.
+    if (f.payam) {
+      if (seller.payam_id !== f.payam) return false;
+    } else if (f.county) {
+      if (!seller.payam_id?.startsWith(`${f.county}-`)) return false;
+    } else if (f.state) {
+      if (!seller.payam_id?.startsWith(`${f.state}-`)) return false;
+    }
     if (f.unit && listing.unit !== f.unit) return false;
     if (min !== null && listing.price_ssp < min) return false;
     if (max !== null && listing.price_ssp > max) return false;
@@ -161,14 +176,6 @@ export function similarRows(
     ),
     'newest',
   ).slice(0, count);
-}
-
-export function payamOptions(rows: readonly MarketRow[]): { id: string; name: string }[] {
-  const seen = new Map<string, string>();
-  rows.forEach(({ seller }) => {
-    if (seller.payam_id && !seen.has(seller.payam_id)) seen.set(seller.payam_id, seller.payam_name);
-  });
-  return [...seen].map(([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name));
 }
 
 export function liveCount(rows: readonly MarketRow[], farmerId: string): number {

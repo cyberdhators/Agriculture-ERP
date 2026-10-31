@@ -10,6 +10,8 @@ import {
   type ResourceFormat,
 } from '@agri-erp/shared';
 
+import { NATIONAL_COUNTIES, NATIONAL_PAYAMS, NATIONAL_STATES } from '../places/national';
+
 /**
  * FIXTURE DATA for the portal preview. EVERY ROW HERE IS INVENTED.
  *
@@ -20,7 +22,7 @@ import {
  * scripts/directories-seed.mjs, so that swapping this file for API responses
  * is a one-line change per screen.
  *
- * Location codes are B2's placeholders and will change when I-07 arrives.
+ * The place lists are the real national reference (see STATES below).
  */
 
 export interface PayamRef {
@@ -35,29 +37,19 @@ export interface StateRef {
   name: string;
 }
 
-export const STATES: readonly StateRef[] = [{ id: 'CE', name: 'Central Equatoria' }];
+/**
+ * 2026-10-31: the place lists are CORWADO's national reference (13 states and
+ * areas, 83 counties, 505 payams), generated from docs/data/locations.csv into
+ * lib/places/national.ts. Until today these were B2's twelve Juba payams, so
+ * the sign-up form, "Your details", an officer's registration and "Start
+ * selling" offered Central Equatoria only, although the database held the
+ * whole country.
+ */
+export const STATES: readonly StateRef[] = NATIONAL_STATES;
 
-export const COUNTIES = [{ id: 'CE-JUB', name: 'Juba', stateId: 'CE' }] as const;
+export const COUNTIES: readonly { id: string; name: string; stateId: string }[] = NATIONAL_COUNTIES;
 
-export const PAYAMS: readonly PayamRef[] = [
-  ['CE-JUB-JUB', 'Juba'],
-  ['CE-JUB-KAT', 'Kator'],
-  ['CE-JUB-MUN', 'Munuki'],
-  ['CE-JUB-NBA', 'Northern Bari'],
-  ['CE-JUB-REJ', 'Rejaf'],
-  ['CE-JUB-GAN', 'Ganji'],
-  ['CE-JUB-LOK', 'Lokiliri'],
-  ['CE-JUB-LOB', 'Lobonok'],
-  ['CE-JUB-GON', 'Gondokoro'],
-  ['CE-JUB-DOL', 'Dolo'],
-  ['CE-JUB-BUN', 'Bungu'],
-  ['CE-JUB-MAN', 'Mangalla'],
-].map(([id, name]) => ({
-  id: id as string,
-  name: name as string,
-  countyId: 'CE-JUB',
-  stateId: 'CE',
-}));
+export const PAYAMS: readonly PayamRef[] = NATIONAL_PAYAMS;
 
 export function payamName(id: string): string {
   return PAYAMS.find((p) => p.id === id)?.name ?? id;

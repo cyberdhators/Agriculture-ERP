@@ -47,7 +47,6 @@ import {
   featuredRows,
   filtersActive,
   loadMarketRows,
-  payamOptions,
   sortRows,
   type MarketFilters,
   type MarketMode,
@@ -55,6 +54,7 @@ import {
   type MarketSort,
 } from './marketplace';
 import styles from '@/components/listings/listings.module.css';
+import { NATIONAL_COUNTIES, NATIONAL_PAYAMS, NATIONAL_STATES } from '@/lib/places/national';
 
 const SORTS: readonly MarketSort[] = ['newest', 'price_low', 'price_high', 'quantity'];
 const SORT_KEY = {
@@ -129,7 +129,17 @@ export function Market({
     () => sortRows(applyFilters(withOverrides, filters, today, mode), sort),
     [withOverrides, filters, today, mode, sort],
   );
-  const payams = useMemo(() => payamOptions(withOverrides), [withOverrides]);
+  const countyChoices = useMemo(
+    () =>
+      filters.state
+        ? NATIONAL_COUNTIES.filter((c) => c.stateId === filters.state)
+        : NATIONAL_COUNTIES,
+    [filters.state],
+  );
+  const payamChoices = useMemo(
+    () => (filters.county ? NATIONAL_PAYAMS.filter((p) => p.countyId === filters.county) : []),
+    [filters.county],
+  );
   const featured = useMemo(() => featuredRows(withOverrides), [withOverrides]);
   const categoryCount = (c: ListingCategory | '') =>
     applyFilters(withOverrides, { ...filters, category: c }, today, mode).length;
@@ -182,12 +192,17 @@ export function Market({
       label: t(CATEGORY_KEY[filters.category], lang),
       clear: () => set('category', ''),
     });
-  if (filters.payam) {
-    const payam = payams.find((p) => p.id === filters.payam);
+  // One chip for the place: the narrowest level chosen, cleared back to all.
+  if (filters.state || filters.county || filters.payam) {
+    const label = filters.payam
+      ? (NATIONAL_PAYAMS.find((p) => p.id === filters.payam)?.name ?? filters.payam)
+      : filters.county
+        ? (NATIONAL_COUNTIES.find((c) => c.id === filters.county)?.name ?? filters.county)
+        : (NATIONAL_STATES.find((st) => st.id === filters.state)?.name ?? filters.state);
     applied.push({
-      key: 'payam',
-      label: payam?.name ?? filters.payam,
-      clear: () => set('payam', ''),
+      key: 'place',
+      label,
+      clear: () => setFilters((f) => ({ ...f, state: '', county: '', payam: '' })),
     });
   }
   if (filters.unit)
@@ -301,11 +316,55 @@ export function Market({
           </details>
 
           <details className={styles.section} open>
-            <summary>{t('market.payam', lang)}</summary>
+            <summary>{t('market.place', lang)}</summary>
+            {/* 2026-10-31: the national list, narrowing down: a state, then a
+                county in it, then a payam in that. Until today this offered
+                only the payams that happened to have a listing. */}
             <div className={styles.sectionBody}>
-              <Select value={filters.payam} onChange={(e) => set('payam', e.target.value)}>
-                <option value="">{t('market.allPayams', lang)}</option>
-                {payams.map((p) => (
+              <Select
+                aria-label={t('register.state', lang)}
+                value={filters.state}
+                onChange={(e) =>
+                  setFilters((f) => ({ ...f, state: e.target.value, county: '', payam: '' }))
+                }
+              >
+                <option value="">{t('market.allStates', lang)}</option>
+                {NATIONAL_STATES.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </Select>
+              <Select
+                aria-label={t('register.county', lang)}
+                value={filters.county}
+                onChange={(e) => {
+                  const county = NATIONAL_COUNTIES.find((c) => c.id === e.target.value);
+                  setFilters((f) => ({
+                    ...f,
+                    state: county ? county.stateId : f.state,
+                    county: e.target.value,
+                    payam: '',
+                  }));
+                }}
+              >
+                <option value="">{t('market.allCounties', lang)}</option>
+                {countyChoices.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </Select>
+              <Select
+                aria-label={t('register.payam', lang)}
+                value={filters.payam}
+                disabled={!filters.county}
+                onChange={(e) => set('payam', e.target.value)}
+              >
+                <option value="">
+                  {filters.county ? t('market.allPayams', lang) : t('market.pickCounty', lang)}
+                </option>
+                {payamChoices.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.name}
                   </option>

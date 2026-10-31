@@ -681,8 +681,7 @@ export function RegisterFarmer() {
                 and more. The intake form records the person and their consent only.
               </p>
               <p className="small muted">
-                Location is scoped to {payamName(values.payam_id) || 'Central Equatoria'}, the only
-                state seeded in this preview.
+                Location: {values.payam_id ? payamName(values.payam_id) : 'not chosen yet'}.
               </p>
             </Card>
           </aside>
