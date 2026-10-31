@@ -12,6 +12,7 @@ import {
   savedSearchSchema,
 } from '@agri-erp/shared';
 
+import css from '@/components/account/settings.module.css';
 import { Button, Field, Input, Notice, Select } from '@/components/ui';
 import {
   SavedSearchError,
@@ -222,8 +223,8 @@ function SearchForm({
           </Field>
         ) : null}
       </div>
-      <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-        <Button type="submit" size="small" disabled={busy}>
+      <div className={css.actions}>
+        <Button type="submit" disabled={busy}>
           {t('saved.saveButton', lang)}
         </Button>
         {savedHref ? (
@@ -315,63 +316,64 @@ export function SavedSearchList({ lang }: { lang: Language }) {
 
   const full = (rows?.length ?? 0) >= SAVED_SEARCH_LIMIT;
 
+  // 2026-10-31 (the owner: "elite level ui"): the Account page's look -- one
+  // short line, each search a row whose switch is its alerts (on = alerting,
+  // off = paused; the same call Pause and Resume made), and the add form on a
+  // white card under a small group title.
   return (
-    <div style={{ display: 'grid', gap: 16 }}>
-      <p className="small muted">{t('saved.lead', lang)}</p>
+    <div className={css.page}>
+      <p className={css.note}>
+        {lang === 'ar'
+          ? 'تنبيه عند ظهور جديد يطابق بحثك، حتى 10 عمليات بحث وتنبيهين في اليوم.'
+          : 'An alert when something new matches: up to 10 searches, 2 alerts a day.'}
+      </p>
       {failed ? <Notice kind="error">{failed}</Notice> : null}
       {rows === null ? null : rows.length === 0 ? (
         <p className="small">{t('saved.empty', lang)}</p>
       ) : (
-        <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 10 }}>
+        <ul className={css.list}>
           {rows.map((row) => (
-            <li
-              key={row.id}
-              style={{
-                display: 'flex',
-                gap: 8,
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                flexWrap: 'wrap',
-                borderBottom: '1px solid var(--border, #e5e5e5)',
-                paddingBottom: 8,
-              }}
-            >
-              <span style={{ minWidth: 0, flex: '1 1 220px' }}>
-                <strong dir="auto">{describe(row, lang)}</strong>
-                <br />
-                <span className="small muted">
+            <li key={row.id} className={css.row}>
+              <span className={css.rowText}>
+                <span className={css.rowLabel} dir="auto">
+                  {describe(row, lang)}
+                </span>
+                <span className={css.rowHint}>
                   {row.paused ? `${t('saved.paused', lang)} · ` : ''}
                   {t('saved.since', lang)} {formatDate(row.created_at, lang)}
                 </span>
               </span>
-              <span style={{ display: 'flex', gap: 8 }}>
-                <Button
-                  variant="secondary"
-                  size="small"
-                  disabled={busy === row.id}
-                  onClick={() => void act(row.id, () => setSearchPaused(row.id, !row.paused))}
-                >
-                  {t(row.paused ? 'saved.resume' : 'saved.pause', lang)}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="small"
-                  disabled={busy === row.id}
-                  onClick={() => void act(row.id, () => deleteSavedSearch(row.id))}
-                >
-                  {t('saved.delete', lang)}
-                </Button>
-              </span>
+              <input
+                type="checkbox"
+                role="switch"
+                className={css.switch}
+                aria-label={`${describe(row, lang)}: ${t(row.paused ? 'saved.resume' : 'saved.pause', lang)}`}
+                checked={!row.paused}
+                disabled={busy === row.id}
+                onChange={() => void act(row.id, () => setSearchPaused(row.id, !row.paused))}
+              />
+              <Button
+                variant="ghost"
+                size="small"
+                disabled={busy === row.id}
+                onClick={() => void act(row.id, () => deleteSavedSearch(row.id))}
+              >
+                {t('saved.delete', lang)}
+              </Button>
             </li>
           ))}
         </ul>
       )}
-      <section>
-        <h2 style={{ fontSize: '1.05rem' }}>{t('saved.add', lang)}</h2>
+      <section className={css.group} aria-labelledby="saved-add-title">
+        <h2 id="saved-add-title" className={css.groupTitle}>
+          {t('saved.add', lang)}
+        </h2>
         {full ? (
           <p className="small muted">{t('saved.lead', lang)}</p>
         ) : (
-          <SearchForm lang={lang} onSaved={() => load()} />
+          <div className={css.formCard}>
+            <SearchForm lang={lang} onSaved={() => load()} />
+          </div>
         )}
       </section>
     </div>

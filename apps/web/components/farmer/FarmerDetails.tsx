@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 
+import css from '@/components/account/settings.module.css';
 import { Button, Field, Input, Notice, Select } from '@/components/ui';
 import { maxBirthYear } from '@/lib/farmers/schema';
 import { COUNTIES, PAYAMS, STATES } from '@/lib/fixtures/p1';
@@ -12,7 +13,8 @@ import styles from './farmer.module.css';
 const W = {
   en: {
     title: 'Your details',
-    lead: 'Your account was made when sign-up did not ask for these. Please add them now; a listing asks for your place when it needs it.',
+    // 2026-10-31: one short sentence (it was two long ones).
+    lead: 'Sign-up did not ask for these when you joined.',
     sex: 'Sex',
     female: 'Female',
     male: 'Male',
@@ -28,7 +30,7 @@ const W = {
   },
   ar: {
     title: 'تفاصيلك',
-    lead: 'أُنشئ حسابك حين لم يكن التسجيل يطلب هذه التفاصيل. يُرجى إضافتها الآن؛ يُطلب مكانك عند نشر عرض.',
+    lead: 'لم يطلب التسجيل هذه التفاصيل حين انضممت.',
     sex: 'الجنس',
     female: 'أنثى',
     male: 'ذكر',
@@ -99,10 +101,9 @@ export function FarmerDetails() {
   }
 
   return (
-    <section className={styles.block} aria-labelledby="farmer-details-title">
-      <div className={styles.blockHead}>
-        <h2 id="farmer-details-title">{w.title}</h2>
-      </div>
+    // 2026-10-31: on a white form card, as the Account page's settings are.
+    <section className={css.formCard} aria-labelledby="farmer-details-title">
+      <h2 id="farmer-details-title">{w.title}</h2>
       <p className="small muted">{w.lead}</p>
       {message ? <Notice kind={message.ok ? 'success' : 'error'} title={message.text} /> : null}
       <div className={styles.stack}>
@@ -213,7 +214,7 @@ export function FarmerDetails() {
             )}
           </Field>
         ) : null}
-        <div>
+        <div className={css.actions}>
           <Button variant="primary" onClick={() => void save()} disabled={busy}>
             {busy ? '…' : w.save}
           </Button>

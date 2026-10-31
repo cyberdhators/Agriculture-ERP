@@ -88,8 +88,8 @@ export function MessageButton({
 
   if (signIn) {
     return (
+      // 2026-10-31: the button says it; the same words above it went.
       <div className={styles.box}>
-        <p>{t('msg.signIn', language)}</p>
         <div className={styles.actions}>
           <ButtonLink href="/join">{t('msg.signIn', language)}</ButtonLink>
         </div>

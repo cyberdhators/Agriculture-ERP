@@ -21,10 +21,13 @@ export function WeatherTile({
   payamId,
   language,
   forecastOpen = false,
+  greeting,
 }: {
   payamId: string | null;
   language: Language;
   forecastOpen?: boolean;
+  /** 2026-10-31: on Home, the welcome line sits at the top of this card. */
+  greeting?: React.ReactNode;
 }) {
   const w = useWeather(payamId);
   const [open, setOpen] = useState(forecastOpen);
@@ -39,6 +42,7 @@ export function WeatherTile({
 
   return (
     <section className={styles.weatherHero} aria-label={t('weather.title', language)}>
+      {greeting ? <div className={styles.weatherGreeting}>{greeting}</div> : null}
       {w.loading ? (
         <p className={styles.weatherHeroNote}>{t('weather.loading', language)}</p>
       ) : w.error ? (

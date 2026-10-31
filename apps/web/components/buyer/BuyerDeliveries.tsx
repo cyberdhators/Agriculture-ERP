@@ -39,7 +39,7 @@ export function BuyerDeliveries() {
     <div className={styles.page}>
       <PageHeader
         title="Deliveries"
-        subtitle="Orders that are ready, on the way or delivered. Statuses are recorded by CORWADO; there is no live tracking."
+        subtitle="CORWADO records each status; there is no live tracking."
       />
       {list.error ? (
         <EmptyState

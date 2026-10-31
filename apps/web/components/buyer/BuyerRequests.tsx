@@ -31,7 +31,6 @@ export function BuyerRequests() {
     <div className={styles.page}>
       <PageHeader
         title="My requests"
-        subtitle="What you have asked sellers for, and each seller's answer. Call or message the seller to agree the price and the handover."
         actions={
           profile.verification.capabilities.browse ? (
             <ButtonLink href="/buyer/marketplace">Find products</ButtonLink>

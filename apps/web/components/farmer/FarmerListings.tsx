@@ -58,9 +58,10 @@ export function FarmerListings() {
 
   return (
     <>
+      {/* 2026-10-31: the title and its button; the two-sentence lead went
+          (the stage tabs below say what buyers see). */}
       <PageHead
         title={t('listings.title', language)}
-        lead={t('listings.lead', language)}
         actions={
           <ButtonLink href="/farmer/account/listings/new">{t('listings.new', language)}</ButtonLink>
         }
@@ -75,15 +76,8 @@ export function FarmerListings() {
       {loading ? (
         <p className="muted">{t('market.loading', language)}</p>
       ) : all.length === 0 ? (
-        <EmptyState
-          title={t('listings.empty', language)}
-          body={t('listings.lead', language)}
-          actions={
-            <ButtonLink href="/farmer/account/listings/new">
-              {t('listings.emptyAction', language)}
-            </ButtonLink>
-          }
-        />
+        // The "New listing" button sits just above; not a second one here.
+        <EmptyState title={t('listings.empty', language)} />
       ) : (
         <>
           <div className={styles.toolbar}>

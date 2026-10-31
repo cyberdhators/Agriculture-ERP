@@ -179,11 +179,7 @@ export function AdminOverview() {
 
   return (
     <div className={styles.page}>
-      <PageHeader
-        eyebrow="Overview"
-        title="Platform overview"
-        subtitle="Accounts, marketplace activity, open cases and system alerts. Every figure opens the list behind it."
-      />
+      <PageHeader title="Platform overview" subtitle="Every figure opens the list behind it." />
 
       <Card padded>
         <div className={styles.presets} role="group" aria-label="Quick periods">

@@ -997,3 +997,20 @@ select.control {
 :global(.shop) .notice {
   border-radius: var(--radius-control);
 }
+
+/* 2026-10-31: page titles are calm -- the content leads, not the label. */
+:global(.shop) .pageHeader {
+  margin-bottom: var(--s-5);
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+:global(.shop) .pageHeader h1 {
+  font-size: clamp(22px, 2.6vw, 28px);
+  line-height: 1.15;
+}
+
+:global(.shop) .pageSubtitle {
+  color: var(--muted);
+  font-size: var(--text-small);
+}

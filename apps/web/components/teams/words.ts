@@ -10,7 +10,8 @@ export type Lang = 'en' | 'ar';
 export const TEAM_WORDS = {
   en: {
     title: 'Organisations',
-    lead: 'Create a profile for your group, business or institution, and invite colleagues. Each person signs in with their own account; nobody shares a password.',
+    // 2026-10-31: one line (was two sentences).
+    lead: 'Your group, business or institution, with colleagues on their own accounts.',
     actingAs: 'Acting as',
     yourself: 'Yourself',
     actingNote:
@@ -30,11 +31,12 @@ export const TEAM_WORDS = {
     closed: 'Closed',
     draft: 'Draft (not public)',
     published: 'Published',
-    create: 'Create an organisation profile',
+    newOrg: 'New organisation',
+    create: 'Create',
     name: 'Organisation name',
     kind: 'It is',
     groupKind: 'What kind of group',
-    activities: 'What it does (choose any)',
+    activities: 'What it does',
     about: 'Description',
     location: 'General location',
     creating: 'Creating…',
@@ -120,7 +122,7 @@ export const TEAM_WORDS = {
   },
   ar: {
     title: 'المنظمات',
-    lead: 'أنشئ ملفاً لمجموعتك أو شركتك أو مؤسستك وادعُ زملاءك. يسجّل كل شخص الدخول بحسابه الخاص؛ لا أحد يشارك كلمة مرور.',
+    lead: 'مجموعتك أو شركتك أو مؤسستك، مع زملائك كلٌّ بحسابه الخاص.',
     actingAs: 'تتصرف باسم',
     yourself: 'نفسك',
     actingNote:
@@ -140,11 +142,12 @@ export const TEAM_WORDS = {
     closed: 'مغلقة',
     draft: 'مسودة (غير منشورة)',
     published: 'منشورة',
-    create: 'إنشاء ملف منظمة',
+    newOrg: 'منظمة جديدة',
+    create: 'إنشاء',
     name: 'اسم المنظمة',
     kind: 'هي',
     groupKind: 'نوع المجموعة',
-    activities: 'ماذا تفعل (اختر ما يناسب)',
+    activities: 'ماذا تفعل',
     about: 'الوصف',
     location: 'الموقع العام',
     creating: 'جارٍ الإنشاء…',

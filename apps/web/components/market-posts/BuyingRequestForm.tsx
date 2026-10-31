@@ -6,16 +6,8 @@ import { useEffect, useState } from 'react';
 
 import { LISTING_CATEGORIES, LISTING_UNITS, buyingRequestSchema } from '@agri-erp/shared';
 
-import {
-  Button,
-  Checkbox,
-  Field,
-  Input,
-  Notice,
-  PrefixedInput,
-  Select,
-  Textarea,
-} from '@/components/ui';
+import css from '@/components/account/settings.module.css';
+import { Button, Field, Input, Notice, PrefixedInput, Select, Textarea } from '@/components/ui';
 import { CATEGORY_KEY, UNIT_KEY } from '@/lib/farmers/listings';
 import { t, type Language } from '@/lib/i18n';
 import {
@@ -31,6 +23,7 @@ import { renewalDefault } from '@/lib/market-posts/presentation';
 import { offered, useArchivedLists } from '@/lib/settings/client';
 
 import { BuyingRequestDetailBody } from './MarketRequests';
+import { SwitchRow } from './bits';
 import styles from './market-posts.module.css';
 
 interface Values {
@@ -262,7 +255,7 @@ export function BuyingRequestForm({
       updated_at: new Date().toISOString(),
     };
     return (
-      <section aria-label={t('posts.previewTitle', lang)}>
+      <section className={styles.formStack} aria-label={t('posts.previewTitle', lang)}>
         <Notice kind="info" title={t('posts.previewTitle', lang)}>
           <p className="small">{t(id ? 'posts.previewSaved' : 'posts.previewLead', lang)}</p>
         </Notice>
@@ -274,24 +267,24 @@ export function BuyingRequestForm({
         <div className={styles.detail}>
           <BuyingRequestDetailBody row={row} lang={lang} preview />
         </div>
-        <div className={styles.formActions}>
-          <Button variant="ghost" disabled={busy} onClick={() => setPreviewing(false)}>
-            {t('posts.previewEdit', lang)}
-          </Button>
+        <div className={css.actions}>
           {id ? (
             <Button disabled={busy} onClick={() => void submit()}>
               {t('listingForm.save', lang)}
             </Button>
           ) : (
             <>
-              <Button variant="secondary" disabled={busy} onClick={() => void submit('draft')}>
-                {t('listingForm.saveDraft', lang)}
-              </Button>
               <Button disabled={busy} onClick={() => void submit('active')}>
                 {t('lifecycle.publish', lang)}
               </Button>
+              <Button variant="secondary" disabled={busy} onClick={() => void submit('draft')}>
+                {t('listingForm.saveDraft', lang)}
+              </Button>
             </>
           )}
+          <Button variant="ghost" disabled={busy} onClick={() => setPreviewing(false)}>
+            {t('posts.previewEdit', lang)}
+          </Button>
         </div>
       </section>
     );
@@ -300,6 +293,7 @@ export function BuyingRequestForm({
   return (
     <form
       noValidate
+      className={styles.formStack}
       onSubmit={(e) => {
         e.preventDefault();
         void submit(id ? undefined : 'active');
@@ -310,175 +304,193 @@ export function BuyingRequestForm({
           <p className="small">{failure}</p>
         </Notice>
       ) : null}
-      <div className={styles.formGrid}>
-        <div className={styles.span2}>
+      {/* 2026-10-31 (the owner's phone screenshots: fields loose on the grey
+          ground under a two-sentence lead): the same fields, in the same
+          order, grouped on white cards -- what is needed, where and when, the
+          price, more about it, and the contact. */}
+      <section className={css.formCard}>
+        <div className={styles.formGrid}>
+          <div className={styles.span2}>
+            <Field
+              label={t('requests.displayName', lang)}
+              hint={t('requests.displayNameHint', lang)}
+              error={err('display_name')}
+            >
+              {(ids) => (
+                <Input
+                  {...ids}
+                  dir="auto"
+                  maxLength={120}
+                  value={values.display_name}
+                  onChange={(e) => set('display_name', e.target.value)}
+                />
+              )}
+            </Field>
+          </div>
+          <Field label={t('listingForm.category', lang)} error={err('category')}>
+            {(ids) => (
+              <Select
+                {...ids}
+                value={values.category}
+                onChange={(e) => set('category', e.target.value)}
+              >
+                <option value="">{t('register.select', lang)}</option>
+                {offered(
+                  LISTING_CATEGORIES,
+                  archivedLists?.archived_categories,
+                  values.category,
+                ).map((c) => (
+                  <option key={c} value={c}>
+                    {t(CATEGORY_KEY[c], lang)}
+                  </option>
+                ))}
+              </Select>
+            )}
+          </Field>
+          <Field label={t('requests.product', lang)} error={err('product_name')}>
+            {(ids) => (
+              <Input
+                {...ids}
+                dir="auto"
+                value={values.product_name}
+                onChange={(e) => set('product_name', e.target.value)}
+              />
+            )}
+          </Field>
+          <Field label={t('requests.quantity', lang)} error={err('quantity')}>
+            {(ids) => (
+              <Input
+                {...ids}
+                inputMode="decimal"
+                className="mono"
+                value={values.quantity}
+                onChange={(e) => set('quantity', e.target.value.replace(/[^\d.]/g, ''))}
+              />
+            )}
+          </Field>
+          <Field label={t('listingForm.unit', lang)} error={err('unit')}>
+            {(ids) => (
+              <Select {...ids} value={values.unit} onChange={(e) => set('unit', e.target.value)}>
+                <option value="">{t('register.select', lang)}</option>
+                {unitOptions}
+              </Select>
+            )}
+          </Field>
+        </div>
+      </section>
+
+      <section className={css.formCard}>
+        <div className={styles.formGrid}>
+          <Field label={t('requests.state', lang)} error={err('state_id')}>
+            {(ids) => (
+              <Select
+                {...ids}
+                value={values.state_id}
+                onChange={(e) => set('state_id', e.target.value)}
+              >
+                <option value="">{t('register.select', lang)}</option>
+                {states.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </Select>
+            )}
+          </Field>
           <Field
-            label={t('requests.displayName', lang)}
-            hint={t('requests.displayNameHint', lang)}
-            error={err('display_name')}
+            label={t('requests.location', lang)}
+            hint={t('requests.locationHint', lang)}
+            error={err('location')}
           >
             {(ids) => (
               <Input
                 {...ids}
                 dir="auto"
-                maxLength={120}
-                value={values.display_name}
-                onChange={(e) => set('display_name', e.target.value)}
+                value={values.location}
+                onChange={(e) => set('location', e.target.value)}
+              />
+            )}
+          </Field>
+          <Field label={t('requests.neededBy', lang)} error={err('needed_by')}>
+            {(ids) => (
+              <Input
+                {...ids}
+                type="date"
+                className="mono"
+                value={values.needed_by}
+                onChange={(e) => set('needed_by', e.target.value)}
               />
             )}
           </Field>
         </div>
-        <Field label={t('listingForm.category', lang)} error={err('category')}>
-          {(ids) => (
-            <Select
-              {...ids}
-              value={values.category}
-              onChange={(e) => set('category', e.target.value)}
-            >
-              <option value="">{t('register.select', lang)}</option>
-              {offered(LISTING_CATEGORIES, archivedLists?.archived_categories, values.category).map(
-                (c) => (
-                  <option key={c} value={c}>
-                    {t(CATEGORY_KEY[c], lang)}
-                  </option>
-                ),
-              )}
-            </Select>
-          )}
-        </Field>
-        <Field label={t('requests.product', lang)} error={err('product_name')}>
-          {(ids) => (
-            <Input
-              {...ids}
-              dir="auto"
-              value={values.product_name}
-              onChange={(e) => set('product_name', e.target.value)}
-            />
-          )}
-        </Field>
-        <Field label={t('requests.quantity', lang)} error={err('quantity')}>
-          {(ids) => (
-            <Input
-              {...ids}
-              inputMode="decimal"
-              className="mono"
-              value={values.quantity}
-              onChange={(e) => set('quantity', e.target.value.replace(/[^\d.]/g, ''))}
-            />
-          )}
-        </Field>
-        <Field label={t('listingForm.unit', lang)} error={err('unit')}>
-          {(ids) => (
-            <Select {...ids} value={values.unit} onChange={(e) => set('unit', e.target.value)}>
-              <option value="">{t('register.select', lang)}</option>
-              {unitOptions}
-            </Select>
-          )}
-        </Field>
-        <Field label={t('requests.state', lang)} error={err('state_id')}>
-          {(ids) => (
-            <Select
-              {...ids}
-              value={values.state_id}
-              onChange={(e) => set('state_id', e.target.value)}
-            >
-              <option value="">{t('register.select', lang)}</option>
-              {states.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-            </Select>
-          )}
-        </Field>
+      </section>
+
+      <section className={css.formCard}>
+        <div className={styles.formGrid}>
+          <Field label={t('requests.price', lang)} optional error={err('price_ssp')}>
+            {(ids) => (
+              <PrefixedInput
+                {...ids}
+                prefix={t('listings.ssp', lang)}
+                inputMode="numeric"
+                className="mono"
+                value={values.price_ssp}
+                onChange={(e) => set('price_ssp', e.target.value.replace(/[^\d]/g, ''))}
+              />
+            )}
+          </Field>
+          <Field label={t('listingForm.pricePer', lang)} optional error={err('price_per')}>
+            {(ids) => (
+              <Select
+                {...ids}
+                value={values.price_per}
+                disabled={values.price_ssp === ''}
+                onChange={(e) => set('price_per', e.target.value)}
+              >
+                <option value="">{t('register.select', lang)}</option>
+                {unitOptions}
+              </Select>
+            )}
+          </Field>
+        </div>
+        <SwitchRow
+          label={t('listingForm.negotiable', lang)}
+          checked={values.negotiable}
+          onChange={(on) => set('negotiable', on)}
+        />
+      </section>
+
+      <section className={css.formCard}>
         <Field
-          label={t('requests.location', lang)}
-          hint={t('requests.locationHint', lang)}
-          error={err('location')}
+          label={t('requests.deliveryTerms', lang)}
+          hint={t('requests.deliveryHint', lang)}
+          optional
+          error={err('delivery_terms')}
         >
           {(ids) => (
-            <Input
+            <Textarea
               {...ids}
+              rows={2}
               dir="auto"
-              value={values.location}
-              onChange={(e) => set('location', e.target.value)}
+              value={values.delivery_terms}
+              onChange={(e) => set('delivery_terms', e.target.value)}
             />
           )}
         </Field>
-        <Field label={t('requests.neededBy', lang)} error={err('needed_by')}>
+        <Field label={t('requests.details', lang)} optional error={err('description')}>
           {(ids) => (
-            <Input
+            <Textarea
               {...ids}
-              type="date"
-              className="mono"
-              value={values.needed_by}
-              onChange={(e) => set('needed_by', e.target.value)}
+              rows={3}
+              dir="auto"
+              value={values.description}
+              onChange={(e) => set('description', e.target.value)}
             />
           )}
         </Field>
-        <Field label={t('requests.price', lang)} optional error={err('price_ssp')}>
-          {(ids) => (
-            <PrefixedInput
-              {...ids}
-              prefix={t('listings.ssp', lang)}
-              inputMode="numeric"
-              className="mono"
-              value={values.price_ssp}
-              onChange={(e) => set('price_ssp', e.target.value.replace(/[^\d]/g, ''))}
-            />
-          )}
-        </Field>
-        <Field label={t('listingForm.pricePer', lang)} optional error={err('price_per')}>
-          {(ids) => (
-            <Select
-              {...ids}
-              value={values.price_per}
-              disabled={values.price_ssp === ''}
-              onChange={(e) => set('price_per', e.target.value)}
-            >
-              <option value="">{t('register.select', lang)}</option>
-              {unitOptions}
-            </Select>
-          )}
-        </Field>
-        <div className={styles.span2}>
-          <Checkbox
-            label={t('listingForm.negotiable', lang)}
-            checked={values.negotiable}
-            onChange={(e) => set('negotiable', e.target.checked)}
-          />
-        </div>
-        <div className={styles.span2}>
-          <Field
-            label={t('requests.deliveryTerms', lang)}
-            hint={t('requests.deliveryHint', lang)}
-            optional
-            error={err('delivery_terms')}
-          >
-            {(ids) => (
-              <Textarea
-                {...ids}
-                rows={2}
-                dir="auto"
-                value={values.delivery_terms}
-                onChange={(e) => set('delivery_terms', e.target.value)}
-              />
-            )}
-          </Field>
-        </div>
-        <div className={styles.span2}>
-          <Field label={t('requests.details', lang)} optional error={err('description')}>
-            {(ids) => (
-              <Textarea
-                {...ids}
-                rows={3}
-                dir="auto"
-                value={values.description}
-                onChange={(e) => set('description', e.target.value)}
-              />
-            )}
-          </Field>
-        </div>
+      </section>
+
+      <section className={css.formCard}>
         <Field
           label={t('listingForm.contactPhone', lang)}
           hint={t('requests.phoneHint', lang)}
@@ -491,42 +503,42 @@ export function BuyingRequestForm({
               prefix="+211"
               inputMode="tel"
               className="mono"
+              dir="ltr"
               value={values.contact_phone}
               onChange={(e) => set('contact_phone', e.target.value)}
             />
           )}
         </Field>
-        <div>
-          <Checkbox
-            label={t('posts.showPhone', lang)}
-            checked={values.show_phone}
-            onChange={(e) => set('show_phone', e.target.checked)}
-          />
-          <p className="small muted">{t('posts.showPhoneHint', lang)}</p>
-        </div>
-      </div>
+        <SwitchRow
+          label={t('posts.showPhone', lang)}
+          hint={t('posts.showPhoneHint', lang)}
+          checked={values.show_phone}
+          onChange={(on) => set('show_phone', on)}
+        />
+      </section>
 
-      <div className={styles.formActions}>
-        <Link href={listHref} className="small">
-          {t('listingForm.cancel', lang)}
-        </Link>
-        <Button variant="ghost" disabled={busy} onClick={openPreview}>
-          {t('posts.preview', lang)}
-        </Button>
+      {/* The one primary action first: full width on a phone. */}
+      <div className={css.actions}>
         {id ? (
           <Button type="submit" disabled={busy}>
             {t('listingForm.save', lang)}
           </Button>
         ) : (
           <>
-            <Button variant="secondary" disabled={busy} onClick={() => void submit('draft')}>
-              {t('listingForm.saveDraft', lang)}
-            </Button>
             <Button type="submit" disabled={busy}>
               {t('lifecycle.publish', lang)}
             </Button>
+            <Button variant="secondary" disabled={busy} onClick={() => void submit('draft')}>
+              {t('listingForm.saveDraft', lang)}
+            </Button>
           </>
         )}
+        <Button variant="ghost" disabled={busy} onClick={openPreview}>
+          {t('posts.preview', lang)}
+        </Button>
+        <Link href={listHref} className="small">
+          {t('listingForm.cancel', lang)}
+        </Link>
       </div>
     </form>
   );

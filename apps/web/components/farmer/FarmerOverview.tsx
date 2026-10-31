@@ -3,13 +3,12 @@
 import Link from 'next/link';
 
 import { ShortcutHub } from '@/components/account/ShortcutHub';
-import { Boundary } from '@/components/farmers/Boundary';
 import { ListingCard } from '@/components/listings/ListingCard';
-import { ButtonLink, EmptyState, KpiStrip, Notice } from '@/components/ui';
+import { ButtonLink, EmptyState, Notice } from '@/components/ui';
 import { farmerPayamName, farmsForFarmer, officerById } from '@/lib/fixtures/farmers';
+import css from '@/components/account/settings.module.css';
 import { useFarmerSession } from '@/lib/farmer-session';
-import { LANGUAGE_LABELS, formatDate, formatPhone } from '@/lib/format';
-import { t, type TKey } from '@/lib/i18n';
+import { t } from '@/lib/i18n';
 
 import { PageHead } from './AccountShell';
 import { FarmerRequests } from './FarmerRequests';
@@ -17,139 +16,11 @@ import { WeatherTile } from './WeatherTile';
 import listingStyles from '@/components/listings/listings.module.css';
 import styles from './farmer.module.css';
 
-/** The Amazon "Your Account" tiles: a glyph, a title and a one-line sub. */
-const ACCOUNT_TILES: ReadonlyArray<{
-  href: string;
-  title: TKey;
-  sub: TKey;
-  glyph: React.ReactNode;
-  /** Also a tab of the phone's bottom bar: the tile is hidden at phone width. */
-  inBottomBar?: boolean;
-}> = [
-  // 2026-10-31 (owner: duplicate icons on the phone home): "Post produce" and
-  // "Buy" are no longer tiles here. The shortcut hub above already offers both
-  // ("Sell produce" and "Buy", same pages), so the home showed two cart tiles
-  // and two ways to post. tests/duplicate-icons-scan.test.ts keeps it so.
-  // 2026-11-01 (owner: "compare the redundancy" above and below the weather):
-  // the Marketplace tile went too -- "Buy" above the weather and the bottom
-  // bar's Market tab already lead there -- and so did the header's "Post
-  // produce" button, which repeated the hub's "Sell produce".
-  {
-    href: '/farmer/account/listings',
-    title: 'account.tileListings',
-    sub: 'account.tileListingsSub',
-    glyph: (
-      <svg
-        viewBox="0 0 24 24"
-        width="26"
-        height="26"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.6"
-      >
-        <rect x="3" y="4" width="18" height="16" rx="2" />
-        <path d="M3 9h18M8 13h8M8 16.5h5" />
-      </svg>
-    ),
-  },
-  {
-    href: '/farmer/account/farm',
-    title: 'account.tileFarm',
-    sub: 'account.tileFarmSub',
-    glyph: (
-      <svg
-        viewBox="0 0 24 24"
-        width="26"
-        height="26"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.6"
-      >
-        <path d="M4 20V9l8-5 8 5v11" />
-        <path d="M4 20h16M9 20v-6h6v6" />
-      </svg>
-    ),
-  },
-  {
-    href: '/farmer/account/ai',
-    inBottomBar: true,
-    title: 'account.tileAi',
-    sub: 'account.tileAiSub',
-    glyph: (
-      <svg
-        viewBox="0 0 24 24"
-        width="26"
-        height="26"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.6"
-      >
-        <path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z" />
-        <path d="M8.5 11h7M8.5 14.5h4.5" />
-      </svg>
-    ),
-  },
-  {
-    href: '/farmer/account/security',
-    title: 'account.tileSecurity',
-    sub: 'account.tileSecuritySub',
-    glyph: (
-      <svg
-        viewBox="0 0 24 24"
-        width="26"
-        height="26"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.6"
-      >
-        <path d="M12 3l7 3v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z" />
-        <path d="M9.5 12l1.8 1.8L15 10" />
-      </svg>
-    ),
-  },
-  {
-    href: '/farmer/account/language',
-    title: 'account.tileLanguage',
-    sub: 'account.tileLanguageSub',
-    glyph: (
-      <svg
-        viewBox="0 0 24 24"
-        width="26"
-        height="26"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.6"
-      >
-        <circle cx="12" cy="12" r="9" />
-        <path d="M3 12h18M12 3c2.5 2.5 2.5 15 0 18M12 3c-2.5 2.5-2.5 15 0 18" />
-      </svg>
-    ),
-  },
-  {
-    href: '/farmer/account/verification',
-    title: 'account.tileVerification',
-    sub: 'account.tileVerificationSub',
-    glyph: (
-      <svg
-        viewBox="0 0 24 24"
-        width="26"
-        height="26"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.6"
-      >
-        <path d="M12 3l2.3 1.6 2.8-.2 1 2.6 2.3 1.6-.8 2.7.8 2.7-2.3 1.6-1 2.6-2.8-.2L12 21l-2.3-1.6-2.8.2-1-2.6-2.3-1.6.8-2.7-.8-2.7 2.3-1.6 1-2.6 2.8.2z" />
-        <path d="M9 12l2 2 4-4" />
-      </svg>
-    ),
-  },
-];
+function greetingKey(): 'home.morning' | 'home.afternoon' | 'home.evening' {
+  const hour = new Date().getHours();
+  return hour < 12 ? 'home.morning' : hour < 17 ? 'home.afternoon' : 'home.evening';
+}
 
-/**
- * The overview: a ruled KPI row (live, drafts, sold, plots), the three
- * most recent listings as cards, and a side column with the record and the
- * first mapped plot.
- */
 export function FarmerOverview() {
   const { farmer, language, listingsFor } = useFarmerSession();
   if (!farmer) return null;
@@ -161,17 +32,59 @@ export function FarmerOverview() {
   const sold = listings.filter((l) => l.status === 'sold' || l.status === 'completed').length;
   const farms = farmsForFarmer(farmer.id);
   const recent = listings.slice(0, 3);
-  const numberPending = farmer.farmer_number.endsWith('-pending');
   const officer = officerById(farmer.caseload_officer_id ?? farmer.registered_by);
+  const pin = (
+    <svg
+      viewBox="0 0 24 24"
+      width="14"
+      height="14"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21Z" />
+      <circle cx="12" cy="9.5" r="2.5" />
+    </svg>
+  );
+  const stats: [string, number, boolean][] = [
+    [t('account.kpiLive', language), live, live > 0],
+    [t('account.kpiDrafts', language), drafts, false],
+    [t('account.kpiSold', language), sold, false],
+    [t('account.kpiPlots', language), farms.length, false],
+  ];
+  const plots =
+    farms.length === 0
+      ? t('account.noFarms', language)
+      : `${farms.length} ${t('account.plot', language).toLowerCase()}${farms.length === 1 ? '' : 's'}`;
+
+  // 2026-10-31 (the owner: "creatively beautiful", nothing redundant): one
+  // calm page -- a welcome on the weather card, the ways in as round icons,
+  // the four numbers on one strip, then the farmer's own things. The account
+  // links and the full record that sat here are on Account and "Your record".
   return (
     <>
-      <PageHead
-        title={t('account.tabOverview', language)}
-        lead={farmerPayamName(farmer.payam_id)}
-      />
+      <PageHead title={t('account.tabOverview', language)} quiet />
 
-      {/* 2026-10-28: one home for every ordinary function (infographic no. 4). */}
-      <ShortcutHub shell="farmer" language={language === 'ar' ? 'ar' : 'en'} />
+      <WeatherTile
+        payamId={farmer.payam_id}
+        language={language}
+        greeting={
+          <>
+            <p className={styles.greetingHello} suppressHydrationWarning>
+              {t(greetingKey(), language)}, <span dir="auto">{farmer.given_name}</span>
+            </p>
+            {farmer.payam_id ? (
+              <p className={styles.greetingPlace}>
+                {pin}
+                {farmerPayamName(farmer.payam_id)}
+              </p>
+            ) : null}
+          </>
+        }
+      />
 
       {!farmer.payam_id ? (
         <Notice
@@ -180,8 +93,8 @@ export function FarmerOverview() {
         >
           <p className="small">
             {language === 'ar'
-              ? 'لم تُضف مكانك بعد. يُطلب عند نشر عرض، ويجلب لك الطقس والمرشد الزراعي.'
-              : 'You have not given your place yet. A listing asks for it, and it brings your weather and an extension officer.'}{' '}
+              ? 'يجلب لك مكانك الطقس والمرشد الزراعي.'
+              : 'Your place brings your weather and an extension officer.'}{' '}
             <Link href="/farmer/account/about">
               {language === 'ar' ? 'أضف التفاصيل' : 'Add your details'}
             </Link>
@@ -189,46 +102,19 @@ export function FarmerOverview() {
         </Notice>
       ) : null}
 
-      <WeatherTile payamId={farmer.payam_id} language={language} />
+      {/* 2026-10-28: one home for every ordinary function (infographic no. 4). */}
+      <ShortcutHub shell="farmer" language={language === 'ar' ? 'ar' : 'en'} />
 
-      <nav
-        className={`${styles.acctTiles} ${styles.acctList}`}
-        aria-label={t('account.tilesTitle', language)}
-      >
-        {ACCOUNT_TILES.map((tile) => (
-          <Link
-            key={tile.href}
-            href={tile.href}
-            className={
-              tile.inBottomBar ? `${styles.acctTile} ${styles.acctTileBottomBar}` : styles.acctTile
-            }
-          >
-            <span className={styles.acctTileGlyph} aria-hidden>
-              {tile.glyph}
-            </span>
-            <span className={styles.acctTileText}>
-              <span className={styles.acctTileTitle}>{t(tile.title, language)}</span>
-              <span className={styles.acctTileSub}>
-                {tile.title === 'account.tileLanguage'
-                  ? LANGUAGE_LABELS[language]
-                  : t(tile.sub, language)}
-              </span>
-            </span>
-          </Link>
+      <dl className={styles.stats} aria-label={t('account.tabOverview', language)}>
+        {stats.map(([label, value, accent]) => (
+          <div key={label} className={styles.stat}>
+            <dd className={accent ? `${styles.statValue} ${styles.statAccent}` : styles.statValue}>
+              {value}
+            </dd>
+            <dt className={styles.statLabel}>{label}</dt>
+          </div>
         ))}
-      </nav>
-
-      <KpiStrip
-        label={t('account.tabOverview', language)}
-        items={[
-          { label: t('account.kpiLive', language), value: live, accent: live > 0 },
-          { label: t('account.kpiDrafts', language), value: drafts },
-          { label: t('account.kpiSold', language), value: sold },
-          { label: t('account.kpiPlots', language), value: farms.length },
-          // 2026-10-31 (the owner): no verification here -- a person's account
-          // is never verified. An officer's field record stays the officer's.
-        ]}
-      />
+      </dl>
 
       <div className={styles.overview}>
         <div className={styles.block}>
@@ -245,7 +131,6 @@ export function FarmerOverview() {
           {recent.length === 0 ? (
             <EmptyState
               title={t('listings.empty', language)}
-              body={t('listings.lead', language)}
               actions={
                 <ButtonLink href="/farmer/account/listings/new">
                   {t('listings.emptyAction', language)}
@@ -273,102 +158,59 @@ export function FarmerOverview() {
         </div>
 
         <aside className={styles.side}>
-          <div className={styles.block}>
-            <div className={styles.blockHead}>
-              <h2>{t('account.officer', language)}</h2>
-            </div>
-            {officer ? (
-              <div className={styles.officerCard}>
-                <div>
-                  <div dir="auto">{officer.name}</div>
-                  <div className="small muted">{farmerPayamName(officer.payam_id)}</div>
-                </div>
-                <ButtonLink href={`tel:${officer.phone}`} variant="secondary">
+          <ul className={css.list}>
+            <li className={css.row}>
+              <span className={css.rowIcon} aria-hidden>
+                <svg
+                  viewBox="0 0 24 24"
+                  width="20"
+                  height="20"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <rect x="3" y="5" width="18" height="14" rx="2" />
+                  <circle cx="9" cy="11" r="2" />
+                  <path d="M6 16c.6-1.4 1.7-2 3-2s2.4.6 3 2M14.5 10h3.5M14.5 13.5h2.5" />
+                </svg>
+              </span>
+              <span className={css.rowText}>
+                <span className={css.rowLabel}>{t('account.officer', language)}</span>
+                <span className={css.rowHint} dir="auto">
+                  {officer ? officer.name : t('account.officerNone', language)}
+                </span>
+              </span>
+              {officer ? (
+                <ButtonLink href={`tel:${officer.phone}`} variant="secondary" size="small">
                   {t('account.call', language)}
                 </ButtonLink>
-              </div>
-            ) : (
-              <p className="small muted">{t('account.officerNone', language)}</p>
-            )}
-            <p className="small muted" style={{ marginTop: 'var(--s-2)' }}>
-              {t('account.officerLead', language)}
-            </p>
-          </div>
-
-          <div className={styles.block}>
-            <div className={styles.blockHead}>
-              <h2>{t('account.record', language)}</h2>
-              <Link href="/farmer/account/settings" className="small">
-                {t('account.tabAccount', language)}
+              ) : null}
+            </li>
+            <li>
+              <Link href="/farmer/account/farm" className={`${css.row} ${css.rowButton}`}>
+                <span className={css.rowIcon} aria-hidden>
+                  <svg
+                    viewBox="0 0 24 24"
+                    width="20"
+                    height="20"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M3 20h18M5 20V9l7-5 7 5v11M9 20v-6h6v6" />
+                  </svg>
+                </span>
+                <span className={css.rowText}>
+                  <span className={css.rowLabel}>{t('account.tabFarm', language)}</span>
+                  <span className={css.rowHint}>{plots}</span>
+                </span>
               </Link>
-            </div>
-            <dl className={styles.recordRows}>
-              <div className={styles.recordRow}>
-                <dt>{t('account.farmerNumber', language)}</dt>
-                <dd className={styles.recordValueMono}>
-                  {numberPending ? '—' : farmer.farmer_number}
-                  {numberPending ? (
-                    <span className={styles.recordNote}>
-                      {t('account.numberPending', language)}
-                    </span>
-                  ) : null}
-                </dd>
-              </div>
-              <div className={styles.recordRow}>
-                <dt>{t('account.name', language)}</dt>
-                <dd dir="auto">
-                  {farmer.given_name} {farmer.family_name}
-                </dd>
-              </div>
-              <div className={styles.recordRow}>
-                <dt>{t('account.phone', language)}</dt>
-                <dd className={styles.recordValueMono}>{formatPhone(farmer.phone)}</dd>
-              </div>
-              <div className={styles.recordRow}>
-                <dt>{t('account.payam', language)}</dt>
-                <dd>{farmerPayamName(farmer.payam_id)}</dd>
-              </div>
-              <div className={styles.recordRow}>
-                <dt>{t('account.registered', language)}</dt>
-                <dd className={styles.recordValueMono}>
-                  {formatDate(farmer.created_at, language)}
-                </dd>
-              </div>
-              <div className={styles.recordRow}>
-                <dt>{t('account.language', language)}</dt>
-                <dd>{LANGUAGE_LABELS[language]}</dd>
-              </div>
-            </dl>
-          </div>
-
-          <div className={styles.block}>
-            <div className={styles.blockHead}>
-              <h2>{t('account.tabFarm', language)}</h2>
-              <Link href="/farmer/account/farm" className="small">
-                {t('account.plot', language)}s ({farms.length})
-              </Link>
-            </div>
-            {farms.length === 0 ? (
-              <p className="small muted">{t('account.noFarms', language)}</p>
-            ) : (
-              <div className={styles.farms}>
-                {farms.slice(0, 2).map((farm, i) => (
-                  <div key={farm.id} className={styles.farmCard}>
-                    <Boundary farm={farm} size={96} />
-                    <div>
-                      <div>
-                        {t('account.plot', language)} {i + 1}
-                      </div>
-                      <div className={styles.farmMeta}>
-                        {farm.season} · {t('account.mapped', language)}{' '}
-                        {formatDate(farm.mapped_at, language)}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+            </li>
+          </ul>
         </aside>
       </div>
     </>

@@ -12,16 +12,8 @@ import {
   type ServicePosterType,
 } from '@agri-erp/shared';
 
-import {
-  Button,
-  Checkbox,
-  Field,
-  Input,
-  Notice,
-  PrefixedInput,
-  Select,
-  Textarea,
-} from '@/components/ui';
+import css from '@/components/account/settings.module.css';
+import { Button, Field, Input, Notice, PrefixedInput, Select, Textarea } from '@/components/ui';
 import { t, type Language } from '@/lib/i18n';
 import {
   MarketPostError,
@@ -35,6 +27,7 @@ import {
 import { PRICE_UNIT_KEY, SERVICE_TYPE_KEY, todayLocal } from '@/lib/market-posts/presentation';
 
 import { ServiceDetailBody } from './MarketServices';
+import { SwitchRow } from './bits';
 import styles from './market-posts.module.css';
 
 interface Values {
@@ -260,7 +253,7 @@ export function ServiceForm({
       updated_at: now,
     };
     return (
-      <section aria-label={t('posts.previewTitle', lang)}>
+      <section className={styles.formStack} aria-label={t('posts.previewTitle', lang)}>
         <Notice kind="info" title={t('posts.previewTitle', lang)}>
           <p className="small">{t(id ? 'posts.previewSaved' : 'posts.previewLead', lang)}</p>
         </Notice>
@@ -272,24 +265,24 @@ export function ServiceForm({
         <div className={styles.detail}>
           <ServiceDetailBody row={row} lang={lang} preview />
         </div>
-        <div className={styles.formActions}>
-          <Button variant="ghost" disabled={busy} onClick={() => setPreviewing(false)}>
-            {t('posts.previewEdit', lang)}
-          </Button>
+        <div className={css.actions}>
           {id ? (
             <Button disabled={busy} onClick={() => void submit()}>
               {t('listingForm.save', lang)}
             </Button>
           ) : (
             <>
-              <Button variant="secondary" disabled={busy} onClick={() => void submit('draft')}>
-                {t('listingForm.saveDraft', lang)}
-              </Button>
               <Button disabled={busy} onClick={() => void submit('active')}>
                 {t('lifecycle.publish', lang)}
               </Button>
+              <Button variant="secondary" disabled={busy} onClick={() => void submit('draft')}>
+                {t('listingForm.saveDraft', lang)}
+              </Button>
             </>
           )}
+          <Button variant="ghost" disabled={busy} onClick={() => setPreviewing(false)}>
+            {t('posts.previewEdit', lang)}
+          </Button>
         </div>
       </section>
     );
@@ -298,6 +291,7 @@ export function ServiceForm({
   return (
     <form
       noValidate
+      className={styles.formStack}
       onSubmit={(e) => {
         e.preventDefault();
         void submit(id ? undefined : 'active');
@@ -308,183 +302,203 @@ export function ServiceForm({
           <p className="small">{failure}</p>
         </Notice>
       ) : null}
-      <div className={styles.formGrid}>
-        <div className={styles.span2}>
-          <Field
-            label={t('listingForm.tradingName', lang)}
-            hint={t('listingForm.tradingNameHint', lang)}
-            error={err('trading_name')}
-          >
-            {(ids) => (
-              <Input
-                {...ids}
-                dir="auto"
-                maxLength={120}
-                value={values.trading_name}
-                onChange={(e) => set('trading_name', e.target.value)}
-              />
-            )}
-          </Field>
-        </div>
-        <Field label={t('svc.type', lang)} error={err('service_type')}>
-          {(ids) => (
-            <Select
-              {...ids}
-              value={values.service_type}
-              onChange={(e) => set('service_type', e.target.value)}
+      {/* 2026-10-31 (the owner's phone screenshots: fields loose on the grey
+          ground under a two-sentence lead): the same fields, in the same
+          order, grouped on white cards -- the service, where and when, the
+          price, and the contact. */}
+      <section className={css.formCard}>
+        <div className={styles.formGrid}>
+          <div className={styles.span2}>
+            <Field
+              label={t('listingForm.tradingName', lang)}
+              hint={t('requests.displayNameHint', lang)}
+              error={err('trading_name')}
             >
-              <option value="">{t('register.select', lang)}</option>
-              {SERVICE_TYPES.map((s) => (
-                <option key={s} value={s}>
-                  {t(SERVICE_TYPE_KEY[s], lang)}
-                </option>
-              ))}
-            </Select>
-          )}
-        </Field>
-        <Field label={t('listingForm.title', lang)} error={err('title')}>
-          {(ids) => (
-            <Input
-              {...ids}
-              dir="auto"
-              maxLength={200}
-              value={values.title}
-              onChange={(e) => set('title', e.target.value)}
-            />
-          )}
-        </Field>
-        <div className={styles.span2}>
-          <Field label={t('listingForm.description', lang)} error={err('description')}>
-            {(ids) => (
-              <Textarea
-                {...ids}
-                rows={4}
-                dir="auto"
-                value={values.description}
-                onChange={(e) => set('description', e.target.value)}
-              />
-            )}
-          </Field>
-        </div>
-        <div className={styles.span2}>
-          <Field
-            label={t('svc.location', lang)}
-            hint={t('svc.locationHint', lang)}
-            error={err('location')}
-          >
-            {(ids) => (
-              <Input
-                {...ids}
-                dir="auto"
-                value={values.location}
-                onChange={(e) => set('location', e.target.value)}
-              />
-            )}
-          </Field>
-        </div>
-        {choosesState ? (
-          <Field label={t('requests.state', lang)} error={err('state_id')}>
+              {(ids) => (
+                <Input
+                  {...ids}
+                  dir="auto"
+                  maxLength={120}
+                  value={values.trading_name}
+                  onChange={(e) => set('trading_name', e.target.value)}
+                />
+              )}
+            </Field>
+          </div>
+          <Field label={t('svc.type', lang)} error={err('service_type')}>
             {(ids) => (
               <Select
                 {...ids}
-                value={values.state_id}
-                onChange={(e) => set('state_id', e.target.value)}
+                value={values.service_type}
+                onChange={(e) => set('service_type', e.target.value)}
               >
                 <option value="">{t('register.select', lang)}</option>
-                {states.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
+                {SERVICE_TYPES.map((s) => (
+                  <option key={s} value={s}>
+                    {t(SERVICE_TYPE_KEY[s], lang)}
                   </option>
                 ))}
               </Select>
             )}
           </Field>
-        ) : null}
-        <Field label={t('listingForm.availableFrom', lang)} error={err('available_from')}>
-          {(ids) => (
-            <Input
-              {...ids}
-              type="date"
-              className="mono"
-              value={values.available_from}
-              onChange={(e) => set('available_from', e.target.value)}
-            />
-          )}
-        </Field>
-        <Field
-          label={t('listingForm.availableUntil', lang)}
-          hint={t('listingForm.untilDefault', lang)}
-          optional
-          error={err('available_until')}
-        >
-          {(ids) => (
-            <Input
-              {...ids}
-              type="date"
-              className="mono"
-              min={values.available_from}
-              value={values.available_until}
-              onChange={(e) => set('available_until', e.target.value)}
-            />
-          )}
-        </Field>
-        <div className={styles.span2}>
-          <Field
-            label={t('svc.availability', lang)}
-            hint={t('svc.availabilityHint', lang)}
-            optional
-            error={err('availability_note')}
-          >
+          <Field label={t('listingForm.title', lang)} error={err('title')}>
             {(ids) => (
               <Input
                 {...ids}
                 dir="auto"
-                value={values.availability_note}
-                onChange={(e) => set('availability_note', e.target.value)}
+                maxLength={200}
+                value={values.title}
+                onChange={(e) => set('title', e.target.value)}
               />
             )}
           </Field>
+          <div className={styles.span2}>
+            <Field label={t('listingForm.description', lang)} error={err('description')}>
+              {(ids) => (
+                <Textarea
+                  {...ids}
+                  rows={4}
+                  dir="auto"
+                  value={values.description}
+                  onChange={(e) => set('description', e.target.value)}
+                />
+              )}
+            </Field>
+          </div>
         </div>
-        <Field
-          label={t('listingForm.price', lang)}
-          hint={t('svc.priceHint', lang)}
-          error={err('price_ssp')}
-        >
-          {(ids) => (
-            <PrefixedInput
-              {...ids}
-              prefix={t('listings.ssp', lang)}
-              inputMode="numeric"
-              className="mono"
-              value={values.price_ssp}
-              onChange={(e) => set('price_ssp', e.target.value.replace(/[^\d]/g, ''))}
-            />
-          )}
-        </Field>
-        <Field label={t('svc.priceFor', lang)} optional error={err('price_unit')}>
-          {(ids) => (
-            <Select
-              {...ids}
-              value={values.price_unit}
-              disabled={values.price_ssp === ''}
-              onChange={(e) => set('price_unit', e.target.value)}
+      </section>
+
+      <section className={css.formCard}>
+        <div className={styles.formGrid}>
+          <div className={styles.span2}>
+            <Field
+              label={t('svc.location', lang)}
+              hint={t('svc.locationHint', lang)}
+              error={err('location')}
             >
-              <option value="">{t('register.select', lang)}</option>
-              {SERVICE_PRICE_UNITS.map((u) => (
-                <option key={u} value={u}>
-                  {t(PRICE_UNIT_KEY[u], lang)}
-                </option>
-              ))}
-            </Select>
-          )}
-        </Field>
-        <div className={styles.span2}>
-          <Checkbox
-            label={t('listingForm.negotiable', lang)}
-            checked={values.negotiable}
-            onChange={(e) => set('negotiable', e.target.checked)}
-          />
+              {(ids) => (
+                <Input
+                  {...ids}
+                  dir="auto"
+                  value={values.location}
+                  onChange={(e) => set('location', e.target.value)}
+                />
+              )}
+            </Field>
+          </div>
+          {choosesState ? (
+            <Field label={t('requests.state', lang)} error={err('state_id')}>
+              {(ids) => (
+                <Select
+                  {...ids}
+                  value={values.state_id}
+                  onChange={(e) => set('state_id', e.target.value)}
+                >
+                  <option value="">{t('register.select', lang)}</option>
+                  {states.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
+                    </option>
+                  ))}
+                </Select>
+              )}
+            </Field>
+          ) : null}
+          <Field label={t('listingForm.availableFrom', lang)} error={err('available_from')}>
+            {(ids) => (
+              <Input
+                {...ids}
+                type="date"
+                className="mono"
+                value={values.available_from}
+                onChange={(e) => set('available_from', e.target.value)}
+              />
+            )}
+          </Field>
+          <Field
+            label={t('listingForm.availableUntil', lang)}
+            hint={t('listingForm.untilDefault', lang)}
+            optional
+            error={err('available_until')}
+          >
+            {(ids) => (
+              <Input
+                {...ids}
+                type="date"
+                className="mono"
+                min={values.available_from}
+                value={values.available_until}
+                onChange={(e) => set('available_until', e.target.value)}
+              />
+            )}
+          </Field>
+          <div className={styles.span2}>
+            <Field
+              label={t('svc.availability', lang)}
+              hint={t('svc.availabilityHint', lang)}
+              optional
+              error={err('availability_note')}
+            >
+              {(ids) => (
+                <Input
+                  {...ids}
+                  dir="auto"
+                  value={values.availability_note}
+                  onChange={(e) => set('availability_note', e.target.value)}
+                />
+              )}
+            </Field>
+          </div>
         </div>
+      </section>
+
+      <section className={css.formCard}>
+        <div className={styles.formGrid}>
+          <Field
+            label={t('listingForm.price', lang)}
+            // 2026-10-31: "tick Negotiable" no longer fits a switch.
+            hint={
+              lang === 'ar' ? 'أو فعّل «السعر قابل للتفاوض».' : 'Or turn on “Price is negotiable”.'
+            }
+            error={err('price_ssp')}
+          >
+            {(ids) => (
+              <PrefixedInput
+                {...ids}
+                prefix={t('listings.ssp', lang)}
+                inputMode="numeric"
+                className="mono"
+                value={values.price_ssp}
+                onChange={(e) => set('price_ssp', e.target.value.replace(/[^\d]/g, ''))}
+              />
+            )}
+          </Field>
+          <Field label={t('svc.priceFor', lang)} optional error={err('price_unit')}>
+            {(ids) => (
+              <Select
+                {...ids}
+                value={values.price_unit}
+                disabled={values.price_ssp === ''}
+                onChange={(e) => set('price_unit', e.target.value)}
+              >
+                <option value="">{t('register.select', lang)}</option>
+                {SERVICE_PRICE_UNITS.map((u) => (
+                  <option key={u} value={u}>
+                    {t(PRICE_UNIT_KEY[u], lang)}
+                  </option>
+                ))}
+              </Select>
+            )}
+          </Field>
+        </div>
+        <SwitchRow
+          label={t('listingForm.negotiable', lang)}
+          checked={values.negotiable}
+          onChange={(on) => set('negotiable', on)}
+        />
+      </section>
+
+      <section className={css.formCard}>
         <Field
           label={t('listingForm.contactPhone', lang)}
           hint={t('requests.phoneHint', lang)}
@@ -497,42 +511,42 @@ export function ServiceForm({
               prefix="+211"
               inputMode="tel"
               className="mono"
+              dir="ltr"
               value={values.contact_phone}
               onChange={(e) => set('contact_phone', e.target.value)}
             />
           )}
         </Field>
-        <div>
-          <Checkbox
-            label={t('posts.showPhone', lang)}
-            checked={values.show_phone}
-            onChange={(e) => set('show_phone', e.target.checked)}
-          />
-          <p className="small muted">{t('posts.showPhoneHint', lang)}</p>
-        </div>
-      </div>
+        <SwitchRow
+          label={t('posts.showPhone', lang)}
+          hint={t('posts.showPhoneHint', lang)}
+          checked={values.show_phone}
+          onChange={(on) => set('show_phone', on)}
+        />
+      </section>
 
-      <div className={styles.formActions}>
-        <Link href={listHref} className="small">
-          {t('listingForm.cancel', lang)}
-        </Link>
-        <Button variant="ghost" disabled={busy} onClick={openPreview}>
-          {t('posts.preview', lang)}
-        </Button>
+      {/* The one primary action first: full width on a phone. */}
+      <div className={css.actions}>
         {id ? (
           <Button type="submit" disabled={busy}>
             {t('listingForm.save', lang)}
           </Button>
         ) : (
           <>
-            <Button variant="secondary" disabled={busy} onClick={() => void submit('draft')}>
-              {t('listingForm.saveDraft', lang)}
-            </Button>
             <Button type="submit" disabled={busy}>
               {t('lifecycle.publish', lang)}
             </Button>
+            <Button variant="secondary" disabled={busy} onClick={() => void submit('draft')}>
+              {t('listingForm.saveDraft', lang)}
+            </Button>
           </>
         )}
+        <Button variant="ghost" disabled={busy} onClick={openPreview}>
+          {t('posts.preview', lang)}
+        </Button>
+        <Link href={listHref} className="small">
+          {t('listingForm.cancel', lang)}
+        </Link>
       </div>
     </form>
   );

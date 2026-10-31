@@ -198,7 +198,7 @@ export function FarmerAssistant() {
     <>
       <PageHead
         title={t('ai.title', language)}
-        lead={t('ai.lead', language)}
+        quiet
         actions={
           turns.length > 0 ? (
             <button type="button" className={styles.aiNew} onClick={newChat} disabled={busy}>
@@ -212,6 +212,27 @@ export function FarmerAssistant() {
         <p className={styles.aiNotice} role="status">
           {t('ai.offline', language)}
         </p>
+      ) : null}
+
+      {turns.length === 0 ? (
+        <div className={styles.aiHello}>
+          <span className={styles.aiHelloIcon} aria-hidden>
+            <svg
+              viewBox="0 0 24 24"
+              width="22"
+              height="22"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M5 18.5V6a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H8.5Z" />
+              <path d="M9 9.5h6M9 12.5h4" />
+            </svg>
+          </span>
+          <p className={styles.aiHelloText}>{t('ai.hello', language)}</p>
+        </div>
       ) : null}
 
       <div className={styles.aiThread} aria-live="polite">

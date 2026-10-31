@@ -41,7 +41,7 @@ export function FarmerAccount() {
 
   return (
     <>
-      <PageHead title={t('account.tabAccount', language)} />
+      <PageHead title={t('account.tabAccount', language)} quiet />
 
       <div className={css.page}>
         <section className={css.profile} aria-label={t('account.record', language)}>

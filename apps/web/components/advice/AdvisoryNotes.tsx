@@ -11,17 +11,9 @@ import {
   advisoryNoteInputSchema,
 } from '@agri-erp/shared';
 
-import {
-  Badge,
-  Button,
-  Checkbox,
-  Field,
-  Input,
-  Notice,
-  Select,
-  Textarea,
-  type Tone,
-} from '@/components/ui';
+import css from '@/components/account/settings.module.css';
+import { Badge, Button, Field, Input, Notice, Select, Textarea, type Tone } from '@/components/ui';
+import ui from '@/components/ui/ui.module.css';
 import {
   AdviceError,
   getMyNotes,
@@ -144,7 +136,7 @@ export function AdvisoryNotes({ lang }: { lang: Language }) {
       {done ? <Notice kind="success">{done}</Notice> : null}
 
       {maySubmit && !draft ? (
-        <div className={styles.actions}>
+        <div className={css.actions}>
           <Button
             onClick={() => {
               setDone(null);
@@ -176,23 +168,30 @@ export function AdvisoryNotes({ lang }: { lang: Language }) {
               />
             )}
           </Field>
-          <fieldset style={{ border: 0, padding: 0, margin: 0 }}>
-            <legend className="small">{t('notes.topics', lang)}</legend>
-            {ADVICE_TOPICS.map((v) => (
-              <Checkbox
-                key={v}
-                label={t(TOPIC_KEY[v], lang)}
-                checked={draft.topics.includes(v)}
-                onChange={(e) =>
-                  setDraft({
-                    ...draft,
-                    topics: e.target.checked
-                      ? [...draft.topics, v]
-                      : draft.topics.filter((x) => x !== v),
-                  })
-                }
-              />
-            ))}
+          {/* 2026-10-31: the topics as chips (was a column of checkboxes). */}
+          <fieldset style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
+            <legend className={ui.fieldLabel} style={{ marginBottom: 6 }}>
+              {t('notes.topics', lang)}
+            </legend>
+            <div className={css.chips}>
+              {ADVICE_TOPICS.map((v) => (
+                <label key={v} className={css.chip}>
+                  <input
+                    type="checkbox"
+                    checked={draft.topics.includes(v)}
+                    onChange={(e) =>
+                      setDraft({
+                        ...draft,
+                        topics: e.target.checked
+                          ? [...draft.topics, v]
+                          : draft.topics.filter((x) => x !== v),
+                      })
+                    }
+                  />
+                  {t(TOPIC_KEY[v], lang)}
+                </label>
+              ))}
+            </div>
             {errors.topics ? (
               <p className="small" role="alert">
                 {errors.topics}
@@ -230,7 +229,7 @@ export function AdvisoryNotes({ lang }: { lang: Language }) {
               />
             )}
           </Field>
-          <div className={styles.actions}>
+          <div className={css.actions}>
             <Button type="submit" disabled={busy}>
               {draft.id ? t('notes.resend', lang) : t('notes.send', lang)}
             </Button>
@@ -254,7 +253,7 @@ export function AdvisoryNotes({ lang }: { lang: Language }) {
               {t('notes.staffNote', lang)}: <span dir="auto">{n.review_note}</span>
             </p>
           ) : null}
-          <div className={styles.actions}>
+          <div className={css.actions}>
             {n.status === 'returned' && maySubmit ? (
               <Button
                 size="small"

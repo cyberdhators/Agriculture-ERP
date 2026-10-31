@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 
 import { ADVICE_CASE_STATUSES, type AdviceCaseStatus, type AdviceCaseView } from '@agri-erp/shared';
 
-import { ButtonLink, EmptyState, Notice, Tabs } from '@/components/ui';
+import { ButtonLink, EmptyState, Notice, PageHeader, Tabs } from '@/components/ui';
 import { AdviceError, listCases } from '@/lib/advice/client';
 import { OUTCOME_KEY, STATUS_KEY, TOPIC_KEY, caseHref } from '@/lib/advice/labels';
 import { formatDate } from '@/lib/format';
@@ -18,6 +18,9 @@ import styles from './advice.module.css';
  * tabs. `role="requester"` is "My advice requests" (questions this account
  * sent); `role="provider"` is "My Advisory Work" (questions sent to its
  * advice profile). Each row opens the request's page on this side of the app.
+ *
+ * 2026-10-31: one title (its lead only said the title again), with "Find
+ * advice" beside it.
  */
 export function CaseList({
   lang,
@@ -55,19 +58,16 @@ export function CaseList({
 
   return (
     <div className={styles.narrow}>
-      <header className={styles.head}>
-        <h1>{t(requester ? 'advice.myRequests' : 'advice.work', lang)}</h1>
-        <p className="muted small">
-          {t(requester ? 'advice.requestsLead' : 'advice.workLead', lang)}
-        </p>
-      </header>
-      {requester ? (
-        <div className={styles.actions}>
-          <ButtonLink href={findHref} variant="secondary">
-            {t('advice.find', lang)}
-          </ButtonLink>
-        </div>
-      ) : null}
+      <PageHeader
+        title={t(requester ? 'advice.myRequests' : 'advice.work', lang)}
+        actions={
+          requester ? (
+            <ButtonLink href={findHref} variant="secondary">
+              {t('advice.find', lang)}
+            </ButtonLink>
+          ) : undefined
+        }
+      />
       <Tabs
         label={t(requester ? 'advice.myRequests' : 'advice.work', lang)}
         value={tab}

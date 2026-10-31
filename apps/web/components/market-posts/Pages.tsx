@@ -87,10 +87,8 @@ export function FarmerBuyingRequestFormPage({ id }: { id?: string }) {
   if (!farmer) return null;
   return (
     <>
-      <PageHead
-        title={t(id ? 'requests.editTitle' : 'requests.newTitle', language)}
-        lead={t('requests.formLead', language)}
-      />
+      {/* 2026-10-31: the title alone; who sees the phone is said beside its switch. */}
+      <PageHead title={t(id ? 'requests.editTitle' : 'requests.newTitle', language)} />
       <BuyingRequestForm
         lang={language}
         id={id}
@@ -122,10 +120,7 @@ export function FarmerServiceFormPage({ id }: { id?: string }) {
   if (!farmer) return null;
   return (
     <>
-      <PageHead
-        title={t(id ? 'svc.editTitle' : 'svc.newTitle', language)}
-        lead={t('svc.formLead', language)}
-      />
+      <PageHead title={t(id ? 'svc.editTitle' : 'svc.newTitle', language)} />
       <ServiceForm
         lang={language}
         id={id}
@@ -148,7 +143,8 @@ export function BuyerBuyingRequestsPage() {
     <>
       <PageHeader
         title={t('requests.mineTitle', language)}
-        subtitle={t('requests.mineLeadBuyer', language)}
+        // 2026-10-31: one sentence (it was three), the farmer's own.
+        subtitle={t('requests.mineLead', language)}
         actions={
           <ButtonLink href={`${BUYER_REQUESTS}/new`}>{t('requests.new', language)}</ButtonLink>
         }
@@ -162,10 +158,7 @@ export function BuyerBuyingRequestFormPage({ id }: { id?: string }) {
   const { language } = useBuyer();
   return (
     <>
-      <PageHeader
-        title={t(id ? 'requests.editTitle' : 'requests.newTitle', language)}
-        subtitle={t('requests.formLead', language)}
-      />
+      <PageHeader title={t(id ? 'requests.editTitle' : 'requests.newTitle', language)} />
       <BuyingRequestForm lang={language} id={id} listHref={BUYER_REQUESTS} posterType="buyer" />
     </>
   );
@@ -196,10 +189,7 @@ export function BuyerServiceFormPage({ id }: { id?: string }) {
   // The organisation's name is the name on the market unless changed.
   return (
     <>
-      <PageHeader
-        title={t(id ? 'svc.editTitle' : 'svc.newTitle', language)}
-        subtitle={t('svc.formLead', language)}
-      />
+      <PageHeader title={t(id ? 'svc.editTitle' : 'svc.newTitle', language)} />
       <ServiceForm
         lang={language}
         id={id}

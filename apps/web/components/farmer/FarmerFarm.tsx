@@ -40,11 +40,10 @@ export function FarmerFarm() {
   if (farms.length === 0) {
     return (
       <>
-        <PageHead title={t('account.farms', language)} lead={t('account.farmLead', language)} />
-        <EmptyState
-          title={t('account.noFarms', language)}
-          body={t('account.howRecordedBody', language)}
-        />
+        {/* 2026-10-31: with no plots, the lead about plots and the long note on
+            how boundaries are walked went; the empty state says what happens. */}
+        <PageHead title={t('account.farms', language)} />
+        <EmptyState title={t('account.noFarms', language)} />
       </>
     );
   }

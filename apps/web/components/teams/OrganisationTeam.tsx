@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useId, useState } from 'react';
 
 import {
   GRANTABLE_ORG_PERMISSIONS,
@@ -16,7 +16,9 @@ import {
   type TeamMember,
 } from '@agri-erp/shared';
 
+import css from '@/components/account/settings.module.css';
 import { Button, Checkbox, Field, Input, Notice, Select, Textarea } from '@/components/ui';
+import ui from '@/components/ui/ui.module.css';
 
 import { OrganisationStateField } from './StateField';
 
@@ -34,15 +36,9 @@ import {
 type Org = MyOrganization & { needs_second_administrator: boolean };
 type Say = (ok: boolean, text: string) => void;
 
-const box: React.CSSProperties = {
-  border: '1px solid var(--color-border, #d9d9d9)',
-  borderRadius: 8,
-  padding: 12,
-  display: 'flex',
-  flexDirection: 'column',
-  gap: 10,
-};
 const col: React.CSSProperties = { display: 'flex', flexDirection: 'column', gap: 10 };
+/** A switch row inside a card: the card already gives the padding. */
+const flush: React.CSSProperties = { padding: 0, minHeight: 44 };
 const row: React.CSSProperties = { display: 'flex', flexWrap: 'wrap', gap: 8 };
 
 /**
@@ -52,6 +48,10 @@ const row: React.CSSProperties = { display: 'flex', flexWrap: 'wrap', gap: 8 };
  * invite, change roles and permissions, remove access, hand over and close.
  * The server enforces every one of these; the page only hides what would be
  * refused.
+ *
+ * 2026-10-31 (the owner: "elite level ui"): each topic on a white card from
+ * the settings kit, permissions as chips, the two "show on the public
+ * profile" choices as switches. Every request and handler is the one it was.
  */
 export function OrganisationTeam({
   id,
@@ -113,11 +113,11 @@ export function OrganisationTeam({
   const canEdit = memberMay(self, 'profile.edit') && !org.closed;
 
   return (
-    <div style={{ ...col, gap: 20, maxWidth: 760 }}>
+    <div className={css.page}>
       <Link href={teamBase(side)} className="small">
         ← {w.back}
       </Link>
-      <header>
+      <header style={{ ...col, gap: 4 }}>
         <h1 style={{ margin: 0 }} dir="auto">
           {org.name}
         </h1>
@@ -154,8 +154,10 @@ export function OrganisationTeam({
         <MyMembership org={org} side={side} language={language} say={say} reload={load} />
       ) : null}
 
-      <section style={col}>
-        <h2 style={{ margin: 0 }}>{w.team}</h2>
+      <section className={css.group} aria-labelledby="org-team">
+        <h2 id="org-team" className={css.groupTitle}>
+          {w.team}
+        </h2>
         {members.map((m) => (
           <MemberRow
             key={m.id}
@@ -231,7 +233,7 @@ function ProfileEditor({
   }
 
   return (
-    <section style={box}>
+    <section className={css.formCard}>
       <h2 style={{ margin: 0 }}>{w.profile}</h2>
       <Field label={w.name}>
         {(ids) => (
@@ -265,6 +267,7 @@ function ProfileEditor({
           <Input
             {...ids}
             inputMode="tel"
+            dir="ltr"
             className="mono"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
@@ -276,15 +279,20 @@ function ProfileEditor({
           <Input {...ids} type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
         )}
       </Field>
-      <Checkbox
-        label={w.showTeam}
-        checked={showTeam}
-        onChange={(e) => setShowTeam(e.target.checked)}
-      />
-      <p className="small muted" style={{ margin: 0 }}>
-        {w.publicNote}
-      </p>
-      <div style={row}>
+      <label className={css.row} style={flush}>
+        <span className={css.rowText}>
+          <span className={css.rowLabel}>{w.showTeam}</span>
+          <span className={css.rowHint}>{w.publicNote}</span>
+        </span>
+        <input
+          type="checkbox"
+          role="switch"
+          className={css.switch}
+          checked={showTeam}
+          onChange={(e) => setShowTeam(e.target.checked)}
+        />
+      </label>
+      <div className={css.actions}>
         <Button disabled={busy} onClick={() => void save()}>
           {busy ? w.saving : w.edit}
         </Button>
@@ -347,15 +355,26 @@ function MyMembership({
   }
 
   return (
-    <section style={box}>
+    <section className={css.formCard}>
       <h2 style={{ margin: 0 }}>{w.me}</h2>
-      <Checkbox label={w.showMe} checked={show} onChange={(e) => setShow(e.target.checked)} />
+      <label className={css.row} style={flush}>
+        <span className={css.rowText}>
+          <span className={css.rowLabel}>{w.showMe}</span>
+        </span>
+        <input
+          type="checkbox"
+          role="switch"
+          className={css.switch}
+          checked={show}
+          onChange={(e) => setShow(e.target.checked)}
+        />
+      </label>
       <Field label={w.myTitle} optional>
         {(ids) => (
           <Input {...ids} dir="auto" value={title} onChange={(e) => setTitle(e.target.value)} />
         )}
       </Field>
-      <div style={row}>
+      <div className={css.actions}>
         <Button variant="secondary" onClick={() => void save()}>
           {w.edit}
         </Button>
@@ -380,22 +399,27 @@ function PermissionPicker({
 }) {
   const allowed: readonly OrgPermission[] =
     preset === 'viewer' ? VIEWER_ORG_PERMISSIONS : GRANTABLE_ORG_PERMISSIONS;
+  const labelId = useId();
   return (
-    <fieldset style={{ border: 0, padding: 0, margin: 0, ...col, gap: 4 }}>
-      <legend className="small" style={{ fontWeight: 600 }}>
+    <div className={ui.field} role="group" aria-labelledby={labelId}>
+      <span id={labelId} className={ui.fieldLabel}>
         {TEAM_WORDS[language].permissions}
-      </legend>
-      {allowed.map((p) => (
-        <Checkbox
-          key={p}
-          label={PERMISSION_WORDS[language][p]}
-          checked={value.includes(p)}
-          onChange={(e) =>
-            onChange(e.target.checked ? [...value, p] : value.filter((x) => x !== p))
-          }
-        />
-      ))}
-    </fieldset>
+      </span>
+      <div className={css.chips}>
+        {allowed.map((p) => (
+          <label key={p} className={css.chip}>
+            <input
+              type="checkbox"
+              checked={value.includes(p)}
+              onChange={(e) =>
+                onChange(e.target.checked ? [...value, p] : value.filter((x) => x !== p))
+              }
+            />
+            {PERMISSION_WORDS[language][p]}
+          </label>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -460,7 +484,7 @@ function MemberRow({
   }
 
   return (
-    <article style={{ ...box, opacity: active ? 1 : 0.7 }}>
+    <article className={css.formCard} style={{ gap: 10, opacity: active ? 1 : 0.7 }}>
       <div style={{ ...row, justifyContent: 'space-between', alignItems: 'baseline' }}>
         <strong dir="auto">
           {member.name}
@@ -587,9 +611,9 @@ function InviteForm({
   }
 
   return (
-    <section style={box}>
+    <section className={css.formCard}>
       <h2 style={{ margin: 0 }}>{w.invite}</h2>
-      <form onSubmit={(e) => void invite(e)} noValidate style={col}>
+      <form onSubmit={(e) => void invite(e)} noValidate style={{ ...col, gap: 16 }}>
         <Field label={w.channel}>
           {(ids) => (
             <Select
@@ -640,7 +664,7 @@ function InviteForm({
             language={language}
           />
         ) : null}
-        <div>
+        <div className={css.actions}>
           <Button type="submit">{w.sendInvite}</Button>
         </div>
       </form>
@@ -703,7 +727,7 @@ function Handover({
   }
 
   return (
-    <section style={box}>
+    <section className={css.formCard}>
       <h2 style={{ margin: 0 }}>{w.handover}</h2>
       <Field label={w.handoverTo}>
         {(ids) => (
@@ -732,7 +756,7 @@ function Handover({
           </Select>
         )}
       </Field>
-      <div>
+      <div className={css.actions}>
         <Button variant="secondary" disabled={!memberId} onClick={() => void offer()}>
           {w.offer}
         </Button>
@@ -772,15 +796,17 @@ function InvitationList({
   }
 
   return (
-    <section style={col}>
-      <h2 style={{ margin: 0 }}>{w.sentInvitations}</h2>
+    <section className={css.group} aria-labelledby="org-sent">
+      <h2 id="org-sent" className={css.groupTitle}>
+        {w.sentInvitations}
+      </h2>
       {invitations.map((inv) => {
         const who =
           inv.kind === 'transfer'
             ? (members.find((m) => m.id === inv.target_member_id)?.name ?? '—')
             : inv.target;
         return (
-          <article key={inv.id} style={{ ...box, gap: 4 }}>
+          <article key={inv.id} className={css.formCard} style={{ gap: 4 }}>
             <div style={{ ...row, justifyContent: 'space-between' }}>
               <strong className={inv.kind === 'member' ? 'mono' : undefined}>{who}</strong>
               <span className="small">{w.state[inv.state] ?? inv.state}</span>
@@ -832,8 +858,8 @@ function CloseOrganisation({
   }
 
   return (
-    <section style={box}>
-      <h2 style={{ margin: 0 }}>{w.close}</h2>
+    <section className={css.formCard}>
+      {/* 2026-10-31: no heading -- the button beneath says "Close the organisation". */}
       <p className="small muted" style={{ margin: 0 }}>
         {w.closeLead}
       </p>

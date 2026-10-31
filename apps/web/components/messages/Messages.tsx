@@ -123,9 +123,10 @@ function Inbox({ language, tab }: { language: Language; tab: InboxTab }) {
 
   return (
     <div className={styles.page}>
+      {/* 2026-10-31: the title alone; the two-sentence lead under it went (a
+          post's Message box says the phone number stays private). */}
       <header className={styles.head}>
         <h1>{t('msg.title', language)}</h1>
-        <p className={styles.lead}>{t('msg.lead', language)}</p>
       </header>
       <Tabs<InboxTab>
         label={t('msg.title', language)}

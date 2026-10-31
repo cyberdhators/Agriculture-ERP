@@ -95,7 +95,7 @@ export function BuyerMarketplace() {
     <div className={styles.page}>
       <PageHeader
         title="Marketplace"
-        subtitle="Produce listed by registered farmers. Prices are indicative; you agree the final price with the farmer."
+        subtitle="Prices are indicative; you agree the final price with the farmer."
       />
       <p className="small">
         Also on the market: <Link href="/market/requests">buying requests</Link> and{' '}

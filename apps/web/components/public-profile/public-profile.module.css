@@ -23,8 +23,17 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
   gap: 8px 16px;
+}
+
+/* 2026-10-31: a settings-kit row that is a link (Manage my listings, …). */
+.linkRow {
+  color: inherit;
+  text-decoration: none;
+}
+
+.linkRow:hover {
+  background: var(--dust);
 }
 
 /* ---- The profile card (public page and preview) ---------------------- */
@@ -222,25 +231,13 @@
 }
 
 /* ---- The editor ------------------------------------------------------- */
+/* 2026-10-31: cards, chips, switches and actions come from the settings kit
+   (components/account/settings.module.css); only the editor's own bits stay. */
 
 .form {
   display: flex;
   flex-direction: column;
   gap: 16px;
-}
-
-.choices {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px 14px;
-  margin: 0;
-  padding: 0;
-  border: 0;
-}
-
-.choices legend {
-  margin-bottom: 6px;
-  font-weight: 600;
 }
 
 .two {
@@ -268,61 +265,10 @@
   gap: 8px;
 }
 
-.switchRow {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 12px 0;
-  border-top: 1px solid var(--line);
-}
-
-.switchRow strong {
-  display: block;
-}
-
-.switch {
-  display: inline-flex;
-  flex: none;
-  align-items: center;
-  gap: 8px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.switch input {
-  width: 22px;
-  height: 22px;
-  margin: 0;
-}
-
 .actions {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-}
-
-.note {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 12px 14px;
-  border-radius: var(--radius-card);
-  background: var(--sorghum-wash, var(--card));
-  border: 1px solid var(--line);
-}
-
-.note p {
-  margin: 0;
-}
-
-.links {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
 }
 
 .hiddenInput {
