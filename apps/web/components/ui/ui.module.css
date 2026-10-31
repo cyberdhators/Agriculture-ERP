@@ -914,3 +914,86 @@ select.control {
   border-color: var(--green);
   box-shadow: var(--az-focus);
 }
+
+/* ─────────────────────────────────────────────────────────────────────
+ *  2026-10-31 refresh, `.shop` scope only: cards lift off the page with a
+ *  soft shadow and a light rule; controls are one height; a field never
+ *  stretches its control to match a taller neighbour; the KPI strip becomes
+ *  a row of small cards; the page header rule is a single hairline.
+ * ───────────────────────────────────────────────────────────────────── */
+
+:global(.shop) .card {
+  border-color: var(--line);
+  box-shadow: var(--shadow-card);
+}
+
+:global(.shop) .cardHeader,
+:global(.shop) .cardFooter {
+  border-color: var(--line);
+}
+
+:global(.shop) .control {
+  min-height: 44px;
+  background-color: var(--card);
+}
+
+:global(.shop) textarea.control {
+  min-height: 104px;
+}
+
+/* Two fields side by side: each keeps its own height, so a hint under one
+   no longer pushes the other's box taller or lower. */
+:global(.shop) .field {
+  align-content: start;
+}
+
+:global(.shop) .fieldLabel {
+  letter-spacing: 0;
+}
+
+:global(.shop) .button {
+  min-height: 44px;
+  padding-inline: var(--s-5);
+}
+
+:global(.shop) .buttonSmall {
+  min-height: 34px;
+  padding-inline: var(--s-3);
+}
+
+:global(.shop) .buttonPrimary:active:not(:disabled),
+:global(.shop) .buttonSecondary:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+:global(.shop) .kpiStrip {
+  gap: var(--s-3);
+  border: 0;
+}
+
+:global(.shop) .kpiItem {
+  padding: var(--s-4) var(--s-5);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+}
+
+:global(.shop) .kpiItem:last-child {
+  border-right: 1px solid var(--line);
+}
+
+:global(.shop) .kpiValue {
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 32px;
+  letter-spacing: -0.02em;
+}
+
+:global(.shop) .pageHeader {
+  border-bottom-color: var(--line);
+}
+
+:global(.shop) .notice {
+  border-radius: var(--radius-control);
+}

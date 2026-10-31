@@ -6197,6 +6197,41 @@ the existing reseed already reads when present.
   still left untouched. Each statement was planned with EXPLAIN on production
   before the second run.
 
+## One look for every member page (2026-10-31, lane-polish)
+
+The owner asked for a UI that is "very appealing to the eyes, consistent ...
+but something that do not break the application". Visual only: no route,
+data, permission or behaviour changes.
+
+- **The buyer side now wears the member look.** B13 dressed the buyer area in
+  "The Register" (serif headings, mono figures, square corners) as
+  procurement work. Since then one account buys and sells (an email account
+  can sell, a phone account can buy), so the same person saw two different
+  apps depending on how they signed up. `BuyerShell` now carries `.shop`. The
+  staff portal is unchanged and stays on The Register.
+- **The `.shop` tokens are refined in place:** a lighter ground, softer
+  rules, 14px cards and 10px controls, one soft card shadow, one heading
+  scale (`:where(.shop)`, so a component's own heading size still wins). The
+  double green rules under page and section heads are one hairline.
+- **Shared parts, not screen by screen:** cards, KPI tiles, controls (44px),
+  section heads and the market section tabs (one segmented control that fits
+  a phone) are restyled in their own CSS modules under `:global(.shop)`.
+- **A field no longer stretches its control** to the height of a taller
+  neighbour (`.field { align-content: start }`): side-by-side fields line up.
+- **/join** leads with its title; the phone and email ways in are two equal
+  cards with an icon and ticked points; staff sign-in is a slim row beneath;
+  a link goes back to the marketplace. Every button keeps its destination.
+- **Fixed on the way:** the buyer rail's Arabic button was dark ink on dark
+  green (blank to the eye); staff Reports scrolled sideways on a 390px phone
+  (OBSERVED, 104px before, 0 after on the reach cards; the breakdown bars
+  are shorter on a phone).
+
+Verified by screenshots of the branch on a local server against production
+data (phone and laptop): /join, Help, Services, farmer sign-up, New listing,
+Account, buyer dashboard and marketplace, staff Reports. Not verified on the
+branch: the farmer Home (the local server's single database connection timed
+out the session); checked on the live site after merge.
+
 ## The forms offer the national place list (2026-10-31)
 
 Found by the owner ("all the payams are not showing in the filter for the

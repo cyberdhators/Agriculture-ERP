@@ -173,6 +173,19 @@
   font-weight: 600;
 }
 
+/* 2026-10-31: on the buyer's dark rail the unpressed button was dark ink on
+   dark green -- blank to the eye. Light ink there; the pressed one stays tinted. */
+.panelLangOnBand .panelLangBtn {
+  border-color: color-mix(in srgb, var(--band-ink) 45%, transparent);
+  color: var(--band-ink);
+}
+
+.panelLangOnBand .panelLangBtn[aria-pressed='true'] {
+  border-color: var(--green);
+  background: var(--green-tint);
+  color: var(--green-deep);
+}
+
 /* On the band the same switch inverts. */
 .compactBand .panelLangBtn {
   border-color: var(--band-line);
@@ -419,7 +432,9 @@
 .choiceSelected {
   border-color: var(--accent);
   box-shadow: inset 0 0 0 1px var(--accent);
+  background: var(--accent-tint);
   color: var(--accent-hover);
+  font-weight: 600;
 }
 
 /* ---- Consent -------------------------------------------------------- */
@@ -654,7 +669,7 @@
   gap: var(--s-4) var(--s-6);
   padding-bottom: var(--s-5);
   margin-bottom: var(--s-6);
-  border-bottom: 3px double color-mix(in srgb, var(--sprout) 40%, transparent);
+  border-bottom: 1px solid var(--line);
 }
 
 .pageTitle {
@@ -723,7 +738,7 @@
   justify-content: space-between;
   gap: var(--s-3);
   padding-bottom: var(--s-3);
-  border-bottom: 3px double color-mix(in srgb, var(--sprout) 40%, transparent);
+  border-bottom: 1px solid var(--line);
 }
 
 .blockHead h2 {
@@ -788,6 +803,7 @@
   background: var(--card);
   border: 1px solid var(--line);
   border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
 }
 
 .plotCard h3 {
@@ -1095,7 +1111,7 @@
   display: grid;
   gap: var(--s-5);
   padding: var(--s-6) 0;
-  border-top: 3px double color-mix(in srgb, var(--sprout) 40%, transparent);
+  border-top: 1px solid var(--line);
 }
 
 .fieldSection:first-child {
@@ -1163,6 +1179,7 @@
   background: var(--card);
   border: 1px solid var(--line);
   border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
 }
 
 .settingCard h2 {
@@ -1580,12 +1597,15 @@
   border-radius: var(--radius-card);
   color: var(--ink);
   text-decoration: none;
+  box-shadow: var(--shadow-card);
   transition:
     border-color 140ms ease,
-    box-shadow 140ms ease;
+    box-shadow 140ms ease,
+    transform 140ms ease;
 }
 
 .acctTile:hover {
+  transform: translateY(-1px);
   border-color: var(--line-strong);
   box-shadow: var(--shadow-card-hover);
   color: var(--ink);
@@ -2188,6 +2208,7 @@
     background: var(--card);
     border: 1px solid var(--line);
     border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
     overflow: hidden;
   }
 
@@ -2201,6 +2222,8 @@
     border: 0;
     border-block-end: 1px solid var(--line);
     border-radius: 0;
+    box-shadow: none;
+    transform: none;
   }
 
   .acctList .acctTile:last-child {
@@ -2562,4 +2585,47 @@
 .aiPhoto:disabled {
   opacity: 0.55;
   cursor: default;
+}
+
+/* ---- Help: common questions as an accordion (2026-10-31) -------------- */
+
+.faq {
+  border-top: 1px solid var(--line);
+}
+
+.faq summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  padding-block: var(--s-3);
+  list-style: none;
+  cursor: pointer;
+}
+
+.faq summary::-webkit-details-marker {
+  display: none;
+}
+
+.faq summary::after {
+  content: '';
+  flex: none;
+  width: 18px;
+  height: 18px;
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231f7a3f' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>")
+    center / contain no-repeat;
+  transition: transform 160ms ease;
+}
+
+.faq[open] summary::after {
+  transform: rotate(180deg);
+}
+
+.faq summary:hover strong {
+  color: var(--green);
+}
+
+.faq > p {
+  padding-block-end: var(--s-3);
+  color: var(--ink-2);
 }
