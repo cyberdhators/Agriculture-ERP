@@ -240,6 +240,8 @@ export const en = {
   'weather.none': 'No weather location for your area yet.',
   'weather.noReading': 'No reading yet for this location.',
   'weather.rain': 'Rain',
+  'weather.mm': 'mm',
+  'weather.kmh': 'km/h',
   'weather.humidity': 'Humidity',
   'weather.wind': 'Wind',
   'weather.next': 'Next days',

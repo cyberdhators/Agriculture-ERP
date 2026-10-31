@@ -21,6 +21,19 @@
   align-items: end;
 }
 
+/* The From - To pair is two date boxes: it takes the whole row on a narrow
+   screen and two columns on a wide one, so "To" no longer runs under the
+   Location box beside it (seen 2026-10-31). */
+.filters > :first-child {
+  grid-column: 1 / -1;
+}
+
+@media (min-width: 900px) {
+  .filters > :first-child {
+    grid-column: span 2;
+  }
+}
+
 .apply {
   display: flex;
   flex-wrap: wrap;

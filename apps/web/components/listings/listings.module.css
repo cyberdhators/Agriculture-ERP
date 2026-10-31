@@ -1405,8 +1405,8 @@
  *  Amazon-style overrides inside the `.shop` scope (marketplace surfaces).
  *  The filter rail becomes plain ruled sections on the ground (not a boxed
  *  card); the product panel becomes a bordered white "buy box" with a soft
- *  shadow; the negotiable chip picks up the green palette. The staff portal
- *  never carries `.shop`, so its marketplace is unchanged.
+ *  shadow; the negotiable chip picks up the green palette. Since 2026-10-31
+ *  the staff portal carries `.shop` too, so its marketplace matches.
  * ═══════════════════════════════════════════════════════════════════════ */
 
 :global(.shop) .rail {

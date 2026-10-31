@@ -223,6 +223,8 @@ export const ar: Partial<Record<TKey, string>> = {
   'weather.none': 'لا يوجد موقع طقس لمنطقتك بعد.',
   'weather.noReading': 'لا توجد قراءة لهذا الموقع بعد.',
   'weather.rain': 'مطر',
+  'weather.mm': 'مم',
+  'weather.kmh': 'كم/س',
   'weather.humidity': 'رطوبة',
   'weather.wind': 'رياح',
   'weather.next': 'الأيام القادمة',

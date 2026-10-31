@@ -62,8 +62,9 @@ export function WeatherTile({
                   </span>
                   <span className={styles.weatherHeroFacts}>
                     {t('weather.humidity', language)} {loc.current.humidity_pct}% ·{' '}
-                    {t('weather.rain', language)} {loc.current.rain_mm} mm ·{' '}
-                    {t('weather.wind', language)} {Math.round(loc.current.wind_kph)} km/h
+                    {t('weather.rain', language)} {loc.current.rain_mm} {t('weather.mm', language)}{' '}
+                    · {t('weather.wind', language)} {Math.round(loc.current.wind_kph)}{' '}
+                    {t('weather.kmh', language)}
                   </span>
                 </>
               ) : (
