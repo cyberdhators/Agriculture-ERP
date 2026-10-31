@@ -43,7 +43,7 @@ export function FarmerFarm() {
         {/* 2026-10-31: with no plots, the lead about plots and the long note on
             how boundaries are walked went; the empty state says what happens. */}
         <PageHead title={t('account.farms', language)} />
-        <EmptyState title={t('account.noFarms', language)} />
+        <EmptyState art="field" title={t('account.noFarms', language)} />
       </>
     );
   }

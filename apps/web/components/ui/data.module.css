@@ -474,3 +474,94 @@
   gap: var(--s-3);
   min-block-size: 118px;
 }
+
+/* ---- PageLoading (2026-10-31): the outline of what is coming --------- */
+
+@keyframes ghost-shimmer {
+  from {
+    background-position: 120% 0;
+  }
+  to {
+    background-position: -20% 0;
+  }
+}
+
+.ghost {
+  display: block;
+  border-radius: 6px;
+  background:
+    linear-gradient(
+      100deg,
+      transparent 30%,
+      color-mix(in srgb, var(--card) 70%, transparent) 50%,
+      transparent 70%
+    ),
+    var(--dust);
+  background-size: 220% 100%;
+  animation: ghost-shimmer 1.4s ease-in-out infinite;
+}
+
+.ghostCards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--s-4);
+}
+
+.ghostCard {
+  display: grid;
+  gap: var(--s-2);
+  padding-bottom: var(--s-4);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+}
+
+.ghostCard > .ghost:not(.ghostPhoto) {
+  margin-inline: var(--s-4);
+}
+
+.ghostPhoto {
+  aspect-ratio: 4 / 3;
+  width: 100%;
+  border-radius: 0;
+  margin-bottom: var(--s-2);
+}
+
+.ghostRows {
+  display: grid;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+}
+
+.ghostRow {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-4);
+}
+
+.ghostRow + .ghostRow {
+  border-top: 1px solid var(--line);
+}
+
+.ghostDot {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+}
+
+.ghostLines {
+  flex: 1;
+  display: grid;
+  gap: var(--s-2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ghost {
+    animation: none;
+  }
+}

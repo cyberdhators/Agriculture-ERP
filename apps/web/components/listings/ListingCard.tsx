@@ -37,6 +37,8 @@ function initials(seller: Pick<ProduceListing, 'trading_name'>): string {
  * hover or shown on touch. On the farmer's own list (no seller): the same head
  * with the status stamp and an Edit action in the foot. Staff get a kebab that
  * opens moderation. The whole card links to the product page.
+ * 2026-10-31: the category chip sits at the cover's foot on a soft shade (or
+ * on the category drawing when there is no photo); layout only, in the CSS.
  */
 export function ListingCard({
   listing,

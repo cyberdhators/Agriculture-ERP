@@ -1704,3 +1704,130 @@
     max-width: 9.5rem;
   }
 }
+
+/* ─────────────────────────────────────────────────────────────────────
+ *  2026-10-31, "photos that sell": the no-photo placeholder is a line
+ *  drawing of the category on its tint (CropArt), a real photo gets a soft
+ *  shade at its foot so the category chip sits on it cleanly, the card lifts
+ *  a little on hover, and prices read as the hero figure.
+ * ───────────────────────────────────────────────────────────────────── */
+
+.placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-image: radial-gradient(
+    circle at 50% 46%,
+    color-mix(in srgb, var(--card) 60%, transparent) 0,
+    transparent 62%
+  );
+}
+
+.placeholder[data-tone='harvest'] {
+  background-color: var(--harvest-tint);
+  color: var(--harvest-ink);
+}
+
+.placeholder[data-tone='soil'] {
+  background-color: var(--soil-tint);
+  color: var(--soil);
+}
+
+.placeholder[data-tone='info'] {
+  background-color: var(--info-tint);
+  color: var(--info);
+}
+
+.placeholderArt {
+  flex: none;
+  height: 46%;
+  min-height: 18px;
+  max-height: 128px;
+  width: auto;
+  aspect-ratio: 1;
+}
+
+.placeholderNote {
+  padding: 1px 8px;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--card) 75%, transparent);
+  color: inherit;
+}
+
+/* Tiny frames (gallery thumbs, list rows) show the drawing alone. */
+.thumb .placeholderNote,
+.listThumb .placeholderNote {
+  display: none;
+}
+
+/* The category chip sits at the foot of the cover; the status / moderation
+   stay top-right. Neither takes clicks, so the whole card stays the link. */
+.card .badge {
+  inset-block-start: auto;
+  inset-block-end: var(--s-2);
+  pointer-events: none;
+}
+
+.card .placeholder {
+  padding-block-end: calc(var(--s-3) + 24px);
+}
+
+.card .frame:has(img)::after {
+  content: '';
+  position: absolute;
+  inset: auto 0 0;
+  height: 45%;
+  background: linear-gradient(to top, color-mix(in srgb, var(--ink) 55%, transparent), transparent);
+  pointer-events: none;
+}
+
+.cover:has(img) .badge {
+  background: color-mix(in srgb, var(--ink) 38%, transparent);
+  border-color: color-mix(in srgb, var(--card) 22%, transparent);
+  color: var(--card);
+  backdrop-filter: blur(6px) saturate(1.1);
+}
+
+.cover:has(img) .badge svg {
+  color: var(--sprout);
+}
+
+/* Card text: title, a calm meta line, then the price as the hero. */
+.cardBody {
+  gap: var(--s-1);
+}
+
+.cardPrice {
+  margin-block-start: var(--s-2);
+}
+
+.cardPrice,
+.productPrice > span:first-child {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.cardPrice small,
+.productPrice small {
+  font-weight: 400;
+  letter-spacing: 0;
+  color: var(--muted);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .card .frame img {
+    transition: transform 240ms ease;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine) {
+  .card:hover {
+    transform: translateY(-2px);
+  }
+
+  .card:hover .frame img {
+    transform: scale(1.03);
+  }
+}

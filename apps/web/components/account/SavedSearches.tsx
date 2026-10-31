@@ -13,7 +13,7 @@ import {
 } from '@agri-erp/shared';
 
 import css from '@/components/account/settings.module.css';
-import { Button, Field, Input, Notice, Select } from '@/components/ui';
+import { Button, EmptyState, Field, Input, Notice, Select } from '@/components/ui';
 import {
   SavedSearchError,
   deleteSavedSearch,
@@ -329,7 +329,11 @@ export function SavedSearchList({ lang }: { lang: Language }) {
       </p>
       {failed ? <Notice kind="error">{failed}</Notice> : null}
       {rows === null ? null : rows.length === 0 ? (
-        <p className="small">{t('saved.empty', lang)}</p>
+        <EmptyState
+          // 2026-10-31: the shared empty card with a drawing, not a bare line.
+          art="magnifier"
+          title={t('saved.empty', lang)}
+        />
       ) : (
         <ul className={css.list}>
           {rows.map((row) => (

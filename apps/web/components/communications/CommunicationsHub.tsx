@@ -15,6 +15,7 @@ import { usePreview } from '@/lib/preview';
 import { AnnouncementComposer, CHANNEL_LABELS } from './AnnouncementComposer';
 import { Communications } from './Communications';
 import { TemplatesPanel } from './TemplatesPanel';
+import { PageLoading } from '@/components/ui/data';
 
 type Tab = 'announcements' | 'templates' | 'direct';
 
@@ -111,7 +112,7 @@ function AnnouncementsPanel() {
           <Button onClick={() => setComposing(true)}>New announcement</Button>
         </div>
       )}
-      {rows === null && !failure ? <p className="muted">Loading…</p> : null}
+      {rows === null && !failure ? <PageLoading /> : null}
       {rows ? (
         <DataTable
           caption="Announcements"

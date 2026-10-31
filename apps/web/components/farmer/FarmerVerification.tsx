@@ -1,5 +1,6 @@
 'use client';
 
+import { MyAvatar } from '@/components/account/MyAvatar';
 import css from '@/components/account/settings.module.css';
 import { useFarmerSession } from '@/lib/farmer-session';
 import { farmerPayamName } from '@/lib/fixtures/farmers';
@@ -36,9 +37,7 @@ export function FarmerVerification() {
       <PageHead title={t('account.tileVerification', language)} />
       <div className={css.page}>
         <section className={css.profile} aria-label={t('account.record', language)}>
-          <span className={css.avatar} aria-hidden>
-            {initials}
-          </span>
+          <MyAvatar initials={initials} />
           <div className={css.profileText}>
             <span className={css.profileName} dir="auto">
               {farmer.given_name} {farmer.family_name}

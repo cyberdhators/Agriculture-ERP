@@ -1041,6 +1041,48 @@ select.control {
   color: var(--green-deep);
 }
 
+/* 2026-10-31: the drawing an empty page may carry instead of the icon circle.
+   Green line, warm accents (in the art itself); a short rise on arrival. */
+:global(.shop) .stateArt {
+  display: grid;
+  place-items: center;
+  width: 96px;
+  height: 96px;
+  margin-bottom: var(--s-1);
+  color: var(--green-deep);
+  animation: stateArtIn 220ms ease-out both;
+}
+
+:global(.shop) .stateArt svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+@keyframes stateArtIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :global(.shop) .stateArt {
+    animation: none;
+  }
+}
+
+@media (max-width: 480px) {
+  :global(.shop) .stateArt {
+    width: 80px;
+    height: 80px;
+  }
+}
+
 :global(.shop) .stateError {
   background: var(--card);
   border-color: color-mix(in srgb, var(--danger) 45%, transparent);
@@ -1081,4 +1123,63 @@ select.control {
 
 :global(.shop) .cardBody {
   padding: var(--s-5);
+}
+
+/* 2026-10-31: come alive, gently. Skeleton lines shimmer instead of
+   blinking; a success notice's tick pops in once. Both off under reduced
+   motion (globals.css). */
+@keyframes agri-shimmer {
+  from {
+    background-position: 120% 0;
+  }
+  to {
+    background-position: -20% 0;
+  }
+}
+
+:global(.shop) .skeleton {
+  background:
+    linear-gradient(
+      100deg,
+      transparent 30%,
+      color-mix(in srgb, var(--card) 70%, transparent) 50%,
+      transparent 70%
+    ),
+    var(--dust);
+  background-size: 220% 100%;
+  animation: agri-shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes agri-pop {
+  0% {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  70% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Keyframes are local to a CSS module, so the rise is declared here too. */
+@keyframes notice-rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+:global(.shop) .noticeSuccess {
+  animation: notice-rise 220ms ease-out both;
+}
+
+:global(.shop) .noticeSuccess svg {
+  animation: agri-pop 320ms ease-out both;
 }

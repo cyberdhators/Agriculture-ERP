@@ -49,6 +49,7 @@ export function BuyerCart() {
       <div className={styles.page}>
         <PageHeader title="Cart" />
         <EmptyState
+          art="cart"
           title="Your cart is empty"
           body="Add products from the marketplace, then send them to the sellers together."
           actions={<Link href="/buyer/marketplace">Go to the marketplace</Link>}

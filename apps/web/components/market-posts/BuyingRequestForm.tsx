@@ -25,6 +25,7 @@ import { offered, useArchivedLists } from '@/lib/settings/client';
 import { BuyingRequestDetailBody } from './MarketRequests';
 import { SwitchRow } from './bits';
 import styles from './market-posts.module.css';
+import { PageLoading } from '@/components/ui/data';
 
 interface Values {
   display_name: string;
@@ -215,7 +216,7 @@ export function BuyingRequestForm({
     }
   }
 
-  if (loading) return <p className="muted">{t('market.loading', lang)}</p>;
+  if (loading) return <PageLoading label={t('market.loading', lang)} />;
 
   const err = (key: keyof Values) => errors[key] || undefined;
   // 2026-10-27: archived units are not offered for a new request.

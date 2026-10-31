@@ -30,6 +30,7 @@ import { t, type Language, type TKey } from '@/lib/i18n';
 
 import styles from './advice.module.css';
 import { AdvisoryNotes } from './AdvisoryNotes';
+import { PageLoading } from '@/components/ui/data';
 
 const STATUS_KEY: Record<AdviserApplicationStatus, TKey> = {
   submitted: 'adviser.status.submitted',
@@ -253,9 +254,7 @@ export function AdviserApplication({
         </Notice>
       ) : null}
       {notice ? <Notice kind="success">{notice}</Notice> : null}
-      {profile && state === undefined ? (
-        <p className="muted small">{t('market.loading', lang)}</p>
-      ) : null}
+      {profile && state === undefined ? <PageLoading label={t('market.loading', lang)} /> : null}
 
       {state?.approved ? <Notice kind="success">{t('adviser.approvedNow', lang)}</Notice> : null}
       {current?.status === 'suspended' && current.suspended_until ? (

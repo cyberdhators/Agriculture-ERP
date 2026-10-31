@@ -29,6 +29,7 @@ import {
   type Failure,
 } from './api';
 import { SettingHistory, VersionLine } from './common';
+import { PageLoading } from '@/components/ui/data';
 
 interface Status {
   integrations: {
@@ -77,7 +78,7 @@ export function SecuritySection({
               <p className="small">{error}</p>
             </Notice>
           ) : status === null ? (
-            <p className="muted">Loading…</p>
+            <PageLoading />
           ) : (
             <table className="small" style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
@@ -129,7 +130,7 @@ export function SecuritySection({
         />
         <CardBody>
           {status === null ? (
-            <p className="muted">Loading…</p>
+            <PageLoading />
           ) : status.staff_mfa.tracked ? (
             <p className="small">
               {status.staff_mfa.with_mfa} of {status.staff_mfa.staff} staff accounts have a verified

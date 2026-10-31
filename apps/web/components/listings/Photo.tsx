@@ -3,6 +3,7 @@ import { t } from '@/lib/i18n';
 import type { ListingCategory } from '@/lib/fixtures/farmers';
 import { CATEGORY_KEY } from '@/lib/farmers/listings';
 
+import { CROP_TONE, CropArt } from './CropArt';
 import styles from './listings.module.css';
 
 /**
@@ -11,6 +12,10 @@ import styles from './listings.module.css';
  * resolved later by the API, so until then the frame shows a tokenised block
  * with the category word — never a broken image. No source at all reads "No
  * photo" in the same block.
+ *
+ * 2026-10-31: the placeholder is now an illustration of the category (CropArt)
+ * on its tint, not a grey block with a word: the word repeated the card's
+ * category badge. The accessible name is unchanged.
  */
 export function Photo({
   src,
@@ -39,12 +44,11 @@ export function Photo({
       ) : (
         <div
           className={styles.placeholder}
+          data-tone={CROP_TONE[category] ?? 'green'}
           role="img"
           aria-label={alt || t(CATEGORY_KEY[category], lang)}
         >
-          <span className={styles.placeholderWord}>
-            {src === null ? t('listings.noPhoto', lang) : t(CATEGORY_KEY[category], lang)}
-          </span>
+          <CropArt category={category} className={styles.placeholderArt} />
           {note ? <span className={styles.placeholderNote}>{note}</span> : null}
         </div>
       )}

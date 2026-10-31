@@ -65,6 +65,7 @@ export function BuyerOrders() {
             rowKey={(o) => o.id}
             empty={
               <EmptyState
+                art="box"
                 title={status ? 'No orders with this status' : 'No orders yet'}
                 body={
                   status

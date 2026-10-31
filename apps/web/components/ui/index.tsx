@@ -15,6 +15,7 @@ import {
 } from 'react';
 
 import { IconInfo, IconSearch, IconWarn, IconCheck, IconX } from './icons';
+import { Illustration, type IllustrationKey } from './illustrations';
 import styles from './ui.module.css';
 
 /**
@@ -484,6 +485,7 @@ export function EmptyState({
   actions,
   error = false,
   icon,
+  art,
 }: {
   title: string;
   /** Optional since 2026-10-31: a title that says it all needs no echo beneath it. */
@@ -491,12 +493,21 @@ export function EmptyState({
   actions?: ReactNode;
   error?: boolean;
   icon?: ReactNode;
+  /** 2026-10-31: a small drawing in place of the icon circle, for empty pages. */
+  art?: IllustrationKey;
 }) {
+  const Art = art ? Illustration[art] : null;
   return (
     <div className={cx(styles.state, error && styles.stateError)} role={error ? 'alert' : 'status'}>
-      <div className={styles.stateIcon}>
-        {icon ?? (error ? <IconWarn size={22} /> : <IconSearch size={22} />)}
-      </div>
+      {Art ? (
+        <div className={styles.stateArt}>
+          <Art />
+        </div>
+      ) : (
+        <div className={styles.stateIcon}>
+          {icon ?? (error ? <IconWarn size={22} /> : <IconSearch size={22} />)}
+        </div>
+      )}
       <div>
         <p className={styles.stateTitle}>{title}</p>
         {body ? <p className={styles.stateBody}>{body}</p> : null}

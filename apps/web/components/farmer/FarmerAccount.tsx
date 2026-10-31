@@ -1,6 +1,7 @@
 'use client';
 
 import { NotificationPreferencesCard } from '@/components/account/NotificationSettings';
+import { MyAvatar } from '@/components/account/MyAvatar';
 import css from '@/components/account/settings.module.css';
 import { farmerPayamName } from '@/lib/fixtures/farmers';
 import { useFarmerSession } from '@/lib/farmer-session';
@@ -45,9 +46,7 @@ export function FarmerAccount() {
 
       <div className={css.page}>
         <section className={css.profile} aria-label={t('account.record', language)}>
-          <span className={css.avatar} aria-hidden>
-            {initials}
-          </span>
+          <MyAvatar initials={initials} />
           <div className={css.profileText}>
             <span className={css.profileName} dir="auto">
               {farmer.given_name} {farmer.family_name}

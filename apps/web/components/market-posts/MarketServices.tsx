@@ -19,6 +19,7 @@ import { ContactReveal, ReportPost } from './ContactAndReport';
 import { MarketSections } from './MarketSections';
 import { servicePriceLine, serviceTypeLabel } from './MyServices';
 import styles from './market-posts.module.css';
+import { PageLoading } from '@/components/ui/data';
 
 /** "From 20 Oct 2026 until 19 Nov 2026" -- when the service can be booked. */
 function availabilityLine(s: ServiceListing, lang: Language): string {
@@ -133,7 +134,7 @@ export function MarketServices({ lang, postHref }: { lang: Language; postHref?: 
         </Notice>
       ) : null}
       {rows === null ? (
-        <p className="muted">{t('market.loading', lang)}</p>
+        <PageLoading kind="cards" label={t('market.loading', lang)} />
       ) : rows.length === 0 ? (
         <EmptyState title={t('svc.marketEmpty', lang)} body={t('svc.marketLead', lang)} />
       ) : (
@@ -175,7 +176,7 @@ export function MarketServiceDetail({ id, lang }: { id: string; lang: Language }
       .catch(() => setRow(null));
   }, [id]);
 
-  if (row === undefined) return <p className="muted">{t('market.loading', lang)}</p>;
+  if (row === undefined) return <PageLoading kind="cards" label={t('market.loading', lang)} />;
   if (row === null) {
     return (
       <>

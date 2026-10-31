@@ -41,7 +41,15 @@ export function WeatherTile({
       : loc.name;
 
   return (
-    <section className={styles.weatherHero} aria-label={t('weather.title', language)}>
+    <section
+      className={styles.weatherHero}
+      aria-label={t('weather.title', language)}
+      // 2026-10-31: the card takes the time of day and the sky -- a warm
+      // morning, a deep night, light rain marks when it rains. Look only.
+      data-mood={moodNow()}
+      data-sky={skyOf(loc?.current?.conditions ?? '')}
+      suppressHydrationWarning
+    >
       {greeting ? <div className={styles.weatherGreeting}>{greeting}</div> : null}
       {w.loading ? (
         <p className={styles.weatherHeroNote}>{t('weather.loading', language)}</p>
@@ -139,6 +147,20 @@ export function WeatherTile({
 }
 
 /** A plain outline glyph from the provider's condition string; never parsed as an icon code. */
+function moodNow(): 'morning' | 'day' | 'evening' | 'night' {
+  const hour = new Date().getHours();
+  return hour >= 5 && hour < 10 ? 'morning' : hour < 16 ? 'day' : hour < 19 ? 'evening' : 'night';
+}
+
+function skyOf(conditions: string): 'clear' | 'cloud' | 'rain' | 'storm' {
+  const c = conditions.toLowerCase();
+  if (c.includes('thunder')) return 'storm';
+  if (c.includes('rain') || c.includes('drizzle') || c.includes('shower')) return 'rain';
+  if (c.includes('cloud') || c.includes('overcast') || c.includes('mist') || c.includes('haze'))
+    return 'cloud';
+  return 'clear';
+}
+
 function WeatherGlyph({ conditions }: { conditions: string }) {
   const c = conditions.toLowerCase();
   const rain = c.includes('rain') || c.includes('drizzle') || c.includes('storm');

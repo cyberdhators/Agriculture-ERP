@@ -31,6 +31,7 @@ import { KIND_KEY, LANGUAGE_KEY, TOPIC_KEY } from '@/lib/advice/labels';
 import { formatDate } from '@/lib/format';
 import { t } from '@/lib/i18n';
 import { usePreview } from '@/lib/preview';
+import { PageLoading } from '@/components/ui/data';
 
 /**
  * APPROVED ADVISERS -- THE STAFF QUEUE (2026-10-24). Administrators holding
@@ -224,7 +225,7 @@ export function AdviserReview() {
       ) : null}
       {done ? <Notice kind="success">{done}</Notice> : null}
       {rows === null ? (
-        <p className="muted">Loading…</p>
+        <PageLoading />
       ) : rows.length === 0 ? (
         <Notice kind="info" title="Nothing here">
           <p className="small">No application has this status.</p>

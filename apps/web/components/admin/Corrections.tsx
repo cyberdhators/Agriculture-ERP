@@ -13,6 +13,7 @@ import { ReasonCodeSelect, useReasonCodes } from '@/components/admin/ReasonCodeS
 import { Button, Field, Notice, Select, Stamp, Textarea } from '@/components/ui';
 import { ConfirmationDialog } from '@/components/ui/feedback';
 import { formatDate } from '@/lib/format';
+import { PageLoading } from '@/components/ui/data';
 
 /**
  * REQUEST A CORRECTION (2026-10-27, CORWADO's specification, Marketplace:
@@ -201,7 +202,7 @@ export function CorrectionRequests() {
       </Field>
       {failure ? <Notice kind="error">{failure}</Notice> : null}
       {rows === null ? (
-        <p className="small muted">Loading…</p>
+        <PageLoading />
       ) : rows.length === 0 ? (
         <p className="small muted">No correction requests.</p>
       ) : (

@@ -151,11 +151,16 @@ function Inbox({ language, tab }: { language: Language; tab: InboxTab }) {
       ) : rows.length === 0 ? (
         offline ? null : tab === 'archived' ? (
           <EmptyState
+            art="chat"
             title={t('msg.archivedEmpty', language)}
             body={t('msg.archivedEmptyBody', language)}
           />
         ) : (
-          <EmptyState title={t('msg.empty', language)} body={t('msg.emptyBody', language)} />
+          <EmptyState
+            art="chat"
+            title={t('msg.empty', language)}
+            body={t('msg.emptyBody', language)}
+          />
         )
       ) : (
         <ul className={styles.list}>
