@@ -24,18 +24,14 @@ type Viewer = 'loading' | 'buyer' | 'farmer' | 'staff' | 'visitor';
 
 const W = {
   en: {
-    title: 'Buy this',
-    lead: 'Add it to your cart. You can add products from other sellers and send them all together; each seller gets their own request.',
     buy: 'Add to cart',
-    signIn: 'Sign in or create an account to buy',
+    signIn: 'Sign in to buy',
     opening: 'Opening…',
     failed: 'Buying could not be opened. Please try again.',
   },
   ar: {
-    title: 'اشترِ هذا',
-    lead: 'أضفه إلى سلتك. يمكنك إضافة منتجات من بائعين آخرين وإرسالها معاً؛ يتلقى كل بائع طلبه الخاص.',
     buy: 'أضف إلى السلة',
-    signIn: 'سجّل الدخول أو أنشئ حساباً للشراء',
+    signIn: 'سجّل الدخول للشراء',
     opening: 'جارٍ الفتح…',
     failed: 'تعذّر فتح الشراء. حاول مرة أخرى.',
   },
@@ -66,7 +62,9 @@ export function BuyBox({ listingId, lang }: { listingId: string; lang: Language 
     };
   }, []);
 
-  if (viewer === 'loading' || viewer === 'staff') return null;
+  if (viewer === 'staff') return null;
+  // While the server answers who is looking, hold the button's place.
+  if (viewer === 'loading') return <Button disabled>{w.buy}</Button>;
 
   async function startBuying() {
     setBusy(true);
@@ -85,11 +83,8 @@ export function BuyBox({ listingId, lang }: { listingId: string; lang: Language 
   }
 
   return (
-    <section style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <strong>{w.title}</strong>
-      <p className="small muted" style={{ margin: 0 }}>
-        {w.lead}
-      </p>
+    // 2026-10-31: just the action -- the page around it says what it is.
+    <>
       {viewer === 'buyer' ? (
         <ButtonLink href={target}>{w.buy}</ButtonLink>
       ) : viewer === 'farmer' ? (
@@ -100,6 +95,6 @@ export function BuyBox({ listingId, lang }: { listingId: string; lang: Language 
         <ButtonLink href="/join">{w.signIn}</ButtonLink>
       )}
       {failed ? <Notice kind="error">{w.failed}</Notice> : null}
-    </section>
+    </>
   );
 }

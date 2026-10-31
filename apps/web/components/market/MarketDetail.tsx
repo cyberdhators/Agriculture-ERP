@@ -186,7 +186,8 @@ export function MarketDetail({
         sellerListingsHref={backHref}
         contact={contact}
         // 2026-10-21: Buy for every account -- the cart is on the buyer side.
-        actions={<BuyBox listingId={currentListing.id} lang={lang} />}
+        // 2026-10-31: in the page's one Buy place, not as a second box.
+        buy={<BuyBox listingId={currentListing.id} lang={lang} />}
         moderate={
           canModerate ? (
             <section id="moderate" className={styles.moderation}>

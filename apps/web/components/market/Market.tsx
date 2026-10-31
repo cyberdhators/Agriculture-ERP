@@ -148,7 +148,10 @@ export function Market({
   const pages = Math.max(1, Math.ceil(matched.length / PAGE_SIZE));
   const current = Math.min(page, pages);
   const shown = matched.slice((current - 1) * PAGE_SIZE, current * PAGE_SIZE);
-  const showFeatured = !active && current === 1 && featured.length > 0;
+  // 2026-10-31: the strip shows only when there is more than it holds, so a
+  // short market does not show the same cards twice.
+  const showFeatured =
+    !active && current === 1 && featured.length > 0 && matched.length > featured.length;
 
   useEffect(() => {
     setPage(1);
@@ -246,19 +249,6 @@ export function Market({
   return (
     <div className={styles.browse}>
       <div className={styles.body}>
-        <button
-          type="button"
-          className={styles.railToggle}
-          aria-expanded={filtersOpen}
-          aria-controls="market-filters"
-          onClick={() => setFiltersOpen((o) => !o)}
-        >
-          <span>{t('market.filters', lang)}</span>
-          {applied.length > 0 ? (
-            <span className={styles.railToggleCount}>{applied.length}</span>
-          ) : null}
-          <span aria-hidden="true" className={styles.railChevron} />
-        </button>
         <aside
           id="market-filters"
           className={`${styles.rail} ${filtersOpen ? styles.railOpen : ''}`}
@@ -474,12 +464,25 @@ export function Market({
             />
           ) : null}
           <div className={styles.resultsBar} ref={gridTop}>
+            <button
+              type="button"
+              className={styles.railToggle}
+              aria-expanded={filtersOpen}
+              aria-controls="market-filters"
+              onClick={() => setFiltersOpen((o) => !o)}
+            >
+              <span>{t('market.filters', lang)}</span>
+              {applied.length > 0 ? (
+                <span className={styles.railToggleCount}>{applied.length}</span>
+              ) : null}
+              <span aria-hidden="true" className={styles.railChevron} />
+            </button>
             <span className={styles.resultsCount} aria-live="polite">
               {matched.length} {t(matched.length === 1 ? 'market.one' : 'market.many', lang)}
             </span>
             <span className={styles.resultsSpacer} />
             <label className={styles.resultsControl}>
-              {t('market.sort', lang)}
+              <span className="visually-hidden">{t('market.sort', lang)}</span>
               <select value={sort} onChange={(e) => setSort(e.target.value as MarketSort)}>
                 {SORTS.map((s) => (
                   <option key={s} value={s}>
@@ -489,15 +492,48 @@ export function Market({
               </select>
             </label>
             <div className={styles.viewToggle} role="group" aria-label={t('market.view', lang)}>
+              {/* 2026-10-31: two small icons; the words are their names. */}
               <button
                 type="button"
                 aria-pressed={view === 'cards'}
+                aria-label={t('market.viewCards', lang)}
+                title={t('market.viewCards', lang)}
                 onClick={() => setView('cards')}
               >
-                {t('market.viewCards', lang)}
+                <svg
+                  viewBox="0 0 24 24"
+                  width="18"
+                  height="18"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.9"
+                  aria-hidden
+                >
+                  <rect x="4" y="4" width="7" height="7" rx="1.5" />
+                  <rect x="13" y="4" width="7" height="7" rx="1.5" />
+                  <rect x="4" y="13" width="7" height="7" rx="1.5" />
+                  <rect x="13" y="13" width="7" height="7" rx="1.5" />
+                </svg>
               </button>
-              <button type="button" aria-pressed={view === 'list'} onClick={() => setView('list')}>
-                {t('market.viewList', lang)}
+              <button
+                type="button"
+                aria-pressed={view === 'list'}
+                aria-label={t('market.viewList', lang)}
+                title={t('market.viewList', lang)}
+                onClick={() => setView('list')}
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  width="18"
+                  height="18"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.9"
+                  strokeLinecap="round"
+                  aria-hidden
+                >
+                  <path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01" />
+                </svg>
               </button>
             </div>
           </div>
