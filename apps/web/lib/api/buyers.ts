@@ -5,7 +5,12 @@ import {
   type BuyerVerificationStatus,
 } from '@agri-erp/shared';
 
-import { FARMER_CANCEL_NOTICE, FARMER_REQUEST_NOTICE } from '../farmer-notices';
+import {
+  FARMER_CANCEL_NOTICE,
+  FARMER_REQUESTS_HREF,
+  FARMER_REQUEST_NOTICE,
+} from '../farmer-notices';
+import { emitPush } from '../realtime/outbox';
 import { writeAudit, type AuditTx } from './audit';
 import {
   BUYER_NOTICES,
@@ -157,6 +162,14 @@ export async function notifyOrganization(
     action: 'notification.created',
     after: { recipient: 'buyer_organization', notice },
   });
+  emitPush({
+    organizationId,
+    titleKey: 'push.update.title',
+    bodyKey: 'push.update.body',
+    href: '/buyer/notifications',
+    tag: `notice-${row!.id}`,
+    urgency: 'high',
+  });
 }
 
 /** The notice each verification decision sends, if any. */
@@ -189,10 +202,10 @@ export async function notifyFarmerOfRequest(
   listingId: string,
   actor: { actorType: 'buyer'; actorId: string },
 ): Promise<void> {
-  const [row] = await tx.$queryRawUnsafe<{ id: string }[]>(
+  const [row] = await tx.$queryRawUnsafe<{ id: string; farmer_id: string }[]>(
     `INSERT INTO public.notification (farmer_id, channel, title, body)
      SELECT pl.farmer_id, 'in_app', $2, $3 FROM public.produce_listing pl WHERE pl.id = $1::uuid
-     RETURNING id`,
+     RETURNING id, farmer_id`,
     listingId,
     FARMER_REQUEST_NOTICE.title,
     FARMER_REQUEST_NOTICE.body,
@@ -204,6 +217,14 @@ export async function notifyFarmerOfRequest(
     ...actor,
     action: 'notification.created',
     after: { recipient: 'farmer', notice: 'request_received' },
+  });
+  emitPush({
+    farmerId: row.farmer_id,
+    titleKey: 'push.request.title',
+    bodyKey: 'push.request.body',
+    href: FARMER_REQUESTS_HREF,
+    tag: `notice-${row.id}`,
+    urgency: 'high',
   });
 }
 
@@ -298,10 +319,10 @@ export async function notifyFarmerOfCancel(
   listingId: string,
   actor: { actorType: 'buyer'; actorId: string },
 ): Promise<void> {
-  const [row] = await tx.$queryRawUnsafe<{ id: string }[]>(
+  const [row] = await tx.$queryRawUnsafe<{ id: string; farmer_id: string }[]>(
     `INSERT INTO public.notification (farmer_id, channel, title, body)
      SELECT pl.farmer_id, 'in_app', $2, $3 FROM public.produce_listing pl WHERE pl.id = $1::uuid
-     RETURNING id`,
+     RETURNING id, farmer_id`,
     listingId,
     FARMER_CANCEL_NOTICE.title,
     FARMER_CANCEL_NOTICE.body,
@@ -313,6 +334,14 @@ export async function notifyFarmerOfCancel(
     ...actor,
     action: 'notification.created',
     after: { recipient: 'farmer', notice: 'request_cancelled' },
+  });
+  emitPush({
+    farmerId: row.farmer_id,
+    titleKey: 'push.cancel.title',
+    bodyKey: 'push.cancel.body',
+    href: FARMER_REQUESTS_HREF,
+    tag: `notice-${row.id}`,
+    urgency: 'high',
   });
 }
 

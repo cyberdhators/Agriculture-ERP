@@ -17,6 +17,7 @@ import { DEFAULT_LANGUAGE, LANG_COOKIE, LANG_STORAGE, isLanguage, type Language 
 import type { Farmer, ProduceListing } from '@/lib/fixtures/farmers';
 import { enqueue, queuedOf, subscribeOutbox } from '@/lib/offline/outbox';
 import { loadWithSnapshot, readSnapshot, saveSnapshot } from '@/lib/offline/snapshot';
+import { stopPushOnThisPhone } from '@/lib/push/client';
 import { serverSignIn } from '@/lib/auth/server-sign-in';
 import { useArabicEnabled } from '@/lib/settings/client';
 import { supabaseBrowser } from '@/lib/supabase/browser';
@@ -333,6 +334,7 @@ export function FarmerSessionProvider({
   );
 
   const signOut = useCallback(async () => {
+    await stopPushOnThisPhone();
     await supabaseBrowser()
       .auth.signOut()
       .catch(() => undefined);

@@ -2470,6 +2470,22 @@ model NotificationPreference {
   @@map("notification_preference")
 }
 
+/// 2026-11-03: one phone that asked for alerts. Migration 20261103120000_push_subscription.
+model PushSubscription {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  authUserId String    @map("auth_user_id") @db.Uuid
+  endpoint   String    @unique(map: "push_subscription_endpoint_key")
+  p256dh     String
+  auth       String
+  language   String
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime  @default(now()) @map("updated_at") @db.Timestamptz(6)
+  deletedAt  DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  @@index([authUserId], map: "push_subscription_account_idx")
+  @@map("push_subscription")
+}
+
 /// 2026-11-01: one row per Bird webhook-id -- deduplication. No payload.
 model BirdWebhookEvent {
   webhookId  String    @id @map("webhook_id")

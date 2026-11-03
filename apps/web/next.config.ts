@@ -27,6 +27,8 @@ const withSerwist = withSerwistInit({
 const nextConfig: NextConfig = {
   // packages/shared ships TypeScript source, so Next must compile it.
   transpilePackages: ['@agri-erp/shared'],
+  // Phone alerts: a server library, loaded as it is rather than bundled.
+  serverExternalPackages: ['web-push'],
 };
 
 export default withSentryConfig(withSerwist(nextConfig), {

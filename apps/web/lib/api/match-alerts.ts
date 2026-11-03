@@ -297,7 +297,11 @@ export async function runMatchAlerts(kind: MatchPost['kind'], postId: string): P
   const recipients: AlertRecipient[] = selectAlertRecipients(post, candidates, savedCandidates);
   if (recipients.length === 0) return { told: 0, sms: 0 };
 
-  const { result: told, events } = await withRealtimeOutbox(() =>
+  const {
+    result: told,
+    events,
+    notes,
+  } = await withRealtimeOutbox(() =>
     audited(prisma, async (tx) => {
       const out: { authUserId: string; markId: string; source: MatchAlertSource }[] = [];
       for (const r of recipients) {
@@ -343,7 +347,7 @@ export async function runMatchAlerts(kind: MatchPost['kind'], postId: string): P
     }),
   );
   // Published now: this runs after the poster's answer, outside its request.
-  flushRealtime(events);
+  flushRealtime(events, notes);
 
   // SMS only to those who switched SMS match alerts on. Best effort.
   let sms = 0;

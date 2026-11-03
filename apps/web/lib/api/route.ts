@@ -323,12 +323,12 @@ function wrap<TBody>(definition: RouteDefinition<TBody>): NextRouteHandler {
       // 2026-10-26: live updates the handler queued are published only after
       // it returned -- its transactions committed -- and after the answer has
       // gone (lib/realtime/outbox.ts). A handler that throws publishes nothing.
-      const { result, events } = await withRealtimeOutbox(() =>
+      const { result, events, notes } = await withRealtimeOutbox(() =>
         runWithRequestContext({ correlationId, deviceId }, async () =>
           definition.handler({ request, auth, body, params, correlationId, deviceId }),
         ),
       );
-      flushRealtime(events);
+      flushRealtime(events, notes);
       return respond(result, correlationId);
     } catch (failure) {
       // A documented outcome for the caller -- 401, 404, 422 and so on. Not an

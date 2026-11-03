@@ -6304,3 +6304,47 @@ page keep the old one: "should we stop name edits after account creation?"
   or business name. Its field now reads "Name on your public profile", and
   the Account card (farmer and buyer) adds "Shown publicly as: …" when it
   differs from the record name.
+
+## Push alerts on a phone (2026-11-03)
+
+The owner, in writing: "i want to add push notifications", then "i think you
+should first add push notification before creating the apk". Not one of the
+twenty contracted items in `docs/scope-and-acceptance.md`; it adds no acceptance
+criterion and does not replace SMS, deliverable (n). Adds one dependency,
+`web-push`, approved by the same instruction. No account and no paid service.
+Azure Notification Hubs was considered at the owner's question and not chosen:
+another account, a 500-device free tier Microsoft does not recommend for
+production, and Safari absent from its browser-push guide (DOCUMENTED, read
+2026-11-03).
+
+- **Who.** Farmers and buyers, per phone, by a switch on Account. The browser
+  asks permission only when the switch is turned on. Staff receive no account
+  notices today, so none. Official announcements are NOT sent: they hold free
+  text, and sending to every phone at once needs its own design.
+- **What it says.** Fixed i18n sentences only, in the language the phone uses.
+  Never a stored notice's text: the staff-withdrawal notice stores the listing's
+  title and the reason, so the alert has its own sentence. Never a message or a
+  name. Same rule as ACCOUNT_NOTICES: "avoid exposing private case details in
+  notification previews". Tested in `lib/push/plan.test.ts`.
+- **What triggers it.** Every `notification.created` and `message.created` live
+  event, after the commit, plus `emitPush` for the notices with no live event
+  (a buyer's request or cancellation, staff withdrawal, buyer organisation
+  decisions). A rolled-back change sends nothing. Unlike the in-app notice, every
+  message alerts, not only a conversation's first; alerts in one conversation
+  replace each other on the phone. "Activity updates" switched off stops them.
+- **Outgoing requests.** The server posts to an address a member's browser
+  supplied, so `isPushEndpoint` accepts only https at the Google, Apple, Mozilla
+  and Microsoft push services.
+- **Shared phones.** Signing out unsubscribes this phone first, which holds with
+  no signal, then removes the row. One phone is one row, so it can never get two
+  accounts' alerts. Known gap: a session that EXPIRES with no sign-out leaves the
+  old account's alerts on until someone turns the switch on; those alerts carry
+  fixed sentences and open a page that asks for sign-in.
+- **Off until keyed.** With NEXT_PUBLIC_VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY or
+  VAPID_SUBJECT empty, no alert is sent and the switch does not show.
+
+OBSERVED: the unit tests, and the library building a signed request from these
+settings without sending it. NOT YET OBSERVED at the time of writing: an alert
+arriving on a real Android phone or iPhone. INFERRED, from one reading of
+Apple's documentation and not exercised: an iPhone withdraws alerts from a site
+that receives pushes without showing them, so the worker always shows one there.

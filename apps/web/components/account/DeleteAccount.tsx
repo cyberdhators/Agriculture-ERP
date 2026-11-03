@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { Button, Checkbox, Field, Notice, PasswordInput } from '@/components/ui';
 import { clearCacheFor } from '@/lib/offline/db';
 import { currentAccount, ensureAccount, setAccount } from '@/lib/offline/outbox';
+import { stopPushOnThisPhone } from '@/lib/push/client';
 import { supabaseBrowser } from '@/lib/supabase/browser';
 
 import css from './settings.module.css';
@@ -105,7 +106,8 @@ export function DeleteAccount({
         setError(body.error?.fields ? null : (body.error?.message ?? w.failed));
         return;
       }
-      // Forget the account on this phone: saved pages and data, then the session.
+      // Forget the account on this phone: alerts, saved pages and data, then the session.
+      await stopPushOnThisPhone();
       const id = currentAccount() ?? (await ensureAccount());
       if (id) await clearCacheFor(id).catch(() => undefined);
       setAccount(null);

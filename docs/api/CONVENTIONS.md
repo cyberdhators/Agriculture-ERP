@@ -780,6 +780,8 @@ change.
 | `rating.hidden`                               |
 | `rating.restored`                             |
 | `rating.report_dismissed`                     |
+| `push_subscription.created`                   |
+| `push_subscription.removed`                   |
 | `saved_search.created`                        |
 | `saved_search.paused`                         |
 | `saved_search.resumed`                        |

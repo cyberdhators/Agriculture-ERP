@@ -159,3 +159,76 @@ self.addEventListener('sync', (event: Event) => {
       .then((windows) => windows.forEach((w) => w.postMessage({ type: 'agrione-sync' }))),
   );
 });
+
+/**
+ * PHONE ALERTS (2026-11-03). lib/push builds the wording on the server, fixed
+ * sentences only. A later alert with the same tag replaces the earlier one, so
+ * a busy conversation is one alert. While the person is looking at the app its
+ * own live pop says it, so no alert is shown -- except on an iPhone, where
+ * Safari is documented to withdraw alerts from a site that receives pushes
+ * without showing them.
+ */
+const IOS = /iPhone|iPad|iPod/.test(self.navigator.userAgent);
+
+self.addEventListener('push', (event: PushEvent) => {
+  let alert: { title?: string; body?: string; href?: string; tag?: string; lang?: string };
+  try {
+    alert = (event.data?.json() ?? {}) as typeof alert;
+  } catch {
+    return;
+  }
+  if (!alert.title) return;
+  const { title, body, href, tag, lang } = alert;
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windows) => {
+      if (!IOS && windows.some((w) => w.focused && w.visibilityState === 'visible')) return;
+      return self.registration.showNotification(title, {
+        body,
+        tag,
+        lang,
+        dir: 'auto',
+        icon: '/icons/icon-192.png',
+        badge: '/icons/badge-72.png',
+        data: { href: isPagePath(href) ? href : '/open' },
+      });
+    }),
+  );
+});
+
+self.addEventListener('notificationclick', (event: NotificationEvent) => {
+  event.notification.close();
+  const data = event.notification.data as { href?: unknown } | null;
+  const href = isPagePath(data?.href) ? data.href : '/open';
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(async (windows) => {
+      const open = windows[0];
+      if (!open) return self.clients.openWindow(href);
+      await open.focus();
+      return open.navigate(href);
+    }),
+  );
+});
+
+/** The push service replaced this phone's address: tell the server the new one. */
+self.addEventListener('pushsubscriptionchange', (event: Event) => {
+  const e = event as ExtendableEvent & {
+    oldSubscription?: PushSubscription | null;
+    newSubscription?: PushSubscription | null;
+  };
+  e.waitUntil(
+    (async () => {
+      const options = e.oldSubscription?.options;
+      const next =
+        e.newSubscription ??
+        (options ? await self.registration.pushManager.subscribe(options) : null);
+      if (!next) return;
+      const { endpoint, keys } = next.toJSON();
+      const language = self.navigator.language.startsWith('ar') ? 'ar' : 'en';
+      await fetch('/api/account/push-subscription', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ endpoint, keys, language }),
+      });
+    })().catch(() => undefined),
+  );
+});
