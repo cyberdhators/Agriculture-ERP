@@ -6371,3 +6371,12 @@ available for all, remove that label". Replaces "Who" above.
   in Google Chrome on a computer: on, saved, still on after a reload (OBSERVED).
   What failed on the owner's phone was not reproduced, so this change is not
   claimed to fix it. An iPhone still needs AgriOne on its home screen first.
+
+**Corrected the same day: an Allow / Not now box.** The owner: "its not working on
+my phone the allow is not poping up". OBSERVED on the live site, in Chrome on a
+computer: the question was requested at the first tap, but that tap also opened
+what was tapped, and the code then stayed silent for a week, so trying again showed
+nothing. INFERRED, one instance and not reproduced on a phone: that is what the
+owner met. The app now shows its own box, whose Allow button does only that. It is
+a permission, not the removed switch. Blocked and "iPhone needs the home screen"
+are said in the same box, because a silent failure is what could not be diagnosed.

@@ -3189,3 +3189,8 @@ Decision in `docs/DECISIONS.md`. The Play Store build follows this, owner's orde
 Owner's instruction: the switch is gone, `components/pwa/PushPermission.tsx` in
 the root layout asks at the first tap once signed in, the two routes take every
 role. No migration. The Play Store build still waits for an alert on a real phone.
+
+### 2026-11-04 -- Push permission gets its own box (branch fix/push-allow-box) -- Alieu-Claude
+
+`components/pwa/PushPermission.tsx` now shows Allow / Not now instead of asking at
+any first tap. No migration.

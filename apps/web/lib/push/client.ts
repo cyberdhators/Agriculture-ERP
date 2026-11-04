@@ -6,17 +6,20 @@ import { ensureAccount } from '../offline/outbox';
 
 /**
  * PHONE ALERTS, THE PHONE'S SIDE (2026-11-04, the owner: no switch, "include it
- * as permission", for everyone). Once someone is signed in, the phone's own
- * permission question appears at their first tap: browsers refuse or quieten
- * one that opens by itself. Allowed, this phone gets alerts until they sign out
- * or block them in the phone's settings. Dismissed, it asks again after a week.
- * Blocked, it never asks. Nothing here shows on screen, or gets in anyone's way.
+ * as permission", for everyone). Once someone is signed in, an Allow / Not now
+ * box appears (components/pwa/PushPermission.tsx), and Allow opens the phone's
+ * own question. Found on the live site: asking at any first tap also followed
+ * whatever was tapped, and then stayed silent for a week, so it has its own
+ * button. Allowed, this phone gets alerts until sign-out or until blocked in its
+ * settings. Not now asks again after a week. Blocked is said once.
  */
 
 /** Which account, language and address the server already has for this phone. */
 const SYNCED_KEY = 'agri-push-synced';
-const ASKED_KEY = 'agri-push-asked';
-const ASK_AGAIN_MS = 7 * 24 * 60 * 60 * 1000;
+const ASKED_KEY = 'agri-push-box';
+const BLOCKED_KEY = 'agri-push-blocked-told';
+const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 const publicKey = () => process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? '';
 
@@ -39,6 +42,14 @@ const recall = (key: string) => {
 
 function canPush(): boolean {
   return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+}
+
+/** An iPhone only offers alerts once AgriOne is on the home screen. */
+function iPhoneInBrowser(): boolean {
+  return (
+    /iPhone|iPad|iPod/.test(navigator.userAgent) &&
+    !window.matchMedia('(display-mode: standalone)').matches
+  );
 }
 
 const bytesOf = (base64url: string): Uint8Array<ArrayBuffer> => {
@@ -76,37 +87,51 @@ async function sync(account: string): Promise<void> {
 
 function askedLately(): boolean {
   const at = Number(recall(ASKED_KEY));
-  return Number.isFinite(at) && at > 0 && Date.now() - at < ASK_AGAIN_MS;
+  return Number.isFinite(at) && at > 0 && Date.now() - at < WEEK_MS;
 }
 
+/** What the box should say. */
+export type PushAsk = 'ask' | 'blocked' | 'install';
+
 /**
- * Starts alerts for whoever is signed in on this phone. Returns how to stop
- * waiting for the first tap. Never throws: alerts are never in the app's way.
+ * Starts alerts for whoever is signed in on this phone, and says whether the box
+ * has anything to ask. Never throws: alerts are never in the app's way.
  */
-export async function startPush(): Promise<() => void> {
-  const nothing = () => undefined;
+export async function startPush(): Promise<PushAsk | null> {
   try {
-    if (!publicKey() || !canPush() || Notification.permission === 'denied') return nothing;
+    if (!publicKey()) return null;
     const account = await ensureAccount();
-    if (!account) return nothing;
+    if (!account) return null;
+    if (!canPush()) return iPhoneInBrowser() && !askedLately() ? 'install' : null;
     if (Notification.permission === 'granted') {
       await sync(account);
-      return nothing;
+      return null;
     }
-    if (askedLately()) return nothing;
-    const onTap = () => {
-      document.removeEventListener('click', onTap, true);
-      remember(ASKED_KEY, String(Date.now()));
-      // Called directly inside the tap, which is what the browser requires.
-      void Notification.requestPermission()
-        .then((answer) => (answer === 'granted' ? sync(account) : undefined))
-        .catch(() => undefined);
-    };
-    document.addEventListener('click', onTap, true);
-    return () => document.removeEventListener('click', onTap, true);
+    if (Notification.permission === 'denied') return recall(BLOCKED_KEY) ? null : 'blocked';
+    return askedLately() ? null : 'ask';
   } catch {
-    return nothing;
+    return null;
   }
+}
+
+/** Allow, on the box: the phone's own question. Must be called directly from the tap. */
+export async function allowPush(): Promise<void> {
+  try {
+    const answer = await Notification.requestPermission();
+    // Closed without an answer: tomorrow, since Chrome blocks a site dismissed repeatedly.
+    remember(ASKED_KEY, String(answer === 'default' ? Date.now() - WEEK_MS + DAY_MS : Date.now()));
+    if (answer !== 'granted') return;
+    const account = await ensureAccount();
+    if (account) await sync(account);
+  } catch {
+    // The next time the app opens, a granted phone tries again.
+  }
+}
+
+/** Not now, or OK on a box that only told them something. */
+export function closePushBox(ask: PushAsk): void {
+  if (ask === 'blocked') remember(BLOCKED_KEY, '1');
+  else remember(ASKED_KEY, String(Date.now()));
 }
 
 /**
