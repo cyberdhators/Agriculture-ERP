@@ -303,6 +303,9 @@ export const AUDIT_ACTIONS = [
   'rating.hidden',
   'rating.restored',
   'rating.report_dismissed',
+  // 2026-11-03: alerts turned on or stopped for one phone. Never its address or keys.
+  'push_subscription.created',
+  'push_subscription.removed',
   // 2026-11-03 (lane-searches): an account's own saved searches -- created,
   // paused, resumed, deleted (soft). The criteria are recorded (a product
   // word, a category, a state, a price), never a name or a contact. NOT YET

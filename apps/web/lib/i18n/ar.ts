@@ -1938,4 +1938,20 @@ export const ar: Partial<Record<TKey, string>> = {
   'sync.attention.few': '{n} تغييرات تحتاج إلى مراجعة',
   'sync.attention.many': '{n} تغييرًا يحتاج إلى مراجعة',
   'sync.attention.other': '{n} تغيير يحتاج إلى مراجعة',
+
+  // 2026-11-03: alerts on a phone.
+  'push.row.label': 'التنبيهات على هذا الهاتف',
+  'push.row.install': 'أضف AgriOne إلى الشاشة الرئيسية أولًا.',
+  'push.row.blocked': 'محظورة من إعدادات هذا الهاتف.',
+  'push.row.failed': 'لم تنجح العملية. حاول مرة أخرى.',
+  'push.message.title': 'لديك رسالة جديدة',
+  'push.message.body': 'افتح الرسائل لقراءتها.',
+  'push.update.title': 'لديك إشعار جديد',
+  'push.update.body': 'افتح AgriOne لقراءته.',
+  'push.request.title': 'مشترٍ يريد منتجاتك',
+  'push.request.body': 'اضغط لعرض الطلب.',
+  'push.cancel.title': 'ألغى مشترٍ طلبًا',
+  'push.cancel.body': 'اضغط لمعرفة الطلب.',
+  'push.withdrawn.title': 'أُزيل أحد إعلاناتك من السوق',
+  'push.withdrawn.body': 'افتح إعلاناتك لمعرفة السبب.',
 };

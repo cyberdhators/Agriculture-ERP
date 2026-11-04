@@ -2016,6 +2016,22 @@ export const en = {
   'sync.attention.few': '{n} changes need attention',
   'sync.attention.many': '{n} changes need attention',
   'sync.attention.other': '{n} changes need attention',
+
+  // 2026-11-03: alerts on a phone. Fixed sentences: they show on a locked screen.
+  'push.row.label': 'Alerts on this phone',
+  'push.row.install': 'Add AgriOne to your home screen first.',
+  'push.row.blocked': "Blocked in this phone's settings.",
+  'push.row.failed': 'That did not work. Try again.',
+  'push.message.title': 'You have a new message',
+  'push.message.body': 'Open Messages to read it.',
+  'push.update.title': 'You have a new notification',
+  'push.update.body': 'Open AgriOne to read it.',
+  'push.request.title': 'A buyer wants your produce',
+  'push.request.body': 'Tap to see the request.',
+  'push.cancel.title': 'A buyer cancelled a request',
+  'push.cancel.body': 'Tap to see which one.',
+  'push.withdrawn.title': 'A listing was taken off the market',
+  'push.withdrawn.body': 'Open your listings to see why.',
 } as const;
 
 export type TKey = keyof typeof en;

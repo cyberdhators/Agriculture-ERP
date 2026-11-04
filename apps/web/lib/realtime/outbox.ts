@@ -2,6 +2,7 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 
 import { after } from 'next/server';
 
+import type { PushNote } from '../push/plan';
 import { publishRealtime, type RealtimeEvent } from './publish';
 
 /**
@@ -16,24 +17,41 @@ import { publishRealtime, type RealtimeEvent } from './publish';
  *
  * Outside a request (a cron job, a script) there is no outbox, and the event
  * is published at once, in the background.
+ *
+ * 2026-11-03: phone alerts leave the same way (lib/push). Every event here can
+ * become an alert; `emitPush` adds a notice that has no live event.
  */
 
-const storage = new AsyncLocalStorage<RealtimeEvent[]>();
+const storage = new AsyncLocalStorage<{ events: RealtimeEvent[]; notes: PushNote[] }>();
+
+/** Loaded when an alert is due, so a route that sends none never loads the push library. */
+const sendPushes = async (events: readonly RealtimeEvent[], notes: readonly PushNote[]) =>
+  (await import('../push/send')).sendPushes(events, notes);
 
 export function emitRealtime(event: RealtimeEvent): void {
   if (event.channels.length === 0) return;
   const outbox = storage.getStore();
-  if (outbox) outbox.push(event);
-  else void publishRealtime([event]);
+  if (outbox) outbox.events.push(event);
+  else {
+    void publishRealtime([event]);
+    void sendPushes([event], []);
+  }
+}
+
+export function emitPush(note: PushNote): void {
+  const outbox = storage.getStore();
+  if (outbox) outbox.notes.push(note);
+  else void sendPushes([], [note]);
 }
 
 /** Runs `fn` with an outbox, and returns what it queued with its result. */
 export async function withRealtimeOutbox<T>(
   fn: () => Promise<T>,
-): Promise<{ result: T; events: RealtimeEvent[] }> {
+): Promise<{ result: T; events: RealtimeEvent[]; notes: PushNote[] }> {
   const events: RealtimeEvent[] = [];
-  const result = await storage.run(events, fn);
-  return { result, events };
+  const notes: PushNote[] = [];
+  const result = await storage.run({ events, notes }, fn);
+  return { result, events, notes };
 }
 
 /** Runs `task` after the response when the runtime allows it; otherwise in the background. */
@@ -52,7 +70,10 @@ export function afterResponse(task: () => Promise<unknown>): void {
 }
 
 /** Publishes what a request queued, after its answer. Never throws. */
-export function flushRealtime(events: readonly RealtimeEvent[]): void {
-  if (events.length === 0) return;
-  afterResponse(() => publishRealtime(events));
+export function flushRealtime(
+  events: readonly RealtimeEvent[],
+  notes: readonly PushNote[] = [],
+): void {
+  if (events.length > 0) afterResponse(() => publishRealtime(events));
+  if (events.length > 0 || notes.length > 0) afterResponse(() => sendPushes(events, notes));
 }

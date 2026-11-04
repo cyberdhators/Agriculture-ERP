@@ -27,6 +27,7 @@ import { useDocumentLanguage, useLanguageChoice } from '@/lib/i18n/client';
 import { setCartOwner, useCart } from '@/lib/buyer/cart';
 import { useUnreadMessages } from '@/lib/messages/client';
 import { useLiveEvent } from '@/lib/realtime/client';
+import { stopPushOnThisPhone } from '@/lib/push/client';
 import { supabaseBrowser } from '@/lib/supabase/browser';
 
 import { Wordmark } from '../brand/Wordmark';
@@ -228,6 +229,7 @@ export function BuyerShell({
 
   const signOut = useCallback(async () => {
     setCartOwner(null);
+    await stopPushOnThisPhone();
     try {
       // 'local': end the session on this device even when the network is down;
       // the server-side token simply expires.

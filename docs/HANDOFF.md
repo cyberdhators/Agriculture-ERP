@@ -3174,3 +3174,12 @@ Analyst sees "Download Excel" on both analytics pages (same roles as the
 export routes); rating counts in correct singular/plural (English and Arabic
 via the new `tCount`); public profile post lines show unit labels, not raw
 values. Pure scan: `apps/web/tests/live-test-polish-scan.test.ts`.
+
+### 2026-11-03 -- Push alerts on a phone (branch feat/push-notifications) -- Alieu-Claude
+
+Crossed into the backend lane on the owner's instruction: one additive migration
+(`20261103120000_push_subscription`, audit CHECK now 202 keys, so the next CHECK
+migration starts from it), two routes under `account/push-subscription`,
+`packages/shared/src/push.ts`, `lib/push/*`. `lib/realtime/outbox.ts` now also
+carries phone alerts; a notice writer with no live event calls `emitPush`.
+Decision in `docs/DECISIONS.md`. The Play Store build follows this, owner's order.

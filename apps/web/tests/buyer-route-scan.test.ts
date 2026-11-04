@@ -111,6 +111,9 @@ const BUYER_OUTSIDE_ITS_TREE = [
   // session's sign-in) and the announcements delivered to its own inbox.
   'account/notification-preferences',
   'account/announcements',
+  // 2026-11-03: this phone's alerts -- the caller's own row, keyed by the session's sign-in.
+  'account/push-subscription',
+  'account/push-subscription/remove',
   // IN-APP MESSAGING (2026-10-20): conversations belong to sign-ins, and every
   // read is filtered to the caller's own (lib/api/messaging.ts).
   'conversations',

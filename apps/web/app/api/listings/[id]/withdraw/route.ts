@@ -6,6 +6,7 @@ import { defineRoutes, ok } from '../../../../../lib/api/route';
 import { requireWriter } from '../../../../../lib/api/scope';
 import { prisma } from '../../../../../lib/db';
 import { LISTING_WITHDRAWN_NOTICE_TITLE } from '../../../../../lib/farmer-notices';
+import { emitPush } from '../../../../../lib/realtime/outbox';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -85,6 +86,15 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
           ...actor,
           action: 'notification.created',
           after: { recipient: 'farmer', notice: 'listing_withdrawn_by_staff' },
+        });
+        // The stored notice names the listing and the reason; the alert does not.
+        emitPush({
+          farmerId: listing.farmer_id,
+          titleKey: 'push.withdrawn.title',
+          bodyKey: 'push.withdrawn.body',
+          href: '/farmer/account/listings',
+          tag: `notice-${note!.id}`,
+          urgency: 'high',
         });
         return { id, status: 'withdrawn' as const };
       });
