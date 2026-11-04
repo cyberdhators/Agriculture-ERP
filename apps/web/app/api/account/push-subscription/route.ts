@@ -1,4 +1,4 @@
-import { BUYER_ROLE, FARMER_ROLE, pushSubscriptionSchema } from '@agri-erp/shared';
+import { ALL_ROLES, BUYER_ROLE, FARMER_ROLE, pushSubscriptionSchema } from '@agri-erp/shared';
 
 import { audited, writeAudit } from '../../../../lib/api/audit';
 import { defineRoutes, ok } from '../../../../lib/api/route';
@@ -8,14 +8,14 @@ import { prisma } from '../../../../lib/db';
 const MOST_PHONES = 10;
 
 /**
- * POST /api/account/push-subscription (2026-11-03). The signed-in account
- * turns alerts on for this phone. One phone is one row: when someone else
- * signs in on it and turns alerts on, the row becomes theirs, so a phone never
- * gets two people's alerts. The audit row carries no address or key.
+ * POST /api/account/push-subscription (2026-11-03). This phone allowed alerts
+ * for the signed-in account (2026-11-04: every role, the owner). One phone is
+ * one row: when someone else signs in on it, the row becomes theirs, so a phone
+ * never gets two people's alerts. The audit row carries no address or key.
  */
 export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   POST: {
-    roles: [FARMER_ROLE, BUYER_ROLE],
+    roles: [...ALL_ROLES, FARMER_ROLE, BUYER_ROLE],
     bodySchema: pushSubscriptionSchema,
     handler: async ({ auth, body }) => {
       const authUserId = auth.principal.authUserId;
@@ -45,7 +45,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
         await writeAudit(tx, {
           entityType: 'push_subscription',
           entityId: row!.id,
-          actorType: auth.role === 'buyer' ? 'buyer' : 'farmer',
+          actorType: auth.role,
           actorId: auth.principal.id,
           action: 'push_subscription.created',
           after: { language: body.language },

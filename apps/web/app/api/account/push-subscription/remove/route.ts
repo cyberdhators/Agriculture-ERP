@@ -1,4 +1,4 @@
-import { BUYER_ROLE, FARMER_ROLE, pushRemoveSchema } from '@agri-erp/shared';
+import { ALL_ROLES, BUYER_ROLE, FARMER_ROLE, pushRemoveSchema } from '@agri-erp/shared';
 
 import { audited, writeAudit } from '../../../../../lib/api/audit';
 import { defineRoutes, ok } from '../../../../../lib/api/route';
@@ -6,12 +6,12 @@ import { prisma } from '../../../../../lib/db';
 
 /**
  * POST /api/account/push-subscription/remove (2026-11-03). Alerts stop for
- * this phone: the switch on Account, or signing out. Only the account's own
- * row, and asking twice is harmless. Soft delete, audited, no address or key.
+ * this phone at sign-out. Only the account's own row, and asking twice is
+ * harmless. Soft delete, audited, no address or key.
  */
 export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
   POST: {
-    roles: [FARMER_ROLE, BUYER_ROLE],
+    roles: [...ALL_ROLES, FARMER_ROLE, BUYER_ROLE],
     bodySchema: pushRemoveSchema,
     handler: async ({ auth, body }) => {
       await audited(prisma, async (tx) => {
@@ -26,7 +26,7 @@ export const { GET, POST, PUT, PATCH, DELETE } = defineRoutes({
         await writeAudit(tx, {
           entityType: 'push_subscription',
           entityId: row.id,
-          actorType: auth.role === 'buyer' ? 'buyer' : 'farmer',
+          actorType: auth.role,
           actorId: auth.principal.id,
           action: 'push_subscription.removed',
           after: { reason: 'member' },

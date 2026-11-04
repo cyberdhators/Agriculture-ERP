@@ -35,6 +35,7 @@ import {
   transitionLearningResource,
 } from './library/api';
 import { BUYER_HOME_PATH, PORTAL_PREFIXES } from './auth/paths';
+import { stopPushOnThisPhone } from '@/lib/push/client';
 import { supabaseBrowser } from './supabase/browser';
 
 const under = (pathname: string, prefixes: readonly string[]): boolean =>
@@ -230,6 +231,7 @@ export function PreviewProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signOut = useCallback(async () => {
+    await stopPushOnThisPhone();
     await supabaseBrowser().auth.signOut();
     window.location.assign('/admin/login');
   }, []);

@@ -9,6 +9,7 @@ import {
 import type { ReactNode } from 'react';
 
 import { OfflineSync } from '@/components/pwa/OfflineSync';
+import { PushPermission } from '@/components/pwa/PushPermission';
 import { PwaStatus } from '@/components/pwa/PwaStatus';
 import { MaintenanceBanner } from '@/components/site/MaintenanceBanner';
 
@@ -113,6 +114,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         {children}
         <PwaStatus />
         <OfflineSync />
+        <PushPermission />
       </body>
     </html>
   );

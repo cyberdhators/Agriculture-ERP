@@ -6348,3 +6348,26 @@ settings without sending it. NOT YET OBSERVED at the time of writing: an alert
 arriving on a real Android phone or iPhone. INFERRED, from one reading of
 Apple's documentation and not exercised: an iPhone withdraws alerts from a site
 that receives pushes without showing them, so the worker always shows one there.
+
+### Push alerts become a permission (2026-11-04)
+
+The owner, in writing: "the Alerts on this phone is not working, include it as
+permission and will be included in the terms and condition later, make it
+available for all, remove that label". Replaces "Who" above.
+
+- **No switch and no label.** Once someone is signed in, the phone's own
+  permission question appears at their first tap, because browsers refuse or
+  quieten one that opens by itself. Allowed: alerts until sign-out or until they
+  block them in the phone's settings. Dismissed: asked again after a week.
+  Blocked: never asked again. The earlier gap closes: signing in as someone else
+  moves the phone's row to them.
+- **Everyone signed in is asked, every role.** Staff and officers receive no
+  alerts yet: they have no account notices to send, and the sender only finds
+  farmers and buyers. Recorded so that nobody reads their row as a delivery.
+- **The terms are owed.** The owner will add this to the terms and conditions
+  later; until then the phone's question is the only consent. Consent records and
+  CONSENT_VERSION are unchanged.
+- **The owner's failure is not explained.** On 2026-11-04 the live switch worked
+  in Google Chrome on a computer: on, saved, still on after a reload (OBSERVED).
+  What failed on the owner's phone was not reproduced, so this change is not
+  claimed to fix it. An iPhone still needs AgriOne on its home screen first.
