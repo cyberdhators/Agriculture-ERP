@@ -6380,3 +6380,13 @@ nothing. INFERRED, one instance and not reproduced on a phone: that is what the
 owner met. The app now shows its own box, whose Allow button does only that. It is
 a permission, not the removed switch. Blocked and "iPhone needs the home screen"
 are said in the same box, because a silent failure is what could not be diagnosed.
+
+**Corrected again the same day: no box of ours.** The owner: "forget pop up message,
+only pop up is allow this site to send notification, after apk, it should be alow
+app". The Allow / Not now box and its blocked and iPhone messages are gone. Once
+someone is signed in, the browser's own question opens by itself, and asks again the
+next day if unanswered. An iPhone opens it only from a tap, so there it waits for the
+first tap. Consequences the owner accepted by this instruction: nothing tells a
+person their browser has blocked the site, or that an iPhone needs AgriOne on its
+home screen first. **For the Android app:** build it with notification delegation
+on (Bubblewrap `enableNotifications`), so the question is the phone's own for the app.

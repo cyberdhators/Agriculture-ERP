@@ -3194,3 +3194,9 @@ role. No migration. The Play Store build still waits for an alert on a real phon
 
 `components/pwa/PushPermission.tsx` now shows Allow / Not now instead of asking at
 any first tap. No migration.
+
+### 2026-11-04 -- Push permission: the browser's own question only (branch fix/push-browser-question) -- Alieu-Claude
+
+No box of ours: `components/pwa/PushPermission.tsx` renders nothing and
+`lib/push/client.ts` opens the browser's question by itself. No migration. The Android
+app must be built with notification delegation on (see `docs/DECISIONS.md`).
