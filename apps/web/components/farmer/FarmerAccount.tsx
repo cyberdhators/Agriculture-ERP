@@ -3,7 +3,6 @@
 import { NotificationPreferencesCard } from '@/components/account/NotificationSettings';
 import { MyAvatar, PublicNameLine } from '@/components/account/MyAvatar';
 import { AppearanceRow, TextSizeRow } from '@/components/account/Appearance';
-import { PushRow } from '@/components/account/PushRow';
 import css from '@/components/account/settings.module.css';
 import { farmerPayamName } from '@/lib/fixtures/farmers';
 import { useFarmerSession } from '@/lib/farmer-session';
@@ -108,7 +107,6 @@ export function FarmerAccount() {
             {/* 2026-10-31: light, dark, or follow the phone. */}
             <AppearanceRow language={language === 'ar' ? 'ar' : 'en'} />
             <TextSizeRow language={language === 'ar' ? 'ar' : 'en'} />
-            <PushRow language={language === 'ar' ? 'ar' : 'en'} />
           </ul>
         </section>
 

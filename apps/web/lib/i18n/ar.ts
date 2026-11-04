@@ -1940,10 +1940,6 @@ export const ar: Partial<Record<TKey, string>> = {
   'sync.attention.other': '{n} تغيير يحتاج إلى مراجعة',
 
   // 2026-11-03: alerts on a phone.
-  'push.row.label': 'التنبيهات على هذا الهاتف',
-  'push.row.install': 'أضف AgriOne إلى الشاشة الرئيسية أولًا.',
-  'push.row.blocked': 'محظورة من إعدادات هذا الهاتف.',
-  'push.row.failed': 'لم تنجح العملية. حاول مرة أخرى.',
   'push.message.title': 'لديك رسالة جديدة',
   'push.message.body': 'افتح الرسائل لقراءتها.',
   'push.update.title': 'لديك إشعار جديد',

@@ -3183,3 +3183,9 @@ migration starts from it), two routes under `account/push-subscription`,
 `packages/shared/src/push.ts`, `lib/push/*`. `lib/realtime/outbox.ts` now also
 carries phone alerts; a notice writer with no live event calls `emitPush`.
 Decision in `docs/DECISIONS.md`. The Play Store build follows this, owner's order.
+
+### 2026-11-04 -- Push alerts become a permission (branch fix/push-permission) -- Alieu-Claude
+
+Owner's instruction: the switch is gone, `components/pwa/PushPermission.tsx` in
+the root layout asks at the first tap once signed in, the two routes take every
+role. No migration. The Play Store build still waits for an alert on a real phone.
