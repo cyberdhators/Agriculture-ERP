@@ -1940,6 +1940,15 @@ export const ar: Partial<Record<TKey, string>> = {
   'sync.attention.other': '{n} تغيير يحتاج إلى مراجعة',
 
   // 2026-11-03: alerts on a phone.
+  'push.ask.title': 'هل تسمح بالتنبيهات من AgriOne؟',
+  'push.ask.body': 'الرسائل والطلبات الجديدة، حتى عندما يكون التطبيق مغلقًا.',
+  'push.ask.allow': 'سماح',
+  'push.ask.later': 'ليس الآن',
+  'push.blocked.title': 'التنبيهات محظورة على هذا الهاتف',
+  'push.blocked.body': 'اسمح بالإشعارات لهذا الموقع من إعدادات المتصفح.',
+  'push.install.title': 'أضف AgriOne إلى الشاشة الرئيسية',
+  'push.install.body': 'يحتاج iPhone إلى ذلك للتنبيهات. اضغط مشاركة، ثم إضافة إلى الشاشة الرئيسية.',
+  'push.ok': 'حسنًا',
   'push.message.title': 'لديك رسالة جديدة',
   'push.message.body': 'افتح الرسائل لقراءتها.',
   'push.update.title': 'لديك إشعار جديد',

@@ -2018,6 +2018,15 @@ export const en = {
   'sync.attention.other': '{n} changes need attention',
 
   // 2026-11-03: alerts on a phone. Fixed sentences: they show on a locked screen.
+  'push.ask.title': 'Allow alerts from AgriOne?',
+  'push.ask.body': 'New messages and requests, even when the app is closed.',
+  'push.ask.allow': 'Allow',
+  'push.ask.later': 'Not now',
+  'push.blocked.title': 'Alerts are blocked on this phone',
+  'push.blocked.body': "Allow notifications for this site in your browser's settings.",
+  'push.install.title': 'Add AgriOne to your home screen',
+  'push.install.body': 'An iPhone needs this for alerts. Tap Share, then Add to Home Screen.',
+  'push.ok': 'OK',
   'push.message.title': 'You have a new message',
   'push.message.body': 'Open Messages to read it.',
   'push.update.title': 'You have a new notification',
